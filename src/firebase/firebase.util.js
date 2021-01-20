@@ -41,13 +41,20 @@
      }
 
      return userRef;
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 37137a73dd46edd2bbe27377bc2dd42a622365ac
  }
 
 
  firebase.initializeApp(config);
  export const auth = firebase.auth();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 37137a73dd46edd2bbe27377bc2dd42a622365ac
  export const firestore = firebase.firestore();
 
  const provider = new firebase.auth.GoogleAuthProvider();

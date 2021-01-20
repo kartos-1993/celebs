@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+<<<<<<< HEAD
 
 import { createStructuredSelector } from "reselect";
 
@@ -52,3 +53,40 @@ const mapSateToProps = createStructuredSelector({
 });
 
 export default connect(mapSateToProps)(Header);
+=======
+import { connect } from "react-redux";
+import { ReactComponent as Logo } from "../../assets/crown.svg";
+import "./header.styles.scss";
+import { auth } from "../../firebase/firebase.util";
+
+const Header = ({ currentUser }) => (
+  <div className="header">
+    <Link className="logo-container" to="/">
+      <Logo className="logo" />
+    </Link>
+    <div className="options">
+      <Link className="option" to="/shop">
+        SHOP
+      </Link>
+      <Link className="option" to="/contact">
+        CONTACT
+      </Link>
+      {console.log(currentUser)}
+      {currentUser ? (
+        <div className="option" onClick={() => auth.signOut()}>
+          SIGN OUT
+        </div>
+      ) : (
+        <Link className="option" to="/signin">
+          SIGN IN
+        </Link>
+      )}
+    </div>
+  </div>
+);
+
+const mapStateToProps = (state) => ({
+  currentUser: state.user.currentUser,
+});
+export default connect(mapStateToProps)(Header);
+>>>>>>> 37137a73dd46edd2bbe27377bc2dd42a622365ac
