@@ -29,6 +29,7 @@ export const selectCartItemCount = createSelector(
 
 )
 
+//cart Item total price selector
 
 export const selectCartTotal = createSelector(
     [selectCartItems],
