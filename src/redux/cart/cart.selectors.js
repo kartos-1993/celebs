@@ -10,11 +10,11 @@ export const selectCartItems = createSelector(
     (cart) => cart.cartItems
 )
 
-//cart hidde selector
+//cart hide selector
 
 export const selectCartHidden = createSelector(
     [selectCart],
-    cart => cart.hidden
+    (cart) => cart.hidden
 
 )
 

@@ -1,4 +1,3 @@
-import { createSelectorHook } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectUser = state => state.user

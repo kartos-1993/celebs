@@ -1,5 +1,6 @@
 import React from "react";
 import MenuItem from "../menu-item/menu-item.component";
+import ShopPage from "../../pages/shop/shop.component";
 import "./directory.styles.scss";
 
 class Directory extends React.Component {
@@ -52,6 +53,7 @@ class Directory extends React.Component {
             <MenuItem key={id} title={title} imageUrl={imageUrl} size={size} />
           );
         })}
+        <ShopPage />
       </div>
     );
   }

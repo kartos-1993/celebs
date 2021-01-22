@@ -22,10 +22,6 @@ class SignUp extends React.Component {
     this.setState({
       [name]: value,
     });
-<<<<<<< HEAD
-=======
-    console.log(this.state);
->>>>>>> 37137a73dd46edd2bbe27377bc2dd42a622365ac
   };
 
   handleSubmit = async (e) => {

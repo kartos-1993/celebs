@@ -13,6 +13,8 @@ import "./cart-dropdown.styles.scss";
 
 import { selectCartItems } from "../../redux/cart/cart.selectors";
 
+import { createStructuredSelector } from "reselect";
+
 const CartDropdown = ({ cartItems, history, dispatch }) => (
   <div className="cart-dropdown">
     <div className="cart-items">
@@ -35,12 +37,8 @@ const CartDropdown = ({ cartItems, history, dispatch }) => (
   </div>
 );
 
-// const mapDispatchToProps = (dispatch) => ({
-//   toggleCartHidden: () => dispatch(toggleCartHidden()),
-// });
-
-const mapStateToProps = (state) => ({
-  cartItems: selectCartItems(state),
+const mapStateToProps = createStructuredSelector({
+  cartItems: selectCartItems,
 });
 
 export default withRouter(connect(mapStateToProps)(CartDropdown));
