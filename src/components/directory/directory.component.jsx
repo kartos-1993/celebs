@@ -1,6 +1,5 @@
 import React from "react";
 import MenuItem from "../menu-item/menu-item.component";
-import ShopPage from "../../pages/shop/shop.component";
 
 import { createStructuredSelector } from "reselect";
 
@@ -16,7 +15,6 @@ const Directory = ({ sections }) => (
         <MenuItem key={id} title={title} imageUrl={imageUrl} size={size} />
       );
     })}
-    <ShopPage />
   </div>
 );
 

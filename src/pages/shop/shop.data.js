@@ -5,50 +5,50 @@ const SHOP_DATA = {
         routeName: 'hats',
         items: [{
                 id: 1,
-                name: 'Brown Brim',
-                imageUrl: 'https://i.ibb.co/ZYW3VTp/brown-brim.png',
-                price: 25
+                name: 'Ribbed Beanie - Black',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/11-08-19_Studio_5_JR_07-45-57_8_MMQ7301_Black_0859_RG_468x.jpg?v=1573517576',
+                price: 5.99
             },
             {
                 id: 2,
-                name: 'Blue Beanie',
-                imageUrl: 'https://i.ibb.co/ypkgK0X/blue-beanie.png',
-                price: 18
+                name: 'Trust NO1 Distressed Dad Hat - Black/White',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/04-26-20_MA_12-04-55_31_KBSV055_BlackWhite_1222_JK_468x.jpg?v=1588099985',
+                price: 6.99
             },
             {
                 id: 3,
-                name: 'Brown Cowboy',
-                imageUrl: 'https://i.ibb.co/QdJwgmp/brown-cowboy.png',
-                price: 35
+                name: 'Call Him Daddy Embroidered Beanie - Pink/combo',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/09-08-20Lightbox_CE_09-32-54_9_FNMBSE05_Pinkcombo_4431_KL_468x.jpg?v=1599604503',
+                price: 5.98
             },
             {
                 id: 4,
-                name: 'Grey Brim',
-                imageUrl: 'https://i.ibb.co/RjBLWxB/grey-brim.png',
+                name: 'GTrap King 2 Pack Beanie Set - Mint/combo',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/08-27-20Studio1_JP_DJ_11-16-44_18_FNMBSET8_Mintcombo_3605_JK_468x.jpg?v=1598660284',
                 price: 25
             },
             {
                 id: 5,
-                name: 'Green Beanie',
-                imageUrl: 'https://i.ibb.co/YTjW3vF/green-beanie.png',
+                name: 'Baller Embroidered Beanie - Black',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/11-30-20Studio4_SR_SD_14-01-49_103_KBECLASSIC_White_53103_NT_360x.jpg?v=1606784097',
                 price: 18
             },
             {
                 id: 6,
-                name: 'Palm Tree Cap',
-                imageUrl: 'https://i.ibb.co/rKBDvJX/palm-tree-cap.png',
-                price: 14
+                name: 'Instafamous Dad Hat - Navy',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/04-23-20Lightbox_CE_17-02-49_20_KBECLASSIC_Navy_P_2307_KL_360x.jpg?v=1588177640',
+                price: 9.99
             },
             {
                 id: 7,
-                name: 'Red Beanie',
-                imageUrl: 'https://i.ibb.co/bLB646Z/red-beanie.png',
+                name: 'Disobey Dad Hat - Orange',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/01-19-21Studio3_RT_ON_TB_08-43-27_1_SPDNA118_Orange_P_73885_JK_360x.jpg?v=1611104069',
                 price: 18
             },
             {
                 id: 8,
-                name: 'Wolf Cap',
-                imageUrl: 'https://i.ibb.co/1f2nWMM/wolf-cap.png',
+                name: 'Instafamous Dad Hat - Blue',
+                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/11-30-20Studio4_SR_SD_13-41-32_93_KBECLASSIC_Blue_53005_NT_360x.jpg?v=1606784416',
                 price: 14
             },
             {
@@ -65,26 +65,26 @@ const SHOP_DATA = {
         routeName: 'sneakers',
         items: [{
                 id: 10,
-                name: 'Adidas NMD',
-                imageUrl: 'https://i.ibb.co/0s3pdnc/adidas-nmd.png',
-                price: 220
+                name: 'MEN\'S NIKE AIR VAPORMAX PLUS RUNNING SHOES',
+                imageUrl: 'https://media.jdsports.com/i/jdsports/924453_100_P1?$default$&w=671&&h=671',
+                price: 200
             },
             {
                 id: 11,
-                name: 'Adidas Yeezy',
-                imageUrl: 'https://i.ibb.co/dJbG1cT/yeezy.png',
+                name: 'MEN\'S NIKE AIR MAX 97 CASUAL SHOES',
+                imageUrl: 'https://media.jdsports.com/i/jdsports/921826_001_P1?$default$&w=671&&h=671',
                 price: 280
             },
             {
                 id: 12,
-                name: 'Black Converse',
-                imageUrl: 'https://i.ibb.co/bPmVXyP/black-converse.png',
+                name: 'MEN\'S NIKE AIR MAX LTD 3 CASUAL SHOES ',
+                imageUrl: 'https://media.jdsports.com/i/jdsports/BV1171_100_P1?$default$&w=671&&h=671',
                 price: 110
             },
             {
                 id: 13,
-                name: 'Nike White AirForce',
-                imageUrl: 'https://i.ibb.co/1RcFPk0/white-nike-high-tops.png',
+                name: 'MEN\'S NIKE AIR MAX 2015 RUNNING SHOES',
+                imageUrl: 'https://media.jdsports.com/i/jdsports/DC4111_001_P1?$default$&$global_access_pdp$&layer0=[h=671&w=671&bg=rgb(237,237,237)]&h=671&w=671',
                 price: 160
             },
             {
