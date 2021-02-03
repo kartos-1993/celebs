@@ -26,7 +26,7 @@ const INITIAL_STATE = {
         },
         {
             title: "mens",
-            imageUrl: "https://i8.amplience.net/i/jpl/desktop-top-banner-1920x840-892d67aa36b4e3ba6e7d25689cd10923?qlt=80&fmt=webp",
+            imageUrl: "https://i.ibb.co/R70vBrQ/men.png",
             size: "large",
             id: 5,
             linkUrl: "shop/mens",

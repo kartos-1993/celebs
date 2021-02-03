@@ -18,6 +18,7 @@ import CartIcon from "../cart-icon/cart-icon.component";
 import "./header.styles.scss";
 
 const Header = ({ currentUser, hidden }) => {
+  console.log(currentUser);
   return (
     <div className="header">
       <Link className="logo-container" to="/">
