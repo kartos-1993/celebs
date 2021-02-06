@@ -10,12 +10,15 @@ class SignUp extends React.Component {
     super();
 
     this.state = {
+      id: "",
       displayName: "",
       email: "",
       password: "",
       confirmPassword: "",
     };
   }
+
+  countId = 0;
 
   handleChange = (e) => {
     const { name, value } = e.target;

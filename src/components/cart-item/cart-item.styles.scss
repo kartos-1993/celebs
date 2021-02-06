@@ -4,7 +4,7 @@
     height: 80px;
     margin-bottom: 15px;
     img {
-        width: 30%;
+        width: 20%;
     }
     .item-details {
         display: flex;
@@ -13,5 +13,8 @@
         padding: 10px 20px;
         justify-content: center;
         width: 70%;
+        .price {
+            font-weight: bold;
+        }
     }
 }
