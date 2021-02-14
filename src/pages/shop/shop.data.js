@@ -5,56 +5,56 @@ const SHOP_DATA = {
         routeName: 'hats',
         items: [{
                 id: 1,
-                name: 'Ribbed Beanie - Black',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/11-08-19_Studio_5_JR_07-45-57_8_MMQ7301_Black_0859_RG_468x.jpg?v=1573517576',
+                name: 'Nike H86 Futura washed cap in black',
+                imageUrl: 'https://images.asos-media.com/products/nike-h86-futura-washed-cap-in-black/21389754-1-blackblack?$XXL$&wid=513&fit=constrain',
                 price: 5.99
             },
             {
                 id: 2,
-                name: 'Trust NO1 Distressed Dad Hat - Black/White',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/04-26-20_MA_12-04-55_31_KBSV055_BlackWhite_1222_JK_468x.jpg?v=1588099985',
+                name: 'The North Face Horizon cap in grey',
+                imageUrl: 'https://images.asos-media.com/products/the-north-face-horizon-cap-in-grey/23376105-1-wroughtiron?$XXL$&wid=513&fit=constrain',
                 price: 6.99
             },
             {
                 id: 3,
-                name: 'Call Him Daddy Embroidered Beanie - Pink/combo',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/09-08-20Lightbox_CE_09-32-54_9_FNMBSE05_Pinkcombo_4431_KL_468x.jpg?v=1599604503',
+                name: 'Puma Ess cap in white',
+                imageUrl: 'https://images.asos-media.com/products/puma-ess-cap-in-white/14568558-1-white?$XXL$&wid=513&fit=constrain',
                 price: 5.98
             },
             {
                 id: 4,
-                name: 'GTrap King 2 Pack Beanie Set - Mint/combo',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/08-27-20Studio1_JP_DJ_11-16-44_18_FNMBSET8_Mintcombo_3605_JK_468x.jpg?v=1598660284',
+                name: 'Baseball cap in khaki cotton',
+                imageUrl: 'https://images.asos-media.com/products/asos-design-baseball-cap-in-khaki-cotton/21014378-1-khaki?$XXL$&wid=513&fit=constrain',
                 price: 25
             },
             {
                 id: 5,
-                name: 'Baller Embroidered Beanie - Black',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/11-30-20Studio4_SR_SD_14-01-49_103_KBECLASSIC_White_53103_NT_360x.jpg?v=1606784097',
+                name: 'ASOS DESIGN baseball cap with logo in dark green',
+                imageUrl: 'https://images.asos-media.com/products/asos-design-baseball-cap-with-logo-in-dark-green/21801043-1-green?$XXL$&wid=513&fit=constrain',
                 price: 18
             },
             {
                 id: 6,
-                name: 'Instafamous Dad Hat - Navy',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/04-23-20Lightbox_CE_17-02-49_20_KBECLASSIC_Navy_P_2307_KL_360x.jpg?v=1588177640',
+                name: 'New Era 9forty NY Yankees cap in beige',
+                imageUrl: 'https://images.asos-media.com/products/new-era-9forty-ny-yankees-cap-in-beige/21515112-1-beige?$XXL$&wid=513&fit=constrain',
                 price: 9.99
             },
             {
                 id: 7,
-                name: 'Disobey Dad Hat - Orange',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/01-19-21Studio3_RT_ON_TB_08-43-27_1_SPDNA118_Orange_P_73885_JK_360x.jpg?v=1611104069',
+                name: 'Tommy Hilfiger with small flag logo cap in beige',
+                imageUrl: 'https://images.asos-media.com/products/tommy-hilfiger-with-small-flag-logo-cap-in-beige/22775925-1-camel?$XXL$&wid=513&fit=constrain',
                 price: 18
             },
             {
                 id: 8,
-                name: 'Instafamous Dad Hat - Blue',
-                imageUrl: 'https://cdn.shopify.com/s/files/1/0293/9277/products/11-30-20Studio4_SR_SD_13-41-32_93_KBECLASSIC_Blue_53005_NT_360x.jpg?v=1606784416',
+                name: 'Adidas Originals RYV dad cap in beige',
+                imageUrl: 'https://images.asos-media.com/products/adidas-originals-ryv-dad-cap-in-beige/21989458-1-beige?$XXL$&wid=513&fit=constrain',
                 price: 14
             },
             {
                 id: 9,
-                name: 'Blue Snapback',
-                imageUrl: 'https://i.ibb.co/X2VJP2W/blue-snapback.png',
+                name: 'Reclaimed Vintage inspired front logo embroidery cap in washed grey',
+                imageUrl: 'https://images.asos-media.com/products/asos-design-baseball-cap-in-khaki-cotton/21014378-1-khaki?$XXL$&wid=513&fit=constrain',
                 price: 16
             }
         ]

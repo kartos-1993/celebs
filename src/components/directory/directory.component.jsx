@@ -10,9 +10,15 @@ import { connect } from "react-redux";
 
 const Directory = ({ sections }) => (
   <div className="directory-menu">
-    {sections.map(({ title, imageUrl, id, size }) => {
+    {sections.map(({ title, imageUrl, id, size, linkUrl }) => {
       return (
-        <MenuItem key={id} title={title} imageUrl={imageUrl} size={size} />
+        <MenuItem
+          key={id}
+          title={title}
+          imageUrl={imageUrl}
+          size={size}
+          linkUrl={linkUrl}
+        />
       );
     })}
   </div>
