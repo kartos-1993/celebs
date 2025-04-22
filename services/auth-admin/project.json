@@ -1,0 +1,26 @@
+{
+  "name": "auth-admin",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/auth-admin/src",
+  "projectType": "application",
+  "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "auth-admin:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "auth-admin:build:development"
+        },
+        "production": {
+          "buildTarget": "auth-admin:build:production"
+        }
+      }
+    }
+  },
+  "tags": []
+}
