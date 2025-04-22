@@ -1,5 +1,16 @@
-
 .nx/installation
 .nx/cache
 .nx/workspace-data
 node_modules
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore build output folders
+dist/
+build/
+
+# Ignore build output folders for each service
+services/auth-admin/dist/
+services-e2e/dist/

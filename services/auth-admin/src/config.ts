@@ -2,13 +2,13 @@
 export enum Role {
   ADMIN = 'admin',
   USER = 'user',
-  GUEST = 'guest',
+  EMPLOYEE = 'employee',
 }
 
 export const Permissions = {
   [Role.ADMIN]: ['read', 'write', 'delete'],
   [Role.USER]: ['read', 'write'],
-  [Role.GUEST]: ['read'],
+  [Role.EMPLOYEE]: ['read'],
 };
 
 export const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';

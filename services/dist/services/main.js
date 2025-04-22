@@ -581,12 +581,12 @@ var Role;
 (function (Role) {
     Role["ADMIN"] = "admin";
     Role["USER"] = "user";
-    Role["GUEST"] = "guest";
+    Role["EMPLOYEE"] = "employee";
 })(Role || (exports.Role = Role = {}));
 exports.Permissions = (_a = {},
     _a[Role.ADMIN] = ['read', 'write', 'delete'],
     _a[Role.USER] = ['read', 'write'],
-    _a[Role.GUEST] = ['read'],
+    _a[Role.EMPLOYEE] = ['read'],
     _a);
 exports.JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 exports.SUPABASE_URL = process.env.SUPABASE_URL || '';
