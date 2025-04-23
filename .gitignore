@@ -3,6 +3,13 @@
 .nx/workspace-data
 node_modules
 
+# NX specific
+.nx/
+.nxignore
+.nxcache/
+nx-cloud.env
+tmp/
+
 # Ignore environment files
 .env
 .env.*
@@ -14,3 +21,47 @@ build/
 # Ignore build output folders for each service
 services/auth-admin/dist/
 services-e2e/dist/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Local development specific files
+*.local
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Sensitive data - for extra security
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# NX Report files
+report.json

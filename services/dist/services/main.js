@@ -575,7 +575,7 @@ module.exports = require("jsonwebtoken");
 
 var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DATABASE_URL = exports.SUPABASE_KEY = exports.SUPABASE_URL = exports.JWT_SECRET = exports.Permissions = exports.Role = void 0;
+exports.DATABASE_URL = exports.SUPABASE_SERVICE_ROLE_KEY = exports.SUPABASE_KEY = exports.SUPABASE_URL = exports.JWT_SECRET = exports.Permissions = exports.Role = void 0;
 // RBAC roles and permissions
 var Role;
 (function (Role) {
@@ -591,6 +591,7 @@ exports.Permissions = (_a = {},
 exports.JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 exports.SUPABASE_URL = process.env.SUPABASE_URL || '';
 exports.SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+exports.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 exports.DATABASE_URL = process.env.DATABASE_URL || '';
 
 
