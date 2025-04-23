@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@nx/express": "^20.8.0",
+    "@nx/jest": "^20.8.0",
     "@nx/js": "^20.8.0",
     "@nx/node": "20.8.0",
     "@nx/web": "20.8.0",
@@ -14,12 +15,16 @@
     "@types/compression": "^1.7.5",
     "@types/express": "^4.17.21",
     "@types/express-session": "^1.18.1",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "~18.16.9",
     "@types/nodemailer": "^6.4.17",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
     "prettier": "^2.6.2",
     "prisma": "^6.6.0",
     "react-refresh": "^0.10.0",
+    "ts-jest": "^29.3.2",
     "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "webpack-cli": "^5.1.4"
