@@ -9,6 +9,7 @@ import pinoHttp from 'pino-http';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
+import { config } from './config';
 
 const app = express();
 app.use(json());
@@ -20,27 +21,40 @@ app.use(compression());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: config.nodeEnv === 'production' ? 100 : 1000, // limit based on environment
     standardHeaders: true,
     legacyHeaders: false,
   })
 );
-
+const client = createClient({
+  username: 'default',
+  password: 'Buax8DUUfoFAC7OKRZ7nMpAiQNTmO8Ks',
+  socket: {
+    host: 'redis-19950.c264.ap-south-1-1.ec2.redns.redis-cloud.com',
+    port: 19950,
+  },
+});
 // Redis client setup
 const redisClient = createClient({
-  url: 'redis://localhost:6379',
+  username: config.redis.url,
   legacyMode: true, // for connect-redis compatibility
 });
 redisClient.connect().catch(console.error);
 
+if (!config.sessionSecret) {
+  throw new Error(
+    'SESSION_SECRET (or JWT_SECRET) environment variable is required for session management'
+  );
+}
+
 app.use(
   session({
     store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET || 'change_this_secret',
+    secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // set to true if using HTTPS
+      secure: config.nodeEnv === 'production', // Only set to true if using HTTPS
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },

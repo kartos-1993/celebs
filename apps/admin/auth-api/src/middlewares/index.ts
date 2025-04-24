@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload, VerifyErrors } from 'jsonwebtoken';
 import { JWT_SECRET, Role, Permissions } from '../config';
 
 export function authenticateToken(
@@ -10,13 +10,17 @@ export function authenticateToken(
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.sendStatus(401);
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(401).json({ message: 'Invalid token' }); // Updated to handle error gracefully
+  jwt.verify(
+    token,
+    JWT_SECRET,
+    (err: VerifyErrors | null, user: JwtPayload | string | undefined) => {
+      if (err) {
+        return res.status(401).json({ message: 'Invalid token' }); // Updated to handle error gracefully
+      }
+      (req as any).user = user;
+      next();
     }
-    (req as any).user = user;
-    next();
-  });
+  );
 }
 
 export function authorizeRole(roles: Role[]) {

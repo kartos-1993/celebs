@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: auth-api-staging
+    env: node
+    region: frankfurt
+    buildCommand: |
+      npm install -g pnpm
+      pnpm install
+      pnpm nx prisma generate --project=admin-auth-api
+      pnpm nx build admin-auth-api
+    startCommand: pnpm nx serve admin-auth-api
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      # Supabase Database URL
+      - key: DATABASE_URL
+        sync: false # Add your Supabase connection string in Render dashboard
+      # Redis Cloud Configuration
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      # Auth configuration
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: '1h'
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: '7d'
+      # SMTP configuration
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true
