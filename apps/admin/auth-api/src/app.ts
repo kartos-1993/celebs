@@ -26,14 +26,7 @@ app.use(
     legacyHeaders: false,
   })
 );
-const client = createClient({
-  username: 'default',
-  password: 'Buax8DUUfoFAC7OKRZ7nMpAiQNTmO8Ks',
-  socket: {
-    host: 'redis-19950.c264.ap-south-1-1.ec2.redns.redis-cloud.com',
-    port: 19950,
-  },
-});
+
 // Redis client setup
 const redisClient = createClient({
   username: config.redis.url,
@@ -61,6 +54,11 @@ app.use(
   })
 );
 
+const router = express.Router();
 app.use('/api/auth', authRouter);
+
+app.get('/health', (req, res) => {
+  res.send(200).json({ status: 'OK', message: 'Server is healthy' });
+});
 
 export default app;

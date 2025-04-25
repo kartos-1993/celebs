@@ -65,8 +65,6 @@ function logAuthEvent(
   });
 }
 
-authRouter.get('/health', (req, res) => res.json({ status: 'ok' }));
-
 authRouter.post('/register', validate(registerSchema), async (req, res) => {
   const { email, password, role } = req.body;
   if (!isPasswordStrong(password)) {
