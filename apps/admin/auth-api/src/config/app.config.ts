@@ -1,11 +1,11 @@
 import { getEnv } from '../common/utils/get-env';
 
 export const appConfig = () => {
-  const env = getEnv('NODE_ENV', 'development');
+  const env = getEnv('NODE_ENV');
   const isProduction = env === 'production';
   const isStaging = env === 'staging';
 
-  const appOriginEnv = getEnv('APP_ORIGIN', 'http://localhost:5173');
+  const appOriginEnv = getEnv('APP_ORIGIN');
   const appOrigins = appOriginEnv.includes(',')
     ? appOriginEnv.split(',').map((origin) => origin.trim())
     : appOriginEnv;
@@ -15,7 +15,6 @@ export const appConfig = () => {
     APP_ORIGIN: appOrigins,
     PORT: getEnv('PORT', '5000'),
     BASE_PATH: getEnv('BASE_PATH', '/api/v1'),
-    MONGO_URI: getEnv('MONGO_URI'),
     JWT: {
       SECRET: getEnv('JWT_SECRET'),
       EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m'),
