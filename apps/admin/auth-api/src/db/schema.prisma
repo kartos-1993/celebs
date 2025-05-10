@@ -8,18 +8,35 @@ generator client {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  role     String
-  createdAt DateTime @default(now())
-  resetToken     String?   // Password reset token
-  resetTokenExpiry DateTime? // Token expiration
-  failedLoginAttempts Int      @default(0) // Track failed logins
-  lockoutUntil        DateTime? // Account lockout expiry
-  isEmailVerified Boolean   @default(false) // Email verification status
-  emailVerificationToken String? // Email verification token
-  emailVerificationTokenExpiry DateTime? // Token expiration
-  refreshToken String? // JWT refresh token
-  refreshTokenExpiry DateTime? // Refresh token expiration
+  id                String           @id @default(dbgenerated("gen_random_uuid()"))
+  name              String
+  email             String           @unique
+  password          String
+  isEmailVerified   Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  userPreferences   UserPreference?  @relation("UserToUserPreference")
+  verificationCodes VerificationCode[]
 }
+
+model UserPreference {
+  id                String  @id @default(dbgenerated("gen_random_uuid()"))
+  enable2FA         Boolean @default(false)
+  emailNotification Boolean @default(true)
+  twoFactorSecret   String?
+  userId            String  @unique
+  user              User    @relation("UserToUserPreference", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationCode {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String
+  code      String   @unique @default(dbgenerated("gen_random_uuid()"))
+  type      String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+

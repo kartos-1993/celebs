@@ -37,6 +37,18 @@
           "buildTarget": "admin-auth-api:build:production"
         }
       }
+    },
+    "migrate-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma migrate dev --schema=apps/admin/auth-api/src/db/schema.prisma"
+      }
+    },
+    "migrate-deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotenv -e apps/admin/auth-api/.env.staging -- npx prisma migrate deploy --schema=apps/admin/auth-api/src/db/schema.prisma"
+      }
     }
   },
   "tags": []
