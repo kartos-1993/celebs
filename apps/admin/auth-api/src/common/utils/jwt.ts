@@ -1,55 +1,59 @@
-import { ErrorCode } from '../enums/error-code.enum';
-import { HTTPSTATUS, HttpStatusCode } from '../../config/http.config';
-import { AppError } from './AppError';
+import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
+import { config } from '../../config/app.config';
 
-export class NotFoundException extends AppError {
-  constructor(message = 'Resource not found', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.NOT_FOUND,
-      errorCode || ErrorCode.RESOURCE_NOT_FOUND
-    );
-  }
-}
+type StringValue = `${number}${'s' | 'm' | 'h' | 'd'}`;
 
-export class BadRequestException extends AppError {
-  constructor(message = 'Bad Request', errorCode?: ErrorCode) {
-    super(message, HTTPSTATUS.BAD_REQUEST, errorCode);
-  }
-}
+export type AccessTPayload = {
+  userId: string;
+  sessionId: string;
+};
+export type RefreshTPayload = {
+  sessionId: string;
+};
 
-export class UnauthorizedException extends AppError {
-  constructor(message = 'Unauthorized Access', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.UNAUTHORIZED,
-      errorCode || ErrorCode.ACCESS_UNAUTHORIZED
-    );
-  }
-}
+type SignOptsAndSecret = SignOptions & {
+  secret: string;
+};
 
-export class InternalServerException extends AppError {
-  constructor(message = 'Internal Server Error', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.INTERNAL_SERVER_ERROR,
-      errorCode || ErrorCode.INTERNAL_SERVER_ERROR
-    );
-  }
-}
+const defaults: SignOptions = {
+  audience: ['user'],
+};
 
-export class TooManyRequestsException extends AppError {
-  constructor(message: string, code?: ErrorCode) {
-    super(message, HTTPSTATUS.TOO_MANY_REQUESTS, code);
-  }
-}
+export const accessTokenSignOptions: SignOptsAndSecret = {
+  expiresIn: config.JWT.EXPIRES_IN as StringValue | number,
+  secret: config.JWT.SECRET,
+};
 
-export class HttpException extends AppError {
-  constructor(
-    message = 'Http Exception Error',
-    statusCode: HttpStatusCode,
-    errorCode?: ErrorCode
-  ) {
-    super(message, statusCode, errorCode);
+export const refreshTokenSignOptions: SignOptsAndSecret = {
+  expiresIn: config.JWT.REFRESH_EXPIRES_IN as StringValue | number,
+  secret: config.JWT.REFRESH_SECRET,
+};
+
+export const signJwtToken = (
+  payload: AccessTPayload | RefreshTPayload,
+  options?: SignOptsAndSecret
+) => {
+  const { secret, ...opts } = options || accessTokenSignOptions;
+  return jwt.sign(payload, secret, {
+    ...defaults,
+    ...opts,
+  });
+};
+
+export const verifyJwtToken = <TPayload extends object = AccessTPayload>(
+  token: string,
+  options?: VerifyOptions & { secret: string }
+) => {
+  try {
+    const { secret = config.JWT.SECRET, ...opts } = options || {};
+    const payload = jwt.verify(token, secret, {
+      ...defaults,
+      ...opts,
+    }) as TPayload;
+    return { payload };
+  } catch (err: any) {
+    return {
+      error: err.message,
+    };
   }
-}
+};
