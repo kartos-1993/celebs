@@ -7,25 +7,38 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("userId")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  createdAt DateTime @default(now())
+  expiredAt DateTime @default(dbgenerated("NOW() + interval '30 days'"))
+
+  @@index([userId])
+}
+
 model User {
-  id                String           @id @default(dbgenerated("gen_random_uuid()"))
-  name              String
-  email             String           @unique
-  password          String
-  isEmailVerified   Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  userPreferences   UserPreference?  @relation("UserToUserPreference")
+  id              String           @id @default(dbgenerated("gen_random_uuid()"))
+  name            String
+  email           String           @unique
+  password        String
+  isEmailVerified Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userPreferences UserPreference?  @relation("UserToUserPreference")
   verificationCodes VerificationCode[]
+  sessions        Session[]
 }
 
 model UserPreference {
-  id                String  @id @default(dbgenerated("gen_random_uuid()"))
-  enable2FA         Boolean @default(false)
+  id              String  @id @default(dbgenerated("gen_random_uuid()"))
+  enable2FA       Boolean @default(false)
   emailNotification Boolean @default(true)
-  twoFactorSecret   String?
-  userId            String  @unique
-  user              User    @relation("UserToUserPreference", fields: [userId], references: [id], onDelete: Cascade)
+  twoFactorSecret String?
+  userId          String  @unique
+  user            User    @relation("UserToUserPreference", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationCode {
@@ -39,4 +52,3 @@ model VerificationCode {
 
   @@index([userId])
 }
-

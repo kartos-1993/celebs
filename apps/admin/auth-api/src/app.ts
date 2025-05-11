@@ -4,8 +4,10 @@ import { authRouter } from './routes/auth.routes';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import pino from 'pino';
+
 import pinoHttp from 'pino-http';
+import { logger } from './common/utils/logger';
+
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
@@ -14,7 +16,6 @@ import { config } from './config';
 const app = express();
 app.use(json());
 
-const logger = pino();
 app.use(pinoHttp({ logger }));
 app.use(helmet());
 app.use(compression());
