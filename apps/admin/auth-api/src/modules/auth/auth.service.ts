@@ -33,6 +33,13 @@ import { hashValue } from '../../common/utils/bcrypt';
 import { logger } from '../../common/utils/logger';
 import prisma from '../../db';
 
+function isPasswordStrong(password: string): boolean {
+  // At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(
+    password
+  );
+}
+
 export class AuthService {
   public async register(registerData: RegisterDto) {
     const { name, email, password } = registerData;
@@ -45,11 +52,23 @@ export class AuthService {
         ErrorCode.AUTH_EMAIL_ALREADY_EXISTS
       );
     }
+
+    // Hash the password before saving
+    const hashedPassword = await hashValue(password);
+
+    // Optional: Check if the password is too weak (add your own logic)
+    if (!isPasswordStrong(password)) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.',
+        ErrorCode.AUTH_PASSWORD_TOO_WEAK
+      );
+    }
+
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
-        password, // You should hash the password before saving!
+        password: hashedPassword,
       },
     });
 
