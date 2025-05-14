@@ -69,10 +69,16 @@ export class AuthService {
     });
 
     const verificationUrl = `${config.APP_ORIGIN}/confirm-account?code=${verification.code}`;
+    logger.info(
+      { email: newUser.email, verificationUrl },
+      'Attempting to send verification email'
+    );
     try {
       await sendEmail({
         to: newUser.email,
-        ...verifyEmailTemplate(verificationUrl),
+        subject: 'Verify your email address',
+        text: `Please verify your email by clicking the following link: ${verificationUrl}`,
+        html: verifyEmailTemplate(verificationUrl).html,
       });
       logger.info({ email: newUser.email }, 'Verification email sent');
     } catch (err) {

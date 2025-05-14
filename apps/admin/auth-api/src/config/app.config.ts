@@ -22,6 +22,7 @@ export const appConfig = () => {
       REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '30d'),
     },
     MAILER_SENDER: getEnv('SMTP_FROM'),
+    MAILER_API_KEY: getEnv('SMTP_API_KEY'),
     COOKIE: {
       HTTPONLY: isProduction || isStaging ? true : false,
       SECURE: isProduction || isStaging,

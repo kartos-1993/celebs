@@ -86,9 +86,8 @@ app.use(errorHandler);
 //     },
 //   })
 // );
-app.use(`${config.BASE_PATH}`, authRoutes);
-const router = express.Router();
-app.use('/api/auth', authRoutes);
+
+app.use(`${config.BASE_PATH}/auth`, authRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is healthy' });

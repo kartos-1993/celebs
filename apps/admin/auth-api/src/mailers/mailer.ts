@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import axios from 'axios';
 import { config } from '../config/app.config';
 
 type Params = {
@@ -9,31 +9,29 @@ type Params = {
   from?: string;
 };
 
-const mailer_sender =
-  config.NODE_ENV === 'development'
-    ? `no-reply <onboarding@brevo.dev>`
-    : `no-reply <${config.MAILER_SENDER}>`;
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
-
 export const sendEmail = async ({
   to,
-  from = mailer_sender,
+  from = `no-reply <${config.MAILER_SENDER}>`,
   subject,
   text,
   html,
-}: Params) =>
-  await transporter.sendMail({
-    from,
-    to: Array.isArray(to) ? to.join(', ') : to,
+}: Params) => {
+  const apiKey = process.env.SMTP_API_KEY;
+  if (!apiKey) throw new Error('Brevo API key not set');
+
+  const payload = {
+    sender: { email: config.MAILER_SENDER, name: 'Celebs' },
+    to: Array.isArray(to) ? to.map((email) => ({ email })) : [{ email: to }],
     subject,
-    text,
-    html,
+    htmlContent: html,
+    textContent: text,
+  };
+
+  await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
+    headers: {
+      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      accept: 'application/json',
+    },
   });
+};
