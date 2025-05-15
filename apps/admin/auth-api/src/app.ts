@@ -58,7 +58,6 @@ app.use(
     legacyHeaders: false,
   })
 );
-app.use(errorHandler);
 
 // Redis client setup
 // const redisClient = createClient({
@@ -92,5 +91,8 @@ app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is healthy' });
 });
+
+// Register error handler after all routes
+app.use(errorHandler);
 
 export default app;
