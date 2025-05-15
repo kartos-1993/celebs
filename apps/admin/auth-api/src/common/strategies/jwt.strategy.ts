@@ -1,5 +1,5 @@
 import { errorHandler } from '../../middlewares/errorHandler';
-import { JWT_SECRET } from '../../config';
+
 import { ErrorCode } from '../enums/error-code.enum';
 import { UnauthorizedException } from '../utils/catch-errors';
 

@@ -18,7 +18,9 @@ import {
 import {
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '../../common/utils/catch-errors';
+import { ErrorCode } from '../../common/enums/error-code.enum';
 
 export class AuthController {
   private authService: AuthService;
@@ -28,9 +30,18 @@ export class AuthController {
 
   public register = asyncHandler(
     async (req: Request, res: Response): Promise<any> => {
-      const body = registerSchema.parse({
-        ...req.body,
-      });
+      let body;
+      try {
+        body = registerSchema.parse({
+          ...req.body,
+        });
+      } catch (err) {
+        // Standardize validation error
+        throw new BadRequestException(
+          'Validation failed',
+          ErrorCode.VALIDATION_ERROR
+        );
+      }
       const { user } = await this.authService.register(body);
       return res.status(HTTPSTATUS.CREATED).json({
         message: 'User registered successfully',

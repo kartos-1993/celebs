@@ -1,5 +1,5 @@
 import { getEnv } from '../common/utils/get-env';
-
+// Removed JWT_SECRET logging as it will be properly handled inside the config
 export const appConfig = () => {
   const env = getEnv('NODE_ENV');
   const isProduction = env === 'production';

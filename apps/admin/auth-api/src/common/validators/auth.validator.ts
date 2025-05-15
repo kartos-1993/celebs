@@ -1,7 +1,15 @@
 import { z } from 'zod';
 
 export const emailSchema = z.string().trim().email().min(1).max(255);
-export const passwordSchema = z.string().trim().min(6).max(255);
+export const passwordSchema = z
+  .string()
+  .trim()
+  .min(8, 'Password must be at least 8 characters long')
+  .regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+    'Password must include uppercase, lowercase, number, and special character'
+  )
+  .max(255);
 export const verificationCodeSchema = z.string().trim().min(1).max(25);
 
 export const registerSchema = z
