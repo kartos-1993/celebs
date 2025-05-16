@@ -75,4 +75,17 @@ export class AuthController {
       return res.status(HTTPSTATUS.OK).json(response);
     }
   );
+  public verifyEmail = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const { code } = verificationEmailSchema.parse(req.body);
+      const { user } = await this.authService.verifyEmail(code);
+
+      const response: IApiResponse<typeof user> = {
+        success: true,
+        message: 'Email verified successfully',
+        data: user,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
 }

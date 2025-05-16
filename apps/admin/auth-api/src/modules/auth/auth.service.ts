@@ -167,4 +167,42 @@ export class AuthService {
       mfaRequired: false,
     };
   }
+
+  public async verifyEmail(code: string) {
+    const validCode = await prisma.verificationCode.findFirst({
+      where: {
+        type: VerificationEnum.EMAIL_VERIFICATION,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!validCode) {
+      throw new NotFoundException(
+        'Verification code not found or expired',
+        ErrorCode.VERIFICATION_ERROR
+      );
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: validCode.userId },
+      data: { isEmailVerified: true },
+    });
+
+    if (!updatedUser) {
+      throw new BadRequestException(
+        'Unable to verify email',
+        ErrorCode.VERIFICATION_ERROR
+      );
+    }
+
+    await prisma.verificationCode.delete({
+      where: { id: validCode.id },
+    });
+
+    return {
+      user: updatedUser,
+    };
+  }
 }
