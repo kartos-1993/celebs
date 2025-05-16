@@ -55,6 +55,12 @@
       "options": {
         "command": "dotenv -e apps/admin/auth-api/.env.staging -- npx prisma migrate deploy --schema=apps/admin/auth-api/src/db/schema.prisma"
       }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma studio --schema=apps/admin/auth-api/src/db/schema.prisma"
+      }
     }
   },
   "tags": []
