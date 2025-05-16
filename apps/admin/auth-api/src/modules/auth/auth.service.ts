@@ -25,11 +25,12 @@ import {
   RefreshTPayload,
   signJwtToken,
   verifyJwtToken,
+  AccessTPayload,
 } from '../../common/utils/jwt';
 import { sendEmail } from '../../mailers/mailer';
 import { verifyEmailTemplate } from '../../mailers/templates/template';
 import { HTTPSTATUS } from '../../config/http.config';
-import { hashValue } from '../../common/utils/bcrypt';
+import { hashValue, comparePassword } from '../../common/utils/bcrypt';
 import { logger } from '../../common/utils/logger';
 import prisma from '../../db';
 
@@ -96,6 +97,74 @@ export class AuthService {
 
     return {
       user: newUser,
+    };
+  }
+  public async login(LoginData: LoginDto) {
+    const { email, password, userAgent } = LoginData;
+    logger.info(`Login attempt for email: ${email}`);
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      logger.warn(`Login failed: User with email ${email} not found`);
+      throw new NotFoundException(
+        'User not found with this email',
+        ErrorCode.AUTH_NOT_FOUND
+      );
+    }
+    // Verify password
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      logger.warn(`Login failed: Invalid password for user ${email}`);
+      throw new UnauthorizedException(
+        'Invalid credentials',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+      );
+    }
+
+    logger.info({ userId: user.id }, 'User authenticated successfully');
+
+    // Create session
+    logger.info({ userId: user.id }, 'Creating session');
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        userAgent,
+      },
+    });
+
+    logger.info(
+      { userId: user.id, sessionId: session.id },
+      'Session created successfully'
+    );
+
+    // Generate tokens
+    const accessTokenPayload: AccessTPayload = {
+      userId: user.id,
+      sessionId: session.id,
+    };
+
+    const refreshTokenPayload: RefreshTPayload = {
+      sessionId: session.id,
+    };
+
+    const accessToken = signJwtToken(accessTokenPayload);
+    const refreshToken = signJwtToken(
+      refreshTokenPayload,
+      refreshTokenSignOptions
+    );
+
+    logger.info(
+      { userId: user.id, sessionId: session.id },
+      'Authentication tokens generated'
+    );
+
+    return {
+      user,
+      accessToken,
+      refreshToken,
+      mfaRequired: false,
     };
   }
 }

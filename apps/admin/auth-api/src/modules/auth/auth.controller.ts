@@ -56,4 +56,23 @@ export class AuthController {
       return res.status(HTTPSTATUS.CREATED).json(response);
     }
   );
+
+  public login = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const userAgent = req.headers['user-agent'];
+      const body = loginSchema.parse({
+        ...req.body,
+        userAgent,
+      });
+      const { user, accessToken, refreshToken, mfaRequired } =
+        await this.authService.login(body);
+      setAuthenticationCookies({ res, accessToken, refreshToken });
+      const response: IApiResponse<typeof user> = {
+        success: true,
+        message: 'User logged in successfully',
+        data: user,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
 }
