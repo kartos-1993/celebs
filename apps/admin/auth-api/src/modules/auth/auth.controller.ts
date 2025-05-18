@@ -74,11 +74,13 @@ export class AuthController {
       };
       return res.status(HTTPSTATUS.OK).json(response);
     }
-  );
-  public verifyEmail = asyncHandler(
+  );  public verifyEmail = asyncHandler(
     async (req: Request, res: Response): Promise<any> => {
       const { code } = verificationEmailSchema.parse(req.body);
-      const { user } = await this.authService.verifyEmail(code);
+      const { user, accessToken, refreshToken } = await this.authService.verifyEmail(code);
+      
+      // Set authentication cookies just like login endpoint
+      setAuthenticationCookies({ res, accessToken, refreshToken });
 
       const response: IApiResponse<typeof user> = {
         success: true,

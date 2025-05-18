@@ -10,7 +10,7 @@ export const passwordSchema = z
     'Password must include uppercase, lowercase, number, and special character'
   )
   .max(255);
-export const verificationCodeSchema = z.string().trim().min(1).max(25);
+export const verificationCodeSchema = z.string().trim().min(1).max(50);
 
 export const registerSchema = z
   .object({

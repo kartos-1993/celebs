@@ -4,6 +4,7 @@ import {
   LoginDto,
   RegisterDto,
   resetPasswordDto,
+  VerifyEmailResponse,
 } from '../../common/interface/auth.interface';
 import {
   BadRequestException,
@@ -74,7 +75,7 @@ export class AuthService {
       },
     });
 
-    const verificationUrl = `${config.APP_ORIGIN}/confirm-account?code=${verification.code}`;
+    const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
     logger.info(
       { email: newUser.email, verificationUrl },
       'Attempting to send verification email'
@@ -168,10 +169,11 @@ export class AuthService {
     };
   }
 
-  public async verifyEmail(code: string) {
+  public async verifyEmail(code: string): Promise<VerifyEmailResponse> {
     const validCode = await prisma.verificationCode.findFirst({
       where: {
         type: VerificationEnum.EMAIL_VERIFICATION,
+        code,
         expiresAt: {
           gt: new Date(),
         },
@@ -201,8 +203,49 @@ export class AuthService {
       where: { id: validCode.id },
     });
 
+    // Create a session for the auto-login
+    logger.info(
+      { userId: updatedUser.id },
+      'Creating session after email verification'
+    );
+    const userAgent = 'Email Verification Auto-Login';
+    const session = await prisma.session.create({
+      data: {
+        userId: updatedUser.id,
+        userAgent,
+      },
+    });
+
+    logger.info(
+      { userId: updatedUser.id, sessionId: session.id },
+      'Session created successfully after email verification'
+    );
+
+    // Generate tokens for auto-login
+    const accessTokenPayload: AccessTPayload = {
+      userId: updatedUser.id,
+      sessionId: session.id,
+    };
+
+    const refreshTokenPayload: RefreshTPayload = {
+      sessionId: session.id,
+    };
+
+    const accessToken = signJwtToken(accessTokenPayload);
+    const refreshToken = signJwtToken(
+      refreshTokenPayload,
+      refreshTokenSignOptions
+    );
+
+    logger.info(
+      { userId: updatedUser.id, sessionId: session.id },
+      'Authentication tokens generated after email verification'
+    );
+
     return {
       user: updatedUser,
+      accessToken,
+      refreshToken,
     };
   }
 }
