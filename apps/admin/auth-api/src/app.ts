@@ -26,21 +26,14 @@ const app = express();
 app.use(json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+logger.info(
+  { APP_ORIGIN_CONFIG: config.APP_ORIGIN },
+  'CORS Origin Configuration'
+);
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      const allowedOrigins = Array.isArray(config.APP_ORIGIN)
-        ? config.APP_ORIGIN
-        : [config.APP_ORIGIN];
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error('Not allowed by CORS'));
-    },
+    origin: config.APP_ORIGIN,
     credentials: true,
   })
 );
