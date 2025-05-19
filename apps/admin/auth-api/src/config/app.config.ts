@@ -25,7 +25,7 @@ export const appConfig = () => {
     MAILER_API_KEY: getEnv('SMTP_API_KEY'),
     COOKIE: {
       HTTPONLY: isProduction || isStaging ? true : false,
-      SECURE: isProduction || isStaging,
+      SECURE: isProduction || isStaging ? true : false,
       SAME_SITE: (isProduction || isStaging ? 'strict' : 'lax') as
         | 'strict'
         | 'lax'

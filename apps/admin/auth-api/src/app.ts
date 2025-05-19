@@ -20,6 +20,7 @@ import { logger } from './common/utils/logger';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
+import sessionRoutes from './modules/session/session.routes';
 // import { config } from './config';
 
 const app = express();
@@ -52,34 +53,28 @@ app.use(
   })
 );
 
-// Redis client setup
-// const redisClient = createClient({
-//   username: config.redis.url,
-//   legacyMode: true, // for connect-redis compatibility
-// });
-// redisClient.connect().catch(console.error);
+// Session management setup
+if (!config.JWT.SECRET) {
+  throw new Error(
+    'JWT_SECRET environment variable is required for session management'
+  );
+}
 
-// if (!config.sessionSecret) {
-//   throw new Error(
-//     'SESSION_SECRET (or JWT_SECRET) environment variable is required for session management'
-//   );
-// }
-
-// app.use(
-//   session({
-//     store: new RedisStore({ client: redisClient }),
-//     secret: config.sessionSecret,
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: {
-//       secure: config.nodeEnv === 'production', // Only set to true if using HTTPS
-//       httpOnly: true,
-//       maxAge: 1000 * 60 * 60 * 24, // 1 day
-//     },
-//   })
-// );
+app.use(
+  session({
+    secret: config.JWT.SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: config.NODE_ENV === 'production', // Only set to true if using HTTPS
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
 
 app.use(`${config.BASE_PATH}/auth`, authRoutes);
+app.use(`${config.BASE_PATH}/session`, sessionRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is healthy' });
