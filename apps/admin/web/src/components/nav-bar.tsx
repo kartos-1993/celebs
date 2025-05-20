@@ -8,7 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumbs";
-import { useMatches } from "react-router-dom";
+import { useMatches, Link } from "react-router-dom";
 import { SheetMenu } from "./sheet-menu";
 
 // Refine the type of match.handle
@@ -23,12 +23,13 @@ export function Navbar() {
     .filter((match) => (match.handle as RouteHandle)?.crumb)
     .map((match, index, array) => {
       const handle = match.handle as RouteHandle;
-      const isLast = index === array.length - 1;
-      return isLast ? (
+      const isLast = index === array.length - 1;      return isLast ? (
         <BreadcrumbPage key={match.pathname}>{handle.crumb}</BreadcrumbPage>
       ) : (
         <React.Fragment key={match.pathname}>
-          <BreadcrumbLink href={match.pathname}>{handle.crumb}</BreadcrumbLink>
+          <BreadcrumbLink asChild>
+            <Link to={match.pathname}>{handle.crumb}</Link>
+          </BreadcrumbLink>
           <BreadcrumbSeparator />
         </React.Fragment>
       );
