@@ -10,8 +10,8 @@ const Main = ({ children }: MainProps) => {
   return (
     <main
       className={cn(
-        "min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
-        isSideBarOpen ? "lg:ml-72" : "lg:ml-[90px]"
+        "pl-4 pr-4 pb-4 min-h-[calc(100vh-58px)] bg-zinc-50 dark:bg-zinc-950 transition-[margin-left] ease-in-out duration-300",
+        isSideBarOpen ? "lg:ml-60" : "lg:ml-[81px]"
       )}
     >
       {children}

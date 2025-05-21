@@ -11,10 +11,10 @@ type SibarToggleProps = {
 
 const SidebarToggle = ({ isOpen, setIsOpen }: SibarToggleProps) => {
   return (
-    <div className="invisible lg:visible absolute top-[12px] -right-[16px] z-20">
+    <div className="invisible lg:visible absolute top-[56px] -right-[12px] z-20">
       <Button
         onClick={() => setIsOpen && setIsOpen(!isOpen)}
-        className="rounded-md w-8 h-8"
+        className="rounded-md w-6 h-6"
         variant="outline"
         size="icon"
       >

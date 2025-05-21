@@ -23,20 +23,19 @@ export function Navbar() {
     .filter((match) => (match.handle as RouteHandle)?.crumb)
     .map((match, index, array) => {
       const handle = match.handle as RouteHandle;
-      const isLast = index === array.length - 1;      return isLast ? (
+      const isLast = index === array.length - 1;
+      return isLast ? (
         <BreadcrumbPage key={match.pathname}>{handle.crumb}</BreadcrumbPage>
       ) : (
         <React.Fragment key={match.pathname}>
-          <BreadcrumbLink asChild>
-            <Link to={match.pathname}>{handle.crumb}</Link>
-          </BreadcrumbLink>
+          <BreadcrumbLink href={match.pathname}>{handle.crumb}</BreadcrumbLink>
           <BreadcrumbSeparator />
         </React.Fragment>
       );
     });
 
   return (
-    <header className="sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
+    <header className="mb-6 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
       <div className=" lg:mr-8 flex h-14 items-center">
         <div className="flex items-center space-x-4 lg:space-x-0">
           <SheetMenu />
