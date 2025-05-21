@@ -32,9 +32,7 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
     if (!token) {
       logger.warn('No token provided');
       throw new UnauthorizedException('Authentication token is required', ErrorCode.AUTH_TOKEN_MISSING);
-    }
-
-    // Verify the token
+    }    // Verify the token
     jwt.verify(token, config.JWT.SECRET, (err, decoded) => {
       if (err) {
         // Handle different JWT errors

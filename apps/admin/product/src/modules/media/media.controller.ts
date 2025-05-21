@@ -85,16 +85,18 @@ export class MediaController {
             HTTPSTATUS.BAD_REQUEST,
             ErrorCode.MEDIA_UPLOAD_FAILED
           );
-        }
-
-        // Create media entry
+        }        // Create media entry
         const mediaData = {
           fileName: req.file.filename,
-          filePath: req.file.path,
+          originalname: req.file.originalname,
           mimeType: req.file.mimetype,
           size: req.file.size,
+          filePath: req.file.path,
+          url: `/uploads/${req.file.filename}`,
+          key: req.file.filename,
           entityId: req.body.entityId,
-          entityType: req.body.entityType
+          entityType: req.body.entityType,
+          createdBy: req.user?.userId || 'system'
         };
 
         const media = await this.mediaService.createMedia(mediaData);
@@ -157,16 +159,18 @@ export class MediaController {
             HTTPSTATUS.BAD_REQUEST,
             ErrorCode.MEDIA_UPLOAD_FAILED
           );
-        }
-
-        // Create media entries for each file
+        }        // Create media entries for each file
         const mediaDataArray = (req.files as Express.Multer.File[]).map(file => ({
           fileName: file.filename,
-          filePath: file.path,
+          originalname: file.originalname,
           mimeType: file.mimetype,
           size: file.size,
+          filePath: file.path,
+          url: `/uploads/${file.filename}`,
+          key: file.filename,
           entityId: req.body.entityId,
-          entityType: req.body.entityType
+          entityType: req.body.entityType,
+          createdBy: req.user?.userId || 'system'
         }));
 
         const media = await this.mediaService.createMultipleMedia(mediaDataArray);

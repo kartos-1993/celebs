@@ -13,12 +13,16 @@ export class MediaService {
     await media.save();
     return media;
   }
-
   /**
    * Create multiple media entries
    */
   async createMultipleMedia(mediaDataArray: Partial<IMedia>[]): Promise<IMedia[]> {
-    const mediaArray = await MediaModel.insertMany(mediaDataArray);
+    // Using create method to ensure proper typing
+    const createdMediaPromises = mediaDataArray.map(mediaData => 
+      MediaModel.create(mediaData)
+    );
+    
+    const mediaArray = await Promise.all(createdMediaPromises);
     return mediaArray;
   }
 

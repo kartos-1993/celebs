@@ -170,7 +170,7 @@ const ProductSchema: Schema = new Schema(
 );
 
 // Add pre-save hook to generate slug if not provided
-ProductSchema.pre('save', function(next) {
+ProductSchema.pre<IProduct>('save', function(next) {
   if (!this.slug) {
     this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
     

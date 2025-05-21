@@ -2,13 +2,16 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 // Interface for Media document
 export interface IMedia extends Document {
-  filename: string;
+  fileName: string;
   originalname: string;
-  mimetype: string;
+  mimeType: string;
   size: number;
   url: string;
+  filePath: string; // Local file path
   key: string; // S3 key
   productId?: mongoose.Types.ObjectId; // Optional, as media can be uploaded without associating
+  entityId?: string; // Generic entity ID (could be a product, review, etc.)
+  entityType?: string; // Type of the entity (product, review, etc.)
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -17,7 +20,7 @@ export interface IMedia extends Document {
 // Schema for Media
 const MediaSchema: Schema = new Schema(
   {
-    filename: { 
+    fileName: { 
       type: String, 
       required: true 
     },
@@ -25,7 +28,7 @@ const MediaSchema: Schema = new Schema(
       type: String, 
       required: true 
     },
-    mimetype: { 
+    mimeType: { 
       type: String, 
       required: true 
     },
@@ -37,6 +40,10 @@ const MediaSchema: Schema = new Schema(
       type: String, 
       required: true 
     },
+    filePath: {
+      type: String,
+      required: true
+    },
     key: { 
       type: String, 
       required: true 
@@ -44,6 +51,12 @@ const MediaSchema: Schema = new Schema(
     productId: { 
       type: Schema.Types.ObjectId, 
       ref: 'Product'
+    },
+    entityId: {
+      type: String
+    },
+    entityType: {
+      type: String
     },
     createdBy: { 
       type: String, 

@@ -1,10 +1,12 @@
 import express from 'express';
-import { ProductController } from '../controllers/product.controller';
+import { ProductController } from '../modules/product/product.controller';
+import { ProductService } from '../modules/product/product.service';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
 const router = express.Router();
-const productController = new ProductController();
+const productService = new ProductService();
+const productController = new ProductController(productService);
 
 // Apply authentication middleware to all product routes
 router.use(authenticateJWT);

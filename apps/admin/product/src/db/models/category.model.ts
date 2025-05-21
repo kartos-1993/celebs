@@ -35,7 +35,7 @@ const CategorySchema: Schema = new Schema(
 );
 
 // Add pre-save hook to generate slug if not provided
-CategorySchema.pre('save', function(next) {
+CategorySchema.pre<ICategory>('save', function(next) {
   if (!this.slug) {
     this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
   }

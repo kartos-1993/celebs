@@ -51,7 +51,7 @@ const SubcategorySchema: Schema = new Schema(
 );
 
 // Add pre-save hook to generate slug if not provided
-SubcategorySchema.pre('save', function(next) {
+SubcategorySchema.pre<ISubcategory>('save', function(next) {
   if (!this.slug) {
     this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
   }

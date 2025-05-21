@@ -1,10 +1,12 @@
 import express from 'express';
-import { MediaController } from '../controllers/media.controller';
+import { MediaController } from '../modules/media/media.controller';
+import { MediaService } from '../modules/media/media.service';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
 const router = express.Router();
-const mediaController = new MediaController();
+const mediaService = new MediaService();
+const mediaController = new MediaController(mediaService);
 
 // Apply authentication middleware to all media routes
 router.use(authenticateJWT);

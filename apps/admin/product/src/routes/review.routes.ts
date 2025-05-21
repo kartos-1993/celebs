@@ -1,10 +1,12 @@
 import express from 'express';
-import { ReviewController } from '../controllers/review.controller';
+import { ReviewController } from '../modules/review/review.controller';
+import { ReviewService } from '../modules/review/review.service';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
 const router = express.Router();
-const reviewController = new ReviewController();
+const reviewService = new ReviewService();
+const reviewController = new ReviewController(reviewService);
 
 // Apply authentication middleware to all review routes
 router.use(authenticateJWT);
