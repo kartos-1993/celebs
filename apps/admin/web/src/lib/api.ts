@@ -35,6 +35,9 @@ type mfaType = {
   qrImageUrl: string;
 };
 
+type createCategotyType = {
+  name: string;
+}
 export const loginMutationFn = async (data: loginType) =>
   await API.post(`/auth/login`, data);
 
@@ -74,3 +77,7 @@ export const sessionsQueryFn = async () => {
 
 export const sessionDelMutationFn = async (id: string) =>
   await API.delete(`/session/${id}`);
+
+export const createCategoryMutation = async () => {
+  await API.post(`/category`, {});
+}

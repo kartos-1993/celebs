@@ -36,6 +36,11 @@
         "production": {
           "buildTarget": "admin-product:build:production"
         }
+      }    },
+    "test-cloudinary": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/admin/product/src/cloudinary-test.js"
       }
     },
     "serve:nodemon": {

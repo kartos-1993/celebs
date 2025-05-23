@@ -3,8 +3,16 @@ import { ErrorCode } from '../../common/enums/error-code.enum';
 import { HTTPSTATUS } from '../../config/http.config';
 import { MediaModel, IMedia } from '../../db/models/media.model';
 import { Types } from 'mongoose';
+import { CloudinaryService } from './cloudinary.service';
+import fs from 'fs';
 
 export class MediaService {
+  private cloudinaryService: CloudinaryService;
+
+  constructor() {
+    this.cloudinaryService = new CloudinaryService();
+  }
+
   /**
    * Create a new media entry
    */
@@ -13,6 +21,7 @@ export class MediaService {
     await media.save();
     return media;
   }
+
   /**
    * Create multiple media entries
    */
@@ -104,8 +113,26 @@ export class MediaService {
       );
     }
 
-    // TODO: Delete the actual file from storage (S3, local, etc.)
-    // This would depend on the storage solution used
+    // Delete from Cloudinary if applicable
+    if (media.key && media.key.includes('cloudinary')) {
+      try {
+        // Extract public ID from key
+        const publicId = this.extractPublicIdFromKey(media.key);
+        if (publicId) {
+          await this.cloudinaryService.deleteFile(publicId);
+        }
+      } catch (error) {
+        console.error('Error deleting file from Cloudinary:', error);
+        // Continue with the process even if Cloudinary deletion fails
+      }
+    } else if (media.filePath && fs.existsSync(media.filePath)) {
+      // Delete local file if it exists
+      try {
+        fs.unlinkSync(media.filePath);
+      } catch (error) {
+        console.error('Error deleting local file:', error);
+      }
+    }
 
     await MediaModel.findByIdAndDelete(mediaId);
     return { success: true };
@@ -122,8 +149,28 @@ export class MediaService {
     // Find all media for the entity
     const mediaItems = await MediaModel.find({ entityId, entityType });
     
-    // TODO: Delete the actual files from storage (S3, local, etc.)
-    // This would depend on the storage solution used
+    // Delete each file from storage
+    for (const media of mediaItems) {
+      if (media.key && media.key.includes('cloudinary')) {
+        try {
+          // Extract public ID from key
+          const publicId = this.extractPublicIdFromKey(media.key);
+          if (publicId) {
+            await this.cloudinaryService.deleteFile(publicId);
+          }
+        } catch (error) {
+          console.error('Error deleting file from Cloudinary:', error);
+          // Continue with the process even if Cloudinary deletion fails
+        }
+      } else if (media.filePath && fs.existsSync(media.filePath)) {
+        // Delete local file if it exists
+        try {
+          fs.unlinkSync(media.filePath);
+        } catch (error) {
+          console.error('Error deleting local file:', error);
+        }
+      }
+    }
 
     // Delete all media records for the entity
     const result = await MediaModel.deleteMany({ entityId, entityType });
@@ -132,5 +179,22 @@ export class MediaService {
       success: true,
       count: result.deletedCount || 0
     };
+  }
+
+  /**
+   * Extract public ID from Cloudinary key or URL
+   */
+  private extractPublicIdFromKey(key: string): string | null {
+    // If it's a URL, extract the public ID
+    if (key.includes('cloudinary.com')) {
+      // Extract the public ID from the Cloudinary URL
+      const matches = key.match(/\/v\d+\/(.+?)\./);
+      if (matches && matches[1]) {
+        return matches[1];
+      }
+    }
+    
+    // If it's a key, assume it's already a public ID
+    return key;
   }
 }

@@ -3,7 +3,7 @@ import { CategoryService } from './category.service';
 import { HTTPSTATUS } from '../../config/http.config';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
-import { validateCreateCategory, validateUpdateCategory } from '../../common/validators/category.validation';
+import { createCategorySchema } from '../../common/validators/category.validator';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
@@ -51,7 +51,7 @@ export class CategoryController {
    */
   createCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const validatedData = validateCreateCategory(req.body);
+      const validatedData = createCategorySchema.parse(req.body);
       
       if (!validatedData.success) {
         throw new AppError(
