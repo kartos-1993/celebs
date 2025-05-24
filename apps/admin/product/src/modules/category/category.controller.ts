@@ -3,7 +3,8 @@ import { CategoryService } from './category.service';
 import { HTTPSTATUS } from '../../config/http.config';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
-import { createCategorySchema } from '../../common/validators/category.validator';
+import { createCategorySchema ,updateCategorySchema} from '../../common/validators/category.validator';
+import { logger } from '../../common/utils/logger';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
@@ -48,21 +49,20 @@ export class CategoryController {
 
   /**
    * Create new category
-   */
-  createCategory = async (req: Request, res: Response, next: NextFunction) => {
+   */  createCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Log the incoming request details for debugging
+      logger.debug({ 
+        body: req.body,
+        user: req.user,
+        headers: req.headers,
+        cookies: req.cookies
+      }, 'Create category request received');
+      
       const validatedData = createCategorySchema.parse(req.body);
-      
-      if (!validatedData.success) {
-        throw new AppError(
-          validatedData.error.message,
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR
-        );
-      }
-      
-      const category = await this.categoryService.createCategory(validatedData.data);
-      
+        
+      const category = await this.categoryService.createCategory(validatedData);
+        
       return res.status(HTTPSTATUS.CREATED).json({
         success: true,
         message: 'Category created successfully',
@@ -79,17 +79,8 @@ export class CategoryController {
   updateCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const validatedData = validateUpdateCategory(req.body);
-      
-      if (!validatedData.success) {
-        throw new AppError(
-          validatedData.error.message,
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR
-        );
-      }
-      
-      const category = await this.categoryService.updateCategory(id, validatedData.data);
+      const validatedData = updateCategorySchema.parse(req.body);
+      const category = await this.categoryService.updateCategory(id, validatedData);
       
       return res.status(HTTPSTATUS.OK).json({
         success: true,

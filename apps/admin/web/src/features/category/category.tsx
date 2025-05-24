@@ -27,6 +27,9 @@ import CategoryForm from "./component/categoryform";
 import { useToast } from "@/hooks/use-toast";
 
 
+
+
+
 // Mock data
 const mockCategories = [
   {
@@ -59,7 +62,7 @@ const mockCategories = [
 ];
 
 const Category = () => {
-
+ 
   const [categories, setCategories] = useState(mockCategories);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [formDialogOpen, setFormDialogOpen] = useState(false);

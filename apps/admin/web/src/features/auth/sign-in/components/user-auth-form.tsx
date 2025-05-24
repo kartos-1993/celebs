@@ -53,7 +53,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     console.log("login submitting");
     mutate(values, {
       onSuccess: (response) => {
-        console.log(response.data, "data");
+      
         if (response.data?.mfaRequired) {
           navigate(`/verify-mfa?email=${values.email}`);
           return;

@@ -8,8 +8,7 @@ import { SubcategoryModel } from '../../db/models/subcategory.model';
 export class CategoryService {
   /**
    * Create a new category
-   */
-  async createCategory(categoryData: Partial<ICategory>): Promise<ICategory> {
+   */  async createCategory(categoryData: Partial<ICategory>): Promise<ICategory> {
     // Check if category with the same name already exists
     const existingCategory = await CategoryModel.findOne({ name: categoryData.name });
     if (existingCategory) {
@@ -18,6 +17,14 @@ export class CategoryService {
         HTTPSTATUS.CONFLICT,
         ErrorCode.CATEGORY_ALREADY_EXISTS
       );
+    }
+
+    // Generate slug from name if not provided
+    if (!categoryData.slug && categoryData.name) {
+      categoryData.slug = categoryData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
     }
 
     // Create new category

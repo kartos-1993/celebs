@@ -9,7 +9,7 @@ export const appConfig = () => {
   const appOrigins = appOriginEnv
     .split(',') // [ "http://localhost:3333", "http://localhost:5173" ]
     .map((o) => o.trim());
-
+    console.log('JWT SECRET:PRODUCT SERVICE', getEnv('JWT_SECRET'));
   return {
     NODE_ENV: env,
     APP_ORIGIN: appOrigins,
@@ -20,12 +20,7 @@ export const appConfig = () => {
       EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m'),
     },
     MONGODB_URI: getEnv('MONGODB_URI', 'mongodb://localhost:27017/fashion-ecommerce'),
-    AWS: {
-      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID'),
-      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY'),
-      REGION: getEnv('AWS_REGION', 'us-east-1'),
-      BUCKET_NAME: getEnv('AWS_BUCKET_NAME')
-    },
+  
     LOG_LEVEL: getEnv('LOG_LEVEL', 'info')
   };
 };

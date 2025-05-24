@@ -77,7 +77,7 @@ app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Server is healthy' });
+  res.status(200).json({ status: 'OK', message: 'Auth Service is healthy' });
 });
 
 // Register error handler after all routes

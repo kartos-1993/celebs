@@ -1,9 +1,26 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
+import { X, Plus } from "lucide-react";
+import { createCategoryMutationFn } from "../api";
+import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+
+const formSchema = z.object({
+name: z.string().min(1,{message:"Category name is required"}).min(2,{message:"Category name must be at least 2 characters"}).max(30,{message:"Category name must be less than 30 characters"}),
+})
 interface CategoryFormProps {
   initialData: any;
   isSubcategory: boolean;
@@ -11,13 +28,25 @@ interface CategoryFormProps {
   onCancel: () => void;
 }
 
+
 const CategoryForm = ({
   initialData,
   isSubcategory,
   onSave,
   onCancel,
 }: CategoryFormProps) => {
-  const [name, setName] = useState(initialData?.name || "");
+   const {mutate} = useMutation({
+      mutationFn:createCategoryMutationFn
+    })
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: initialData?.name || ""
+    }
+  })
+  
+  // State for attributes (for future use when subcategory attribute management is needed)
   const [attributes, setAttributes] = useState<string[]>(initialData?.attributes || []);
   const [newAttribute, setNewAttribute] = useState("");
 
@@ -31,30 +60,50 @@ const CategoryForm = ({
   const handleRemoveAttribute = (attribute: string) => {
     setAttributes(attributes.filter((attr) => attr !== attribute));
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      name,
-      attributes: isSubcategory ? attributes : [],
+    function onSubmit(values:z.infer<typeof formSchema>) {
+    console.log("Submitting form with values:", values);
+    
+    // Pass the values directly to the API
+    mutate(values, {
+      onSuccess: response => {
+        console.log("Category created successfully", response);
+        onSave(response.data);  // Pass the response data to the parent component
+      },
+      onError: error => {
+        console.error("Error creating category", error);
+        // Show the error to help with debugging
+        alert(`Error creating category: ${JSON.stringify(error)}`);
+      }
     });
   };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="space-y-4 py-2 pb-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">{isSubcategory ? "Subcategory" : "Category"} Name</Label>
-          <Input
-            id="name"
-            placeholder={`Enter ${isSubcategory ? "subcategory" : "category"} name`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
 
-        {isSubcategory && (
+
+  return (
+    <Form {...form}>
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <div className="space-y-4 py-2 pb-4">
+        <div className="space-y-2">          <FormField
+         control ={form.control}
+         name="name"
+         render = {({field}) => (
+          <FormItem className="space-y-1">
+            <FormLabel>Category</FormLabel>
+            <FormControl>
+              <Input
+                placeholder= "Category name"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage/>
+            </FormItem>
+         )}
+          />
+         
+        </div>
+         
+
+        {/* {isSubcategory && (
           <div className="space-y-2">
             <Label htmlFor="attributes">Attributes</Label>
             <div className="flex gap-2">
@@ -95,18 +144,20 @@ const CategoryForm = ({
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-fashion-700 hover:bg-fashion-800">
+          <Button type="submit" variant="outline">
             Save
           </Button>
         </div>
       </div>
     </form>
+    </Form>
+   
   );
 };
 

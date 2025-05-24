@@ -66,8 +66,18 @@ export const errorHandler = (
     };
     return res.status(error.statusCode).json(response);
   }
-
   // Default error response for unhandled errors
+  logger.error({
+    path: req.path,
+    method: req.method,
+    error: {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    },
+    body: req.body
+  }, 'Unhandled error occurred');
+  
   const response: IApiResponse = {
     success: false,
     message: 'Internal server error',

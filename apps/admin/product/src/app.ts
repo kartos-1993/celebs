@@ -50,8 +50,8 @@ app.use(
 );
 
 // API routes
-app.use(`${config.BASE_PATH}/categories`, categoryRoutes);
-app.use(`${config.BASE_PATH}/products`, productRoutes);
+app.use(`${config.BASE_PATH}/category`, categoryRoutes);
+app.use(`${config.BASE_PATH}/product`, productRoutes);
 app.use(`${config.BASE_PATH}/reviews`, reviewRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 

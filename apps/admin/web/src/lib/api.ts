@@ -1,4 +1,4 @@
-import API from "./axios-client";
+import {AuthAPI} from "./axios-client";
 import { SessionResponse } from "../types";
 
 type loginType = { email: string; password: string };
@@ -35,49 +35,48 @@ type mfaType = {
   qrImageUrl: string;
 };
 
-type createCategotyType = {
-  name: string;
-}
+
+
+
 export const loginMutationFn = async (data: loginType) =>
-  await API.post(`/auth/login`, data);
+  await AuthAPI.post(`/auth/login`, data);
 
 export const registerMutationFn = async (data: registerType) =>
-  await API.post(`/auth/register`, data);
+  await AuthAPI.post(`/auth/register`, data);
 
 export const verifyEmailMutationFn = async (data: verifyEmailType) =>
-  await API.post(`/auth/verify-email`, data);
+  await AuthAPI.post(`/auth/verify-email`, data);
 
 export const forgotPasswordMutationFn = async (data: forgotPasswordType) =>
-  await API.post(`/auth/password-forgot`, data);
+  await AuthAPI.post(`/auth/password-forgot`, data);
 
 export const resetPasswordMutationFn = async (data: resetPasswordType) =>
-  await API.post(`/auth/password-reset`, data);
+  await AuthAPI.post(`/auth/password-reset`, data);
 
 export const verifyMFAMutationFn = async (data: verifyMFAType) =>
-  await API.post(`/mfa/verify`, data);
+  await AuthAPI.post(`/mfa/verify`, data);
 
 export const verifyMFALoginMutationFn = async (data: mfaLoginType) =>
-  await API.post(`/mfa/verify-login`, data);
+  await AuthAPI.post(`/mfa/verify-login`, data);
 
-export const logoutMutationFn = async () => await API.post(`/auth/logout`);
+export const logoutMutationFn = async () => await AuthAPI.post(`/auth/logout`);
 
 export const mfaSetupQueryFn = async () => {
-  const response = await API.get<mfaType>(`/mfa/setup`);
+  const response = await AuthAPI.get<mfaType>(`/mfa/setup`);
   return response.data;
 };
-export const revokeMFAMutationFn = async () => await API.put(`/mfa/revoke`, {});
+export const revokeMFAMutationFn = async () => await AuthAPI.put(`/mfa/revoke`, {});
 
 export const getUserSessionQueryFn = async (): Promise<SessionResponse> =>
-  await API.get(`/session/`).then((res) => res.data);
+  await AuthAPI.get(`/session/`).then((res) => res.data);
 
 export const sessionsQueryFn = async () => {
-  const response = await API.get<SessionResponseType>(`/session/all`);
+  const response = await AuthAPI.get<SessionResponseType>(`/session/all`);
   return response.data;
 };
 
 export const sessionDelMutationFn = async (id: string) =>
-  await API.delete(`/session/${id}`);
+  await AuthAPI.delete(`/session/${id}`);
 
-export const createCategoryMutation = async () => {
-  await API.post(`/category`, {});
-}
+
+
