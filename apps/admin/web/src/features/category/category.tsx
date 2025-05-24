@@ -25,6 +25,9 @@ import {
 import { FolderTree, FolderPlus, ChevronRight, Edit, Trash2, Plus } from "lucide-react";
 import CategoryForm from "./component/categoryform";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { CategoryType, getcategoryQueryFn } from "./api";
+
 
 
 
@@ -62,6 +65,8 @@ const mockCategories = [
 ];
 
 const Category = () => {
+
+  const {isLoading, error, data} = useQuery({ queryKey: ['getAllCategories'], queryFn: getcategoryQueryFn })
  
   const [categories, setCategories] = useState(mockCategories);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
@@ -184,7 +189,11 @@ const Category = () => {
   };
 
   return (
+   
     <div className="space-y-6">
+
+      {isLoading && <p>Loading categories...</p>}
+      {error && <p className="text-red-500">Error loading categories: {error.message}</p>}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold ">Categories</h1>
@@ -227,21 +236,21 @@ const Category = () => {
                 <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {categories.map((category) => (
+            <TableBody>              
+              {data?.data?.categories?.map((category: CategoryType) => (
                 <>
-                  <TableRow key={category.id} className="">
+                  <TableRow key={category._id} className="">
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0"
-                          onClick={() => toggleCategory(category.id)}
+                          onClick={() => toggleCategory(category._id)}
                         >
                           <ChevronRight
                             className={`h-4 w-4 transition-transform ${
-                              expandedCategories[category.id] ? "rotate-90" : ""
+                              expandedCategories[category._id] ? "rotate-90" : ""
                             }`}
                           />
                         </Button>
@@ -258,12 +267,11 @@ const Category = () => {
                           onClick={() => handleEdit(category)}
                         >
                           <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
+                        </Button>                        <Button
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 text-gray-500 hover:text-red-700"
-                          onClick={() => handleDelete(category.id)}
+                          onClick={() => handleDelete(category._id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -271,14 +279,14 @@ const Category = () => {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-700"
-                          onClick={() => handleAddSubcategory(category.id)}
+                          onClick={() => handleAddSubcategory(category._id)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                  {expandedCategories[category.id] &&
+                  {/* {expandedCategories[category.id] &&
                     category.subcategories.map((subcategory) => (
                       <TableRow key={subcategory.id}>
                         <TableCell className="font-medium">
@@ -319,7 +327,7 @@ const Category = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ))} */}
                 </>
               ))}
             </TableBody>

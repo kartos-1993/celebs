@@ -2,7 +2,7 @@
 import {ProductAPI} from "../../lib/axios-client";
 
 
-type CategoryType = {
+export type CategoryType = {
     _id: string;
     name: string;
     slug: string;
@@ -14,8 +14,14 @@ type CategoryType = {
   type CategoryResponseType = {
     success: boolean;
     message: string;
-    data: CategoryType | CategoryType[];
-  }
+    data: {
+      categories: CategoryType[];
+      total: number;
+      page: number;
+      limit: number;
+      pages: number;
+    };
+  };
   type createCategotyType = {
     name: string;
   }
