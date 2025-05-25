@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { z } from "zod";
+import { useState } from 'react';
+import { z } from 'zod';
 import {
   Form,
   FormControl,
@@ -7,136 +7,163 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-
-import { X, Plus } from "lucide-react";
-import { createCategoryMutationFn } from "../api";
-import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { X, Plus } from 'lucide-react';
+import { createCategoryMutationFn, updateCategoryMutationFn } from '../api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const formSchema = z.object({
-name: z.string().min(1,{message:"Category name is required"}).min(2,{message:"Category name must be at least 2 characters"}).max(30,{message:"Category name must be less than 30 characters"}),
-})
+  name: z
+    .string()
+    .min(1, { message: 'Category name is required' })
+    .min(2, { message: 'Category name must be at least 2 characters' })
+    .max(30, { message: 'Category name must be less than 30 characters' }),
+  parent: z.string().optional().nullable(),
+});
+
 interface CategoryFormProps {
   initialData: any;
   isSubcategory: boolean;
+  parentId?: string | null;
   onSave: (data: any) => void;
   onCancel: () => void;
 }
 
-
 const CategoryForm = ({
   initialData,
   isSubcategory,
+  parentId,
   onSave,
   onCancel,
 }: CategoryFormProps) => {
-   const {mutate} = useMutation({
-      mutationFn:createCategoryMutationFn
-    })
+  const queryClient = useQueryClient();
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: createCategoryMutationFn,
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateCategoryMutationFn(id, data),
+  });
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || ""
-    }
-  })
-  
-  // State for attributes (for future use when subcategory attribute management is needed)
-  const [attributes, setAttributes] = useState<string[]>(initialData?.attributes || []);
-  const [newAttribute, setNewAttribute] = useState("");
+      name: initialData?.name || '',
+      parent: initialData?.parent || parentId || null,
+    },
+  });
+
+  const [attributes, setAttributes] = useState<string[]>(
+    initialData?.attributes || [],
+  );
+  const [newAttribute, setNewAttribute] = useState('');
 
   const handleAddAttribute = () => {
     if (newAttribute && !attributes.includes(newAttribute)) {
       setAttributes([...attributes, newAttribute]);
-      setNewAttribute("");
+      setNewAttribute('');
     }
   };
 
   const handleRemoveAttribute = (attribute: string) => {
     setAttributes(attributes.filter((attr) => attr !== attribute));
   };
-    function onSubmit(values:z.infer<typeof formSchema>) {
-    console.log("Submitting form with values:", values);
-    
-    // Pass the values directly to the API
-    mutate(values, {
-      onSuccess: response => {
-        console.log("Category created successfully", response);
-        onSave(response.data);  // Pass the response data to the parent component
-      },
-      onError: error => {
-        console.error("Error creating category", error);
-        // Show the error to help with debugging
-        alert(`Error creating category: ${JSON.stringify(error)}`);
-      }
-    });
-  };
 
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    const formData = {
+      ...values,
+      attributes: attributes,
+    };
 
+    if (initialData?._id) {
+      // Update existing category
+      updateMutation.mutate(
+        {
+          id: initialData._id,
+          data: formData,
+        },
+        {
+          onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
+            onSave(response.data);
+          },
+          onError: (error) => {
+            console.error('Error updating category', error);
+          },
+        },
+      );
+    } else {
+      // Create new category
+      createMutation.mutate(formData, {
+        onSuccess: (response) => {
+          queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
+          onSave(response.data);
+        },
+        onError: (error) => {
+          console.error('Error creating category', error);
+        },
+      });
+    }
+  }
 
   return (
     <Form {...form}>
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <div className="space-y-4 py-2 pb-4">
-        <div className="space-y-2">          <FormField
-         control ={form.control}
-         name="name"
-         render = {({field}) => (
-          <FormItem className="space-y-1">
-            <FormLabel>Category</FormLabel>
-            <FormControl>
-              <Input
-                placeholder= "Category name"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage/>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter category name" {...field} />
+              </FormControl>
+              <FormMessage />
             </FormItem>
-         )}
-          />
-         
-        </div>
-         
+          )}
+        />
 
-        {/* {isSubcategory && (
-          <div className="space-y-2">
-            <Label htmlFor="attributes">Attributes</Label>
-            <div className="flex gap-2">
-              <Input
-                id="attributes"
-                placeholder="Add attribute (e.g. Size, Color)"
-                value={newAttribute}
-                onChange={(e) => setNewAttribute(e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handleAddAttribute}
-                disabled={!newAttribute}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+        {isSubcategory && (
+          <div className="space-y-4">
+            <div>
+              <FormLabel>Attributes</FormLabel>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  placeholder="Add attribute"
+                  value={newAttribute}
+                  onChange={(e) => setNewAttribute(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddAttribute}
+                  className="flex-shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            
-            <div className="flex flex-wrap gap-2 mt-2">
+
+            <div className="flex flex-wrap gap-2">
               {attributes.map((attribute, index) => (
                 <div
                   key={index}
-                  className="inline-flex items-center gap-1 rounded-full bg-fashion-100 px-3 py-1 text-sm text-fashion-700"
+                  className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
                 >
-                  {attribute}
+                  <span className="text-sm">{attribute}</span>{' '}
                   <button
                     type="button"
-                    className="text-fashion-500 hover:text-fashion-700"
                     onClick={() => handleRemoveAttribute(attribute)}
+                    className="text-gray-500 hover:text-red-500"
+                    title={`Remove ${attribute} attribute`}
                     aria-label={`Remove ${attribute} attribute`}
-                    title={`Remove ${attribute}`}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -144,20 +171,18 @@ const CategoryForm = ({
               ))}
             </div>
           </div>
-        )} */}
+        )}
 
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" variant="outline">
-            Save
+          <Button type="submit">
+            {initialData?._id ? 'Update' : 'Create'}
           </Button>
         </div>
-      </div>
-    </form>
+      </form>
     </Form>
-   
   );
 };
 

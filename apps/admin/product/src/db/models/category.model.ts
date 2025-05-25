@@ -4,6 +4,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ICategory extends Document {
   name: string;
   slug: string;
+  parent: mongoose.Types.ObjectId | null;
   subcategories: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -24,10 +25,15 @@ const CategorySchema: Schema = new Schema(
       unique: true,
       lowercase: true,
     },
+    parent: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null,
+    },
     subcategories: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Subcategory',
+        ref: 'Category',
       },
     ],
   },
