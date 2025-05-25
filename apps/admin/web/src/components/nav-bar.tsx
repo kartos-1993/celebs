@@ -1,15 +1,17 @@
-import React from "react";
-import { UserNav } from "@/components/user-nav";
-import { ModeToggle } from "@/components/mode-toggle";
+import React from 'react';
+import { UserNav } from '@/components/user-nav';
+import { ModeToggle } from '@/components/mode-toggle';
 import {
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumbs";
-import { useMatches, Link } from "react-router-dom";
-import { SheetMenu } from "./sheet-menu";
+} from '@/components/ui/breadcrumbs';
+import { useMatches, Link } from 'react-router-dom';
+import { SheetMenu } from './sheet-menu';
+import { useSideBarContext } from '@/context/sidebar-provider';
+import { cn } from '@/lib/utils';
 
 // Refine the type of match.handle
 interface RouteHandle {
@@ -17,6 +19,7 @@ interface RouteHandle {
 }
 
 export function Navbar() {
+  const { isSideBarOpen } = useSideBarContext();
   const matches = useMatches();
 
   const breadcrumbs = matches
@@ -35,7 +38,12 @@ export function Navbar() {
     });
 
   return (
-    <header className="mb-6 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
+    <header
+      className={cn(
+        `pl-6 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary`,
+        isSideBarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
+      )}
+    >
       <div className=" lg:mr-8 flex h-14 items-center">
         <div className="flex items-center space-x-4 lg:space-x-0">
           <SheetMenu />
