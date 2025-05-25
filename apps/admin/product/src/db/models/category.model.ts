@@ -12,34 +12,31 @@ export interface ICategory extends Document {
 // Schema for Category
 const CategorySchema: Schema = new Schema(
   {
-    name: { 
-      type: String, 
-      required: true, 
+    name: {
+      type: String,
+      required: true,
       trim: true,
-      unique: true
-    },
-    slug: { 
-      type: String, 
-      required: true, 
       unique: true,
-      lowercase: true 
     },
-    subcategories: [{ 
-      type: Schema.Types.ObjectId, 
-      ref: 'Subcategory' 
-    }]
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+    subcategories: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Subcategory',
+      },
+    ],
   },
-  { 
-    timestamps: true 
-  }
+  {
+    timestamps: true,
+  },
 );
 
-// Add pre-save hook to generate slug if not provided
-CategorySchema.pre<ICategory>('save', function(next) {
-  if (!this.slug) {
-    this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-  }
-  next();
-});
-
-export const CategoryModel = mongoose.model<ICategory>('Category', CategorySchema);
+export const CategoryModel = mongoose.model<ICategory>(
+  'Category',
+  CategorySchema,
+);

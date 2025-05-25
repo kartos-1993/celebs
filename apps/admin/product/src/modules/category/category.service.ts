@@ -8,23 +8,19 @@ import { SubcategoryModel } from '../../db/models/subcategory.model';
 export class CategoryService {
   /**
    * Create a new category
-   */  async createCategory(categoryData: Partial<ICategory>): Promise<ICategory> {
+   */ async createCategory(
+    categoryData: Partial<ICategory>,
+  ): Promise<ICategory> {
     // Check if category with the same name already exists
-    const existingCategory = await CategoryModel.findOne({ name: categoryData.name });
+    const existingCategory = await CategoryModel.findOne({
+      name: categoryData.name,
+    });
     if (existingCategory) {
       throw new AppError(
         'Category with this name already exists',
         HTTPSTATUS.CONFLICT,
-        ErrorCode.CATEGORY_ALREADY_EXISTS
+        ErrorCode.CATEGORY_ALREADY_EXISTS,
       );
-    }
-
-    // Generate slug from name if not provided
-    if (!categoryData.slug && categoryData.name) {
-      categoryData.slug = categoryData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
     }
 
     // Create new category
@@ -36,7 +32,10 @@ export class CategoryService {
   /**
    * Get all categories with optional pagination
    */
-  async getAllCategories(page: number = 1, limit: number = 50): Promise<{
+  async getAllCategories(
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<{
     categories: ICategory[];
     total: number;
     page: number;
@@ -46,19 +45,19 @@ export class CategoryService {
     const skip = (page - 1) * limit;
     const total = await CategoryModel.countDocuments();
     const pages = Math.ceil(total / limit);
-    
+
     const categories = await CategoryModel.find()
       .populate('subcategories')
       .sort({ name: 1 })
       .skip(skip)
       .limit(limit);
-    
+
     return {
       categories,
       total,
       page,
       limit,
-      pages
+      pages,
     };
   }
   /**
@@ -66,12 +65,21 @@ export class CategoryService {
    */
   async getCategoryById(categoryId: string): Promise<ICategory> {
     if (!Types.ObjectId.isValid(categoryId)) {
-      throw new AppError('Invalid category ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Invalid category ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
-    const category = await CategoryModel.findById(categoryId).populate('subcategories');
+    const category =
+      await CategoryModel.findById(categoryId).populate('subcategories');
     if (!category) {
-      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
+      throw new AppError(
+        'Category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
     }
 
     return category;
@@ -79,33 +87,45 @@ export class CategoryService {
   /**
    * Update a category
    */
-  async updateCategory(categoryId: string, updateData: Partial<ICategory>): Promise<ICategory> {
+  async updateCategory(
+    categoryId: string,
+    updateData: Partial<ICategory>,
+  ): Promise<ICategory> {
     if (!Types.ObjectId.isValid(categoryId)) {
-      throw new AppError('Invalid category ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Invalid category ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     // If name is being updated, check for duplicates
     if (updateData.name) {
-      const existingCategory = await CategoryModel.findOne({ 
+      const existingCategory = await CategoryModel.findOne({
         name: updateData.name,
-        _id: { $ne: categoryId }
+        _id: { $ne: categoryId },
       });
-      
+
       if (existingCategory) {
         throw new AppError(
           'Category with this name already exists',
           HTTPSTATUS.CONFLICT,
-          ErrorCode.CATEGORY_ALREADY_EXISTS
+          ErrorCode.CATEGORY_ALREADY_EXISTS,
         );
       }
-    }    const category = await CategoryModel.findByIdAndUpdate(
+    }
+    const category = await CategoryModel.findByIdAndUpdate(
       categoryId,
       updateData,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).populate('subcategories');
 
     if (!category) {
-      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
+      throw new AppError(
+        'Category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
     }
 
     return category;
@@ -115,17 +135,27 @@ export class CategoryService {
    */
   async deleteCategory(categoryId: string): Promise<{ success: boolean }> {
     if (!Types.ObjectId.isValid(categoryId)) {
-      throw new AppError('Invalid category ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Invalid category ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     const category = await CategoryModel.findById(categoryId);
     if (!category) {
-      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
+      throw new AppError(
+        'Category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
     }
 
     // Delete all associated subcategories
     if (category.subcategories.length > 0) {
-      await SubcategoryModel.deleteMany({ _id: { $in: category.subcategories } });
+      await SubcategoryModel.deleteMany({
+        _id: { $in: category.subcategories },
+      });
     }
 
     await CategoryModel.findByIdAndDelete(categoryId);
