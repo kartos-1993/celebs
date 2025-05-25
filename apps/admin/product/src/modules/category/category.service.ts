@@ -3,7 +3,10 @@ import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
 import { HTTPSTATUS } from '../../config/http.config';
 import { CategoryModel, ICategory } from '../../db/models/category.model';
-import { SubcategoryModel } from '../../db/models/subcategory.model';
+import {
+  SubcategoryModel,
+  ISubcategory,
+} from '../../db/models/subcategory.model';
 
 export class CategoryService {
   /**
@@ -160,5 +163,186 @@ export class CategoryService {
 
     await CategoryModel.findByIdAndDelete(categoryId);
     return { success: true };
+  }
+
+  /**
+   * Create a new subcategory
+   */
+  async createSubcategory(
+    subcategoryData: any,
+    parentId: string,
+  ): Promise<ISubcategory> {
+    if (!Types.ObjectId.isValid(parentId)) {
+      throw new AppError(
+        'Invalid parent category ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    const parentCategory = await CategoryModel.findById(parentId);
+    if (!parentCategory) {
+      throw new AppError(
+        'Parent category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
+    }
+
+    // Check if subcategory with the same name already exists under this parent
+    const existingSubcategory = await SubcategoryModel.findOne({
+      name: subcategoryData.name,
+      category: parentId,
+    });
+
+    if (existingSubcategory) {
+      throw new AppError(
+        'Subcategory with this name already exists under this category',
+        HTTPSTATUS.CONFLICT,
+        ErrorCode.CATEGORY_ALREADY_EXISTS,
+      );
+    }
+
+    // Create the subcategory
+    const subcategory = new SubcategoryModel({
+      ...subcategoryData,
+      category: parentId,
+    });
+    await subcategory.save();
+
+    // Update parent category's subcategories array
+    await CategoryModel.findByIdAndUpdate(parentId, {
+      $addToSet: { subcategories: subcategory._id },
+    });
+
+    return subcategory;
+  }
+
+  /**
+   * Get a subcategory by ID
+   */
+  async getSubcategoryById(subcategoryId: string): Promise<ISubcategory> {
+    if (!Types.ObjectId.isValid(subcategoryId)) {
+      throw new AppError(
+        'Invalid subcategory ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    const subcategory =
+      await SubcategoryModel.findById(subcategoryId).populate('category');
+
+    if (!subcategory) {
+      throw new AppError(
+        'Subcategory not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
+    }
+
+    return subcategory;
+  }
+
+  /**
+   * Update a subcategory
+   */
+  async updateSubcategory(
+    subcategoryId: string,
+    updateData: Partial<ISubcategory>,
+  ): Promise<ISubcategory> {
+    if (!Types.ObjectId.isValid(subcategoryId)) {
+      throw new AppError(
+        'Invalid subcategory ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    // Find the existing subcategory
+    const subcategory = await SubcategoryModel.findById(subcategoryId);
+    if (!subcategory) {
+      throw new AppError(
+        'Subcategory not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
+    }
+
+    // If name is being updated, check for duplicates within the same parent category
+    if (updateData.name) {
+      const existingSubcategory = await SubcategoryModel.findOne({
+        name: updateData.name,
+        category: subcategory.category,
+        _id: { $ne: subcategoryId },
+      });
+
+      if (existingSubcategory) {
+        throw new AppError(
+          'Subcategory with this name already exists under this category',
+          HTTPSTATUS.CONFLICT,
+          ErrorCode.CATEGORY_ALREADY_EXISTS,
+        );
+      }
+    }
+
+    // Perform the update
+    const updatedSubcategory = await SubcategoryModel.findByIdAndUpdate(
+      subcategoryId,
+      { ...updateData },
+      { new: true, runValidators: true },
+    ).populate('category');
+
+    if (!updatedSubcategory) {
+      throw new AppError(
+        'Error updating subcategory',
+        HTTPSTATUS.INTERNAL_SERVER_ERROR,
+        ErrorCode.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return updatedSubcategory;
+  }
+
+  /**
+   * Delete a subcategory
+   */
+  async deleteSubcategory(
+    subcategoryId: string,
+  ): Promise<{ success: boolean }> {
+    if (!Types.ObjectId.isValid(subcategoryId)) {
+      throw new AppError(
+        'Invalid subcategory ID',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    const subcategory = await SubcategoryModel.findById(subcategoryId);
+    if (!subcategory) {
+      throw new AppError(
+        'Subcategory not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
+    }
+
+    try {
+      // Remove subcategory from parent category's subcategories array
+      await CategoryModel.findByIdAndUpdate(subcategory.category, {
+        $pull: { subcategories: subcategoryId },
+      });
+
+      // Delete the subcategory
+      await SubcategoryModel.findByIdAndDelete(subcategoryId);
+
+      return { success: true };
+    } catch (error) {
+      throw new AppError(
+        'Error deleting subcategory',
+        HTTPSTATUS.INTERNAL_SERVER_ERROR,
+        ErrorCode.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

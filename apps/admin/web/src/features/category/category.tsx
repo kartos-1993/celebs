@@ -34,6 +34,7 @@ import {
   deleteCategoryMutationFn,
   getcategoryQueryFn,
   updateCategoryMutationFn,
+  createCategoryMutationFn,
 } from './api';
 
 const Category = () => {
@@ -42,6 +43,10 @@ const Category = () => {
 
   const deleteCategory = useMutation({
     mutationFn: deleteCategoryMutationFn,
+  });
+
+  const createCategory = useMutation({
+    mutationFn: createCategoryMutationFn,
   });
 
   const updateCategory = useMutation({
@@ -118,8 +123,16 @@ const Category = () => {
       });
     }
   };
-
   const handleSave = (formData: any) => {
+    const handleSuccess = () => {
+      queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
+      toast({
+        title: 'Success',
+        description: `${isSubcategory ? 'Subcategory' : 'Category'} ${editingCategory ? 'updated' : 'added'} successfully`,
+      });
+      setFormDialogOpen(false);
+    };
+
     if (editingCategory) {
       // Update existing category
       updateCategory.mutate(
@@ -131,23 +144,20 @@ const Category = () => {
           },
         },
         {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
-            toast({
-              title: 'Success',
-              description: `${isSubcategory ? 'Subcategory' : 'Category'} updated successfully`,
-            });
-            setFormDialogOpen(false);
-          },
+          onSuccess: handleSuccess,
         },
       );
     } else {
       // Create new category
-      setFormDialogOpen(false);
-      toast({
-        title: 'Success',
-        description: `${isSubcategory ? 'Subcategory' : 'Category'} added successfully`,
-      });
+      createCategory.mutate(
+        {
+          ...formData,
+          parent: isSubcategory ? parentCategory : null,
+        },
+        {
+          onSuccess: handleSuccess,
+        },
+      );
     }
   };
 

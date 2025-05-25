@@ -3,7 +3,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 // Interface for Attribute
 interface IAttribute {
   name: string;
-  values: string[];
 }
 
 // Interface for Subcategory document
@@ -19,43 +18,48 @@ export interface ISubcategory extends Document {
 // Schema for Subcategory
 const SubcategorySchema: Schema = new Schema(
   {
-    name: { 
-      type: String, 
-      required: true, 
-      trim: true 
+    name: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    slug: { 
-      type: String, 
-      required: true, 
+    slug: {
+      type: String,
+      required: true,
       unique: true,
-      lowercase: true 
+      lowercase: true,
     },
-    category: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Category', 
-      required: true 
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+      required: true,
     },
-    attributes: [{
-      name: { 
-        type: String, 
-        required: true 
+    attributes: [
+      {
+        name: {
+          type: String,
+          required: true,
+        },
       },
-      values: [{ 
-        type: String 
-      }]
-    }]
+    ],
   },
-  { 
-    timestamps: true 
-  }
+  {
+    timestamps: true,
+  },
 );
 
 // Add pre-save hook to generate slug if not provided
-SubcategorySchema.pre<ISubcategory>('save', function(next) {
+SubcategorySchema.pre<ISubcategory>('save', function (next) {
   if (!this.slug) {
-    this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '');
   }
   next();
 });
 
-export const SubcategoryModel = mongoose.model<ISubcategory>('Subcategory', SubcategorySchema);
+export const SubcategoryModel = mongoose.model<ISubcategory>(
+  'Subcategory',
+  SubcategorySchema,
+);
