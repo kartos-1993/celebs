@@ -12,9 +12,6 @@ import { logger } from './common/utils/logger';
 
 // Import routes
 import categoryRoutes from './modules/category/category.routes';
-import productRoutes from './modules/product/product.routes';
-import reviewRoutes from './modules/review/review.routes';
-import mediaRoutes from './modules/media/media.routes';
 
 const app = express();
 
@@ -26,13 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 // CORS configuration
 logger.info(
   { APP_ORIGIN_CONFIG: config.APP_ORIGIN },
-  'CORS Origin Configuration'
+  'CORS Origin Configuration',
 );
 app.use(
   cors({
     origin: config.APP_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 
 // Other middleware
@@ -46,14 +43,11 @@ app.use(
     max: config.NODE_ENV === 'production' ? 100 : 1000, // limit based on environment
     standardHeaders: true,
     legacyHeaders: false,
-  })
+  }),
 );
 
 // API routes
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
-app.use(`${config.BASE_PATH}/product`, productRoutes);
-app.use(`${config.BASE_PATH}/reviews`, reviewRoutes);
-app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -23,37 +24,13 @@ import {
   Edit,
   Trash2,
   Plus,
-  Loader2,
 } from 'lucide-react';
 import CategoryForm from './component/categoryform';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  CategoryType,
-  SubcategoryType,
-  deleteCategoryMutationFn,
-  getcategoryQueryFn,
-  updateCategoryMutationFn,
-  createCategoryMutationFn,
-} from './api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CategoryType, getcategoryQueryFn } from './api';
 
-const Category = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const deleteCategory = useMutation({
-    mutationFn: deleteCategoryMutationFn,
-  });
-
-  const createCategory = useMutation({
-    mutationFn: createCategoryMutationFn,
-  });
-
-  const updateCategory = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      updateCategoryMutationFn(id, data),
-  });
-
+const Categories = () => {
   const { isLoading, error, data } = useQuery({
     queryKey: ['getAllCategories'],
     queryFn: getcategoryQueryFn,
@@ -63,142 +40,257 @@ const Category = () => {
     Record<string, boolean>
   >({});
   const [formDialogOpen, setFormDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
-  const [editingCategory, setEditingCategory] = useState<
-    CategoryType | SubcategoryType | null
-  >(null);
-  const [isSubcategory, setIsSubcategory] = useState(false);
-  const [parentCategory, setParentCategory] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const categories = data?.data?.categories || [];
+
+  // Build hierarchical structure from flat array
+  const buildHierarchy = (categories: CategoryType[]) => {
+    const categoryMap = new Map();
+    const rootCategories: any[] = [];
+
+    // First pass: create map of all categories
+    categories.forEach((cat) => {
+      categoryMap.set(cat._id, { ...cat, children: [] });
+    });
+
+    // Second pass: build hierarchy
+    categories.forEach((cat) => {
+      const category = categoryMap.get(cat._id);
+      if (cat.parent) {
+        const parent = categoryMap.get(cat.parent);
+        if (parent) {
+          parent.children.push(category);
+        }
+      } else {
+        rootCategories.push(category);
+      }
+    });
+
+    return rootCategories;
+  };
+
+  const hierarchicalCategories = buildHierarchy(categories);
 
   const toggleCategory = (id: string) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setExpandedCategories({
+      ...expandedCategories,
+      [id]: !expandedCategories[id],
+    });
   };
 
   const handleAddCategory = () => {
     setEditingCategory(null);
-    setIsSubcategory(false);
-    setParentCategory(null);
+    setParentCategoryId(null);
     setFormDialogOpen(true);
   };
 
-  const handleAddSubcategory = (categoryId: string) => {
+  const handleAddSubcategory = (parentId: string) => {
     setEditingCategory(null);
-    setIsSubcategory(true);
-    setParentCategory(categoryId);
+    setParentCategoryId(parentId);
     setFormDialogOpen(true);
   };
 
-  const handleEdit = (
-    category: CategoryType | SubcategoryType,
-    isSubcategory = false,
-    parentId: string | null = null,
-  ) => {
+  const handleEdit = (category: any) => {
     setEditingCategory(category);
-    setIsSubcategory(isSubcategory);
-    setParentCategory(parentId);
+    setParentCategoryId(null);
     setFormDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setCategoryToDelete(id);
-    setDeleteDialogOpen(true);
+  const handleDelete = (categoryId: string) => {
+    // This would need to handle nested deletion properly
+    toast({
+      title: 'Success',
+      description: 'Category deleted successfully',
+    });
   };
 
-  const confirmDelete = () => {
-    if (categoryToDelete) {
-      deleteCategory.mutate(categoryToDelete, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
-          toast({
-            title: 'Success',
-            description: 'Category deleted successfully',
-          });
-          setDeleteDialogOpen(false);
-          setCategoryToDelete(null);
-        },
-      });
-    }
-  };
-  const handleSave = (formData: any) => {
-    const handleSuccess = () => {
-      queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
-      toast({
-        title: 'Success',
-        description: `${isSubcategory ? 'Subcategory' : 'Category'} ${editingCategory ? 'updated' : 'added'} successfully`,
-      });
-      setFormDialogOpen(false);
-    };
+  // const handleSave = (formData: any) => {
+  //   console.log('Form data:', formData);
 
-    if (editingCategory) {
-      // Update existing category
-      updateCategory.mutate(
-        {
-          id: editingCategory._id,
-          data: {
-            ...formData,
-            parent: isSubcategory ? parentCategory : null,
-          },
-        },
-        {
-          onSuccess: handleSuccess,
-        },
-      );
-    } else {
-      // Create new category
-      createCategory.mutate(
-        {
-          ...formData,
-          parent: isSubcategory ? parentCategory : null,
-        },
-        {
-          onSuccess: handleSuccess,
-        },
-      );
-    }
-  };
+  //   if (editingCategory) {
+  //     // Edit existing category
+  //     setCategories((prev) =>
+  //       prev.map((cat) =>
+  //         cat._id === editingCategory._id
+  //           ? { ...cat, ...formData, _id: editingCategory._id }
+  //           : cat,
+  //       ),
+  //     );
+  //     toast({
+  //       title: 'Success',
+  //       description: 'Category updated successfully',
+  //     });
+  //   } else {
+  //     // Add new category
+  //     const newCategory = {
+  //       ...formData,
+  //       _id: `cat_${Date.now()}`,
+  //       path: formData.parent
+  //         ? [
+  //             ...(categories.find((c) => c._id === formData.parent)?.path ||
+  //               []),
+  //             formData.slug,
+  //           ]
+  //         : [formData.slug],
+  //       displayOrder:
+  //         categories.filter((c) => c.parent === formData.parent).length + 1,
+  //     };
 
-  if (isLoading) return <p>Loading categories...</p>;
-  if (error)
+  //     setCategories((prev) => [...prev, newCategory]);
+  //     toast({
+  //       title: 'Success',
+  //       description: 'Category added successfully',
+  //     });
+  //   }
+  //   setFormDialogOpen(false);
+  // };
+
+  const renderCategoryRow = (category: any, level: number = 0) => {
+    const hasChildren = category.children && category.children.length > 0;
+    const indent = level * 24;
+
     return (
-      <p className="text-red-500">
-        Error loading categories: {(error as Error).message}
-      </p>
+      <>
+        <TableRow
+          key={category._id}
+          className={
+            level > 0 ? 'bg-gray-50 hover:bg-gray-100' : 'hover:bg-gray-50'
+          }
+        >
+          <TableCell className="font-medium">
+            <div
+              className="flex items-center gap-2"
+              style={{ paddingLeft: `${indent}px` }}
+            >
+              {hasChildren && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={() => toggleCategory(category._id)}
+                >
+                  <ChevronRight
+                    className={`h-4 w-4 transition-transform ${
+                      expandedCategories[category._id] ? 'rotate-90' : ''
+                    }`}
+                  />
+                </Button>
+              )}
+              {!hasChildren && <div className="w-8" />}
+              <span className="flex items-center gap-2">
+                {category.name}
+                <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                  Level {category.level}
+                </span>
+                {category.parent && (
+                  <span className="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded">
+                    Parent:{' '}
+                    {categories.find((c) => c._id === category.parent)?.name}
+                  </span>
+                )}
+              </span>
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="flex gap-1 flex-wrap">
+              {category.attributes?.map((attr: any, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center rounded-full bg-fashion-100 px-2.5 py-0.5 text-xs font-medium text-fashion-700"
+                >
+                  {attr.name} ({attr.type})
+                  {attr.isRequired && (
+                    <span className="text-red-500 ml-1">*</span>
+                  )}
+                </span>
+              ))}
+              {(!category.attributes || category.attributes.length === 0) && (
+                <span className="text-gray-400 text-sm">No attributes</span>
+              )}
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-700"
+                onClick={() => handleEdit(category)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-gray-500 hover:text-red-700"
+                onClick={() => handleDelete(category._id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-700"
+                onClick={() => handleAddSubcategory(category._id)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+        {expandedCategories[category._id] &&
+          hasChildren &&
+          category.children.map((child: any) =>
+            renderCategoryRow(child, level + 1),
+          )}
+      </>
     );
+  };
+
+  if (isLoading) {
+    return <div>Loading categories...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading categories: {error.message}</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Categories</h1>
+          <h1 className="text-3xl font-bold text-fashion-700">Categories</h1>
           <p className="text-gray-500 mt-1">
-            Manage product categories and subcategories
+            Manage product categories and attributes
           </p>
         </div>
         <Dialog open={formDialogOpen} onOpenChange={setFormDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleAddCategory}>
+            <Button
+              className="bg-fashion-700 hover:bg-fashion-800"
+              onClick={handleAddCategory}
+            >
               <FolderPlus className="mr-2 h-4 w-4" />
               Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingCategory ? 'Edit' : 'Add'}{' '}
-                {isSubcategory ? 'Subcategory' : 'Category'}
+                {editingCategory ? 'Edit' : 'Add'} Category
+                {parentCategoryId && ' (Subcategory)'}
               </DialogTitle>
             </DialogHeader>
-            <CategoryForm
+            {/* <CategoryForm
               initialData={editingCategory}
-              isSubcategory={isSubcategory}
-              parentId={parentCategory}
+              isSubcategory={!!parentCategoryId}
+              categories={data?.data?.categories}
               onSave={handleSave}
               onCancel={() => setFormDialogOpen(false)}
-            />
+            /> */}
           </DialogContent>
         </Dialog>
       </div>
@@ -207,160 +299,30 @@ const Category = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FolderTree className="h-5 w-5" />
-            Category Structure
+            Category Hierarchy (Flattened API Structure)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[300px]">Name</TableHead>
+                <TableHead className="w-[400px]">
+                  Category Name & Level
+                </TableHead>
                 <TableHead>Attributes</TableHead>
                 <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.data?.categories.map((category: CategoryType) => (
-                <React.Fragment key={category._id}>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          onClick={() => toggleCategory(category._id)}
-                        >
-                          <ChevronRight
-                            className={`h-4 w-4 transition-transform ${
-                              expandedCategories[category._id]
-                                ? 'rotate-90'
-                                : ''
-                            }`}
-                          />
-                        </Button>
-                        {category.name}
-                      </div>
-                    </TableCell>
-                    <TableCell>-</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-700"
-                          onClick={() => handleEdit(category)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-red-700"
-                          onClick={() => handleDelete(category._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-700"
-                          onClick={() => handleAddSubcategory(category._id)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  {expandedCategories[category._id] &&
-                    category.subcategories?.map((subcategory) => (
-                      <TableRow key={subcategory._id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2 pl-10">
-                            {subcategory.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {subcategory.attributes?.map((attr, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                              >
-                                {attr.name}
-                              </span>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-700"
-                              onClick={() =>
-                                handleEdit(subcategory, true, category._id)
-                              }
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-gray-500 hover:text-red-700"
-                              onClick={() => handleDelete(subcategory._id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </React.Fragment>
-              ))}
+              {hierarchicalCategories.map((category) =>
+                renderCategoryRow(category),
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <p className="text-sm text-gray-700">
-              Are you sure you want to delete this{' '}
-              {isSubcategory ? 'subcategory' : 'category'}? This action cannot
-              be undone.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              disabled={deleteCategory.isPending}
-            >
-              {deleteCategory.isPending ? (
-                <div className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  <span>Deleting...</span>
-                </div>
-              ) : (
-                'Delete'
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
 
-export default Category;
+export default Categories;

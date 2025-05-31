@@ -1,47 +1,38 @@
 import { z } from 'zod';
+import { Types } from 'mongoose';
 
-// Common schema for ID validation
-export const idSchema = z.string().trim().min(1).max(50);
+// Zod schema for a Mongoose ObjectId (or null)
+const objectIdSchema = z
+  .string()
+  .refine((val) => Types.ObjectId.isValid(val), { message: 'Invalid ObjectId' })
+  .transform((val) => new Types.ObjectId(val))
+  .nullable();
 
-// Attribute schema
-export const attributeSchema = z.object({
-  name: z.string().trim().min(1, 'Attribute name is required').max(50),
-  values: z.array(z.string()),
+// Zod schema for attribute values
+const attributeValueSchema = z.object({
+  value: z.string().min(1, 'Value is required'),
+  displayOrder: z.number().int().positive(),
 });
 
-// Base schema for shared fields between categories and subcategories
-const baseSchema = {
-  name: z
-    .string()
-    .trim()
-    .min(2, 'Name must be at least 2 characters long')
-    .max(100),
-};
-
-// Category schemas
-export const createCategorySchema = z.object({
-  ...baseSchema,
+// Zod schema for an attribute
+const attributeInputSchema = z.object({
+  name: z.string().min(1, 'Attribute name is required').trim(),
+  type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean'], {
+    message: 'Invalid attribute type',
+  }),
+  values: z.array(attributeValueSchema),
+  isRequired: z.boolean().default(false),
+  displayOrder: z.number().int().positive(),
+  group: z.string().optional(),
 });
 
-export const updateCategorySchema = z.object({
-  ...baseSchema,
+// Zod schema for the category request body
+export const categoryInputSchema = z.object({
+  name: z.string().min(1, 'Name is required').trim(),
+  parent: objectIdSchema.optional().default(null),
+  displayOrder: z.number().int().positive().default(1),
+  attributes: z.array(attributeInputSchema).optional().default([]),
 });
 
-export const getCategoryByIdSchema = z.object({
-  id: idSchema,
-});
-
-// Subcategory schemas
-export const createSubcategorySchema = z.object({
-  ...baseSchema,
-  attributes: z.array(attributeSchema).optional(),
-});
-
-export const updateSubcategorySchema = z.object({
-  ...baseSchema,
-  attributes: z.array(attributeSchema).optional(),
-});
-
-export const getSubcategoryByIdSchema = z.object({
-  id: idSchema,
-});
+// TypeScript type for the validated input
+export type CategoryInput = z.infer<typeof categoryInputSchema>;

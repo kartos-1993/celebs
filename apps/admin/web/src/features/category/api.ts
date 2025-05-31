@@ -2,28 +2,22 @@ import { ProductAPI } from '../../lib/axios-client';
 
 interface Attribute {
   name: string;
-  values: string[];
 }
 
-export interface SubcategoryType {
+export interface CategoryType {
   _id: string;
   name: string;
   slug: string;
-  parent: string;
-  attributes?: Array<Attribute>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type CategoryType = {
-  _id: string;
-  name: string;
-  slug: string;
+  level: number;
   parent: string | null;
-  subcategories: SubcategoryType[];
-  createdAt: string;
-  updatedAt: string;
-};
+  path: string[];
+  attributes?: {
+    name: string;
+    type: string;
+    isRequired: boolean;
+  }[];
+  children?: CategoryType[];
+}
 
 export type CreateCategoryType = {
   name: string;
@@ -81,29 +75,5 @@ export const deleteCategoryMutationFn = async (id: string) => {
     success: boolean;
     message: string;
   }>(`/category/${id}`);
-  return response.data;
-};
-
-export const createSubcategoryMutationFn = async (
-  parentId: string,
-  data: CreateCategoryType,
-) => {
-  const response = await ProductAPI.post<{
-    success: boolean;
-    message: string;
-    data: SubcategoryType;
-  }>(`/category/${parentId}/subcategory`, data);
-  return response.data;
-};
-
-export const updateSubcategoryMutationFn = async (
-  id: string,
-  data: CreateCategoryType,
-) => {
-  const response = await ProductAPI.put<{
-    success: boolean;
-    message: string;
-    data: SubcategoryType;
-  }>(`/category/subcategory/${id}`, data);
   return response.data;
 };

@@ -4,8 +4,10 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ICategory extends Document {
   name: string;
   slug: string;
+  level: number;
   parent: mongoose.Types.ObjectId | null;
-  subcategories: mongoose.Types.ObjectId[];
+  path: mongoose.Types.ObjectId[];
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +20,7 @@ const CategorySchema: Schema = new Schema(
       required: true,
       trim: true,
       unique: true,
+      index: true,
     },
     slug: {
       type: String,
@@ -25,17 +28,18 @@ const CategorySchema: Schema = new Schema(
       unique: true,
       lowercase: true,
     },
+    level: {
+      type: Number,
+      required: true,
+      default: 1,
+    },
     parent: {
       type: Schema.Types.ObjectId,
       ref: 'Category',
       default: null,
+      index: true,
     },
-    subcategories: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Category',
-      },
-    ],
+    path: [{ type: String }],
   },
   {
     timestamps: true,

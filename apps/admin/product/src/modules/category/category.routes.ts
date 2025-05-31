@@ -29,25 +29,7 @@ categoryRoute.use(authenticateJWT);
 categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 categoryRoute.post('/', asyncHandler(categoryController.createCategory));
-categoryRoute.put('/:id', asyncHandler(categoryController.updateCategory));
-categoryRoute.delete('/:id', asyncHandler(categoryController.deleteCategory));
-
-// Subcategory routes
-categoryRoute.post(
-  '/:id/subcategory',
-  asyncHandler(categoryController.createSubcategory),
-);
-categoryRoute.get(
-  '/subcategory/:id',
-  asyncHandler(categoryController.getSubcategoryById),
-);
-categoryRoute.put(
-  '/subcategory/:id',
-  asyncHandler(categoryController.updateSubcategory),
-);
-categoryRoute.delete(
-  '/subcategory/:id',
-  asyncHandler(categoryController.deleteSubcategory),
-);
+// categoryRoute.put('/:id', asyncHandler(categoryController.updateCategory));
+// categoryRoute.delete('/:id', asyncHandler(categoryController.deleteCategory));
 
 export default categoryRoute;

@@ -3,12 +3,7 @@ import { CategoryService } from './category.service';
 import { HTTPSTATUS } from '../../config/http.config';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
-import {
-  createCategorySchema,
-  updateCategorySchema,
-  createSubcategorySchema,
-  updateSubcategorySchema,
-} from '../../common/validators/category.validator';
+import { categoryInputSchema } from '../../common/validators/category.validator';
 import { logger } from '../../common/utils/logger';
 import slugify from 'slugify';
 
@@ -59,11 +54,8 @@ export class CategoryController {
 
   /**
    * Create new category
-   */ createCategory = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+   */
+  createCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Log the incoming request details for debugging
       logger.debug(
@@ -76,15 +68,42 @@ export class CategoryController {
         'Create category request received',
       );
 
-      const validatedData = createCategorySchema.parse(req.body);
+      const validatedData = categoryInputSchema.parse(req.body);
+      const { name, parent, attributes, displayOrder = 1 } = validatedData;
 
-      // Generate slug from name using slugify
-      const categoryData = {
-        ...validatedData,
-        slug: slugify(validatedData.name, { lower: true, strict: true }),
+      // Generate slug
+      const slug = slugify(name, { lower: true, strict: true });
+      let level = 1;
+      let path: string[] = [];
+
+      if (parent) {
+        const parentCategory = await this.categoryService.getCategoryById(
+          parent.toString(),
+        );
+        if (!parentCategory) {
+          throw new AppError(
+            'Parent category not found',
+            HTTPSTATUS.NOT_FOUND,
+            ErrorCode.CATEGORY_NOT_FOUND,
+          );
+        }
+        level = parentCategory.level + 1;
+        path = [...parentCategory.path.map((p) => p.toString()), slug];
+      } else {
+        path = [slug];
+      }
+
+      const categoryInput = {
+        name,
+        parent: parent?.toString() || null,
+        slug,
+        level,
+        path,
+        displayOrder,
+        attributes: attributes || [],
       };
 
-      const category = await this.categoryService.createCategory(categoryData);
+      const category = await this.categoryService.createCategory(categoryInput);
 
       return res.status(HTTPSTATUS.CREATED).json({
         success: true,
@@ -99,163 +118,49 @@ export class CategoryController {
   /**
    * Update category
    */
-  updateCategory = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const validatedData = updateCategorySchema.parse(req.body);
+  // updateCategory = async (req: Request, res: Response, next: NextFunction) => {
+  //   try {
+  //     const { id } = req.params;
+  //     const validatedData = updateCategorySchema.parse(req.body);
 
-      // If name is being updated, also update the slug
-      const updateData = {
-        ...validatedData,
-        ...(validatedData.name && {
-          slug: slugify(validatedData.name, { lower: true, strict: true }),
-        }),
-      };
+  //     // If name is being updated, also update the slug
+  //     const updateData = {
+  //       ...validatedData,
+  //       ...(validatedData.name && {
+  //         slug: slugify(validatedData.name, { lower: true, strict: true }),
+  //       }),
+  //     };
 
-      const category = await this.categoryService.updateCategory(
-        id,
-        updateData,
-      );
+  //     const category = await this.categoryService.updateCategory(
+  //       id,
+  //       updateData,
+  //     );
 
-      return res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category updated successfully',
-        data: category,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+  //     return res.status(HTTPSTATUS.OK).json({
+  //       success: true,
+  //       message: 'Category updated successfully',
+  //       data: category,
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 
   /**
    * Delete category
    */
-  deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      await this.categoryService.deleteCategory(id);
+  // deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
+  //   try {
+  //     const { id } = req.params;
+  //     await this.categoryService.deleteCategory(id);
 
-      return res.status(HTTPSTATUS.NO_CONTENT).send();
-    } catch (error) {
-      next(error);
-    }
-  };
+  //     return res.status(HTTPSTATUS.NO_CONTENT).send();
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 
   /**
    * Create a new subcategory
    */
-  createSubcategory = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const { id: parentId } = req.params;
-      logger.debug(
-        {
-          body: req.body,
-          parentId,
-        },
-        'Create subcategory request received',
-      );
-
-      const validatedData = createSubcategorySchema.parse(req.body);
-
-      const subcategoryData = {
-        ...validatedData,
-        slug: slugify(validatedData.name, { lower: true, strict: true }),
-        parent: parentId,
-      };
-
-      const subcategory = await this.categoryService.createSubcategory(
-        subcategoryData,
-        parentId,
-      );
-
-      return res.status(HTTPSTATUS.CREATED).json({
-        success: true,
-        message: 'Subcategory created successfully',
-        data: subcategory,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Update an existing subcategory
-   */
-  updateSubcategory = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const { id } = req.params;
-      const validatedData = updateSubcategorySchema.parse(req.body);
-
-      const updateData = {
-        ...validatedData,
-        ...(validatedData.name && {
-          slug: slugify(validatedData.name, { lower: true, strict: true }),
-        }),
-      };
-
-      const subcategory = await this.categoryService.updateSubcategory(
-        id,
-        updateData,
-      );
-
-      return res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Subcategory updated successfully',
-        data: subcategory,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Get a subcategory by ID
-   */
-  getSubcategoryById = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const { id } = req.params;
-      const subcategory = await this.categoryService.getSubcategoryById(id);
-
-      return res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Subcategory retrieved successfully',
-        data: subcategory,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Delete a subcategory
-   */
-  deleteSubcategory = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const { id } = req.params;
-      await this.categoryService.deleteSubcategory(id);
-
-      return res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Subcategory deleted successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
 }
