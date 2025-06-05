@@ -69,7 +69,7 @@ export class CategoryController {
       );
 
       const validatedData = categoryInputSchema.parse(req.body);
-      const { name, parent, attributes, displayOrder = 1 } = validatedData;
+      const { name, parent, attributes } = validatedData;
 
       // Generate slug
       const slug = slugify(name, { lower: true, strict: true });
@@ -99,7 +99,7 @@ export class CategoryController {
         slug,
         level,
         path,
-        displayOrder,
+
         attributes: attributes || [],
       };
 

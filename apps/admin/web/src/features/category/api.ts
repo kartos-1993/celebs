@@ -16,12 +16,11 @@ export interface CategoryType {
     type: string;
     isRequired: boolean;
   }[];
-  children?: CategoryType[];
 }
 
 export type CreateCategoryType = {
   name: string;
-  parent?: string | null;
+  parent: string | null;
   attributes?: Array<Attribute>;
 };
 

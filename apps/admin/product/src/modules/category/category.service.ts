@@ -8,10 +8,8 @@ import slugify from 'slugify';
 interface CategoryAttribute {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
-  values: { value: string; displayOrder: number }[];
+  values: string[];
   isRequired: boolean;
-  displayOrder: number;
-  group?: string;
 }
 
 interface CategoryInput {
@@ -20,7 +18,6 @@ interface CategoryInput {
   slug: string;
   level: number;
   path: string[];
-  displayOrder: number;
   attributes: CategoryAttribute[];
 }
 
@@ -58,8 +55,6 @@ export class CategoryService {
       type: attr.type,
       values: attr.values,
       isRequired: attr.isRequired,
-      displayOrder: attr.displayOrder,
-      group: attr.group,
     }));
 
     try {

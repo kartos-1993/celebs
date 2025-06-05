@@ -1,10 +1,10 @@
-import { HTMLAttributes, useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@/lib/utils";
+import { HTMLAttributes, useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { cn } from '@/lib/utils';
 import {
   Form,
   FormControl,
@@ -12,26 +12,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Button } from "@/components/ui/button";
-import { loginMutationFn } from "@/lib/api";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Button } from '@/components/ui/button';
+import { loginMutationFn } from '@/lib/api';
 
 type UserAuthFormProps = HTMLAttributes<HTMLDivElement>;
 
 const formSchema = z.object({
   email: z
     .string()
-    .min(1, { message: "Please enter your email" })
-    .email({ message: "Invalid email address" }),
+    .min(1, { message: 'Please enter your email' })
+    .email({ message: 'Invalid email address' }),
   password: z
     .string()
     .min(1, {
-      message: "Please enter your password",
+      message: 'Please enter your password',
     })
     .min(4, {
-      message: "Password must be at least 7 characters long",
+      message: 'Password must be at least 7 characters long',
     }),
 });
 
@@ -44,30 +44,29 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("login submitting");
+    console.log('login submitting');
     mutate(values, {
       onSuccess: (response) => {
-      
         if (response.data?.mfaRequired) {
           navigate(`/verify-mfa?email=${values.email}`);
           return;
         }
-        navigate("/");
+        navigate('/');
       },
       onError: (error) => {
-        console.log("login failure");
+        console.log('login failure');
       },
     });
   }
 
   return (
-    <div className={cn("grid gap-6", className)} {...props}>
+    <div className={cn('grid gap-6', className)} {...props}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid gap-2">

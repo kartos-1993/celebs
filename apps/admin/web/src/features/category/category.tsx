@@ -24,11 +24,14 @@ import {
   Edit,
   Trash2,
   Plus,
+  Loader2,
 } from 'lucide-react';
 import CategoryForm from './component/categoryform';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CategoryType, getcategoryQueryFn } from './api';
+import { getcategoryQueryFn } from './api';
+import { useQuery } from '@tanstack/react-query';
+
+// Updated API structure - flattened categories
 
 const Categories = () => {
   const { isLoading, error, data } = useQuery({
@@ -44,10 +47,8 @@ const Categories = () => {
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const categories = data?.data?.categories || [];
-
   // Build hierarchical structure from flat array
-  const buildHierarchy = (categories: CategoryType[]) => {
+  const buildHierarchy = (categories: any[]) => {
     const categoryMap = new Map();
     const rootCategories: any[] = [];
 
@@ -71,7 +72,7 @@ const Categories = () => {
 
     return rootCategories;
   };
-
+  const categories = data?.data?.categories || [];
   const hierarchicalCategories = buildHierarchy(categories);
 
   const toggleCategory = (id: string) => {
@@ -100,53 +101,15 @@ const Categories = () => {
   };
 
   const handleDelete = (categoryId: string) => {
-    // This would need to handle nested deletion properly
     toast({
       title: 'Success',
       description: 'Category deleted successfully',
     });
   };
 
-  // const handleSave = (formData: any) => {
-  //   console.log('Form data:', formData);
-
-  //   if (editingCategory) {
-  //     // Edit existing category
-  //     setCategories((prev) =>
-  //       prev.map((cat) =>
-  //         cat._id === editingCategory._id
-  //           ? { ...cat, ...formData, _id: editingCategory._id }
-  //           : cat,
-  //       ),
-  //     );
-  //     toast({
-  //       title: 'Success',
-  //       description: 'Category updated successfully',
-  //     });
-  //   } else {
-  //     // Add new category
-  //     const newCategory = {
-  //       ...formData,
-  //       _id: `cat_${Date.now()}`,
-  //       path: formData.parent
-  //         ? [
-  //             ...(categories.find((c) => c._id === formData.parent)?.path ||
-  //               []),
-  //             formData.slug,
-  //           ]
-  //         : [formData.slug],
-  //       displayOrder:
-  //         categories.filter((c) => c.parent === formData.parent).length + 1,
-  //     };
-
-  //     setCategories((prev) => [...prev, newCategory]);
-  //     toast({
-  //       title: 'Success',
-  //       description: 'Category added successfully',
-  //     });
-  //   }
-  //   setFormDialogOpen(false);
-  // };
+  const handleSave = (formData: any) => {
+    console.log('Form data:', formData);
+  };
 
   const renderCategoryRow = (category: any, level: number = 0) => {
     const hasChildren = category.children && category.children.length > 0;
@@ -157,7 +120,9 @@ const Categories = () => {
         <TableRow
           key={category._id}
           className={
-            level > 0 ? 'bg-gray-50 hover:bg-gray-100' : 'hover:bg-gray-50'
+            level > 0
+              ? 'bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
           }
         >
           <TableCell className="font-medium">
@@ -250,14 +215,6 @@ const Categories = () => {
     );
   };
 
-  if (isLoading) {
-    return <div>Loading categories...</div>;
-  }
-
-  if (error) {
-    return <div>Error loading categories: {error.message}</div>;
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -270,7 +227,7 @@ const Categories = () => {
         <Dialog open={formDialogOpen} onOpenChange={setFormDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              className="bg-fashion-700 hover:bg-fashion-800"
+              className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
               onClick={handleAddCategory}
             >
               <FolderPlus className="mr-2 h-4 w-4" />
@@ -284,13 +241,13 @@ const Categories = () => {
                 {parentCategoryId && ' (Subcategory)'}
               </DialogTitle>
             </DialogHeader>
-            {/* <CategoryForm
+            <CategoryForm
               initialData={editingCategory}
               isSubcategory={!!parentCategoryId}
-              categories={data?.data?.categories}
-              onSave={handleSave}
+              categories={categories}
+              onSave={() => setFormDialogOpen(true)}
               onCancel={() => setFormDialogOpen(false)}
-            /> */}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -299,26 +256,62 @@ const Categories = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FolderTree className="h-5 w-5" />
-            Category Hierarchy (Flattened API Structure)
+            Category Hierarchy
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[400px]">
-                  Category Name & Level
-                </TableHead>
-                <TableHead>Attributes</TableHead>
-                <TableHead className="w-[120px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {hierarchicalCategories.map((category) =>
-                renderCategoryRow(category),
-              )}
-            </TableBody>
-          </Table>
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-fashion-700" />
+              <p className="text-sm text-muted-foreground">
+                Loading categories...
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg px-4 py-3 text-sm">
+                <p className="font-medium">Unable to load categories</p>
+                <p className="mt-1 text-xs opacity-90">
+                  Please try again later or contact support if the issue
+                  persists.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {hierarchicalCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <p className="text-muted-foreground text-sm">
+                No categories found
+              </p>
+              <Button
+                className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
+                onClick={handleAddCategory}
+              >
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Add Your First Category
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[400px]">
+                    Category Name & Level
+                  </TableHead>
+                  <TableHead>Attributes</TableHead>
+                  <TableHead className="w-[120px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hierarchicalCategories.map((category) =>
+                  renderCategoryRow(category),
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

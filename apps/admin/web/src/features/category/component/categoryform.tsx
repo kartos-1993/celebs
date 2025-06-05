@@ -4,6 +4,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -20,6 +21,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { X, Plus } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createCategoryMutationFn } from '../api';
+import { useToast } from '@/hooks/use-toast';
 
 const attributeSchema = z.object({
   name: z.string().min(1, 'Attribute name is required'),
@@ -27,7 +31,6 @@ const attributeSchema = z.object({
   values: z.array(z.string()).optional(),
   isRequired: z.boolean(),
   displayOrder: z.number(),
-  group: z.string().min(1, 'Group is required'),
 });
 
 const categorySchema = z.object({
@@ -36,7 +39,7 @@ const categorySchema = z.object({
     .min(1, 'Category name is required')
     .max(100, 'Category name must be less than 100 characters'),
   parent: z.string().nullable().optional(),
-  attributes: z.array(attributeSchema),
+  attributes: z.array(attributeSchema).default([]),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -52,7 +55,7 @@ interface Category {
 interface CategoryFormProps {
   initialData?: any;
   isSubcategory?: boolean;
-  onSave: (data: any) => void;
+  onSave: () => void;
   onCancel: () => void;
   categories?: Category[];
 }
@@ -64,6 +67,7 @@ const CategoryForm = ({
   onCancel,
   categories = [],
 }: CategoryFormProps) => {
+  const { toast } = useToast();
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -71,6 +75,11 @@ const CategoryForm = ({
       parent: initialData?.parent || null,
       attributes: initialData?.attributes || [],
     },
+  });
+
+  const queryClient = useQueryClient();
+  const { mutate, isPending } = useMutation({
+    mutationFn: createCategoryMutationFn,
   });
 
   const {
@@ -89,61 +98,43 @@ const CategoryForm = ({
       values: [],
       isRequired: false,
       displayOrder: attributeFields.length + 1,
-      group: 'style',
     });
   };
 
-  const onSubmit = (data: CategoryFormData) => {
-    // Generate slug from name
-    const slug = data.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    const level =
-      data.parent && data.parent !== 'ROOT_CATEGORY'
-        ? (categories.find((c) => c._id === data.parent)?.level || 0) + 1
-        : 1;
-
-    // Convert ROOT_CATEGORY back to null
-    const parentId = data.parent === 'ROOT_CATEGORY' ? null : data.parent;
-
-    // Calculate the path based on parent
-    let path = [slug];
-    if (parentId) {
-      const parentCategory = categories.find((c) => c._id === parentId);
-      if (parentCategory) {
-        path = [...parentCategory.path, slug];
-      }
-    }
-
-    // Calculate display order
-    const displayOrder =
-      categories.filter((c) => c.parent === parentId).length + 1;
-
-    const payload = {
-      _id: initialData?._id || `cat_${Date.now()}`, // Generate ID for new categories
-      name: data.name,
-      slug,
-      level,
-      parent: parentId,
-      path,
-      displayOrder,
-      attributes: data.attributes.map((attr, index) => ({
-        name: attr.name,
-        type: attr.type,
-        values: attr.type === 'select' ? attr.values || [] : undefined,
-        isRequired: attr.isRequired,
-        displayOrder: index + 1,
-        group: attr.group,
+  const onSubmit = (values: z.infer<typeof categorySchema>) => {
+    const normalizedData = {
+      ...values,
+      // Ensure parent is always string | null, never undefined
+      parent:
+        values.parent === 'ROOT_CATEGORY' || !values.parent
+          ? null
+          : values.parent,
+      attributes: values.attributes.map((attr) => ({
+        ...attr,
+        values: attr.type === 'select' ? attr.values : undefined,
       })),
     };
 
-    console.log('=== CATEGORY PAYLOAD TO BACKEND ===');
-    console.log(JSON.stringify(payload, null, 2));
-    console.log('=====================================');
+    console.log((values, 'category data:'));
 
-    onSave(payload);
+    mutate(normalizedData, {
+      onSuccess: async (response) => {
+        await queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
+        toast({
+          title: 'Success',
+          description: `Category ${values.name} has been saved successfully.`,
+        });
+        onSave();
+      },
+      onError: (error) => {
+        console.error('Failed to save category:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to save category. Please try again.',
+        });
+      },
+    });
   };
 
   // Filter categories to show only potential parents (avoid circular references)
@@ -158,10 +149,12 @@ const CategoryForm = ({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 py-2 pb-4"
       >
-        {/* Add payload preview section */}
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="font-semibold text-blue-900 mb-2">Payload Preview</h3>
-          <p className="text-sm text-blue-800">
+        {/* Update the payload preview section for dark mode */}
+        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            Payload Preview
+          </h3>
+          <p className="text-sm text-blue-800 dark:text-blue-200">
             The complete payload will be logged to console when you save. Check
             browser console (F12) to see the exact data structure sent to
             backend.
@@ -242,7 +235,10 @@ const CategoryForm = ({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-fashion-700 hover:bg-fashion-800">
+          <Button
+            type="submit"
+            className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
+          >
             Save Category
           </Button>
         </div>
@@ -251,7 +247,7 @@ const CategoryForm = ({
   );
 };
 
-// Separate component for attribute field set to keep things organized
+// Update the AttributeFieldSet component with dark mode support
 const AttributeFieldSet = ({
   index,
   form,
@@ -276,14 +272,16 @@ const AttributeFieldSet = ({
   };
 
   return (
-    <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+    <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="font-medium">Attribute {index + 1}</h4>
+        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+          Attribute {index + 1}
+        </h4>
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="text-red-500 hover:text-red-700"
+          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           onClick={onRemove}
         >
           <X className="h-4 w-4" />
@@ -360,12 +358,9 @@ const AttributeFieldSet = ({
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2 space-y-0 pt-6">
               <FormControl>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={field.value}
-                  onChange={field.onChange}
-                  title="Required"
-                  placeholder="Required"
+                  onCheckedChange={field.onChange}
                 />
               </FormControl>
               <FormLabel className="text-sm font-normal">Required</FormLabel>
@@ -377,12 +372,13 @@ const AttributeFieldSet = ({
       {attributeType === 'select' && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Options</Label>
+            <Label className="text-gray-900 dark:text-gray-100">Options</Label>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleAddValue}
+              className="border-gray-200 dark:border-gray-800"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -397,7 +393,11 @@ const AttributeFieldSet = ({
                   render={({ field }) => (
                     <FormItem className="flex-1">
                       <FormControl>
-                        <Input placeholder="Option value" {...field} />
+                        <Input
+                          placeholder="Option value"
+                          {...field}
+                          className="bg-white dark:bg-gray-950"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -408,6 +408,7 @@ const AttributeFieldSet = ({
                   variant="outline"
                   size="sm"
                   onClick={() => removeValue(valueIndex)}
+                  className="border-gray-200 dark:border-gray-800"
                 >
                   <X className="h-3 w-3" />
                 </Button>

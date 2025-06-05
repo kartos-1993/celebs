@@ -9,10 +9,7 @@ const objectIdSchema = z
   .nullable();
 
 // Zod schema for attribute values
-const attributeValueSchema = z.object({
-  value: z.string().min(1, 'Value is required'),
-  displayOrder: z.number().int().positive(),
-});
+const attributeValueSchema = z.string().min(1, 'Value is required');
 
 // Zod schema for an attribute
 const attributeInputSchema = z.object({
@@ -22,7 +19,6 @@ const attributeInputSchema = z.object({
   }),
   values: z.array(attributeValueSchema),
   isRequired: z.boolean().default(false),
-  displayOrder: z.number().int().positive(),
   group: z.string().optional(),
 });
 
@@ -30,7 +26,7 @@ const attributeInputSchema = z.object({
 export const categoryInputSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
   parent: objectIdSchema.optional().default(null),
-  displayOrder: z.number().int().positive().default(1),
+
   attributes: z.array(attributeInputSchema).optional().default([]),
 });
 
