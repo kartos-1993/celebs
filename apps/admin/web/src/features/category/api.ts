@@ -2,6 +2,10 @@ import { ProductAPI } from '../../lib/axios-client';
 
 interface Attribute {
   name: string;
+  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
+  values: string[];
+  isRequired: boolean;
+  _id?: string;
 }
 
 export interface CategoryType {
@@ -11,17 +15,13 @@ export interface CategoryType {
   level: number;
   parent: string | null;
   path: string[];
-  attributes?: {
-    name: string;
-    type: string;
-    isRequired: boolean;
-  }[];
+  attributes?: Attribute[];
 }
 
 export type CreateCategoryType = {
   name: string;
   parent: string | null;
-  attributes?: Array<Attribute>;
+  attributes: Array<Attribute>;
 };
 
 export const createCategoryMutationFn = async (data: CreateCategoryType) => {

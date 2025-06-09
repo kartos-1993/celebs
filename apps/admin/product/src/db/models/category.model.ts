@@ -1,20 +1,14 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { IAttribute } from './attribute.model';
 
 // Interface for Category document
-interface CategoryAttribute {
-  name: string;
-  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
-  values: string[];
-  isRequired: boolean;
-}
-
 export interface ICategory extends Document {
   name: string;
   slug: string;
   level: number;
   parent: mongoose.Types.ObjectId | null;
-  path: mongoose.Types.ObjectId[];
-  attributes: CategoryAttribute[];
+  path: string[];
+  attributes?: IAttribute[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,23 +41,25 @@ const CategorySchema: Schema = new Schema(
       index: true,
     },
     path: [{ type: String }],
-    attributes: [
-      {
-        name: { type: String, required: true },
-        type: {
-          type: String,
-          enum: ['text', 'select', 'multiselect', 'number', 'boolean'],
-          required: true,
-        },
-        values: [{ type: String }],
-        isRequired: { type: Boolean, default: false },
-      },
-    ],
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
+
+// Virtual field for attributes
+CategorySchema.virtual('attributes', {
+  ref: 'Attribute',
+  localField: '_id',
+  foreignField: 'categoryId',
+  options: { sort: { displayOrder: 1 } },
+});
+
+// Add indexes
+CategorySchema.index({ slug: 1 });
+CategorySchema.index({ path: 1 });
 
 export const CategoryModel = mongoose.model<ICategory>(
   'Category',

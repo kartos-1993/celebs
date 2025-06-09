@@ -4,10 +4,10 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IAttribute extends Document {
   categoryId: mongoose.Types.ObjectId;
   name: string;
-  type: 'text' | 'select';
+  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
-  displayOrder: number;
+  displayOrder?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,7 +29,7 @@ const AttributeSchema: Schema = new Schema(
     },
     type: {
       type: String,
-      enum: ['text', 'select'],
+      enum: ['text', 'select', 'multiselect', 'number', 'boolean'],
       required: true,
     },
     values: [
@@ -38,10 +38,7 @@ const AttributeSchema: Schema = new Schema(
         required: true,
       },
     ],
-    displayOrder: {
-      type: Number,
-      required: true,
-    },
+
     isRequired: {
       type: Boolean,
       default: false,

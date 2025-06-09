@@ -8,6 +8,13 @@ const objectIdSchema = z
   .transform((val) => new Types.ObjectId(val))
   .nullable();
 
+// Export idSchema for use in other validators
+export const idSchema = z
+  .string()
+  .refine((val) => Types.ObjectId.isValid(val), {
+    message: 'Invalid ObjectId',
+  });
+
 // Zod schema for attribute values
 const attributeValueSchema = z.string().min(1, 'Value is required');
 
@@ -17,7 +24,7 @@ const attributeInputSchema = z.object({
   type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean'], {
     message: 'Invalid attribute type',
   }),
-  values: z.array(attributeValueSchema),
+  values: z.array(attributeValueSchema).optional().default([]),
   isRequired: z.boolean().default(false),
   group: z.string().optional(),
 });
@@ -26,7 +33,6 @@ const attributeInputSchema = z.object({
 export const categoryInputSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
   parent: objectIdSchema.optional().default(null),
-
   attributes: z.array(attributeInputSchema).optional().default([]),
 });
 

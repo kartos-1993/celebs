@@ -3,7 +3,9 @@ import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
 import { HTTPSTATUS } from '../../config/http.config';
 import { CategoryModel, ICategory } from '../../db/models/category.model';
+import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
 import slugify from 'slugify';
+import mongoose from 'mongoose';
 
 interface CategoryAttribute {
   name: string;
@@ -30,16 +32,13 @@ interface CategoryDeleteResult {
 }
 
 export class CategoryService {
-  // Create a new category
-  async createCategory(
-    categoryData: CategoryInput,
-    session?: ClientSession,
-  ): Promise<ICategory> {
+  // Create a new category with attributes
+  async createCategory(categoryData: CategoryInput): Promise<ICategory> {
     // Check if category with the same name already exists under the same parent
     const existingCategory = await CategoryModel.findOne({
       name: categoryData.name,
       parent: categoryData.parent,
-    }).session(session || null);
+    });
 
     if (existingCategory) {
       throw new AppError(
@@ -49,35 +48,43 @@ export class CategoryService {
       );
     }
 
-    // Process and validate attributes
-    const processedAttributes = (categoryData.attributes || []).map((attr) => ({
-      name: attr.name,
-      type: attr.type,
-      values: attr.values,
-      isRequired: attr.isRequired,
-    }));
-
     try {
-      // If session is provided, use transaction
-      if (session) {
-        const createdCategory = await CategoryModel.create(
-          [
-            {
-              ...categoryData,
-              attributes: processedAttributes,
-            },
-          ],
-          { session },
-        ).then((docs) => docs[0]);
-        return createdCategory;
+      // Create the category first
+      const categoryDoc = await CategoryModel.create({
+        name: categoryData.name,
+        parent: categoryData.parent,
+        slug: categoryData.slug,
+        level: categoryData.level,
+        path: categoryData.path,
+      });
+
+      // If attributes are provided, create them in parallel
+      if (categoryData.attributes && categoryData.attributes.length > 0) {
+        await Promise.all(
+          categoryData.attributes.map((attr) =>
+            AttributeModel.create({
+              categoryId: categoryDoc._id,
+              name: attr.name,
+              type: attr.type,
+              values:
+                attr.type === 'select' || attr.type === 'multiselect'
+                  ? attr.values
+                  : [],
+              isRequired: attr.isRequired,
+            }),
+          ),
+        );
       }
 
-      // Create category without transaction
-      const createdCategory = await CategoryModel.create({
-        ...categoryData,
-        attributes: processedAttributes,
+      // Get the fresh category with populated attributes
+      const populatedCategory = await CategoryModel.findById(
+        categoryDoc._id,
+      ).populate({
+        path: 'attributes',
+        model: 'Attribute',
       });
-      return createdCategory;
+
+      return populatedCategory!;
     } catch (error: any) {
       throw new AppError(
         `Failed to create category: ${error.message}`,
@@ -88,11 +95,11 @@ export class CategoryService {
   }
 
   /**
-   * Get all categories with optional pagination
+   * Get all categories with populated attributes
    */
   async getAllCategories(
     page: number = 1,
-    limit: number = 50,
+    limit: number = 10,
   ): Promise<{
     categories: ICategory[];
     total: number;
@@ -100,14 +107,17 @@ export class CategoryService {
     limit: number;
     pages: number;
   }> {
-    const skip = (page - 1) * limit;
     const total = await CategoryModel.countDocuments();
     const pages = Math.ceil(total / limit);
 
     const categories = await CategoryModel.find()
-      .sort({ displayOrder: 1, name: 1 })
-      .skip(skip)
-      .limit(limit);
+      .sort({ name: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate({
+        path: 'attributes',
+        model: 'Attribute',
+      });
 
     return {
       categories,
@@ -118,28 +128,12 @@ export class CategoryService {
     };
   }
 
-  /**
-   * Get a category by ID
-   */
-  async getCategoryById(categoryId: string): Promise<ICategory> {
-    if (!Types.ObjectId.isValid(categoryId)) {
-      throw new AppError(
-        'Invalid category ID',
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
-
-    const category = await CategoryModel.findById(categoryId);
-    if (!category) {
-      throw new AppError(
-        'Category not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.CATEGORY_NOT_FOUND,
-      );
-    }
-
-    return category;
+  // Get a single category by ID
+  async getCategoryById(id: string): Promise<ICategory | null> {
+    return CategoryModel.findById(id).populate({
+      path: 'attributes',
+      model: 'Attribute',
+    });
   }
 
   /**

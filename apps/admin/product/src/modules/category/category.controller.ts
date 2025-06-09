@@ -6,12 +6,13 @@ import { ErrorCode } from '../../common/enums/error-code.enum';
 import { categoryInputSchema } from '../../common/validators/category.validator';
 import { logger } from '../../common/utils/logger';
 import slugify from 'slugify';
+import mongoose from 'mongoose';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
   /**
-   * Get all categories
+   * Get all categories with populated attributes
    */
   getAllCategories = async (
     req: Request,
@@ -35,12 +36,20 @@ export class CategoryController {
   };
 
   /**
-   * Get category by ID
+   * Get category by ID with populated attributes
    */
   getCategoryById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
       const category = await this.categoryService.getCategoryById(id);
+
+      if (!category) {
+        throw new AppError(
+          'Category not found',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.CATEGORY_NOT_FOUND,
+        );
+      }
 
       return res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -53,17 +62,18 @@ export class CategoryController {
   };
 
   /**
-   * Create new category
-   */
-  createCategory = async (req: Request, res: Response, next: NextFunction) => {
+   * Create new category with attributes
+   */ createCategory = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       // Log the incoming request details for debugging
       logger.debug(
         {
           body: req.body,
           user: req.user,
-          headers: req.headers,
-          cookies: req.cookies,
         },
         'Create category request received',
       );
@@ -99,7 +109,6 @@ export class CategoryController {
         slug,
         level,
         path,
-
         attributes: attributes || [],
       };
 
@@ -115,52 +124,5 @@ export class CategoryController {
     }
   };
 
-  /**
-   * Update category
-   */
-  // updateCategory = async (req: Request, res: Response, next: NextFunction) => {
-  //   try {
-  //     const { id } = req.params;
-  //     const validatedData = updateCategorySchema.parse(req.body);
-
-  //     // If name is being updated, also update the slug
-  //     const updateData = {
-  //       ...validatedData,
-  //       ...(validatedData.name && {
-  //         slug: slugify(validatedData.name, { lower: true, strict: true }),
-  //       }),
-  //     };
-
-  //     const category = await this.categoryService.updateCategory(
-  //       id,
-  //       updateData,
-  //     );
-
-  //     return res.status(HTTPSTATUS.OK).json({
-  //       success: true,
-  //       message: 'Category updated successfully',
-  //       data: category,
-  //     });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
-
-  /**
-   * Delete category
-   */
-  // deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
-  //   try {
-  //     const { id } = req.params;
-  //     await this.categoryService.deleteCategory(id);
-
-  //     return res.status(HTTPSTATUS.NO_CONTENT).send();
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
-
-  /**
-   * Create a new subcategory
-   */
+  // Additional methods can go here...
 }

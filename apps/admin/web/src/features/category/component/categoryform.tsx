@@ -27,10 +27,9 @@ import { useToast } from '@/hooks/use-toast';
 
 const attributeSchema = z.object({
   name: z.string().min(1, 'Attribute name is required'),
-  type: z.enum(['select', 'text', 'number']),
+  type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean']),
   values: z.array(z.string()).optional(),
   isRequired: z.boolean(),
-  displayOrder: z.number(),
 });
 
 const categorySchema = z.object({
@@ -97,25 +96,34 @@ const CategoryForm = ({
       type: 'select',
       values: [],
       isRequired: false,
-      displayOrder: attributeFields.length + 1,
     });
   };
-
   const onSubmit = (values: z.infer<typeof categorySchema>) => {
     const normalizedData = {
-      ...values,
+      name: values.name,
       // Ensure parent is always string | null, never undefined
       parent:
         values.parent === 'ROOT_CATEGORY' || !values.parent
           ? null
           : values.parent,
+      // Format attribute data for backend validation
       attributes: values.attributes.map((attr) => ({
-        ...attr,
-        values: attr.type === 'select' ? attr.values : undefined,
+        name: attr.name,
+        type: attr.type,
+        // Only include values for select/multiselect types, empty array for others
+        values:
+          attr.type === 'select' || attr.type === 'multiselect'
+            ? attr.values || []
+            : [],
+        isRequired: attr.isRequired,
       })),
     };
 
-    console.log((values, 'category data:'));
+    // Debug: Log the payload being sent
+    console.log(
+      'Category payload being sent:',
+      JSON.stringify(normalizedData, null, 2),
+    );
 
     mutate(normalizedData, {
       onSuccess: async (response) => {
@@ -319,6 +327,8 @@ const AttributeFieldSet = ({
                   <SelectItem value="select">Select</SelectItem>
                   <SelectItem value="text">Text</SelectItem>
                   <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="boolean">Boolean</SelectItem>
+                  <SelectItem value="multiselect">Multi-Select</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -327,49 +337,27 @@ const AttributeFieldSet = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.group`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Group</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="style">Style</SelectItem>
-                  <SelectItem value="fit">Fit</SelectItem>
-                  <SelectItem value="material">Material</SelectItem>
-                  <SelectItem value="features">Features</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <FormField
+        control={form.control}
+        name={`attributes.${index}.isRequired`}
+        render={({ field }) => (
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+            <FormControl>
+              <Checkbox
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel className="text-gray-900 dark:text-gray-100">
+                Required field
+              </FormLabel>
+            </div>
+          </FormItem>
+        )}
+      />
 
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.isRequired`}
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2 space-y-0 pt-6">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel className="text-sm font-normal">Required</FormLabel>
-            </FormItem>
-          )}
-        />
-      </div>
-
-      {attributeType === 'select' && (
+      {(attributeType === 'select' || attributeType === 'multiselect') && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-gray-900 dark:text-gray-100">Options</Label>
