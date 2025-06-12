@@ -5,7 +5,6 @@ interface Attribute {
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
-  _id?: string;
 }
 
 export interface CategoryType {

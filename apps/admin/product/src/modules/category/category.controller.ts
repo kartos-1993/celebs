@@ -63,11 +63,8 @@ export class CategoryController {
 
   /**
    * Create new category with attributes
-   */ createCategory = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+   */
+  createCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Log the incoming request details for debugging
       logger.debug(
@@ -124,5 +121,54 @@ export class CategoryController {
     }
   };
 
-  // Additional methods can go here...
+  /**
+   * Delete category by ID
+   * This method will also handle cascading deletes if necessary
+   */
+  deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      await this.categoryService.deleteCategoryWithCascade(id);
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Update category by ID
+   */
+  updateCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      // Validate input (reuse categoryInputSchema but allow partial)
+      const updateSchema = categoryInputSchema.partial();
+      const validatedData = updateSchema.parse(req.body);
+
+      // Prepare update data
+      const updateData: any = { ...validatedData };
+      // If name is present, generate new slug
+      if (updateData.name) {
+        updateData.slug = slugify(updateData.name, { lower: true, strict: true });
+      }
+
+      // If parent is present, convert to string or null
+      if (updateData.parent !== undefined) {
+        updateData.parent = updateData.parent ? updateData.parent.toString() : null;
+      }
+
+      const updatedCategory = await this.categoryService.updateCategory(id, updateData);
+
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category updated successfully',
+        data: updatedCategory,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

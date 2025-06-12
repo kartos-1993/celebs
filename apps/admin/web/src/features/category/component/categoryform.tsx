@@ -22,13 +22,22 @@ import {
 } from '@/components/ui/form';
 import { X, Plus } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createCategoryMutationFn } from '../api';
+import { createCategoryMutationFn, updateCategoryMutationFn } from '../api';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { useState } from 'react';
 
 const attributeSchema = z.object({
   name: z.string().min(1, 'Attribute name is required'),
   type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean']),
-  values: z.array(z.string()).optional(),
+  values: z.array(z.string()).default([]), // Provide a default value of an empty array
   isRequired: z.boolean(),
 });
 
@@ -37,7 +46,7 @@ const categorySchema = z.object({
     .string()
     .min(1, 'Category name is required')
     .max(100, 'Category name must be less than 100 characters'),
-  parent: z.string().nullable().optional(),
+  parent: z.string().nullable(),
   attributes: z.array(attributeSchema).default([]),
 });
 
@@ -53,7 +62,6 @@ interface Category {
 
 interface CategoryFormProps {
   initialData?: any;
-  isSubcategory?: boolean;
   onSave: () => void;
   onCancel: () => void;
   categories?: Category[];
@@ -61,7 +69,6 @@ interface CategoryFormProps {
 
 const CategoryForm = ({
   initialData,
-  isSubcategory,
   onSave,
   onCancel,
   categories = [],
@@ -77,8 +84,12 @@ const CategoryForm = ({
   });
 
   const queryClient = useQueryClient();
-  const { mutate, isPending } = useMutation({
+  const createCategoryMutation = useMutation({
     mutationFn: createCategoryMutationFn,
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CategoryFormData }) =>
+      updateCategoryMutationFn(id, data),
   });
 
   const {
@@ -101,48 +112,66 @@ const CategoryForm = ({
   const onSubmit = (values: z.infer<typeof categorySchema>) => {
     const normalizedData = {
       name: values.name,
-      // Ensure parent is always string | null, never undefined
-      parent:
-        values.parent === 'ROOT_CATEGORY' || !values.parent
-          ? null
-          : values.parent,
-      // Format attribute data for backend validation
+      parent: values.parent ?? null,
       attributes: values.attributes.map((attr) => ({
         name: attr.name,
         type: attr.type,
-        // Only include values for select/multiselect types, empty array for others
-        values:
-          attr.type === 'select' || attr.type === 'multiselect'
-            ? attr.values || []
-            : [],
+        values: attr.values ?? [], // Provide a default value of an empty array
         isRequired: attr.isRequired,
       })),
     };
-
-    // Debug: Log the payload being sent
     console.log(
       'Category payload being sent:',
       JSON.stringify(normalizedData, null, 2),
     );
-
-    mutate(normalizedData, {
-      onSuccess: async (response) => {
-        await queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
-        toast({
-          title: 'Success',
-          description: `Category ${values.name} has been saved successfully.`,
-        });
-        onSave();
-      },
-      onError: (error) => {
-        console.error('Failed to save category:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to save category. Please try again.',
-        });
-      },
-    });
+    if (initialData?._id) {
+      // Editing: use update mutation
+      updateMutation.mutate(
+        { id: initialData._id, data: normalizedData },
+        {
+          onSuccess: async (response) => {
+            await queryClient.invalidateQueries({
+              queryKey: ['getAllCategories'],
+            });
+            toast({
+              title: 'Success',
+              description: `Category ${values.name} has been updated successfully.`,
+            });
+            onSave();
+          },
+          onError: (error) => {
+            console.error('Failed to update category:', error);
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: 'Failed to update category. Please try again.',
+            });
+          },
+        },
+      );
+    } else {
+      // Creating: use create mutation
+      createCategoryMutation.mutate(normalizedData, {
+        onSuccess: async (response) => {
+          await queryClient.invalidateQueries({
+            queryKey: ['getAllCategories'],
+          });
+          toast({
+            title: 'Success',
+            description: `Category ${values.name} has been saved successfully.`,
+          });
+          onSave();
+        },
+        onError: (error) => {
+          console.error('Failed to save category:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to save category. Please try again.',
+          });
+        },
+      });
+    }
   };
 
   // Filter categories to show only potential parents (avoid circular references)
@@ -240,14 +269,26 @@ const CategoryForm = ({
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={
+              createCategoryMutation.isPending || updateMutation.isPending
+            }
+          >
             Cancel
           </Button>
           <Button
             type="submit"
             className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
+            disabled={
+              createCategoryMutation.isPending || updateMutation.isPending
+            }
           >
-            Save Category
+            {createCategoryMutation.isPending || updateMutation.isPending
+              ? 'Saving...'
+              : 'Save Category'}
           </Button>
         </div>
       </form>
@@ -279,21 +320,50 @@ const AttributeFieldSet = ({
     appendValue('');
   };
 
+  // Dialog state for confirming delete
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-gray-900 dark:text-gray-100">
           Attribute {index + 1}
         </h4>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-          onClick={onRemove}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              onClick={() => setOpen(true)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>Delete Attribute?</DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+              Are you sure you want to delete this attribute?
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setOpen(false);
+                  onRemove();
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-2 gap-2">

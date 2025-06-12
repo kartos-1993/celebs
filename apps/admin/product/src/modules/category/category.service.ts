@@ -281,4 +281,73 @@ export class CategoryService {
     await CategoryModel.findByIdAndDelete(categoryId);
     return { success: true };
   }
+
+  // Update an attribute
+  async updateAttribute(
+    attributeId: string,
+    updateData: Partial<IAttribute>,
+  ): Promise<IAttribute> {
+    const updated = await AttributeModel.findByIdAndUpdate(
+      attributeId,
+      updateData,
+      { new: true, runValidators: true },
+    );
+    if (!updated) {
+      throw new AppError(
+        'Attribute not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.ATTRIBUTE_NOT_FOUND,
+      );
+    }
+    return updated;
+  }
+
+  // Delete an attribute
+  async deleteAttribute(attributeId: string): Promise<{ success: boolean }> {
+    const deleted = await AttributeModel.findByIdAndDelete(attributeId);
+    if (!deleted) {
+      throw new AppError(
+        'Attribute not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.ATTRIBUTE_NOT_FOUND,
+      );
+    }
+    return { success: true };
+  }
+
+  // Delete all attributes for a category (cascading delete helper)
+  async deleteAttributesByCategoryId(categoryId: string): Promise<void> {
+    await AttributeModel.deleteMany({ categoryId });
+  }
+
+  /**
+   * Delete a category and cascade delete its attributes if no child categories exist
+   */
+  async deleteCategoryWithCascade(categoryId: string): Promise<void> {
+    // Check if category exists
+    const category = await this.getCategoryById(categoryId);
+    if (!category) {
+      throw new AppError(
+        'Category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
+    }
+    // Check for child categories
+    const childCategories = await this.getAllCategories();
+    const hasChildren = childCategories.categories.some(
+      (cat) => cat.parent?.toString() === categoryId,
+    );
+    if (hasChildren) {
+      throw new AppError(
+        'Cannot delete category with child categories',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.FORBIDDEN_ACCESS,
+      );
+    }
+    // Delete all related attributes
+    await this.deleteAttributesByCategoryId(categoryId);
+    // Delete the category itself
+    await this.deleteCategory(categoryId);
+  }
 }

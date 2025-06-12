@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   FolderTree,
@@ -28,8 +29,8 @@ import {
 } from 'lucide-react';
 import CategoryForm from './component/categoryform';
 import { useToast } from '@/hooks/use-toast';
-import { getcategoryQueryFn } from './api';
-import { useQuery } from '@tanstack/react-query';
+import { getcategoryQueryFn, deleteCategoryMutationFn } from './api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Updated API structure - flattened categories
 
@@ -39,12 +40,34 @@ const Categories = () => {
     queryFn: getcategoryQueryFn,
   });
 
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: deleteCategoryMutationFn,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['getAllCategories'] });
+      toast({
+        title: 'Success',
+        description: 'Category deleted successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error?.response?.data?.message || 'Failed to delete category',
+      });
+    },
+  });
+
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({});
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Build hierarchical structure from flat array
@@ -101,10 +124,31 @@ const Categories = () => {
   };
 
   const handleDelete = (categoryId: string) => {
-    toast({
-      title: 'Success',
-      description: 'Category deleted successfully',
-    });
+    setCategoryToDelete(categoryId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (categoryToDelete) {
+      deleteMutation.mutate(categoryToDelete, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setCategoryToDelete(null);
+        },
+        onError: () => {
+          setDeleteDialogOpen(false);
+          setCategoryToDelete(null);
+        },
+      });
+    } else {
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setCategoryToDelete(null);
   };
 
   const handleSave = (formData: any) => {
@@ -243,7 +287,6 @@ const Categories = () => {
             </DialogHeader>
             <CategoryForm
               initialData={editingCategory}
-              isSubcategory={!!parentCategoryId}
               categories={categories}
               onSave={() => setFormDialogOpen(true)}
               onCancel={() => setFormDialogOpen(false)}
@@ -314,6 +357,26 @@ const Categories = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Delete Category?</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            Are you sure you want to delete this category? This action cannot be
+            undone.
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

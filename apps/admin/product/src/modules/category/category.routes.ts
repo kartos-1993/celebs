@@ -29,7 +29,7 @@ categoryRoute.use(authenticateJWT);
 categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 categoryRoute.post('/', asyncHandler(categoryController.createCategory));
-// categoryRoute.put('/:id', asyncHandler(categoryController.updateCategory));
-// categoryRoute.delete('/:id', asyncHandler(categoryController.deleteCategory));
+categoryRoute.put('/:id', asyncHandler(categoryController.updateCategory));
+categoryRoute.delete('/:id', asyncHandler(categoryController.deleteCategory));
 
 export default categoryRoute;
