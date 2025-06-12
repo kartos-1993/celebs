@@ -77,14 +77,15 @@ export class CategoryService {
       }
 
       // Get the fresh category with populated attributes
-      const populatedCategory = await CategoryModel.findById(
-        categoryDoc._id,
-      ).populate({
-        path: 'attributes',
-        model: 'Attribute',
-      });
+      const attributes = await AttributeModel.find({
+        categoryId: categoryDoc._id,
+      }).sort({ displayOrder: 1 });
 
-      return populatedCategory!;
+      // Return the category document with attributes
+      const categoryWithAttributes = categoryDoc.toObject();
+      (categoryWithAttributes as any).attributes = attributes;
+
+      return categoryWithAttributes as ICategory;
     } catch (error: any) {
       throw new AppError(
         `Failed to create category: ${error.message}`,
@@ -93,9 +94,8 @@ export class CategoryService {
       );
     }
   }
-
   /**
-   * Get all categories with populated attributes
+   * Get all categories with populated attributes using aggregation
    */
   async getAllCategories(
     page: number = 1,
@@ -110,14 +110,20 @@ export class CategoryService {
     const total = await CategoryModel.countDocuments();
     const pages = Math.ceil(total / limit);
 
-    const categories = await CategoryModel.find()
-      .sort({ name: 1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate({
-        path: 'attributes',
-        model: 'Attribute',
-      });
+    const categories = await CategoryModel.aggregate([
+      { $sort: { name: 1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'attributes',
+          localField: '_id',
+          foreignField: 'categoryId',
+          as: 'attributes',
+          pipeline: [{ $sort: { displayOrder: 1 } }],
+        },
+      },
+    ]);
 
     return {
       categories,
@@ -127,13 +133,22 @@ export class CategoryService {
       pages,
     };
   }
-
   // Get a single category by ID
   async getCategoryById(id: string): Promise<ICategory | null> {
-    return CategoryModel.findById(id).populate({
-      path: 'attributes',
-      model: 'Attribute',
-    });
+    const result = await CategoryModel.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: 'attributes',
+          localField: '_id',
+          foreignField: 'categoryId',
+          as: 'attributes',
+          pipeline: [{ $sort: { displayOrder: 1 } }],
+        },
+      },
+    ]);
+
+    return result[0] || null;
   }
 
   /**

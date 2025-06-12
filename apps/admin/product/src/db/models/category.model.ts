@@ -49,14 +49,6 @@ const CategorySchema: Schema = new Schema(
   },
 );
 
-// Virtual field for attributes
-CategorySchema.virtual('attributes', {
-  ref: 'Attribute',
-  localField: '_id',
-  foreignField: 'categoryId',
-  options: { sort: { displayOrder: 1 } },
-});
-
 // Add indexes
 CategorySchema.index({ slug: 1 });
 CategorySchema.index({ path: 1 });

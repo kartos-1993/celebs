@@ -7,7 +7,6 @@ export interface IAttribute extends Document {
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
-  displayOrder?: number;
   createdAt: Date;
   updatedAt: Date;
 }
