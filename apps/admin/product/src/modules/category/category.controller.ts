@@ -152,20 +152,45 @@ export class CategoryController {
       const updateData: any = { ...validatedData };
       // If name is present, generate new slug
       if (updateData.name) {
-        updateData.slug = slugify(updateData.name, { lower: true, strict: true });
+        updateData.slug = slugify(updateData.name, {
+          lower: true,
+          strict: true,
+        });
       }
 
       // If parent is present, convert to string or null
       if (updateData.parent !== undefined) {
-        updateData.parent = updateData.parent ? updateData.parent.toString() : null;
+        updateData.parent = updateData.parent
+          ? updateData.parent.toString()
+          : null;
       }
 
-      const updatedCategory = await this.categoryService.updateCategory(id, updateData);
+      const updatedCategory = await this.categoryService.updateCategory(
+        id,
+        updateData,
+      );
 
       return res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Category updated successfully',
         data: updatedCategory,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get category tree with attributes
+   * This method retrieves the entire category tree with their attributes
+   */
+  getCategoryTreeWithAttributes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tree = await this.categoryService.getCategoryTreeWithAttributes();
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category tree with attributes retrieved successfully',
+        data: tree,
       });
     } catch (error) {
       next(error);

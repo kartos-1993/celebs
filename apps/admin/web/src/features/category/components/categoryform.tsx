@@ -62,7 +62,7 @@ interface Category {
 
 interface CategoryFormProps {
   initialData?: any;
-  onSave: () => void;
+  onSave: (data:CategoryFormData) => void;
   onCancel: () => void;
   categories?: Category[];
 }
@@ -129,7 +129,7 @@ const CategoryForm = ({
       updateMutation.mutate(
         { id: initialData._id, data: normalizedData },
         {
-          onSuccess: async (response) => {
+          onSuccess: async () => {
             await queryClient.invalidateQueries({
               queryKey: ['getAllCategories'],
             });
@@ -137,7 +137,7 @@ const CategoryForm = ({
               title: 'Success',
               description: `Category ${values.name} has been updated successfully.`,
             });
-            onSave();
+            onSave(values);
           },
           onError: (error) => {
             console.error('Failed to update category:', error);
@@ -152,7 +152,7 @@ const CategoryForm = ({
     } else {
       // Creating: use create mutation
       createCategoryMutation.mutate(normalizedData, {
-        onSuccess: async (response) => {
+        onSuccess: async () => {
           await queryClient.invalidateQueries({
             queryKey: ['getAllCategories'],
           });
@@ -160,7 +160,7 @@ const CategoryForm = ({
             title: 'Success',
             description: `Category ${values.name} has been saved successfully.`,
           });
-          onSave();
+          onSave(values);
         },
         onError: (error) => {
           console.error('Failed to save category:', error);

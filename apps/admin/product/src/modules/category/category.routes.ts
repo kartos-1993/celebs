@@ -27,6 +27,10 @@ categoryRoute.use(authenticateJWT);
 
 // Category routes
 categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
+categoryRoute.get(
+  '/tree-with-attributes',
+  asyncHandler(categoryController.getCategoryTreeWithAttributes),
+);
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 categoryRoute.post('/', asyncHandler(categoryController.createCategory));
 categoryRoute.put('/:id', asyncHandler(categoryController.updateCategory));

@@ -7,6 +7,7 @@ import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
+// Types and Interfaces
 interface CategoryAttribute {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
@@ -31,61 +32,41 @@ interface CategoryDeleteResult {
   success: boolean;
 }
 
-export class CategoryService {
-  // Create a new category with attributes
-  async createCategory(categoryData: CategoryInput): Promise<ICategory> {
-    // Check if category with the same name already exists under the same parent
-    const existingCategory = await CategoryModel.findOne({
-      name: categoryData.name,
-      parent: categoryData.parent,
-    });
+interface CategoryTreeNode extends ICategory {
+  children: CategoryTreeNode[];
+}
 
-    if (existingCategory) {
-      throw new AppError(
-        'Category with this name already exists under the same parent',
-        HTTPSTATUS.CONFLICT,
-        ErrorCode.CATEGORY_ALREADY_EXISTS,
-      );
-    }
+interface PaginatedCategoriesResponse {
+  categories: ICategory[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+/**
+ * CategoryService - Handles all category-related operations
+ * Follows Domain-Driven Design principles and maintains clean separation of concerns
+ */
+export class CategoryService {
+  private static readonly DEFAULT_PAGE = 1;
+  private static readonly DEFAULT_LIMIT = 10;
+
+  /**
+   * Creates a new category with its associated attributes
+   * @param categoryData - The category data including attributes
+   * @returns Promise<ICategory> - The created category with attributes
+   */  async createCategory(categoryData: CategoryInput): Promise<ICategory> {
+    await this.validateCategoryUniqueness(categoryData.name, categoryData.parent);
 
     try {
-      // Create the category first
-      const categoryDoc = await CategoryModel.create({
-        name: categoryData.name,
-        parent: categoryData.parent,
-        slug: categoryData.slug,
-        level: categoryData.level,
-        path: categoryData.path,
-      });
-
-      // If attributes are provided, create them in parallel
-      if (categoryData.attributes && categoryData.attributes.length > 0) {
-        await Promise.all(
-          categoryData.attributes.map((attr) =>
-            AttributeModel.create({
-              categoryId: categoryDoc._id,
-              name: attr.name,
-              type: attr.type,
-              values:
-                attr.type === 'select' || attr.type === 'multiselect'
-                  ? attr.values
-                  : [],
-              isRequired: attr.isRequired,
-            }),
-          ),
-        );
+      const categoryDoc = await this.createCategoryDocument(categoryData);
+      
+      if (this.hasAttributes(categoryData)) {
+        await this.createCategoryAttributes(categoryDoc._id, categoryData.attributes);
       }
 
-      // Get the fresh category with populated attributes
-      const attributes = await AttributeModel.find({
-        categoryId: categoryDoc._id,
-      }).sort({ displayOrder: 1 });
-
-      // Return the category document with attributes
-      const categoryWithAttributes = categoryDoc.toObject();
-      (categoryWithAttributes as any).attributes = attributes;
-
-      return categoryWithAttributes as ICategory;
+      return await this.getCategoryWithAttributes(String(categoryDoc._id));
     } catch (error: any) {
       throw new AppError(
         `Failed to create category: ${error.message}`,
@@ -94,19 +75,14 @@ export class CategoryService {
       );
     }
   }
+
   /**
-   * Get all categories with populated attributes using aggregation
+   * Retrieves paginated categories with their attributes
    */
   async getAllCategories(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<{
-    categories: ICategory[];
-    total: number;
-    page: number;
-    limit: number;
-    pages: number;
-  }> {
+    page: number = CategoryService.DEFAULT_PAGE,
+    limit: number = CategoryService.DEFAULT_LIMIT,
+  ): Promise<PaginatedCategoriesResponse> {
     const total = await CategoryModel.countDocuments();
     const pages = Math.ceil(total / limit);
 
@@ -125,16 +101,15 @@ export class CategoryService {
       },
     ]);
 
-    return {
-      categories,
-      total,
-      page,
-      limit,
-      pages,
-    };
+    return { categories, total, page, limit, pages };
   }
-  // Get a single category by ID
+
+  /**
+   * Retrieves a single category by ID with its attributes
+   */
   async getCategoryById(id: string): Promise<ICategory | null> {
+    this.validateObjectId(id);
+
     const result = await CategoryModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
       {
@@ -150,83 +125,25 @@ export class CategoryService {
 
     return result[0] || null;
   }
+  /**
+   * Builds and returns the complete category tree with attributes
+   * Optimized for UI consumption with clear separation of children and attributes
+   */
+  async getCategoryTreeWithAttributes(): Promise<CategoryTreeNode[]> {
+    const categories = await this.fetchCategoriesWithAttributes();
+    return this.buildCategoryTree(categories);
+  }
 
   /**
-   * Update a category
+   * Updates an existing category and its attributes
    */
-  async updateCategory(
-    categoryId: string,
-    updateData: CategoryUpdateInput,
-  ): Promise<ICategory> {
-    if (!Types.ObjectId.isValid(categoryId)) {
-      throw new AppError(
-        'Invalid category ID',
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
-
-    const existingCategory = await CategoryModel.findById(categoryId);
-    if (!existingCategory) {
-      throw new AppError(
-        'Category not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.CATEGORY_NOT_FOUND,
-      );
-    }
-
-    // If parent is being updated, validate it
-    if (updateData.parent !== undefined) {
-      if (updateData.parent === categoryId) {
-        throw new AppError(
-          'Category cannot be its own parent',
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST,
-        );
-      }
-
-      if (updateData.parent) {
-        const parentCategory = await CategoryModel.findById(updateData.parent);
-        if (!parentCategory) {
-          throw new AppError(
-            'Parent category not found',
-            HTTPSTATUS.NOT_FOUND,
-            ErrorCode.CATEGORY_NOT_FOUND,
-          );
-        }
-
-        // Update level and path if parent changes
-        updateData.level = parentCategory.level + 1;
-        updateData.path = [
-          ...parentCategory.path.map((p) => p.toString()),
-          existingCategory.slug,
-        ];
-      } else {
-        // If parent is set to null (making it a root category)
-        updateData.level = 1;
-        updateData.path = [existingCategory.slug];
-      }
-    }
-
-    // If name is being updated, check for duplicates and update slug
-    if (updateData.name) {
-      const duplicateCategory = await CategoryModel.findOne({
-        name: updateData.name,
-        parent: updateData.parent ?? existingCategory.parent,
-        _id: { $ne: categoryId },
-      });
-
-      if (duplicateCategory) {
-        throw new AppError(
-          'Category with this name already exists under the same parent',
-          HTTPSTATUS.CONFLICT,
-          ErrorCode.CATEGORY_ALREADY_EXISTS,
-        );
-      }
-
-      updateData.slug = slugify(updateData.name, { lower: true, strict: true });
-    }
-
+  async updateCategory(categoryId: string, updateData: CategoryUpdateInput): Promise<ICategory> {
+    this.validateObjectId(categoryId);
+    
+    const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
+    
+    await this.validateUpdateData(updateData, categoryId, existingCategory);
+    
     const updatedCategory = await CategoryModel.findByIdAndUpdate(
       categoryId,
       updateData,
@@ -239,23 +156,236 @@ export class CategoryService {
         HTTPSTATUS.INTERNAL_SERVER_ERROR,
         ErrorCode.CATEGORY_UPDATE_FAILED,
       );
+    }    if (updateData.attributes) {
+      await this.updateCategoryAttributes(updatedCategory._id, updateData.attributes);
     }
 
-    return updatedCategory;
+    return await this.getCategoryWithAttributes(String(updatedCategory._id));
   }
 
   /**
-   * Delete a category
+   * Deletes a category (only if it has no child categories)
    */
   async deleteCategory(categoryId: string): Promise<CategoryDeleteResult> {
-    if (!Types.ObjectId.isValid(categoryId)) {
+    this.validateObjectId(categoryId);
+    
+    const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
+    await this.validateCategoryHasNoChildren(categoryId);
+
+    await CategoryModel.findByIdAndDelete(categoryId);
+    return { success: true };
+  }
+
+  /**
+   * Deletes a category and cascades to delete its attributes
+   */
+  async deleteCategoryWithCascade(categoryId: string): Promise<void> {
+    const category = await this.getCategoryById(categoryId);
+    if (!category) {
+      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
+    }
+
+    await this.validateCategoryHasNoChildren(categoryId);
+    await this.deleteAttributesByCategoryId(categoryId);
+    await this.deleteCategory(categoryId);
+  }
+
+  // Attribute Management Methods
+  
+  /**
+   * Updates a specific attribute
+   */
+  async updateAttribute(attributeId: string, updateData: Partial<IAttribute>): Promise<IAttribute> {
+    const updated = await AttributeModel.findByIdAndUpdate(
+      attributeId,
+      updateData,
+      { new: true, runValidators: true },
+    );
+    
+    if (!updated) {
+      throw new AppError('Attribute not found', HTTPSTATUS.NOT_FOUND, ErrorCode.ATTRIBUTE_NOT_FOUND);
+    }
+    
+    return updated;
+  }
+
+  /**
+   * Deletes a specific attribute
+   */
+  async deleteAttribute(attributeId: string): Promise<{ success: boolean }> {
+    const deleted = await AttributeModel.findByIdAndDelete(attributeId);
+    
+    if (!deleted) {
+      throw new AppError('Attribute not found', HTTPSTATUS.NOT_FOUND, ErrorCode.ATTRIBUTE_NOT_FOUND);
+    }
+    
+    return { success: true };
+  }
+
+  /**
+   * Deletes all attributes for a specific category
+   */
+  async deleteAttributesByCategoryId(categoryId: string): Promise<void> {
+    await AttributeModel.deleteMany({ categoryId });
+  }
+
+  // Private Helper Methods
+
+  /**
+   * Validates that a category name is unique within the same parent
+   */
+  private async validateCategoryUniqueness(
+    name: string,
+    parent: string | null,
+  ): Promise<void> {
+    const existingCategory = await CategoryModel.findOne({ name, parent });
+
+    if (existingCategory) {
+      throw new AppError(
+        'Category with this name already exists under the same parent',
+        HTTPSTATUS.CONFLICT,
+        ErrorCode.CATEGORY_ALREADY_EXISTS,
+      );
+    }
+  }
+  /**
+   * Creates the core category document
+   */
+  private async createCategoryDocument(categoryData: CategoryInput): Promise<ICategory> {
+    return await CategoryModel.create({
+      name: categoryData.name,
+      parent: categoryData.parent,
+      slug: categoryData.slug,
+      level: categoryData.level,
+      path: categoryData.path,
+    });
+  }
+
+  /**
+   * Checks if category has attributes to create
+   */
+  private hasAttributes(categoryData: CategoryInput): boolean {
+    return categoryData.attributes && categoryData.attributes.length > 0;
+  }
+
+  /**
+   * Creates attributes for a category in parallel
+   */
+  private async createCategoryAttributes(
+    categoryId: any,
+    attributes: CategoryAttribute[],
+  ): Promise<void> {
+    await Promise.all(
+      attributes.map((attr) =>
+        AttributeModel.create({
+          categoryId,
+          name: attr.name,
+          type: attr.type,
+          values: this.processAttributeValues(attr),
+          isRequired: attr.isRequired,
+        }),
+      ),
+    );
+  }
+
+  /**
+   * Processes attribute values based on type
+   */
+  private processAttributeValues(attr: CategoryAttribute): string[] {
+    if (attr.type === 'select' || attr.type === 'multiselect') {
+      return Array.isArray(attr.values) ? attr.values : [attr.values];
+    }
+    return [];
+  }
+
+  /**
+   * Retrieves a category with its attributes
+   */
+  private async getCategoryWithAttributes(
+    categoryId: string,
+  ): Promise<ICategory> {
+    const attributes = await AttributeModel.find({ categoryId }).sort({
+      displayOrder: 1,
+    });
+    const category = await CategoryModel.findById(categoryId);
+
+    if (!category) {
+      throw new AppError(
+        'Category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
+    }
+
+    const categoryWithAttributes = category.toObject();
+    (categoryWithAttributes as any).attributes = attributes;
+    return categoryWithAttributes as ICategory;
+  }
+
+  /**
+   * Fetches all categories with their attributes from the database
+   */
+  private async fetchCategoriesWithAttributes(): Promise<any[]> {
+    return await CategoryModel.aggregate([
+      {
+        $lookup: {
+          from: 'attributes',
+          localField: '_id',
+          foreignField: 'categoryId',
+          as: 'attributes',
+        },
+      },
+      { $sort: { name: 1 } },
+    ]);
+  }
+
+  /**
+   * Builds hierarchical tree structure from flat category array
+   * Optimized for UI consumption with clear separation of children and attributes
+   */
+  private buildCategoryTree(categories: any[]): CategoryTreeNode[] {
+    const categoryMap: Record<string, CategoryTreeNode> = {};
+
+    // Initialize category map with empty children arrays
+    categories.forEach((cat) => {
+      categoryMap[cat._id.toString()] = { ...cat, children: [] };
+    });
+
+    const rootCategories: CategoryTreeNode[] = [];
+
+    // Build parent-child relationships
+    categories.forEach((cat) => {
+      const categoryNode = categoryMap[cat._id.toString()];
+
+      if (cat.parent) {
+        const parent = categoryMap[cat.parent.toString()];
+        if (parent) {
+          parent.children.push(categoryNode);
+        }
+      } else {
+        rootCategories.push(categoryNode);
+      }
+    });
+
+    return rootCategories;
+  }
+  /**
+   * Validates MongoDB ObjectId format
+   */
+  private validateObjectId(id: string): void {
+    if (!Types.ObjectId.isValid(id)) {
       throw new AppError(
         'Invalid category ID',
         HTTPSTATUS.BAD_REQUEST,
         ErrorCode.INVALID_REQUEST,
       );
     }
+  }
 
+  /**
+   * Retrieves existing category or throws error if not found
+   */
+  private async getExistingCategoryOrThrow(categoryId: string) {
     const existingCategory = await CategoryModel.findById(categoryId);
     if (!existingCategory) {
       throw new AppError(
@@ -264,8 +394,129 @@ export class CategoryService {
         ErrorCode.CATEGORY_NOT_FOUND,
       );
     }
+    return existingCategory;
+  }
 
-    // Check if the category has child categories
+  /**
+   * Validates update data including parent relationships and name uniqueness
+   */
+  private async validateUpdateData(
+    updateData: CategoryUpdateInput,
+    categoryId: string,
+    existingCategory: any,
+  ): Promise<void> {
+    if (updateData.parent !== undefined) {
+      await this.validateParentUpdate(updateData, categoryId, existingCategory);
+    }
+
+    if (updateData.name) {
+      await this.validateNameUpdate(updateData, categoryId, existingCategory);
+    }
+  }
+
+  /**
+   * Validates parent update operations
+   */
+  private async validateParentUpdate(
+    updateData: CategoryUpdateInput,
+    categoryId: string,
+    existingCategory: any,
+  ): Promise<void> {
+    if (updateData.parent === categoryId) {
+      throw new AppError(
+        'Category cannot be its own parent',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    if (updateData.parent) {
+      const parentCategory = await CategoryModel.findById(updateData.parent);
+      if (!parentCategory) {
+        throw new AppError(
+          'Parent category not found',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.CATEGORY_NOT_FOUND,
+        );
+      }
+
+      // Update level and path when parent changes
+      updateData.level = parentCategory.level + 1;
+      updateData.path = [
+        ...parentCategory.path.map((p) => p.toString()),
+        existingCategory.slug,
+      ];
+    } else {
+      // Making it a root category
+      updateData.level = 1;
+      updateData.path = [existingCategory.slug];
+    }
+  }
+
+  /**
+   * Validates name update and generates new slug
+   */
+  private async validateNameUpdate(
+    updateData: CategoryUpdateInput,
+    categoryId: string,
+    existingCategory: any,
+  ): Promise<void> {
+    const duplicateCategory = await CategoryModel.findOne({
+      name: updateData.name,
+      parent: updateData.parent ?? existingCategory.parent,
+      _id: { $ne: categoryId },
+    });
+
+    if (duplicateCategory) {
+      throw new AppError(
+        'Category with this name already exists under the same parent',
+        HTTPSTATUS.CONFLICT,
+        ErrorCode.CATEGORY_ALREADY_EXISTS,
+      );
+    }
+
+    updateData.slug = slugify(updateData.name!, { lower: true, strict: true });
+  }
+
+  /**
+   * Updates category attributes (creates new or updates existing)
+   */
+  private async updateCategoryAttributes(
+    categoryId: any,
+    attributes: CategoryAttribute[],
+  ): Promise<void> {
+    for (const attr of attributes) {
+      const values = this.processAttributeValues(attr);
+
+      const existingAttr = await AttributeModel.findOne({
+        categoryId,
+        name: attr.name,
+      });
+
+      if (existingAttr) {
+        // Update existing attribute
+        existingAttr.values = values;
+        existingAttr.isRequired = attr.isRequired;
+        existingAttr.type = attr.type;
+        await existingAttr.save();
+      } else {
+        // Create new attribute
+        await AttributeModel.create({
+          categoryId,
+          name: attr.name,
+          type: attr.type,
+          values,
+          isRequired: attr.isRequired,
+        });
+      }
+    }
+  }
+  /**
+   * Validates that category has no child categories before deletion
+   */
+  private async validateCategoryHasNoChildren(
+    categoryId: string,
+  ): Promise<void> {
     const hasChildCategories = await CategoryModel.exists({
       parent: categoryId,
     });
@@ -277,77 +528,5 @@ export class CategoryService {
         ErrorCode.FORBIDDEN_ACCESS,
       );
     }
-
-    await CategoryModel.findByIdAndDelete(categoryId);
-    return { success: true };
-  }
-
-  // Update an attribute
-  async updateAttribute(
-    attributeId: string,
-    updateData: Partial<IAttribute>,
-  ): Promise<IAttribute> {
-    const updated = await AttributeModel.findByIdAndUpdate(
-      attributeId,
-      updateData,
-      { new: true, runValidators: true },
-    );
-    if (!updated) {
-      throw new AppError(
-        'Attribute not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.ATTRIBUTE_NOT_FOUND,
-      );
-    }
-    return updated;
-  }
-
-  // Delete an attribute
-  async deleteAttribute(attributeId: string): Promise<{ success: boolean }> {
-    const deleted = await AttributeModel.findByIdAndDelete(attributeId);
-    if (!deleted) {
-      throw new AppError(
-        'Attribute not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.ATTRIBUTE_NOT_FOUND,
-      );
-    }
-    return { success: true };
-  }
-
-  // Delete all attributes for a category (cascading delete helper)
-  async deleteAttributesByCategoryId(categoryId: string): Promise<void> {
-    await AttributeModel.deleteMany({ categoryId });
-  }
-
-  /**
-   * Delete a category and cascade delete its attributes if no child categories exist
-   */
-  async deleteCategoryWithCascade(categoryId: string): Promise<void> {
-    // Check if category exists
-    const category = await this.getCategoryById(categoryId);
-    if (!category) {
-      throw new AppError(
-        'Category not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.CATEGORY_NOT_FOUND,
-      );
-    }
-    // Check for child categories
-    const childCategories = await this.getAllCategories();
-    const hasChildren = childCategories.categories.some(
-      (cat) => cat.parent?.toString() === categoryId,
-    );
-    if (hasChildren) {
-      throw new AppError(
-        'Cannot delete category with child categories',
-        HTTPSTATUS.FORBIDDEN,
-        ErrorCode.FORBIDDEN_ACCESS,
-      );
-    }
-    // Delete all related attributes
-    await this.deleteAttributesByCategoryId(categoryId);
-    // Delete the category itself
-    await this.deleteCategory(categoryId);
   }
 }

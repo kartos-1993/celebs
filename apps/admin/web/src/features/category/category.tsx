@@ -27,7 +27,7 @@ import {
   Plus,
   Loader2,
 } from 'lucide-react';
-import CategoryForm from './component/categoryform';
+import CategoryForm from './components/categoryform';
 import { useToast } from '@/hooks/use-toast';
 import { getcategoryQueryFn, deleteCategoryMutationFn } from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
