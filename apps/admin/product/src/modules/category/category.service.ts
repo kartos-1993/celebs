@@ -56,14 +56,20 @@ export class CategoryService {
    * Creates a new category with its associated attributes
    * @param categoryData - The category data including attributes
    * @returns Promise<ICategory> - The created category with attributes
-   */  async createCategory(categoryData: CategoryInput): Promise<ICategory> {
-    await this.validateCategoryUniqueness(categoryData.name, categoryData.parent);
+   */ async createCategory(categoryData: CategoryInput): Promise<ICategory> {
+    await this.validateCategoryUniqueness(
+      categoryData.name,
+      categoryData.parent,
+    );
 
     try {
       const categoryDoc = await this.createCategoryDocument(categoryData);
-      
+
       if (this.hasAttributes(categoryData)) {
-        await this.createCategoryAttributes(categoryDoc._id, categoryData.attributes);
+        await this.createCategoryAttributes(
+          categoryDoc._id,
+          categoryData.attributes,
+        );
       }
 
       return await this.getCategoryWithAttributes(String(categoryDoc._id));
@@ -137,13 +143,16 @@ export class CategoryService {
   /**
    * Updates an existing category and its attributes
    */
-  async updateCategory(categoryId: string, updateData: CategoryUpdateInput): Promise<ICategory> {
+  async updateCategory(
+    categoryId: string,
+    updateData: CategoryUpdateInput,
+  ): Promise<ICategory> {
     this.validateObjectId(categoryId);
-    
+
     const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
-    
+
     await this.validateUpdateData(updateData, categoryId, existingCategory);
-    
+
     const updatedCategory = await CategoryModel.findByIdAndUpdate(
       categoryId,
       updateData,
@@ -156,56 +165,87 @@ export class CategoryService {
         HTTPSTATUS.INTERNAL_SERVER_ERROR,
         ErrorCode.CATEGORY_UPDATE_FAILED,
       );
-    }    if (updateData.attributes) {
-      await this.updateCategoryAttributes(updatedCategory._id, updateData.attributes);
+    }
+    if (updateData.attributes) {
+      await this.updateCategoryAttributes(
+        updatedCategory._id,
+        updateData.attributes,
+      );
     }
 
     return await this.getCategoryWithAttributes(String(updatedCategory._id));
   }
-
   /**
-   * Deletes a category (only if it has no child categories)
+   * Deletes a category and its associated attributes
    */
   async deleteCategory(categoryId: string): Promise<CategoryDeleteResult> {
     this.validateObjectId(categoryId);
-    
-    const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
-    await this.validateCategoryHasNoChildren(categoryId);
 
+    const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
+
+    // Delete all attributes first
+    await this.deleteAttributesByCategoryId(categoryId);
+
+    // Then delete the category
     await CategoryModel.findByIdAndDelete(categoryId);
     return { success: true };
   }
+  /**
+   * Recursively deletes a category, its child categories, and all their attributes
+   */
+  private async deleteChildCategories(category: any): Promise<void> {
+    const childCategories = await CategoryModel.find({ parent: category._id });
+
+    for (const childCategory of childCategories) {
+      await this.deleteChildCategories(childCategory);
+    }
+
+    // Delete attributes first
+    await this.deleteAttributesByCategoryId(category._id);
+    // Then delete the category
+    await CategoryModel.findByIdAndDelete(category._id);
+  }
 
   /**
-   * Deletes a category and cascades to delete its attributes
+   * Deletes a category and cascades to delete its children and attributes
    */
   async deleteCategoryWithCascade(categoryId: string): Promise<void> {
     const category = await this.getCategoryById(categoryId);
     if (!category) {
-      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
+      throw new AppError(
+        'Category not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.CATEGORY_NOT_FOUND,
+      );
     }
 
-    await this.validateCategoryHasNoChildren(categoryId);
-    await this.deleteAttributesByCategoryId(categoryId);
-    await this.deleteCategory(categoryId);
+    // Start the recursive deletion process
+    await this.deleteChildCategories(category);
   }
 
   // Attribute Management Methods
-  
+
   /**
    * Updates a specific attribute
    */
-  async updateAttribute(attributeId: string, updateData: Partial<IAttribute>): Promise<IAttribute> {
+  async updateAttribute(
+    attributeId: string,
+    updateData: Partial<IAttribute>,
+  ): Promise<IAttribute> {
     const updated = await AttributeModel.findByIdAndUpdate(
       attributeId,
       updateData,
       { new: true, runValidators: true },
     );
-    
+
     if (!updated) {
-      throw new AppError('Attribute not found', HTTPSTATUS.NOT_FOUND, ErrorCode.ATTRIBUTE_NOT_FOUND);
+      throw new AppError(
+        'Attribute not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.ATTRIBUTE_NOT_FOUND,
+      );
     }
-    
+
     return updated;
   }
 
@@ -214,11 +254,15 @@ export class CategoryService {
    */
   async deleteAttribute(attributeId: string): Promise<{ success: boolean }> {
     const deleted = await AttributeModel.findByIdAndDelete(attributeId);
-    
+
     if (!deleted) {
-      throw new AppError('Attribute not found', HTTPSTATUS.NOT_FOUND, ErrorCode.ATTRIBUTE_NOT_FOUND);
+      throw new AppError(
+        'Attribute not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.ATTRIBUTE_NOT_FOUND,
+      );
     }
-    
+
     return { success: true };
   }
 
@@ -251,7 +295,9 @@ export class CategoryService {
   /**
    * Creates the core category document
    */
-  private async createCategoryDocument(categoryData: CategoryInput): Promise<ICategory> {
+  private async createCategoryDocument(
+    categoryData: CategoryInput,
+  ): Promise<ICategory> {
     return await CategoryModel.create({
       name: categoryData.name,
       parent: categoryData.parent,
@@ -510,23 +556,13 @@ export class CategoryService {
         });
       }
     }
-  }
-  /**
-   * Validates that category has no child categories before deletion
+  } /**
+   * Gets the total number of child categories
    */
-  private async validateCategoryHasNoChildren(
-    categoryId: string,
-  ): Promise<void> {
-    const hasChildCategories = await CategoryModel.exists({
+  private async getChildCategoriesCount(categoryId: string): Promise<number> {
+    const childCount = await CategoryModel.countDocuments({
       parent: categoryId,
     });
-
-    if (hasChildCategories) {
-      throw new AppError(
-        'Cannot delete category with child categories',
-        HTTPSTATUS.FORBIDDEN,
-        ErrorCode.FORBIDDEN_ACCESS,
-      );
-    }
+    return childCount;
   }
 }

@@ -7,6 +7,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FolderTree, FolderPlus, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 import { CategoryFormDialog } from './components/CategoryFormDialog';
 import { CategoryTreeTable } from './components/CategoryTreeTable';
@@ -22,6 +23,7 @@ import { useCategoryState } from './hooks/useCategoryState';
  * Main Categories Page Component
  */
 export const Categories: React.FC = () => {
+  const { toast } = useToast();
   const {
     categories,
     categoryTree,
@@ -49,10 +51,23 @@ export const Categories: React.FC = () => {
       // Error is handled by the mutation in useCategories
     }
   };
-
   const handleConfirmDelete = async () => {
     if (uiState.categoryToDelete) {
       try {
+        const targetCategory = categories.find(
+          (c) => c._id === uiState.categoryToDelete,
+        );
+        const hasChildren = categories.some(
+          (c) => c.parent === uiState.categoryToDelete,
+        );
+
+        toast({
+          title: 'Deleting Category',
+          description: hasChildren
+            ? `Deleting '${targetCategory?.name}' and its subcategories...`
+            : `Deleting '${targetCategory?.name}'...`,
+        });
+
         await deleteCategory(uiState.categoryToDelete);
         actions.closeDeleteDialog();
       } catch (error) {
@@ -84,7 +99,6 @@ export const Categories: React.FC = () => {
           Add Category
         </Button>
       </div>
-
       {/* Main Content */}
       <Card>
         <CardHeader>
@@ -110,7 +124,6 @@ export const Categories: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
       {/* Dialogs */}
       <CategoryFormDialog
         open={uiState.isFormOpen}
@@ -120,13 +133,30 @@ export const Categories: React.FC = () => {
         categories={categories}
         onSave={handleSaveCategory}
         onCancel={actions.closeForm}
-      />
-
+      />{' '}
       <DeleteCategoryDialog
         open={uiState.isDeleteDialogOpen}
         onOpenChange={actions.setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         onCancel={actions.closeDeleteDialog}
+        category={
+          uiState.categoryToDelete
+            ? {
+                name:
+                  categories.find((c) => c._id === uiState.categoryToDelete)
+                    ?.name || '',
+                hasChildren: categories.some(
+                  (c) => c.parent === uiState.categoryToDelete,
+                ),
+                childCount: categories.filter(
+                  (c) => c.parent === uiState.categoryToDelete,
+                ).length,
+                attributes:
+                  categories.find((c) => c._id === uiState.categoryToDelete)
+                    ?.attributes || [],
+              }
+            : undefined
+        }
       />
     </div>
   );

@@ -89,15 +89,23 @@ export function useCategories(): UseCategoriesReturn {
       });
     },
   });
-
   // Delete category mutation
   const deleteMutation = useMutation({
     mutationFn: CategoryApiService.deleteCategory,
-    onSuccess: () => {
+    onSuccess: (_, categoryId) => {
       queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.all });
+      const category = categoriesData?.data?.categories.find(
+        (c) => c._id === categoryId,
+      );
+      const hasChildren = categoriesData?.data?.categories.some(
+        (c) => c.parent === categoryId,
+      );
+
       toast({
         title: 'Success',
-        description: 'Category deleted successfully',
+        description: hasChildren
+          ? `Category '${category?.name}' and its children were deleted successfully`
+          : `Category '${category?.name}' was deleted successfully`,
       });
     },
     onError: (error: any) => {
