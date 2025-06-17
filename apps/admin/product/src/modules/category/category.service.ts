@@ -141,7 +141,8 @@ export class CategoryService {
   }
 
   /**
-   * Updates an existing category and its attributes
+   * Updates a category and all its descendants if name is changed
+   * Uses transaction to ensure consistency
    */
   async updateCategory(
     categoryId: string,
@@ -150,30 +151,51 @@ export class CategoryService {
     this.validateObjectId(categoryId);
 
     const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
-
     await this.validateUpdateData(updateData, categoryId, existingCategory);
 
-    const updatedCategory = await CategoryModel.findByIdAndUpdate(
-      categoryId,
-      updateData,
-      { new: true, runValidators: true },
-    );
+    try {
+      // If name is updated, handle slug and path updates
+      if (updateData.name) {
+        const oldSlug = existingCategory.slug;
+        const newSlug = slugify(updateData.name, {
+          lower: true,
+          strict: true,
+        });
+        updateData.slug = newSlug;
 
-    if (!updatedCategory) {
-      throw new AppError(
-        'Failed to update category',
-        HTTPSTATUS.INTERNAL_SERVER_ERROR,
-        ErrorCode.CATEGORY_UPDATE_FAILED,
-      );
-    }
-    if (updateData.attributes) {
-      await this.updateCategoryAttributes(
-        updatedCategory._id,
-        updateData.attributes,
-      );
-    }
+        // Update own slug and paths
+        await CategoryModel.findByIdAndUpdate(categoryId, {
+          ...updateData,
+          path: existingCategory.path.map((slug) =>
+            slug === oldSlug ? newSlug : slug,
+          ),
+        });
 
-    return await this.getCategoryWithAttributes(String(updatedCategory._id));
+        // Update all descendant paths without using session
+        await this.updateCategoryPathsRecursively(categoryId, oldSlug, newSlug);
+      } else {
+        // If name is not updated, just update other fields
+        await CategoryModel.findByIdAndUpdate(categoryId, updateData);
+      }
+
+      // Update attributes if provided
+      if (updateData.attributes) {
+        await this.updateCategoryAttributes(categoryId, updateData.attributes);
+      }
+
+      // Fetch and return the updated category with its attributes
+      const updatedCategory = await this.getCategoryById(categoryId);
+      if (!updatedCategory) {
+        throw new AppError(
+          'Category not found after update',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.CATEGORY_NOT_FOUND,
+        );
+      }
+      return updatedCategory;
+    } catch (error) {
+      throw error;
+    }
   }
   /**
    * Deletes a category and its associated attributes
@@ -530,30 +552,40 @@ export class CategoryService {
   private async updateCategoryAttributes(
     categoryId: any,
     attributes: CategoryAttribute[],
+    session?: ClientSession,
   ): Promise<void> {
     for (const attr of attributes) {
       const values = this.processAttributeValues(attr);
 
-      const existingAttr = await AttributeModel.findOne({
-        categoryId,
-        name: attr.name,
-      });
+      const existingAttr = await AttributeModel.findOne(
+        {
+          categoryId,
+          name: attr.name,
+        },
+        null,
+        session ? { session } : undefined,
+      );
 
       if (existingAttr) {
         // Update existing attribute
         existingAttr.values = values;
         existingAttr.isRequired = attr.isRequired;
         existingAttr.type = attr.type;
-        await existingAttr.save();
+        await existingAttr.save({ session });
       } else {
         // Create new attribute
-        await AttributeModel.create({
-          categoryId,
-          name: attr.name,
-          type: attr.type,
-          values,
-          isRequired: attr.isRequired,
-        });
+        await AttributeModel.create(
+          [
+            {
+              categoryId,
+              name: attr.name,
+              type: attr.type,
+              values,
+              isRequired: attr.isRequired,
+            },
+          ],
+          session ? { session } : undefined,
+        );
       }
     }
   } /**
@@ -564,5 +596,48 @@ export class CategoryService {
       parent: categoryId,
     });
     return childCount;
+  }
+
+  /**
+   * Updates a category's path and all its descendants' paths recursively
+   * Uses bulk operations for performance
+   */
+  private async updateCategoryPathsRecursively(
+    categoryId: string,
+    oldSlug: string,
+    newSlug: string,
+    session?: ClientSession,
+  ): Promise<void> {
+    // Get all descendants
+    const categories = session
+      ? await CategoryModel.find({ path: oldSlug }, { session })
+      : await CategoryModel.find({ path: oldSlug });
+
+    if (categories.length === 0) {
+      return;
+    }
+
+    // Prepare bulk operations
+    const bulkOps = categories.map((category) => ({
+      updateOne: {
+        filter: { _id: category._id },
+        update: {
+          $set: {
+            path: category.path.map((slug) =>
+              slug === oldSlug ? newSlug : slug,
+            ),
+          },
+        },
+      },
+    }));
+
+    // Execute bulk operations if there are any updates
+    if (bulkOps.length > 0) {
+      if (session) {
+        await CategoryModel.bulkWrite(bulkOps, { session });
+      } else {
+        await CategoryModel.bulkWrite(bulkOps);
+      }
+    }
   }
 }

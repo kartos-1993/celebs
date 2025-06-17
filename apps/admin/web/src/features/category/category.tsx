@@ -284,11 +284,11 @@ const Categories = () => {
                 {editingCategory ? 'Edit' : 'Add'} Category
                 {parentCategoryId && ' (Subcategory)'}
               </DialogTitle>
-            </DialogHeader>
+            </DialogHeader>{' '}
             <CategoryForm
               initialData={editingCategory}
               categories={categories}
-              onSave={() => setFormDialogOpen(true)}
+              onSave={() => setFormDialogOpen(false)}
               onCancel={() => setFormDialogOpen(false)}
             />
           </DialogContent>
