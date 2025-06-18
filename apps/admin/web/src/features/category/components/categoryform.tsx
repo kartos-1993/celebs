@@ -21,8 +21,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { X, Plus } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createCategoryMutationFn, updateCategoryMutationFn } from '../api';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -62,7 +60,7 @@ interface Category {
 
 interface CategoryFormProps {
   initialData?: any;
-  onSave: (data:CategoryFormData) => void;
+  onSave: (data: CategoryFormData) => void;
   onCancel: () => void;
   categories?: Category[];
 }
@@ -81,15 +79,6 @@ const CategoryForm = ({
       parent: initialData?.parent || null,
       attributes: initialData?.attributes || [],
     },
-  });
-
-  const queryClient = useQueryClient();
-  const createCategoryMutation = useMutation({
-    mutationFn: createCategoryMutationFn,
-  });
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CategoryFormData }) =>
-      updateCategoryMutationFn(id, data),
   });
 
   const {
@@ -124,52 +113,17 @@ const CategoryForm = ({
       'Category payload being sent:',
       JSON.stringify(normalizedData, null, 2),
     );
-    if (initialData?._id) {
-      // Editing: use update mutation
-      updateMutation.mutate(
-        { id: initialData._id, data: normalizedData },
-        {
-          onSuccess: async () => {
-            await queryClient.invalidateQueries({
-              queryKey: ['getAllCategories'],
-            });
-            toast({
-              title: 'Success',
-              description: `Category ${values.name} has been updated successfully.`,
-            });
-            onSave(values);
-          },
-          onError: (error) => {
-            console.error('Failed to update category:', error);
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: 'Failed to update category. Please try again.',
-            });
-          },
-        },
-      );
-    } else {
-      // Creating: use create mutation
-      createCategoryMutation.mutate(normalizedData, {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ['getAllCategories'],
-          });
-          toast({
-            title: 'Success',
-            description: `Category ${values.name} has been saved successfully.`,
-          });
-          onSave(values);
-        },
-        onError: (error) => {
-          console.error('Failed to save category:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to save category. Please try again.',
-          });
-        },
+    // Pass the normalized data to the parent's onSave handler
+    // which will take care of API calls and query invalidation
+    try {
+      // Instead of calling API directly, we let the parent component handle it
+      onSave(normalizedData);
+    } catch (error) {
+      console.error('Failed to save category:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save category. Please try again.',
       });
     }
   };
@@ -269,26 +223,15 @@ const CategoryForm = ({
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={
-              createCategoryMutation.isPending || updateMutation.isPending
-            }
-          >
+          {' '}
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
           <Button
             type="submit"
             className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
-            disabled={
-              createCategoryMutation.isPending || updateMutation.isPending
-            }
           >
-            {createCategoryMutation.isPending || updateMutation.isPending
-              ? 'Saving...'
-              : 'Save Category'}
+            Save Category
           </Button>
         </div>
       </form>

@@ -86,8 +86,8 @@ export interface UseCategoriesReturn {
   categoryTree: CategoryTreeNode[];
   isLoading: boolean;
   error: Error | null;
-  createCategory: (data: CreateCategoryRequest) => Promise<void>;
-  updateCategory: (id: string, data: UpdateCategoryRequest) => Promise<void>;
-  deleteCategory: (id: string) => Promise<void>;
+  createCategory: (data: CreateCategoryRequest) => Promise<any>;
+  updateCategory: (id: string, data: UpdateCategoryRequest) => Promise<any>;
+  deleteCategory: (id: string) => Promise<any>;
   refetch: () => void;
 }
