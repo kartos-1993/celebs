@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { getUserSessionQueryFn } from '@/lib/api';
 import AppLayout from '@/layout/AppLayout';
-import Categories from '@/features/category/Categories';
+import Categories from '@/features/category';
 import ManageProduct from '@/features/product/manage-product';
 import MediaCenter from '@/features/product/media-center';
 import Orders from '@/features/orders/orders';

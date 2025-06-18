@@ -9,15 +9,15 @@ import { Button } from '@/components/ui/button';
 import { FolderTree, FolderPlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-import { CategoryFormDialog } from './components/CategoryFormDialog';
-import { CategoryTreeTable } from './components/CategoryTreeTable';
-import { DeleteCategoryDialog } from './components/DeleteCategoryDialog';
-import { EmptyState } from './components/EmptyState';
-import { ErrorState } from './components/ErrorState';
-import { LoadingState } from './components/LoadingState';
+import { CategoryFormDialog } from './CategoryFormDialog';
+import { CategoryTreeTable } from './CategoryTreeTable';
+import { DeleteCategoryDialog } from './DeleteCategoryDialog';
+import { EmptyState } from './EmptyState';
+import { ErrorState } from './ErrorState';
+import { LoadingState } from './LoadingState';
 
-import { useCategories } from './hooks/useCategories';
-import { useCategoryState } from './hooks/useCategoryState';
+import { useCategories } from '../hooks/useCategories';
+import { useCategoryState } from '../hooks/useCategoryState';
 
 /**
  * Main Categories Page Component

@@ -4,7 +4,7 @@
  */
 
 // Main component
-export { default as Categories } from './Categories';
+export { default } from './components/Categories';
 
 // Types
 export * from './types';
