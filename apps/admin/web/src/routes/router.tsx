@@ -8,7 +8,7 @@ import {
 import SignIn from '@/features/auth/sign-in';
 import App from '@/App';
 
-import AddProductt from '@/features/product/add-product';
+import Products from '@/features/product/components/manage-product';
 import {
   ProtectedLoaderData,
   ProtectedLoader,
@@ -17,7 +17,8 @@ import {
 import { getUserSessionQueryFn } from '@/lib/api';
 import AppLayout from '@/layout/AppLayout';
 import Categories from '@/features/category';
-import ManageProduct from '@/features/product/manage-product';
+import ManageProduct from '@/features/product/components/manage-product';
+import AddProduct from '@/features/product/components/add-product';
 import MediaCenter from '@/features/product/media-center';
 import Orders from '@/features/orders/orders';
 import ReturnOrders from '@/features/orders/return-orders';
@@ -71,7 +72,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'new',
-            element: <AddProductt />,
+            element: <AddProduct />,
             handle: { crumb: 'Add Product' },
           },
           {
