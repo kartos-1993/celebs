@@ -43,7 +43,7 @@ export interface IProduct extends Document {
   price: number;
   discountedPrice?: number;
   category: mongoose.Types.ObjectId;
-  subcategory: mongoose.Types.ObjectId;
+
   sizes: ISize[];
   colorVariants: IColorVariant[];
   tags: string[];
@@ -58,122 +58,129 @@ export interface IProduct extends Document {
 // Schema for Product
 const ProductSchema: Schema = new Schema(
   {
-    name: { 
-      type: String, 
-      required: true, 
-      trim: true 
-    },
-    slug: { 
-      type: String, 
-      required: true, 
-      unique: true,
-      lowercase: true 
-    },
-    description: { 
-      type: String, 
-      required: true 
-    },
-    price: { 
-      type: Number, 
+    name: {
+      type: String,
       required: true,
-      min: 0 
+      trim: true,
     },
-    discountedPrice: { 
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    price: {
       type: Number,
-      min: 0 
+      required: true,
+      min: 0,
     },
-    category: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Category', 
-      required: true 
+    discountedPrice: {
+      type: Number,
+      min: 0,
     },
-    subcategory: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Subcategory', 
-      required: true 
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+      required: true,
+    },
+    subcategory: {
+      type: Schema.Types.ObjectId,
+      ref: 'Subcategory',
+      required: true,
     },
     sizes: [
       {
-        name: { 
-          type: String, 
-          required: true 
+        name: {
+          type: String,
+          required: true,
         },
         productMeasurements: [
           {
             name: { type: String, required: true },
             value: { type: String, required: true },
-            unit: { type: String, required: true }
-          }
+            unit: { type: String, required: true },
+          },
         ],
         bodyMeasurements: [
           {
             name: { type: String, required: true },
             value: { type: String, required: true },
-            unit: { type: String, required: true }
-          }
-        ]
-      }
+            unit: { type: String, required: true },
+          },
+        ],
+      },
     ],
     colorVariants: [
       {
-        name: { 
-          type: String, 
-          required: true 
+        name: {
+          type: String,
+          required: true,
         },
-        colorCode: { 
-          type: String, 
-          required: true 
+        colorCode: {
+          type: String,
+          required: true,
         },
-        images: [{ 
-          type: String 
-        }],
+        images: [
+          {
+            type: String,
+          },
+        ],
         stocks: [
           {
-            size: { 
-              type: String, 
-              required: true 
+            size: {
+              type: String,
+              required: true,
             },
-            quantity: { 
-              type: Number, 
-              required: true, 
-              min: 0, 
-              default: 0 
-            }
-          }
-        ]
-      }
+            quantity: {
+              type: Number,
+              required: true,
+              min: 0,
+              default: 0,
+            },
+          },
+        ],
+      },
     ],
-    tags: [{ 
-      type: String 
-    }],
-    featured: { 
-      type: Boolean, 
-      default: false 
+    tags: [
+      {
+        type: String,
+      },
+    ],
+    featured: {
+      type: Boolean,
+      default: false,
     },
-    status: { 
-      type: String, 
+    status: {
+      type: String,
       enum: ['draft', 'published', 'archived'],
-      default: 'draft'
+      default: 'draft',
     },
-    createdBy: { 
-      type: String, 
-      required: true 
+    createdBy: {
+      type: String,
+      required: true,
     },
-    updatedBy: { 
-      type: String, 
-      required: true 
-    }
+    updatedBy: {
+      type: String,
+      required: true,
+    },
   },
-  { 
-    timestamps: true 
-  }
+  {
+    timestamps: true,
+  },
 );
 
 // Add pre-save hook to generate slug if not provided
-ProductSchema.pre<IProduct>('save', function(next) {
+ProductSchema.pre<IProduct>('save', function (next) {
   if (!this.slug) {
-    this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '');
+
     // Add a timestamp to ensure uniqueness
     this.slug = `${this.slug}-${Date.now().toString().slice(-6)}`;
   }
