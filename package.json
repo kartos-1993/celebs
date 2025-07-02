@@ -75,6 +75,7 @@
     "@radix-ui/react-icons": "^1.3.2",
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-popover": "^1.1.14",
+    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-scroll-area": "^1.2.3",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.1.2",
@@ -127,6 +128,7 @@
   "scripts": {
     "migrate:dev": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma migrate dev --schema=apps/admin/auth-api/src/db/schema.prisma --name auto",
     "migrate:deploy": "dotenv -e apps/admin/auth-api/.env.staging -- npx prisma migrate deploy --schema=apps/admin/auth-api/src/db/schema.prisma",
+    "prisma:generate": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma generate --schema=apps/admin/auth-api/src/db/schema.prisma",
     "web:dev": "nx dev admin-web",
     "web:dev:dev": "nx dev:dev admin-web",
     "web:dev:staging": "nx dev:staging admin-web",
