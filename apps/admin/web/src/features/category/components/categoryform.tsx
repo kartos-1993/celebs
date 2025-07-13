@@ -140,18 +140,6 @@ const CategoryForm = ({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 py-2 pb-4"
       >
-        {/* Update the payload preview section for dark mode */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-            Payload Preview
-          </h3>
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            The complete payload will be logged to console when you save. Check
-            browser console (F12) to see the exact data structure sent to
-            backend.
-          </p>
-        </div>
-
         <FormField
           control={form.control}
           name="name"

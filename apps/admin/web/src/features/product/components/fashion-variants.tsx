@@ -29,16 +29,24 @@ export interface ColorVariant {
   };
 }
 
+export interface SizeMeasurement {
+  name: string;
+  value: string;
+}
+
+export interface SizeVariant {
+  size: string;
+  sku: string;
+  price: number;
+  stock: number;
+  isAvailable: boolean;
+  measurements: SizeMeasurement[];
+}
+
 export interface FashionVariant {
   id: string;
   color: ColorVariant;
-  sizes: {
-    size: string;
-    sku: string;
-    price: number;
-    stock: number;
-    isAvailable: boolean;
-  }[];
+  sizes: SizeVariant[];
 }
 
 interface FashionVariantsProps {
@@ -67,6 +75,7 @@ const FashionVariants = ({
   ];
 
   const standardSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const standardMeasurements = ['sleeve', 'shoulder', 'chest', 'length'];
   const imageTypes = ['front', 'back', 'side', 'detail'] as const;
 
   const addColorVariant = () => {
@@ -84,6 +93,7 @@ const FashionVariants = ({
         price: 0,
         stock: 0,
         isAvailable: true,
+        measurements: standardMeasurements.map((m) => ({ name: m, value: '' })),
       })),
     };
 
@@ -126,6 +136,85 @@ const FashionVariants = ({
               ...variant,
               sizes: variant.sizes.map((size, index) =>
                 index === sizeIndex ? { ...size, [field]: value } : size,
+              ),
+            }
+          : variant,
+      ),
+    );
+  };
+
+  const updateSizeMeasurement = (
+    variantId: string,
+    sizeIndex: number,
+    measurementIndex: number,
+    field: 'name' | 'value',
+    value: string,
+  ) => {
+    onVariantsChange(
+      variants.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              sizes: variant.sizes.map((size, idx) =>
+                idx === sizeIndex
+                  ? {
+                      ...size,
+                      measurements: size.measurements.map((m, mIdx) =>
+                        mIdx === measurementIndex
+                          ? { ...m, [field]: value }
+                          : m,
+                      ),
+                    }
+                  : size,
+              ),
+            }
+          : variant,
+      ),
+    );
+  };
+
+  const addMeasurement = (variantId: string, sizeIndex: number) => {
+    onVariantsChange(
+      variants.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              sizes: variant.sizes.map((size, idx) =>
+                idx === sizeIndex
+                  ? {
+                      ...size,
+                      measurements: [
+                        ...size.measurements,
+                        { name: '', value: '' },
+                      ],
+                    }
+                  : size,
+              ),
+            }
+          : variant,
+      ),
+    );
+  };
+
+  const removeMeasurement = (
+    variantId: string,
+    sizeIndex: number,
+    measurementIndex: number,
+  ) => {
+    onVariantsChange(
+      variants.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              sizes: variant.sizes.map((size, idx) =>
+                idx === sizeIndex
+                  ? {
+                      ...size,
+                      measurements: size.measurements.filter(
+                        (_, mIdx) => mIdx !== measurementIndex,
+                      ),
+                    }
+                  : size,
               ),
             }
           : variant,
@@ -393,7 +482,7 @@ const FashionVariants = ({
                 {selectedVariant.sizes.map((sizeVariant, index) => (
                   <div
                     key={sizeVariant.size}
-                    className="grid grid-cols-6 gap-4 items-center p-3 border rounded-lg"
+                    className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center p-3 border rounded-lg"
                   >
                     <div className="font-medium">{sizeVariant.size}</div>
                     <Input
@@ -467,6 +556,72 @@ const FashionVariants = ({
                     >
                       {sizeVariant.stock > 0 ? 'In Stock' : 'Out of Stock'}
                     </Badge>
+                    {/* Measurements Section */}
+                    <div className="col-span-7 bg-gray-50 rounded p-2 mt-2">
+                      <div className="flex flex-wrap gap-2 items-center mb-2">
+                        <span className="font-semibold text-xs text-gray-700">
+                          Measurements:
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            addMeasurement(selectedVariant.id, index)
+                          }
+                        >
+                          + Add Measurement
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {sizeVariant.measurements.map((m, mIdx) => (
+                          <div key={mIdx} className="flex items-center gap-1">
+                            <Input
+                              className="w-20"
+                              placeholder="Name"
+                              value={m.name}
+                              onChange={(e) =>
+                                updateSizeMeasurement(
+                                  selectedVariant.id,
+                                  index,
+                                  mIdx,
+                                  'name',
+                                  e.target.value,
+                                )
+                              }
+                            />
+                            <Input
+                              className="w-20"
+                              placeholder="Value"
+                              value={m.value}
+                              onChange={(e) =>
+                                updateSizeMeasurement(
+                                  selectedVariant.id,
+                                  index,
+                                  mIdx,
+                                  'value',
+                                  e.target.value,
+                                )
+                              }
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                removeMeasurement(
+                                  selectedVariant.id,
+                                  index,
+                                  mIdx,
+                                )
+                              }
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

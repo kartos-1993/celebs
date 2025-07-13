@@ -133,7 +133,8 @@ export const Categories: React.FC = () => {
         categories={categories}
         onSave={handleSaveCategory}
         onCancel={actions.closeForm}
-      />{' '}
+      />
+
       <DeleteCategoryDialog
         open={uiState.isDeleteDialogOpen}
         onOpenChange={actions.setDeleteDialogOpen}
