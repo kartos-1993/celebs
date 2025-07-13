@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Form } from '@/components/ui/form';
 import { ShoppingBag, Palette, Ruler, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -267,9 +267,9 @@ const AddProduct = () => {
                     />
 
                     <FashionVariants
-                      variants={formData.variants}
+                      variants={formData.variants || []}
                       onVariantsChange={(variants) =>
-                        updateFormData({ variants })
+                        updateFormData({ variants: variants })
                       }
                     />
                   </CollapsibleFormSection>
