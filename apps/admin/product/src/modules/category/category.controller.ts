@@ -95,9 +95,9 @@ export class CategoryController {
           );
         }
         level = parentCategory.level + 1;
-        path = [...parentCategory.path.map((p) => p.toString()), slug];
+        path = [...parentCategory.path.map((p) => p.toString()), name];
       } else {
-        path = [slug];
+        path = [name];
       }
 
       const categoryInput = {
@@ -184,7 +184,11 @@ export class CategoryController {
    * Get category tree with attributes
    * This method retrieves the entire category tree with their attributes
    */
-  getCategoryTreeWithAttributes = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryTreeWithAttributes = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
       const tree = await this.categoryService.getCategoryTreeWithAttributes();
       return res.status(HTTPSTATUS.OK).json({
