@@ -150,6 +150,7 @@ export class CategoryController {
 
       // Prepare update data
       const updateData: any = { ...validatedData };
+      console.log(updateData, 111111111111)
       // If name is present, generate new slug
       if (updateData.name) {
         updateData.slug = slugify(updateData.name, {

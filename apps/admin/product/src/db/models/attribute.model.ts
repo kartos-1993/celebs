@@ -1,3 +1,4 @@
+import { group } from 'console';
 import mongoose, { Schema, Document } from 'mongoose';
 
 // Interface for Attribute document
@@ -7,6 +8,7 @@ export interface IAttribute extends Document {
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
+  group?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +44,10 @@ const AttributeSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
+    group:{
+      type:String,
+      required: false,
+    }
   },
   {
     timestamps: true,

@@ -32,12 +32,13 @@ import {
 } from '@/components/ui/dialog';
 import { useState } from 'react';
 
+
 const attributeSchema = z.object({
   name: z.string().min(1, 'Attribute name is required'),
   type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean']),
   values: z.array(z.string()).default([]), // Provide a default value of an empty array
   isRequired: z.boolean(),
-  group:z.string()
+  group: z.string(),
 });
 
 const categorySchema = z.object({
@@ -97,7 +98,7 @@ const CategoryForm = ({
       type: 'select',
       values: [],
       isRequired: false,
-      group:""
+      group: '',
     });
   };
   const onSubmit = (values: z.infer<typeof categorySchema>) => {
@@ -109,6 +110,7 @@ const CategoryForm = ({
         type: attr.type,
         values: attr.values ?? [], // Provide a default value of an empty array
         isRequired: attr.isRequired,
+        group: attr.group,
       })),
     };
     console.log(
@@ -356,6 +358,35 @@ const AttributeFieldSet = ({
                 Required field
               </FormLabel>
             </div>
+          </FormItem>    
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name={`attributes.${index}.group`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Group</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value ?? ''}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select group" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="basic">Basic</SelectItem>
+                <SelectItem value="sale">Sale</SelectItem>
+                <SelectItem value="package">Package</SelectItem>
+                <SelectItem value="details">Details</SelectItem>
+                <SelectItem value="termcondition">Terms & Conditions</SelectItem>
+                <SelectItem value="variant">Variant</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
           </FormItem>
         )}
       />

@@ -10,7 +10,7 @@ export interface CategoryAttribute {
   values: string[];
   isRequired: boolean;
   categoryId?: string;
-  displayOrder?: number;
+  group?: string;
   createdAt?: string;
   updatedAt?: string;
 }

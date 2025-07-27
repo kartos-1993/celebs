@@ -1,3 +1,4 @@
+import { group } from 'console';
 import { ClientSession, Types } from 'mongoose';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
@@ -12,6 +13,7 @@ interface CategoryAttribute {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
+  group?: string;
   isRequired: boolean;
 }
 
@@ -571,6 +573,7 @@ export class CategoryService {
         existingAttr.values = values;
         existingAttr.isRequired = attr.isRequired;
         existingAttr.type = attr.type;
+        existingAttr.group = attr.group;
         await existingAttr.save({ session });
       } else {
         // Create new attribute
@@ -582,6 +585,7 @@ export class CategoryService {
               type: attr.type,
               values,
               isRequired: attr.isRequired,
+              group: attr.group,
             },
           ],
           session ? { session } : undefined,
