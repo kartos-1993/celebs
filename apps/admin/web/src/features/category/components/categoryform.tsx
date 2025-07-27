@@ -37,6 +37,7 @@ const attributeSchema = z.object({
   type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean']),
   values: z.array(z.string()).default([]), // Provide a default value of an empty array
   isRequired: z.boolean(),
+  group:z.string()
 });
 
 const categorySchema = z.object({
@@ -96,6 +97,7 @@ const CategoryForm = ({
       type: 'select',
       values: [],
       isRequired: false,
+      group:""
     });
   };
   const onSubmit = (values: z.infer<typeof categorySchema>) => {

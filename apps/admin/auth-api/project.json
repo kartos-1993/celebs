@@ -38,12 +38,14 @@
         }
       }
     },
+
     "serve:nodemon": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/auth-api/.env.development -- nodemon --watch apps/admin/auth-api/src --ext ts,js,json --exec ts-node apps/admin/auth-api/src/main.ts"
+        "command": "dotenv -e apps/admin/auth-api/.env.development -- nodemon --watch apps/admin/auth-api/src --ext ts --exec node -r @swc-node/register apps/admin/auth-api/src/main.ts"
       }
     },
+
     "migrate-dev": {
       "executor": "nx:run-commands",
       "options": {
