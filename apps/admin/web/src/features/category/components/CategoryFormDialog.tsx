@@ -39,10 +39,20 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+        aria-describedby="dialog-description"
+      >
         <DialogHeader>
           <DialogTitle>{getDialogTitle()}</DialogTitle>
-        </DialogHeader>{' '}
+        </DialogHeader>
+        <div id="dialog-description" className="sr-only">
+          {editingCategory
+            ? 'Edit the details of the selected category.'
+            : parentCategoryId
+            ? 'Add a subcategory under the selected parent category.'
+            : 'Add a new category to the list.'}
+        </div>
         <CategoryForm
           initialData={
             editingCategory ||

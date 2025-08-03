@@ -6,8 +6,12 @@
 export interface CategoryAttribute {
   _id?: string;
   name: string;
-  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
-  values: string[];
+  label:string
+  type: "text" | "select" | "multiselect" | "number" | "boolean" | 
+        "richText" | "image" | "video" | "marketImages" | "mainImage" | 
+        "customEditor" | "translateInput" | "listEditor" | "packageWeight" | 
+        "packageVolume" | "color-with-image" | "measurement-group" | "size-guide";
+  values: { name: string; value: string; id?: string }[];
   isRequired: boolean;
   categoryId?: string;
   group?: string;
@@ -65,6 +69,10 @@ export interface CategoryFormData {
   name: string;
   parent: string | null;
   attributes: CategoryAttribute[];
+   hasVariants: boolean;
+  variantAttributes?: string[];
+  hasShippingAttributes: boolean;
+  hasCustomFields: boolean;
 }
 
 // UI State Types
