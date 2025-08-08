@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Form } from '@/components/ui/form';
 import { ShoppingBag, Palette, Ruler, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProductForm } from '../hooks/useProductForm';
-import { categoryService } from '../categoryService';
-import { Category } from '../types/product';
 import ProductFormSidebar from './productform-sidebar';
 import CollapsibleFormSection from './collapsible-form-section';
 import ValidationHelper from './validation-helper';
@@ -21,8 +19,6 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const isEditMode = !!id;
   const { toast } = useToast();
-
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -40,23 +36,7 @@ const AddProduct = () => {
 
   // Set breadcrumbs
 
-  // Load categories on component mount
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await categoryService.getCategories();
-        setCategories(categoriesData);
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to load categories',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    loadCategories();
-  }, [toast]);
+  // No upfront categories fetch; the dropdown fetches category tree lazily
 
   const handleBasicInfoChange = (name: string, value: string) => {
     updateFormData({ [name]: value });
@@ -140,13 +120,13 @@ const AddProduct = () => {
       100,
   );
 
-  if (isLoading && categories.length === 0) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">
-            Loading categories...
+            Loading...
           </p>
         </div>
       </div>
@@ -192,7 +172,6 @@ const AddProduct = () => {
 
                   <BasicInfoSection
                     control={form.control}
-                    categories={categories}
                     selectedCategoryId={formData.categoryId}
                     selectedSubcategoryId={formData.subcategoryId}
                     onCategoryChange={handleCategoryChange}

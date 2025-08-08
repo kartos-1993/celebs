@@ -7,7 +7,7 @@ import {
   ValidationStatus,
   ProductAttribute,
 } from '../types/product';
-import { categoryService } from '../categoryService';
+import { CategoryApiService } from '../../category/api';
 import { useToast } from '@/hooks/use-toast';
 
 const productFormSchema = z.object({
@@ -85,20 +85,24 @@ export const useProductForm = (productId?: string) => {
 
     setIsLoading(true);
     try {
-      const subcategoryDetails =
-        await categoryService.getSubcategoryDetails(subcategoryId);
+      // Fetch category (leaf) with attributes from Product API
+      const res = await CategoryApiService.getCategoryById(subcategoryId);
+      const data = res?.data as any;
+      const attrs: any[] = data?.attributes ?? [];
 
-      setFormData((prev) => ({
-        ...prev,
-        attributes: subcategoryDetails.attributes.map((attr) => ({
-          ...attr,
-          value: attr.type === 'multiselect' ? [] : '',
-        })),
+      const mapped = attrs.map((a) => ({
+        name: a.name,
+        value: Array.isArray(a.values) && a.type === 'multiselect' ? [] : '',
+        type: a.type ?? 'text',
+        required: !!a.isRequired,
+        options: Array.isArray(a.values) ? a.values : [],
       }));
+
+      setFormData((prev) => ({ ...prev, attributes: mapped }));
 
       toast({
         title: 'Form Updated',
-        description: `Loaded ${subcategoryDetails.attributes.length} attributes for ${subcategoryDetails.name}`,
+        description: `Loaded ${mapped.length} attributes`,
       });
     } catch (error) {
       toast({

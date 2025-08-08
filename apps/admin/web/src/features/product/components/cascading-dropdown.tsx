@@ -64,12 +64,12 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const handleCategoryClick = (category: Category, columnIndex: number) => {
     if (category.hasChildren) {
       expandToCategory(category, columnIndex);
-    } else {
-      // Set temporary selection for leaf categories
-      const newPath = selectedPath.slice(0, columnIndex);
-      newPath.push(category);
-      setTempSelectedPath(newPath);
+      return;
     }
+    // Select leaf category
+    const newPath = selectedPath.slice(0, columnIndex);
+    newPath.push(category);
+    setTempSelectedPath(newPath);
   };
 
   const expandToCategory = (category: Category, columnIndex: number) => {
@@ -346,7 +346,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                                 onClick={() => handleCategoryClick(category, columnIndex)}
                               >
                                 <span className="truncate">{category.name}</span>
-                                {category.hasChildren && getChildCategories(category.id).length > 0 && (
+                                {category.hasChildren && (
                                   <ChevronRight className="h-3 w-3 shrink-0 ml-1" />
                                 )}
                               </Button>
