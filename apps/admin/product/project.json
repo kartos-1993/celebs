@@ -46,7 +46,7 @@
     "serve:nodemon": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/product/.env.development -- nodemon --watch apps/admin/product/src --ext ts,js,json --exec ts-node apps/admin/product/src/main.ts"
+        "command": "dotenv -e apps/admin/product/.env.development -- nodemon --watch apps/admin/product/src --ext ts --exec ts-node apps/admin/product/src/main.ts"
       }
     }
   },

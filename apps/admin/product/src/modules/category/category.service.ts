@@ -1,3 +1,4 @@
+import { group } from 'console';
 import { ClientSession, Types } from 'mongoose';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
@@ -12,6 +13,7 @@ interface CategoryAttribute {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
+  group?: string;
   isRequired: boolean;
   // new fields
   isVariant?: boolean;

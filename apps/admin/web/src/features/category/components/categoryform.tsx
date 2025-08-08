@@ -471,6 +471,35 @@ const AttributeFieldSet = ({
                 Required field
               </FormLabel>
             </div>
+          </FormItem>    
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name={`attributes.${index}.group`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Group</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value ?? ''}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select group" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="basic">Basic</SelectItem>
+                <SelectItem value="sale">Sale</SelectItem>
+                <SelectItem value="package">Package</SelectItem>
+                <SelectItem value="details">Details</SelectItem>
+                <SelectItem value="termcondition">Terms & Conditions</SelectItem>
+                <SelectItem value="variant">Variant</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
           </FormItem>
         )}
       />

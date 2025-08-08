@@ -1,3 +1,4 @@
+import { group } from 'console';
 import mongoose, { Schema, Document } from 'mongoose';
 
 // Interface for Attribute document
@@ -49,12 +50,6 @@ const AttributeSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
-  // New: variant + option set metadata
-  isVariant: { type: Boolean, default: false },
-  // Keep stored path 'variantAxis', expose alias 'variantType' for code
-  variantAxis: { type: String, enum: ['color', 'size'], default: null, alias: 'variantType' },
-  useStandardOptions: { type: Boolean, default: false },
-  optionSetId: { type: Schema.Types.ObjectId, ref: 'OptionSet', default: null },
   },
   {
     timestamps: true,
