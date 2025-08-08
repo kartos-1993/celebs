@@ -122,9 +122,14 @@ const CategoryForm = ({
         values: attr.values ?? [], // Provide a default value of an empty array
         isRequired: attr.isRequired,
         isVariant: attr.isVariant ?? false,
-        variantType: attr.variantType ?? null,
-        useStandardOptions: attr.useStandardOptions ?? false,
-        optionSetId: attr.optionSetId ?? null,
+        // If not a variant, force variant metadata off
+        variantType: (attr.isVariant ? attr.variantType : null) ?? null,
+        useStandardOptions: attr.isVariant ? (attr.useStandardOptions ?? false) : false,
+        // Backend expects a valid ObjectId or null. Convert empty string/undefined to null
+        optionSetId:
+          attr.isVariant && attr.useStandardOptions && typeof attr.optionSetId === 'string'
+            ? attr.optionSetId.trim() || null
+            : null,
       })),
     };
     console.log(
