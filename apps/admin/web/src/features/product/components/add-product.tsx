@@ -20,6 +20,7 @@ const AddProduct = () => {
   const isEditMode = !!id;
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
 
   const {
     form,
@@ -83,6 +84,7 @@ const AddProduct = () => {
     // Merge form values with other data
     const finalData = {
       ...values,
+  categoryPath,
       attributes: formData.attributes,
       variants: formData.variants,
       sizeChart: formData.sizeChart,
@@ -177,6 +179,7 @@ const AddProduct = () => {
                     onCategoryChange={handleCategoryChange}
                     onSubcategoryChange={handleSubcategoryChange}
                     onFieldChange={handleBasicInfoChange}
+                    onCategoryPathChange={setCategoryPath}
                   />
                 </CollapsibleFormSection>
 

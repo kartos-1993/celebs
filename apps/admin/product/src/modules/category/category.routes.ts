@@ -27,6 +27,7 @@ categoryRoute.use(authenticateJWT);
 
 // Category routes
 categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
+categoryRoute.get('/search', asyncHandler(categoryController.searchCategories));
 categoryRoute.get(
   '/tree-with-attributes',
   asyncHandler(categoryController.getCategoryTreeWithAttributes),

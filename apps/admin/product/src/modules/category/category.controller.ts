@@ -36,6 +36,28 @@ export class CategoryController {
   };
 
   /**
+   * Search categories globally by name (case-insensitive)
+   */
+  searchCategories = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const q = (req.query.q as string) || '';
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : 20;
+      const results = await this.categoryService.searchCategories(q, limit);
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Search results',
+        data: results,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Get category by ID with populated attributes
    */
   getCategoryById = async (req: Request, res: Response, next: NextFunction) => {

@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { useCategories } from '../hooks/useCategories';
+import { CategoryApiService } from '../../category/api';
 // import { Category } from '@/features/product/types/category';
 import { cn } from '../../../lib/utils';
 
@@ -114,11 +115,18 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
       let results: Category[] = [];
       
       if (onSearch) {
-        // Use API search if provided
         results = await onSearch(value);
       } else {
-        // Fallback to local search
-        results = searchCategories(value);
+        // Use backend search to include deep matches
+        const api = await CategoryApiService.searchCategories(value);
+        results = (api as any[]).map((c) => ({
+          id: c.id || c._id || c.id,
+          name: c.name,
+          parentId: c.parentId ?? null,
+          hasChildren: !!c.hasChildren,
+          level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
+          path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
+        }));
       }
       
       setGlobalSearchResults(results);

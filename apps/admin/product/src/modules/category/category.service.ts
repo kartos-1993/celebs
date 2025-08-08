@@ -118,6 +118,26 @@ export class CategoryService {
   }
 
   /**
+   * Full-text like search on category names; returns flat list with basic fields and path
+   */
+  async searchCategories(query: string, limit = 20) {
+    if (!query || !query.trim()) return [];
+    const regex = new RegExp(query.trim(), 'i');
+    const results = await CategoryModel.find({ name: regex })
+      .sort({ level: 1, name: 1 })
+      .limit(limit)
+      .lean();
+    return results.map((c: any) => ({
+      id: String(c._id),
+      name: c.name,
+      parentId: c.parent ? String(c.parent) : null,
+      hasChildren: false, // UI can expand via tree if needed
+      level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
+      path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
+    }));
+  }
+
+  /**
    * Retrieves a single category by ID with its attributes
    */
   async getCategoryById(id: string): Promise<ICategory | null> {

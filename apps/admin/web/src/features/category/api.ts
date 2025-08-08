@@ -56,6 +56,17 @@ export class CategoryApiService {
   }
 
   /**
+   * Global search for categories (flat list for dropdown)
+   */
+  static async searchCategories(query: string) {
+    const response = await ProductAPI.get(
+      `${CategoryApiService.BASE_PATH}/search`,
+      { params: { q: query, limit: 20 } },
+    );
+    return response.data?.data ?? response.data ?? [];
+  }
+
+  /**
    * Retrieves a single category by ID
    */
   static async getCategoryById(id: string): Promise<ApiResponse<Category>> {

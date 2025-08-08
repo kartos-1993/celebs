@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+// no hooks needed here
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProductAttribute } from '../types/product';
 
 interface FashionAttributesProps {
-  categoryType: string;
+  categoryType: string; // kept for external API parity
   attributes: ProductAttribute[];
   onAttributesChange: (attributes: ProductAttribute[]) => void;
 }
@@ -118,12 +118,7 @@ const FashionAttributes = ({
   if (attributes.length === 0) {
     return (
       <div className="p-8 text-center border border-dashed rounded-lg">
-        <p className="text-gray-500">
-          No attributes available for this category.
-        </p>
-        <p className="text-sm text-gray-400 mt-1">
-          Attributes will load when you select a subcategory.
-        </p>
+        <p className="text-gray-500">Attributes will load when you select a category.</p>
       </div>
     );
   }

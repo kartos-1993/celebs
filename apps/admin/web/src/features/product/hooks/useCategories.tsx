@@ -44,16 +44,7 @@ export const useCategories = () => {
     };
   }, []);
 
-  // Load recent categories from localStorage once
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('recent-categories');
-      if (raw) {
-        const parsed = JSON.parse(raw) as RecentCategory[];
-        setRecentCategories(parsed.map((r) => ({ ...r, usedAt: new Date(r.usedAt) })));
-      }
-    } catch {}
-  }, []);
+  // Keep recent categories in-memory for this session only
 
   const getRootCategories = (): Category[] => {
     return allCategories.filter((cat) => cat.parentId === null);
@@ -85,11 +76,7 @@ export const useCategories = () => {
 
     setRecentCategories((prev) => {
       const filtered = prev.filter((item) => item.id !== category.id);
-      const next = [newRecentCategory, ...filtered].slice(0, 5);
-      try {
-        localStorage.setItem('recent-categories', JSON.stringify(next));
-      } catch {}
-      return next;
+      return [newRecentCategory, ...filtered].slice(0, 5);
     });
   };
 

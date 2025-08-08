@@ -19,15 +19,17 @@ interface BasicInfoSectionProps {
   onCategoryChange: (categoryId: string) => void;
   onSubcategoryChange: (subcategoryId: string) => void;
   onFieldChange: (name: string, value: string) => void;
+  onCategoryPathChange?: (path: string[]) => void;
 }
 
 const BasicInfoSection = ({
   control,
-  selectedCategoryId,
-  selectedSubcategoryId,
+  selectedCategoryId: _selectedCategoryId,
+  selectedSubcategoryId: _selectedSubcategoryId,
   onCategoryChange,
   onSubcategoryChange,
   onFieldChange,
+  onCategoryPathChange,
 }: BasicInfoSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
 
@@ -69,6 +71,7 @@ const BasicInfoSection = ({
               // Treat the selected leaf as the subcategory for this form
               onCategoryChange(cat.id);
               onSubcategoryChange(cat.id);
+              onCategoryPathChange?.(cat.path);
             }}
             placeholder="Please select category or search with keyword"
           />
