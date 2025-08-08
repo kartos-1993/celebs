@@ -3,7 +3,7 @@ import { CategoryService } from './category.service';
 import { HTTPSTATUS } from '../../config/http.config';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
-import { categoryInputSchema } from '../../common/validators/category.validator';
+import { categoryInputSchema, categoryBaseSchema } from '../../common/validators/category.validator';
 import { logger } from '../../common/utils/logger';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
@@ -144,8 +144,8 @@ export class CategoryController {
   updateCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      // Validate input (reuse categoryInputSchema but allow partial)
-      const updateSchema = categoryInputSchema.partial();
+  // Validate input (use base schema for .partial() to avoid effects on refined schema)
+  const updateSchema = categoryBaseSchema.partial();
       const validatedData = updateSchema.parse(req.body);
 
       // Prepare update data

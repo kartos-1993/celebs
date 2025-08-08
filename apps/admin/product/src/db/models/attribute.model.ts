@@ -7,6 +7,13 @@ export interface IAttribute extends Document {
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
+  // NEW fields
+  isVariant?: boolean;
+  // Prefer variantType in code, keep variantAxis for backwards compatibility
+  variantType?: 'color' | 'size' | null;
+  variantAxis?: 'color' | 'size' | null;
+  useStandardOptions?: boolean;
+  optionSetId?: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +49,12 @@ const AttributeSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
+  // New: variant + option set metadata
+  isVariant: { type: Boolean, default: false },
+  // Keep stored path 'variantAxis', expose alias 'variantType' for code
+  variantAxis: { type: String, enum: ['color', 'size'], default: null, alias: 'variantType' },
+  useStandardOptions: { type: Boolean, default: false },
+  optionSetId: { type: Schema.Types.ObjectId, ref: 'OptionSet', default: null },
   },
   {
     timestamps: true,

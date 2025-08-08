@@ -30,13 +30,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { ProductAPI } from '@/lib/axios-client';
 
 const attributeSchema = z.object({
   name: z.string().min(1, 'Attribute name is required'),
   type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean']),
   values: z.array(z.string()).default([]), // Provide a default value of an empty array
   isRequired: z.boolean(),
+  // New: variation + standard option metadata (UX-friendly wording)
+  isVariant: z.boolean().default(false),
+  variantType: z.enum(['color', 'size']).optional().nullable(),
+  useStandardOptions: z.boolean().default(false),
+  optionSetId: z.string().optional().nullable(),
 });
 
 const categorySchema = z.object({
@@ -96,17 +102,29 @@ const CategoryForm = ({
       type: 'select',
       values: [],
       isRequired: false,
+      // defaults for new fields
+      isVariant: false,
+      variantType: null,
+      useStandardOptions: false,
+      optionSetId: null,
     });
   };
   const onSubmit = (values: z.infer<typeof categorySchema>) => {
     const normalizedData = {
       name: values.name,
-      parent: values.parent ?? null,
+      parent:
+        values.parent && values.parent !== 'ROOT_CATEGORY'
+          ? values.parent
+          : null,
       attributes: values.attributes.map((attr) => ({
         name: attr.name,
         type: attr.type,
         values: attr.values ?? [], // Provide a default value of an empty array
         isRequired: attr.isRequired,
+        isVariant: attr.isVariant ?? false,
+        variantType: attr.variantType ?? null,
+        useStandardOptions: attr.useStandardOptions ?? false,
+        optionSetId: attr.optionSetId ?? null,
       })),
     };
     console.log(
@@ -238,6 +256,13 @@ const AttributeFieldSet = ({
   onRemove: () => void;
 }) => {
   const attributeType = form.watch(`attributes.${index}.type`);
+  const isVariant = form.watch(`attributes.${index}.isVariant`);
+  const variantType = form.watch(`attributes.${index}.variantType`);
+  const useStandardOptions = form.watch(
+    `attributes.${index}.useStandardOptions`,
+  );
+  // const optionSetId = form.watch(`attributes.${index}.optionSetId`);
+
   const {
     fields: valueFields,
     append: appendValue,
@@ -253,6 +278,51 @@ const AttributeFieldSet = ({
 
   // Dialog state for confirming delete
   const [open, setOpen] = useState(false);
+
+  // New: option sets support
+  const [optionSets, setOptionSets] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [loadingSets, setLoadingSets] = useState(false);
+
+  const fetchOptionSets = async (kind?: 'color' | 'size') => {
+    if (!kind) return setOptionSets([]);
+    try {
+      setLoadingSets(true);
+      const res = await ProductAPI.get(`/option-sets`, { params: { type: kind } });
+      const data = res.data;
+      setOptionSets(data?.data ?? data ?? []);
+    } catch (e) {
+      setOptionSets([]);
+    } finally {
+      setLoadingSets(false);
+    }
+  };
+
+  const applyOptionSet = async (id?: string | null) => {
+    if (!id) return;
+    try {
+      const res = await ProductAPI.get(`/option-sets/${id}`);
+      const data = res.data;
+      const values: string[] = (data?.data?.values ?? data?.values ?? [])
+        .map((v: any) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
+        .filter(Boolean);
+      form.setValue(`attributes.${index}.values`, values, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    } catch {}
+  };
+
+  // Load sets when toggled/changed
+  React.useEffect(() => {
+    if (useStandardOptions && isVariant && (variantType === 'color' || variantType === 'size')) {
+      fetchOptionSets(variantType as 'color' | 'size');
+    } else {
+      setOptionSets([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useStandardOptions, isVariant, variantType]);
 
   return (
     <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 space-y-3">
@@ -338,6 +408,53 @@ const AttributeFieldSet = ({
         />
       </div>
 
+      {/* Variation controls */}
+      <div className="grid grid-cols-2 gap-2">
+        <FormField
+          control={form.control}
+          name={`attributes.${index}.isVariant`}
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="text-gray-900 dark:text-gray-100">Use as variation</FormLabel>
+              </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name={`attributes.${index}.variantType`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Variation type</FormLabel>
+              <Select
+                onValueChange={(v) => {
+                  field.onChange(v);
+                  // clear set when type changes
+                  form.setValue(`attributes.${index}.optionSetId`, null);
+                }}
+                value={(field.value as any) || undefined}
+                disabled={!isVariant}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={isVariant ? 'Select type' : 'Disabled'} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="color">Color</SelectItem>
+                  <SelectItem value="size">Size</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
       <FormField
         control={form.control}
         name={`attributes.${index}.isRequired`}
@@ -359,50 +476,113 @@ const AttributeFieldSet = ({
       />
 
       {(attributeType === 'select' || attributeType === 'multiselect') && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-gray-900 dark:text-gray-100">Options</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddValue}
-              className="border-gray-200 dark:border-gray-800"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+        <div className="space-y-3">
+          {/* Standard options controls */}
+          <div className="grid grid-cols-2 gap-2">
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.useStandardOptions`}
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(val) => {
+                        field.onChange(val);
+                        if (!val) {
+                          form.setValue(`attributes.${index}.optionSetId`, null);
+                        }
+                      }}
+                      disabled={!isVariant || !variantType}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-gray-900 dark:text-gray-100">Use standard options</FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.optionSetId`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Option set</FormLabel>
+                  <Select
+                    onValueChange={async (v) => {
+                      field.onChange(v);
+                      await applyOptionSet(v);
+                    }}
+                    value={(field.value as any) || undefined}
+                    disabled={!useStandardOptions || !isVariant || !variantType || loadingSets}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingSets ? 'Loading…' : 'Select set'} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {optionSets.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
+          {/* Manual options list (still editable) */}
           <div className="space-y-2">
-            {valueFields.map((valueField, valueIndex) => (
-              <div key={valueField.id} className="flex gap-2">
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.values.${valueIndex}`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Option value"
-                          {...field}
-                          className="bg-white dark:bg-gray-950"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeValue(valueIndex)}
-                  className="border-gray-200 dark:border-gray-800"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+            <div className="flex items-center justify-between">
+              <Label className="text-gray-900 dark:text-gray-100">Options</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddValue}
+                className="border-gray-200 dark:border-gray-800"
+                disabled={loadingSets}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {valueFields.map((valueField, valueIndex) => (
+                <div key={valueField.id} className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.values.${valueIndex}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            placeholder="Option value"
+                            {...field}
+                            className="bg-white dark:bg-gray-950"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeValue(valueIndex)}
+                    className="border-gray-200 dark:border-gray-800"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

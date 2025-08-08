@@ -13,6 +13,11 @@ interface CategoryAttribute {
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
+  // new fields
+  isVariant?: boolean;
+  variantType?: 'color' | 'size' | null;
+  useStandardOptions?: boolean;
+  optionSetId?: string | Types.ObjectId | null;
 }
 
 interface CategoryInput {
@@ -351,6 +356,14 @@ export class CategoryService {
           type: attr.type,
           values: this.processAttributeValues(attr),
           isRequired: attr.isRequired,
+          isVariant: !!attr.isVariant,
+          variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
+          useStandardOptions: !!attr.useStandardOptions,
+          optionSetId: attr.optionSetId
+            ? typeof attr.optionSetId === 'string'
+              ? new Types.ObjectId(attr.optionSetId)
+              : (attr.optionSetId as any)
+            : null,
         }),
       ),
     );
@@ -571,6 +584,14 @@ export class CategoryService {
         existingAttr.values = values;
         existingAttr.isRequired = attr.isRequired;
         existingAttr.type = attr.type;
+  existingAttr.isVariant = !!attr.isVariant;
+  (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
+        existingAttr.useStandardOptions = !!attr.useStandardOptions;
+        existingAttr.optionSetId = attr.optionSetId
+          ? typeof attr.optionSetId === 'string'
+            ? new Types.ObjectId(attr.optionSetId)
+            : (attr.optionSetId as any)
+          : null;
         await existingAttr.save({ session });
       } else {
         // Create new attribute
@@ -582,6 +603,15 @@ export class CategoryService {
               type: attr.type,
               values,
               isRequired: attr.isRequired,
+              // new fields
+              isVariant: !!attr.isVariant,
+              variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
+              useStandardOptions: !!attr.useStandardOptions,
+              optionSetId: attr.optionSetId
+                ? typeof attr.optionSetId === 'string'
+                  ? new Types.ObjectId(attr.optionSetId)
+                  : (attr.optionSetId as any)
+                : null,
             },
           ],
           session ? { session } : undefined,

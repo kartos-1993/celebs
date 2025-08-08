@@ -12,6 +12,7 @@ import { logger } from './common/utils/logger';
 
 // Import routes
 import categoryRoutes from './modules/category/category.routes';
+import optionSetRoutes from './modules/option-set/option-set.routes';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use(
 
 // API routes
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
+app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
