@@ -59,6 +59,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const [tempSelectedPath, setTempSelectedPath] = useState<Category[]>([]);
   const [globalSearchResults, setGlobalSearchResults] = useState<Category[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef<number | null>(null);
   
   const { getRootCategories, getChildCategories, searchCategories, recentCategories, addToRecent } = useCategories();
 
@@ -100,9 +101,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     setColumns(newColumns);
   };
 
-  const handleGlobalSearchChange = async (value: string) => {
+  const handleGlobalSearchChange = (value: string) => {
     setGlobalSearchQuery(value);
-    
+    // clear pending
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
     if (!value.trim()) {
       setGlobalSearchResults([]);
       setIsSearching(false);
@@ -110,32 +116,32 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     }
 
     setIsSearching(true);
-    
-    try {
-      let results: Category[] = [];
-      
-      if (onSearch) {
-        results = await onSearch(value);
-      } else {
-        // Use backend search to include deep matches
-        const api = await CategoryApiService.searchCategories(value);
-        results = (api as any[]).map((c) => ({
-          id: c.id || c._id || c.id,
-          name: c.name,
-          parentId: c.parentId ?? null,
-          hasChildren: !!c.hasChildren,
-          level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
-          path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
-        }));
+    const q = value;
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        let results: Category[] = [];
+        if (onSearch) {
+          results = await onSearch(q);
+        } else {
+          const api = await CategoryApiService.searchCategories(q);
+          results = (api as any[]).map((c) => ({
+            id: c.id || c._id || c.id,
+            name: c.name,
+            parentId: c.parentId ?? null,
+            hasChildren: !!c.hasChildren,
+            level:
+              c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
+            path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
+          }));
+        }
+        setGlobalSearchResults(results);
+      } catch (error) {
+        console.error('Search error:', error);
+        setGlobalSearchResults([]);
+      } finally {
+        setIsSearching(false);
       }
-      
-      setGlobalSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
-      setGlobalSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
+    }, 300);
   };
 
   const handleRecentSelect = (category: Category) => {
