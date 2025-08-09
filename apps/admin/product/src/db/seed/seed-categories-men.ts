@@ -120,8 +120,15 @@ const MEN_TREE: SeedCategory = {
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
             { name: 'Sleeve Length', type: 'select', values: ['Short Sleeve','Long Sleeve','Sleeveless'] },
-            { name: 'Pattern', type: 'select', values: ['Solid','Striped','Graphic','Colorblock','Plaid'] },
-            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Linen','Blend'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Striped','Graphic','Colorblock','Plaid','All Over Print'] },
+            { name: 'Style', type: 'select', values: ['Casual','Street','Sporty','Minimalist'] },
+            { name: 'Neckline', type: 'select', values: ['Crew Neck','V Neck','Polo Collar','Henley','Scoop'] },
+            { name: 'Fit Type', type: 'select', values: ['Slim','Regular','Oversized','Relaxed'] },
+            { name: 'Length', type: 'select', values: ['Regular','Cropped','Longline'] },
+            { name: 'Fabric Elasticity', type: 'select', values: ['Non-Stretch','Slight Stretch','Medium Stretch','High Stretch'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Spandex','Linen','Viscose','Blend'] },
+            { name: 'Details', type: 'multiselect', values: ['Pocket','Zipper','Button','Embroidery','Applique'] },
+            { name: 'Occasion', type: 'multiselect', values: ['Casual','Work','Vacation','Party','Sports','Street'] },
           ],
         },
         {
@@ -131,7 +138,11 @@ const MEN_TREE: SeedCategory = {
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
             { name: 'Sleeve Length', type: 'select', values: ['Short Sleeve','Long Sleeve'] },
             { name: 'Fit', type: 'select', values: ['Slim','Regular','Relaxed'] },
-            { name: 'Pattern', type: 'select', values: ['Solid','Plaid','Striped'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Plaid','Striped','All Over Print','Colorblock'] },
+            { name: 'Collar Type', type: 'select', values: ['Spread','Button-Down','Mandarin','Cuban','Stand'] },
+            { name: 'Fabric Elasticity', type: 'select', values: ['Non-Stretch','Slight Stretch'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Linen','Viscose','Blend'] },
+            { name: 'Style', type: 'select', values: ['Casual','Smart Casual','Formal'] },
           ],
         },
         {
@@ -139,7 +150,9 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
-            { name: 'Pattern', type: 'select', values: ['Solid','Striped','Colorblock'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Striped','Colorblock'] },
+            { name: 'Fit Type', type: 'select', values: ['Slim','Regular','Relaxed'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Pique','Blend'] },
           ],
         },
         {
@@ -148,6 +161,10 @@ const MEN_TREE: SeedCategory = {
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
             { name: 'Style', type: 'select', values: ['Hoodie','Sweatshirt','Zip-Up'] },
+            { name: 'Thickness', type: 'select', values: ['Lightweight','Midweight','Heavyweight'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Graphic','Colorblock','Striped'] },
+            { name: 'Fabric Elasticity', type: 'select', values: ['Non-Stretch','Slight Stretch','Medium Stretch'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Fleece','Blend'] },
           ],
         },
         {
@@ -155,7 +172,10 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
-            { name: 'Neck', type: 'select', values: ['Crew','V-Neck','Turtle'] },
+            { name: 'Neckline', type: 'select', values: ['Crew Neck','V Neck','Turtleneck','Half-Zip'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Acrylic','Wool','Blend'] },
+            { name: 'Fabric Elasticity', type: 'select', values: ['Non-Stretch','Slight Stretch','Medium Stretch'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Cable Knit','Striped','Colorblock','Argyle'] },
           ],
         },
         {
@@ -163,7 +183,11 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
-            { name: 'Type', type: 'select', values: ['Denim','Bomber','Puffer','Trench'] },
+            { name: 'Type', type: 'select', values: ['Denim','Bomber','Puffer','Trench','Leather','Varsity','Windbreaker'] },
+            { name: 'Closure', type: 'select', values: ['Zip','Buttons','Snap','Open'] },
+            { name: 'Thickness', type: 'select', values: ['Lightweight','Midweight','Heavyweight'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Nylon','Leather','Denim','Blend'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Colorblock','Plaid'] },
           ],
         },
       ],
@@ -177,7 +201,14 @@ const MEN_TREE: SeedCategory = {
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Waist Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Numeric Sizes (28-44)' },
             { name: 'Fit', type: 'select', values: ['Skinny','Slim','Straight','Relaxed','Baggy'] },
-            { name: 'Wash', type: 'select', values: ['Light','Medium','Dark','Black'] },
+            { name: 'Wash', type: 'select', values: ['Light','Medium','Dark','Black','Acid'] },
+            { name: 'Length', type: 'select', values: ['Full Length','Cropped'] },
+            { name: 'Rise', type: 'select', values: ['Low','Mid','High'] },
+            { name: 'Stretch', type: 'select', values: ['Non-Stretch','Slight Stretch','Stretch'] },
+            { name: 'Details', type: 'multiselect', values: ['Ripped','Distressed','Cargo Pockets','Whiskering'] },
+            { name: 'Closure', type: 'select', values: ['Zipper Fly','Button Fly'] },
+            { name: 'Material', type: 'select', values: ['Denim','Cotton Blend'] },
+            { name: 'Inseam (in)', type: 'number' },
           ],
         },
         {
@@ -185,7 +216,13 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Waist Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Numeric Sizes (28-44)' },
-            { name: 'Type', type: 'select', values: ['Chinos','Dress Pants','Cargo','Jogger'] },
+            { name: 'Type', type: 'select', values: ['Chinos','Dress Pants','Cargo','Jogger','Sweatpants'] },
+            { name: 'Fit Type', type: 'select', values: ['Slim','Regular','Relaxed','Tapered'] },
+            { name: 'Length', type: 'select', values: ['Full Length','Cropped','Short'] },
+            { name: 'Rise', type: 'select', values: ['Low','Mid','High'] },
+            { name: 'Closure', type: 'select', values: ['Drawstring','Button','Zipper','Elastic Waist'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Linen','Nylon','Blend'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Plaid','Striped','Camouflage'] },
           ],
         },
         {
@@ -193,7 +230,11 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
-            { name: 'Type', type: 'select', values: ['Chino','Athletic','Cargo','Denim'] },
+            { name: 'Type', type: 'select', values: ['Chino','Athletic','Cargo','Denim','Swim'] },
+            { name: 'Length', type: 'select', values: ['Above Knee','Knee Length','Long'] },
+            { name: 'Waist Type', type: 'select', values: ['Elastic','Drawstring','Fixed Waist'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Nylon','Denim','Blend'] },
+            { name: 'Pattern Type', type: 'select', values: ['Plain','Plaid','Striped','All Over Print','Camouflage'] },
           ],
         },
         {
@@ -201,6 +242,9 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
+            { name: 'Fit Type', type: 'select', values: ['Slim','Regular','Relaxed'] },
+            { name: 'Cuff', type: 'select', values: ['Elastic Cuff','Open Hem'] },
+            { name: 'Material', type: 'select', values: ['Cotton','Polyester','Fleece','Nylon','Blend'] },
           ],
         },
       ],
@@ -211,6 +255,20 @@ const MEN_TREE: SeedCategory = {
         { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
         { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
         { name: 'Fit', type: 'select', values: ['Slim','Regular','Relaxed'] },
+        { name: 'Type', type: 'select', values: ['Suit Set','Blazer','Dress Vest'] },
+        { name: 'Closure', type: 'select', values: ['Single-Breasted','Double-Breasted'] },
+        { name: 'Pattern Type', type: 'select', values: ['Plain','Plaid','Striped'] },
+        { name: 'Material', type: 'select', values: ['Polyester','Viscose','Wool','Blend'] },
+      ],
+    },
+    {
+      name: 'Sets & Co-ords',
+      attributes: [
+        { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
+        { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
+        { name: 'Pattern Type', type: 'select', values: ['Plain','Striped','Plaid','All Over Print','Colorblock'] },
+        { name: 'Style', type: 'select', values: ['Casual','Sporty','Street'] },
+        { name: 'Material', type: 'select', values: ['Cotton','Polyester','Nylon','Blend'] },
       ],
     },
     {
@@ -221,6 +279,8 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
+            { name: 'Fabric Features', type: 'multiselect', values: ['Quick-Dry','Breathable','Moisture Wicking','Anti-Odor'] },
+            { name: 'Fabric Elasticity', type: 'select', values: ['Slight Stretch','Medium Stretch','High Stretch'] },
           ],
         },
         {
@@ -228,6 +288,8 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
+            { name: 'Type', type: 'select', values: ['Shorts','Joggers','Leggings'] },
+            { name: 'Fabric Features', type: 'multiselect', values: ['Quick-Dry','Breathable','Moisture Wicking','Anti-Odor'] },
           ],
         },
       ],
@@ -240,7 +302,10 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: false, variantType: null, useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
-            { name: 'Type', type: 'select', values: ['Briefs','Boxers','Trunks'] },
+      { name: 'Type', type: 'select', values: ['Briefs','Boxers','Trunks'] },
+      { name: 'Rise', type: 'select', values: ['Low','Mid','High'] },
+      { name: 'Material', type: 'select', values: ['Cotton','Modal','Polyester','Spandex','Blend'] },
+      { name: 'Pack Count', type: 'number' },
           ],
         },
         {
@@ -248,13 +313,17 @@ const MEN_TREE: SeedCategory = {
           attributes: [
             { name: 'Color', type: 'select', isVariant: false, variantType: null, useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
+      { name: 'Type', type: 'select', values: ['Pajama Set','Nightshirt','Lounge Set'] },
+      { name: 'Material', type: 'select', values: ['Cotton','Polyester','Satin','Flannel','Blend'] },
           ],
         },
         {
           name: 'Socks',
           attributes: [
             { name: 'Color', type: 'select', isVariant: false, variantType: null, useStandardOptions: true, optionSetName: 'Basic Colors' },
-            { name: 'Size', type: 'select', isVariant: false, variantType: null, values: ['One Size','M','L'] },
+      { name: 'Size', type: 'select', isVariant: false, variantType: null, values: ['One Size','M','L'] },
+      { name: 'Length', type: 'select', values: ['No-Show','Ankle','Crew','Knee High'] },
+      { name: 'Material', type: 'select', values: ['Cotton','Polyester','Nylon','Wool','Blend'] },
           ],
         },
       ],
@@ -264,7 +333,11 @@ const MEN_TREE: SeedCategory = {
       attributes: [
         { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
         { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
-        { name: 'Type', type: 'select', values: ['Trunks','Briefs','Boardshorts'] },
+    { name: 'Type', type: 'select', values: ['Trunks','Briefs','Boardshorts'] },
+    { name: 'Length', type: 'select', values: ['Short','Mid','Long'] },
+    { name: 'Waist Type', type: 'select', values: ['Drawstring','Elastic','Fixed Waist'] },
+    { name: 'Liner', type: 'select', values: ['Mesh Liner','No Liner'] },
+    { name: 'Pattern Type', type: 'select', values: ['Plain','Striped','All Over Print','Colorblock'] },
       ],
     },
     {
@@ -274,35 +347,44 @@ const MEN_TREE: SeedCategory = {
           name: 'Sneakers',
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
-            { name: 'Size', type: 'select', isVariant: true, variantType: 'size', values: ['40','41','42','43','44','45','46'] },
+            { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
+            { name: 'Upper Material', type: 'select', values: ['Mesh','Leather','PU','Canvas','Suede','Knit'] },
+            { name: 'Closure Type', type: 'select', values: ['Lace-Up','Slip-On','Velcro'] },
           ],
         },
         {
           name: 'Boots',
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
-            { name: 'Size', type: 'select', isVariant: true, variantType: 'size', values: ['40','41','42','43','44','45','46'] },
+            { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
+            { name: 'Upper Material', type: 'select', values: ['Leather','PU','Suede','Canvas'] },
+            { name: 'Closure Type', type: 'select', values: ['Lace-Up','Zip','Slip-On'] },
           ],
         },
         {
           name: 'Sandals & Slides',
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
-            { name: 'Size', type: 'select', isVariant: true, variantType: 'size', values: ['40','41','42','43','44','45','46'] },
+            { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
+            { name: 'Upper Material', type: 'select', values: ['PU','Rubber','Mesh','Canvas'] },
+            { name: 'Closure Type', type: 'select', values: ['Slip-On','Hook & Loop','Buckle'] },
           ],
         },
         {
           name: 'Loafers',
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
-            { name: 'Size', type: 'select', isVariant: true, variantType: 'size', values: ['40','41','42','43','44','45','46'] },
+            { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
+            { name: 'Upper Material', type: 'select', values: ['Leather','PU','Suede'] },
           ],
         },
         {
           name: 'Dress Shoes',
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
-            { name: 'Size', type: 'select', isVariant: true, variantType: 'size', values: ['40','41','42','43','44','45','46'] },
+            { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
+            { name: 'Upper Material', type: 'select', values: ['Leather','PU','Suede'] },
+            { name: 'Closure Type', type: 'select', values: ['Lace-Up','Slip-On','Buckle'] },
           ],
         },
       ],
@@ -310,9 +392,11 @@ const MEN_TREE: SeedCategory = {
     {
       name: 'Accessories',
       children: [
-        { name: 'Bags', attributes: [ { name: 'Color', type: 'select', values: ['Black','Brown','Gray','Blue'] } ] },
-        { name: 'Belts', attributes: [ { name: 'Color', type: 'select', values: ['Black','Brown','Tan'] } ] },
-        { name: 'Scarves & Gloves', attributes: [ { name: 'Color', type: 'select', values: ['Black','Gray','Navy'] } ] },
+  { name: 'Bags', attributes: [ { name: 'Color', type: 'select', values: ['Black','Brown','Gray','Blue'] }, { name: 'Material', type: 'select', values: ['PU','Leather','Canvas','Nylon'] } ] },
+  { name: 'Belts', attributes: [ { name: 'Color', type: 'select', values: ['Black','Brown','Tan'] }, { name: 'Material', type: 'select', values: ['Leather','PU','Fabric'] } ] },
+  { name: 'Hats', attributes: [ { name: 'Color', type: 'select', values: ['Black','White','Gray','Navy','Khaki'] }, { name: 'Type', type: 'select', values: ['Baseball Cap','Beanie','Bucket','Fedora'] } ] },
+  { name: 'Sunglasses', attributes: [ { name: 'Color', type: 'select', values: ['Black','Brown','Silver','Gold'] }, { name: 'Frame Shape', type: 'select', values: ['Aviator','Wayfarer','Round','Square'] } ] },
+  { name: 'Scarves & Gloves', attributes: [ { name: 'Color', type: 'select', values: ['Black','Gray','Navy'] } ] },
       ],
     },
   ],

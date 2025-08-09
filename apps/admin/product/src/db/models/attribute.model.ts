@@ -50,6 +50,28 @@ const AttributeSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
+    // Variant support
+    isVariant: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    variantType: {
+      type: String,
+      enum: ['color', 'size'],
+      default: undefined,
+    },
+    
+    useStandardOptions: {
+      type: Boolean,
+      default: false,
+    },
+    optionSetId: {
+      type: Schema.Types.ObjectId,
+      ref: 'OptionSet',
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
