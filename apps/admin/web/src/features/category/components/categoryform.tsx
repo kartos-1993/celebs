@@ -329,7 +329,7 @@ const AttributeFieldSet = ({
     } else {
       setOptionSets([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [useStandardOptions, isVariant, variantType]);
 
   return (

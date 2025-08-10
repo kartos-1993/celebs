@@ -469,6 +469,14 @@ function MainImageField({ field }: UiProps) {
 
 function SkuTableField({ field, control }: UiProps) {
   const ds = field.dataSource;
+  // Optional labels map: { [axisKey]: { [valueId]: label } }
+  const labelsMap: Record<string, Record<string, string>> =
+    (ds?.labels as any) ?? {};
+  const labelOf = React.useCallback(
+    (axisKey: string, value: string) =>
+      labelsMap?.[axisKey]?.[String(value)] ?? String(value),
+    [labelsMap],
+  );
   // Variant metadata (e.g., Color, Size). Avoid using the term "axes".
   const [variantMeta, setVariantMeta] = React.useState<
     Array<{ key: string; label: string }>
@@ -590,19 +598,19 @@ function SkuTableField({ field, control }: UiProps) {
       for (const v of variants[0].values)
         opts.push({
           value: `${variants[0].key}::${v}`,
-          label: `${variants[0].label}: ${v}`,
+          label: `${variants[0].label}: ${labelOf(variants[0].key, v)}`,
         });
     } else if (variants.length >= 2) {
       for (const a of variants[0].values) {
         for (const b of variants[1].values)
           opts.push({
             value: `${variants[0].key}::${a}||${variants[1].key}::${b}`,
-            label: `${variants[0].label}: ${a} × ${variants[1].label}: ${b}`,
+            label: `${variants[0].label}: ${labelOf(variants[0].key, a)} × ${variants[1].label}: ${labelOf(variants[1].key, b)}`,
           });
       }
     }
     return opts;
-  }, [variants]);
+  }, [variants, labelOf]);
   const matchesScope = (
     aKey: string,
     aVal: string,
@@ -869,9 +877,9 @@ function SkuTableField({ field, control }: UiProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {variants[0].values.map((opt) => (
+      {variants[0].values.map((opt) => (
               <TableRow key={opt}>
-                <TableCell className="capitalize">{opt}</TableCell>
+        <TableCell className="capitalize">{labelOf(variants[0].key, opt)}</TableCell>
                 <TableCell>
                   <VariantFieldInput
                     name={pathFor(variants[0].key, opt, 'price')}
@@ -928,11 +936,11 @@ function SkuTableField({ field, control }: UiProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {variants[0].values.flatMap((opt1) =>
+    {variants[0].values.flatMap((opt1) =>
               variants[1].values.map((opt2) => (
                 <TableRow key={`${opt1}-${opt2}`}>
-                  <TableCell className="capitalize">{opt1}</TableCell>
-                  <TableCell className="capitalize">{opt2}</TableCell>
+      <TableCell className="capitalize">{labelOf(variants[0].key, opt1)}</TableCell>
+      <TableCell className="capitalize">{labelOf(variants[1].key, opt2)}</TableCell>
                   <TableCell>
                     <VariantFieldInput
                       name={pathFor(
@@ -1317,7 +1325,16 @@ function ColorMetaItem({
 
 function ColorMetaField({ field }: UiProps) {
   const { watch, setValue } = useFormContext();
-  const colorField: string = field.dataSource?.colorField ?? 'color';
+  const colorField: string =
+    field.dataSource?.colorField ??
+    field.dataSource?.variants?.find((v: any) =>
+      /color/i.test(v?.label ?? v?.key),
+    )?.key ??
+    'color';
+  const labelsMap: Record<string, Record<string, string>> =
+    (field.dataSource?.labels as any) ?? {};
+  const labelOf = (value: string) =>
+    labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = field.rule?.accept ?? ['image/*'];
   const limits = {
     maxImages: field.rule?.maxItems ?? 8,
@@ -1347,10 +1364,10 @@ function ColorMetaField({ field }: UiProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {colors.map((c) => (
+      {colors.map((c) => (
             <div key={c} className="rounded border p-2">
               <div className="flex items-center gap-2">
-                <Input value={c} readOnly className="capitalize" />
+        <Input value={labelOf(c)} readOnly className="capitalize" />
                 <Button
                   type="button"
                   variant="outline"
@@ -1681,7 +1698,16 @@ function ColorInlineRow({
 
 function ColorInlineField({ field }: UiProps) {
   const { watch } = useFormContext();
-  const colorField: string = field.dataSource?.colorField ?? 'color';
+  const colorField: string =
+    field.dataSource?.colorField ??
+    field.dataSource?.variants?.find((v: any) =>
+      /color/i.test(v?.label ?? v?.key),
+    )?.key ??
+    'color';
+  const labelsMap: Record<string, Record<string, string>> =
+    (field.dataSource?.labels as any) ?? {};
+  const labelOf = (value: string) =>
+    labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = field.rule?.accept ?? ['image/*'];
   const limits = {
     maxImages: field.rule?.maxItems ?? 8,
@@ -1709,10 +1735,10 @@ function ColorInlineField({ field }: UiProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {colors.map((c) => (
+      {colors.map((c) => (
             <ColorInlineRow
               key={c}
-              color={c}
+        color={labelOf(c)}
               namePrefix={`variants.colorMeta.${c}`}
               accept={accept}
               limits={limits}
