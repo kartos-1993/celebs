@@ -1,4 +1,3 @@
-import { group } from 'console';
 import mongoose, { Schema, Document } from 'mongoose';
 
 // Interface for Attribute document
@@ -8,11 +7,9 @@ export interface IAttribute extends Document {
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
   isRequired: boolean;
-  // NEW fields
+  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
   isVariant?: boolean;
-  // Prefer variantType in code, keep variantAxis for backwards compatibility
   variantType?: 'color' | 'size' | null;
-  variantAxis?: 'color' | 'size' | null;
   useStandardOptions?: boolean;
   optionSetId?: mongoose.Types.ObjectId | null;
   createdAt: Date;
@@ -45,6 +42,13 @@ const AttributeSchema: Schema = new Schema(
         required: true,
       },
     ],
+
+    group: {
+      type: String,
+      enum: ['basic', 'sale', 'package', 'details', 'termcondition', 'variant'],
+      default: 'basic',
+      index: true,
+    },
 
     isRequired: {
       type: Boolean,

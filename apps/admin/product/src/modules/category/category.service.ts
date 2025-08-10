@@ -1,4 +1,3 @@
-import { group } from 'console';
 import { ClientSession, Types } from 'mongoose';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
@@ -8,14 +7,13 @@ import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
-// Types and Interfaces
+
 interface CategoryAttribute {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
-  group?: string;
+  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
   isRequired: boolean;
-  // new fields
   isVariant?: boolean;
   variantType?: 'color' | 'size' | null;
   useStandardOptions?: boolean;
@@ -378,6 +376,7 @@ export class CategoryService {
           type: attr.type,
           values: this.processAttributeValues(attr),
           isRequired: attr.isRequired,
+          group: (attr.group as any) ?? 'basic',
           isVariant: !!attr.isVariant,
           variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
           useStandardOptions: !!attr.useStandardOptions,
@@ -606,6 +605,7 @@ export class CategoryService {
         existingAttr.values = values;
         existingAttr.isRequired = attr.isRequired;
         existingAttr.type = attr.type;
+    (existingAttr as any).group = (attr.group as any) ?? (existingAttr as any).group ?? 'basic';
   existingAttr.isVariant = !!attr.isVariant;
   (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
         existingAttr.useStandardOptions = !!attr.useStandardOptions;
@@ -625,6 +625,7 @@ export class CategoryService {
               type: attr.type,
               values,
               isRequired: attr.isRequired,
+      group: (attr.group as any) ?? 'basic',
               // new fields
               isVariant: !!attr.isVariant,
               variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
