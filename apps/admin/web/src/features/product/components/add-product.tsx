@@ -13,6 +13,7 @@ import FashionAttributes from './fashion-attributes';
 import SizeChart from './sizechart';
 import FashionVariants from './fashion-variants';
 import ImageUpload from './image-upload';
+import DynamicProductForm from './dynamic-product-form';
 
 const AddProduct = () => {
   const { id } = useParams();
@@ -159,19 +160,7 @@ const AddProduct = () => {
                 className="space-y-6"
               >
                 {/* Basic Information */}
-                <CollapsibleFormSection
-                  title="Basic Information"
-                  description="Essential product details and categorization"
-                  icon={<ShoppingBag className="h-5 w-5 text-blue-700" />}
-                  isValid={validationStatus.basicInfo}
-                  isRequired={true}
-                  defaultOpen={true}
-                >
-                  {/* <ValidationHelper
-                    errors={getValidationErrors('basicInfo')}
-                    isValid={validationStatus.basicInfo}
-                  /> */}
-
+                
                   <BasicInfoSection
                     control={form.control}
                     selectedCategoryId={formData.categoryId}
@@ -180,33 +169,16 @@ const AddProduct = () => {
                     onSubcategoryChange={handleSubcategoryChange}
                     onFieldChange={handleBasicInfoChange}
                     onCategoryPathChange={setCategoryPath}
+                    categoryPath={categoryPath}
                   />
-                </CollapsibleFormSection>
+                
 
-                {/* Fashion Attributes */}
+                {/* Render server-driven sections after category selection */}
                 {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Fashion Attributes"
-                    description="Detailed product specifications and style details"
-                    icon={<Palette className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.attributes}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.basicInfo}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('attributes')}
-                      isValid={validationStatus.attributes}
-                    />
-
-                    <FashionAttributes
-                      categoryType={formData.subcategoryId}
-                      attributes={formData.attributes}
-                      onAttributesChange={(attributes) =>
-                        updateFormData({ attributes })
-                      }
-                    />
-                  </CollapsibleFormSection>
+                  <DynamicProductForm catId={formData.subcategoryId as any} />
                 )}
+
+                {/* Legacy bespoke sections below are temporarily hidden to avoid duplication with composer-driven UI */}
 
                 {/* Size Chart */}
                 {canShowAdditionalSections && (

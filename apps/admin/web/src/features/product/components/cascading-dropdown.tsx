@@ -61,7 +61,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<number | null>(null);
   
-  const { getRootCategories, getChildCategories, searchCategories, recentCategories, addToRecent } = useCategories();
+  const { getRootCategories, getChildCategories, searchCategories, recentCategories, addToRecent, findCategoryById } = useCategories();
 
   const handleCategoryClick = (category: Category, columnIndex: number) => {
     if (category.hasChildren) {
@@ -82,16 +82,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
     // Only add a new column if the category has children AND there are actual child categories
     if (category.hasChildren) {
-      const childCategories = getChildCategories(category.id);
-      if (childCategories.length > 0) {
-        const newColumns = columns.slice(0, columnIndex + 1);
-        newColumns.push({
-          parentId: category.id,
-          parentName: category.name,
-          searchQuery: ''
-        });
-        setColumns(newColumns);
-      }
+      const newColumns = columns.slice(0, columnIndex + 1);
+      // Always add a next column to reflect hierarchy, even if data not yet present
+      newColumns.push({
+        parentId: category.id,
+        parentName: category.name,
+        searchQuery: ''
+      });
+      setColumns(newColumns);
     }
   };
 
@@ -145,57 +143,63 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   };
 
   const handleRecentSelect = (category: Category) => {
-    // Build the full category path and expand columns accordingly
-    const pathCategories: Category[] = [];
-    const newColumns: ColumnData[] = [{ parentId: null, parentName: 'Categories', searchQuery: '' }];
-    
-    // Build categories from path
-    for (let i = 0; i < category.path.length; i++) {
-      const pathName = category.path[i];
-      let categoryData: Category;
-      
-      if (i === 0) {
-        // Root category
-        categoryData = getRootCategories().find(cat => cat.name === pathName) || {
-          id: `path-${i}`,
-          name: pathName,
-          parentId: null,
-          hasChildren: i < category.path.length - 1,
-          level: i,
-          path: category.path.slice(0, i + 1)
-        };
-      } else {
-        // Child category
-        const parentId = pathCategories[i - 1].id;
-        categoryData = getChildCategories(parentId).find(cat => cat.name === pathName) || {
-          id: `path-${i}`,
-          name: pathName,
-          parentId: parentId,
-          hasChildren: i < category.path.length - 1,
-          level: i,
-          path: category.path.slice(0, i + 1)
-        };
+    applyPathSelection(category);
+  };
+
+  // Build and apply columns/paths from a category.path
+  const applyPathSelection = (category: Category) => {
+    // First try to resolve by ID (most reliable)
+    const byId = category.id ? findCategoryById?.(category.id) : undefined;
+    let finalPath: Category[] = [];
+
+    if (byId) {
+      // Walk up via parentId to construct full path
+      const chain: Category[] = [];
+      let node: Category | undefined = byId;
+      while (node) {
+        chain.unshift(node);
+        node = node.parentId ? findCategoryById?.(node.parentId) : undefined;
       }
-      
-      pathCategories.push(categoryData);
-      
-      // Add column for next level if this category has children
-      if (categoryData.hasChildren && i < category.path.length - 1) {
-        newColumns.push({
-          parentId: categoryData.id,
-          parentName: categoryData.name,
-          searchQuery: ''
-        });
+      finalPath = chain;
+    } else {
+      // Fallback to resolving each segment by name from our local cache
+      if (!category.path || category.path.length === 0) {
+        setTempSelectedPath([category]);
+        return;
+      }
+      const resolvedPath: Category[] = [];
+      for (let i = 0; i < category.path.length; i++) {
+        const name = category.path[i];
+        const parentId = i === 0 ? null : resolvedPath[i - 1]?.id ?? null;
+        const candidates = parentId === null ? getRootCategories() : getChildCategories(parentId!);
+        const match = candidates.find((c) => c.name === name);
+        if (!match) {
+          break;
+        }
+        resolvedPath.push(match);
+      }
+      finalPath = resolvedPath.length > 0 ? resolvedPath : [category];
+    }
+
+    // Build columns so that each selected level opens the next column
+    const newColumns: ColumnData[] = [{ parentId: null, parentName: 'Categories', searchQuery: '' }];
+    // For each resolved level, add a column showing its children list.
+    // Do not add an extra empty column after a leaf node without children.
+    for (let i = 0; i < finalPath.length; i++) {
+      const node = finalPath[i];
+      const isLast = i === finalPath.length - 1;
+      if (!isLast || node.hasChildren) {
+        newColumns.push({ parentId: node.id, parentName: node.name, searchQuery: '' });
       }
     }
-    
-    setSelectedPath(pathCategories);
-    setTempSelectedPath(pathCategories);
+
+    setSelectedPath(finalPath);
+    setTempSelectedPath(finalPath);
     setColumns(newColumns);
   };
 
   const handleGlobalResultSelect = (category: Category) => {
-    setTempSelectedPath([category]);
+    applyPathSelection(category);
     setGlobalSearchQuery('');
     setGlobalSearchResults([]);
   };
@@ -326,12 +330,13 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             {/* Category Columns - only show if not searching globally */}
             {!globalSearchQuery && (
               <div className="border rounded-lg overflow-hidden flex-1 min-h-0">
-                <div className="flex h-[200px]">
+                <div className="overflow-x-auto">
+                  <div className="flex h-64 w-max min-w-full">
                   {columns.map((column, columnIndex) => {
                     const categoriesForColumn = getCategoriesForColumn(column);
                     
                     return (
-                      <div key={columnIndex} className="flex-1 border-r border-border last:border-r-0 min-w-0 flex flex-col">
+                      <div key={columnIndex} className="w-64 shrink-0 border-r border-border last:border-r-0 min-w-64 flex flex-col">
                         {/* Column Header with Filter */}
                         <div className="p-3 border-b border-border bg-muted/30 flex-shrink-0">
                           <div className="relative">
@@ -359,7 +364,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                                 )}
                                 onClick={() => handleCategoryClick(category, columnIndex)}
                               >
-                                <span className="truncate">{category.name}</span>
+                                <span className="whitespace-nowrap overflow-x-auto block max-w-full">{category.name}</span>
                                 {category.hasChildren && (
                                   <ChevronRight className="h-3 w-3 shrink-0 ml-1" />
                                 )}
@@ -370,6 +375,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               </div>
             )}
@@ -379,7 +385,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               <div className="p-3 bg-muted/50 rounded border flex-shrink-0">
                 <div className="text-sm">
                   <span className="text-muted-foreground">Current selection: </span>
-                  <span className="font-medium text-orange-600">{currentSelectionText}</span>
+                  <span className="font-medium text-primary">{currentSelectionText}</span>
                 </div>
               </div>
             )}

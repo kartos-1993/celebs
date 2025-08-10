@@ -43,6 +43,7 @@ const attributeSchema = z.object({
   variantType: z.enum(['color', 'size']).optional().nullable(),
   useStandardOptions: z.boolean().default(false),
   optionSetId: z.string().optional().nullable(),
+  group: z.enum(['basic', 'sale', 'package', 'details', 'termcondition', 'variant']),
 });
 
 const categorySchema = z.object({
@@ -107,6 +108,7 @@ const CategoryForm = ({
       variantType: null,
       useStandardOptions: false,
       optionSetId: null,
+      group:"basic"
     });
   };
   const onSubmit = (values: z.infer<typeof categorySchema>) => {
@@ -130,6 +132,7 @@ const CategoryForm = ({
           attr.isVariant && attr.useStandardOptions && typeof attr.optionSetId === 'string'
             ? attr.optionSetId.trim() || null
             : null,
+            group: attr.group ?? 'basic',
       })),
     };
     console.log(

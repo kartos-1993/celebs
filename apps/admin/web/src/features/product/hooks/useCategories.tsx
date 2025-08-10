@@ -86,5 +86,8 @@ export const useCategories = () => {
     searchCategories,
     recentCategories,
     addToRecent,
+  // New helpers for robust path resolution
+  findCategoryById: (id: string) => allCategories.find((c) => c.id === id),
+  getAllCategories: () => allCategories,
   };
 };
