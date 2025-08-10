@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { FieldSpec } from '../renderer/UiRegistry';
+import { extractVariantsMeta } from '../renderer/variant-utils';
 import { uiTypeRegistry } from '../renderer/UiRegistry';
 import CollapsibleFormSection from './collapsible-form-section';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -112,13 +113,14 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
           // ignore fallback errors, keep original fields
         }
 
-        // Normalize any composer-provided Color -> VariantList and Size -> multiSelect
+        // Normalize any composer-provided Color -> VariantList (only when backend provides multiselect)
+        // and Size -> multiSelect (only when backend provides select)
         merged = (merged || []).map((f) => {
           const isVariantGroup = (f.group || '').toLowerCase().includes('variant');
           const isColorName = f.name === 'color' || f.label?.toLowerCase?.().includes('color');
           const isSizeName = f.name === 'size' || f.label?.toLowerCase?.().includes('size');
           const ui = String(f.uiType || '').toLowerCase();
-          if (isVariantGroup && isColorName && (ui === 'multiselect' || ui === 'multiselect' || ui === 'multiselect'.toLowerCase())) {
+          if (isVariantGroup && isColorName && ui === 'multiselect') {
             return { ...f, uiType: 'VariantList' as any };
           }
           if (isVariantGroup && isSizeName && (ui === 'select')) {
@@ -129,10 +131,8 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
 
         // Ensure SkuTableV2 is aware of variant keys (color/size)
         try {
-          const variantFields = (merged || []).filter((f) => (f.group || '').toLowerCase().includes('variant'));
-          const variantsMeta = variantFields
-            .filter((f) => ['select', 'multiSelect', 'multiselect', 'VariantList'].includes(String(f.uiType)))
-            .map((f) => ({ key: f.name, label: f.label }));
+          const { variants: variantMetaItems } = extractVariantsMeta(merged || []);
+          const variantsMeta = variantMetaItems.map((v) => ({ key: v.key, label: v.label }));
           const idx = (merged || []).findIndex((f) => String(f.uiType) === 'SkuTableV2');
           if (variantsMeta.length) {
             if (idx >= 0) {
@@ -155,18 +155,18 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
             }
 
             // Ensure Color Images UI exists whenever a Color variant exists
-            const hasColorVariant = variantFields.some(
-              (f) => f.name === 'color' || f.label?.toLowerCase?.().includes('color')
+            const colorVariantField = (merged || []).find(
+              (f) => (f.group || '').toLowerCase().includes('variant') && (f.name === 'color' || f.label?.toLowerCase?.().includes('color'))
             );
             const hasColorImages = (merged || []).some((f) => f.name === 'variants.colorMeta');
-            if (hasColorVariant && !hasColorImages) {
+            if (colorVariantField && !hasColorImages) {
               merged.push({
                 name: 'variants.colorMeta',
                 uiType: 'ColorInline' as any,
                 label: 'Color Images',
                 group: 'variant',
                 required: false,
-                dataSource: { colorField: 'color' },
+                dataSource: { colorField: colorVariantField.name },
                 rule: { accept: ['image/*'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
                 visible: true,
               });
@@ -176,11 +176,11 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
 
         // Final safeguard: ensure Color Images UI exists if Color variant exists
         try {
-          const hasColorVariant = (merged || []).some(
+          const colorVariantField = (merged || []).find(
             (f) => (f.group || '').toLowerCase().includes('variant') && (f.name === 'color' || f.label?.toLowerCase?.().includes('color'))
           );
           const hasColorImages = (merged || []).some((f) => f.name === 'variants.colorMeta');
-          if (hasColorVariant && !hasColorImages) {
+          if (colorVariantField && !hasColorImages) {
             merged = [
               ...merged,
               {
@@ -189,7 +189,7 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
                 label: 'Color Images',
                 group: 'variant',
                 required: false,
-                dataSource: { colorField: 'color' },
+                dataSource: { colorField: colorVariantField.name },
                 rule: { accept: ['image/*'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
                 visible: true,
               },

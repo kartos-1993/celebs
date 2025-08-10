@@ -232,6 +232,7 @@ function SelectField({ field, control }: UiProps) {
 }
 
 function MultiSelectField({ field, control }: UiProps) {
+  const { setValue } = useFormContext();
   const { field: f, fieldState } = useController({
     name: field.name,
     control,
@@ -247,7 +248,13 @@ function MultiSelectField({ field, control }: UiProps) {
       <Multiselect
         options={opts}
         value={value}
-        onChange={(next) => f.onChange(next)}
+        onChange={(next) => {
+          // Use setValue to ensure watchers fire and dirtiness is tracked
+          setValue(field.name, next, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }}
         placeholder={`Select ${field.label}`}
       />
       <FieldError message={fieldState.error?.message} />
@@ -257,6 +264,7 @@ function MultiSelectField({ field, control }: UiProps) {
 
 // VariantListField: list-style editor for Color with per-row upload triggers
 function VariantListField({ field, control }: UiProps) {
+  const { setValue } = useFormContext();
   const { field: f, fieldState } = useController({
     name: field.name,
     control,
@@ -272,7 +280,12 @@ function VariantListField({ field, control }: UiProps) {
       <Multiselect
         options={opts}
         value={selected}
-        onChange={(next) => f.onChange(next)}
+        onChange={(next) => {
+          setValue(field.name, next, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }}
         placeholder={`Select ${field.label}`}
       />
       <FieldError message={fieldState.error?.message} />
@@ -530,17 +543,34 @@ function SkuTableField({ field, control }: UiProps) {
   }) as any[] | undefined;
   const variantSelections = variantMeta.map((a, idx) => {
     const v = watchedValues?.[idx];
-    if (Array.isArray(v))
-      return { key: a.key, label: a.label, values: v as string[] };
-    if (typeof v === 'string' && v)
-      return { key: a.key, label: a.label, values: [v] };
+    if (Array.isArray(v)) {
+      // Coerce any multiselect values into strings (handles objects or numbers)
+      const arr = (v as any[]).map((x) =>
+        typeof x === 'string'
+          ? x
+          : String((x as any)?.value ?? (x as any)?.label ?? x),
+      );
+      return { key: a.key, label: a.label, values: arr };
+    }
+    if (typeof v === 'string' && v) {
+      // Support comma-delimited payloads as a convenience
+      const parts = v.split(',').map((s) => s.trim()).filter(Boolean);
+      return { key: a.key, label: a.label, values: parts.length ? parts : [v] };
+    }
     return { key: a.key, label: a.label, values: [] as string[] };
   });
   const variants = variantSelections.filter((a) => a.values.length > 0);
 
   // Helper to build name paths for per-variant stock
+  const sanitize = (s: string) =>
+    String(s)
+      .replace(/\./g, '_')
+      .replace(/\[/g, '(')
+      .replace(/\]/g, ')')
+      .replace(/\s+/g, ' ')
+      .trim();
   const pathFor = (...parts: string[]) =>
-    ['sku', 'variants', ...parts].join('.');
+    ['sku', 'variants', ...parts.map(sanitize)].join('.');
 
   // Apply-to-all controls
   const [applyAll, setApplyAll] = React.useState<{
