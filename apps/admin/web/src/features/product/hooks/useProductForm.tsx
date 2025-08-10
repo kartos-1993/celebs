@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  ProductFormData,
-  ValidationStatus,
-  ProductAttribute,
-} from '../types/product';
+import { ProductFormData, ValidationStatus } from '../types/product';
 import { CategoryApiService } from '../../category/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +11,10 @@ const productFormSchema = z.object({
     .string()
     .min(5, 'Product name must be at least 5 characters')
     .max(100, 'Product name must be less than 100 characters'),
+  brand: z
+    .string()
+    .min(1, 'Brand is required')
+    .max(100, 'Brand must be less than 100 characters'),
   description: z
     .string()
     .min(20, 'Description must be at least 20 characters')
@@ -39,7 +39,7 @@ const productFormSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
 
-export const useProductForm = (productId?: string) => {
+export const useProductForm = (_productId?: string) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -48,13 +48,15 @@ export const useProductForm = (productId?: string) => {
     attributes: false,
     sizeChart: false,
     variants: false,
-    images: false,
+  images: false,
+  brand: false,
   });
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: '',
+      brand: '',
       description: '',
       categoryId: '',
       subcategoryId: '',
@@ -67,6 +69,7 @@ export const useProductForm = (productId?: string) => {
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
+    brand: '',
     description: '',
     categoryId: '',
     subcategoryId: '',
@@ -122,6 +125,7 @@ export const useProductForm = (productId?: string) => {
     switch (section) {
       case 'basicInfo':
         if (!formData.name) errors.push('Product name is required');
+  if (!formData.brand) errors.push('Brand is required');
         if (!formData.categoryId) errors.push('Category is required');
         if (!formData.subcategoryId) errors.push('Subcategory is required');
         if (!formData.price || Number(formData.price) <= 0)
@@ -170,7 +174,8 @@ export const useProductForm = (productId?: string) => {
       attributes: getValidationErrors('attributes').length === 0,
       sizeChart: getValidationErrors('sizeChart').length === 0,
       variants: getValidationErrors('variants').length === 0,
-      images: getValidationErrors('images').length === 0,
+  images: getValidationErrors('images').length === 0,
+  brand: !!formData.brand && formData.brand.trim().length > 0,
     };
     setValidationStatus(newStatus);
   }, [formData]);

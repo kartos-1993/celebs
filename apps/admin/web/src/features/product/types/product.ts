@@ -59,6 +59,7 @@ export interface Subcategory {
 
 export interface ProductFormData {
   name: string;
+  brand: string;
   description: string;
   categoryId: string;
   subcategoryId: string;
@@ -77,4 +78,5 @@ export interface ValidationStatus {
   sizeChart: boolean;
   variants: boolean;
   images: boolean;
+  brand: boolean;
 }

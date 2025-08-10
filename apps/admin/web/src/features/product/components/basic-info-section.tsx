@@ -81,8 +81,8 @@ const BasicInfoSection = ({
         </div>
 
         {/* Show Product Name only after category is selected, like the referenced flow */}
-        {hasCategory && (
-          <FormField
+        {hasCategory && (<>
+        <FormField
             control={control}
             name="name"
             render={({ field }) => (
@@ -105,6 +105,32 @@ const BasicInfoSection = ({
               </FormItem>
             )}
           />
+
+          <FormField
+  control={control}
+  name="brand"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Brand</FormLabel>
+      <FormControl>
+        <Input
+          placeholder="e.g. Nike"
+          {...field}
+          onChange={(e) => {
+            field.onChange(e);
+            onFieldChange?.('brand', e.target.value);
+          }}
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+            </>
+          
+
+          
+          
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Form } from '@/components/ui/form';
-import { ShoppingBag, Palette, Ruler, ImageIcon } from 'lucide-react';
+import { ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProductForm } from '../hooks/useProductForm';
 import ProductFormSidebar from './productform-sidebar';
@@ -9,9 +9,7 @@ import CollapsibleFormSection from './collapsible-form-section';
 import ValidationHelper from './validation-helper';
 import ProductFormActions from './product-form-action';
 import BasicInfoSection from './basic-info-section';
-import FashionAttributes from './fashion-attributes';
-import SizeChart from './sizechart';
-import FashionVariants from './fashion-variants';
+
 import ImageUpload from './image-upload';
 import DynamicProductForm from './dynamic-product-form';
 
@@ -180,54 +178,8 @@ const AddProduct = () => {
 
                 {/* Legacy bespoke sections below are temporarily hidden to avoid duplication with composer-driven UI */}
 
-                {/* Size Chart */}
-                {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Size Chart & Measurements"
-                    description="Size guide and fit recommendations"
-                    icon={<Ruler className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.sizeChart}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.attributes}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('sizeChart')}
-                      isValid={validationStatus.sizeChart}
-                    />
-
-                    <SizeChart
-                      measurements={formData.sizeChart}
-                      onMeasurementsChange={(measurements) =>
-                        updateFormData({ sizeChart: measurements })
-                      }
-                      categoryType={formData.subcategoryId}
-                    />
-                  </CollapsibleFormSection>
-                )}
-
-                {/* Color Variants */}
-                {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Color Variants & Inventory"
-                    description="Manage colors, pricing, and stock levels"
-                    icon={<Palette className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.variants}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.sizeChart}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('variants')}
-                      isValid={validationStatus.variants}
-                    />
-
-                    <FashionVariants
-                      variants={formData.variants || []}
-                      onVariantsChange={(variants) =>
-                        updateFormData({ variants: variants })
-                      }
-                    />
-                  </CollapsibleFormSection>
-                )}
+              
+                
 
                 {/* Product Images */}
                 {canShowAdditionalSections && (
