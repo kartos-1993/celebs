@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Form } from '@/components/ui/form';
-import { ImageIcon } from 'lucide-react';
+// import { ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProductForm } from '../hooks/useProductForm';
 import ProductFormSidebar from './productform-sidebar';
-import CollapsibleFormSection from './collapsible-form-section';
-import ValidationHelper from './validation-helper';
+// import CollapsibleFormSection from './collapsible-form-section';
+// import ValidationHelper from './validation-helper';
 import ProductFormActions from './product-form-action';
 import BasicInfoSection from './basic-info-section';
 
-import ImageUpload from './image-upload';
 import DynamicProductForm from './dynamic-product-form';
 
 const AddProduct = () => {
@@ -20,6 +19,7 @@ const AddProduct = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
+  const [dynamicValues, setDynamicValues] = useState<Record<string, any>>({});
 
   const {
     form,
@@ -30,7 +30,6 @@ const AddProduct = () => {
     updateFormData,
     handleCategoryChange,
     handleSubcategoryChange,
-    getValidationErrors,
     setIsDirty,
   } = useProductForm(id);
 
@@ -43,14 +42,7 @@ const AddProduct = () => {
   };
 
   const handleSaveAsDraft = () => {
-    const draftData = {
-      ...formData,
-      status: 'draft',
-      savedAt: new Date().toISOString(),
-    };
-
-    console.log('Saving draft:', draftData);
-    setIsDirty(false);
+  setIsDirty(false);
 
     toast({
       title: 'Draft Saved',
@@ -80,19 +72,36 @@ const AddProduct = () => {
       return;
     }
 
-    // Merge form values with other data
-    const finalData = {
-      ...values,
-  categoryPath,
-      attributes: formData.attributes,
-      variants: formData.variants,
-      sizeChart: formData.sizeChart,
-      images: formData.images,
+    // Build backend-aligned payload
+    const priceFromSku = dynamicValues['sku.default.price'];
+    const specialPriceFromSku = dynamicValues['sku.default.specialPrice'];
+  const payload = {
+      name: values.name,
+      description: values.description,
+      brand: values.brand,
+      categoryId: formData.categoryId,
+      subcategoryId: formData.subcategoryId,
+      price: priceFromSku ? Number(priceFromSku) : Number(formData.price || 0),
+      discountedPrice: specialPriceFromSku
+        ? Number(specialPriceFromSku)
+        : formData.discountPrice
+          ? Number(formData.discountPrice)
+          : undefined,
+      // TODO: collect colorVariants from variant section when implemented
+      colorVariants: [],
+      // Optional extras not enforced by backend schema
+      status: 'published' as const,
+      // main images come from dynamic form (MainImage field)
+      mainImage: dynamicValues['mainImage'] ?? undefined,
+      // raw dynamic values grouped by sections (for debugging/inspection)
+      _dynamic: dynamicValues,
     };
 
     try {
-      // Here you would make the API call to save the product
-      console.log('Publishing product:', finalData);
+  // TODO: POST to backend when endpoint is available, e.g. ProductAPI.post('/products', payload)
+  // Temporary: log the payload for inspection
+  console.log('Submitting product payload', payload);
+  // For now we just simulate success and navigate back
 
       toast({
         title: 'Success',
@@ -173,7 +182,12 @@ const AddProduct = () => {
 
                 {/* Render server-driven sections after category selection */}
                 {canShowAdditionalSections && (
-                  <DynamicProductForm catId={formData.subcategoryId as any} />
+                  <DynamicProductForm
+                    catId={formData.subcategoryId as any}
+                    onValuesChange={(vals, section) =>
+                      setDynamicValues((prev) => ({ ...prev, ...vals, [`__section__${section}`]: vals }))
+                    }
+                  />
                 )}
 
                 {/* Legacy bespoke sections below are temporarily hidden to avoid duplication with composer-driven UI */}
@@ -181,26 +195,7 @@ const AddProduct = () => {
               
                 
 
-                {/* Product Images */}
-                {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Product Images"
-                    description="Main product photography and visual content"
-                    icon={<ImageIcon className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.images}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.variants}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('images')}
-                      isValid={validationStatus.images}
-                    />
-
-                    <ImageUpload
-                      onImagesChange={(images) => updateFormData({ images })}
-                    />
-                  </CollapsibleFormSection>
-                )}
+                {/* Images are handled by the dynamic form's MainImage field now */}
 
                 {/* Form Actions */}
                 {canShowAdditionalSections && (
