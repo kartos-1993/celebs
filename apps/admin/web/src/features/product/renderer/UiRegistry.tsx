@@ -1,5 +1,10 @@
 import React from 'react';
-import { Control, useController, useFormContext, useWatch } from 'react-hook-form';
+import {
+  Control,
+  useController,
+  useFormContext,
+  useWatch,
+} from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -11,18 +16,29 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ProductAPI } from '@/lib/axios-client';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
-import { MultipleSelector, MSOption } from '@/components/ui/multiple-selector';
+import { Multiselect } from '@/components/ui/multiselect';
 
 export type UiType =
   | 'input'
   | 'number'
   | 'Switch'
   | 'select'
-  | 'multiSelect'
   | 'multiselect' // alias for compatibility with backend payloads
   | 'VariantList' // custom list editor for Color variant per design
   | 'ColorInline' // compact per-color swatch + images row list
@@ -50,19 +66,33 @@ function rulesFrom(field: FieldSpec) {
     rules.required = `${field.label} is required`;
   }
   if (field.uiType === 'number') {
-    if (field.rule?.min != null) rules.min = { value: field.rule.min, message: `Min ${field.rule.min}` };
-    if (field.rule?.max != null) rules.max = { value: field.rule.max, message: `Max ${field.rule.max}` };
+    if (field.rule?.min != null)
+      rules.min = { value: field.rule.min, message: `Min ${field.rule.min}` };
+    if (field.rule?.max != null)
+      rules.max = { value: field.rule.max, message: `Max ${field.rule.max}` };
   }
-  if (field.uiType === 'multiSelect') {
-    rules.validate = (v: any) => (!field.required || (Array.isArray(v) && v.length > 0)) || `${field.label} is required`;
+  if (field.uiType === 'multiselect') {
+    rules.validate = (v: any) =>
+      !field.required ||
+      (Array.isArray(v) && v.length > 0) ||
+      `${field.label} is required`;
   }
   if (field.uiType === 'VariantList') {
-    rules.validate = (v: any) => (!field.required || (Array.isArray(v) && v.length > 0)) || `${field.label} is required`;
+    rules.validate = (v: any) =>
+      !field.required ||
+      (Array.isArray(v) && v.length > 0) ||
+      `${field.label} is required`;
   }
   return rules;
 }
 
-function LabelWithRequired({ children, required }: { children: React.ReactNode; required?: boolean }) {
+function LabelWithRequired({
+  children,
+  required,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+}) {
   return (
     <Label className="font-medium">
       <span>{children}</span>
@@ -77,22 +107,47 @@ function FieldError({ message }: { message?: string }) {
 }
 
 function InputField({ field, control }: UiProps) {
-  const { field: f, fieldState } = useController({ name: field.name, control, rules: rulesFrom(field) });
+  const { field: f, fieldState } = useController({
+    name: field.name,
+    control,
+    rules: rulesFrom(field),
+  });
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-      <Input {...f} placeholder={field.label} className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''} />
+      <LabelWithRequired required={field.required}>
+        {field.label}
+      </LabelWithRequired>
+      <Input
+        {...f}
+        placeholder={field.label}
+        className={
+          fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
+        }
+      />
       <FieldError message={fieldState.error?.message} />
     </div>
   );
 }
 
 function NumberField({ field, control }: UiProps) {
-  const { field: f, fieldState } = useController({ name: field.name, control, rules: rulesFrom(field) });
+  const { field: f, fieldState } = useController({
+    name: field.name,
+    control,
+    rules: rulesFrom(field),
+  });
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-      <Input type="number" {...f} placeholder={field.label} className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''} />
+      <LabelWithRequired required={field.required}>
+        {field.label}
+      </LabelWithRequired>
+      <Input
+        type="number"
+        {...f}
+        placeholder={field.label}
+        className={
+          fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
+        }
+      />
       <FieldError message={fieldState.error?.message} />
     </div>
   );
@@ -102,14 +157,19 @@ function SwitchField({ field, control }: UiProps) {
   const { field: f } = useController({ name: field.name, control });
   return (
     <label className="flex items-center gap-2">
-      <Checkbox checked={!!f.value} onCheckedChange={(val) => f.onChange(!!val)} />
+      <Checkbox
+        checked={!!f.value}
+        onCheckedChange={(val) => f.onChange(!!val)}
+      />
       <span className="text-sm">{field.label}</span>
     </label>
   );
 }
 
 function useOptions(field: FieldSpec) {
-  const [opts, setOpts] = React.useState<Array<{ label: string; value: string }>>([]);
+  const [opts, setOpts] = React.useState<
+    Array<{ label: string; value: string }>
+  >([]);
   React.useEffect(() => {
     (async () => {
       const ds = field.dataSource;
@@ -127,7 +187,12 @@ function useOptions(field: FieldSpec) {
           [];
         const normalized = Array.isArray(values)
           ? values.map((v: any) =>
-              typeof v === 'string' ? { label: v, value: v } : { label: v.label ?? v.name ?? String(v.value), value: v.value ?? v.label ?? v.name }
+              typeof v === 'string'
+                ? { label: v, value: v }
+                : {
+                    label: v.label ?? v.name ?? String(v.value),
+                    value: v.value ?? v.label ?? v.name,
+                  },
             )
           : [];
         setOpts(normalized);
@@ -138,18 +203,26 @@ function useOptions(field: FieldSpec) {
 }
 
 function SelectField({ field, control }: UiProps) {
-  const { field: f, fieldState } = useController({ name: field.name, control, rules: rulesFrom(field) });
+  const { field: f, fieldState } = useController({
+    name: field.name,
+    control,
+    rules: rulesFrom(field),
+  });
   const opts = useOptions(field);
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
+      <LabelWithRequired required={field.required}>
+        {field.label}
+      </LabelWithRequired>
       <Select value={f.value ?? ''} onValueChange={(v) => f.onChange(v)}>
         <SelectTrigger>
           <SelectValue placeholder={`Select ${field.label}`} />
         </SelectTrigger>
         <SelectContent>
           {opts.map((o) => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -159,17 +232,23 @@ function SelectField({ field, control }: UiProps) {
 }
 
 function MultiSelectField({ field, control }: UiProps) {
-  const { field: f, fieldState } = useController({ name: field.name, control, rules: rulesFrom(field) });
+  const { field: f, fieldState } = useController({
+    name: field.name,
+    control,
+    rules: rulesFrom(field),
+  });
   const opts = useOptions(field);
   const value: string[] = Array.isArray(f.value) ? f.value : [];
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-      <MultipleSelector
+      <LabelWithRequired required={field.required}>
+        {field.label}
+      </LabelWithRequired>
+      <Multiselect
+        options={opts}
         value={value}
-        options={opts as MSOption[]}
         onChange={(next) => f.onChange(next)}
-        placeholder={`Please type or select`}
+        placeholder={`Select ${field.label}`}
       />
       <FieldError message={fieldState.error?.message} />
     </div>
@@ -178,15 +257,23 @@ function MultiSelectField({ field, control }: UiProps) {
 
 // VariantListField: list-style editor for Color with per-row upload triggers
 function VariantListField({ field, control }: UiProps) {
-  const { field: f, fieldState } = useController({ name: field.name, control, rules: rulesFrom(field) });
+  const { field: f, fieldState } = useController({
+    name: field.name,
+    control,
+    rules: rulesFrom(field),
+  });
+  const opts = useOptions(field);
+  const selected = Array.isArray(f.value) ? f.value : [];
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-      <MultipleSelector
-        value={Array.isArray(f.value) ? f.value : []}
-        options={useOptions(field) as MSOption[]}
+      <LabelWithRequired required={field.required}>
+        {field.label}
+      </LabelWithRequired>
+      <Multiselect
+        options={opts}
+        value={selected}
         onChange={(next) => f.onChange(next)}
-        placeholder={`Please type or select`}
+        placeholder={`Select ${field.label}`}
       />
       <FieldError message={fieldState.error?.message} />
     </div>
@@ -204,10 +291,17 @@ function MainImageField({ field }: UiProps) {
     register(field.name as any, {
       validate: (v: any) => {
         const arr: File[] = Array.isArray(v) ? v : [];
-        if (field.required && arr.length === 0) return `${field.label} is required`;
-        if (field.rule?.maxItems && arr.length > field.rule.maxItems) return `Max ${field.rule.maxItems} images`;
-        if (Array.isArray(field.rule?.accept) && arr.some((f) => !field.rule.accept.includes(f.type))) return 'Invalid file type';
-        if (field.rule?.maxSize && arr.some((f) => f.size > field.rule.maxSize)) return `Each image must be <= ${Math.round(field.rule.maxSize / 1024 / 1024)}MB`;
+        if (field.required && arr.length === 0)
+          return `${field.label} is required`;
+        if (field.rule?.maxItems && arr.length > field.rule.maxItems)
+          return `Max ${field.rule.maxItems} images`;
+        if (
+          Array.isArray(field.rule?.accept) &&
+          arr.some((f) => !field.rule.accept.includes(f.type))
+        )
+          return 'Invalid file type';
+        if (field.rule?.maxSize && arr.some((f) => f.size > field.rule.maxSize))
+          return `Each image must be <= ${Math.round(field.rule.maxSize / 1024 / 1024)}MB`;
         return true;
       },
     });
@@ -220,7 +314,7 @@ function MainImageField({ field }: UiProps) {
     return () => {
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files?.length]);
 
   const onAddFiles = (list: FileList | null) => {
@@ -244,18 +338,26 @@ function MainImageField({ field }: UiProps) {
 
   return (
     <div className="space-y-2">
-      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
+      <LabelWithRequired required={field.required}>
+        {field.label}
+      </LabelWithRequired>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {/* Add tile */}
         <label className="flex h-24 cursor-pointer items-center justify-center rounded border border-dashed text-sm text-muted-foreground hover:bg-accent/30">
           <input
             type="file"
             className="hidden"
-            accept={Array.isArray(field.rule?.accept) ? field.rule.accept.join(',') : undefined}
+            accept={
+              Array.isArray(field.rule?.accept)
+                ? field.rule.accept.join(',')
+                : undefined
+            }
             multiple
             onChange={(e) => onAddFiles(e.target.files)}
           />
-          <span className="inline-flex items-center gap-1"><ImagePlus className="h-4 w-4" /> Add Image</span>
+          <span className="inline-flex items-center gap-1">
+            <ImagePlus className="h-4 w-4" /> Add Image
+          </span>
         </label>
 
         {/* Thumbnails */}
@@ -264,7 +366,11 @@ function MainImageField({ field }: UiProps) {
             <Tooltip delayDuration={100}>
               <TooltipTrigger asChild>
                 <div className="relative group h-24 rounded border overflow-hidden">
-                  <img src={src} alt={`image-${idx}`} className="h-full w-full object-cover" />
+                  <img
+                    src={src}
+                    alt={`image-${idx}`}
+                    className="h-full w-full object-cover"
+                  />
                   <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
@@ -288,15 +394,25 @@ function MainImageField({ field }: UiProps) {
                       fileInputs.current[idx] = el;
                     }}
                     type="file"
-                    accept={Array.isArray(field.rule?.accept) ? field.rule.accept.join(',') : undefined}
+                    accept={
+                      Array.isArray(field.rule?.accept)
+                        ? field.rule.accept.join(',')
+                        : undefined
+                    }
                     className="hidden"
-                    onChange={(e) => onReplaceFile(idx, e.target.files?.[0] ?? null)}
+                    onChange={(e) =>
+                      onReplaceFile(idx, e.target.files?.[0] ?? null)
+                    }
                   />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="p-2">
                 <div className="w-64">
-                  <img src={src} alt={`preview-${idx}`} className="w-full h-auto rounded" />
+                  <img
+                    src={src}
+                    alt={`preview-${idx}`}
+                    className="w-full h-auto rounded"
+                  />
                   <div className="mt-2 flex justify-end gap-2">
                     <button
                       type="button"
@@ -320,17 +436,19 @@ function MainImageField({ field }: UiProps) {
         ))}
       </div>
       <div className="text-xs text-muted-foreground">
-        {field.rule?.maxItems ? (
-          <>Max {field.rule.maxItems} images</>
-        ) : null}
+        {field.rule?.maxItems ? <>Max {field.rule.maxItems} images</> : null}
         {Array.isArray(field.rule?.accept) ? (
           <>
-            {' '}• Accepted: {field.rule.accept.join(', ')} • Max size ~ {Math.round((field.rule?.maxSize ?? 0) / 1024 / 1024)}MB
+            {' '}
+            • Accepted: {field.rule.accept.join(', ')} • Max size ~{' '}
+            {Math.round((field.rule?.maxSize ?? 0) / 1024 / 1024)}MB
           </>
         ) : null}
       </div>
       {formState.errors?.[field.name as any] ? (
-        <div className="text-xs text-red-500">{(formState.errors as any)[field.name]?.message as string}</div>
+        <div className="text-xs text-red-500">
+          {(formState.errors as any)[field.name]?.message as string}
+        </div>
       ) : null}
     </div>
   );
@@ -339,14 +457,17 @@ function MainImageField({ field }: UiProps) {
 function SkuTableField({ field, control }: UiProps) {
   const ds = field.dataSource;
   // Variant metadata (e.g., Color, Size). Avoid using the term "axes".
-  const [variantMeta, setVariantMeta] = React.useState<Array<{ key: string; label: string }>>(
-    Array.isArray(ds) ? ds : (Array.isArray(ds?.variants) ? ds.variants : [])
-  );
+  const [variantMeta, setVariantMeta] = React.useState<
+    Array<{ key: string; label: string }>
+  >(Array.isArray(ds) ? ds : Array.isArray(ds?.variants) ? ds.variants : []);
   React.useEffect(() => {
     (async () => {
       // If variants are provided inline, prefer them
       if (Array.isArray(ds?.variants)) {
-        const normalized = ds.variants.map((a: any) => ({ key: a.key ?? a.name ?? a.value, label: a.label ?? a.name ?? a.key ?? String(a.value) }));
+        const normalized = ds.variants.map((a: any) => ({
+          key: a.key ?? a.name ?? a.value,
+          label: a.label ?? a.name ?? a.key ?? String(a.value),
+        }));
         setVariantMeta(normalized);
         return;
       }
@@ -355,51 +476,109 @@ function SkuTableField({ field, control }: UiProps) {
         const res = await ProductAPI.get(ds.fetch, { params: ds.params });
         const data = res.data;
         // Prefer "variants" from API; keep "axes" as a backwards-compatible fallback.
-        const raw = data?.data?.variants ?? data?.variants ?? data?.data?.axes ?? data?.axes ?? data?.data ?? data;
+        const raw =
+          data?.data?.variants ??
+          data?.variants ??
+          data?.data?.axes ??
+          data?.axes ??
+          data?.data ??
+          data;
         const list = Array.isArray(raw) ? raw : [];
-        const normalized = list.map((a: any) => ({ key: a.key ?? a.name ?? a.value, label: a.label ?? a.name ?? a.key ?? String(a.value) }));
+        const normalized = list.map((a: any) => ({
+          key: a.key ?? a.name ?? a.value,
+          label: a.label ?? a.name ?? a.key ?? String(a.value),
+        }));
         setVariantMeta(normalized);
       } catch (e) {
         // silently keep current variantMeta
       }
     })();
-  }, [ds?.fetch, Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants]);
+  }, [
+    ds?.fetch,
+    Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants,
+  ]);
   const { control: formControl, setValue } = useFormContext();
-  const { field: price } = useController({ name: 'sku.default.price', control });
-  const { field: specialPrice } = useController({ name: 'sku.default.specialPrice', control });
-  const { field: stock } = useController({ name: 'sku.default.stock', control });
-  const { field: sellerSku } = useController({ name: 'sku.default.sellerSku', control });
-  const { field: freeItems } = useController({ name: 'sku.default.freeItems', control });
-  const { field: available } = useController({ name: 'sku.default.available', control });
+  const { field: price } = useController({
+    name: 'sku.default.price',
+    control,
+  });
+  const { field: specialPrice } = useController({
+    name: 'sku.default.specialPrice',
+    control,
+  });
+  const { field: stock } = useController({
+    name: 'sku.default.stock',
+    control,
+  });
+  const { field: sellerSku } = useController({
+    name: 'sku.default.sellerSku',
+    control,
+  });
+  const { field: freeItems } = useController({
+    name: 'sku.default.freeItems',
+    control,
+  });
+  const { field: available } = useController({
+    name: 'sku.default.available',
+    control,
+  });
 
   // Determine selected options for up to two variant fields (e.g., color, size)
-  const watchedValues = useWatch({ control: formControl, name: variantMeta.map((a) => a.key) as any }) as any[] | undefined;
+  const watchedValues = useWatch({
+    control: formControl,
+    name: variantMeta.map((a) => a.key) as any,
+  }) as any[] | undefined;
   const variantSelections = variantMeta.map((a, idx) => {
     const v = watchedValues?.[idx];
-    if (Array.isArray(v)) return { key: a.key, label: a.label, values: v as string[] };
-    if (typeof v === 'string' && v) return { key: a.key, label: a.label, values: [v] };
+    if (Array.isArray(v))
+      return { key: a.key, label: a.label, values: v as string[] };
+    if (typeof v === 'string' && v)
+      return { key: a.key, label: a.label, values: [v] };
     return { key: a.key, label: a.label, values: [] as string[] };
   });
   const variants = variantSelections.filter((a) => a.values.length > 0);
 
   // Helper to build name paths for per-variant stock
-  const pathFor = (...parts: string[]) => ['sku', 'variants', ...parts].join('.');
+  const pathFor = (...parts: string[]) =>
+    ['sku', 'variants', ...parts].join('.');
 
   // Apply-to-all controls
-  const [applyAll, setApplyAll] = React.useState<{ price?: string; specialPrice?: string; stock?: string; sellerSku?: string; freeItems?: string; available?: boolean }>({});
+  const [applyAll, setApplyAll] = React.useState<{
+    price?: string;
+    specialPrice?: string;
+    stock?: string;
+    sellerSku?: string;
+    freeItems?: string;
+    available?: boolean;
+  }>({});
   const [applyScope, setApplyScope] = React.useState<string>('ALL');
   const scopeOptions = React.useMemo(() => {
-    const opts: Array<{ value: string; label: string }> = [{ value: 'ALL', label: 'All Variants' }];
+    const opts: Array<{ value: string; label: string }> = [
+      { value: 'ALL', label: 'All Variants' },
+    ];
     if (variants.length === 1) {
-      for (const v of variants[0].values) opts.push({ value: `${variants[0].key}::${v}`, label: `${variants[0].label}: ${v}` });
+      for (const v of variants[0].values)
+        opts.push({
+          value: `${variants[0].key}::${v}`,
+          label: `${variants[0].label}: ${v}`,
+        });
     } else if (variants.length >= 2) {
       for (const a of variants[0].values) {
-        for (const b of variants[1].values) opts.push({ value: `${variants[0].key}::${a}||${variants[1].key}::${b}`, label: `${variants[0].label}: ${a} × ${variants[1].label}: ${b}` });
+        for (const b of variants[1].values)
+          opts.push({
+            value: `${variants[0].key}::${a}||${variants[1].key}::${b}`,
+            label: `${variants[0].label}: ${a} × ${variants[1].label}: ${b}`,
+          });
       }
     }
     return opts;
   }, [variants]);
-  const matchesScope = (aKey: string, aVal: string, bKey?: string, bVal?: string) => {
+  const matchesScope = (
+    aKey: string,
+    aVal: string,
+    bKey?: string,
+    bVal?: string,
+  ) => {
     if (applyScope === 'ALL') return true;
     if (!applyScope.includes('||')) {
       const [k, v] = applyScope.split('::');
@@ -408,31 +587,93 @@ function SkuTableField({ field, control }: UiProps) {
     const [p1, p2] = applyScope.split('||');
     const [k1, v1] = p1.split('::');
     const [k2, v2] = p2.split('::');
-    return (k1 === aKey && v1 === aVal && k2 === bKey && v2 === bVal) || (k2 === aKey && v2 === aVal && k1 === bKey && v1 === bVal);
+    return (
+      (k1 === aKey && v1 === aVal && k2 === bKey && v2 === bVal) ||
+      (k2 === aKey && v2 === aVal && k1 === bKey && v1 === bVal)
+    );
   };
   const applyToAll = () => {
     if (variants.length === 0) return;
-    const fill = (name: string, value: any) => setValue(name, value, { shouldDirty: true });
+    const fill = (name: string, value: any) =>
+      setValue(name, value, { shouldDirty: true });
     if (variants.length === 1) {
       for (const opt of variants[0].values) {
         if (!matchesScope(variants[0].key, opt)) continue;
-        if (applyAll.price != null) fill(pathFor(variants[0].key, opt, 'price'), applyAll.price);
-        if (applyAll.specialPrice != null) fill(pathFor(variants[0].key, opt, 'specialPrice'), applyAll.specialPrice);
-        if (applyAll.stock != null) fill(pathFor(variants[0].key, opt, 'stock'), applyAll.stock);
-        if (applyAll.sellerSku != null) fill(pathFor(variants[0].key, opt, 'sellerSku'), applyAll.sellerSku);
-        if (applyAll.freeItems != null) fill(pathFor(variants[0].key, opt, 'freeItems'), applyAll.freeItems);
-        if (applyAll.available != null) fill(pathFor(variants[0].key, opt, 'available'), applyAll.available);
+        if (applyAll.price != null)
+          fill(pathFor(variants[0].key, opt, 'price'), applyAll.price);
+        if (applyAll.specialPrice != null)
+          fill(
+            pathFor(variants[0].key, opt, 'specialPrice'),
+            applyAll.specialPrice,
+          );
+        if (applyAll.stock != null)
+          fill(pathFor(variants[0].key, opt, 'stock'), applyAll.stock);
+        if (applyAll.sellerSku != null)
+          fill(pathFor(variants[0].key, opt, 'sellerSku'), applyAll.sellerSku);
+        if (applyAll.freeItems != null)
+          fill(pathFor(variants[0].key, opt, 'freeItems'), applyAll.freeItems);
+        if (applyAll.available != null)
+          fill(pathFor(variants[0].key, opt, 'available'), applyAll.available);
       }
     } else if (variants.length >= 2) {
       for (const opt1 of variants[0].values) {
         for (const opt2 of variants[1].values) {
-          if (!matchesScope(variants[0].key, opt1, variants[1].key, opt2)) continue;
-          if (applyAll.price != null) fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price'), applyAll.price);
-          if (applyAll.specialPrice != null) fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'specialPrice'), applyAll.specialPrice);
-          if (applyAll.stock != null) fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock'), applyAll.stock);
-          if (applyAll.sellerSku != null) fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku'), applyAll.sellerSku);
-          if (applyAll.freeItems != null) fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'freeItems'), applyAll.freeItems);
-          if (applyAll.available != null) fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'available'), applyAll.available);
+          if (!matchesScope(variants[0].key, opt1, variants[1].key, opt2))
+            continue;
+          if (applyAll.price != null)
+            fill(
+              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price'),
+              applyAll.price,
+            );
+          if (applyAll.specialPrice != null)
+            fill(
+              pathFor(
+                variants[0].key,
+                opt1,
+                variants[1].key,
+                opt2,
+                'specialPrice',
+              ),
+              applyAll.specialPrice,
+            );
+          if (applyAll.stock != null)
+            fill(
+              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock'),
+              applyAll.stock,
+            );
+          if (applyAll.sellerSku != null)
+            fill(
+              pathFor(
+                variants[0].key,
+                opt1,
+                variants[1].key,
+                opt2,
+                'sellerSku',
+              ),
+              applyAll.sellerSku,
+            );
+          if (applyAll.freeItems != null)
+            fill(
+              pathFor(
+                variants[0].key,
+                opt1,
+                variants[1].key,
+                opt2,
+                'freeItems',
+              ),
+              applyAll.freeItems,
+            );
+          if (applyAll.available != null)
+            fill(
+              pathFor(
+                variants[0].key,
+                opt1,
+                variants[1].key,
+                opt2,
+                'available',
+              ),
+              applyAll.available,
+            );
         }
       }
     }
@@ -462,14 +703,27 @@ function SkuTableField({ field, control }: UiProps) {
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell><Input type="number" {...price} placeholder="0" required /></TableCell>
-              <TableCell><Input type="number" {...specialPrice} placeholder="0" /></TableCell>
-              <TableCell><Input type="number" {...stock} placeholder="0" /></TableCell>
-              <TableCell><Input {...sellerSku} placeholder="SKU" /></TableCell>
-              <TableCell><Input type="number" {...freeItems} placeholder="0" /></TableCell>
+              <TableCell>
+                <Input type="number" {...price} placeholder="0" required />
+              </TableCell>
+              <TableCell>
+                <Input type="number" {...specialPrice} placeholder="0" />
+              </TableCell>
+              <TableCell>
+                <Input type="number" {...stock} placeholder="0" />
+              </TableCell>
+              <TableCell>
+                <Input {...sellerSku} placeholder="SKU" />
+              </TableCell>
+              <TableCell>
+                <Input type="number" {...freeItems} placeholder="0" />
+              </TableCell>
               <TableCell>
                 <label className="flex items-center gap-2 text-xs">
-                  <Checkbox checked={!!available.value} onCheckedChange={(v) => available.onChange(!!v)} />
+                  <Checkbox
+                    checked={!!available.value}
+                    onCheckedChange={(v) => available.onChange(!!v)}
+                  />
                   <span>Available</span>
                 </label>
               </TableCell>
@@ -479,7 +733,7 @@ function SkuTableField({ field, control }: UiProps) {
       )}
 
       {/* Apply-to-all control bar */}
-  {variants.length > 0 && (
+      {variants.length > 0 && (
         <div className="mb-3 grid grid-cols-2 sm:grid-cols-8 gap-2 items-end">
           <div>
             <div className="text-xs text-muted-foreground">Select Variant</div>
@@ -488,49 +742,94 @@ function SkuTableField({ field, control }: UiProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {scopeOptions.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}
+                {scopeOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Price</div>
-            <Input type="number" value={applyAll.price ?? ''} onChange={(e) => setApplyAll((p) => ({ ...p, price: e.target.value }))} placeholder="0" />
+            <Input
+              type="number"
+              value={applyAll.price ?? ''}
+              onChange={(e) =>
+                setApplyAll((p) => ({ ...p, price: e.target.value }))
+              }
+              placeholder="0"
+            />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Special Price</div>
-            <Input type="number" value={applyAll.specialPrice ?? ''} onChange={(e) => setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))} placeholder="0" />
+            <Input
+              type="number"
+              value={applyAll.specialPrice ?? ''}
+              onChange={(e) =>
+                setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))
+              }
+              placeholder="0"
+            />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Stock</div>
-            <Input type="number" value={applyAll.stock ?? ''} onChange={(e) => setApplyAll((p) => ({ ...p, stock: e.target.value }))} placeholder="0" />
+            <Input
+              type="number"
+              value={applyAll.stock ?? ''}
+              onChange={(e) =>
+                setApplyAll((p) => ({ ...p, stock: e.target.value }))
+              }
+              placeholder="0"
+            />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">SellerSKU</div>
-            <Input value={applyAll.sellerSku ?? ''} onChange={(e) => setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))} placeholder="SKU" />
+            <Input
+              value={applyAll.sellerSku ?? ''}
+              onChange={(e) =>
+                setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))
+              }
+              placeholder="SKU"
+            />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Free Items</div>
-            <Input type="number" value={applyAll.freeItems ?? ''} onChange={(e) => setApplyAll((p) => ({ ...p, freeItems: e.target.value }))} placeholder="0" />
+            <Input
+              type="number"
+              value={applyAll.freeItems ?? ''}
+              onChange={(e) =>
+                setApplyAll((p) => ({ ...p, freeItems: e.target.value }))
+              }
+              placeholder="0"
+            />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Availability</div>
             <label className="flex items-center gap-2 text-xs border rounded px-2 h-9">
-              <Checkbox checked={!!applyAll.available} onCheckedChange={(v) => setApplyAll((p) => ({ ...p, available: !!v }))} />
+              <Checkbox
+                checked={!!applyAll.available}
+                onCheckedChange={(v) =>
+                  setApplyAll((p) => ({ ...p, available: !!v }))
+                }
+              />
               <span>Available</span>
             </label>
           </div>
           <div className="flex items-end">
-            <Button type="button" className="w-full" onClick={applyToAll}>Apply to All</Button>
+            <Button type="button" className="w-full" onClick={applyToAll}>
+              Apply to All
+            </Button>
           </div>
         </div>
       )}
 
       {/* Variant-specific matrix */}
-  {variants.length === 1 && (
+      {variants.length === 1 && (
         <Table>
           <TableHeader>
             <TableRow>
-      <TableHead className="w-[160px]">{variants[0].label}</TableHead>
+              <TableHead className="w-[160px]">{variants[0].label}</TableHead>
               <TableHead className="w-[120px]">Price</TableHead>
               <TableHead className="w-[120px]">Special Price</TableHead>
               <TableHead className="w-[120px]">Stock</TableHead>
@@ -540,27 +839,56 @@ function SkuTableField({ field, control }: UiProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-      {variants[0].values.map((opt) => (
+            {variants[0].values.map((opt) => (
               <TableRow key={opt}>
                 <TableCell className="capitalize">{opt}</TableCell>
-  <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt, 'price')} type="number" required /></TableCell>
-        <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt, 'specialPrice')} type="number" /></TableCell>
-        <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt, 'stock')} type="number" /></TableCell>
-        <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt, 'sellerSku')} /></TableCell>
-        <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt, 'freeItems')} type="number" /></TableCell>
-  <TableCell><VariantAvailability name={pathFor(variants[0].key, opt, 'available')} /></TableCell>
+                <TableCell>
+                  <VariantFieldInput
+                    name={pathFor(variants[0].key, opt, 'price')}
+                    type="number"
+                    required
+                  />
+                </TableCell>
+                <TableCell>
+                  <VariantFieldInput
+                    name={pathFor(variants[0].key, opt, 'specialPrice')}
+                    type="number"
+                  />
+                </TableCell>
+                <TableCell>
+                  <VariantFieldInput
+                    name={pathFor(variants[0].key, opt, 'stock')}
+                    type="number"
+                  />
+                </TableCell>
+                <TableCell>
+                  <VariantFieldInput
+                    name={pathFor(variants[0].key, opt, 'sellerSku')}
+                  />
+                </TableCell>
+                <TableCell>
+                  <VariantFieldInput
+                    name={pathFor(variants[0].key, opt, 'freeItems')}
+                    type="number"
+                  />
+                </TableCell>
+                <TableCell>
+                  <VariantAvailability
+                    name={pathFor(variants[0].key, opt, 'available')}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
 
-    {variants.length >= 2 && (
+      {variants.length >= 2 && (
         <Table>
           <TableHeader>
             <TableRow>
-        <TableHead className="w-[160px]">{variants[0].label}</TableHead>
-        <TableHead className="w-[160px]">{variants[1].label}</TableHead>
+              <TableHead className="w-[160px]">{variants[0].label}</TableHead>
+              <TableHead className="w-[160px]">{variants[1].label}</TableHead>
               <TableHead className="w-[120px]">Price</TableHead>
               <TableHead className="w-[120px]">Special Price</TableHead>
               <TableHead className="w-[120px]">Stock</TableHead>
@@ -575,14 +903,79 @@ function SkuTableField({ field, control }: UiProps) {
                 <TableRow key={`${opt1}-${opt2}`}>
                   <TableCell className="capitalize">{opt1}</TableCell>
                   <TableCell className="capitalize">{opt2}</TableCell>
-                  <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price')} type="number" required /></TableCell>
-                  <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'specialPrice')} type="number" /></TableCell>
-                  <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock')} type="number" /></TableCell>
-                  <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku')} /></TableCell>
-                  <TableCell><VariantFieldInput name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'freeItems')} type="number" /></TableCell>
-                  <TableCell><VariantAvailability name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'available')} /></TableCell>
+                  <TableCell>
+                    <VariantFieldInput
+                      name={pathFor(
+                        variants[0].key,
+                        opt1,
+                        variants[1].key,
+                        opt2,
+                        'price',
+                      )}
+                      type="number"
+                      required
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <VariantFieldInput
+                      name={pathFor(
+                        variants[0].key,
+                        opt1,
+                        variants[1].key,
+                        opt2,
+                        'specialPrice',
+                      )}
+                      type="number"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <VariantFieldInput
+                      name={pathFor(
+                        variants[0].key,
+                        opt1,
+                        variants[1].key,
+                        opt2,
+                        'stock',
+                      )}
+                      type="number"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <VariantFieldInput
+                      name={pathFor(
+                        variants[0].key,
+                        opt1,
+                        variants[1].key,
+                        opt2,
+                        'sellerSku',
+                      )}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <VariantFieldInput
+                      name={pathFor(
+                        variants[0].key,
+                        opt1,
+                        variants[1].key,
+                        opt2,
+                        'freeItems',
+                      )}
+                      type="number"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <VariantAvailability
+                      name={pathFor(
+                        variants[0].key,
+                        opt1,
+                        variants[1].key,
+                        opt2,
+                        'available',
+                      )}
+                    />
+                  </TableCell>
                 </TableRow>
-              ))
+              )),
             )}
           </TableBody>
         </Table>
@@ -591,10 +984,25 @@ function SkuTableField({ field, control }: UiProps) {
   );
 }
 
-function VariantFieldInput({ name, type, required }: { name: string; type?: 'number'; required?: boolean }) {
+function VariantFieldInput({
+  name,
+  type,
+  required,
+}: {
+  name: string;
+  type?: 'number';
+  required?: boolean;
+}) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });
-  return <Input required={required} type={type === 'number' ? 'number' : 'text'} placeholder={type === 'number' ? '0' : ''} {...field} />;
+  return (
+    <Input
+      required={required}
+      type={type === 'number' ? 'number' : 'text'}
+      placeholder={type === 'number' ? '0' : ''}
+      {...field}
+    />
+  );
 }
 
 function VariantAvailability({ name }: { name: string }) {
@@ -602,7 +1010,10 @@ function VariantAvailability({ name }: { name: string }) {
   const { field } = useController({ name, control });
   return (
     <label className="flex items-center gap-2 text-xs">
-      <Checkbox checked={!!field.value} onCheckedChange={(v) => field.onChange(!!v)} />
+      <Checkbox
+        checked={!!field.value}
+        onCheckedChange={(v) => field.onChange(!!v)}
+      />
       <span>Available</span>
     </label>
   );
@@ -621,13 +1032,19 @@ function useObjectUrl(file: File | string | undefined) {
   return url;
 }
 
-function ColorMetaItem({ color, namePrefix, accept, limits }: {
+function ColorMetaItem({
+  color,
+  namePrefix,
+  accept,
+  limits,
+}: {
   color: string;
   namePrefix: string; // e.g. variants.colorMeta.Red
   accept?: string[];
   limits?: { maxImages?: number; maxSize?: number };
 }) {
-  const { control, setValue, watch, register, trigger, formState } = useFormContext();
+  const { control, setValue, watch, register, trigger, formState } =
+    useFormContext();
   const { field: hot } = useController({ name: `${namePrefix}.hot`, control });
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
   const images: File[] = watch(`${namePrefix}.images`) ?? [];
@@ -647,45 +1064,62 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
     register(`${namePrefix}.swatch` as any, {
       validate: (v: any) => {
         if (!v) return true;
-        if (limits?.maxSize && v instanceof File && v.size > limits.maxSize) return `Swatch must be <= ${Math.round(limits.maxSize / 1024 / 1024)}MB`;
+        if (limits?.maxSize && v instanceof File && v.size > limits.maxSize)
+          return `Swatch must be <= ${Math.round(limits.maxSize / 1024 / 1024)}MB`;
         return true;
       },
     });
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
         const arr: File[] = Array.isArray(v) ? v : [];
-        if (limits?.maxImages && arr.length > limits.maxImages) return `Max ${limits.maxImages} images`;
-        if (limits?.maxSize && arr.some((f) => limits?.maxSize && f.size > limits.maxSize)) {
+        if (limits?.maxImages && arr.length > limits.maxImages)
+          return `Max ${limits.maxImages} images`;
+        if (
+          limits?.maxSize &&
+          arr.some((f) => limits?.maxSize && f.size > limits.maxSize)
+        ) {
           const ms = limits.maxSize!;
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         }
         return true;
       },
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namePrefix]);
 
   const onSwatch = (file: File | null) => {
     if (!file) return;
-    setValue(`${namePrefix}.swatch`, file, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.swatch`, file, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.swatch`);
   };
   const onAddImages = (list: FileList | null) => {
     if (!list) return;
     const next = [...images, ...Array.from(list)];
-    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.images`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.images`);
   };
   const onReplaceImage = (idx: number, file: File | null) => {
     if (!file) return;
     const next = [...images];
     next[idx] = file;
-    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.images`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.images`);
   };
   const onDeleteImage = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
-    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.images`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.images`);
   };
 
@@ -694,7 +1128,10 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
       <div className="flex items-center justify-between gap-3">
         <div className="font-medium capitalize">{color}</div>
         <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={!!hot.value} onCheckedChange={(v) => hot.onChange(!!v)} />
+          <Checkbox
+            checked={!!hot.value}
+            onCheckedChange={(v) => hot.onChange(!!v)}
+          />
           <span>Hot</span>
         </label>
       </div>
@@ -710,13 +1147,24 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
               onChange={(e) => onSwatch(e.target.files?.[0] ?? null)}
             />
             {swatchUrl ? (
-              <img src={swatchUrl} alt={`${color}-swatch`} className="h-full w-full object-cover" />
+              <img
+                src={swatchUrl}
+                alt={`${color}-swatch`}
+                className="h-full w-full object-cover"
+              />
             ) : (
-              <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">+</div>
+              <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
+                +
+              </div>
             )}
           </label>
           {(formState.errors as any)?.[`${namePrefix}.swatch`] ? (
-            <div className="text-xs text-red-500">{(formState.errors as any)[`${namePrefix}.swatch`]?.message as string}</div>
+            <div className="text-xs text-red-500">
+              {
+                (formState.errors as any)[`${namePrefix}.swatch`]
+                  ?.message as string
+              }
+            </div>
           ) : null}
         </div>
 
@@ -731,7 +1179,9 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
                 multiple
                 onChange={(e) => onAddImages(e.target.files)}
               />
-              <span className="inline-flex items-center gap-1"><ImagePlus className="h-3 w-3" /> Add</span>
+              <span className="inline-flex items-center gap-1">
+                <ImagePlus className="h-3 w-3" /> Add
+              </span>
             </label>
             {images.map((_, idx) => {
               const url = imageUrls[idx];
@@ -740,7 +1190,13 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="relative group h-16 rounded border overflow-hidden">
-                        {url ? <img src={url} alt={`${color}-img-${idx}`} className="h-full w-full object-cover" /> : null}
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={`${color}-img-${idx}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
                         <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
@@ -748,8 +1204,14 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
                             onClick={() => {
                               const input = document.createElement('input');
                               input.type = 'file';
-                              input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                              input.onchange = (e: any) => onReplaceImage(idx, e.target.files?.[0] ?? null);
+                              input.accept = Array.isArray(accept)
+                                ? accept.join(',')
+                                : '';
+                              input.onchange = (e: any) =>
+                                onReplaceImage(
+                                  idx,
+                                  e.target.files?.[0] ?? null,
+                                );
                               input.click();
                             }}
                           >
@@ -767,7 +1229,13 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="p-2">
                       <div className="w-64">
-                        {url ? <img src={url} alt={`preview-${idx}`} className="w-full h-auto rounded" /> : null}
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={`preview-${idx}`}
+                            className="w-full h-auto rounded"
+                          />
+                        ) : null}
                         <div className="mt-2 flex justify-end gap-2">
                           <button
                             type="button"
@@ -775,8 +1243,14 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
                             onClick={() => {
                               const input = document.createElement('input');
                               input.type = 'file';
-                              input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                              input.onchange = (e: any) => onReplaceImage(idx, e.target.files?.[0] ?? null);
+                              input.accept = Array.isArray(accept)
+                                ? accept.join(',')
+                                : '';
+                              input.onchange = (e: any) =>
+                                onReplaceImage(
+                                  idx,
+                                  e.target.files?.[0] ?? null,
+                                );
                               input.click();
                             }}
                           >
@@ -798,7 +1272,12 @@ function ColorMetaItem({ color, namePrefix, accept, limits }: {
             })}
           </div>
           {(formState.errors as any)?.[`${namePrefix}.images`] ? (
-            <div className="text-xs text-red-500">{(formState.errors as any)[`${namePrefix}.images`]?.message as string}</div>
+            <div className="text-xs text-red-500">
+              {
+                (formState.errors as any)[`${namePrefix}.images`]
+                  ?.message as string
+              }
+            </div>
           ) : null}
         </div>
       </div>
@@ -810,71 +1289,130 @@ function ColorMetaField({ field }: UiProps) {
   const { watch, setValue } = useFormContext();
   const colorField: string = field.dataSource?.colorField ?? 'color';
   const accept: string[] | undefined = field.rule?.accept ?? ['image/*'];
-  const limits = { maxImages: field.rule?.maxItems ?? 8, maxSize: field.rule?.maxSize };
+  const limits = {
+    maxImages: field.rule?.maxItems ?? 8,
+    maxSize: field.rule?.maxSize,
+  };
   const selected = watch(colorField);
-  const colors: string[] = Array.isArray(selected) ? selected : selected ? [selected] : [];
+  const colors: string[] = Array.isArray(selected)
+    ? selected
+    : selected
+      ? [selected]
+      : [];
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-        <div className="text-xs text-muted-foreground">Add Image {limits.maxImages ? `max ${limits.maxImages} images` : ''} for each variant</div>
+        <LabelWithRequired required={field.required}>
+          {field.label}
+        </LabelWithRequired>
+        <div className="text-xs text-muted-foreground">
+          Add Image {limits.maxImages ? `max ${limits.maxImages} images` : ''}{' '}
+          for each variant
+        </div>
       </div>
       {colors.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Select one or more colors first.</div>
+        <div className="text-sm text-muted-foreground">
+          Select one or more colors first.
+        </div>
       ) : (
         <div className="space-y-2">
           {colors.map((c) => (
             <div key={c} className="rounded border p-2">
               <div className="flex items-center gap-2">
                 <Input value={c} readOnly className="capitalize" />
-                <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => {
-                  // open file picker to add images
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.multiple = true;
-                  input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                  input.onchange = (e: any) => {
-                    const files: FileList | null = e.target.files;
-                    const namePrefix = `variants.colorMeta.${c}`;
-                    const prev: File[] = watch(`${namePrefix}.images`) ?? [];
-                    const next = [...prev, ...Array.from(files ?? [])];
-                    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
-                  };
-                  input.click();
-                }}>+</Button>
-                <button type="button" className="inline-flex items-center gap-1 text-blue-600 text-sm underline" onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.multiple = true;
-                  input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                  input.onchange = (e: any) => {
-                    const files: FileList | null = e.target.files;
-                    const namePrefix = `variants.colorMeta.${c}`;
-                    const prev: File[] = watch(`${namePrefix}.images`) ?? [];
-                    const next = [...prev, ...Array.from(files ?? [])];
-                    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
-                  };
-                  input.click();
-                }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    // open file picker to add images
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.multiple = true;
+                    input.accept = Array.isArray(accept)
+                      ? accept.join(',')
+                      : '';
+                    input.onchange = (e: any) => {
+                      const files: FileList | null = e.target.files;
+                      const namePrefix = `variants.colorMeta.${c}`;
+                      const prev: File[] = watch(`${namePrefix}.images`) ?? [];
+                      const next = [...prev, ...Array.from(files ?? [])];
+                      setValue(`${namePrefix}.images`, next, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    };
+                    input.click();
+                  }}
+                >
+                  +
+                </Button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-blue-600 text-sm underline"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.multiple = true;
+                    input.accept = Array.isArray(accept)
+                      ? accept.join(',')
+                      : '';
+                    input.onchange = (e: any) => {
+                      const files: FileList | null = e.target.files;
+                      const namePrefix = `variants.colorMeta.${c}`;
+                      const prev: File[] = watch(`${namePrefix}.images`) ?? [];
+                      const next = [...prev, ...Array.from(files ?? [])];
+                      setValue(`${namePrefix}.images`, next, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    };
+                    input.click();
+                  }}
+                >
                   <Upload className="h-3 w-3" /> Upload
                 </button>
                 <span className="text-muted-foreground">|</span>
-                <button type="button" className="text-blue-600 text-sm underline" onClick={() => { /* TODO: open media center */ }}>Media Center</button>
+                <button
+                  type="button"
+                  className="text-blue-600 text-sm underline"
+                  onClick={() => {
+                    /* TODO: open media center */
+                  }}
+                >
+                  Media Center
+                </button>
                 <div className="ml-auto flex items-center gap-2">
-                  <button type="button" className="text-red-600" onClick={() => {
-                    // remove this color selection and its meta
-                    const updated = colors.filter((x) => x !== c);
-                    setValue(colorField, updated, { shouldDirty: true, shouldValidate: true });
-                    // clear colorMeta data
-                    setValue(`variants.colorMeta.${c}`, undefined as any, { shouldDirty: true, shouldValidate: true });
-                  }}>
+                  <button
+                    type="button"
+                    className="text-red-600"
+                    onClick={() => {
+                      // remove this color selection and its meta
+                      const updated = colors.filter((x) => x !== c);
+                      setValue(colorField, updated, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      // clear colorMeta data
+                      setValue(`variants.colorMeta.${c}`, undefined as any, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                  >
                     Remove
                   </button>
                 </div>
               </div>
               <div className="mt-2">
-                <ColorMetaItem color={c} namePrefix={`variants.colorMeta.${c}`} accept={accept} limits={limits} />
+                <ColorMetaItem
+                  color={c}
+                  namePrefix={`variants.colorMeta.${c}`}
+                  accept={accept}
+                  limits={limits}
+                />
               </div>
             </div>
           ))}
@@ -885,7 +1423,17 @@ function ColorMetaField({ field }: UiProps) {
 }
 
 // ---------- Color Inline: compact row-style per-color image uploads ----------
-function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; namePrefix: string; accept?: string[]; limits: { maxImages?: number; maxSize?: number } }) {
+function ColorInlineRow({
+  color,
+  namePrefix,
+  accept,
+  limits,
+}: {
+  color: string;
+  namePrefix: string;
+  accept?: string[];
+  limits: { maxImages?: number; maxSize?: number };
+}) {
   const { watch, setValue, trigger, register, formState } = useFormContext();
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
   const swatchUrl = React.useMemo(() => {
@@ -896,7 +1444,9 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
   const images: File[] = watch(`${namePrefix}.images`) ?? [];
   const [urls, setUrls] = React.useState<string[]>([]);
   React.useEffect(() => {
-    const next = (images || []).map((f) => (typeof f === 'string' ? f : URL.createObjectURL(f)));
+    const next = (images || []).map((f) =>
+      typeof f === 'string' ? f : URL.createObjectURL(f),
+    );
     setUrls(next);
     return () => {
       next.forEach((u) => {
@@ -910,37 +1460,56 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
     register(`${namePrefix}.swatch` as any, {
       validate: (v: any) => {
         if (!v) return true;
-        if (limits?.maxSize && v instanceof File && v.size > (limits.maxSize ?? 0)) return `Swatch must be <= ${Math.round((limits.maxSize ?? 0) / 1024 / 1024)}MB`;
+        if (
+          limits?.maxSize &&
+          v instanceof File &&
+          v.size > (limits.maxSize ?? 0)
+        )
+          return `Swatch must be <= ${Math.round((limits.maxSize ?? 0) / 1024 / 1024)}MB`;
         return true;
       },
     });
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
         const arr: File[] = Array.isArray(v) ? v : [];
-        if (limits?.maxImages && arr.length > (limits.maxImages ?? 0)) return `Max ${limits.maxImages} images`;
-        if (limits?.maxSize && arr.some((f) => f instanceof File && f.size > (limits.maxSize ?? 0))) return `Each image must be <= ${Math.round((limits.maxSize ?? 0) / 1024 / 1024)}MB`;
+        if (limits?.maxImages && arr.length > (limits.maxImages ?? 0))
+          return `Max ${limits.maxImages} images`;
+        if (
+          limits?.maxSize &&
+          arr.some((f) => f instanceof File && f.size > (limits.maxSize ?? 0))
+        )
+          return `Each image must be <= ${Math.round((limits.maxSize ?? 0) / 1024 / 1024)}MB`;
         return true;
       },
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namePrefix]);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
     const next = [...images, ...Array.from(list)];
-    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.images`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.images`);
   };
   const replaceAt = (idx: number, file: File | null) => {
     if (!file) return;
     const next = [...images];
     next[idx] = file;
-    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.images`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.images`);
   };
   const removeAt = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
-    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    setValue(`${namePrefix}.images`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     trigger(`${namePrefix}.images`);
   };
 
@@ -957,14 +1526,23 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
               if (!file) return;
-              setValue(`${namePrefix}.swatch`, file as any, { shouldDirty: true, shouldValidate: true });
+              setValue(`${namePrefix}.swatch`, file as any, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
               trigger(`${namePrefix}.swatch`);
             }}
           />
           {swatchUrl ? (
-            <img src={swatchUrl} alt={`${color}-swatch`} className="h-full w-full object-cover" />
+            <img
+              src={swatchUrl}
+              alt={`${color}-swatch`}
+              className="h-full w-full object-cover"
+            />
           ) : (
-            <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">+</div>
+            <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
+              +
+            </div>
           )}
         </label>
       </div>
@@ -978,7 +1556,9 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
       {/* Product images for this color */}
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">Color Product Images</div>
+          <div className="text-xs text-muted-foreground">
+            Color Product Images
+          </div>
           <div className="flex items-center gap-2 text-sm">
             <button
               type="button"
@@ -995,19 +1575,38 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
               <Upload className="h-3 w-3" /> Upload
             </button>
             <span className="text-muted-foreground">|</span>
-            <button type="button" className="text-blue-600 underline" onClick={() => {/* TODO: media center */}}>Media Center</button>
+            <button
+              type="button"
+              className="text-blue-600 underline"
+              onClick={() => {
+                /* TODO: media center */
+              }}
+            >
+              Media Center
+            </button>
           </div>
         </div>
         <div className="min-h-[56px] w-full rounded border border-dashed p-2">
           <div className="flex flex-wrap gap-2">
             {/* Add tile */}
             <label className="flex h-12 w-12 cursor-pointer items-center justify-center rounded border text-xs text-muted-foreground hover:bg-accent/30">
-              <input type="file" className="hidden" accept={Array.isArray(accept) ? accept.join(',') : undefined} multiple onChange={(e) => addFiles(e.target.files)} />
+              <input
+                type="file"
+                className="hidden"
+                accept={Array.isArray(accept) ? accept.join(',') : undefined}
+                multiple
+                onChange={(e) => addFiles(e.target.files)}
+              />
               <ImagePlus className="h-4 w-4" />
             </label>
             {urls.map((src, idx) => (
-              <div key={idx} className="group relative h-12 w-12 overflow-hidden rounded border">
-                {src ? <img src={src} className="h-full w-full object-cover" /> : null}
+              <div
+                key={idx}
+                className="group relative h-12 w-12 overflow-hidden rounded border"
+              >
+                {src ? (
+                  <img src={src} className="h-full w-full object-cover" />
+                ) : null}
                 <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/40 group-hover:flex">
                   <button
                     type="button"
@@ -1015,14 +1614,21 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
                     onClick={() => {
                       const input = document.createElement('input');
                       input.type = 'file';
-                      input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                      input.onchange = (e: any) => replaceAt(idx, e.target.files?.[0] ?? null);
+                      input.accept = Array.isArray(accept)
+                        ? accept.join(',')
+                        : '';
+                      input.onchange = (e: any) =>
+                        replaceAt(idx, e.target.files?.[0] ?? null);
                       input.click();
                     }}
                   >
                     <Pencil className="h-3 w-3" />
                   </button>
-                  <button type="button" className="h-6 w-6 rounded bg-white/90 grid place-items-center text-red-600" onClick={() => removeAt(idx)}>
+                  <button
+                    type="button"
+                    className="h-6 w-6 rounded bg-white/90 grid place-items-center text-red-600"
+                    onClick={() => removeAt(idx)}
+                  >
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
@@ -1030,7 +1636,12 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: { color: string; 
             ))}
           </div>
           {(formState.errors as any)?.[`${namePrefix}.images`] ? (
-            <div className="text-xs text-red-500 mt-1">{(formState.errors as any)[`${namePrefix}.images`]?.message as string}</div>
+            <div className="text-xs text-red-500 mt-1">
+              {
+                (formState.errors as any)[`${namePrefix}.images`]
+                  ?.message as string
+              }
+            </div>
           ) : null}
         </div>
       </div>
@@ -1042,21 +1653,40 @@ function ColorInlineField({ field }: UiProps) {
   const { watch } = useFormContext();
   const colorField: string = field.dataSource?.colorField ?? 'color';
   const accept: string[] | undefined = field.rule?.accept ?? ['image/*'];
-  const limits = { maxImages: field.rule?.maxItems ?? 8, maxSize: field.rule?.maxSize };
+  const limits = {
+    maxImages: field.rule?.maxItems ?? 8,
+    maxSize: field.rule?.maxSize,
+  };
   const selected = watch(colorField);
-  const colors: string[] = Array.isArray(selected) ? selected : selected ? [selected] : [];
+  const colors: string[] = Array.isArray(selected)
+    ? selected
+    : selected
+      ? [selected]
+      : [];
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">
-        <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-        <span className="text-xs text-muted-foreground">Max {limits.maxImages} images for each variant</span>
+        <LabelWithRequired required={field.required}>
+          {field.label}
+        </LabelWithRequired>
+        <span className="text-xs text-muted-foreground">
+          Max {limits.maxImages} images for each variant
+        </span>
       </div>
       {colors.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Select one or more colors first.</div>
+        <div className="text-sm text-muted-foreground">
+          Select one or more colors first.
+        </div>
       ) : (
         <div className="space-y-2">
           {colors.map((c) => (
-            <ColorInlineRow key={c} color={c} namePrefix={`variants.colorMeta.${c}`} accept={accept} limits={limits} />
+            <ColorInlineRow
+              key={c}
+              color={c}
+              namePrefix={`variants.colorMeta.${c}`}
+              accept={accept}
+              limits={limits}
+            />
           ))}
         </div>
       )}
@@ -1069,8 +1699,6 @@ export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   number: NumberField,
   Switch: SwitchField,
   select: SelectField,
-  multiSelect: MultiSelectField,
-  // Accept lowercase 'multiselect' as an alias
   multiselect: MultiSelectField,
   VariantList: VariantListField,
   MainImage: MainImageField,
@@ -1078,4 +1706,3 @@ export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   ColorMeta: ColorMetaField,
   ColorInline: ColorInlineField,
 };
-
