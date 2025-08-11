@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronRight, Search, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -60,8 +60,41 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const [globalSearchResults, setGlobalSearchResults] = useState<Category[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<number | null>(null);
+  // Track refs to each rendered category button by column and id
+  const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   
   const { getRootCategories, getChildCategories, searchCategories, recentCategories, addToRecent, findCategoryById } = useCategories();
+
+  // Helper: collect all leaf descendants for a given parent id
+  const collectLeafDescendants = (parentId: string): Category[] => {
+    const result: Category[] = [];
+    const children = getChildCategories(parentId);
+    const dfs = (node: Category) => {
+      const kids = getChildCategories(node.id);
+      if (!kids || kids.length === 0) {
+        result.push(node);
+      } else {
+        for (const k of kids) dfs(k);
+      }
+    };
+    for (const ch of children) dfs(ch);
+    return result;
+  };
+
+  // Helper: resolve a category to local tree by its path segments
+  const resolveLocalByPath = (segments: string[] | undefined | null): Category | undefined => {
+    if (!segments || segments.length === 0) return undefined;
+    let parentId: string | null = null;
+    let last: Category | undefined = undefined;
+    for (const name of segments) {
+      const candidates: Category[] = parentId ? getChildCategories(parentId) : getRootCategories();
+      const match: Category | undefined = candidates.find((c: Category) => c.name === name);
+      if (!match) return undefined;
+      last = match;
+      parentId = match.id;
+    }
+    return last;
+  };
 
   const handleCategoryClick = (category: Category, columnIndex: number) => {
     if (category.hasChildren) {
@@ -78,7 +111,8 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     const newPath = selectedPath.slice(0, columnIndex);
     newPath.push(category);
     setSelectedPath(newPath);
-    setTempSelectedPath(newPath);
+  // Clear any previous leaf selection when navigating non-leaf levels
+  setTempSelectedPath([]);
 
     // Only add a new column if the category has children AND there are actual child categories
     if (category.hasChildren) {
@@ -132,7 +166,27 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
           }));
         }
-        setGlobalSearchResults(results);
+        // Expand any matched parent categories into their leaf descendants using local tree
+        const expandedLeaves: Category[] = [];
+        for (const r of results) {
+          let local: Category | undefined = r.id ? findCategoryById?.(r.id) : undefined;
+          if (!local) {
+            local = resolveLocalByPath(r.path);
+          }
+          if (local) {
+            const children = getChildCategories(local.id);
+            if (!children || children.length === 0) {
+              expandedLeaves.push(local);
+            } else {
+              expandedLeaves.push(...collectLeafDescendants(local.id));
+            }
+          }
+        }
+        // Dedupe by id
+        const deduped = Array.from(
+          new Map(expandedLeaves.map((c) => [c.id, c])).values(),
+        );
+        setGlobalSearchResults(deduped);
       } catch (error) {
         console.error('Search error:', error);
         setGlobalSearchResults([]);
@@ -193,8 +247,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
       }
     }
 
-    setSelectedPath(finalPath);
-    setTempSelectedPath(finalPath);
+  setSelectedPath(finalPath);
+  // Only treat as selectable if final node is a leaf
+  const isLeaf = finalPath.length > 0 && !finalPath[finalPath.length - 1].hasChildren;
+  setTempSelectedPath(isLeaf ? finalPath : []);
     setColumns(newColumns);
   };
 
@@ -207,8 +263,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const handleConfirm = () => {
     if (tempSelectedPath.length > 0) {
       const finalCategory = tempSelectedPath[tempSelectedPath.length - 1];
-      addToRecent(finalCategory);
-      onSelect?.(finalCategory);
+      if (!finalCategory.hasChildren) {
+        addToRecent(finalCategory);
+        onSelect?.(finalCategory);
+      }
     }
     setIsOpen(false);
     setColumns([{ parentId: null, parentName: 'Categories', searchQuery: '' }]);
@@ -237,6 +295,20 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const currentSelectionText = tempSelectedPath.length > 0 
     ? tempSelectedPath.map(cat => cat.name).join(' > ')
     : '';
+
+  // Auto-scroll columns to reveal current selection path
+  useEffect(() => {
+    const path = selectedPath.length > 0 ? selectedPath : tempSelectedPath;
+    if (!path.length) return;
+    // Wait for DOM to paint after column updates
+    requestAnimationFrame(() => {
+      path.forEach((cat, i) => {
+        const key = `${i}:${cat.id}`;
+        const el = itemRefs.current[key];
+  el?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      });
+    });
+  }, [columns, selectedPath, tempSelectedPath]);
 
   return (
     <div className="space-y-2">
@@ -362,6 +434,11 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                                   selectedPath.some(cat => cat.id === category.id) && "bg-accent",
                                   tempSelectedPath.some(cat => cat.id === category.id) && "bg-primary/10 text-primary"
                                 )}
+                                ref={(el) => {
+                                  const k = `${columnIndex}:${category.id}`;
+                                  if (el) itemRefs.current[k] = el;
+                                  else delete itemRefs.current[k];
+                                }}
                                 onClick={() => handleCategoryClick(category, columnIndex)}
                               >
                                 <span className="whitespace-nowrap overflow-x-auto block max-w-full">{category.name}</span>
@@ -398,7 +475,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               <Button 
                 onClick={handleConfirm} 
                 size="sm"
-                disabled={tempSelectedPath.length === 0}
+                disabled={
+                  tempSelectedPath.length === 0 ||
+                  (tempSelectedPath.length > 0 && tempSelectedPath[tempSelectedPath.length - 1].hasChildren)
+                }
                 className="bg-orange-600 hover:bg-orange-700"
               >
                 Confirm
