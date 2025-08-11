@@ -19,13 +19,19 @@ const defaults: SignOptions = {
   audience: ['user'],
 };
 
+const isDev = config.NODE_ENV === 'development';
+
 export const accessTokenSignOptions: SignOptsAndSecret = {
-  expiresIn: config.JWT.EXPIRES_IN as StringValue | number,
+  // In development, omit the exp claim for a truly non-expiring token
+  ...(isDev ? {} : { expiresIn: config.JWT.EXPIRES_IN as StringValue | number }),
   secret: config.JWT.SECRET,
 };
 
 export const refreshTokenSignOptions: SignOptsAndSecret = {
-  expiresIn: config.JWT.REFRESH_EXPIRES_IN as StringValue | number,
+  // In development, omit the exp claim for a truly non-expiring refresh token
+  ...(isDev
+    ? {}
+    : { expiresIn: config.JWT.REFRESH_EXPIRES_IN as StringValue | number }),
   secret: config.JWT.REFRESH_SECRET,
 };
 
