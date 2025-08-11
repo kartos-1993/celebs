@@ -4,7 +4,11 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 // Load env from project env file (development by default)
-dotenv.config({ path: process.env.DOTENV_CONFIG_PATH || path.resolve(__dirname, '../../../.env.development') });
+dotenv.config({
+  path:
+    process.env.DOTENV_CONFIG_PATH ||
+    path.resolve(__dirname, '../../../.env.development'),
+});
 
 import { CategoryModel } from '../../db/models/category.model';
 import { AttributeModel } from '../../db/models/attribute.model';
@@ -13,6 +17,8 @@ import { OptionSetModel } from '../../db/models/option-set.model';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fashion-ecommerce';
 
 // Types
+type AllowedGroup = 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
+
 interface SeedAttr {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
@@ -22,6 +28,7 @@ interface SeedAttr {
   variantType?: 'color' | 'size' | null;
   useStandardOptions?: boolean;
   optionSetName?: string; // convenience to resolve optionSetId
+  group?: AllowedGroup; // optional explicit group; default inferred
 }
 
 interface SeedCategory {
@@ -37,6 +44,12 @@ async function getOptionSetIdByName(name: string): Promise<Types.ObjectId | null
 }
 
 function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
+  // Default group: variant attributes => 'variant', else 'details'
+  const group: AllowedGroup = a.group
+    ? a.group
+    : a.isVariant
+    ? 'variant'
+    : 'details';
   return {
     name: a.name,
     type: a.type,
@@ -46,16 +59,21 @@ function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
     variantType: a.variantType ?? null,
     useStandardOptions: !!a.useStandardOptions,
     optionSetId: a.optionSetId ?? null,
+    group,
   };
 }
 
 async function ensureCategory(parent: any | null, name: string) {
-  const existing = await CategoryModel.findOne({ name });
-  if (existing) return existing;
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? (parent.level || 1) + 1 : 1;
   const pathParts = parent ? [...(parent.path || []), slug] : [slug];
-  return CategoryModel.create({ name, slug, level, parent: parent?._id || null, path: pathParts });
+  // Upsert so reseeding keeps structure consistent
+  const res = await CategoryModel.findOneAndUpdate(
+    { name },
+    { name, slug, level, parent: parent?._id || null, path: pathParts },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
+  );
+  return res;
 }
 
 async function createAttributes(categoryId: Types.ObjectId, attrs: SeedAttr[]) {
@@ -70,14 +88,17 @@ async function createAttributes(categoryId: Types.ObjectId, attrs: SeedAttr[]) {
     })
   );
 
-  // idempotent-ish: upsert by (categoryId, name)
+  // Upsert by (categoryId, name). Optionally clear missing attributes if CLEAR_MISSING=1
+  const namesInSeed = new Set(withIds.map((a) => a.name));
   for (const attr of withIds) {
-    const existing = await AttributeModel.findOne({ categoryId, name: attr.name });
-    if (existing) {
-      await AttributeModel.updateOne({ _id: existing._id }, attr);
-    } else {
-      await AttributeModel.create({ categoryId, ...attr });
-    }
+    await AttributeModel.updateOne(
+      { categoryId, name: attr.name },
+      { categoryId, ...attr } as any,
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+  }
+  if (process.env.CLEAR_MISSING === '1') {
+    await AttributeModel.deleteMany({ categoryId, name: { $nin: Array.from(namesInSeed) } });
   }
 }
 
@@ -87,9 +108,14 @@ async function seedTree(root: SeedCategory) {
     { name: 'Basic Colors', type: 'color', values: ['Black','White','Red','Blue','Green','Yellow','Gray','Pink','Purple','Brown'] },
     { name: 'Alpha Sizes (XS-XXL)', type: 'size', values: ['XS','S','M','L','XL','XXL'] },
     { name: 'Numeric Sizes (28-44)', type: 'size', values: ['28','30','32','34','36','38','40','42','44'] },
+    { name: 'US Shoe Sizes (Men)', type: 'size', values: ['6','7','8','9','10','11','12','13'] },
   ];
   for (const set of defaults) {
-    await OptionSetModel.updateOne({ name: set.name }, set as any, { upsert: true });
+    await OptionSetModel.updateOne(
+      { name: set.name },
+      set as any,
+      { upsert: true, setDefaultsOnInsert: true },
+    );
   }
 
   async function walk(node: SeedCategory, parent: any | null) {

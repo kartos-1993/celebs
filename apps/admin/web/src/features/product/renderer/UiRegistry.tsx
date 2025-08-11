@@ -6,6 +6,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -742,19 +743,19 @@ function SkuTableField({ field, control }: UiProps) {
           <TableBody>
             <TableRow>
               <TableCell>
-                <Input type="number" {...price} placeholder="0" required />
+                <NumberInput {...price} placeholder="0" required />
               </TableCell>
               <TableCell>
-                <Input type="number" {...specialPrice} placeholder="0" />
+                <NumberInput {...specialPrice} placeholder="0" />
               </TableCell>
               <TableCell>
-                <Input type="number" {...stock} placeholder="0" />
+                <NumberInput {...stock} placeholder="0" />
               </TableCell>
               <TableCell>
                 <Input {...sellerSku} placeholder="SKU" />
               </TableCell>
               <TableCell>
-                <Input type="number" {...freeItems} placeholder="0" />
+                <NumberInput {...freeItems} placeholder="0" />
               </TableCell>
               <TableCell>
                 <label className="flex items-center gap-2 text-xs">
@@ -790,8 +791,7 @@ function SkuTableField({ field, control }: UiProps) {
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Price</div>
-            <Input
-              type="number"
+            <NumberInput
               value={applyAll.price ?? ''}
               onChange={(e) =>
                 setApplyAll((p) => ({ ...p, price: e.target.value }))
@@ -801,8 +801,7 @@ function SkuTableField({ field, control }: UiProps) {
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Special Price</div>
-            <Input
-              type="number"
+            <NumberInput
               value={applyAll.specialPrice ?? ''}
               onChange={(e) =>
                 setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))
@@ -812,8 +811,7 @@ function SkuTableField({ field, control }: UiProps) {
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Stock</div>
-            <Input
-              type="number"
+            <NumberInput
               value={applyAll.stock ?? ''}
               onChange={(e) =>
                 setApplyAll((p) => ({ ...p, stock: e.target.value }))
@@ -833,8 +831,7 @@ function SkuTableField({ field, control }: UiProps) {
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Free Items</div>
-            <Input
-              type="number"
+            <NumberInput
               value={applyAll.freeItems ?? ''}
               onChange={(e) =>
                 setApplyAll((p) => ({ ...p, freeItems: e.target.value }))
@@ -1034,12 +1031,11 @@ function VariantFieldInput({
   const { control } = useFormContext();
   const { field } = useController({ name, control });
   return (
-    <Input
-      required={required}
-      type={type === 'number' ? 'number' : 'text'}
-      placeholder={type === 'number' ? '0' : ''}
-      {...field}
-    />
+    type === 'number' ? (
+      <NumberInput required={required} placeholder="0" {...field} />
+    ) : (
+      <Input required={required} placeholder="" {...field} />
+    )
   );
 }
 
