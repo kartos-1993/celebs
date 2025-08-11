@@ -8,7 +8,9 @@ export type UiType =
   | 'select'
   | 'multiSelect'
   | 'SkuTableV2'
-  | 'MainImage';
+  | 'MainImage'
+  | 'ColorInline'
+  | 'ColorMeta';
 
 export type FieldGroup =
   | 'basic'
@@ -81,7 +83,17 @@ function attributeToField(attr: IAttribute): FieldSpec {
 export function composeSchema(params: {
   category: CategoryDocLike;
   locale: string;
-  policy: { media: { maxImages: number; maxSizeBytes: number; accept: string[] } };
+  policy: {
+    media: {
+      maxImages: number;
+      maxSizeBytes: number;
+      accept: string[];
+      minWidth?: number;
+      minHeight?: number;
+      aspectRatio?: string; // e.g., '1:1'
+      ratioTolerance?: number; // e.g., 0.03 for 3%
+    };
+  };
 }) {
   const fields: FieldSpec[] = [];
 
@@ -97,6 +109,10 @@ export function composeSchema(params: {
         maxItems: params.policy.media.maxImages,
         accept: params.policy.media.accept,
         maxSize: params.policy.media.maxSizeBytes,
+  minWidth: params.policy.media.minWidth,
+  minHeight: params.policy.media.minHeight,
+  aspectRatio: params.policy.media.aspectRatio,
+  ratioTolerance: params.policy.media.ratioTolerance,
       },
     },
   );
@@ -108,6 +124,33 @@ export function composeSchema(params: {
 
   // Variations -> SKU matrix
   const saleProps = (params.category.attributes || []).filter((a: any) => a.isVariant);
+
+  // If there's a Color variant, add per-color images field with same media rules
+  const colorAttr = (params.category.attributes || []).find((a: any) => {
+    const key = String(a?.name || '').toLowerCase();
+    const axis = String(a?.variantType || a?.variantAxis || '').toLowerCase();
+    return a?.isVariant && (axis === 'color' || key.includes('color'));
+  });
+  if (colorAttr) {
+    fields.push({
+      name: 'variants.colorMeta',
+      uiType: 'ColorInline',
+      label: 'Color Images',
+      group: 'variant',
+      required: false,
+      dataSource: { colorField: String(colorAttr.name) },
+      rule: {
+        maxItems: params.policy.media.maxImages,
+        accept: params.policy.media.accept,
+        maxSize: params.policy.media.maxSizeBytes,
+        minWidth: params.policy.media.minWidth,
+        minHeight: params.policy.media.minHeight,
+        aspectRatio: params.policy.media.aspectRatio,
+        ratioTolerance: params.policy.media.ratioTolerance,
+      },
+      visible: true,
+    });
+  }
   fields.push({
     name: 'sku',
     uiType: 'SkuTableV2',

@@ -107,7 +107,7 @@ export default function DynamicProductForm({ catId, productId, onValuesChange, o
                 group: 'variant',
                 required: false,
                 dataSource: { colorField: colorFieldKey },
-                rule: { accept: ['image/*'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
+                rule: { accept: ['image/jpeg','image/png','image/webp','image/avif'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
                 visible: true,
               });
             }
@@ -171,7 +171,7 @@ export default function DynamicProductForm({ catId, productId, onValuesChange, o
                 group: 'variant',
                 required: false,
                 dataSource: { colorField: colorVariantField.name },
-                rule: { accept: ['image/*'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
+                rule: { accept: ['image/jpeg','image/png','image/webp','image/avif'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
                 visible: true,
               });
             }
@@ -194,7 +194,7 @@ export default function DynamicProductForm({ catId, productId, onValuesChange, o
                 group: 'variant',
                 required: false,
                 dataSource: { colorField: colorVariantField.name },
-                rule: { accept: ['image/*'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
+                rule: { accept: ['image/jpeg','image/png','image/webp','image/avif'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
                 visible: true,
               },
             ];

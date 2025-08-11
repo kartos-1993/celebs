@@ -6,7 +6,15 @@ const router = Router();
 const categoryService = new CategoryService();
 
 const DEFAULT_POLICY = {
-  media: { maxImages: 8, maxSizeBytes: 5 * 1024 * 1024, accept: ['image/jpeg', 'image/png'] },
+  media: {
+    maxImages: 8,
+    maxSizeBytes: 5 * 1024 * 1024,
+  accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+    minWidth: 1500,
+    minHeight: 1500,
+    aspectRatio: '1:1',
+    ratioTolerance: 0.03,
+  },
 };
 
 router.get('/product-render', async (req, res) => {
