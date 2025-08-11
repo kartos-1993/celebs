@@ -275,10 +275,10 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
             icon={icon}
             isValid={true}
             isRequired={false}
-            defaultOpen={key === 'base'}
+            defaultOpen={true}
           >
             {key === 'details' ? (
-              <Collapsible>
+              <Collapsible defaultOpen>
                 <div className="mb-3 flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">Fill more product specification to improve searchability</div>
                   <CollapsibleTrigger asChild>
