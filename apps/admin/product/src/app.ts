@@ -14,6 +14,7 @@ import { logger } from './common/utils/logger';
 import categoryRoutes from './modules/category/category.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
 import renderRoutes from './modules/render/router';
+import mediaRoutes from './modules/media/media.routes';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use(
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
 app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
+app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
