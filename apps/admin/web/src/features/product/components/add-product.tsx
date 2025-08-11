@@ -20,6 +20,8 @@ const AddProduct = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
   const [dynamicValues, setDynamicValues] = useState<Record<string, any>>({});
+  const [schemaHasName, setSchemaHasName] = useState(false);
+  const [schemaHasBrand, setSchemaHasBrand] = useState(false);
 
   const {
     form,
@@ -177,6 +179,8 @@ const AddProduct = () => {
                     onFieldChange={handleBasicInfoChange}
                     onCategoryPathChange={setCategoryPath}
                     categoryPath={categoryPath}
+                    hideName={schemaHasName}
+                    hideBrand={schemaHasBrand}
                   />
                 
 
@@ -184,9 +188,29 @@ const AddProduct = () => {
                 {canShowAdditionalSections && (
                   <DynamicProductForm
                     catId={formData.subcategoryId as any}
-                    onValuesChange={(vals, section) =>
-                      setDynamicValues((prev) => ({ ...prev, ...vals, [`__section__${section}`]: vals }))
-                    }
+                    productId={id}
+                    onValuesChange={(vals, section) => {
+                      setDynamicValues((prev) => ({ ...prev, ...vals, [`__section__${section}`]: vals }));
+                      // If backend provided name/brand via dynamic schema, sync to RHF + formData
+                      const lowerKeys = Object.fromEntries(Object.entries(vals).map(([k,v]) => [k.toLowerCase(), v]));
+                      const nameKey = ['name', 'productname', 'title'].find((k) => k in lowerKeys);
+                      if (nameKey) {
+                        const v = (lowerKeys as any)[nameKey];
+                        form.setValue('name', v, { shouldDirty: true, shouldValidate: true });
+                        updateFormData({ name: v });
+                      }
+                      const brandKey = ['brand', 'productbrand'].find((k) => k in lowerKeys);
+                      if (brandKey) {
+                        const v = (lowerKeys as any)[brandKey];
+                        form.setValue('brand', v, { shouldDirty: true, shouldValidate: true });
+                        updateFormData({ brand: v });
+                      }
+                    }}
+                    onSchemaLoaded={(fields) => {
+                      const names = new Set(fields.map((f) => f.name.toLowerCase()))
+                      setSchemaHasName(names.has('name') || names.has('productname') || names.has('title'));
+                      setSchemaHasBrand(names.has('brand') || names.has('productbrand'));
+                    }}
                   />
                 )}
 

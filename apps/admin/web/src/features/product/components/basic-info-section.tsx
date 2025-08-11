@@ -21,6 +21,8 @@ interface BasicInfoSectionProps {
   onFieldChange: (name: string, value: string) => void;
   onCategoryPathChange?: (path: string[]) => void;
   categoryPath?: string[]; // for reflecting preselected value in cascader
+  hideName?: boolean;
+  hideBrand?: boolean;
 }
 
 const BasicInfoSection = ({
@@ -32,6 +34,8 @@ const BasicInfoSection = ({
   onFieldChange,
   onCategoryPathChange,
   categoryPath,
+  hideName,
+  hideBrand,
 }: BasicInfoSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
 
@@ -82,6 +86,7 @@ const BasicInfoSection = ({
 
         {/* Show Product Name only after category is selected, like the referenced flow */}
         {hasCategory && (<>
+        {!hideName && (
         <FormField
             control={control}
             name="name"
@@ -104,8 +109,9 @@ const BasicInfoSection = ({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          />)}
 
+          {!hideBrand && (
           <FormField
   control={control}
   name="brand"
@@ -125,7 +131,7 @@ const BasicInfoSection = ({
       <FormMessage />
     </FormItem>
   )}
-/>
+/>) }
             </>
           
 

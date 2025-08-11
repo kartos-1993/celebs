@@ -10,7 +10,7 @@ import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { ProductAPI } from '@/lib/axios-client';
 import { CategoryApiService } from '../../category/api';
 
-export default function DynamicProductForm({ catId, onValuesChange }: { catId: string; onValuesChange?: (values: any, sectionKey: string) => void }) {
+export default function DynamicProductForm({ catId, productId, onValuesChange, onSchemaLoaded }: { catId: string; productId?: string; onValuesChange?: (values: any, sectionKey: string) => void; onSchemaLoaded?: (fields: FieldSpec[]) => void }) {
   const [fields, setFields] = React.useState<FieldSpec[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -18,6 +18,8 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   // Single shared form across all sections so dependencies work (e.g., variants -> SKU table)
   const form = useForm({ defaultValues: {}, mode: 'onChange' });
+  // Ensure default values from backend are applied only once per category
+  const appliedDefaultsRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     (async () => {
@@ -25,7 +27,7 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
       setLoading(true);
       setError(null);
       try {
-        const res = await ProductAPI.get('/product-render', { params: { catId, locale: 'en_US' } });
+  const res = await ProductAPI.get('/product-render', { params: { catId, locale: 'en_US', productId } });
         const next: FieldSpec[] = res.data?.data?.data ?? res.data?.data ?? [];
 
         // Build a lightweight fallback for missing sections from Category attributes
@@ -199,14 +201,43 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
           }
         } catch {}
 
-        setFields(merged);
+  // Set fields for rendering
+  setFields(merged);
+  onSchemaLoaded?.(merged);
+
+        // Apply backend-provided initial values into the form once per category
+        try {
+          const defaults: Record<string, any> = {};
+          for (const f of merged) {
+            if (typeof f?.value !== 'undefined') {
+              defaults[f.name] = f.value;
+            }
+          }
+          // Only reset if we haven't applied defaults for this category yet
+          if (catId && appliedDefaultsRef.current !== catId && Object.keys(defaults).length) {
+            form.reset({
+              // preserve any current values the user might have entered prior to defaults
+              ...(form.getValues() || {}),
+              ...defaults,
+            });
+            appliedDefaultsRef.current = catId;
+            // Also notify parent about each defaulted field so consumers can sync
+            for (const [k, v] of Object.entries(defaults)) {
+              const sectionKey = (() => {
+                const found = merged.find((f) => f.name === k);
+                return found?.group ? found.group : '';
+              })();
+              onValuesChange?.({ [k]: v }, sectionKey);
+            }
+          }
+        } catch {}
       } catch (e: any) {
         setError(e?.message || 'Failed to load form schema');
       } finally {
         setLoading(false);
       }
     })();
-  }, [catId]);
+  }, [catId, productId]);
 
   // Group by normalized section keys to match the reference layout, with aliases
   const normalize = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -214,7 +245,7 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
     // Images
     base: 'base', productimages: 'base', images: 'base', mainimage: 'base', media: 'base',
     // Attributes/specs
-    details: 'details', productspecification: 'details', specification: 'details', attributes: 'details',
+  details: 'details', productspecification: 'details', specification: 'details', attributes: 'details', basic: 'details', basicinfo: 'details', general: 'details', info: 'details', title: 'details', productname: 'details', brand: 'details',
     // Variants
     variant: 'variant', variants: 'variant', variant1: 'variant', variant2: 'variant', sku: 'variant', color: 'variant', size: 'variant',
     // Price & Stock
@@ -288,6 +319,7 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
                 const mapUi = (ui: string) => ui.toLowerCase().replace(/[^a-z0-9]+/g, '');
                 const uiMap: Record<string, keyof typeof uiTypeRegistry> = {
                   input: 'input',
+                  text: 'input',
                   number: 'number',
                   switch: 'Switch',
                   select: 'select',
@@ -355,6 +387,7 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
                   const norm = ui.toLowerCase().replace(/[^a-z0-9]+/g, '');
                   const map: Record<string, keyof typeof uiTypeRegistry> = {
                     input: 'input',
+                    text: 'input',
                     number: 'number',
                     switch: 'Switch',
                     select: 'select',
