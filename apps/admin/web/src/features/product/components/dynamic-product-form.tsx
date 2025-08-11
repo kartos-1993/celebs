@@ -366,7 +366,7 @@ export default function DynamicProductForm({ catId, productId, onValuesChange, o
                         </CollapsibleContent>
                         <div className="flex justify-center mt-2">
                           <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" type="button">
                               {detailsOpen ? 'Show less' : 'Show more'}
                             </Button>
                           </CollapsibleTrigger>
