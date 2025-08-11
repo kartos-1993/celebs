@@ -14,6 +14,8 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
   const [fields, setFields] = React.useState<FieldSpec[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Controls the inline "Show more" for Product Attributes (details) section
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
   // Single shared form across all sections so dependencies work (e.g., variants -> SKU table)
   const form = useForm({ defaultValues: {}, mode: 'onChange' });
 
@@ -278,44 +280,74 @@ export default function DynamicProductForm({ catId, onValuesChange }: { catId: s
             defaultOpen={true}
           >
             {key === 'details' ? (
-              <Collapsible defaultOpen>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">Fill more product specification to improve searchability</div>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm">Show More</Button>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <div className="space-y-4">
-                    {(groups[key] || []).map((f) => {
-                      // Normalize uiType to be tolerant of casing and dashes
-                      const ui = String(f.uiType || '');
-                      const norm = ui.toLowerCase().replace(/[^a-z0-9]+/g, '');
-                      const map: Record<string, keyof typeof uiTypeRegistry> = {
-                        input: 'input',
-                        number: 'number',
-                        switch: 'Switch',
-                        select: 'select',
-                        multiselect: 'multiselect',
-                        skutablev2: 'SkuTableV2',
-                        mainimage: 'MainImage',
-                        colormeta: 'ColorMeta',
-                        colorinline: 'ColorInline',
-                      };
-                      const Comp = uiTypeRegistry[(map[norm] ?? (f.uiType as keyof typeof uiTypeRegistry))];
-                      if (!Comp || f.visible === false) return null;
-                      return (
-                        <div key={f.name} data-group={f.group}>
-                          <Comp field={f} control={form.control} />
+              (() => {
+                const all = groups[key] || [];
+                const first = all.slice(0, 6);
+                const rest = all.slice(6);
+                const hasMore = rest.length > 0;
+                const mapUi = (ui: string) => ui.toLowerCase().replace(/[^a-z0-9]+/g, '');
+                const uiMap: Record<string, keyof typeof uiTypeRegistry> = {
+                  input: 'input',
+                  number: 'number',
+                  switch: 'Switch',
+                  select: 'select',
+                  multiselect: 'multiselect',
+                  skutablev2: 'SkuTableV2',
+                  mainimage: 'MainImage',
+                  colormeta: 'ColorMeta',
+                  colorinline: 'ColorInline',
+                };
+                return (
+                  <div className="space-y-3">
+                    {/* First 6 fields in two columns */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {first.map((f) => {
+                        const ui = String(f.uiType || '');
+                        const norm = mapUi(ui);
+                        const Comp = uiTypeRegistry[(uiMap[norm] ?? (f.uiType as keyof typeof uiTypeRegistry))];
+                        if (!Comp || f.visible === false) return null;
+                        return (
+                          <div key={f.name} data-group={f.group}>
+                            <Comp field={f} control={form.control} />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Remaining fields collapsed by default */}
+                    {hasMore ? (
+                      <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+                        <CollapsibleContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            {rest.map((f) => {
+                              const ui = String(f.uiType || '');
+                              const norm = mapUi(ui);
+                              const Comp = uiTypeRegistry[(uiMap[norm] ?? (f.uiType as keyof typeof uiTypeRegistry))];
+                              if (!Comp || f.visible === false) return null;
+                              return (
+                                <div key={f.name} data-group={f.group}>
+                                  <Comp field={f} control={form.control} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                        <div className="flex justify-center mt-2">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              {detailsOpen ? 'Show less' : 'Show more'}
+                            </Button>
+                          </CollapsibleTrigger>
                         </div>
-                      );
-                    })}
-                    {!groups[key]?.length ? (
+                      </Collapsible>
+                    ) : null}
+
+                    {!all.length ? (
                       <div className="text-xs text-muted-foreground">No additional attributes in this section.</div>
                     ) : null}
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                );
+              })()
             ) : (
               <div className="space-y-4">
                 {(groups[key] || []).map((f) => {
