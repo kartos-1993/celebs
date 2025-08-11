@@ -50,9 +50,14 @@ function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
     : a.isVariant
     ? 'variant'
     : 'details';
+  // Enforce multiselect for variant color/size
+  const coercedType: SeedAttr['type'] =
+    a.isVariant && (a.variantType === 'color' || a.variantType === 'size')
+      ? 'multiselect'
+      : a.type;
   return {
     name: a.name,
-    type: a.type,
+    type: coercedType,
     values: a.values ?? [],
     isRequired: a.isRequired ?? false,
     isVariant: !!a.isVariant,
