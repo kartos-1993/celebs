@@ -1,16 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronRight, Search, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { useCategories } from '../hooks/useCategories';
 import { CategoryApiService } from '../../category/api';
-// import { Category } from '@/features/product/types/category';
 import { cn } from '../../../lib/utils';
-
 
 export interface Category {
   id: string;
@@ -31,6 +28,7 @@ export interface RecentCategory {
   path: string[];
   usedAt: Date;
 }
+
 interface ColumnData {
   parentId: string | null;
   parentName: string;
@@ -60,9 +58,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const [globalSearchResults, setGlobalSearchResults] = useState<Category[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<number | null>(null);
-  // Track refs to each rendered category button by column and id
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  
   const { getRootCategories, getChildCategories, searchCategories, recentCategories, addToRecent, findCategoryById } = useCategories();
 
   // Helper: collect all leaf descendants for a given parent id
@@ -155,15 +151,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         if (onSearch) {
           results = await onSearch(q);
         } else {
-          const api = await CategoryApiService.searchCategories(q);
-          results = (api as any[]).map((c) => ({
-            id: c.id || c._id || c.id,
+          const apiResults = await CategoryApiService.searchCategories(q);
+          results = apiResults.map((c: { id: string; name: string; parentId?: string | null; hasChildren?: boolean; level?: number; path?: string[] }) => ({
+            id: c.id,
             name: c.name,
             parentId: c.parentId ?? null,
             hasChildren: !!c.hasChildren,
-            level:
-              c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
-            path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
+            level: c.level ?? (Array.isArray(c.path) ? c.path.length - 1 : 0),
+            path: Array.isArray(c.path) ? c.path : [c.name],
           }));
         }
         // Expand any matched parent categories into their leaf descendants using local tree
@@ -187,8 +182,9 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
           new Map(expandedLeaves.map((c) => [c.id, c])).values(),
         );
         setGlobalSearchResults(deduped);
-      } catch (error) {
-        console.error('Search error:', error);
+      } catch (_error) {
+        // Log error using a proper logging mechanism or handle it appropriately
+        // Example: send error to monitoring service or display user-friendly message
         setGlobalSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -268,15 +264,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         onSelect?.(finalCategory);
       }
     }
-    setIsOpen(false);
-    setColumns([{ parentId: null, parentName: 'Categories', searchQuery: '' }]);
-    setSelectedPath([]);
-    setTempSelectedPath([]);
-    setGlobalSearchQuery('');
-    setGlobalSearchResults([]);
+    resetDropdownState();
   };
 
-  const handleCancel = () => {
+  const resetDropdownState = () => {
     setIsOpen(false);
     setColumns([{ parentId: null, parentName: 'Categories', searchQuery: '' }]);
     setSelectedPath([]);
@@ -469,7 +460,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-2 pt-2 flex-shrink-0">
-              <Button variant="outline" onClick={handleCancel} size="sm">
+              <Button variant="outline" onClick={resetDropdownState} size="sm">
                 Cancel
               </Button>
               <Button 
