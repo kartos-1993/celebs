@@ -6,86 +6,68 @@
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
+      "defaultConfiguration": "development",
       "options": {
-        "command": "pnpm dev",
+        "command": "vite",
         "cwd": "apps/admin/web"
       }
     },
-    "dev:dev": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm dev:dev",
-        "cwd": "apps/admin/web"
-      }
-    },
-    "dev:staging": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm dev:staging",
-        "cwd": "apps/admin/web"
-      }
-    },
-    "dev:production": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm dev:production",
-        "cwd": "apps/admin/web"
-      }
-    },
+
     "build": {
       "executor": "nx:run-commands",
+      "outputs": ["dist/apps/admin/web"],
+      "defaultConfiguration": "production",
       "options": {
-        "command": "pnpm build",
+        "command": "vite build",
         "cwd": "apps/admin/web"
+      },
+      "configurations": {
+        "development": {
+          "command": "vite build --mode development"
+        },
+        "staging": {
+          "command": "vite build --mode staging"
+        },
+        "production": {
+          "command": "vite build --mode production"
+        }
       }
     },
-    "build:staging": {
+
+    "preview": {
       "executor": "nx:run-commands",
+      "defaultConfiguration": "production",
       "options": {
-        "command": "pnpm build:staging",
+        "command": "vite preview --port 4173",
         "cwd": "apps/admin/web"
+      },
+      "configurations": {
+        "development": {
+          "command": "vite preview --port 4173"
+        },
+        "staging": {
+          "command": "vite preview --port 4173"
+        },
+        "production": {
+          "command": "vite preview --port 4173"
+        }
       }
     },
-    "build:production": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm build:production",
-        "cwd": "apps/admin/web"
-      }
-    },
+
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm typecheck",
+        "command": "tsc --noEmit -p tsconfig.app.json",
         "cwd": "apps/admin/web"
       }
     },
+
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "pnpm lint",
-        "cwd": "apps/admin/web"
-      }
-    },
-    "preview": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm preview",
-        "cwd": "apps/admin/web"
-      }
-    },
-    "preview:staging": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm preview:staging",
-        "cwd": "apps/admin/web"
-      }
-    },
-    "preview:production": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm preview:production",
-        "cwd": "apps/admin/web"
+        "lintFilePatterns": ["apps/admin/web/**/*.{ts,tsx,js,jsx}"],
+        "cache": true
       }
     }
   },
