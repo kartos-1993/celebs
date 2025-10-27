@@ -82,6 +82,19 @@ const ProductFormSidebar = ({
 
   return (
     <div className="space-y-4">
+      {/* Overall Completion */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Overall Completion</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">Form progress</span>
+            <Badge variant="outline">{completionPercentage}%</Badge>
+          </div>
+          <Progress value={completionPercentage} className="h-2" />
+        </CardContent>
+      </Card>
       {/* Content Quality Score */}
       <Card>
         <CardHeader className="pb-3">

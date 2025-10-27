@@ -1,4 +1,3 @@
-import { group } from 'console';
 import { ClientSession, Types } from 'mongoose';
 import { AppError } from '../../common/utils/AppError';
 import { ErrorCode } from '../../common/enums/error-code.enum';
@@ -8,13 +7,17 @@ import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
-// Types and Interfaces
+
 interface CategoryAttribute {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values: string[];
-  group?: string;
+  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
   isRequired: boolean;
+  isVariant?: boolean;
+  variantType?: 'color' | 'size' | null;
+  useStandardOptions?: boolean;
+  optionSetId?: string | Types.ObjectId | null;
 }
 
 interface CategoryInput {
@@ -110,6 +113,26 @@ export class CategoryService {
     ]);
 
     return { categories, total, page, limit, pages };
+  }
+
+  /**
+   * Full-text like search on category names; returns flat list with basic fields and path
+   */
+  async searchCategories(query: string, limit = 20) {
+    if (!query || !query.trim()) return [];
+    const regex = new RegExp(query.trim(), 'i');
+    const results = await CategoryModel.find({ name: regex })
+      .sort({ level: 1, name: 1 })
+      .limit(limit)
+      .lean();
+    return results.map((c: any) => ({
+      id: String(c._id),
+      name: c.name,
+      parentId: c.parent ? String(c.parent) : null,
+      hasChildren: false, // UI can expand via tree if needed
+      level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
+      path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
+    }));
   }
 
   /**
@@ -353,6 +376,15 @@ export class CategoryService {
           type: attr.type,
           values: this.processAttributeValues(attr),
           isRequired: attr.isRequired,
+          group: (attr.group as any) ?? 'basic',
+          isVariant: !!attr.isVariant,
+          variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
+          useStandardOptions: !!attr.useStandardOptions,
+          optionSetId: attr.optionSetId
+            ? typeof attr.optionSetId === 'string'
+              ? new Types.ObjectId(attr.optionSetId)
+              : (attr.optionSetId as any)
+            : null,
         }),
       ),
     );
@@ -573,7 +605,15 @@ export class CategoryService {
         existingAttr.values = values;
         existingAttr.isRequired = attr.isRequired;
         existingAttr.type = attr.type;
-        existingAttr.group = attr.group;
+    (existingAttr as any).group = (attr.group as any) ?? (existingAttr as any).group ?? 'basic';
+  existingAttr.isVariant = !!attr.isVariant;
+  (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
+        existingAttr.useStandardOptions = !!attr.useStandardOptions;
+        existingAttr.optionSetId = attr.optionSetId
+          ? typeof attr.optionSetId === 'string'
+            ? new Types.ObjectId(attr.optionSetId)
+            : (attr.optionSetId as any)
+          : null;
         await existingAttr.save({ session });
       } else {
         // Create new attribute
@@ -585,7 +625,16 @@ export class CategoryService {
               type: attr.type,
               values,
               isRequired: attr.isRequired,
-              group: attr.group,
+      group: (attr.group as any) ?? 'basic',
+              // new fields
+              isVariant: !!attr.isVariant,
+              variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
+              useStandardOptions: !!attr.useStandardOptions,
+              optionSetId: attr.optionSetId
+                ? typeof attr.optionSetId === 'string'
+                  ? new Types.ObjectId(attr.optionSetId)
+                  : (attr.optionSetId as any)
+                : null,
             },
           ],
           session ? { session } : undefined,

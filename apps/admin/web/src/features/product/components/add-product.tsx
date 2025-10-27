@@ -1,29 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Form } from '@/components/ui/form';
-import { ShoppingBag, Palette, Ruler, ImageIcon } from 'lucide-react';
+// import { ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProductForm } from '../hooks/useProductForm';
-import { categoryService } from '../categoryService';
-import { Category } from '../types/product';
 import ProductFormSidebar from './productform-sidebar';
-import CollapsibleFormSection from './collapsible-form-section';
-import ValidationHelper from './validation-helper';
+// import CollapsibleFormSection from './collapsible-form-section';
+// import ValidationHelper from './validation-helper';
 import ProductFormActions from './product-form-action';
 import BasicInfoSection from './basic-info-section';
-import FashionAttributes from './fashion-attributes';
-import SizeChart from './sizechart';
-import FashionVariants from './fashion-variants';
-import ImageUpload from './image-upload';
+
+import DynamicProductForm from './dynamic-product-form';
 
 const AddProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!id;
   const { toast } = useToast();
-
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
+  const [dynamicValues, setDynamicValues] = useState<Record<string, any>>({});
+  const [schemaHasName, setSchemaHasName] = useState(false);
+  const [schemaHasBrand, setSchemaHasBrand] = useState(false);
 
   const {
     form,
@@ -34,43 +32,19 @@ const AddProduct = () => {
     updateFormData,
     handleCategoryChange,
     handleSubcategoryChange,
-    getValidationErrors,
     setIsDirty,
   } = useProductForm(id);
 
   // Set breadcrumbs
 
-  // Load categories on component mount
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await categoryService.getCategories();
-        setCategories(categoriesData);
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to load categories',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    loadCategories();
-  }, [toast]);
+  // No upfront categories fetch; the dropdown fetches category tree lazily
 
   const handleBasicInfoChange = (name: string, value: string) => {
     updateFormData({ [name]: value });
   };
 
   const handleSaveAsDraft = () => {
-    const draftData = {
-      ...formData,
-      status: 'draft',
-      savedAt: new Date().toISOString(),
-    };
-
-    console.log('Saving draft:', draftData);
-    setIsDirty(false);
+  setIsDirty(false);
 
     toast({
       title: 'Draft Saved',
@@ -100,18 +74,36 @@ const AddProduct = () => {
       return;
     }
 
-    // Merge form values with other data
-    const finalData = {
-      ...values,
-      attributes: formData.attributes,
-      variants: formData.variants,
-      sizeChart: formData.sizeChart,
-      images: formData.images,
+    // Build backend-aligned payload
+    const priceFromSku = dynamicValues['sku.default.price'];
+    const specialPriceFromSku = dynamicValues['sku.default.specialPrice'];
+  const payload = {
+      name: values.name,
+      description: values.description,
+      brand: values.brand,
+      categoryId: formData.categoryId,
+      subcategoryId: formData.subcategoryId,
+      price: priceFromSku ? Number(priceFromSku) : Number(formData.price || 0),
+      discountedPrice: specialPriceFromSku
+        ? Number(specialPriceFromSku)
+        : formData.discountPrice
+          ? Number(formData.discountPrice)
+          : undefined,
+      // TODO: collect colorVariants from variant section when implemented
+      colorVariants: [],
+      // Optional extras not enforced by backend schema
+      status: 'published' as const,
+      // main images come from dynamic form (MainImage field)
+      mainImage: dynamicValues['mainImage'] ?? undefined,
+      // raw dynamic values grouped by sections (for debugging/inspection)
+      _dynamic: dynamicValues,
     };
 
     try {
-      // Here you would make the API call to save the product
-      console.log('Publishing product:', finalData);
+  // TODO: POST to backend when endpoint is available, e.g. ProductAPI.post('/products', payload)
+  // Temporary: log the payload for inspection
+  console.log('Submitting product payload', payload);
+  // For now we just simulate success and navigate back
 
       toast({
         title: 'Success',
@@ -140,13 +132,13 @@ const AddProduct = () => {
       100,
   );
 
-  if (isLoading && categories.length === 0) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">
-            Loading categories...
+            Loading...
           </p>
         </div>
       </div>
@@ -177,124 +169,57 @@ const AddProduct = () => {
                 className="space-y-6"
               >
                 {/* Basic Information */}
-                <CollapsibleFormSection
-                  title="Basic Information"
-                  description="Essential product details and categorization"
-                  icon={<ShoppingBag className="h-5 w-5 text-blue-700" />}
-                  isValid={validationStatus.basicInfo}
-                  isRequired={true}
-                  defaultOpen={true}
-                >
-                  {/* <ValidationHelper
-                    errors={getValidationErrors('basicInfo')}
-                    isValid={validationStatus.basicInfo}
-                  /> */}
-
+                
                   <BasicInfoSection
                     control={form.control}
-                    categories={categories}
                     selectedCategoryId={formData.categoryId}
                     selectedSubcategoryId={formData.subcategoryId}
                     onCategoryChange={handleCategoryChange}
                     onSubcategoryChange={handleSubcategoryChange}
                     onFieldChange={handleBasicInfoChange}
+                    onCategoryPathChange={setCategoryPath}
+                    categoryPath={categoryPath}
+                    hideName={schemaHasName}
+                    hideBrand={schemaHasBrand}
                   />
-                </CollapsibleFormSection>
+                
 
-                {/* Fashion Attributes */}
+                {/* Render server-driven sections after category selection */}
                 {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Fashion Attributes"
-                    description="Detailed product specifications and style details"
-                    icon={<Palette className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.attributes}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.basicInfo}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('attributes')}
-                      isValid={validationStatus.attributes}
-                    />
-
-                    <FashionAttributes
-                      categoryType={formData.subcategoryId}
-                      attributes={formData.attributes}
-                      onAttributesChange={(attributes) =>
-                        updateFormData({ attributes })
+                  <DynamicProductForm
+                    catId={formData.subcategoryId as any}
+                    productId={id}
+                    onValuesChange={(vals, section) => {
+                      setDynamicValues((prev) => ({ ...prev, ...vals, [`__section__${section}`]: vals }));
+                      // If backend provided name/brand via dynamic schema, sync to RHF + formData
+                      const lowerKeys = Object.fromEntries(Object.entries(vals).map(([k,v]) => [k.toLowerCase(), v]));
+                      const nameKey = ['name', 'productname', 'title'].find((k) => k in lowerKeys);
+                      if (nameKey) {
+                        const v = (lowerKeys as any)[nameKey];
+                        form.setValue('name', v, { shouldDirty: true, shouldValidate: true });
+                        updateFormData({ name: v });
                       }
-                    />
-                  </CollapsibleFormSection>
-                )}
-
-                {/* Size Chart */}
-                {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Size Chart & Measurements"
-                    description="Size guide and fit recommendations"
-                    icon={<Ruler className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.sizeChart}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.attributes}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('sizeChart')}
-                      isValid={validationStatus.sizeChart}
-                    />
-
-                    <SizeChart
-                      measurements={formData.sizeChart}
-                      onMeasurementsChange={(measurements) =>
-                        updateFormData({ sizeChart: measurements })
+                      const brandKey = ['brand', 'productbrand'].find((k) => k in lowerKeys);
+                      if (brandKey) {
+                        const v = (lowerKeys as any)[brandKey];
+                        form.setValue('brand', v, { shouldDirty: true, shouldValidate: true });
+                        updateFormData({ brand: v });
                       }
-                      categoryType={formData.subcategoryId}
-                    />
-                  </CollapsibleFormSection>
+                    }}
+                    onSchemaLoaded={(fields) => {
+                      const names = new Set(fields.map((f) => f.name.toLowerCase()))
+                      setSchemaHasName(names.has('name') || names.has('productname') || names.has('title'));
+                      setSchemaHasBrand(names.has('brand') || names.has('productbrand'));
+                    }}
+                  />
                 )}
 
-                {/* Color Variants */}
-                {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Color Variants & Inventory"
-                    description="Manage colors, pricing, and stock levels"
-                    icon={<Palette className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.variants}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.sizeChart}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('variants')}
-                      isValid={validationStatus.variants}
-                    />
+                {/* Legacy bespoke sections below are temporarily hidden to avoid duplication with composer-driven UI */}
 
-                    <FashionVariants
-                      variants={formData.variants || []}
-                      onVariantsChange={(variants) =>
-                        updateFormData({ variants: variants })
-                      }
-                    />
-                  </CollapsibleFormSection>
-                )}
+              
+                
 
-                {/* Product Images */}
-                {canShowAdditionalSections && (
-                  <CollapsibleFormSection
-                    title="Product Images"
-                    description="Main product photography and visual content"
-                    icon={<ImageIcon className="h-5 w-5 text-blue-700" />}
-                    isValid={validationStatus.images}
-                    isRequired={true}
-                    defaultOpen={!validationStatus.variants}
-                  >
-                    <ValidationHelper
-                      errors={getValidationErrors('images')}
-                      isValid={validationStatus.images}
-                    />
-
-                    <ImageUpload
-                      onImagesChange={(images) => updateFormData({ images })}
-                    />
-                  </CollapsibleFormSection>
-                )}
+                {/* Images are handled by the dynamic form's MainImage field now */}
 
                 {/* Form Actions */}
                 {canShowAdditionalSections && (

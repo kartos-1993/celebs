@@ -1,5 +1,4 @@
 import { errorHandler } from '../../middlewares/errorHandler';
-
 import { ErrorCode } from '../enums/error-code.enum';
 import { UnauthorizedException } from '../utils/catch-errors';
 

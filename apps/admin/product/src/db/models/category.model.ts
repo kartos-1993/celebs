@@ -20,8 +20,7 @@ const CategorySchema: Schema = new Schema(
       type: String,
       required: true,
       trim: true,
-      unique: true,
-      index: true,
+  unique: true,
     },
     slug: {
       type: String,
@@ -50,7 +49,6 @@ const CategorySchema: Schema = new Schema(
 );
 
 // Add indexes
-CategorySchema.index({ slug: 1 });
 CategorySchema.index({ path: 1 });
 
 export const CategoryModel = mongoose.model<ICategory>(

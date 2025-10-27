@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -109,6 +111,17 @@
     textarea {
       font-size: 16px !important;
     }
+  }
+
+  /* Hide native number input spinners only for our NumberInput */
+  .number-input input[type="number"]::-webkit-outer-spin-button,
+  .number-input input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .number-input input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
+    appearance: textfield;
   }
 }
 
