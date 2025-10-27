@@ -1,12 +1,11 @@
 // types.ts
 import { LoaderFunction } from "react-router-dom";
 
-export interface User {
+export interface UserData {
   id: string;
   name: string;
   email: string;
   isEmailVerified: boolean;
-  password?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,19 +16,21 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export interface SessionResponse extends ApiResponse<SessionData> {}
-
 export interface SessionData {
   id: string;
   userId: string;
   userAgent: string;
   createdAt: string;
   expiredAt: string;
-  user: User;
+  user: UserData;
 }
 
+export interface SessionResponse extends ApiResponse<SessionData> {}
+
+
+
 export interface ProtectedLoaderData {
-  user: User;
+  user: SessionData;
 }
 
 export type ProtectedLoader = LoaderFunction;

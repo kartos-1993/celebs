@@ -7,8 +7,25 @@ export class SessionService {
       where: {
         id: sessionId,
       },
-      include: {
-        user: true,
+      select: {
+        // Select all fields for the Session model
+        id: true,
+        userId: true,
+        userAgent: true,
+        createdAt: true,
+        expiredAt: true,
+        // Select the User relation, but specify which User fields to return
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isEmailVerified: true,
+            createdAt: true,
+            updatedAt: true,
+            // Explicitly omit the password field by not selecting it
+          },
+        },
       },
     });
     if (!session) {

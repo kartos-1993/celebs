@@ -135,9 +135,9 @@
     "web:dev:production": "nx dev:production admin-web",
     "web:build": "nx build admin-web",
     "web:build:staging": "nx build:staging admin-web",
-    "web:build:production": "nx build:production admin-web",
     "web:preview": "nx preview admin-web",
     "web:preview:staging": "nx preview:staging admin-web",
+    "web:build:production": "nx build:production admin-web",
     "web:preview:production": "nx preview:production admin-web",
     "web:typecheck": "nx typecheck admin-web",
     "web:lint": "nx lint admin-web"
