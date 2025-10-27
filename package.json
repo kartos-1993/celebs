@@ -126,21 +126,21 @@
     "zod": "^3.24.3"
   },
   "scripts": {
+    "dev": "nx run-many --targets=serve:nodemon --projects=admin-auth-api,admin-product",
+    "dev:web": "nx dev admin-web",
+    "build": "nx run-many --targets=build --projects=admin-auth-api,admin-product,admin-web --configuration=production",
+    "build:services": "nx run-many --targets=build --projects=admin-auth-api,admin-product --configuration=production",
+    "build:web": "nx build admin-web --configuration=production",
+    "serve": "nx run-many --targets=serve --projects=admin-auth-api,admin-product --configuration=production",
+    "serve:web": "nx preview admin-web",
+    "test": "nx run-many --targets=test",
+    "lint": "nx run-many --targets=lint",
+    "typecheck": "nx run-many --targets=typecheck",
+    "format": "prettier --write .",
     "migrate:dev": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma migrate dev --schema=apps/admin/auth-api/src/db/schema.prisma --name auto",
     "migrate:deploy": "dotenv -e apps/admin/auth-api/.env.staging -- npx prisma migrate deploy --schema=apps/admin/auth-api/src/db/schema.prisma",
     "prisma:generate": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma generate --schema=apps/admin/auth-api/src/db/schema.prisma",
-    "web:dev": "nx dev admin-web",
-    "web:dev:dev": "nx dev:dev admin-web",
-    "web:dev:staging": "nx dev:staging admin-web",
-    "web:dev:production": "nx dev:production admin-web",
-    "web:build": "nx build admin-web",
-    "web:build:staging": "nx build:staging admin-web",
-    "web:preview": "nx preview admin-web",
-    "web:preview:staging": "nx preview:staging admin-web",
-    "web:build:production": "nx build:production admin-web",
-    "web:preview:production": "nx preview:production admin-web",
-    "web:typecheck": "nx typecheck admin-web",
-    "web:lint": "nx lint admin-web"
+    "prisma:studio": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma studio --schema=apps/admin/auth-api/src/db/schema.prisma"
   },
   "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184"
 }
