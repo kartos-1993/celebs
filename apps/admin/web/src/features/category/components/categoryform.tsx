@@ -86,7 +86,6 @@ const ruleSchema = z.object({
 
 const attributeSchema = z.object({
   name: z.string().min(1, 'Attribute name is required'),
-<<<<<<< HEAD
   label: z.string().min(1, 'Label is required'),
   type: z.enum([
     'text',
@@ -174,17 +173,11 @@ const attributeSchema = z.object({
     method: z.string().optional(),
     url: z.string().optional(),
   }).optional(),
-=======
-  type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean']),
-  values: z.array(z.string()).default([]), // Provide a default value of an empty array
-  isRequired: z.boolean(),
-  // New: variation + standard option metadata (UX-friendly wording)
+  // Variant and standard options metadata
   isVariant: z.boolean().default(false),
   variantType: z.enum(['color', 'size']).optional().nullable(),
   useStandardOptions: z.boolean().default(false),
   optionSetId: z.string().optional().nullable(),
-  group: z.enum(['basic', 'sale', 'package', 'details', 'termcondition', 'variant']),
->>>>>>> 47a3ce276ff9397a6cb2a4b4714262e4ce4e586e
 });
 
 // Update the measurementUnits schema to enforce the unit type
@@ -300,10 +293,13 @@ const CategoryForm = ({
       type: 'text',
       values: [],
       isRequired: false,
-<<<<<<< HEAD
       group: 'basic',
       visible: true,
       important: false,
+      isVariant: false,
+      variantType: null,
+      useStandardOptions: false,
+      optionSetId: null,
       rule: {
         minWidth: undefined,
         maxWidth: undefined,
@@ -321,14 +317,6 @@ const CategoryForm = ({
           warning: 'Warning'
         }
       }
-=======
-      // defaults for new fields
-      isVariant: false,
-      variantType: null,
-      useStandardOptions: false,
-      optionSetId: null,
-      group:"basic"
->>>>>>> 47a3ce276ff9397a6cb2a4b4714262e4ce4e586e
     });
   };
   // Normalize measurementUnits to use numbered keys during form submission
@@ -342,17 +330,14 @@ const CategoryForm = ({
     }, {} as Record<string, { name: string; unit: 'inches' | 'cm' }>);
 
     const normalizedData = {
-<<<<<<< HEAD
       ...values,
-      measurementUnits: normalizedMeasurementUnits,
-=======
-      name: values.name,
       parent:
         values.parent && values.parent !== 'ROOT_CATEGORY'
           ? values.parent
           : null,
       attributes: values.attributes.map((attr) => ({
         name: attr.name,
+        label: attr.label,
         type: attr.type,
         values: attr.values ?? [], // Provide a default value of an empty array
         isRequired: attr.isRequired,
@@ -365,9 +350,10 @@ const CategoryForm = ({
           attr.isVariant && attr.useStandardOptions && typeof attr.optionSetId === 'string'
             ? attr.optionSetId.trim() || null
             : null,
-            group: attr.group ?? 'basic',
+        group: attr.group ?? 'basic',
+        ...attr,
       })),
->>>>>>> 47a3ce276ff9397a6cb2a4b4714262e4ce4e586e
+      measurementUnits: normalizedMeasurementUnits,
     };
 
     console.log('Submitted normalizedData values:', normalizedData);
@@ -1545,51 +1531,6 @@ const AttributeFieldSet = ({
 
           {/* Manual options list (still editable) */}
           <div className="space-y-2">
-<<<<<<< HEAD
-            {valueFields.map((valueField, valueIndex) => (
-              <div key={valueField.id} className="flex gap-2">
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.values.${valueIndex}.name`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Option name"
-                          {...field}
-                          className="bg-white dark:bg-gray-950"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.values.${valueIndex}.value`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Option value"
-                          {...field}
-                          className="bg-white dark:bg-gray-950"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeValue(valueIndex)}
-                  className="border-gray-200 dark:border-gray-800"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-=======
             <div className="flex items-center justify-between">
               <Label className="text-gray-900 dark:text-gray-100">Options</Label>
               <Button
@@ -1609,7 +1550,22 @@ const AttributeFieldSet = ({
                 <div key={valueField.id} className="flex gap-2">
                   <FormField
                     control={form.control}
-                    name={`attributes.${index}.values.${valueIndex}`}
+                    name={`attributes.${index}.values.${valueIndex}.name`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            placeholder="Option name"
+                            {...field}
+                            className="bg-white dark:bg-gray-950"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.values.${valueIndex}.value`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
@@ -1635,7 +1591,6 @@ const AttributeFieldSet = ({
                 </div>
               ))}
             </div>
->>>>>>> 47a3ce276ff9397a6cb2a4b4714262e4ce4e586e
           </div>
         </div>
       )}

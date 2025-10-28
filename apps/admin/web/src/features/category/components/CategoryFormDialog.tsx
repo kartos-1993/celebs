@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import CategoryForm from './categoryform';
+import CategoryForm from './categoryform.tsx';
 import { Category, CategoryFormData } from '../types';
 
 interface CategoryFormDialogProps {
