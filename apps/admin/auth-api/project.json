@@ -1,5 +1,5 @@
 {
-  "name": "admin-auth",
+  "name": "auth",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/admin/auth-api/src",
   "projectType": "application",
@@ -32,15 +32,15 @@
       "defaultConfiguration": "production",
       "dependsOn": ["build"],
       "options": {
-        "buildTarget": "admin-auth-api:build",
+        "buildTarget": "auth:build",
         "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "admin-auth-api:build:development"
+          "buildTarget": "auth:build:development"
         },
         "production": {
-          "buildTarget": "admin-auth-api:build:production"
+          "buildTarget": "auth:build:production"
         }
       }
     },
