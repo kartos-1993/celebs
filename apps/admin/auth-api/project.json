@@ -24,6 +24,11 @@
           "declaration": true,
           "declarationMap": false,
           "sourceMap": false
+        },
+        "staging": {
+          "declaration": true,
+          "declarationMap": false,
+          "sourceMap": false
         }
       }
     },
@@ -41,6 +46,9 @@
         },
         "production": {
           "buildTarget": "auth:build:production"
+        },
+        "staging": {
+          "buildTarget": "auth:build:staging"
         }
       }
     },

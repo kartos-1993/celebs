@@ -92,4 +92,5 @@ export class AuthController {
       return res.status(HTTPSTATUS.OK).json(response);
     }
   );
+
 }
