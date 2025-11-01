@@ -2,7 +2,7 @@ services:
   - type: web
     name: staging-auth
     runtime: docker
-    dockerfilePath: ./apps/admin/auth-api/Dockerfile
+    dockerfilePath: ./Dockerfile
     branch: staging-auth
     envVars:
       - key: NODE_ENV
