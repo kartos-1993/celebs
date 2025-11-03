@@ -15,7 +15,7 @@
 
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["dist/apps/admin/web"],
+      "outputs": ["{workspaceRoot}/dist/apps/admin/web"],
       "defaultConfiguration": "production",
       "options": {
         "command": "vite build",
@@ -53,7 +53,19 @@
         }
       }
     },
-
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "netlify deploy --dir=dist/apps/admin/web --prod",
+        "cwd": "apps/admin/web"
+      },
+      "configurations": {
+        "staging": {
+          "command": "netlify deploy --dir=dist/apps/admin/web --alias=staging"
+        }
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
