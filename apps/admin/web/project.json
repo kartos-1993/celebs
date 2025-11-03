@@ -38,18 +38,18 @@
       "executor": "nx:run-commands",
       "defaultConfiguration": "production",
       "options": {
-        "command": "vite preview --port 4173",
+        "command": "vite preview --port 4173 --mode production",
         "cwd": "apps/admin/web"
       },
       "configurations": {
         "development": {
-          "command": "vite preview --port 4173"
+          "command": "vite preview --port 4173 --mode development"
         },
         "staging": {
-          "command": "vite preview --port 4173"
+          "command": "vite preview --port 4173 --mode staging"
         },
         "production": {
-          "command": "vite preview --port 4173"
+          "command": "vite preview --port 4173 --mode production"
         }
       }
     },

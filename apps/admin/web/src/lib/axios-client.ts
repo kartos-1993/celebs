@@ -10,9 +10,9 @@ const FALLBACK_API_URL = 'http://localhost:8000/api/v1/';
 const FALLBACK_AUTH_API_URL = 'http://localhost:8000/api/v1/auth';
 const FALLBACK_PRODUCT_API_URL = 'http://localhost:8000/api/v1/product';
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || FALLBACK_AUTH_API_URL;
+const AUTH_API_URL = import.meta.env.VITE_API_AUTH_URL || FALLBACK_AUTH_API_URL;
 const PRODUCT_API_URL =
-  import.meta.env.VITE_PRODUCT_API_URL || FALLBACK_PRODUCT_API_URL;
+  import.meta.env.VITE_API_PRODUCT_URL || FALLBACK_PRODUCT_API_URL;
 
 console.log('[Axios Config] Using Auth API URL:', AUTH_API_URL);
 console.log('[Axios Config] Using Product API URL:', PRODUCT_API_URL);
