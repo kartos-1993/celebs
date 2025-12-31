@@ -5,6 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NX_SKIP_NX_CLOUD = "1"
 
 [[redirects]]
   from = "/*"
