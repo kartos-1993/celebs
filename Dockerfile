@@ -16,4 +16,6 @@ RUN npm install -g pnpm && pnpm install --prod
 COPY --from=builder /app/apps/admin/auth-api/src/db ./src/db
 RUN cd src/db && npx prisma generate
 EXPOSE 3000
-CMD ["node", "dist/src/main.js"]
+COPY start.sh ./
+RUN chmod +x start.sh
+CMD ["./start.sh"]
