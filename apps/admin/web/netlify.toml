@@ -1,7 +1,7 @@
 [build]
   base = "apps/admin/web"
-  command = "pnpm run build"
-  publish = "apps/admin/web/dist/apps/admin/web"
+  command = "NX_SKIP_NX_CLOUD=1 pnpm run build"
+  publish = "dist/apps/admin/web"
 
 [build.environment]
   NX_SKIP_NX_CLOUD = "1"
