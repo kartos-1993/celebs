@@ -1,7 +1,7 @@
 [build]
   base = "apps/admin/web"
   command = "pnpm run build"
-  publish = "../../../dist/apps/admin/web"
+  publish = "dist"
 
 [[redirects]]
   from = "/*"
