@@ -1,10 +1,9 @@
 [build]
   base = "apps/admin/web"
   command = "pnpm run build"
-  publish = "dist/apps/admin/web"
+  publish = "apps/admin/web/dist/apps/admin/web"
 
 [build.environment]
-  NODE_VERSION = "18"
   NX_SKIP_NX_CLOUD = "1"
 
 [[redirects]]
