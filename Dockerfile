@@ -5,7 +5,7 @@ RUN npm install -g pnpm && pnpm install --frozen-lockfile
 COPY nx.json tsconfig.base.json ./
 COPY apps/admin/auth-api ./apps/admin/auth-api
 # Generate Prisma client before building
-RUN npx prisma generate --schema=./apps/admin/auth-api/src/db/schema.prisma
+RUN cd apps/admin/auth-api/src/db && npx prisma generate
 RUN npx nx build auth --configuration=staging
 
 FROM node:22-alpine AS runtime
@@ -14,6 +14,6 @@ COPY --from=builder /app/dist/apps/admin/auth-api ./dist
 COPY --from=builder /app/package.json ./
 RUN npm install -g pnpm && pnpm install --prod
 COPY --from=builder /app/apps/admin/auth-api/src/db ./src/db
-RUN npx prisma generate --schema=./src/db/schema.prisma
+RUN cd src/db && npx prisma generate
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]
