@@ -1,16 +1,10 @@
 {
-  "name": "admin-web",
+  "name": "web-admin",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/admin/web/src",
   "projectType": "application",
   "targets": {
     "dev": {
-      "executor": "nx:run-commands",
-      "defaultConfiguration": "development",
-      "options": {
-        "command": "vite",
-        "cwd": "apps/admin/web"
-      }
     },
 
     "build": {
@@ -55,14 +49,13 @@
     },
     "deploy": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
       "options": {
-        "command": "netlify deploy --dir=dist/apps/admin/web --prod",
+        "command": "vite build --mode staging && netlify deploy --dir=dist/apps/admin/web --prod",
         "cwd": "apps/admin/web"
       },
       "configurations": {
         "staging": {
-          "command": "netlify deploy --dir=dist/apps/admin/web --alias=staging"
+          "command": "vite build --mode staging && netlify deploy --dir=dist/apps/admin/web --alias=staging"
         }
       }
     },
