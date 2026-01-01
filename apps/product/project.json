@@ -42,7 +42,8 @@
         "production": {
           "buildTarget": "product:build:production"
         }
-      }    },
+      }
+    },
     "test-cloudinary": {
       "executor": "nx:run-commands",
       "options": {
