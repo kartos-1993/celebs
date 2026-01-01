@@ -36,13 +36,13 @@ export default defineConfig(({ mode }) => {
       drop: mode === 'production' ? ['console', 'debugger'] : undefined,
     },
     define: {
-          // Add NODE_ENV for consistency with React ecosystem
+      // Add NODE_ENV for consistency with React ecosystem
       'process.env.NODE_ENV': JSON.stringify(mode),
       // expose only VITE_ prefixed env vars to avoid leaking system vars like PATH
       'process.env': Object.fromEntries(
         Object.entries(env)
           .filter(([k]) => k.startsWith('VITE_'))
-          .map(([k, v]) => [k, JSON.stringify(v)])
+          .map(([k, v]) => [k, JSON.stringify(v)]),
       ),
     },
   };

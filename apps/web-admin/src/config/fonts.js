@@ -1,1 +1,1 @@
-module.exports = ["inter", "manrope", "system"];
+module.exports = ['inter', 'manrope', 'system'];
