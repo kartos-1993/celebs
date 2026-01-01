@@ -1,11 +1,18 @@
-import tailwindCssAnimate from "tailwindcss-animate";
-import { fontFamily } from "tailwindcss/defaultTheme";
-import { fonts } from "./src/config/fonts";
+const tailwindCssAnimate = require("tailwindcss-animate");
+const { fontFamily } = require("tailwindcss/defaultTheme");
+const fonts = ["inter", "manrope", "system"];
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  safelist: fonts.map((font) => `font-${font}`),
+  safelist: [
+    ...fonts.map((font) => `font-${font}`),
+    'bg-background',
+    'border-border',
+    'text-foreground',
+    'bg-card',
+    'text-card-foreground',
+  ],
   theme: {
     container: {
       center: "true",

@@ -4,51 +4,65 @@
   "sourceRoot": "apps/web-admin/src",
   "projectType": "application",
   "targets": {
-    "dev": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "vite",
-        "cwd": "apps/web-admin"
-      }
-    },
-
     "build": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/vite:build",
       "outputs": ["{workspaceRoot}/dist/apps/web-admin"],
       "defaultConfiguration": "production",
       "options": {
-        "command": "vite build",
-        "cwd": "apps/web-admin"
+        "configFile": "apps/web-admin/vite.config.ts"
       },
       "configurations": {
         "development": {
-          "command": "vite build --mode development"
+          "mode": "development"
         },
         "staging": {
-          "command": "vite build --mode staging"
+          "mode": "staging"
         },
         "production": {
-          "command": "vite build --mode production"
+          "mode": "production"
         }
       }
     },
-
-    "preview": {
-      "executor": "nx:run-commands",
-      "defaultConfiguration": "production",
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
       "options": {
-        "command": "vite preview --port 4173 --mode production",
-        "cwd": "apps/web-admin"
+        "buildTarget": "web-admin:build",
+        "hmr": true
       },
       "configurations": {
         "development": {
-          "command": "vite preview --port 4173 --mode development"
+          "buildTarget": "web-admin:build:development",
+          "hmr": true,
+          "mode": "development"
         },
         "staging": {
-          "command": "vite preview --port 4173 --mode staging"
+          "buildTarget": "web-admin:build:staging",
+          "hmr": true,
+          "mode": "staging"
         },
         "production": {
-          "command": "vite preview --port 4173 --mode production"
+          "buildTarget": "web-admin:build:production",
+          "hmr": false,
+          "mode": "production"
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "production",
+      "options": {
+        "buildTarget": "web-admin:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "web-admin:build:development"
+        },
+        "staging": {
+          "buildTarget": "web-admin:build:staging"
+        },
+        "production": {
+          "buildTarget": "web-admin:build:production"
         }
       }
     },
@@ -68,7 +82,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "tsc --noEmit -p tsconfig.app.json",
-        "cwd": "apps/admin/web"
+        "cwd": "apps/web-admin"
       }
     },
 
@@ -76,7 +90,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/admin/web/**/*.{ts,tsx,js,jsx}"],
+        "lintFilePatterns": ["apps/web-admin/**/*.{ts,tsx,js,jsx}"],
         "cache": true
       }
     }
