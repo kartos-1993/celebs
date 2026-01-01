@@ -4,18 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:dev": "vite --mode development",
-    "dev:staging": "vite --mode staging",
-    "dev:production": "vite --mode production",
-    "build": "vite build",
-    "build:staging": "vite build --mode staging",
-    "build:production": "vite build --mode production",
+    "dev": "nx serve",
+    "dev:dev": "nx serve --mode development",
+    "dev:staging": "nx serve --mode staging",
+    "dev:production": "nx serve --mode production",
+    "build": "nx vite:build",
+    "build:staging": "nx vite:build --mode staging",
+    "build:production": "nx vite:build --mode production",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --fix --ext .js,.jsx,.ts,.tsx .",
-    "preview": "vite preview",
-    "preview:staging": "vite preview --mode staging",
-    "preview:production": "vite preview --mode production"
+    "preview": "nx vite:preview",
+    "preview:staging": "nx vite:preview --mode staging",
+    "preview:production": "nx vite:preview --mode production"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
