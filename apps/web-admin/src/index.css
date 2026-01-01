@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -79,10 +77,10 @@
   .CollapsibleContent {
     overflow: hidden;
   }
-  .CollapsibleContent[data-state="open"] {
+  .CollapsibleContent[data-state='open'] {
     animation: slideDown 300ms ease-out;
   }
-  .CollapsibleContent[data-state="closed"] {
+  .CollapsibleContent[data-state='closed'] {
     animation: slideUp 300ms ease-out;
   }
 
@@ -114,12 +112,12 @@
   }
 
   /* Hide native number input spinners only for our NumberInput */
-  .number-input input[type="number"]::-webkit-outer-spin-button,
-  .number-input input[type="number"]::-webkit-inner-spin-button {
+  .number-input input[type='number']::-webkit-outer-spin-button,
+  .number-input input[type='number']::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  .number-input input[type="number"] {
+  .number-input input[type='number'] {
     -moz-appearance: textfield; /* Firefox */
     appearance: textfield;
   }
@@ -143,14 +141,17 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
   html {
-    @apply overflow-x-hidden;
+    overflow-x: hidden;
   }
   body {
-    @apply min-h-svh w-full bg-background text-foreground;
+    min-height: 100svh;
+    width: 100%;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
