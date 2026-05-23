@@ -1,4 +1,3 @@
-import { get } from 'http';
 import { getEnv } from '../common/utils/get-env';
 // Removed JWT_SECRET logging as it will be properly handled inside the config
 export const appConfig = () => {
@@ -10,7 +9,6 @@ export const appConfig = () => {
   const appOrigins = appOriginEnv
     .split(',') // [ "http://localhost:3333", "http://localhost:5173" ]
     .map((o) => o.trim());
-console.log('JWT SECRET:AUTH SERVICE', getEnv('JWT_SECRET'));
   return {
     NODE_ENV: env,
     APP_ORIGIN: appOrigins,
