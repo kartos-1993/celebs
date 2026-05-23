@@ -21,6 +21,9 @@ build/
 services/auth-admin/dist/
 services-e2e/dist/
 
+# Ignore generated Prisma client code
+apps/**/src/generated/
+
 # Logs
 logs
 *.log
