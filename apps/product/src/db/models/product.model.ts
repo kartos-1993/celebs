@@ -38,14 +38,18 @@ interface IColorVariant {
 // Interface for Product document
 export interface IProduct extends Document {
   name: string;
+  brand?: string;
   slug: string;
   description: string;
   price: number;
   discountedPrice?: number;
   category: mongoose.Types.ObjectId;
+  subcategory: mongoose.Types.ObjectId;
 
   sizes: ISize[];
   colorVariants: IColorVariant[];
+  mainImages: string[];
+  dynamicData?: Record<string, unknown>;
   tags: string[];
   featured: boolean;
   status: 'draft' | 'published' | 'archived';
@@ -61,6 +65,10 @@ const ProductSchema: Schema = new Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
+    },
+    brand: {
+      type: String,
       trim: true,
     },
     slug: {
@@ -89,7 +97,7 @@ const ProductSchema: Schema = new Schema(
     },
     subcategory: {
       type: Schema.Types.ObjectId,
-      ref: 'Subcategory',
+      ref: 'Category',
       required: true,
     },
     sizes: [
@@ -145,6 +153,15 @@ const ProductSchema: Schema = new Schema(
         ],
       },
     ],
+    mainImages: [
+      {
+        type: String,
+      },
+    ],
+    dynamicData: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
     tags: [
       {
         type: String,

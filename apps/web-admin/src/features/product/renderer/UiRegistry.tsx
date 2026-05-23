@@ -295,7 +295,15 @@ function VariantListField({ field, control }: UiProps) {
 }
 
 function MainImageField({ field }: UiProps) {
-  const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
+  const {
+    setValue,
+    watch,
+    register,
+    trigger,
+    formState,
+    setError,
+    clearErrors,
+  } = useFormContext();
   const files: File[] = watch(field.name) ?? [];
   const [previews, setPreviews] = React.useState<string[]>([]);
   const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
@@ -343,14 +351,20 @@ function MainImageField({ field }: UiProps) {
         const arr: File[] = Array.isArray(v) ? v : [];
         if (field.required && arr.length === 0)
           return `${field.label} is required`;
-        if (typeof field.rule?.maxItems === 'number' && arr.length > field.rule.maxItems)
+        if (
+          typeof field.rule?.maxItems === 'number' &&
+          arr.length > field.rule.maxItems
+        )
           return `Max ${field.rule.maxItems} images`;
         if (
           Array.isArray(field.rule?.accept) &&
           arr.some((f) => !field.rule.accept.includes(f.type))
         )
           return 'Invalid file type';
-        if (typeof field.rule?.maxSize === 'number' && arr.some((f) => f.size > field.rule.maxSize))
+        if (
+          typeof field.rule?.maxSize === 'number' &&
+          arr.some((f) => f.size > field.rule.maxSize)
+        )
           return `Each image must be <= ${Math.round(field.rule.maxSize / 1024 / 1024)}MB`;
         return true;
       },
@@ -384,7 +398,8 @@ function MainImageField({ field }: UiProps) {
           return `Width must be >= ${rule.minWidth}px`;
         if (typeof rule.minHeight === 'number' && h < rule.minHeight)
           return `Height must be >= ${rule.minHeight}px`;
-        if (!aspectOk(w, h)) return `Image aspect ratio should be ${rule.aspectRatio}`;
+        if (!aspectOk(w, h))
+          return `Image aspect ratio should be ${rule.aspectRatio}`;
       } catch {
         return 'Could not read image dimensions';
       }
@@ -399,7 +414,6 @@ function MainImageField({ field }: UiProps) {
     const errors: string[] = [];
     const valids: File[] = [];
     for (const f of incoming) {
-       
       const err = await prevalidateFile(f);
       if (err) errors.push(err);
       else valids.push(f);
@@ -444,77 +458,77 @@ function MainImageField({ field }: UiProps) {
       <div className="rounded border p-3">
         <div className="flex flex-wrap items-start gap-2">
           {previews.map((src, idx) => (
-              <TooltipProvider key={idx}>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <div className="relative group h-20 w-20 rounded border overflow-hidden">
-                      <img
-                        src={src}
-                        alt={`image-${idx}`}
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/40 group-hover:flex">
-                        <button
-                          type="button"
-                          className="inline-flex h-6 w-6 items-center justify-center rounded bg-white/90 shadow hover:bg-white"
-                          onClick={() => fileInputs.current[idx]?.click()}
-                          aria-label="Edit image"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-flex h-6 w-6 items-center justify-center rounded bg-white/90 shadow hover:bg-white text-red-600"
-                          onClick={() => onDelete(idx)}
-                          aria-label="Delete image"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                      <input
-                        ref={(el) => {
-                          fileInputs.current[idx] = el;
-                        }}
-                        type="file"
-                        accept={
-                          Array.isArray(field.rule?.accept)
-                            ? field.rule.accept.join(',')
-                            : undefined
-                        }
-                        className="hidden"
-                        onChange={(e) =>
-                          onReplaceFile(idx, e.target.files?.[0] ?? null)
-                        }
-                      />
+            <TooltipProvider key={idx}>
+              <Tooltip delayDuration={100}>
+                <TooltipTrigger asChild>
+                  <div className="relative group h-20 w-20 rounded border overflow-hidden">
+                    <img
+                      src={src}
+                      alt={`image-${idx}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/40 group-hover:flex">
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded bg-white/90 shadow hover:bg-white"
+                        onClick={() => fileInputs.current[idx]?.click()}
+                        aria-label="Edit image"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded bg-white/90 shadow hover:bg-white text-red-600"
+                        onClick={() => onDelete(idx)}
+                        aria-label="Delete image"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="p-2">
-                    <div className="w-64">
-                      <img
-                        src={src}
-                        alt={`preview-${idx}`}
-                        className="w-full h-auto rounded"
-                      />
-                      <div className="mt-2 flex justify-end gap-2">
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
-                          onClick={() => fileInputs.current[idx]?.click()}
-                        >
-                          <Pencil className="h-3 w-3" /> Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
-                          onClick={() => onDelete(idx)}
-                        >
-                          <Trash2 className="h-3 w-3" /> Delete
-                        </button>
-                      </div>
+                    <input
+                      ref={(el) => {
+                        fileInputs.current[idx] = el;
+                      }}
+                      type="file"
+                      accept={
+                        Array.isArray(field.rule?.accept)
+                          ? field.rule.accept.join(',')
+                          : undefined
+                      }
+                      className="hidden"
+                      onChange={(e) =>
+                        onReplaceFile(idx, e.target.files?.[0] ?? null)
+                      }
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="p-2">
+                  <div className="w-64">
+                    <img
+                      src={src}
+                      alt={`preview-${idx}`}
+                      className="w-full h-auto rounded"
+                    />
+                    <div className="mt-2 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
+                        onClick={() => fileInputs.current[idx]?.click()}
+                      >
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
+                        onClick={() => onDelete(idx)}
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))}
           {/* Inline Add tile */}
           <label className="grid h-20 w-20 cursor-pointer place-items-center rounded border text-sm text-muted-foreground hover:bg-accent/30">
@@ -522,7 +536,11 @@ function MainImageField({ field }: UiProps) {
               ref={addInputRef}
               type="file"
               className="hidden"
-              accept={Array.isArray(field.rule?.accept) ? field.rule.accept.join(',') : undefined}
+              accept={
+                Array.isArray(field.rule?.accept)
+                  ? field.rule.accept.join(',')
+                  : undefined
+              }
               multiple
               onChange={(e) => onAddFiles(e.target.files)}
             />
@@ -530,21 +548,45 @@ function MainImageField({ field }: UiProps) {
           </label>
         </div>
         {/* Helper text (only if backend provided rules) */}
-        {(field.rule?.maxItems != null || Array.isArray(field.rule?.accept) || field.rule?.maxSize != null || field.rule?.aspectRatio || field.rule?.minWidth || field.rule?.minHeight) ? (
+        {field.rule?.maxItems != null ||
+        Array.isArray(field.rule?.accept) ||
+        field.rule?.maxSize != null ||
+        field.rule?.aspectRatio ||
+        field.rule?.minWidth ||
+        field.rule?.minHeight ? (
           <div className="mt-2 text-xs text-muted-foreground">
-            {field.rule?.maxItems != null ? <>Max {field.rule.maxItems} images</> : null}
+            {field.rule?.maxItems != null ? (
+              <>Max {field.rule.maxItems} images</>
+            ) : null}
             {Array.isArray(field.rule?.accept) ? (
-              <> {field.rule?.maxItems != null ? ' • ' : ''}Accepted: {field.rule.accept.join(', ')}
-                {field.rule?.maxSize != null ? <> • Max size ~ {Math.round((field.rule?.maxSize || 0) / 1024 / 1024)}MB</> : null}
+              <>
+                {' '}
+                {field.rule?.maxItems != null ? ' • ' : ''}Accepted:{' '}
+                {field.rule.accept.join(', ')}
+                {field.rule?.maxSize != null ? (
+                  <>
+                    {' '}
+                    • Max size ~{' '}
+                    {Math.round((field.rule?.maxSize || 0) / 1024 / 1024)}MB
+                  </>
+                ) : null}
               </>
             ) : field.rule?.maxSize != null ? (
-              <> {field.rule?.maxItems != null ? ' • ' : ''}Max size ~ {Math.round((field.rule?.maxSize || 0) / 1024 / 1024)}MB</>
+              <>
+                {' '}
+                {field.rule?.maxItems != null ? ' • ' : ''}Max size ~{' '}
+                {Math.round((field.rule?.maxSize || 0) / 1024 / 1024)}MB
+              </>
             ) : null}
             {field.rule?.aspectRatio ? (
               <> • Recommended aspect ratio: {field.rule.aspectRatio}</>
             ) : null}
             {field.rule?.minWidth || field.rule?.minHeight ? (
-              <> • Minimum dimensions: {field.rule?.minWidth ?? 0}×{field.rule?.minHeight ?? 0}px</>
+              <>
+                {' '}
+                • Minimum dimensions: {field.rule?.minWidth ?? 0}×
+                {field.rule?.minHeight ?? 0}px
+              </>
             ) : null}
           </div>
         ) : null}
@@ -558,11 +600,13 @@ function MainImageField({ field }: UiProps) {
   );
 }
 
-function SkuTableField({ field, control }: UiProps) {
+function SkuTableField({ field }: UiProps) {
   const ds = field.dataSource;
   // Optional labels map: { [axisKey]: { [valueId]: label } }
-  const labelsMap: Record<string, Record<string, string>> =
-    (ds?.labels as any) ?? {};
+  const labelsMap: Record<
+    string,
+    Record<string, string>
+  > = (ds?.labels as any) ?? {};
   const labelOf = React.useCallback(
     (axisKey: string, value: string) =>
       labelsMap?.[axisKey]?.[String(value)] ?? String(value),
@@ -610,30 +654,6 @@ function SkuTableField({ field, control }: UiProps) {
     Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants,
   ]);
   const { control: formControl, setValue } = useFormContext();
-  const { field: price } = useController({
-    name: 'sku.default.price',
-    control,
-  });
-  const { field: specialPrice } = useController({
-    name: 'sku.default.specialPrice',
-    control,
-  });
-  const { field: stock } = useController({
-    name: 'sku.default.stock',
-    control,
-  });
-  const { field: sellerSku } = useController({
-    name: 'sku.default.sellerSku',
-    control,
-  });
-  const { field: freeItems } = useController({
-    name: 'sku.default.freeItems',
-    control,
-  });
-  const { field: available } = useController({
-    name: 'sku.default.available',
-    control,
-  });
 
   // Determine selected options for up to two variant fields (e.g., color, size)
   const watchedValues = useWatch({
@@ -653,7 +673,10 @@ function SkuTableField({ field, control }: UiProps) {
     }
     if (typeof v === 'string' && v) {
       // Support comma-delimited payloads as a convenience
-      const parts = v.split(',').map((s) => s.trim()).filter(Boolean);
+      const parts = v
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       return { key: a.key, label: a.label, values: parts.length ? parts : [v] };
     }
     return { key: a.key, label: a.label, values: [] as string[] };
@@ -833,28 +856,29 @@ function SkuTableField({ field, control }: UiProps) {
           <TableBody>
             <TableRow>
               <TableCell>
-                <NumberInput {...price} placeholder="0" required />
+                <VariantFieldInput
+                  name="sku.default.price"
+                  type="number"
+                  required
+                />
               </TableCell>
               <TableCell>
-                <NumberInput {...specialPrice} placeholder="0" />
+                <VariantFieldInput
+                  name="sku.default.specialPrice"
+                  type="number"
+                />
               </TableCell>
               <TableCell>
-                <NumberInput {...stock} placeholder="0" />
+                <VariantFieldInput name="sku.default.stock" type="number" />
               </TableCell>
               <TableCell>
-                <Input {...sellerSku} placeholder="SKU" />
+                <VariantFieldInput name="sku.default.sellerSku" />
               </TableCell>
               <TableCell>
-                <NumberInput {...freeItems} placeholder="0" />
+                <VariantFieldInput name="sku.default.freeItems" type="number" />
               </TableCell>
               <TableCell>
-                <label className="flex items-center gap-2 text-xs">
-                  <Checkbox
-                    checked={!!available.value}
-                    onCheckedChange={(v) => available.onChange(!!v)}
-                  />
-                  <span>Available</span>
-                </label>
+                <VariantAvailability name="sku.default.available" />
               </TableCell>
             </TableRow>
           </TableBody>
@@ -964,9 +988,11 @@ function SkuTableField({ field, control }: UiProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-      {variants[0].values.map((opt) => (
+            {variants[0].values.map((opt) => (
               <TableRow key={opt}>
-        <TableCell className="capitalize">{labelOf(variants[0].key, opt)}</TableCell>
+                <TableCell className="capitalize">
+                  {labelOf(variants[0].key, opt)}
+                </TableCell>
                 <TableCell>
                   <VariantFieldInput
                     name={pathFor(variants[0].key, opt, 'price')}
@@ -1023,11 +1049,15 @@ function SkuTableField({ field, control }: UiProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-    {variants[0].values.flatMap((opt1) =>
+            {variants[0].values.flatMap((opt1) =>
               variants[1].values.map((opt2) => (
                 <TableRow key={`${opt1}-${opt2}`}>
-      <TableCell className="capitalize">{labelOf(variants[0].key, opt1)}</TableCell>
-      <TableCell className="capitalize">{labelOf(variants[1].key, opt2)}</TableCell>
+                  <TableCell className="capitalize">
+                    {labelOf(variants[0].key, opt1)}
+                  </TableCell>
+                  <TableCell className="capitalize">
+                    {labelOf(variants[1].key, opt2)}
+                  </TableCell>
                   <TableCell>
                     <VariantFieldInput
                       name={pathFor(
@@ -1118,14 +1148,75 @@ function VariantFieldInput({
   type?: 'number';
   required?: boolean;
 }) {
-  const { control } = useFormContext();
-  const { field } = useController({ name, control });
+  const { control, getValues } = useFormContext();
+  const isPriceField = name.endsWith('.price');
+  const isSpecialPriceField = name.endsWith('.specialPrice');
+  const isNonNegativeField =
+    name.endsWith('.stock') || name.endsWith('.freeItems');
+  const { field, fieldState } = useController({
+    name,
+    control,
+    rules:
+      type === 'number'
+        ? {
+            validate: (value: unknown) => {
+              const raw = String(value ?? '').trim();
+
+              if (!raw) {
+                return required ? 'This field is required' : true;
+              }
+
+              const numeric = Number(raw);
+              if (!Number.isFinite(numeric)) {
+                return 'Enter a valid number';
+              }
+
+              if ((isPriceField || isSpecialPriceField) && numeric <= 0) {
+                return 'Must be greater than 0';
+              }
+
+              if (isNonNegativeField && numeric < 0) {
+                return 'Cannot be negative';
+              }
+
+              if (isSpecialPriceField) {
+                const basePrice = Number(
+                  getValues(name.replace(/\.specialPrice$/, '.price')),
+                );
+
+                if (Number.isFinite(basePrice) && numeric >= basePrice) {
+                  return 'Must be lower than price';
+                }
+              }
+
+              return true;
+            },
+          }
+        : required
+          ? { required: 'This field is required' }
+          : undefined,
+  });
   return (
-    type === 'number' ? (
-      <NumberInput required={required} placeholder="0" {...field} />
-    ) : (
-      <Input required={required} placeholder="" {...field} />
-    )
+    <div className="space-y-1">
+      {type === 'number' ? (
+        <NumberInput
+          required={required}
+          placeholder="0"
+          invalid={!!fieldState.error}
+          {...field}
+        />
+      ) : (
+        <Input
+          required={required}
+          placeholder=""
+          className={
+            fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
+          }
+          {...field}
+        />
+      )}
+      <FieldError message={fieldState.error?.message} />
+    </div>
   );
 }
 
@@ -1192,7 +1283,9 @@ function ColorMetaItem({
       validate: (v: any) => {
         if (!v) return true;
         const ms =
-          typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
+          typeof safeLimits?.maxSize === 'number'
+            ? safeLimits.maxSize
+            : undefined;
         if (typeof ms === 'number' && v instanceof File && v.size > ms)
           return `Swatch must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
@@ -1201,11 +1294,19 @@ function ColorMetaItem({
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
         const arr: File[] = Array.isArray(v) ? v : [];
-        if (typeof safeLimits?.maxImages === 'number' && arr.length > safeLimits.maxImages)
+        if (
+          typeof safeLimits?.maxImages === 'number' &&
+          arr.length > safeLimits.maxImages
+        )
           return `Max ${safeLimits.maxImages} images`;
         const ms =
-          typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
-        if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms)) {
+          typeof safeLimits?.maxSize === 'number'
+            ? safeLimits.maxSize
+            : undefined;
+        if (
+          typeof ms === 'number' &&
+          arr.some((f) => f instanceof File && f.size > ms)
+        ) {
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         }
         return true;
@@ -1419,8 +1520,8 @@ function ColorMetaField({ field }: UiProps) {
       /color/i.test(v?.label ?? v?.key),
     )?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> =
-    (field.dataSource?.labels as any) ?? {};
+  const labelsMap: Record<string, Record<string, string>> = (field.dataSource
+    ?.labels as any) ?? {};
   const labelOf = (value: string) =>
     labelsMap?.[colorField]?.[String(value)] ?? String(value);
   // Accept and limits must be driven by backend; do not hardcode defaults
@@ -1428,8 +1529,12 @@ function ColorMetaField({ field }: UiProps) {
     ? field.rule?.accept
     : undefined;
   const limits = {
-    maxImages: typeof field.rule?.maxItems === 'number' ? field.rule?.maxItems : undefined,
-    maxSize: typeof field.rule?.maxSize === 'number' ? field.rule?.maxSize : undefined,
+    maxImages:
+      typeof field.rule?.maxItems === 'number'
+        ? field.rule?.maxItems
+        : undefined,
+    maxSize:
+      typeof field.rule?.maxSize === 'number' ? field.rule?.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
   const selected = watch(colorField);
   const colors: string[] = Array.isArray(selected)
@@ -1448,7 +1553,9 @@ function ColorMetaField({ field }: UiProps) {
           <div className="text-xs text-muted-foreground">
             {limits.maxImages != null ? `Max ${limits.maxImages} images` : ''}
             {limits.maxImages != null && limits.maxSize != null ? ' • ' : ''}
-            {limits.maxSize != null ? `Max size ~ ${Math.round((limits.maxSize || 0) / 1024 / 1024)}MB` : ''}
+            {limits.maxSize != null
+              ? `Max size ~ ${Math.round((limits.maxSize || 0) / 1024 / 1024)}MB`
+              : ''}
           </div>
         ) : null}
       </div>
@@ -1458,10 +1565,10 @@ function ColorMetaField({ field }: UiProps) {
         </div>
       ) : (
         <div className="space-y-2">
-      {colors.map((c) => (
+          {colors.map((c) => (
             <div key={c} className="rounded border p-2">
               <div className="flex items-center gap-2">
-        <Input value={labelOf(c)} readOnly className="capitalize" />
+                <Input value={labelOf(c)} readOnly className="capitalize" />
                 <Button
                   type="button"
                   variant="outline"
@@ -1603,7 +1710,9 @@ function ColorInlineRow({
       validate: (v: any) => {
         if (!v) return true;
         const ms =
-          typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
+          typeof safeLimits?.maxSize === 'number'
+            ? safeLimits.maxSize
+            : undefined;
         if (typeof ms === 'number' && v instanceof File && v.size > ms)
           return `Swatch must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
@@ -1612,11 +1721,19 @@ function ColorInlineRow({
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
         const arr: File[] = Array.isArray(v) ? v : [];
-        if (typeof safeLimits?.maxImages === 'number' && arr.length > safeLimits.maxImages)
+        if (
+          typeof safeLimits?.maxImages === 'number' &&
+          arr.length > safeLimits.maxImages
+        )
           return `Max ${safeLimits.maxImages} images`;
         const ms =
-          typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
-        if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms))
+          typeof safeLimits?.maxSize === 'number'
+            ? safeLimits.maxSize
+            : undefined;
+        if (
+          typeof ms === 'number' &&
+          arr.some((f) => f instanceof File && f.size > ms)
+        )
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
       },
@@ -1796,16 +1913,20 @@ function ColorInlineField({ field }: UiProps) {
       /color/i.test(v?.label ?? v?.key),
     )?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> =
-    (field.dataSource?.labels as any) ?? {};
+  const labelsMap: Record<string, Record<string, string>> = (field.dataSource
+    ?.labels as any) ?? {};
   const labelOf = (value: string) =>
     labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = Array.isArray(field.rule?.accept)
     ? field.rule.accept
     : undefined;
   const limits = {
-    maxImages: typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : undefined,
-    maxSize: typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
+    maxImages:
+      typeof field.rule?.maxItems === 'number'
+        ? field.rule.maxItems
+        : undefined,
+    maxSize:
+      typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
   const selected = watch(colorField);
   const colors: string[] = Array.isArray(selected)
@@ -1831,10 +1952,10 @@ function ColorInlineField({ field }: UiProps) {
         </div>
       ) : (
         <div className="space-y-2">
-      {colors.map((c) => (
+          {colors.map((c) => (
             <ColorInlineRow
               key={c}
-        color={labelOf(c)}
+              color={labelOf(c)}
               namePrefix={`variants.colorMeta.${c}`}
               accept={accept}
               limits={limits}

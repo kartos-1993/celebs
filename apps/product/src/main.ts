@@ -1,12 +1,13 @@
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 import * as path from 'path';
 
-// Load environment variables from .env file at the very beginning
-const envPath = path.resolve(
-  process.cwd(),
-  'apps/admin/product/.env.development'
-);
-dotenv.config({ path: envPath });
+const envName = process.env.NODE_ENV ?? 'development';
+const envPath = path.resolve(process.cwd(), `apps/product/.env.${envName}`);
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
 import app from './app';
 import { config } from './config/app.config';

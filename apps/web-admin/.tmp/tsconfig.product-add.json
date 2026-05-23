@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.app.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "../src/features/product/components/add-product.tsx",
+    "../src/features/product/components/basic-info-section.tsx",
+    "../src/features/product/components/collapsible-form-section.tsx",
+    "../src/features/product/components/dynamic-product-form.tsx",
+    "../src/features/product/components/product-form-action.tsx",
+    "../src/features/product/components/productform-sidebar.tsx",
+    "../src/features/product/hooks/useProductForm.tsx",
+    "../src/features/product/renderer/UiRegistry.tsx"
+  ]
+}

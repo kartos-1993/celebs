@@ -1,81 +1,65 @@
 import { Button } from '@/components/ui/button';
-import { Save, Upload, Clock, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { FileText, Loader2, Upload } from 'lucide-react';
 
 interface ProductFormActionsProps {
-  isValid: boolean;
-  onSaveAsDraft: () => void;
-  onPublish: () => void;
-  onCancel: () => void;
   isDirty: boolean;
+  isReady: boolean;
   isSubmitting?: boolean;
+  onCancel: () => void;
+  onSaveAsDraft: () => void;
 }
 
 const ProductFormActions = ({
-  isValid,
-  onSaveAsDraft,
-  onPublish,
-  onCancel,
   isDirty,
+  isReady,
   isSubmitting = false,
+  onCancel,
+  onSaveAsDraft,
 }: ProductFormActionsProps) => {
-  const { toast } = useToast();
-
-  const handleSaveAsDraft = () => {
-    onSaveAsDraft();
-    toast({
-      title: 'Draft Saved',
-      description:
-        'Your product has been saved as a draft. You can continue editing later.',
-    });
-  };
-
   return (
-    <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center p-4 bg-gray-50 rounded-lg border">
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        {isDirty && (
-          <>
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <span>You have unsaved changes</span>
-          </>
-        )}
-        {!isDirty && (
-          <>
-            <Clock className="h-4 w-4 text-green-500" />
-            <span>All changes saved</span>
-          </>
-        )}
+    <div className="flex flex-col gap-4 rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {isReady ? 'Ready to publish' : 'More details are still required'}
+        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {isDirty
+            ? 'You have unsaved changes in this product draft.'
+            : 'Current changes are already saved locally.'}
+        </p>
       </div>
 
-      <div className="flex gap-2 w-full sm:w-auto">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 sm:flex-none"
+          className="rounded-full border-gray-200 px-5 dark:border-gray-700"
         >
           Cancel
         </Button>
-
         <Button
           type="button"
-          variant="secondary"
-          onClick={handleSaveAsDraft}
+          variant="outline"
+          onClick={onSaveAsDraft}
           disabled={isSubmitting}
-          className="flex-1 sm:flex-none"
+          className="rounded-full border-orange-200 bg-orange-50 px-5 text-orange-700 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/60"
         >
-          <Clock className="mr-2 h-4 w-4" />
-          Save as Draft
+          <FileText className="mr-2 h-4 w-4" />
+          Save Draft
         </Button>
-
         <Button
           type="submit"
-          className="bg-fashion-700 hover:bg-fashion-800 flex-1 sm:flex-none"
-          disabled={!isValid || isSubmitting}
+          disabled={isSubmitting}
+          className="rounded-full bg-orange-500 px-5 text-white hover:bg-orange-600"
         >
-          <Upload className="mr-2 h-4 w-4" />
-          {isSubmitting ? 'Publishing...' : 'Publish Product'}
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="mr-2 h-4 w-4" />
+          )}
+          {isSubmitting ? 'Submitting...' : 'Submit Product'}
         </Button>
       </div>
     </div>

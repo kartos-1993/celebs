@@ -15,6 +15,7 @@ import categoryRoutes from './modules/category/category.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
 import renderRoutes from './modules/render/router';
 import mediaRoutes from './modules/media/media.routes';
+import productRoutes from './modules/product/product.routes';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use(
 // API routes
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
 app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
+app.use(`${config.BASE_PATH}/products`, productRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 
