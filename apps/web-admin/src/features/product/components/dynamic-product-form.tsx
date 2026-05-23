@@ -1,418 +1,662 @@
 import React from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import type { FieldSpec } from '../renderer/UiRegistry';
-import { extractVariantsMeta } from '../renderer/variant-utils';
-import { uiTypeRegistry } from '../renderer/UiRegistry';
-import CollapsibleFormSection from './collapsible-form-section';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { useFormContext } from 'react-hook-form';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { ProductAPI } from '@/lib/axios-client';
+import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { CategoryApiService } from '../../category/api';
+import type { FieldSpec } from '../renderer/UiRegistry';
+import { uiTypeRegistry } from '../renderer/UiRegistry';
+import { extractVariantsMeta } from '../renderer/variant-utils';
+import CollapsibleFormSection from './collapsible-form-section';
 
-export default function DynamicProductForm({ catId, productId, onValuesChange, onSchemaLoaded }: { catId: string; productId?: string; onValuesChange?: (values: any, sectionKey: string) => void; onSchemaLoaded?: (fields: FieldSpec[]) => void }) {
+interface DynamicProductFormProps {
+  catId: string;
+  productId?: string;
+  onValuesChange?: (
+    values: Record<string, unknown>,
+    sectionKey: string,
+  ) => void;
+  onSchemaLoaded?: (fields: FieldSpec[]) => void;
+}
+
+const normalizeGroup = (value?: string) =>
+  (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+const normalizeUiType = (value?: string) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+
+const uiAliases: Record<string, keyof typeof uiTypeRegistry> = {
+  input: 'input',
+  text: 'input',
+  number: 'number',
+  switch: 'Switch',
+  select: 'select',
+  multiselect: 'multiselect',
+  skutablev2: 'SkuTableV2',
+  mainimage: 'MainImage',
+  colormeta: 'ColorMeta',
+  colorinline: 'ColorInline',
+};
+
+const groupAliases: Record<string, string> = {
+  base: 'base',
+  productimages: 'base',
+  images: 'base',
+  mainimage: 'base',
+  media: 'base',
+  details: 'details',
+  productspecification: 'details',
+  specification: 'details',
+  attributes: 'details',
+  basic: 'details',
+  basicinfo: 'details',
+  general: 'details',
+  info: 'details',
+  title: 'details',
+  productname: 'details',
+  brand: 'details',
+  variant: 'variant',
+  variants: 'variant',
+  variant1: 'variant',
+  variant2: 'variant',
+  sku: 'variant',
+  color: 'variant',
+  size: 'variant',
+  sale: 'sale',
+  pricestock: 'sale',
+  priceandstock: 'sale',
+  pricing: 'sale',
+  stock: 'sale',
+  package: 'package',
+  shippingandwarranty: 'package',
+  shipping: 'package',
+  warranty: 'package',
+  termcondition: 'termcondition',
+  termsandconditions: 'termcondition',
+  terms: 'termcondition',
+};
+
+const resolveFieldComponent = (field: FieldSpec) =>
+  uiTypeRegistry[
+    uiAliases[normalizeUiType(field.uiType)] ??
+      (field.uiType as keyof typeof uiTypeRegistry)
+  ];
+
+const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
+  let merged = Array.isArray(next) ? [...next] : [];
+
+  try {
+    const cat = await CategoryApiService.getCategoryById(catId);
+    const attrs: any[] = (cat as any)?.data?.attributes ?? [];
+
+    if (!Array.isArray(attrs) || attrs.length === 0) {
+      return merged;
+    }
+
+    const existingNames = new Set(merged.map((field) => field.name));
+    const haveDetails = merged.some((field) =>
+      normalizeGroup(field.group).includes('detail'),
+    );
+    const haveVariant = merged.some((field) =>
+      normalizeGroup(field.group).includes('variant'),
+    );
+
+    const extra: FieldSpec[] = [];
+    let colorFieldKey: string | null = null;
+
+    const toField = (attribute: any): FieldSpec | null => {
+      const key = String(attribute.name || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '');
+
+      if (!key) {
+        return null;
+      }
+
+      const isSelect =
+        attribute.type === 'select' || attribute.type === 'multiselect';
+      const variantType = String(
+        attribute.variantType || attribute.variantAxis || '',
+      ).toLowerCase();
+      const isColorVariant =
+        attribute.isVariant &&
+        (variantType === 'color' ||
+          key === 'color' ||
+          String(attribute.name || '')
+            .toLowerCase()
+            .includes('color'));
+      const isSizeVariant =
+        attribute.isVariant &&
+        (variantType === 'size' ||
+          key === 'size' ||
+          String(attribute.name || '')
+            .toLowerCase()
+            .includes('size'));
+
+      const uiType = isColorVariant
+        ? 'VariantList'
+        : isSizeVariant
+          ? 'multiSelect'
+          : attribute.type === 'multiselect'
+            ? 'multiSelect'
+            : attribute.type === 'select'
+              ? 'select'
+              : attribute.type === 'number'
+                ? 'number'
+                : attribute.type === 'boolean'
+                  ? 'Switch'
+                  : 'input';
+
+      let dataSource: any;
+      if (isSelect) {
+        if (attribute.useStandardOptions && attribute.optionSetId) {
+          dataSource = { fetch: `/option-sets/${attribute.optionSetId}` };
+        } else if (Array.isArray(attribute.values)) {
+          dataSource = attribute.values.map((value: any) =>
+            typeof value === 'string'
+              ? { label: value, value }
+              : {
+                  label:
+                    value.label ?? value.name ?? String(value.value ?? value),
+                  value: value.value ?? value.label ?? value.name,
+                },
+          );
+        } else {
+          dataSource = [];
+        }
+      }
+
+      return {
+        name: key,
+        uiType: uiType as any,
+        label: String(attribute.name || key),
+        group: attribute.isVariant ? 'variant' : 'details',
+        required: !!attribute.isRequired,
+        dataSource,
+        visible: true,
+      };
+    };
+
+    for (const attribute of attrs) {
+      const field = toField(attribute);
+      if (!field) continue;
+      if (existingNames.has(field.name)) continue;
+      if (field.group === 'details' && haveDetails) continue;
+      if (field.group === 'variant' && haveVariant) continue;
+
+      extra.push(field);
+
+      const variantType = String(
+        attribute.variantType || attribute.variantAxis || '',
+      ).toLowerCase();
+      if (
+        !colorFieldKey &&
+        (variantType === 'color' || field.name === 'color')
+      ) {
+        colorFieldKey = field.name;
+      }
+    }
+
+    if (colorFieldKey && !existingNames.has('variants.colorMeta')) {
+      extra.push({
+        name: 'variants.colorMeta',
+        uiType: 'ColorInline' as any,
+        label: 'Color Images',
+        group: 'variant',
+        required: false,
+        dataSource: { colorField: colorFieldKey },
+        rule: {
+          accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+          maxItems: 8,
+          maxSize: 5 * 1024 * 1024,
+        },
+        visible: true,
+      });
+    }
+
+    if (extra.length > 0) {
+      merged = [...merged, ...extra];
+    }
+  } catch {
+    return merged;
+  }
+
+  return merged;
+};
+
+const normalizeSchema = (fields: FieldSpec[]) =>
+  fields.map((field) => {
+    const isVariantGroup = normalizeGroup(field.group).includes('variant');
+    const lowerLabel = field.label?.toLowerCase?.() ?? '';
+    const isColorName = field.name === 'color' || lowerLabel.includes('color');
+    const isSizeName = field.name === 'size' || lowerLabel.includes('size');
+    const ui = normalizeUiType(field.uiType);
+
+    if (isVariantGroup && isColorName && ui === 'multiselect') {
+      return { ...field, uiType: 'VariantList' as any };
+    }
+
+    if (isVariantGroup && isSizeName && ui === 'select') {
+      return { ...field, uiType: 'multiSelect' as any };
+    }
+
+    return field;
+  });
+
+const ensureVariantSupportFields = (fields: FieldSpec[]) => {
+  let merged = [...fields];
+
+  try {
+    const { variants } = extractVariantsMeta(merged);
+    const variantsMeta = variants.map((variant) => ({
+      key: variant.key,
+      label: variant.label,
+    }));
+
+    const skuIndex = merged.findIndex(
+      (field) => String(field.uiType) === 'SkuTableV2',
+    );
+
+    if (variantsMeta.length > 0) {
+      if (skuIndex >= 0) {
+        const existing = merged[skuIndex];
+        const dataSource = existing.dataSource ?? {};
+
+        if (!dataSource.fetch && !Array.isArray(dataSource)) {
+          merged[skuIndex] = {
+            ...existing,
+            dataSource: { ...dataSource, variants: variantsMeta },
+          };
+        }
+      } else {
+        merged.push({
+          name: 'sku.table',
+          uiType: 'SkuTableV2' as any,
+          label: 'Price & Stock',
+          group: 'sale',
+          required: false,
+          dataSource: { variants: variantsMeta },
+          visible: true,
+        });
+      }
+    }
+
+    const colorVariantField = merged.find(
+      (field) =>
+        normalizeGroup(field.group).includes('variant') &&
+        (field.name === 'color' ||
+          field.label?.toLowerCase?.().includes('color')),
+    );
+    const hasColorImages = merged.some(
+      (field) => field.name === 'variants.colorMeta',
+    );
+
+    if (colorVariantField && !hasColorImages) {
+      merged.push({
+        name: 'variants.colorMeta',
+        uiType: 'ColorInline' as any,
+        label: 'Color Images',
+        group: 'variant',
+        required: false,
+        dataSource: { colorField: colorVariantField.name },
+        rule: {
+          accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+          maxItems: 8,
+          maxSize: 5 * 1024 * 1024,
+        },
+        visible: true,
+      });
+    }
+  } catch {
+    return merged;
+  }
+
+  return merged;
+};
+
+const sectionOrder: Array<{
+  key: string;
+  title: string;
+  icon?: React.ReactNode;
+}> = [
+  {
+    key: 'base',
+    title: 'Product Images',
+    icon: <ImageIcon className="h-5 w-5 text-primary" />,
+  },
+  {
+    key: 'details',
+    title: 'Product Attributes',
+    icon: <Palette className="h-5 w-5 text-primary" />,
+  },
+  {
+    key: 'variant',
+    title: 'Variants',
+    icon: <Palette className="h-5 w-5 text-primary" />,
+  },
+  {
+    key: 'sale',
+    title: 'Price, Stock & Variants',
+    icon: <Palette className="h-5 w-5 text-primary" />,
+  },
+  {
+    key: 'package',
+    title: 'Shipping & Warranty',
+    icon: <Ruler className="h-5 w-5 text-primary" />,
+  },
+  {
+    key: 'termcondition',
+    title: 'Terms & Conditions',
+  },
+];
+
+export default function DynamicProductForm({
+  catId,
+  productId,
+  onValuesChange,
+  onSchemaLoaded,
+}: DynamicProductFormProps) {
+  const form = useFormContext();
   const [fields, setFields] = React.useState<FieldSpec[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  // Controls the inline "Show more" for Product Attributes (details) section
   const [detailsOpen, setDetailsOpen] = React.useState(false);
-  // Single shared form across all sections so dependencies work (e.g., variants -> SKU table)
-  const form = useForm({ defaultValues: {}, mode: 'onChange' });
-  // Ensure default values from backend are applied only once per category
   const appliedDefaultsRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    (async () => {
-      if (!catId) return;
+    let cancelled = false;
+
+    const loadSchema = async () => {
+      if (!catId) {
+        setFields([]);
+        return;
+      }
+
       setLoading(true);
       setError(null);
+
       try {
-  const res = await ProductAPI.get('/product-render', { params: { catId, locale: 'en_US', productId } });
-        const next: FieldSpec[] = res.data?.data?.data ?? res.data?.data ?? [];
-
-        // Build a lightweight fallback for missing sections from Category attributes
-        let merged: FieldSpec[] = Array.isArray(next) ? [...next] : [];
-        try {
-          const cat = await CategoryApiService.getCategoryById(catId);
-          const attrs: any[] = (cat as any)?.data?.attributes ?? [];
-          if (Array.isArray(attrs) && attrs.length) {
-            const toField = (a: any): FieldSpec | null => {
-              const key = String(a.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-              if (!key) return null;
-              const isSelect = a.type === 'select' || a.type === 'multiselect';
-              const vType = (a.variantType || a.variantAxis || '').toString().toLowerCase();
-              const isColorVariant = a.isVariant && (vType === 'color' || key === 'color' || String(a.name || '').toLowerCase().includes('color'));
-              const isSizeVariant = a.isVariant && (vType === 'size' || key === 'size' || String(a.name || '').toLowerCase().includes('size'));
-              const uiType = isColorVariant
-                ? 'VariantList'
-                : isSizeVariant
-                  ? 'multiSelect'
-                  : a.type === 'multiselect'
-                  ? 'multiSelect'
-                  : a.type === 'select'
-                    ? 'select'
-                    : a.type === 'number'
-                      ? 'number'
-                      : a.type === 'boolean'
-                        ? 'Switch'
-                        : 'input';
-              let dataSource: any = undefined;
-              if (isSelect) {
-                if (a.useStandardOptions && a.optionSetId) {
-                  dataSource = { fetch: `/option-sets/${a.optionSetId}` };
-                } else if (Array.isArray(a.values)) {
-                  dataSource = (a.values as any[]).map((v) =>
-                    typeof v === 'string' ? { label: v, value: v } : { label: v.label ?? v.name ?? String(v.value), value: v.value ?? v.label ?? v.name }
-                  );
-                } else {
-                  dataSource = [];
-                }
-              }
-              return {
-                name: key,
-                uiType: uiType as any,
-                label: String(a.name || key),
-                group: a.isVariant ? 'variant' : 'details',
-                required: !!a.isRequired,
-                dataSource,
-                visible: true,
-              };
-            };
-
-            // Only add fields for groups that came back empty from composer
-            const existingNames = new Set((merged || []).map((f) => f.name));
-            const haveDetails = (merged || []).some((f) => (f.group || '').toLowerCase().includes('detail'));
-            const haveVariant = (merged || []).some((f) => (f.group || '').toLowerCase().includes('variant'));
-
-            const extra: FieldSpec[] = [];
-            let colorFieldKey: string | null = null;
-            for (const a of attrs) {
-              const f = toField(a);
-              if (!f) continue;
-              if (existingNames.has(f.name)) continue;
-              if (f.group === 'details' && haveDetails) continue;
-              if (f.group === 'variant' && haveVariant) continue;
-              extra.push(f);
-              const vType = (a.variantType || a.variantAxis || '').toString().toLowerCase();
-              if (!colorFieldKey && (vType === 'color' || f.name === 'color')) {
-                colorFieldKey = f.name;
-              }
-            }
-      // Inject per-color image uploader when color variant exists
-            if (colorFieldKey && !existingNames.has('variants.colorMeta')) {
-              extra.push({
-                name: 'variants.colorMeta',
-        uiType: 'ColorInline' as any,
-                label: 'Color Images',
-                group: 'variant',
-                required: false,
-                dataSource: { colorField: colorFieldKey },
-                rule: { accept: ['image/jpeg','image/png','image/webp','image/avif'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
-                visible: true,
-              });
-            }
-            if (extra.length) merged = [...merged, ...extra];
-          }
-        } catch {
-          // ignore fallback errors, keep original fields
-        }
-
-        // Normalize any composer-provided Color -> VariantList (only when backend provides multiselect)
-        // and Size -> multiSelect (only when backend provides select)
-        merged = (merged || []).map((f) => {
-          const isVariantGroup = (f.group || '').toLowerCase().includes('variant');
-          const isColorName = f.name === 'color' || f.label?.toLowerCase?.().includes('color');
-          const isSizeName = f.name === 'size' || f.label?.toLowerCase?.().includes('size');
-          const ui = String(f.uiType || '').toLowerCase();
-          if (isVariantGroup && isColorName && ui === 'multiselect') {
-            return { ...f, uiType: 'VariantList' as any };
-          }
-          if (isVariantGroup && isSizeName && (ui === 'select')) {
-            return { ...f, uiType: 'multiSelect' as any };
-          }
-          return f;
+        const response = await ProductAPI.get('/product-render', {
+          params: { catId, locale: 'en_US', productId },
         });
 
-        // Ensure SkuTableV2 is aware of variant keys (color/size)
-        try {
-          const { variants: variantMetaItems } = extractVariantsMeta(merged || []);
-          const variantsMeta = variantMetaItems.map((v) => ({ key: v.key, label: v.label }));
-          const idx = (merged || []).findIndex((f) => String(f.uiType) === 'SkuTableV2');
-          if (variantsMeta.length) {
-            if (idx >= 0) {
-              const existing = merged[idx];
-              const ds = existing.dataSource ?? {};
-              if (!ds.fetch && !Array.isArray(ds)) {
-                existing.dataSource = { ...(ds || {}), variants: variantsMeta } as any;
-              }
-            } else {
-              // If no SkuTable present, add a minimal one under 'sale'
-              merged.push({
-                name: 'sku.table',
-                uiType: 'SkuTableV2' as any,
-                label: 'Price & Stock',
-                group: 'sale',
-                required: false,
-                dataSource: { variants: variantsMeta },
-                visible: true,
-              });
-            }
+        const serverFields: FieldSpec[] =
+          response.data?.data?.data ?? response.data?.data ?? [];
 
-            // Ensure Color Images UI exists whenever a Color variant exists
-            const colorVariantField = (merged || []).find(
-              (f) => (f.group || '').toLowerCase().includes('variant') && (f.name === 'color' || f.label?.toLowerCase?.().includes('color'))
-            );
-            const hasColorImages = (merged || []).some((f) => f.name === 'variants.colorMeta');
-            if (colorVariantField && !hasColorImages) {
-              merged.push({
-                name: 'variants.colorMeta',
-                uiType: 'ColorInline' as any,
-                label: 'Color Images',
-                group: 'variant',
-                required: false,
-                dataSource: { colorField: colorVariantField.name },
-                rule: { accept: ['image/jpeg','image/png','image/webp','image/avif'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
-                visible: true,
-              });
-            }
-          }
-        } catch {}
+        let merged = await addFallbackFields(catId, serverFields);
+        merged = normalizeSchema(merged);
+        merged = ensureVariantSupportFields(merged);
 
-        // Final safeguard: ensure Color Images UI exists if Color variant exists
-        try {
-          const colorVariantField = (merged || []).find(
-            (f) => (f.group || '').toLowerCase().includes('variant') && (f.name === 'color' || f.label?.toLowerCase?.().includes('color'))
-          );
-          const hasColorImages = (merged || []).some((f) => f.name === 'variants.colorMeta');
-          if (colorVariantField && !hasColorImages) {
-            merged = [
-              ...merged,
-              {
-                name: 'variants.colorMeta',
-                uiType: 'ColorInline' as any,
-                label: 'Color Images',
-                group: 'variant',
-                required: false,
-                dataSource: { colorField: colorVariantField.name },
-                rule: { accept: ['image/jpeg','image/png','image/webp','image/avif'], maxItems: 8, maxSize: 5 * 1024 * 1024 },
-                visible: true,
-              },
-            ];
-          }
-        } catch {}
+        if (cancelled) return;
 
-  // Set fields for rendering
-  setFields(merged);
-  onSchemaLoaded?.(merged);
+        setFields(merged);
+        onSchemaLoaded?.(merged);
 
-        // Apply backend-provided initial values into the form once per category
-        try {
-          const defaults: Record<string, any> = {};
-          for (const f of merged) {
-            if (typeof f?.value !== 'undefined') {
-              defaults[f.name] = f.value;
-            }
-          }
-          // Only reset if we haven't applied defaults for this category yet
-          if (catId && appliedDefaultsRef.current !== catId && Object.keys(defaults).length) {
-            form.reset({
-              // preserve any current values the user might have entered prior to defaults
-              ...(form.getValues() || {}),
-              ...defaults,
+        const defaults = Object.fromEntries(
+          merged
+            .filter((field) => typeof field.value !== 'undefined')
+            .map((field) => [field.name, field.value]),
+        );
+
+        if (
+          appliedDefaultsRef.current !== catId &&
+          Object.keys(defaults).length > 0
+        ) {
+          Object.entries(defaults).forEach(([key, value]) => {
+            form.setValue(key, value, {
+              shouldDirty: false,
+              shouldTouch: false,
+              shouldValidate: false,
             });
-            appliedDefaultsRef.current = catId;
-            // Also notify parent about each defaulted field so consumers can sync
-            for (const [k, v] of Object.entries(defaults)) {
-              const sectionKey = (() => {
-                const found = merged.find((f) => f.name === k);
-                return found?.group ? found.group : '';
-              })();
-              onValuesChange?.({ [k]: v }, sectionKey);
-            }
-          }
-        } catch {}
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load form schema');
+          });
+
+          Object.entries(defaults).forEach(([key, value]) => {
+            const sectionKey =
+              merged.find((field) => field.name === key)?.group ?? '';
+            onValuesChange?.({ [key]: value }, sectionKey);
+          });
+        }
+
+        appliedDefaultsRef.current = catId;
+      } catch (loadError: any) {
+        if (!cancelled) {
+          setError(loadError?.message || 'Failed to load form schema');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    })();
-  }, [catId, productId]);
+    };
 
-  // Group by normalized section keys to match the reference layout, with aliases
-  const normalize = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-  const groupAliases: Record<string, string> = {
-    // Images
-    base: 'base', productimages: 'base', images: 'base', mainimage: 'base', media: 'base',
-    // Attributes/specs
-  details: 'details', productspecification: 'details', specification: 'details', attributes: 'details', basic: 'details', basicinfo: 'details', general: 'details', info: 'details', title: 'details', productname: 'details', brand: 'details',
-    // Variants
-    variant: 'variant', variants: 'variant', variant1: 'variant', variant2: 'variant', sku: 'variant', color: 'variant', size: 'variant',
-    // Price & Stock
-    sale: 'sale', pricestock: 'sale', priceandstock: 'sale', pricing: 'sale', stock: 'sale',
-    // Shipping & Warranty
-    package: 'package', shippingandwarranty: 'package', shipping: 'package', warranty: 'package',
-    // Terms
-    termcondition: 'termcondition', termsandconditions: 'termcondition', terms: 'termcondition',
-  };
-  const groups: Record<string, FieldSpec[]> = {};
-  for (const f of fields) {
-    const gRaw = f.group || 'basic';
-    const gNorm = normalize(gRaw);
-    const mapped = groupAliases[gNorm] ?? gRaw; // fall back to original if unknown
-    groups[mapped] = groups[mapped] || [];
-    groups[mapped].push(f);
-  }
+    loadSchema();
 
-  // Map to explicit tiles as in the reference
-  const order: Array<{ key: string; title: string; desc?: string; icon?: any }> = [
-    { key: 'base', title: 'Product Images', icon: <ImageIcon className="h-5 w-5 text-primary" /> },
-    { key: 'details', title: 'Product Attributes', icon: <Palette className="h-5 w-5 text-primary" /> },
-    { key: 'variant', title: 'Variants', icon: <Palette className="h-5 w-5 text-primary" /> },
-    { key: 'sale', title: 'Price, Stock & Variants', icon: <Palette className="h-5 w-5 text-primary" /> },
-    { key: 'package', title: 'Shipping & Warranty', icon: <Ruler className="h-5 w-5 text-primary" /> },
-    { key: 'termcondition', title: 'Terms & Conditions' },
-  ];
-  const nameToGroup = React.useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const [gk, arr] of Object.entries(groups)) {
-      for (const f of arr) map[f.name] = gk;
-    }
-    return map;
+    return () => {
+      cancelled = true;
+    };
+  }, [catId, form, onSchemaLoaded, onValuesChange, productId]);
+
+  const groups = React.useMemo(() => {
+    const grouped: Record<string, FieldSpec[]> = {};
+
+    fields.forEach((field) => {
+      const mappedKey =
+        groupAliases[normalizeGroup(field.group)] ?? field.group;
+      grouped[mappedKey] = grouped[mappedKey] || [];
+      grouped[mappedKey].push(field);
+    });
+
+    return grouped;
   }, [fields]);
 
-  React.useEffect(() => {
-    const sub = form.watch((vals, meta) => {
-      const name = meta?.name as string | undefined;
-      if (!name) return;
-      const sectionKey = nameToGroup[name] ?? '';
-      const valueAt = (vals as any)?.[name];
-      onValuesChange?.({ [name]: valueAt }, sectionKey);
-    });
-    return () => sub.unsubscribe();
-  }, [form, nameToGroup, onValuesChange]);
+  const nameToGroup = React.useMemo(() => {
+    const map: Record<string, string> = {};
 
-  if (!catId) return <div className="text-sm text-gray-500">Select a category to continue.</div>;
-  if (loading) return <div>Loading…</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
-  if (!fields.length) return <div>No fields.</div>;
+    Object.entries(groups).forEach(([groupKey, groupFields]) => {
+      groupFields.forEach((field) => {
+        map[field.name] = groupKey;
+      });
+    });
+
+    return map;
+  }, [groups]);
+
+  const getValueAtPath = React.useCallback((obj: unknown, path: string) => {
+    return path.split('.').reduce<unknown>((current, part) => {
+      if (
+        current &&
+        typeof current === 'object' &&
+        part in (current as Record<string, unknown>)
+      ) {
+        return (current as Record<string, unknown>)[part];
+      }
+      return undefined;
+    }, obj);
+  }, []);
+
+  const resolveFieldName = React.useCallback(
+    (path: string) => {
+      const parts = path.split('.');
+
+      for (let index = parts.length; index > 0; index -= 1) {
+        const candidate = parts.slice(0, index).join('.');
+        if (candidate in nameToGroup) {
+          return candidate;
+        }
+      }
+
+      return path;
+    },
+    [nameToGroup],
+  );
+
+  React.useEffect(() => {
+    const subscription = form.watch((values, meta) => {
+      const changedName = meta?.name as string | undefined;
+      if (!changedName) return;
+
+      const fieldName = resolveFieldName(changedName);
+      const sectionKey = nameToGroup[fieldName];
+
+      if (!sectionKey) {
+        return;
+      }
+
+      onValuesChange?.(
+        { [changedName]: getValueAtPath(values, changedName) },
+        sectionKey,
+      );
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, getValueAtPath, nameToGroup, onValuesChange, resolveFieldName]);
+
+  if (!catId) {
+    return (
+      <div className="rounded-3xl border border-dashed border-gray-300 bg-white/80 px-6 py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+        Select a category to continue.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-3xl border border-gray-200 bg-white px-6 py-8 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+        Loading category-specific fields...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+        {error}
+      </div>
+    );
+  }
+
+  if (fields.length === 0) {
+    return (
+      <div className="rounded-3xl border border-gray-200 bg-white px-6 py-8 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+        No fields available for this category.
+      </div>
+    );
+  }
 
   return (
-    <FormProvider {...form}>
-      <div className="space-y-6">
-        {order.map(({ key, title, icon }) => (
+    <div className="space-y-6">
+      {sectionOrder.map(({ key, title, icon }) => {
+        const sectionFields = groups[key] || [];
+
+        return (
           <CollapsibleFormSection
             key={key}
+            id={`product-section-${key}`}
             title={title}
-            description=""
             icon={icon}
-            isValid={true}
-            isRequired={false}
             defaultOpen={true}
           >
             {key === 'details' ? (
-              (() => {
-                const all = groups[key] || [];
-                const first = all.slice(0, 6);
-                const rest = all.slice(6);
-                const hasMore = rest.length > 0;
-                const mapUi = (ui: string) => ui.toLowerCase().replace(/[^a-z0-9]+/g, '');
-                const uiMap: Record<string, keyof typeof uiTypeRegistry> = {
-                  input: 'input',
-                  text: 'input',
-                  number: 'number',
-                  switch: 'Switch',
-                  select: 'select',
-                  multiselect: 'multiselect',
-                  skutablev2: 'SkuTableV2',
-                  mainimage: 'MainImage',
-                  colormeta: 'ColorMeta',
-                  colorinline: 'ColorInline',
-                };
-                return (
-                  <div className="space-y-3">
-                    {/* First 6 fields in two columns */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {first.map((f) => {
-                        const ui = String(f.uiType || '');
-                        const norm = mapUi(ui);
-                        const Comp = uiTypeRegistry[(uiMap[norm] ?? (f.uiType as keyof typeof uiTypeRegistry))];
-                        if (!Comp || f.visible === false) return null;
-                        return (
-                          <div key={f.name} data-group={f.group}>
-                            <Comp field={f} control={form.control} />
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Remaining fields collapsed by default */}
-                    {hasMore ? (
-                      <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-                        <CollapsibleContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            {rest.map((f) => {
-                              const ui = String(f.uiType || '');
-                              const norm = mapUi(ui);
-                              const Comp = uiTypeRegistry[(uiMap[norm] ?? (f.uiType as keyof typeof uiTypeRegistry))];
-                              if (!Comp || f.visible === false) return null;
-                              return (
-                                <div key={f.name} data-group={f.group}>
-                                  <Comp field={f} control={form.control} />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CollapsibleContent>
-                        <div className="flex justify-center mt-2">
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm" type="button">
-                              {detailsOpen ? 'Show less' : 'Show more'}
-                            </Button>
-                          </CollapsibleTrigger>
-                        </div>
-                      </Collapsible>
-                    ) : null}
-
-                    {!all.length ? (
-                      <div className="text-xs text-muted-foreground">No additional attributes in this section.</div>
-                    ) : null}
-                  </div>
-                );
-              })()
+              <DetailsSection
+                fields={sectionFields}
+                control={form.control}
+                isOpen={detailsOpen}
+                onOpenChange={setDetailsOpen}
+              />
             ) : (
               <div className="space-y-4">
-                {(groups[key] || []).map((f) => {
-                  const ui = String(f.uiType || '');
-                  const norm = ui.toLowerCase().replace(/[^a-z0-9]+/g, '');
-                  const map: Record<string, keyof typeof uiTypeRegistry> = {
-                    input: 'input',
-                    text: 'input',
-                    number: 'number',
-                    switch: 'Switch',
-                    select: 'select',
-                    multiselect: 'multiselect',
-                    skutablev2: 'SkuTableV2',
-                    mainimage: 'MainImage',
-                    colormeta: 'ColorMeta',
-                    colorinline: 'ColorInline',
-                  };
-                  const Comp = uiTypeRegistry[(map[norm] ?? (f.uiType as keyof typeof uiTypeRegistry))];
-                  if (!Comp || f.visible === false) return null;
+                {sectionFields.map((field) => {
+                  const Component = resolveFieldComponent(field);
+                  if (!Component || field.visible === false) return null;
+
                   return (
-                    <div key={f.name} data-group={f.group}>
-                      <Comp field={f} control={form.control} />
+                    <div key={field.name} data-group={field.group}>
+                      <Component field={field} control={form.control} />
                     </div>
                   );
                 })}
-                {!groups[key]?.length ? (
-                  <div className="text-sm text-muted-foreground">No fields available for this section.</div>
+
+                {sectionFields.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">
+                    No fields available for this section.
+                  </div>
                 ) : null}
               </div>
             )}
           </CollapsibleFormSection>
-        ))}
+        );
+      })}
+    </div>
+  );
+}
+
+function DetailsSection({
+  fields,
+  control,
+  isOpen,
+  onOpenChange,
+}: {
+  fields: FieldSpec[];
+  control: any;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const first = fields.slice(0, 6);
+  const rest = fields.slice(6);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {first.map((field) => {
+          const Component = resolveFieldComponent(field);
+          if (!Component || field.visible === false) return null;
+
+          return (
+            <div key={field.name} data-group={field.group}>
+              <Component field={field} control={control} />
+            </div>
+          );
+        })}
       </div>
-    </FormProvider>
+
+      {rest.length > 0 ? (
+        <Collapsible open={isOpen} onOpenChange={onOpenChange}>
+          <CollapsibleContent>
+            <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {rest.map((field) => {
+                const Component = resolveFieldComponent(field);
+                if (!Component || field.visible === false) return null;
+
+                return (
+                  <div key={field.name} data-group={field.group}>
+                    <Component field={field} control={control} />
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+          <div className="mt-2 flex justify-center">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" type="button">
+                {isOpen ? 'Show less' : 'Show more'}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+        </Collapsible>
+      ) : null}
+
+      {fields.length === 0 ? (
+        <div className="text-xs text-muted-foreground">
+          No additional attributes in this section.
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/collapsible';
 
 interface CollapsibleFormSectionProps {
+  id?: string;
   title: string;
   description?: string;
   icon?: React.ReactNode;
@@ -25,6 +26,7 @@ interface CollapsibleFormSectionProps {
 }
 
 const CollapsibleFormSection = ({
+  id,
   title,
   description,
   icon,
@@ -43,16 +45,17 @@ const CollapsibleFormSection = ({
 
   return (
     <Card
-      className={`transition-all duration-200 ${isOpen ? 'shadow-md' : 'shadow-sm'} bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800`}
+      id={id}
+      className={`rounded-[32px] border border-gray-200 bg-white transition-all duration-200 dark:border-gray-800 dark:bg-gray-900 ${isOpen ? 'shadow-md' : 'shadow-sm'}`}
     >
       <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <CardHeader className="cursor-pointer rounded-t-[32px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {icon}
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-lg text-gray-900 dark:text-white">
+                  <CardTitle className="flex items-center gap-2 text-xl text-gray-900 dark:text-gray-100">
                     {title}
                     {isRequired && (
                       <span className="text-red-500 text-sm">*</span>
@@ -65,9 +68,7 @@ const CollapsibleFormSection = ({
                     )}
                   </CardTitle>
                   {description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      {description}
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
                   )}
                 </div>
               </div>
@@ -75,7 +76,7 @@ const CollapsibleFormSection = ({
                 variant="ghost"
                 size="sm"
                 type="button"
-                className="text-gray-700 dark:text-gray-200"
+                className="rounded-full text-gray-500 dark:text-gray-300"
               >
                 {isOpen ? (
                   <ChevronUp className="h-4 w-4" />
@@ -87,7 +88,7 @@ const CollapsibleFormSection = ({
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent className="pt-0 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-t border-gray-100 dark:border-gray-800">
+          <CardContent className="border-t border-gray-100 pt-0 text-gray-900 dark:border-gray-800 dark:text-gray-100">
             {children}
           </CardContent>
         </CollapsibleContent>

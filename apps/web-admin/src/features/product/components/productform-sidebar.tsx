@@ -1,175 +1,120 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, AlertCircle, Clock, Star } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle2, Circle, Sparkles } from 'lucide-react';
 
-interface ValidationStatus {
-  basicInfo: boolean;
-  attributes: boolean;
-  sizeChart: boolean;
-  variants: boolean;
-  images: boolean;
+export interface ProductSidebarSection {
+  anchorId: string;
+  errors: string[];
+  key: string;
+  label: string;
+  status: boolean;
 }
 
 interface ProductFormSidebarProps {
-  validationStatus: ValidationStatus;
   completionPercentage: number;
+  onSectionClick?: (anchorId: string) => void;
+  sections: ProductSidebarSection[];
+  tips?: string[];
 }
 
-const ProductFormSidebar = ({
-  validationStatus,
-  completionPercentage,
-}: ProductFormSidebarProps) => {
-  const sections = [
-    {
-      key: 'basicInfo',
-      label: 'Basic Information',
-      status: validationStatus.basicInfo,
-    },
-    {
-      key: 'attributes',
-      label: 'Fashion Attributes',
-      status: validationStatus.attributes,
-    },
-    {
-      key: 'sizeChart',
-      label: 'Size Chart',
-      status: validationStatus.sizeChart,
-    },
-    {
-      key: 'variants',
-      label: 'Color Variants',
-      status: validationStatus.variants,
-    },
-    { key: 'images', label: 'Product Images', status: validationStatus.images },
-  ];
-
-  const getQualityScore = () => {
-    const completedSections =
-      Object.values(validationStatus).filter(Boolean).length;
-    const totalSections = Object.keys(validationStatus).length;
-    return Math.round((completedSections / totalSections) * 100);
-  };
-
-  const getQualityBadge = () => {
-    const score = getQualityScore();
-    if (score >= 80)
-      return {
-        label: 'Excellent',
-        variant: 'default' as const,
-        color: 'text-green-600',
-      };
-    if (score >= 60)
-      return {
-        label: 'Good',
-        variant: 'secondary' as const,
-        color: 'text-blue-600',
-      };
-    if (score >= 40)
-      return {
-        label: 'Fair',
-        variant: 'secondary' as const,
-        color: 'text-yellow-600',
-      };
+const scoreMeta = (score: number) => {
+  if (score >= 90) {
     return {
-      label: 'Needs Work',
-      variant: 'destructive' as const,
-      color: 'text-red-600',
+      label: 'Excellent',
+      tone: 'text-emerald-600',
+      bar: 'bg-emerald-500',
     };
-  };
+  }
+  if (score >= 70) {
+    return { label: 'Good', tone: 'text-sky-600', bar: 'bg-sky-500' };
+  }
+  if (score >= 40) {
+    return { label: 'Fair', tone: 'text-amber-600', bar: 'bg-amber-500' };
+  }
+  return { label: 'Poor', tone: 'text-orange-600', bar: 'bg-orange-500' };
+};
 
-  const qualityBadge = getQualityBadge();
+const ProductFormSidebar = ({
+  completionPercentage,
+  onSectionClick,
+  sections,
+  tips = [],
+}: ProductFormSidebarProps) => {
+  const score = scoreMeta(completionPercentage);
 
   return (
     <div className="space-y-4">
-      {/* Overall Completion */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Overall Completion</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Form progress</span>
-            <Badge variant="outline">{completionPercentage}%</Badge>
-          </div>
-          <Progress value={completionPercentage} className="h-2" />
-        </CardContent>
-      </Card>
-      {/* Content Quality Score */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Star className="h-5 w-5" />
-            Content Quality
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold mb-2">{getQualityScore()}%</div>
-            <Badge variant={qualityBadge.variant} className="mb-3">
-              {qualityBadge.label}
-            </Badge>
-            <Progress value={getQualityScore()} className="h-2" />
-          </div>
-          <p className="text-sm text-gray-600">
-            Complete all sections for better product visibility and sales
-            performance.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Section Progress */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Section Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {sections.map((section) => (
-              <div
-                key={section.key}
-                className="flex items-center justify-between"
+      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">
+              Content Score
+            </p>
+            <div className="mt-2 flex items-end gap-3">
+              <span className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+                {completionPercentage}%
+              </span>
+              <Badge
+                variant="outline"
+                className={`rounded-full border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 ${score.tone}`}
               >
-                <div className="flex items-center gap-2">
-                  {section.status ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-gray-400" />
-                  )}
-                  <span
-                    className={`text-sm ${section.status ? 'text-green-600' : 'text-gray-600'}`}
-                  >
-                    {section.label}
-                  </span>
-                </div>
-                {section.status && (
-                  <Badge variant="outline" className="text-xs">
-                    Complete
-                  </Badge>
-                )}
-              </div>
-            ))}
+                {score.label}
+              </Badge>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <Sparkles className="h-5 w-5 text-orange-400" />
+        </div>
 
-      {/* Quick Tips */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5" />
-            Quick Tips
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>• Add at least 4 high-quality images per color variant</p>
-            <p>• Include detailed size measurements for better fit</p>
-            <p>• Use descriptive product names with key features</p>
-            <p>• Complete all fashion attributes for better search</p>
-          </div>
-        </CardContent>
-      </Card>
+        <Progress
+          value={completionPercentage}
+          className="mt-4 h-2 bg-gray-100 dark:bg-gray-800"
+        />
+      </div>
+
+      <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          Publishing Checklist
+        </p>
+        <div className="mt-4 space-y-1">
+          {sections.map((section) => (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => onSectionClick?.(section.anchorId)}
+              className="flex w-full items-start gap-3 rounded-2xl px-2 py-2 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            >
+              <span className="mt-0.5">
+                {section.status ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <Circle className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span
+                  className={`block text-sm font-medium ${section.status ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-200'}`}
+                >
+                  {section.label}
+                </span>
+                {!section.status && section.errors[0] ? (
+                  <span className="block text-xs text-gray-500 dark:text-gray-400">
+                    {section.errors[0]}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-gray-200 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-5 shadow-sm dark:border-gray-800 dark:from-orange-950/30 dark:via-gray-900 dark:to-amber-950/20">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tips</p>
+        <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          {tips.map((tip) => (
+            <p key={tip}>{tip}</p>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

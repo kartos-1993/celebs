@@ -1,0 +1,21 @@
+{
+  "extends": "../apps/web-admin/tsconfig.app.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "../apps/web-admin/src/vite-env.d.ts",
+    "../apps/web-admin/src/features/product/api.ts",
+    "../apps/web-admin/src/features/product/components/add-product.tsx",
+    "../apps/web-admin/src/features/product/components/basic-info-section.tsx",
+    "../apps/web-admin/src/features/product/components/dynamic-product-form.tsx",
+    "../apps/web-admin/src/features/product/components/product-form-action.tsx",
+    "../apps/web-admin/src/features/product/components/productform-sidebar.tsx",
+    "../apps/web-admin/src/features/product/hooks/useProductForm.tsx",
+    "../apps/web-admin/src/features/product/renderer/UiRegistry.tsx",
+    "../apps/web-admin/src/features/product/renderer/variant-utils.ts",
+    "../apps/web-admin/src/features/category/api.ts",
+    "../apps/web-admin/src/lib/axios-client.ts"
+  ]
+}

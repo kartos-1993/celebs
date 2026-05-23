@@ -1,56 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ProductFormData, ValidationStatus } from '../types/product';
-import { CategoryApiService } from '../../category/api';
-import { useToast } from '@/hooks/use-toast';
 
 const productFormSchema = z.object({
   name: z
     .string()
-    .min(5, 'Product name must be at least 5 characters')
-    .max(100, 'Product name must be less than 100 characters'),
+    .trim()
+    .min(2, 'Product name must be at least 2 characters')
+    .max(200, 'Product name must be less than 200 characters'),
   brand: z
     .string()
-    .min(1, 'Brand is required')
-    .max(100, 'Brand must be less than 100 characters'),
+    .trim()
+    .max(100, 'Brand must be less than 100 characters')
+    .optional()
+    .or(z.literal('')),
   description: z
     .string()
-    .min(20, 'Description must be at least 20 characters')
-    .max(1000, 'Description must be less than 1000 characters'),
-  categoryId: z.string().min(1, 'Category is required'),
-  subcategoryId: z.string().min(1, 'Subcategory is required'),
-  price: z
-    .string()
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0,
-      'Price must be a positive number',
-    ),
-  discountPrice: z
-    .string()
-    .refine(
-      (val) => !val || (!isNaN(Number(val)) && Number(val) >= 0),
-      'Discount price must be valid',
-    )
-    .optional(),
-  status: z.string(),
+    .trim()
+    .min(10, 'Description must be at least 10 characters')
+    .max(4000, 'Description must be less than 4000 characters'),
+  categoryId: z.string().trim().min(1, 'Category is required'),
+  subcategoryId: z.string().trim().min(1, 'Subcategory is required'),
+  status: z.enum(['draft', 'published', 'archived']).default('draft'),
 });
 
-type ProductFormValues = z.infer<typeof productFormSchema>;
+export type ProductFormValues = z.infer<typeof productFormSchema> &
+  Record<string, unknown>;
 
 export const useProductForm = (_productId?: string) => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
-  const [validationStatus, setValidationStatus] = useState<ValidationStatus>({
-    basicInfo: false,
-    attributes: false,
-    sizeChart: false,
-    variants: false,
-  images: false,
-  brand: false,
-  });
+  const [isLoading] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -60,158 +39,49 @@ export const useProductForm = (_productId?: string) => {
       description: '',
       categoryId: '',
       subcategoryId: '',
-      price: '',
-      discountPrice: '',
-      status: 'active',
+      status: 'draft',
     },
     mode: 'onChange',
+    shouldUnregister: true,
   });
 
-  const [formData, setFormData] = useState<ProductFormData>({
-    name: '',
-    brand: '',
-    description: '',
-    categoryId: '',
-    subcategoryId: '',
-    price: '',
-    discountPrice: '',
-    status: 'active',
-    attributes: [],
-    variants: [],
-    sizeChart: [],
-    images: [],
-  });
-
-  // Load dynamic attributes when subcategory changes
-  const loadSubcategoryAttributes = async (subcategoryId: string) => {
-    if (!subcategoryId) return;
-
-    setIsLoading(true);
-    try {
-      // Fetch category (leaf) with attributes from Product API
-      const res = await CategoryApiService.getCategoryById(subcategoryId);
-      const data = res?.data as any;
-      const attrs: any[] = data?.attributes ?? [];
-
-      const mapped = attrs.map((a) => ({
-        name: a.name,
-        value: Array.isArray(a.values) && a.type === 'multiselect' ? [] : '',
-        type: a.type ?? 'text',
-        required: !!a.isRequired,
-        options: Array.isArray(a.values) ? a.values : [],
-      }));
-
-      setFormData((prev) => ({ ...prev, attributes: mapped }));
-
-      toast({
-        title: 'Form Updated',
-        description: `Loaded ${mapped.length} attributes`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load category attributes',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Validation functions
-  const getValidationErrors = (section: keyof ValidationStatus): string[] => {
-    const errors: string[] = [];
-
-    switch (section) {
-      case 'basicInfo':
-        if (!formData.name) errors.push('Product name is required');
-  if (!formData.brand) errors.push('Brand is required');
-        if (!formData.categoryId) errors.push('Category is required');
-        if (!formData.subcategoryId) errors.push('Subcategory is required');
-        if (!formData.price || Number(formData.price) <= 0)
-          errors.push('Valid price is required');
-        if (!formData.description || formData.description.length < 20) {
-          errors.push('Description must be at least 20 characters');
-        }
-        break;
-
-      case 'attributes':
-        const requiredAttributes = formData.attributes.filter(
-          (attr) => attr.required,
-        );
-        const emptyRequired = requiredAttributes.filter(
-          (attr) =>
-            attr.value === '' ||
-            (Array.isArray(attr.value) && attr.value.length === 0),
-        );
-        if (emptyRequired.length > 0) {
-          errors.push(
-            `Required attributes missing: ${emptyRequired.map((a) => a.name).join(', ')}`,
-          );
-        }
-        break;
-
-      case 'variants':
-        if (formData.variants.length === 0) {
-          errors.push('At least one color variant is required');
-        }
-        break;
-
-      case 'images':
-        if (formData.images.length === 0) {
-          errors.push('At least one product image is required');
-        }
-        break;
-    }
-
-    return errors;
-  };
-
-  // Update validation status whenever form data changes
-  useEffect(() => {
-    const newStatus: ValidationStatus = {
-      basicInfo: getValidationErrors('basicInfo').length === 0,
-      attributes: getValidationErrors('attributes').length === 0,
-      sizeChart: getValidationErrors('sizeChart').length === 0,
-      variants: getValidationErrors('variants').length === 0,
-  images: getValidationErrors('images').length === 0,
-  brand: !!formData.brand && formData.brand.trim().length > 0,
-    };
-    setValidationStatus(newStatus);
-  }, [formData]);
-
-  const updateFormData = (updates: Partial<ProductFormData>) => {
-    setFormData((prev) => ({ ...prev, ...updates }));
-    setIsDirty(true);
-  };
-
-  const handleCategoryChange = async (categoryId: string) => {
-    updateFormData({
-      categoryId,
-      subcategoryId: '',
-      attributes: [],
+  const updateBasicField = (
+    name: keyof Pick<ProductFormValues, 'name' | 'brand' | 'description'>,
+    value: string,
+  ) => {
+    form.setValue(name, value, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
     });
-    form.setValue('categoryId', categoryId);
-    form.setValue('subcategoryId', '');
   };
 
-  const handleSubcategoryChange = async (subcategoryId: string) => {
-    updateFormData({ subcategoryId });
-    form.setValue('subcategoryId', subcategoryId);
-    await loadSubcategoryAttributes(subcategoryId);
+  const handleCategoryChange = (categoryId: string) => {
+    form.setValue('categoryId', categoryId, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    form.setValue('subcategoryId', '', {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  };
+
+  const handleSubcategoryChange = (subcategoryId: string) => {
+    form.setValue('subcategoryId', subcategoryId, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
   };
 
   return {
     form,
-    formData,
-    validationStatus,
     isLoading,
-    isDirty,
-    updateFormData,
+    updateBasicField,
     handleCategoryChange,
     handleSubcategoryChange,
-    loadSubcategoryAttributes,
-    getValidationErrors,
-    setIsDirty,
   };
 };

@@ -39,6 +39,7 @@ const colorVariantSchema = z.object({
 // Base product schema
 const baseProductSchema = {
   name: z.string().trim().min(2, 'Product name must be at least 2 characters').max(200),
+  brand: z.string().trim().min(1, 'Brand is required').max(100).optional(),
   description: z.string().trim().min(10, 'Product description must be at least 10 characters'),
   price: z.number().positive('Price must be positive'),
   discountedPrice: z.number().positive('Discounted price must be positive').optional(),
@@ -46,6 +47,8 @@ const baseProductSchema = {
   subcategoryId: idSchema,
   sizes: z.array(sizeSchema).optional().default([]),
   colorVariants: z.array(colorVariantSchema).min(1, 'At least one color variant is required'),
+  mainImages: z.array(z.string().url('Image must be a valid URL')).optional().default([]),
+  dynamicData: z.record(z.unknown()).optional().default({}),
   tags: z.array(z.string()).optional().default([]),
   featured: z.boolean().optional().default(false),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),

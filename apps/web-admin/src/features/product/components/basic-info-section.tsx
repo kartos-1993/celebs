@@ -1,26 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Control } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-// Icons intentionally not used now; keep minimal imports
-import { CascadingDropdown, Category as DropdownCategory } from './cascading-dropdown';
-
+import {
+  CascadingDropdown,
+  Category as DropdownCategory,
+} from './cascading-dropdown';
 
 interface BasicInfoSectionProps {
   control: Control<any>;
-  selectedCategoryId: string; // kept for API parity
-  selectedSubcategoryId: string; // kept for API parity
+  selectedCategoryId: string;
+  selectedSubcategoryId: string;
   onCategoryChange: (categoryId: string) => void;
   onSubcategoryChange: (subcategoryId: string) => void;
-  onFieldChange: (name: string, value: string) => void;
+  onFieldChange: (
+    name: 'name' | 'brand' | 'description',
+    value: string,
+  ) => void;
   onCategoryPathChange?: (path: string[]) => void;
-  categoryPath?: string[]; // for reflecting preselected value in cascader
+  categoryPath?: string[];
   hideName?: boolean;
   hideBrand?: boolean;
 }
@@ -28,7 +34,7 @@ interface BasicInfoSectionProps {
 const BasicInfoSection = ({
   control,
   selectedCategoryId: _selectedCategoryId,
-  selectedSubcategoryId: _selectedSubcategoryId,
+  selectedSubcategoryId,
   onCategoryChange,
   onSubcategoryChange,
   onFieldChange,
@@ -37,13 +43,13 @@ const BasicInfoSection = ({
   hideName,
   hideBrand,
 }: BasicInfoSectionProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<DropdownCategory | null>(null);
 
-  // If parent already has a selected category id + path (e.g., editing or deep link), reflect it in the trigger
   useEffect(() => {
-    if (!selectedCategory && categoryPath && categoryPath.length && _selectedSubcategoryId) {
+    if (!selectedCategory && categoryPath?.length && selectedSubcategoryId) {
       setSelectedCategory({
-        id: _selectedSubcategoryId,
+        id: selectedSubcategoryId,
         name: categoryPath[categoryPath.length - 1] || 'Selected',
         parentId: null,
         hasChildren: false,
@@ -51,94 +57,160 @@ const BasicInfoSection = ({
         path: categoryPath,
       });
     }
-  }, [categoryPath, _selectedSubcategoryId, selectedCategory]);
+  }, [categoryPath, selectedCategory, selectedSubcategoryId]);
 
-  // Consider either local selection or parent-provided subcategory id as selected state
-  const hasCategory = useMemo(() => !!selectedCategory || !!_selectedSubcategoryId, [selectedCategory, _selectedSubcategoryId]);
+  const hasCategory = useMemo(
+    () => !!selectedCategory || !!selectedSubcategoryId,
+    [selectedCategory, selectedSubcategoryId],
+  );
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-6">
-        {/* Category selection first with hint */}
-        <div className="space-y-2">
-          <FormLabel className="required text-gray-900 dark:text-gray-100">
-            Category
-          </FormLabel>
-          <CascadingDropdown
-            selectedCategory={selectedCategory ?? undefined}
-            onSelect={(cat) => {
-              setSelectedCategory(cat);
-              onCategoryChange(cat.id);
-              onSubcategoryChange(cat.id);
-              onCategoryPathChange?.(cat.path);
-            }}
-            placeholder="Please select category or search with keyword"
-          />
-          <p className="text-xs text-muted-foreground">
-            {hasCategory
-              ? (
-                <>
-                  Current selection: <span className="font-medium text-primary">{(selectedCategory?.path || categoryPath || []).join(' > ')}</span>
-                </>
-              )
-              : 'Select a category to start adding the product. The form will appear after selection.'}
-          </p>
-        </div>
+      <FormField
+        control={control}
+        name="subcategoryId"
+        render={() => (
+          <FormItem className="space-y-3">
+            <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Category <span className="text-orange-500">*</span>
+            </FormLabel>
+            <FormControl>
+              <CascadingDropdown
+                selectedCategory={selectedCategory ?? undefined}
+                onSelect={(category) => {
+                  setSelectedCategory(category);
+                  onCategoryChange(category.id);
+                  onSubcategoryChange(category.id);
+                  onCategoryPathChange?.(category.path);
+                }}
+                placeholder="Select the product category"
+              />
+            </FormControl>
+            <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+              Pick the most specific category. The rest of the product form is
+              generated from this selection.
+            </FormDescription>
+            {hasCategory ? (
+              <div className="rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+                Current selection:{' '}
+                <span className="font-semibold">
+                  {(selectedCategory?.path || categoryPath || []).join(' > ')}
+                </span>
+              </div>
+            ) : null}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        {/* Show Product Name only after category is selected, like the referenced flow */}
-        {hasCategory && (<>
-        {!hideName && (
-        <FormField
+      {hasCategory ? (
+        <div className="grid gap-6">
+          {!hideName ? (
+            <FormField
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between gap-3">
+                    <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Product Name <span className="text-orange-500">*</span>
+                    </FormLabel>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {String(field.value || '').length}/200
+                    </span>
+                  </div>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter a clear, searchable product title"
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(event);
+                        onFieldChange('name', event.target.value);
+                      }}
+                      className="h-11 rounded-2xl border-gray-200 bg-white text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+                    Include the key identifier, style, or collection name buyers
+                    would search for.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
+
+          {!hideBrand ? (
+            <FormField
+              control={control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between gap-3">
+                    <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Brand
+                    </FormLabel>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {String(field.value || '').length}/100
+                    </span>
+                  </div>
+                  <FormControl>
+                    <Input
+                      placeholder="Brand or collection name"
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(event);
+                        onFieldChange('brand', event.target.value);
+                      }}
+                      className="h-11 rounded-2xl border-gray-200 bg-white text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+                    Leave blank only if this product should be listed as
+                    unbranded.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
+
+          <FormField
             control={control}
-            name="name"
+            name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="required text-gray-900 dark:text-gray-100">
-                  Product Name
-                </FormLabel>
+                <div className="flex items-center justify-between gap-3">
+                  <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Product Description{' '}
+                    <span className="text-orange-500">*</span>
+                  </FormLabel>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                    {String(field.value || '').length}/4000
+                  </span>
+                </div>
                 <FormControl>
-                  <Input
-                    placeholder="Enter product name"
+                  <Textarea
+                    placeholder="Describe the material, fit, standout features, and customer-facing details."
                     {...field}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      onFieldChange('name', e.target.value);
+                    onChange={(event) => {
+                      field.onChange(event);
+                      onFieldChange('description', event.target.value);
                     }}
-                    className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800"
+                    className="min-h-36 rounded-3xl border-gray-200 bg-white px-4 py-3 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
                   />
                 </FormControl>
+                <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+                  This description is used for the published product page and
+                  should be specific enough for customers to understand the
+                  item.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
-          />)}
-
-          {!hideBrand && (
-          <FormField
-  control={control}
-  name="brand"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Brand</FormLabel>
-      <FormControl>
-        <Input
-          placeholder="e.g. Nike"
-          {...field}
-          onChange={(e) => {
-            field.onChange(e);
-            onFieldChange?.('brand', e.target.value);
-          }}
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )}
-/>) }
-            </>
-          
-
-          
-          
-        )}
-      </div>
+          />
+        </div>
+      ) : null}
     </div>
   );
 };
