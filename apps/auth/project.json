@@ -56,32 +56,32 @@
     "serve:nodemon": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/auth-api/.env.development -- nodemon --watch apps/admin/auth-api/src --ext ts --exec node -r @swc-node/register apps/admin/auth-api/src/main.ts"
+        "command": "dotenv -e apps/auth/.env.development -- nodemon --watch apps/auth/src --ext ts --exec node -r @swc-node/register apps/auth/src/main.ts"
       }
     },
 
     "migrate-dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma migrate dev --schema=apps/admin/auth-api/src/db/schema.prisma --name auto"
+        "command": "dotenv -e apps/auth/.env.development -- npx prisma migrate dev --schema=apps/auth/src/db/schema.prisma --name auto"
       }
     },
     "migrate-deploy": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/auth-api/.env.staging -- npx prisma migrate deploy --schema=apps/admin/auth-api/src/db/schema.prisma"
+        "command": "dotenv -e apps/auth/.env.staging -- npx prisma migrate deploy --schema=apps/auth/src/db/schema.prisma"
       }
     },
     "studio": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma studio --schema=apps/admin/auth-api/src/db/schema.prisma"
+        "command": "dotenv -e apps/auth/.env.development -- npx prisma studio --schema=apps/auth/src/db/schema.prisma"
       }
     },
     "prisma-generate": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotenv -e apps/admin/auth-api/.env.development -- npx prisma generate --schema=apps/admin/auth-api/src/db/schema.prisma"
+        "command": "dotenv -e apps/auth/.env.development -- npx prisma generate --schema=apps/auth/src/db/schema.prisma"
       }
     }
   },

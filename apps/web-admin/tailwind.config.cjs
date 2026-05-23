@@ -1,10 +1,18 @@
+const path = require('path');
 const tailwindCssAnimate = require('tailwindcss-animate');
 const { fontFamily } = require('tailwindcss/defaultTheme');
 const fonts = ['inter', 'manrope', 'system'];
+const fromHere = (glob) => path.join(__dirname, glob).replace(/\\/g, '/');
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    fromHere('index.html'),
+    fromHere('src/**/*.{html,js,ts,jsx,tsx}'),
+    // include app and libs source files only (avoid scanning the repository root or unrelated files)
+    fromHere('../../apps/**/src/**/*.{html,js,ts,jsx,tsx}'),
+    fromHere('../../libs/**/src/**/*.{html,js,ts,jsx,tsx}'),
+  ],
   safelist: [
     ...fonts.map((font) => `font-${font}`),
     'bg-background',
