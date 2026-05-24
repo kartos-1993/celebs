@@ -441,7 +441,7 @@ export default function DynamicProductForm({
     return () => {
       cancelled = true;
     };
-  }, [catId, form, onSchemaLoaded, onValuesChange, productId]);
+  }, [catId, productId]);
 
   const groups = React.useMemo(() => {
     const grouped: Record<string, FieldSpec[]> = {};
@@ -516,7 +516,7 @@ export default function DynamicProductForm({
     });
 
     return () => subscription.unsubscribe();
-  }, [form, getValueAtPath, nameToGroup, onValuesChange, resolveFieldName]);
+  }, [form.watch, getValueAtPath, nameToGroup, onValuesChange, resolveFieldName]);
 
   if (!catId) {
     return (

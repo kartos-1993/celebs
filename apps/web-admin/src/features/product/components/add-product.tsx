@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from '@/components/ui/form';
@@ -905,31 +905,53 @@ const AddProduct = () => {
     clearDynamicState(categoryId);
   };
 
-  const handleDynamicValuesChange = (values: Record<string, unknown>) => {
-    const normalizedEntries = Object.fromEntries(
-      Object.entries(values).map(([key, value]) => [key.toLowerCase(), value]),
-    );
+  const handleDynamicValuesChange = useCallback(
+    (values: Record<string, unknown>) => {
+      const normalizedEntries = Object.fromEntries(
+        Object.entries(values).map(([key, value]) => [
+          key.toLowerCase(),
+          value,
+        ]),
+      );
 
-    const nameKey = ['name', 'productname', 'title'].find(
-      (key) => key in normalizedEntries,
-    );
-    if (nameKey) {
-      form.setValue('name', String(normalizedEntries[nameKey] ?? ''), {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
+      const nameKey = ['name', 'productname', 'title'].find(
+        (key) => key in normalizedEntries,
+      );
+      if (nameKey) {
+        const newValue = String(normalizedEntries[nameKey] ?? '');
+        if (form.getValues('name') !== newValue) {
+          form.setValue('name', newValue, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+      }
 
-    const brandKey = ['brand', 'productbrand'].find(
-      (key) => key in normalizedEntries,
+      const brandKey = ['brand', 'productbrand'].find(
+        (key) => key in normalizedEntries,
+      );
+      if (brandKey) {
+        const newValue = String(normalizedEntries[brandKey] ?? '');
+        if (form.getValues('brand') !== newValue) {
+          form.setValue('brand', newValue, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+      }
+    },
+    [form],
+  );
+
+  const handleSchemaLoaded = useCallback((fields: FieldSpec[]) => {
+    setSchemaFields(fields);
+    const names = new Set(fields.map((field) => field.name.toLowerCase()));
+
+    setSchemaHasName(
+      names.has('name') || names.has('productname') || names.has('title'),
     );
-    if (brandKey) {
-      form.setValue('brand', String(normalizedEntries[brandKey] ?? ''), {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  };
+    setSchemaHasBrand(names.has('brand') || names.has('productbrand'));
+  }, []);
 
   const handleSaveAsDraft = () => {
     window.localStorage.setItem(
@@ -1188,20 +1210,7 @@ const AddProduct = () => {
                     catId={watchedSubcategoryId}
                     productId={id}
                     onValuesChange={handleDynamicValuesChange}
-                    onSchemaLoaded={(fields) => {
-                      setSchemaFields(fields);
-                      const names = new Set(
-                        fields.map((field) => field.name.toLowerCase()),
-                      );
-                      setSchemaHasName(
-                        names.has('name') ||
-                          names.has('productname') ||
-                          names.has('title'),
-                      );
-                      setSchemaHasBrand(
-                        names.has('brand') || names.has('productbrand'),
-                      );
-                    }}
+                    onSchemaLoaded={handleSchemaLoaded}
                   />
                 ) : null}
 
