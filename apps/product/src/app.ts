@@ -41,14 +41,19 @@ app.use(cookieParser());
 app.use(pinoHttp({ logger }));
 app.use(helmet());
 app.use(compression());
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: config.NODE_ENV === 'production' ? 100 : 1000, // limit based on environment
-    standardHeaders: true,
-    legacyHeaders: false,
-  }),
-);
+
+if (config.NODE_ENV === 'production') {
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
+} else {
+  logger.info('Skipping global rate limiting in development/staging mode');
+}
 
 // API routes
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
