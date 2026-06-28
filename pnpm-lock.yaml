@@ -403,6 +403,37 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(webpack-dev-server@5.2.1)(webpack@5.98.0)
 
+  packages/shared-types:
+    dependencies:
+      zod:
+        specifier: ^3.24.3
+        version: 3.24.3
+
+  packages/shared-ui:
+    dependencies:
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^0.483.0
+        version: 0.483.0(react@19.1.0)
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.0(react@19.1.0)
+      tailwind-merge:
+        specifier: ^3.0.2
+        version: 3.3.0
+
+  packages/shared-utils: {}
+
+  packages/tsconfig: {}
+
 packages:
 
   '@adobe/css-tools@4.3.3':

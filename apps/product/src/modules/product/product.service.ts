@@ -101,8 +101,8 @@ export class ProductService {
       !Types.ObjectId.isValid(categoryId) ||
       String(categoryId) === String(subcategoryId)
     ) {
-      resolvedCategoryId = subcategory.parent
-        ? String(subcategory.parent)
+      resolvedCategoryId = subcategory.parentCategory
+        ? String(subcategory.parentCategory)
         : String(subcategory._id);
     }
 

@@ -1,4 +1,4 @@
-import { getEnv } from '../common/utils/get-env';
+import { getEnv } from '@celebs/shared-utils';
 
 export const appConfig = () => {
   const env = getEnv('NODE_ENV');
