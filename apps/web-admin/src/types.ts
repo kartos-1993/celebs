@@ -30,7 +30,7 @@ export interface SessionResponse extends ApiResponse<SessionData> {}
 
 
 export interface ProtectedLoaderData {
-  user: SessionData;
+  user: UserData;
 }
 
 export type ProtectedLoader = LoaderFunction;
