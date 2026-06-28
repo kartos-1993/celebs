@@ -5,8 +5,8 @@ import cookieParser from 'cookie-parser';
 import passport from './middlewares/passport';
 import { config } from './config/app.config';
 import { errorHandler } from './middlewares/errorHandler';
-import { HTTPSTATUS } from './config/http.config';
-import { asyncHandler } from './middlewares/asyncHandler';
+import { HTTPSTATUS, asyncHandler, logger } from '@celebs/shared-utils';
+
 // import { authRouter } from './routes/auth.routes';
 import authRoutes from './modules/auth/auth.routes';
 import { authenticateJWT } from './common/strategies/jwt.strategy';
@@ -15,7 +15,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import pinoHttp from 'pino-http';
-import { logger } from './common/utils/logger';
+
 
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';

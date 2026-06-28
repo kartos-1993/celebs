@@ -6,7 +6,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@celebs/shared-utils": ["packages/shared-utils/src/index.ts"],
+      "@celebs/shared-types": ["packages/shared-types/src/index.ts"],
+      "@celebs/shared-ui": ["packages/shared-ui/src/index.ts"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "**/*.spec.ts", "dist"]

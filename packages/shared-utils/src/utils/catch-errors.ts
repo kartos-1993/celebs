@@ -1,5 +1,5 @@
 import { ErrorCode } from '../enums/error-code.enum';
-import { HTTPSTATUS, HttpStatusCode } from '../../config/http.config';
+import { HTTPSTATUS, HttpStatusCode } from '../config/http.config';
 import { AppError } from './AppError';
 
 export class NotFoundException extends AppError {
@@ -23,7 +23,7 @@ export class UnauthorizedException extends AppError {
     super(
       message,
       HTTPSTATUS.UNAUTHORIZED,
-      errorCode || ErrorCode.UNAUTHORIZED_ACCESS
+      errorCode || ErrorCode.ACCESS_UNAUTHORIZED
     );
   }
 }
@@ -49,13 +49,29 @@ export class InternalServerException extends AppError {
 }
 
 export class TooManyRequestsException extends AppError {
-  constructor(message = 'Too many requests', code?: ErrorCode) {
-    super(message, HTTPSTATUS.TOO_MANY_REQUESTS, code);
+  constructor(message = 'Too many requests', errorCode?: ErrorCode) {
+    super(message, HTTPSTATUS.TOO_MANY_REQUESTS, errorCode);
   }
 }
 
 export class HttpException extends AppError {
-  constructor(statusCode: HttpStatusCode, message: string, errorCode?: ErrorCode) {
+  constructor(arg1: any, arg2?: any, arg3?: any) {
+    let statusCode: HttpStatusCode;
+    let message: string;
+    let errorCode: ErrorCode | undefined;
+
+    if (typeof arg1 === 'number') {
+      // (statusCode, message, errorCode) signature
+      statusCode = arg1;
+      message = arg2 || 'Http Exception Error';
+      errorCode = arg3;
+    } else {
+      // (message, statusCode, errorCode) signature
+      message = arg1 || 'Http Exception Error';
+      statusCode = arg2 || HTTPSTATUS.INTERNAL_SERVER_ERROR;
+      errorCode = arg3;
+    }
+
     super(message, statusCode, errorCode);
   }
 }

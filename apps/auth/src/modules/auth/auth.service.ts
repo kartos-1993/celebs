@@ -1,4 +1,4 @@
-import { ErrorCode } from '../../common/enums/error-code.enum';
+import { ErrorCode, BadRequestException, HttpException, InternalServerException, NotFoundException, UnauthorizedException, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { VerificationEnum } from '../../common/enums/verification-code.enum';
 import {
   LoginDto,
@@ -6,13 +6,7 @@ import {
   resetPasswordDto,
   VerifyEmailResponse,
 } from '../../common/interface/auth.interface';
-import {
-  BadRequestException,
-  HttpException,
-  InternalServerException,
-  NotFoundException,
-  UnauthorizedException,
-} from '../../common/utils/catch-errors';
+
 import {
   anHourFromNow,
   calculateExpirationDate,
@@ -30,9 +24,9 @@ import {
 } from '../../common/utils/jwt';
 import { sendEmail } from '../../mailers/mailer';
 import { verifyEmailTemplate } from '../../mailers/templates/template';
-import { HTTPSTATUS } from '../../config/http.config';
+
 import { hashValue, comparePassword } from '../../common/utils/bcrypt';
-import { logger } from '../../common/utils/logger';
+
 import prisma from '../../db';
 
 export class AuthService {

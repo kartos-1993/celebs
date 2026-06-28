@@ -1,27 +1,23 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { asyncHandler } from '../../middlewares/asyncHandler';
+import { asyncHandler, HTTPSTATUS, NotFoundException, UnauthorizedException, BadRequestException, ErrorCode } from '@celebs/shared-utils';
 import { AuthService } from './auth.service';
-import { HTTPSTATUS } from '../../config/http.config';
+
 import {
   emailSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
   verificationEmailSchema,
-} from '../../common/validators/auth.validator';
+} from '@celebs/shared-types';
 import {
   clearAuthenticationCookies,
   getAccessTokenCookieOptions,
   getRefreshTokenCookieOptions,
   setAuthenticationCookies,
 } from '../../common/utils/cookie';
-import {
-  NotFoundException,
-  UnauthorizedException,
-  BadRequestException,
-} from '../../common/utils/catch-errors';
-import { ErrorCode } from '../../common/enums/error-code.enum';
+
+
 import { IApiResponse } from '../../common/interface/api-response.interface';
 
 export class AuthController {

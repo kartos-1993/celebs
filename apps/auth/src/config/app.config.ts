@@ -1,4 +1,4 @@
-import { getEnv } from '../common/utils/get-env';
+import { getEnv } from '@celebs/shared-utils';
 // Removed JWT_SECRET logging as it will be properly handled inside the config
 export const appConfig = () => {
   const env = getEnv('NODE_ENV');

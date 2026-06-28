@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateJWT } from '../../middlewares/auth.middleware';
-import { asyncHandler } from '../../middlewares/asyncHandler';
+import { asyncHandler } from '@celebs/shared-utils';
 import { ProductModule } from './product.module';
 
 const productRoutes = Router();

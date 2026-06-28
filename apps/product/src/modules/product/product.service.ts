@@ -1,8 +1,6 @@
 import { Types } from 'mongoose';
 import slugify from 'slugify';
-import { ErrorCode } from '../../common/enums/error-code.enum';
-import { AppError } from '../../common/utils/AppError';
-import { HTTPSTATUS } from '../../config/http.config';
+import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
 import { CategoryModel } from '../../db/models/category.model';
 import { IProduct, ProductModel } from '../../db/models/product.model';
 

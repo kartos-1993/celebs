@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/app.config';
-import { UnauthorizedException } from '../common/utils/catch-errors';
-import { ErrorCode } from '../common/enums/error-code.enum';
-import { logger } from '../common/utils/logger';
+import { UnauthorizedException, ErrorCode, logger } from '@celebs/shared-utils';
 
 interface JwtPayload {
   userId: string;

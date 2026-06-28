@@ -1,9 +1,7 @@
 import { IApiResponse } from './../../common/interface/api-response.interface';
 import { Request, Response } from 'express';
-import { asyncHandler } from '../../middlewares/asyncHandler';
+import { HTTPSTATUS, NotFoundException, asyncHandler } from '@celebs/shared-utils';
 import { SessionService } from './session.service';
-import { HTTPSTATUS } from '../../config/http.config';
-import { NotFoundException } from '../../common/utils/catch-errors';
 import { verifyJwtToken } from '../../common/utils/jwt';
 
 export class SessionController {

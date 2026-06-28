@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
-import { logger } from './common/utils/logger';
+import { logger } from '@celebs/shared-utils';
 
 // Import routes
 import categoryRoutes from './modules/category/category.routes';

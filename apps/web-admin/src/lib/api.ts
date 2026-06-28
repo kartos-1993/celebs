@@ -1,20 +1,9 @@
 import {AuthAPI} from "./axios-client";
 import { SessionResponse } from "../types";
 
-type loginType = { email: string; password: string };
+import { loginType, registerType, verifyEmailType, resetPasswordType, verifyMFAType, mfaLoginType } from '@celebs/shared-types';
 
-type registerType = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
-type verifyEmailType = { code: string };
 type forgotPasswordType = { email: string };
-type resetPasswordType = { password: string; verificationCode: string };
-type verifyMFAType = { code: string; secretKey: string };
-type mfaLoginType = { code: string; email: string };
 type SessionType = {
   _id: string;
   userId: string;

@@ -1,4 +1,4 @@
-import { ErrorCode } from '../enums/error-code.enum';
+import { ErrorCode } from '@celebs/shared-utils';
 
 export interface IApiResponse<T = any> {
   success: boolean;

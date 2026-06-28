@@ -1,4 +1,4 @@
-import { NotFoundException } from '../../common/utils/catch-errors';
+import { NotFoundException } from '@celebs/shared-utils';
 import prisma from '../../db';
 
 export class SessionService {

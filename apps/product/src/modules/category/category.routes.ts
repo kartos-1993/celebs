@@ -1,8 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { CategoryModule } from './category.module';
-import { asyncHandler } from '../../middlewares/asyncHandler';
+import { asyncHandler, logger } from '@celebs/shared-utils';
 import { authenticateJWT } from '../../middlewares/auth.middleware';
-import { logger } from '../../common/utils/logger';
 
 const categoryRoute = Router();
 const categoryController = CategoryModule.getInstance().getCategoryController();

@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { AppError } from '../common/utils/AppError';
-import { HTTPSTATUS } from '../config/http.config';
-import { ErrorCode } from '../common/enums/error-code.enum';
-import { logger } from '../common/utils/logger';
+import { AppError, HTTPSTATUS, ErrorCode, logger } from '@celebs/shared-utils';
 
 // Interface for standardized API responses
 interface IApiResponse<T = any> {

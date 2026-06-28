@@ -1,7 +1,5 @@
 import { ClientSession, Types } from 'mongoose';
-import { AppError } from '../../common/utils/AppError';
-import { ErrorCode } from '../../common/enums/error-code.enum';
-import { HTTPSTATUS } from '../../config/http.config';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import { CategoryModel, ICategory } from '../../db/models/category.model';
 import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
 import slugify from 'slugify';

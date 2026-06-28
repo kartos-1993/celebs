@@ -12,7 +12,7 @@ if (fs.existsSync(envPath)) {
 import app from './app';
 import { config } from './config/app.config';
 import connectDB from './db';
-import { logger } from './common/utils/logger';
+import { logger } from '@celebs/shared-utils';
 
 // Connect to MongoDB
 connectDB().then(() => {

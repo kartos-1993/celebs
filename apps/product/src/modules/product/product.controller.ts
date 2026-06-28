@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { createProductSchema } from '../../common/validators/product.validator';
-import { ErrorCode } from '../../common/enums/error-code.enum';
-import { AppError } from '../../common/utils/AppError';
-import { HTTPSTATUS } from '../../config/http.config';
+import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
 import { ProductService } from './product.service';
 
 export class ProductController {
