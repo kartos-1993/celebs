@@ -9,7 +9,8 @@
       "outputs": ["{workspaceRoot}/dist/apps/web-admin"],
       "defaultConfiguration": "production",
       "options": {
-        "configFile": "apps/web-admin/vite.config.ts"
+        "configFile": "apps/web-admin/vite.config.ts",
+        "outputPath": "dist/apps/web-admin"
       },
       "configurations": {
         "development": {
