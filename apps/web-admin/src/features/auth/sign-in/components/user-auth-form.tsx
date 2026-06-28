@@ -12,10 +12,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { PasswordInput } from '@/components/ui/password-input';
-import { Button } from '@/components/ui/button';
+} from '@celebs/shared-ui/components/form';
+import { Input } from '@celebs/shared-ui/components/input';
+import { PasswordInput } from '@celebs/shared-ui/components/password-input';
+import { Button } from '@celebs/shared-ui/components/button';
 
 import { loginMutationFn } from '@/lib/api';
 
@@ -114,3 +114,4 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@celebs/shared-ui/components/button';
 import { Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -96,3 +96,4 @@ const ImageUpload = ({ onImagesChange }: ImageUploadProps) => {
 };
 
 export default ImageUpload;
+

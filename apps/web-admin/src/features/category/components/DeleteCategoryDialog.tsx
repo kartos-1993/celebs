@@ -11,8 +11,8 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from '@celebs/shared-ui/components/dialog';
+import { Button } from '@celebs/shared-ui/components/button';
 
 interface DeleteCategoryDialogProps {
   open: boolean;
@@ -104,3 +104,4 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
     </Dialog>
   );
 };
+

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Control } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@celebs/shared-ui/components/input';
+import { Textarea } from '@celebs/shared-ui/components/textarea';
 import {
   FormControl,
   FormDescription,
@@ -9,7 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@celebs/shared-ui/components/form';
 import {
   CascadingDropdown,
   Category as DropdownCategory,
@@ -216,3 +216,4 @@ const BasicInfoSection = ({
 };
 
 export default BasicInfoSection;
+

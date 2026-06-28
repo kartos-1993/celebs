@@ -1,17 +1,17 @@
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@celebs/shared-ui/components/button';
+import { Input } from '@celebs/shared-ui/components/input';
+import { Label } from '@celebs/shared-ui/components/label';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@celebs/shared-ui/components/select';
 import {
   Form,
   FormControl,
@@ -19,7 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@celebs/shared-ui/components/form';
 import { X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from '@celebs/shared-ui/components/dialog';
 import React, { useState } from 'react';
 import { ProductAPI } from '@/lib/axios-client';
 
@@ -1599,3 +1599,4 @@ const AttributeFieldSet = ({
 };
 
 export default CategoryForm;
+

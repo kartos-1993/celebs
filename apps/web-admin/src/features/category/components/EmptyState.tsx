@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@celebs/shared-ui/components/button';
 import { FolderPlus } from 'lucide-react';
 
 interface EmptyStateProps {
@@ -24,3 +24,4 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onAddCategory }) => {
     </div>
   );
 };
+

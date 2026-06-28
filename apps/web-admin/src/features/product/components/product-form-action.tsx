@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@celebs/shared-ui/components/button';
 import { FileText, Loader2, Upload } from 'lucide-react';
 
 interface ProductFormActionsProps {
@@ -67,3 +67,4 @@ const ProductFormActions = ({
 };
 
 export default ProductFormActions;
+

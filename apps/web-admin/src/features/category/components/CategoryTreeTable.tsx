@@ -10,7 +10,7 @@ import {
   TableRow,
   TableHead,
   TableBody,
-} from '@/components/ui/table';
+} from '@celebs/shared-ui/components/table';
 import { CategoryTreeRow } from './CategoryTreeRow';
 import { CategoryTreeNode } from '../types';
 
@@ -78,3 +78,4 @@ export const CategoryTreeTable: React.FC<CategoryTreeTableProps> = ({
     </Table>
   );
 };
+

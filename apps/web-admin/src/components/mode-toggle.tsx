@@ -3,13 +3,13 @@
 import * as React from "react";
 import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@celebs/shared-ui/components/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
-} from "@/components/ui/tooltip";
+} from "@celebs/shared-ui/components/tooltip";
 
 export function ModeToggle() {
   return (
@@ -32,3 +32,4 @@ export function ModeToggle() {
     </TooltipProvider>
   );
 }
+

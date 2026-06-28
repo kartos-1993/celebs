@@ -5,18 +5,18 @@ import {
   useFormContext,
   useWatch,
 } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { NumberInput } from '@/components/ui/number-input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Input } from '@celebs/shared-ui/components/input';
+import { NumberInput } from '@celebs/shared-ui/components/number-input';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
+import { Label } from '@celebs/shared-ui/components/label';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from '@/components/ui/select';
+} from '@celebs/shared-ui/components/select';
 import {
   Table,
   TableBody,
@@ -24,16 +24,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@celebs/shared-ui/components/table';
 import { ProductAPI } from '@/lib/axios-client';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@celebs/shared-ui/components/tooltip';
 import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
-import { Multiselect } from '@/components/ui/multiselect';
+import { Multiselect } from '@celebs/shared-ui/components/multiselect';
 
 export type UiType =
   | 'input'
@@ -1979,3 +1979,4 @@ export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   ColorMeta: ColorMetaField,
   ColorInline: ColorInlineField,
 };
+

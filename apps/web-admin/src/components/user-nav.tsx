@@ -1,13 +1,13 @@
 import { LayoutGrid, LogOut, User } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@celebs/shared-ui/components/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
-} from "@/components/ui/tooltip";
+} from "@celebs/shared-ui/components/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@celebs/shared-ui/components/dropdown-menu";
 import { Link } from "react-router-dom";
 
 export function UserNav() {
@@ -74,3 +74,4 @@ export function UserNav() {
     </DropdownMenu>
   );
 }
+

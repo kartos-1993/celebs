@@ -1,15 +1,15 @@
 import { Ellipsis, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMenuList } from "./menu-data";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@celebs/shared-ui/components/button";
+import { ScrollArea } from "@celebs/shared-ui/components/scroll-area";
 import { CollapseMenuButton } from "@/components/sidebar/collapse-menu-button";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-} from "@/components/ui/tooltip";
+} from "@celebs/shared-ui/components/tooltip";
 import { Link, useMatches, useLocation } from "react-router-dom";
 
 interface MenuProps {
@@ -127,3 +127,4 @@ export function Menu({ isSideBarOpen }: MenuProps) {
     </ScrollArea>
   );
 }
+

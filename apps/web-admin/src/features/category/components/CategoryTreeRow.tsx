@@ -3,8 +3,8 @@
  */
 
 import React from 'react';
-import { TableRow, TableCell } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { TableRow, TableCell } from '@celebs/shared-ui/components/table';
+import { Button } from '@celebs/shared-ui/components/button';
 import { ChevronRight, Edit, Trash2, Plus } from 'lucide-react';
 import { CategoryTreeNode } from '../types';
 
@@ -133,3 +133,4 @@ export const CategoryTreeRow: React.FC<CategoryTreeRowProps> = ({
     </TableRow>
   );
 };
+

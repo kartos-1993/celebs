@@ -1,5 +1,5 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
+import { Badge } from '@celebs/shared-ui/components/badge';
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
 
 interface ValidationHelperProps {
@@ -76,3 +76,4 @@ const ValidationHelper = ({
 };
 
 export default ValidationHelper;
+

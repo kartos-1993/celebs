@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Progress } from '@celebs/shared-ui/components/progress';
 import { CheckCircle2, Circle, Sparkles } from 'lucide-react';
 
 export interface ProductSidebarSection {
@@ -120,3 +120,4 @@ const ProductFormSidebar = ({
 };
 
 export default ProductFormSidebar;
+

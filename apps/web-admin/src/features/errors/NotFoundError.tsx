@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@celebs/shared-ui/components/button";
 
 export default function NotFoundError() {
   const navigate = useNavigate();
@@ -22,3 +22,4 @@ export default function NotFoundError() {
     </div>
   );
 }
+

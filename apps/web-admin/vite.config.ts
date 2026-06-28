@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       // Add sourcemap control from previous discussion
       sourcemap: mode !== 'production',
       // Preserve your build output directory (default)
-      outDir: 'dist',
+      outDir: '../../dist/apps/web-admin',
       // Add rollup chunking from previous example
       rollupOptions: {
         output: {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   ChevronDown,
   ChevronUp,
@@ -11,7 +11,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from '@celebs/shared-ui/components/collapsible';
 
 interface CollapsibleFormSectionProps {
   id?: string;
@@ -98,3 +98,4 @@ const CollapsibleFormSection = ({
 };
 
 export default CollapsibleFormSection;
+

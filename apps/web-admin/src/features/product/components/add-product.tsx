@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Form } from '@/components/ui/form';
+import { Form } from '@celebs/shared-ui/components/form';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronRight, FileClock, Info } from 'lucide-react';
 import { CreateProductRequest, ProductApiService } from '../api';
@@ -1266,3 +1266,4 @@ const AddProduct = () => {
 };
 
 export default AddProduct;
+

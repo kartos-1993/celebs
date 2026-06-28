@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { Button } from '@celebs/shared-ui/components/button';
 import { FolderTree, FolderPlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -164,3 +164,4 @@ export const Categories: React.FC = () => {
 };
 
 export default Categories;
+

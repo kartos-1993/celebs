@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
   Table,
   TableHeader,
@@ -8,8 +8,8 @@ import {
   TableHead,
   TableBody,
   TableCell,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+} from '@celebs/shared-ui/components/table';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,18 +17,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@celebs/shared-ui/components/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from '@celebs/shared-ui/components/select';
+import { Input } from '@celebs/shared-ui/components/input';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
 import {
   ShoppingBag,
   MoreHorizontal,
@@ -568,3 +568,4 @@ const ManageProduct = () => {
 };
 
 export default ManageProduct;
+

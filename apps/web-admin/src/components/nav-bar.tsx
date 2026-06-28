@@ -7,7 +7,7 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumbs';
+} from '@celebs/shared-ui/components/breadcrumbs';
 import { useMatches, Link } from 'react-router-dom';
 import { SheetMenu } from './sheet-menu';
 import { useSideBarContext } from '@/context/sidebar-provider';
@@ -59,3 +59,4 @@ export function Navbar() {
     </header>
   );
 }
+

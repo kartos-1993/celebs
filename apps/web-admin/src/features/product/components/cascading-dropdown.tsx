@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronRight, Search, ChevronDown } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from "@celebs/shared-ui/components/button";
+import { Input } from '@celebs/shared-ui/components/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
+import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 
 import { useCategories } from '../hooks/useCategories';
 import { CategoryApiService } from '../../category/api';
@@ -481,3 +481,4 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     </div>
   );
 };
+

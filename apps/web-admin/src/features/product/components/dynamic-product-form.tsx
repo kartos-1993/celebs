@@ -4,8 +4,8 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
+} from '@celebs/shared-ui/components/collapsible';
+import { Button } from '@celebs/shared-ui/components/button';
 import { ProductAPI } from '@/lib/axios-client';
 import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { CategoryApiService } from '../../category/api';
@@ -660,3 +660,4 @@ function DetailsSection({
     </div>
   );
 }
+

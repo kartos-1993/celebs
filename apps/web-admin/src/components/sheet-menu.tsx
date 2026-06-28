@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { MenuIcon, PanelsTopLeft } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@celebs/shared-ui/components/button";
 import { Menu } from "@/components/menu";
 import {
   Sheet,
@@ -9,7 +9,7 @@ import {
   SheetContent,
   SheetTrigger,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from "@celebs/shared-ui/components/sheet";
 
 export function SheetMenu() {
   return (
@@ -37,3 +37,4 @@ export function SheetMenu() {
     </Sheet>
   );
 }
+

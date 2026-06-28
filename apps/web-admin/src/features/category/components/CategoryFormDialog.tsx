@@ -8,7 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@celebs/shared-ui/components/dialog';
 import CategoryForm from './categoryform.tsx';
 import { Category, CategoryFormData } from '../types';
 
@@ -66,3 +66,4 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
     </Dialog>
   );
 };
+
