@@ -4,8 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["packages/shared-ui/src/*"]
+      "@/*": ["./src/*"]
     },
     "types": ["node"]
   },
