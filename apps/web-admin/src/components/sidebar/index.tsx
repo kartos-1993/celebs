@@ -5,7 +5,7 @@ import SidebarToggle from "@/components/sidebar/sidebar-toggle";
 import { cn } from "@/lib/utils";
 import { useSideBarContext } from "@/context/sidebar-provider";
 import { Menu } from "../menu";
-import { Button } from "../ui/button";
+import { Button } from "@celebs/shared-ui/components/button";
 
 const SideBar = () => {
   const { isSideBarOpen, setIsSideBarOpen, setIsHover } = useSideBarContext();
