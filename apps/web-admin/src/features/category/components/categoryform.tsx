@@ -336,11 +336,8 @@ const CategoryForm = ({
           ? values.parent
           : null,
       attributes: values.attributes.map((attr) => ({
-        name: attr.name,
-        label: attr.label,
-        type: attr.type,
+        ...attr,
         values: attr.values ?? [], // Provide a default value of an empty array
-        isRequired: attr.isRequired,
         isVariant: attr.isVariant ?? false,
         // If not a variant, force variant metadata off
         variantType: (attr.isVariant ? attr.variantType : null) ?? null,
@@ -351,7 +348,6 @@ const CategoryForm = ({
             ? attr.optionSetId.trim() || null
             : null,
         group: attr.group ?? 'basic',
-        ...attr,
       })),
       measurementUnits: normalizedMeasurementUnits,
     };
