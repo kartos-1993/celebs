@@ -26,14 +26,9 @@ const formSchema = z.object({
     .string()
     .min(1, { message: 'Please enter your email' })
     .email({ message: 'Invalid email address' }),
-  password: z
-    .string()
-    .min(1, {
-      message: 'Please enter your password',
-    })
-    .min(4, {
-      message: 'Password must be at least 7 characters long',
-    }),
+  password: z.string().min(1, {
+    message: 'Please enter your password',
+  }),
 });
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
@@ -60,8 +55,23 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         }
         navigate('/');
       },
-      onError: (error) => {
-        console.log('login failure');
+      onError: (error: any) => {
+        console.log('login failure', error);
+        if (error?.errors && Array.isArray(error.errors)) {
+          error.errors.forEach((err: any) => {
+            if (err.field) {
+              form.setError(err.field as any, {
+                type: 'server',
+                message: err.message,
+              });
+            }
+          });
+        } else if (error?.message) {
+          form.setError('password', {
+            type: 'server',
+            message: error.message,
+          });
+        }
       },
     });
   }
