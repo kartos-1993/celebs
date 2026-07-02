@@ -1,0 +1,11 @@
+[build]
+  command = "pnpm nx build web-admin --configuration=production"
+  publish = "dist/apps/web-admin"
+
+[context.staging]
+  command = "pnpm nx build web-admin --configuration=staging"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

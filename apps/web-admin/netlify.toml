@@ -1,9 +1,0 @@
-[build]
-  base = "../../"
-  command = "pnpm nx build web-admin --configuration=staging"
-  publish = "dist/apps/web-admin"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
