@@ -16,7 +16,7 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.ya
 COPY --from=builder /app/packages ./packages
 RUN npm install -g pnpm && pnpm install --prod
 COPY --from=builder /app/apps/api/src/db ./src/db
-RUN cd src/db && npx prisma generate --schema schema.prisma
+COPY --from=builder /app/apps/api/src/generated/prisma ./dist/src/generated/prisma
 EXPOSE 3000
 COPY start.sh ./
 RUN chmod +x start.sh
