@@ -25,7 +25,7 @@ export const appConfig = () => {
     COOKIE: {
       HTTPONLY: isProduction || isStaging ? true : false,
       SECURE: isProduction || isStaging ? true : false,
-      SAME_SITE: (isProduction || isStaging ? 'strict' : 'lax') as
+      SAME_SITE: (isStaging ? 'none' : isProduction ? 'strict' : 'lax') as
         | 'strict'
         | 'lax'
         | 'none',
