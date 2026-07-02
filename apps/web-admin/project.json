@@ -70,12 +70,12 @@
     "deploy": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vite build --mode staging && netlify deploy --dir=dist/apps/web-admin --prod",
+        "command": "vite build --mode staging && netlify deploy --dir=../../dist/apps/web-admin --prod",
         "cwd": "apps/web-admin"
       },
       "configurations": {
         "staging": {
-          "command": "vite build --mode staging && netlify deploy --dir=dist/apps/web-admin --alias=staging"
+          "command": "vite build --mode staging && netlify deploy --dir=../../dist/apps/web-admin --alias=staging"
         }
       }
     },

@@ -1,7 +1,7 @@
 [build]
-  base = "apps/admin/web"
-  command = "pnpm run build"
-  publish = "dist"
+  base = "../../"
+  command = "pnpm nx build web-admin --configuration=staging"
+  publish = "dist/apps/web-admin"
 
 [[redirects]]
   from = "/*"
