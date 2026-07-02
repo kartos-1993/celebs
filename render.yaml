@@ -12,6 +12,8 @@ projects:
             branch: staging-auth
             plan: free
             envVars:
+              - key: BASE_PATH
+                value: /api/v1
               - key: APP_ORIGIN
                 sync: false
               - key: SUPABASE_KEY
