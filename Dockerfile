@@ -7,7 +7,7 @@ COPY nx.json tsconfig.base.json ./
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 # Generate Prisma client before building
 RUN npx prisma generate
-RUN npx nx build api --configuration=staging
+RUN npx nx build shared-types && npx nx build shared-utils && npx nx build api --configuration=staging
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
