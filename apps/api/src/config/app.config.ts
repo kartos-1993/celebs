@@ -8,7 +8,7 @@ export const appConfig = () => {
   const appOriginEnv = getEnv('APP_ORIGIN'); // "http://localhost:3333,http://localhost:5173"
   const appOrigins = appOriginEnv
     .split(',') // [ "http://localhost:3333", "http://localhost:5173" ]
-    .map((o) => o.trim());
+    .map((o) => o.trim().replace(/\/$/, ''));
   return {
     NODE_ENV: env,
     APP_ORIGIN: appOrigins,
