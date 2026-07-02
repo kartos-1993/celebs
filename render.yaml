@@ -9,7 +9,7 @@ projects:
             name: celebs
             runtime: docker
             repo: https://github.com/kartos-1993/celebs
-            branch: staging-auth
+            branch: staging
             plan: free
             envVars:
               - key: BASE_PATH
