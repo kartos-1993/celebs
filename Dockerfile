@@ -1,10 +1,10 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
-COPY nx.json tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
+COPY nx.json tsconfig.base.json ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 # Generate Prisma client before building
 RUN npx prisma generate
 RUN npx nx build api --configuration=staging
