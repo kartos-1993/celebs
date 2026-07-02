@@ -8,6 +8,7 @@ import {
 } from 'passport-jwt';
 import { config } from '../../config/app.config';
 import { userService } from '../../modules/user/user.module';
+import prisma from '../../db';
 
 interface JwtPayload {
   userId: string;
@@ -37,6 +38,20 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   passport.use(
     new JwtStrategy(options, async (req, payload: JwtPayload, done) => {
       try {
+        // Validate session exists in database
+        const session = await prisma.session.findUnique({
+          where: { id: payload.sessionId },
+        });
+        if (!session) {
+          return done(
+            new UnauthorizedException(
+              'Session expired or invalid',
+              ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+            ),
+            false
+          );
+        }
+
         const user = await userService.findUserById(payload.userId);
         if (!user) {
           return done(
@@ -62,4 +77,4 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   );
 };
 
-export const authenticateJWT = passport.authenticate('jwt');
+export const authenticateJWT = passport.authenticate('jwt', { session: false });

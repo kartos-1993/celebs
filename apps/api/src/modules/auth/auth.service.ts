@@ -90,8 +90,9 @@ export class AuthService {
       throw new InternalServerException('Failed to send verification email');
     }
 
+    const { password: _, ...userWithoutPassword } = newUser;
     return {
-      user: newUser,
+      user: userWithoutPassword,
     };
   }
   public async login(LoginData: LoginDto) {
@@ -155,8 +156,9 @@ export class AuthService {
       'Authentication tokens generated'
     );
 
+    const { password: _, ...userWithoutPassword } = user;
     return {
-      user,
+      user: userWithoutPassword,
       accessToken,
       refreshToken,
       mfaRequired: false,
@@ -236,10 +238,21 @@ export class AuthService {
       'Authentication tokens generated after email verification'
     );
 
+    const { password: _, ...userWithoutPassword } = updatedUser;
     return {
-      user: updatedUser,
+      user: userWithoutPassword,
       accessToken,
       refreshToken,
     };
+  }
+
+  public async logout(sessionId: string) {
+    await prisma.session.delete({
+      where: {
+        id: sessionId,
+      },
+    }).catch((err) => {
+      logger.error({ err, sessionId }, 'Failed to delete session on logout');
+    });
   }
 }

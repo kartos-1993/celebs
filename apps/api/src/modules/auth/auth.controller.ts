@@ -89,4 +89,19 @@ export class AuthController {
     }
   );
 
+  public logout = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const sessionId = req.user?.sessionId;
+      if (sessionId) {
+        await this.authService.logout(sessionId);
+      }
+      clearAuthenticationCookies(res);
+      const response: IApiResponse<null> = {
+        success: true,
+        message: 'Logged out successfully',
+        data: null,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
 }

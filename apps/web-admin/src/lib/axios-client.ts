@@ -5,17 +5,16 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 
-// Fallback URLs for cases where env vars might not load
-const FALLBACK_API_URL = 'http://localhost:8000/api/v1/';
-const FALLBACK_AUTH_API_URL = 'http://localhost:8000/api/v1/auth';
-const FALLBACK_PRODUCT_API_URL = 'http://localhost:8000/api/v1/product';
+// Fallback URL for the monolithic API
+const FALLBACK_API_URL = 'http://localhost:3333/api/v1/';
 
-const AUTH_API_URL = import.meta.env.VITE_API_AUTH_URL || FALLBACK_AUTH_API_URL;
-const PRODUCT_API_URL =
-  import.meta.env.VITE_API_PRODUCT_URL || FALLBACK_PRODUCT_API_URL;
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_AUTH_URL ||
+  import.meta.env.VITE_API_PRODUCT_URL ||
+  FALLBACK_API_URL;
 
-console.log('[Axios Config] Using Auth API URL:', AUTH_API_URL);
-console.log('[Axios Config] Using Product API URL:', PRODUCT_API_URL);
+console.log('[Axios Config] Using API Base URL:', API_BASE_URL);
 
 const baseOptions = {
   withCredentials: true,
@@ -29,16 +28,16 @@ const baseOptions = {
 // General API client for backwards compatibility
 
 // Service-specific API clients
-export const AuthAPI = axios.create({ ...baseOptions, baseURL: AUTH_API_URL });
+export const AuthAPI = axios.create({ ...baseOptions, baseURL: API_BASE_URL });
 export const ProductAPI = axios.create({
   ...baseOptions,
-  baseURL: PRODUCT_API_URL,
+  baseURL: API_BASE_URL,
 });
 
-// Refresh client (using Auth API for refresh token)
+// Refresh client (using Base API for refresh token)
 export const APIRefresh = axios.create({
   ...baseOptions,
-  baseURL: AUTH_API_URL,
+  baseURL: API_BASE_URL,
 });
 APIRefresh.interceptors.response.use((response) => response);
 
@@ -78,6 +77,31 @@ const createErrorInterceptor = (instance: AxiosInstance) => {
 
     // Handle all 401 unauthorized errors
     if (status === 401) {
+      // Define endpoints that should not trigger token refresh
+      const bypassRefreshUrls = [
+        '/auth/login',
+        '/auth/register',
+        '/auth/password-forgot',
+        '/auth/password-reset',
+        '/auth/verify-email',
+      ];
+      const requestUrl = error.config?.url;
+      const shouldBypassRefresh =
+        requestUrl &&
+        bypassRefreshUrls.some((url) => requestUrl.includes(url));
+
+      if (shouldBypassRefresh) {
+        const errorData = data as Record<string, unknown>;
+        return Promise.reject({
+          status: error.response?.status,
+          message:
+            typeof errorData?.message === 'string'
+              ? errorData.message
+              : error.message,
+          ...(typeof errorData === 'object' ? errorData : {}),
+        });
+      }
+
       try {
         // Only try to refresh if it's not already a refresh token request
         if (!error.config?.url?.includes('/auth/refresh')) {
@@ -89,11 +113,13 @@ const createErrorInterceptor = (instance: AxiosInstance) => {
         }
         // If refresh request fails or this is a refresh request with 401
         console.error('Authentication failed, redirecting to login');
-        window.location.href = '/login';
+        const { router } = await import('@/routes/router');
+        router.navigate('/login');
         return Promise.reject({ message: 'Session expired' });
       } catch (refreshError) {
         console.error('Refresh token failed:', refreshError);
-        window.location.href = '/login';
+        const { router } = await import('@/routes/router');
+        router.navigate('/login');
         return Promise.reject({ message: 'Session expired' });
       }
     }

@@ -17,9 +17,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@celebs/shared-ui/components/dropdown-menu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logoutMutationFn } from "@/lib/api";
 
 export function UserNav() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { mutate } = useMutation({
+    mutationFn: logoutMutationFn,
+    onSuccess: () => {
+      queryClient.clear();
+      navigate('/login');
+    },
+  });
+
   return (
     <DropdownMenu>
       <TooltipProvider disableHoverableContent>
@@ -66,7 +78,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => mutate()}>
           <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
           Sign out
         </DropdownMenuItem>
