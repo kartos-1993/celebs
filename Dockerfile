@@ -10,7 +10,7 @@ RUN npx prisma generate
 # Disable Nx Daemon and DB to prevent SQLite constraint errors in Docker
 ENV NX_DAEMON=false
 ENV NX_DISABLE_DB=true
-RUN npx nx build shared-types && npx nx build shared-utils && npx nx build api --configuration=staging
+RUN npx nx build shared-types --skip-nx-cache && npx nx build shared-utils --skip-nx-cache && npx nx build api --configuration=staging --skip-nx-cache
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
