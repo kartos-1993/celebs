@@ -12,7 +12,13 @@
         "outputPath": "dist/apps/api",
         "main": "apps/api/src/main.ts",
         "tsConfig": "apps/api/tsconfig.app.json",
-        "assets": []
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/api/src/generated/prisma",
+            "output": "generated/prisma"
+          }
+        ]
       },
       "configurations": {
         "development": {
