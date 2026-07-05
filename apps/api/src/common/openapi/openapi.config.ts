@@ -24,6 +24,9 @@ registry.registerComponent('securitySchemes', 'cookieAuth', {
   description: 'Express session ID cookie',
 });
 
+// Import endpoints to register them in the registry
+import './auth.openapi';
+
 export function generateOpenAPIDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions);
   return generator.generateDocument({
