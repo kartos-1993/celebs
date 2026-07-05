@@ -28,6 +28,8 @@ import optionSetRoutes from './modules/option-set/option-set.routes';
 import productRoutes from './modules/product/product.routes';
 import mediaRoutes from './modules/media/media.routes';
 import renderRoutes from './modules/render/router';
+import swaggerUi from 'swagger-ui-express';
+import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 
 const app = express();
 app.use(json());
@@ -86,6 +88,12 @@ app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
 app.use(`${config.BASE_PATH}/products`, productRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
+
+app.use(
+  `${config.BASE_PATH}/docs`,
+  swaggerUi.serve,
+  swaggerUi.setup(generateOpenAPIDocument())
+);
 
 app.get('/health', (req, res) => {
   res.status(HTTPSTATUS.OK).json({ status: 'OK', message: 'Auth Service is healthy', data: null });
