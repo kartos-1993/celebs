@@ -1,12 +1,6 @@
 import { execSync } from 'child_process';
 import mongoose from 'mongoose';
 
-// Set up env variables before anything else imports them
-process.env.DATABASE_URL = 'postgresql://postgres:celebs@localhost:5432/celebs-test';
-process.env.MONGODB_URI = 'mongodb://localhost:27017/celebs-product-test';
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test_jwt_secret_key_long_enough_for_hmac';
-process.env.JWT_REFRESH_SECRET = 'test_jwt_refresh_secret_key_long_enough_for_hmac';
 
 // Import prisma so it gets configured with the test DB
 import prisma from '../db';

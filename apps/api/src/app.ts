@@ -49,7 +49,36 @@ app.use(
 
 app.use(cookieParser());
 app.use(passport.initialize());
-app.use(pinoHttp({ logger }));
+app.use(
+  pinoHttp({
+    logger,
+    // Silence request logging in test environment to keep test runs clean
+    useLevel: process.env.NODE_ENV === 'test' ? 'silent' : 'info',
+    // Custom serializers to prevent logging massive objects and sensitive headers
+    serializers: {
+      req(req) {
+        return {
+          id: req.id,
+          method: req.method,
+          url: req.url,
+          query: req.query,
+        };
+      },
+      res(res) {
+        return {
+          statusCode: res.statusCode,
+        };
+      },
+    },
+    // Concise request completion messages
+    customSuccessMessage(req, res, responseTime) {
+      return `${req.method} ${req.url} completed with status ${res.statusCode} in ${responseTime}ms`;
+    },
+    customErrorMessage(req, res, error) {
+      return `${req.method} ${req.url} failed with status ${res.statusCode}: ${error.message}`;
+    },
+  })
+);
 app.use(helmet());
 app.use(compression());
 app.use(

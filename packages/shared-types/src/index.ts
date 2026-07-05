@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export { z };
 import { loginSchema, registerSchema, verificationEmailSchema, resetPasswordSchema } from './validators/auth.validator';
 import { verifyMfaSchema, verifyMfaForLoginSchema } from './validators/mfa.validator';
 
