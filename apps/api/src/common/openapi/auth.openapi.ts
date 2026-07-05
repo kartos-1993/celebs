@@ -9,7 +9,7 @@ import {
 // We can register request/response bodies or schemas in components
 const registerRequestSchema = registry.register(
   'RegisterRequest',
-  registerSchema
+  registerSchema._def.schema
 );
 
 const loginRequestSchema = registry.register(
