@@ -1,4 +1,4 @@
-import { registry } from './openapi.config';
+import { registry } from './registry';
 import { z } from 'zod';
 import {
   registerSchema,

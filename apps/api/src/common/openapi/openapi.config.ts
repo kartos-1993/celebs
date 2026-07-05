@@ -1,12 +1,6 @@
-import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { config } from '../../config/app.config';
-
-// Extend zod to allow .openapi() calls
-extendZodWithOpenApi(z);
-
-export const registry = new OpenAPIRegistry();
+import { registry } from './registry';
 
 // Register Security Scheme for Bearer Token
 registry.registerComponent('securitySchemes', 'bearerAuth', {
