@@ -18,14 +18,22 @@ interface JwtPayload {
 const options: StrategyOptionsWithRequest = {
   jwtFromRequest: ExtractJwt.fromExtractors([
     (req) => {
-      const accessToken = req.cookies.accessToken;
-      if (!accessToken) {
-        throw new UnauthorizedException(
-          'Access token not found',
-          ErrorCode.AUTH_TOKEN_NOT_FOUND
-        );
+      // 1. Try to extract from Authorization: Bearer <token> header (Mobile)
+      const bearerToken = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+      if (bearerToken) {
+        return bearerToken;
       }
-      return accessToken;
+
+      // 2. Fallback to HTTP-only Cookie (Web)
+      const cookieToken = req.cookies?.accessToken;
+      if (cookieToken) {
+        return cookieToken;
+      }
+
+      throw new UnauthorizedException(
+        'Access token not found',
+        ErrorCode.AUTH_TOKEN_NOT_FOUND
+      );
     },
   ]),
   secretOrKey: config.JWT.SECRET,

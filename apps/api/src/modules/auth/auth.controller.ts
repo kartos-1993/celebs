@@ -63,10 +63,10 @@ export class AuthController {
       const { user, accessToken, refreshToken, mfaRequired } =
         await this.authService.login(body);
       setAuthenticationCookies({ res, accessToken, refreshToken });
-      const response: IApiResponse<typeof user> = {
+      const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> = {
         success: true,
         message: 'User logged in successfully',
-        data: user,
+        data: { user, accessToken, refreshToken },
       };
       return res.status(HTTPSTATUS.OK).json(response);
     }
@@ -80,10 +80,10 @@ export class AuthController {
       // Set authentication cookies just like login endpoint
       setAuthenticationCookies({ res, accessToken, refreshToken });
 
-      const response: IApiResponse<typeof user> = {
+      const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> = {
         success: true,
         message: 'Email verified successfully',
-        data: user,
+        data: { user, accessToken, refreshToken },
       };
       return res.status(HTTPSTATUS.OK).json(response);
     }
