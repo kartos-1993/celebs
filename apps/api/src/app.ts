@@ -89,11 +89,13 @@ app.use(`${config.BASE_PATH}/products`, productRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
-app.use(
-  `${config.BASE_PATH}/docs`,
-  swaggerUi.serve,
-  swaggerUi.setup(generateOpenAPIDocument())
-);
+if (config.NODE_ENV !== 'production') {
+  app.use(
+    `${config.BASE_PATH}/docs`,
+    swaggerUi.serve,
+    swaggerUi.setup(generateOpenAPIDocument())
+  );
+}
 
 app.get('/health', (req, res) => {
   res.status(HTTPSTATUS.OK).json({ status: 'OK', message: 'Auth Service is healthy', data: null });
