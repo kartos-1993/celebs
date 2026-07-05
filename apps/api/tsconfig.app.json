@@ -4,7 +4,11 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
-    "types": ["node", "express", "multer"]
+    "types": ["node", "express", "multer"],
+    "paths": {
+      "@celebs/shared-utils": ["dist/packages/shared-utils/src/index"],
+      "@celebs/shared-types": ["dist/packages/shared-types/src/index"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
