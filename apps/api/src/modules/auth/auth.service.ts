@@ -1,8 +1,9 @@
-import { ErrorCode, BadRequestException, HttpException, InternalServerException, NotFoundException, UnauthorizedException, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import { ErrorCode, BadRequestException, ForbiddenException, HttpException, InternalServerException, NotFoundException, UnauthorizedException, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { VerificationEnum } from '../../common/enums/verification-code.enum';
 import {
   LoginDto,
   RegisterDto,
+  VendorRegisterDto,
   resetPasswordDto,
   VerifyEmailResponse,
 } from '../../common/interface/auth.interface';
@@ -95,11 +96,153 @@ export class AuthService {
       user: userWithoutPassword,
     };
   }
+
+  public async vendorRegister(registerData: VendorRegisterDto) {
+    const {
+      name,
+      email,
+      password,
+      shopName,
+      shopDescription,
+      phoneNumber,
+      panNumber,
+      citizenshipNumber,
+      panDocumentUrl,
+      citizenshipDocumentUrl,
+      ownerPhotoUrl,
+    } = registerData;
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new BadRequestException(
+        'User already exists with this email',
+        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS
+      );
+    }
+
+    const existingShop = await prisma.vendorProfile.findUnique({
+      where: { shopName },
+    });
+    if (existingShop) {
+      throw new BadRequestException(
+        'Shop name is already taken',
+        ErrorCode.INVALID_REQUEST
+      );
+    }
+
+    const existingPhone = await prisma.vendorProfile.findUnique({
+      where: { phoneNumber },
+    });
+    if (existingPhone) {
+      throw new BadRequestException(
+        'Phone number is already registered',
+        ErrorCode.INVALID_REQUEST
+      );
+    }
+
+    const existingPan = await prisma.vendorProfile.findUnique({
+      where: { panNumber },
+    });
+    if (existingPan) {
+      throw new BadRequestException(
+        'PAN number is already registered',
+        ErrorCode.INVALID_REQUEST
+      );
+    }
+
+    const existingCitizenship = await prisma.vendorProfile.findUnique({
+      where: { citizenshipNumber },
+    });
+    if (existingCitizenship) {
+      throw new BadRequestException(
+        'Citizenship number is already registered',
+        ErrorCode.INVALID_REQUEST
+      );
+    }
+
+    // Hash the password before saving
+    const hashedPassword = await hashValue(password);
+
+    // Create user and vendor profile in a transaction
+    const newUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role: 'VENDOR',
+        },
+      });
+
+      await tx.vendorProfile.create({
+        data: {
+          userId: user.id,
+          phoneNumber,
+          shopName,
+          shopDescription,
+          panNumber,
+          citizenshipNumber,
+          panDocumentUrl,
+          citizenshipDocumentUrl,
+          ownerPhotoUrl,
+          status: 'PENDING',
+        },
+      });
+
+      return user;
+    });
+
+    // Log vendor registration
+    logger.info(
+      { email: newUser.email, id: newUser.id, shopName },
+      'New vendor registered, profile pending approval'
+    );
+
+    const verification = await prisma.verificationCode.create({
+      data: {
+        userId: newUser.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+        expiresAt: fortyFiveMinutesFromNow(),
+      },
+    });
+
+    const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
+    logger.info(
+      { email: newUser.email, verificationUrl },
+      'Attempting to send verification email to vendor'
+    );
+    try {
+      await sendEmail({
+        to: newUser.email,
+        subject: 'Verify your email address',
+        text: `Please verify your email by clicking the following link: ${verificationUrl}`,
+        html: verifyEmailTemplate(verificationUrl).html,
+      });
+      logger.info({ email: newUser.email }, 'Verification email sent to vendor');
+    } catch (err) {
+      logger.error(
+        { err, email: newUser.email },
+        'Failed to send verification email to vendor'
+      );
+      throw new InternalServerException('Failed to send verification email');
+    }
+
+    const { password: _, ...userWithoutPassword } = newUser;
+    return {
+      user: userWithoutPassword,
+    };
+  }
+
   public async login(LoginData: LoginDto) {
     const { email, password, userAgent } = LoginData;
     logger.info(`Login attempt for email: ${email}`);
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        vendorProfile: true,
+      },
     });
 
     if (!user) {
@@ -120,6 +263,19 @@ export class AuthService {
     }
 
     logger.info({ userId: user.id }, 'User authenticated successfully');
+
+    if (user.role === 'VENDOR') {
+      const profile = await prisma.vendorProfile.findUnique({
+        where: { userId: user.id },
+      });
+
+      if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
+        throw new ForbiddenException(
+          'Access denied: Seller account is suspended or rejected.',
+          ErrorCode.FORBIDDEN_ACCESS
+        );
+      }
+    }
 
     // Create session
     logger.info({ userId: user.id }, 'Creating session');

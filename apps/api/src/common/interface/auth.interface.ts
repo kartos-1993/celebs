@@ -6,6 +6,17 @@ export interface RegisterDto {
   userAgent?: string;
 }
 
+export interface VendorRegisterDto extends RegisterDto {
+  shopName: string;
+  shopDescription?: string;
+  phoneNumber: string;
+  panNumber: string;
+  citizenshipNumber: string;
+  panDocumentUrl?: string;
+  citizenshipDocumentUrl?: string;
+  ownerPhotoUrl?: string;
+}
+
 export interface LoginDto {
   email: string;
   password: string;

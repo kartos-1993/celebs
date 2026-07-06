@@ -70,6 +70,21 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
             false
           );
         }
+
+        // Check if user is a vendor and status is suspended/rejected
+        if (user.role === 'VENDOR' && user.vendorProfile) {
+          const status = user.vendorProfile.status;
+          if (status === 'REJECTED' || status === 'SUSPENDED') {
+            return done(
+              new UnauthorizedException(
+                'Access denied: Seller account is suspended or rejected.',
+                ErrorCode.FORBIDDEN_ACCESS
+              ),
+              false
+            );
+          }
+        }
+
         req.sessionId = payload.sessionId;
         // Map userId and sessionId for compatibility with product modules
         const mappedUser = {

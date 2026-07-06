@@ -17,6 +17,7 @@ export default defineConfig({
     testTimeout: 30000,
     include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
     exclude: ['src/middlewares/__tests__/index.spec.ts'],
+    fileParallelism: false,
     env: {
       DATABASE_URL: 'postgresql://postgres:celebs@localhost:5432/celebs-test',
       MONGODB_URI: 'mongodb://localhost:27017/celebs-product-test',

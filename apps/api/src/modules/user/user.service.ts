@@ -6,6 +6,9 @@ export class UserService {
       where: {
         id: userId,
       },
+      include: {
+        vendorProfile: true,
+      },
     });
     return user || null;
   }

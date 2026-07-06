@@ -21,6 +21,9 @@ categoryRoute.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+import { requirePermissions } from '../../middlewares/rbac.middleware';
+import { Permission } from '../../common/enums/permission.enum';
+
 // Apply authentication middleware to all category routes
 categoryRoute.use(authenticateJWT);
 
@@ -32,8 +35,8 @@ categoryRoute.get(
   asyncHandler(categoryController.getCategoryTreeWithAttributes),
 );
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
-categoryRoute.post('/', asyncHandler(categoryController.createCategory));
-categoryRoute.put('/:id', asyncHandler(categoryController.updateCategory));
-categoryRoute.delete('/:id', asyncHandler(categoryController.deleteCategory));
+categoryRoute.post('/', requirePermissions(Permission.MANAGE_CATEGORIES), asyncHandler(categoryController.createCategory));
+categoryRoute.put('/:id', requirePermissions(Permission.MANAGE_CATEGORIES), asyncHandler(categoryController.updateCategory));
+categoryRoute.delete('/:id', requirePermissions(Permission.MANAGE_CATEGORIES), asyncHandler(categoryController.deleteCategory));
 
 export default categoryRoute;

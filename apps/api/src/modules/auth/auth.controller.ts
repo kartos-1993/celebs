@@ -9,6 +9,7 @@ import {
   registerSchema,
   resetPasswordSchema,
   verificationEmailSchema,
+  vendorRegisterSchema,
 } from '@celebs/shared-types';
 import {
   clearAuthenticationCookies,
@@ -32,9 +33,9 @@ export class AuthController {
         body = registerSchema.parse({
           ...req.body,
         });
-      } catch (err) {
+      } catch (err: any) {
         // Pass the Zod error to the error handler to format properly
-        if (err instanceof z.ZodError) {
+        if (err instanceof z.ZodError || err?.name === 'ZodError' || err?.constructor?.name === 'ZodError') {
           throw err;
         }
         // For other validation errors
@@ -47,6 +48,33 @@ export class AuthController {
       const response: IApiResponse<typeof user> = {
         success: true,
         message: 'User registered successfully',
+        data: user,
+      };
+      return res.status(HTTPSTATUS.CREATED).json(response);
+    }
+  );
+
+  public vendorRegister = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      let body;
+      try {
+        body = vendorRegisterSchema.parse({
+          ...req.body,
+        });
+      } catch (err: any) {
+        if (err instanceof z.ZodError || err?.name === 'ZodError' || err?.constructor?.name === 'ZodError') {
+          console.log('ZOD VALIDATION ERROR IN VENDOR REGISTRATION:', JSON.stringify(err.errors || err.issues, null, 2));
+          throw err;
+        }
+        throw new BadRequestException(
+          'Validation failed',
+          ErrorCode.VALIDATION_ERROR
+        );
+      }
+      const { user } = await this.authService.vendorRegister(body);
+      const response: IApiResponse<typeof user> = {
+        success: true,
+        message: 'Vendor registered successfully. Approval is pending.',
         data: user,
       };
       return res.status(HTTPSTATUS.CREATED).json(response);

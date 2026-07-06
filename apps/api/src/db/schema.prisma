@@ -20,17 +20,56 @@ model Session {
   @@index([userId])
 }
 
+enum Role {
+  CUSTOMER
+  VENDOR
+  STAFF
+  ADMIN
+}
+
 model User {
   id              String           @id @default(dbgenerated("gen_random_uuid()"))
   name            String
   email           String           @unique
   password        String
+  role            Role             @default(CUSTOMER)
   isEmailVerified Boolean          @default(false)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   userPreferences UserPreference?  @relation("UserToUserPreference")
+  vendorProfile   VendorProfile?   @relation("UserToVendorProfile")
   verificationCodes VerificationCode[]
   sessions        Session[]
+}
+
+model VendorProfile {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId                 String   @unique
+  user                   User     @relation("UserToVendorProfile", fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber            String   @unique
+  shopName               String   @unique
+  shopDescription        String?
+  panNumber              String   @unique
+  citizenshipNumber      String   @unique
+  panDocumentUrl         String?
+  citizenshipDocumentUrl String?
+  ownerPhotoUrl          String?
+  payoutDetails          Json?
+  status                 String   @default("PENDING") // PENDING, APPROVED, SUSPENDED, REJECTED
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model IdempotencyKey {
+  id           String   @id @default(dbgenerated("gen_random_uuid()"))
+  key          String   @unique
+  userId       String
+  statusCode   Int
+  responseBody String
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime @default(dbgenerated("NOW() + interval '24 hours'"))
+
+  @@index([key])
 }
 
 model UserPreference {

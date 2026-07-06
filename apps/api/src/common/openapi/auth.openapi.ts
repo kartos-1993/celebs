@@ -4,12 +4,18 @@ import {
   registerSchema,
   loginSchema,
   verificationEmailSchema,
+  vendorRegisterSchema,
 } from '@celebs/shared-types';
 
 // We can register request/response bodies or schemas in components
 const registerRequestSchema = registry.register(
   'RegisterRequest',
   registerSchema._def.schema
+);
+
+const vendorRegisterRequestSchema = registry.register(
+  'VendorRegisterRequest',
+  vendorRegisterSchema._def.schema
 );
 
 const loginRequestSchema = registry.register(
@@ -57,6 +63,45 @@ registry.registerPath({
     },
     400: {
       description: 'Validation / duplicate email error',
+    },
+  },
+});
+
+// Register POST /auth/vendor/register
+registry.registerPath({
+  method: 'post',
+  path: '/auth/vendor/register',
+  tags: ['Authentication'],
+  summary: 'Register a new vendor account (Onboarding)',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: vendorRegisterRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Successful vendor registration (onboarding pending approval)',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean(),
+            message: z.string(),
+            data: z.object({
+              id: z.string(),
+              name: z.string(),
+              email: z.string(),
+              role: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: 'Validation or duplicate field error',
     },
   },
 });

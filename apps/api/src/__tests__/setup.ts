@@ -8,8 +8,10 @@ import prisma from '../db';
 beforeAll(async () => {
   // Push the Prisma schema to the test database to ensure it is up-to-date
   try {
+    const rootPath = require('path').resolve(__dirname, '../../../../');
     execSync('npx prisma db push --schema=apps/api/src/db/schema.prisma --accept-data-loss', {
       stdio: 'ignore',
+      cwd: rootPath,
     });
   } catch (error) {
     console.error('Failed to push prisma schema to test database:', error);
