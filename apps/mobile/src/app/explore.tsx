@@ -1,180 +1,443 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  StyleSheet,
+  Pressable,
+  TextInput,
+  View,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
 
-import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { PRODUCTS, Product } from '@/constants/mock-data';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
+export default function ExploreScreen() {
+  const router = useRouter();
   const theme = useTheme();
+  const params = useLocalSearchParams();
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<'featured' | 'priceAsc' | 'priceDesc'>('featured');
+
+  // Sync category parameter from home screen navigation
+  useEffect(() => {
+    if (params.category && selectedCategory !== params.category) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedCategory(params.category as string);
+    }
+  }, [params.category, selectedCategory]);
+
+  const categories = useMemo(() => {
+    return ['All', 'Tops', 'Bottoms', 'Shoes', 'Jackets'];
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    let result = [...PRODUCTS];
+
+    // Filter by Category
+    if (selectedCategory !== 'All') {
+      result = result.filter(
+        (p) =>
+          p.parentCategory.toLowerCase() === selectedCategory.toLowerCase() ||
+          p.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
+    // Filter by Search Query
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.brand.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.tags.some((t) => t.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort Results
+    if (sortBy === 'priceAsc') {
+      result.sort((a, b) => (a.discountedPrice ?? a.price) - (b.discountedPrice ?? b.price));
+    } else if (sortBy === 'priceDesc') {
+      result.sort((a, b) => (b.discountedPrice ?? b.price) - (a.discountedPrice ?? a.price));
+    } else {
+      // Sort by featured first, then rating
+      result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || b.rating - a.rating);
+    }
+
+    return result;
+  }, [selectedCategory, searchQuery, sortBy]);
+
+  const renderProductItem = ({ item }: { item: Product }) => {
+    const originalPrice = item.price;
+    const currentPrice = item.discountedPrice ?? item.price;
+    const hasDiscount = !!item.discountedPrice;
+    const discountPercent = hasDiscount
+      ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+      : 0;
+
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.productCard,
+          { backgroundColor: theme.backgroundElement },
+          pressed && styles.pressed,
+        ]}
+        onPress={() => router.push(`/product/${item.id}` as any)}>
+        <View style={styles.imageContainer}>
+          <Image
+            source={item.mainImages[0]}
+            style={styles.productImage}
+            contentFit="cover"
+            transition={150}
+          />
+          {hasDiscount && (
+            <View style={styles.discountBadge}>
+              <ThemedText style={styles.discountText}>-{discountPercent}%</ThemedText>
+            </View>
+          )}
+        </View>
+        <View style={styles.productDetails}>
+          <ThemedText style={styles.productBrand} themeColor="textSecondary">
+            {item.brand}
+          </ThemedText>
+          <ThemedText style={styles.productName} numberOfLines={1}>
+            {item.name}
+          </ThemedText>
+          <View style={styles.priceRow}>
+            <ThemedText style={styles.productPrice}>
+              ${currentPrice.toFixed(2)}
+            </ThemedText>
+            {hasDiscount && (
+              <ThemedText style={styles.originalPrice}>
+                ${originalPrice.toFixed(2)}
+              </ThemedText>
+            )}
+          </View>
+          <View style={styles.ratingRow}>
+            <SymbolView
+              name={{ ios: 'star.fill', android: 'star', web: 'star' }}
+              size={11}
+              tintColor="#FFD700"
+            />
+            <ThemedText style={styles.ratingText} themeColor="textSecondary">
+              {item.rating} ({item.reviewsCount})
+            </ThemedText>
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
-
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        {/* Header Search Input */}
+        <View style={styles.header}>
+          <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement }]}>
+            <SymbolView
+              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+              size={18}
+              tintColor={theme.textSecondary}
+            />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search catalog..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
                 <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
+                  name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                  size={16}
+                  tintColor={theme.textSecondary}
                 />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+              </Pressable>
+            )}
+          </View>
+        </View>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+        {/* Categories Chips */}
+        <View style={styles.chipsWrapper}>
+          <FlashList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={categories}
+            renderItem={({ item }) => {
+              const isSelected = selectedCategory.toLowerCase() === item.toLowerCase();
+              return (
+                <Pressable
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.text
+                        : theme.backgroundElement,
+                    },
+                  ]}
+                  onPress={() => setSelectedCategory(item)}>
+                  <ThemedText
+                    style={[
+                      styles.chipText,
+                      { color: isSelected ? theme.background : theme.text },
+                    ]}>
+                    {item}
+                  </ThemedText>
+                </Pressable>
+              );
+            }}
+            contentContainerStyle={styles.chipsScroll}
+          />
+        </View>
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
+        {/* Sort Controls Bar */}
+        <View style={styles.controlsBar}>
+          <ThemedText style={styles.resultsCount} themeColor="textSecondary">
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'} found
+          </ThemedText>
+          <View style={styles.sortButtons}>
+            <Pressable
+              style={[
+                styles.sortButton,
+                sortBy === 'featured' && { borderBottomColor: theme.text, borderBottomWidth: 2 },
+              ]}
+              onPress={() => setSortBy('featured')}>
+              <ThemedText
+                style={[styles.sortButtonText, sortBy === 'featured' && styles.activeSortText]}>
+                Trending
               </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
+            </Pressable>
+            <Pressable
+              style={[
+                styles.sortButton,
+                sortBy === 'priceAsc' && { borderBottomColor: theme.text, borderBottomWidth: 2 },
+              ]}
+              onPress={() => setSortBy('priceAsc')}>
+              <ThemedText
+                style={[styles.sortButtonText, sortBy === 'priceAsc' && styles.activeSortText]}>
+                Price: Low
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.sortButton,
+                sortBy === 'priceDesc' && { borderBottomColor: theme.text, borderBottomWidth: 2 },
+              ]}
+              onPress={() => setSortBy('priceDesc')}>
+              <ThemedText
+                style={[styles.sortButtonText, sortBy === 'priceDesc' && styles.activeSortText]}>
+                Price: High
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Products Grid */}
+        <View style={styles.gridContainer}>
+          {filteredProducts.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <SymbolView
+                name={{ ios: 'exclamationmark.triangle', android: 'error', web: 'error' }}
+                size={40}
+                tintColor={theme.textSecondary}
               />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+              <ThemedText style={styles.emptyTitle}>No Products Found</ThemedText>
+              <ThemedText style={styles.emptySubtitle} themeColor="textSecondary">
+                Try checking spelling or adjusting filters
+              </ThemedText>
+            </View>
+          ) : (
+            <FlashList
+              data={filteredProducts}
+              numColumns={2}
+              renderItem={renderProductItem}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
     flex: 1,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
+  safeArea: {
+    flex: 1,
     maxWidth: MaxContentWidth,
-    flexGrow: 1,
+    alignSelf: 'center',
+    width: '100%',
   },
-  titleContainer: {
-    gap: Spacing.three,
+  header: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  searchContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Platform.OS === 'ios' ? Spacing.two : Spacing.one,
+    borderRadius: Spacing.two,
+    gap: Spacing.two,
   },
-  centerText: {
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'normal',
+    padding: 0,
+  },
+  chipsWrapper: {
+    height: 48,
+    marginVertical: Spacing.one,
+  },
+  chipsScroll: {
+    paddingHorizontal: Spacing.three,
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  chip: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Spacing.four,
+    justifyContent: 'center',
+    marginRight: Spacing.one,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  controlsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(128,128,128,0.2)',
+  },
+  resultsCount: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  sortButton: {
+    paddingVertical: Spacing.one,
+  },
+  sortButtonText: {
+    fontSize: 12,
+    color: '#8A8A8F',
+    fontWeight: '600',
+  },
+  activeSortText: {
+    color: 'inherit',
+  },
+  gridContainer: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: Spacing.two,
+    paddingBottom: Spacing.five,
+  },
+  productCard: {
+    flex: 1,
+    margin: Spacing.one,
+    borderRadius: Spacing.two,
+    overflow: 'hidden',
+  },
+  imageContainer: {
+    height: 180,
+    position: 'relative',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: Spacing.two,
+    left: Spacing.two,
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: Spacing.one,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.one,
+  },
+  discountText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  productDetails: {
+    padding: Spacing.two,
+    gap: 2,
+  },
+  productBrand: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  productName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  productPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  originalPrice: {
+    fontSize: 11,
+    color: '#8A8A8F',
+    textDecorationLine: 'line-through',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.five,
+    marginTop: 50,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: Spacing.three,
+  },
+  emptySubtitle: {
+    fontSize: 14,
     textAlign: 'center',
+    marginTop: Spacing.one,
   },
   pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
+    opacity: 0.85,
   },
 });
