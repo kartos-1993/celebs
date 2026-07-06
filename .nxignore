@@ -1,0 +1,6 @@
+# Ignore folders for Nx task running and caching
+node_modules
+dist
+.nx
+.git
+tmp

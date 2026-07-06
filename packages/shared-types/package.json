@@ -2,8 +2,11 @@
   "name": "@celebs/shared-types",
   "version": "1.0.0",
   "private": true,
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --outDir dist"
+  },
   "dependencies": {
     "zod": "^3.24.3"
   }

@@ -1,0 +1,11 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.app.json",
+    "dev": "dotenv -e .env.development -- nodemon --watch src --ext ts --exec node -r tsconfig-paths/register -r @swc-node/register src/main.ts",
+    "start": "node dist/apps/api/src/main.js",
+    "test": "vitest run"
+  }
+}
