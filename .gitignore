@@ -3,11 +3,8 @@
 .nx/workspace-data
 node_modules
 
-# NX specific
-.nx/
-.nxignore
-.nxcache/
-nx-cloud.env
+# Turborepo Cache
+.turbo/
 tmp/
 
 # Ignore environment files
