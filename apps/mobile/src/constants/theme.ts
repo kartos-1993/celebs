@@ -9,18 +9,30 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
+    // Core Aligned Tokens
     text: '#000000',
+    textPrimary: '#000000',
+    textSecondary: '#60646C',
     background: '#ffffff',
+    surface: '#F0F0F3',
+    surfaceSelected: '#E0E1E6',
+
+    // Legacy naming mappings for compatibility
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
   },
   dark: {
+    // Core Aligned Tokens
     text: '#ffffff',
+    textPrimary: '#ffffff',
+    textSecondary: '#B0B4BA',
     background: '#000000',
+    surface: '#212225',
+    surfaceSelected: '#2E3135',
+
+    // Legacy naming mappings for compatibility
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
   },
 } as const;
 
