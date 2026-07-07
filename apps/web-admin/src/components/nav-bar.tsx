@@ -40,8 +40,8 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        `pl-6 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary`,
-        isSideBarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
+        `pl-6 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary transition-[margin-left,width] ease-in-out duration-300`,
+        isSideBarOpen ? 'lg:ml-64 lg:w-[calc(100%-16rem)]' : 'lg:ml-[81px] lg:w-[calc(100%-81px)]',
       )}
     >
       <div className=" lg:mr-8 flex h-14 items-center">

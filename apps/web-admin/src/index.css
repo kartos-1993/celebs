@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
+@source "../../packages/shared-ui/src/**/*.{html,js,ts,jsx,tsx}";
 
 @theme {
   --font-inter: Inter, var(--font-sans);
