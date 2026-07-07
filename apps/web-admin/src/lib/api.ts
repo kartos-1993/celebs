@@ -46,6 +46,11 @@ export const loginMutationFn = async (data: loginType) =>
 export const setupSuperadminMutationFn = async (data: setupSuperadminType) =>
   await AuthAPI.post(`/auth/setup-superadmin`, data);
 
+export const getSetupStatusQueryFn = async () => {
+  const response = await AuthAPI.get(`/auth/setup-status`);
+  return response.data;
+};
+
 export const registerMutationFn = async (data: registerType) =>
   await AuthAPI.post(`/auth/register`, data);
 
