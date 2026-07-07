@@ -6,6 +6,8 @@ import {
   json,
 } from 'react-router-dom';
 import SignIn from '@/features/auth/sign-in';
+import SetupSuperadmin from '@/features/auth/setup-superadmin';
+import VendorRegister from '@/features/auth/vendor-register';
 import App from '@/App';
 
 import Products from '@/features/product/components/manage-product';
@@ -27,12 +29,31 @@ import Settings from '@/features/account/settings';
 import AccountSettings from '@/features/account/account-settings';
 import Finance from '@/features/finance/finance';
 import NotFoundError from '@/features/errors/NotFoundError';
+import OnboardingWizard from '@/features/vendor-onboarding/onboarding-wizard';
+import VendorList from '@/features/vendors/vendor-list';
+import UserList from '@/features/users/user-list';
+import StaffList from '@/features/staff/staff-list';
 
-const appLoader: ProtectedLoader = async () => {
+import { RoleGuard } from '@/components/role-guard';
+
+const appLoader: ProtectedLoader = async ({ request }) => {
   try {
     const sessionResponse = await getUserSessionQueryFn();
     console.log('apploader firstName');
-    return json<ProtectedLoaderData>({ user: sessionResponse.data.user });
+    
+    // Global onboarding redirect check in loader
+    const user = sessionResponse.data.user;
+    const url = new URL(request.url);
+    if (
+      user.role === 'VENDOR' &&
+      user.vendorProfile &&
+      user.vendorProfile.onboardingStep < 5 &&
+      !url.pathname.startsWith('/onboarding')
+    ) {
+      return redirect('/onboarding');
+    }
+
+    return json<ProtectedLoaderData>({ user });
   } catch (error) {
     return redirect('/login');
   }
@@ -84,8 +105,28 @@ export const router = createBrowserRouter([
       },
       {
         path: 'categories',
-        element: <Categories />,
+        element: <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}><Categories /></RoleGuard>,
         handle: { crumb: 'Categories' },
+      },
+      {
+        path: 'vendors',
+        element: <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}><VendorList /></RoleGuard>,
+        handle: { crumb: 'Vendors' },
+      },
+      {
+        path: 'users',
+        element: <RoleGuard allowedRoles={['SUPERADMIN']}><UserList /></RoleGuard>,
+        handle: { crumb: 'Users' },
+      },
+      {
+        path: 'staff',
+        element: <RoleGuard allowedRoles={['VENDOR', 'SUPERADMIN']}><StaffList /></RoleGuard>,
+        handle: { crumb: 'Staff' },
+      },
+      {
+        path: 'onboarding',
+        element: <RoleGuard allowedRoles={['VENDOR']}><OnboardingWizard /></RoleGuard>,
+        handle: { crumb: 'Onboarding' },
       },
       {
         path: 'orders',
@@ -126,7 +167,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'finance',
-        element: <Finance />,
+        element: <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN']}><Finance /></RoleGuard>,
         handle: { crumb: 'Finance' },
       },
     ],
@@ -135,6 +176,14 @@ export const router = createBrowserRouter([
     path: '/login',
     loader: loginLoader,
     element: <SignIn />,
+  },
+  {
+    path: '/setup-superadmin',
+    element: <SetupSuperadmin />,
+  },
+  {
+    path: '/vendor/register',
+    element: <VendorRegister />,
   },
   { path: '*', element: <NotFoundError /> },
 ]);

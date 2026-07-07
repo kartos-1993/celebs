@@ -6,6 +6,7 @@ import {
   VendorRegisterDto,
   resetPasswordDto,
   VerifyEmailResponse,
+  SetupSuperadminDto,
 } from '../../common/interface/auth.interface';
 
 import {
@@ -410,5 +411,41 @@ export class AuthService {
     }).catch((err) => {
       logger.error({ err, sessionId }, 'Failed to delete session on logout');
     });
+  }
+
+  public async setupSuperadmin(setupData: SetupSuperadminDto) {
+    const { name, email, password, setupSecret } = setupData;
+
+    // Verify secret
+    if (setupSecret !== config.SETUP_SECRET) {
+      throw new ForbiddenException('Invalid setup secret key');
+    }
+
+    // Check if any SUPERADMIN user exists
+    const superadminExists = await prisma.user.findFirst({
+      where: { role: 'SUPERADMIN' },
+    });
+    if (superadminExists) {
+      throw new HttpException('A SUPERADMIN user already exists', HTTPSTATUS.CONFLICT);
+    }
+
+    // Hash password
+    const hashedPassword = await hashValue(password);
+
+    // Create user
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        role: 'SUPERADMIN',
+        isEmailVerified: true,
+      },
+    });
+
+    const { password: _, ...userWithoutPassword } = newUser;
+    return {
+      user: userWithoutPassword,
+    };
   }
 }

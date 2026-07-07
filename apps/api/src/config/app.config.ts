@@ -31,6 +31,7 @@ export const appConfig = () => {
         | 'none',
       DOMAIN: getEnv('COOKIE_DOMAIN', isProduction ? 'yourdomain.com' : ''),
     },
+    SETUP_SECRET: getEnv('SETUP_SECRET', 'celebs-superadmin-secret-2026'),
     MONGODB_URI: getEnv('MONGODB_URI', 'mongodb://localhost:27017/fashion-ecommerce'),
     CLOUDINARY: {
       CLOUD_NAME: getEnv('CLOUDINARY_CLOUD_NAME'),

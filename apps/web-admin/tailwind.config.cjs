@@ -7,11 +7,9 @@ const fromHere = (glob) => path.join(__dirname, glob).replace(/\\/g, '/');
 module.exports = {
   darkMode: ['class'],
   content: [
-    fromHere('index.html'),
-    fromHere('src/**/*.{html,js,ts,jsx,tsx}'),
-    // include app and libs source files only (avoid scanning the repository root or unrelated files)
-    fromHere('../../apps/**/src/**/*.{html,js,ts,jsx,tsx}'),
-    fromHere('../../libs/**/src/**/*.{html,js,ts,jsx,tsx}'),
+    path.resolve(__dirname, './index.html').replace(/\\/g, '/'),
+    path.resolve(__dirname, './src/**/*.{html,js,ts,jsx,tsx}').replace(/\\/g, '/'),
+    path.resolve(__dirname, '../../packages/shared-ui/src/**/*.{html,js,ts,jsx,tsx}').replace(/\\/g, '/'),
   ],
   safelist: [
     ...fonts.map((font) => `font-${font}`),

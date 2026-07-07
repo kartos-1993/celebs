@@ -5,9 +5,11 @@
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
     "types": ["node", "express", "multer"],
+    "baseUrl": ".",
     "paths": {
-      "@celebs/shared-utils": ["dist/packages/shared-utils/src/index"],
-      "@celebs/shared-types": ["dist/packages/shared-types/src/index"]
+      "@celebs/rbac": ["../../packages/rbac/src/index.ts"],
+      "@celebs/shared-utils": ["../../packages/shared-utils/src/index.ts"],
+      "@celebs/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

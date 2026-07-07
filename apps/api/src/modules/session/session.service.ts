@@ -20,10 +20,21 @@ export class SessionService {
             id: true,
             name: true,
             email: true,
+            role: true,
             isEmailVerified: true,
             createdAt: true,
             updatedAt: true,
-            // Explicitly omit the password field by not selecting it
+            vendorId: true,
+            vendorProfile: {
+              select: {
+                id: true,
+                shopName: true,
+                status: true,
+                onboardingStep: true,
+                storeLogo: true,
+                holidayMode: true,
+              },
+            },
           },
         },
       },

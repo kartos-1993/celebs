@@ -58,3 +58,10 @@ export const resetPasswordSchema = z.object({
   password: passwordSchema,
   verificationCode: verificationCodeSchema,
 });
+
+export const setupSuperadminSchema = z.object({
+  name: z.string().trim().min(3, 'Name must be at least 3 characters long').max(255),
+  email: emailSchema,
+  password: passwordSchema,
+  setupSecret: z.string().min(1, 'Setup secret is required'),
+});

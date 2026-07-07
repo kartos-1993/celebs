@@ -1,7 +1,7 @@
 import { HTMLAttributes, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,8 @@ const formSchema = z.object({
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = (location.state as any)?.successMessage;
 
   const { mutate, isPending } = useMutation({
     mutationFn: loginMutationFn,
@@ -78,6 +80,11 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-800 p-3 rounded text-sm mb-2">
+          {successMessage}
+        </div>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid gap-2">
@@ -121,6 +128,12 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           </div>
         </form>
       </Form>
+      <div className="text-center text-sm text-muted-foreground mt-2">
+        Want to sell on Celebs?{' '}
+        <Link to="/vendor/register" className="underline underline-offset-4 hover:text-primary">
+          Register as a Vendor →
+        </Link>
+      </div>
     </div>
   );
 }
