@@ -16,7 +16,7 @@ import {
   ProtectedLoader,
   SessionResponse,
 } from '../types';
-import { getUserSessionQueryFn } from '@/lib/api';
+import { getUserSessionQueryFn, getSetupStatusQueryFn } from '@/lib/api';
 import AppLayout from '@/layout/AppLayout';
 import Categories from '@/features/category';
 import ManageProduct from '@/features/product/components/manage-product';
@@ -75,6 +75,20 @@ const loginLoader: ProtectedLoader = async () => {
     return null;
   }
 };
+
+// Loader to prevent accessing setup page if SUPERADMIN already exists
+const setupSuperadminLoader: ProtectedLoader = async () => {
+  try {
+    const statusResponse = await getSetupStatusQueryFn();
+    if (statusResponse.success && !statusResponse.data.setupRequired) {
+      return redirect('/login');
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -179,6 +193,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/setup-superadmin',
+    loader: setupSuperadminLoader,
     element: <SetupSuperadmin />,
   },
   {

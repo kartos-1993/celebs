@@ -448,4 +448,11 @@ export class AuthService {
       user: userWithoutPassword,
     };
   }
+
+  public async isSuperadminSetupRequired() {
+    const superadminExists = await prisma.user.findFirst({
+      where: { role: 'SUPERADMIN' },
+    });
+    return !superadminExists;
+  }
 }

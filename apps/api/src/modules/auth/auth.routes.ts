@@ -10,5 +10,6 @@ authRoutes.post('/login', authController.login);
 authRoutes.post('/verify-email', authController.verifyEmail);
 authRoutes.post('/logout', authenticateJWT, authController.logout);
 authRoutes.post('/setup-superadmin', authController.setupSuperadmin);
+authRoutes.get('/setup-status', authController.getSetupStatus);
 
 export default authRoutes;

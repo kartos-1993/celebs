@@ -146,4 +146,16 @@ export class AuthController {
       return res.status(HTTPSTATUS.CREATED).json(response);
     }
   );
+
+  public getSetupStatus = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const setupRequired = await this.authService.isSuperadminSetupRequired();
+      const response: IApiResponse<{ setupRequired: boolean }> = {
+        success: true,
+        message: 'Setup status fetched successfully',
+        data: { setupRequired },
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
 }
