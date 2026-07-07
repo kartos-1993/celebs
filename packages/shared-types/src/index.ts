@@ -1,6 +1,6 @@
 import { z } from 'zod';
 export { z };
-import { loginSchema, registerSchema, verificationEmailSchema, resetPasswordSchema, vendorRegisterSchema } from './validators/auth.validator';
+import { loginSchema, registerSchema, verificationEmailSchema, resetPasswordSchema, vendorRegisterSchema, setupSuperadminSchema } from './validators/auth.validator';
 import { verifyMfaSchema, verifyMfaForLoginSchema } from './validators/mfa.validator';
 import { vendorProfileSchema, warehouseSchema, vendorDocumentsSchema, vendorBusinessInfoSchema } from './validators/vendor.validator';
 
