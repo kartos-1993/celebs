@@ -40,7 +40,7 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        `pl-6 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary`,
+        `pl-6 sticky top-0 z-10 bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary transition-[margin-left] ease-in-out duration-300`,
         isSideBarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
       )}
     >
