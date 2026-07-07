@@ -12,12 +12,19 @@ if (fs.existsSync(envPath)) {
 import app from './app';
 import { config } from './config/app.config';
 import { connectMongoDB } from './db/mongodb';
+import prisma from './db';
+import { logger } from '@celebs/shared-utils';
 
 const port = config.PORT;
 
 const startServer = async () => {
   try {
     await connectMongoDB();
+    
+    // Connect and verify Postgres connection
+    await prisma.$connect();
+    logger.info('Postgres Database Connected successfully');
+
     const server = app.listen(port, () => {
       console.log(`Listening at http://localhost:${port}`);
     });

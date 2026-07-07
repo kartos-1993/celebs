@@ -1,13 +1,29 @@
 // types.ts
 import { LoaderFunction } from "react-router-dom";
 
+export type Role = 'CUSTOMER' | 'VENDOR' | 'STAFF' | 'ADMIN' | 'SUPERADMIN';
+
+export interface VendorProfileData {
+  id: string;
+  shopName: string;
+  status: string;
+  onboardingStep: number;
+  storeLogo?: string;
+  holidayMode: boolean;
+  phoneNumber: string;
+  shopDescription?: string;
+}
+
 export interface UserData {
   id: string;
   name: string;
   email: string;
+  role: Role;
   isEmailVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  vendorId?: string;
+  vendorProfile?: VendorProfileData;
 }
 
 export interface ApiResponse<T> {

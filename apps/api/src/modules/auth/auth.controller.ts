@@ -10,6 +10,7 @@ import {
   resetPasswordSchema,
   verificationEmailSchema,
   vendorRegisterSchema,
+  setupSuperadminSchema,
 } from '@celebs/shared-types';
 import {
   clearAuthenticationCookies,
@@ -130,6 +131,19 @@ export class AuthController {
         data: null,
       };
       return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
+
+  public setupSuperadmin = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const body = setupSuperadminSchema.parse(req.body);
+      const { user } = await this.authService.setupSuperadmin(body);
+      const response: IApiResponse<typeof user> = {
+        success: true,
+        message: 'Superadmin setup completed successfully',
+        data: user,
+      };
+      return res.status(HTTPSTATUS.CREATED).json(response);
     }
   );
 }

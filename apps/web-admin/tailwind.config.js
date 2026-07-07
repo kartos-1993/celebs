@@ -1,10 +1,20 @@
 import tailwindCssAnimate from 'tailwindcss-animate';
 import { fontFamily } from 'tailwindcss/defaultTheme';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const fonts = ['inter', 'manrope', 'system'];
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
-  content: ['index.html', 'src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    path.resolve(__dirname, './index.html').replace(/\\/g, '/'),
+    path.resolve(__dirname, './src/**/*.{html,js,ts,jsx,tsx}').replace(/\\/g, '/'),
+    path.resolve(__dirname, '../../packages/shared-ui/src/**/*.{html,js,ts,jsx,tsx}').replace(/\\/g, '/'),
+  ],
   safelist: [
     ...fonts.map((font) => `font-${font}`),
     'bg-background',

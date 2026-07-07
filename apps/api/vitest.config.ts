@@ -26,6 +26,7 @@ export default defineConfig({
       APP_ORIGIN: 'http://localhost:5173',
       JWT_SECRET: 'test_jwt_secret_key_long_enough_for_hmac',
       JWT_REFRESH_SECRET: 'test_jwt_refresh_secret_key_long_enough_for_hmac',
+      SETUP_SECRET: 'celebs-superadmin-secret-2026',
     },
   },
 });

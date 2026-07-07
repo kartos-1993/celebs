@@ -41,3 +41,10 @@ export interface VerifyEmailResponse {
   accessToken: string;
   refreshToken: string;
 }
+
+export interface SetupSuperadminDto {
+  name: string;
+  email: string;
+  password: string;
+  setupSecret: string;
+}

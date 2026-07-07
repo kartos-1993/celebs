@@ -11,13 +11,15 @@ import {
   TooltipProvider,
 } from "@celebs/shared-ui/components/tooltip";
 import { Link, useMatches, useLocation } from "react-router-dom";
+import { useAuthContext } from "@/context/auth-provider";
 
 interface MenuProps {
   isSideBarOpen: boolean | undefined;
 }
 
 export function Menu({ isSideBarOpen }: MenuProps) {
-  const menuList = getMenuList();
+  const { role } = useAuthContext();
+  const menuList = getMenuList(role);
   const location = useLocation();
   const pathname = location.pathname;
 

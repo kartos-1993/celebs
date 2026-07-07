@@ -9,6 +9,11 @@ type AuthContextType = {
   isLoading: boolean;
   isFetching: boolean;
   refetch: () => void;
+  role?: string;
+  isVendor: boolean;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  isStaff: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,10 +23,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { data, error, isLoading, isFetching, refetch } = useAuth();
   const user = data?.data?.user;
+  const role = user?.role;
+
+  const isVendor = role === 'VENDOR';
+  const isAdmin = role === 'ADMIN';
+  const isSuperAdmin = role === 'SUPERADMIN';
+  const isStaff = role === 'STAFF';
 
   return (
     <AuthContext.Provider
-      value={{ user, error, isLoading, isFetching, refetch }}
+      value={{
+        user,
+        error,
+        isLoading,
+        isFetching,
+        refetch,
+        role,
+        isVendor,
+        isAdmin,
+        isSuperAdmin,
+        isStaff,
+      }}
     >
       {children}
     </AuthContext.Provider>
