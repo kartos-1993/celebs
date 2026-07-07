@@ -7,7 +7,7 @@ COPY turbo.json tsconfig.base.json ./
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 RUN npx prisma generate
 # Build shared packages and API
-RUN pnpm turbo run build --filter=api
+RUN pnpm turbo run build --filter=api --filter=@celebs/shared-types --filter=@celebs/shared-utils
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
