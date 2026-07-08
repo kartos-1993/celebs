@@ -41,7 +41,9 @@ const appLoader: ProtectedLoader = async ({ request }) => {
     const sessionResponse = await getUserSessionQueryFn();
     console.log('apploader firstName');
     
-    // Global onboarding redirect check in loader
+    if (!sessionResponse.data) {
+      throw new Error('Session data not found');
+    }
     const user = sessionResponse.data.user;
     const url = new URL(request.url);
     if (
