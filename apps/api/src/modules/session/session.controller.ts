@@ -1,8 +1,8 @@
-import { IApiResponse } from './../../common/interface/api-response.interface';
 import { Request, Response } from 'express';
 import { HTTPSTATUS, NotFoundException, asyncHandler } from '@celebs/shared-utils';
+import { IApiResponse } from '@celebs/shared-types';
 import { SessionService } from './session.service';
-import { verifyJwtToken } from '../../common/utils/jwt';
+import { verifyJwtToken } from '@/common/utils/jwt';
 
 export class SessionController {
   private sessionService: SessionService;

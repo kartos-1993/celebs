@@ -6,9 +6,9 @@ import {
   Strategy as JwtStrategy,
   StrategyOptionsWithRequest,
 } from 'passport-jwt';
-import { config } from '../../config/app.config';
-import { userService } from '../../modules/user/user.module';
-import prisma from '../../db';
+import { config } from '@/config/app.config';
+import { userService } from '@/modules/user/user.module';
+import prisma from '@/db';
 
 interface JwtPayload {
   userId: string;

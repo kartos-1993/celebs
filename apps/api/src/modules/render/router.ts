@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { composeSchema } from './composer';
-import { CategoryService } from '../category/category.service';
+import { CategoryService } from '@/modules/category/category.service';
 
 const router = Router();
 const categoryService = new CategoryService();

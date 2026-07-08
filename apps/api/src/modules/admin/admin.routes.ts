@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { adminController } from './admin.module';
-import { authenticateJWT } from '../../common/strategies/jwt.strategy';
-import { requirePermissions } from '../../middlewares/rbac.middleware';
+import { authenticateJWT } from '@/common/strategies/jwt.strategy';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 
 const adminRoutes = Router();

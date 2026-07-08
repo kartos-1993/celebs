@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
 import slugify from 'slugify';
 import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
-import { CategoryModel } from '../../db/models/category.model';
-import { IProduct, ProductModel } from '../../db/models/product.model';
+import { CategoryModel } from '@/db/models/category.model';
+import { IProduct, ProductModel } from '@/db/models/product.model';
 
 interface ProductMeasurementInput {
   name: string;

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { staffController } from './staff.module';
-import { authenticateJWT } from '../../common/strategies/jwt.strategy';
-import { requirePermissions } from '../../middlewares/rbac.middleware';
+import { authenticateJWT } from '@/common/strategies/jwt.strategy';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 
 const staffRoutes = Router();

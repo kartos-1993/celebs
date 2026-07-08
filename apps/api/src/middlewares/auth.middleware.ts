@@ -1,1 +1,1 @@
-export { authenticateJWT } from '../common/strategies/jwt.strategy';
+export { authenticateJWT } from '@/common/strategies/jwt.strategy';

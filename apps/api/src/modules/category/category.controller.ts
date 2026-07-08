@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { HTTPSTATUS, AppError, ErrorCode, logger } from '@celebs/shared-utils';
-import { categoryInputSchema, categoryBaseSchema } from '../../common/validators/category.validator';
+import { categoryInputSchema, categoryBaseSchema } from '@/common/validators/category.validator';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
