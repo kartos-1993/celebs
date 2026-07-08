@@ -4,13 +4,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
-    "types": ["node", "express", "multer"],
-    "baseUrl": ".",
-    "paths": {
-      "@celebs/rbac": ["../../packages/rbac/src/index.ts"],
-      "@celebs/shared-utils": ["../../packages/shared-utils/src/index.ts"],
-      "@celebs/shared-types": ["../../packages/shared-types/src/index.ts"]
-    }
+    "types": ["node", "express", "multer"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts", "src/__tests__/setup.ts"]
