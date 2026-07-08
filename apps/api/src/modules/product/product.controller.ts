@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { createProductSchema } from '../../common/validators/product.validator';
+import { createProductSchema } from '@/common/validators/product.validator';
 import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
 import { ProductService } from './product.service';
 

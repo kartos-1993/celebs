@@ -1,4 +1,4 @@
-import type { IAttribute } from '../../db/models/attribute.model';
+import type { IAttribute } from '@/db/models/attribute.model';
 
 // UI field types supported by the renderer
 export type UiType =

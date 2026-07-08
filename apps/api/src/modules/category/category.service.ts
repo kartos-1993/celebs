@@ -1,7 +1,7 @@
 import { ClientSession, Types } from 'mongoose';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
-import { CategoryModel, ICategory } from '../../db/models/category.model';
-import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
+import { CategoryModel, ICategory } from '@/db/models/category.model';
+import { AttributeModel, IAttribute } from '@/db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 

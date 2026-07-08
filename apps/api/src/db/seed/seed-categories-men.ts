@@ -10,9 +10,9 @@ dotenv.config({
     path.resolve(__dirname, '../../../.env.development'),
 });
 
-import { CategoryModel } from '../../db/models/category.model';
-import { AttributeModel } from '../../db/models/attribute.model';
-import { OptionSetModel } from '../../db/models/option-set.model';
+import { CategoryModel } from '@/db/models/category.model';
+import { AttributeModel } from '@/db/models/attribute.model';
+import { OptionSetModel } from '@/db/models/option-set.model';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fashion-ecommerce';
 

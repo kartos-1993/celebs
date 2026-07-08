@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
-import app from '../app';
-import prisma from '../db';
+import app from '@/app';
+import prisma from '@/db';
 
 // Mock the mailer to avoid making external HTTP calls
-vi.mock('../mailers/mailer', () => ({
+vi.mock('../../../mailers/mailer', () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),
 }));
 

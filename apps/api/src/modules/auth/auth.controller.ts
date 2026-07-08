@@ -11,16 +11,14 @@ import {
   verificationEmailSchema,
   vendorRegisterSchema,
   setupSuperadminSchema,
+  IApiResponse,
 } from '@celebs/shared-types';
 import {
   clearAuthenticationCookies,
   getAccessTokenCookieOptions,
   getRefreshTokenCookieOptions,
   setAuthenticationCookies,
-} from '../../common/utils/cookie';
-
-
-import { IApiResponse } from '../../common/interface/api-response.interface';
+} from '@/common/utils/cookie';
 
 export class AuthController {
   private authService: AuthService;
