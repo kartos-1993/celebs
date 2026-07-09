@@ -1265,6 +1265,9 @@ function ColorMetaItem({
   const images: File[] = watch(`${namePrefix}.images`) ?? [];
   const swatchUrl = useObjectUrl(swatch);
   const [imageUrls, setImageUrls] = React.useState<string[]>([]);
+  const imagesHash = (images || [])
+    .map((f) => (typeof f === 'string' ? f : `${f.name}-${f.size}`))
+    .join(',');
 
   React.useEffect(() => {
     // Create object URLs for image previews (Files only)
@@ -1273,7 +1276,7 @@ function ColorMetaItem({
     return () => {
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
-  }, [images]);
+  }, [imagesHash]);
 
   // Ensure limits is always a defined object to avoid undefined access
   const safeLimits = limits ?? {};
@@ -1692,6 +1695,10 @@ function ColorInlineRow({
   }, [swatch]);
   const images: File[] = watch(`${namePrefix}.images`) ?? [];
   const [urls, setUrls] = React.useState<string[]>([]);
+  const imagesHash = (images || [])
+    .map((f) => (typeof f === 'string' ? f : `${f.name}-${f.size}`))
+    .join(',');
+
   React.useEffect(() => {
     const next = (images || []).map((f) =>
       typeof f === 'string' ? f : URL.createObjectURL(f),
@@ -1703,7 +1710,7 @@ function ColorInlineRow({
         if (u.startsWith('blob:')) URL.revokeObjectURL(u);
       });
     };
-  }, [images]);
+  }, [imagesHash]);
 
   React.useEffect(() => {
     register(`${namePrefix}.swatch` as any, {

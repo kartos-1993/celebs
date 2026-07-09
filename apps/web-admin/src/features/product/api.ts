@@ -23,7 +23,7 @@ export interface CreateProductRequest {
   dynamicData?: Record<string, unknown>;
   tags?: string[];
   featured?: boolean;
-  status: 'draft' | 'published' | 'archived';
+  status: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
 }
 
 interface ApiResponse<T> {
@@ -47,6 +47,66 @@ export class ProductApiService {
     const response = await ProductAPI.post<ApiResponse<unknown>>(
       ProductApiService.BASE_PATH,
       data,
+    );
+    return response.data;
+  }
+
+  static async getProducts(filters?: Record<string, any>) {
+    const response = await ProductAPI.get<ApiResponse<any>>(
+      ProductApiService.BASE_PATH,
+      { params: filters }
+    );
+    return response.data;
+  }
+
+  static async getProductById(id: string) {
+    const response = await ProductAPI.get<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/${id}`
+    );
+    return response.data;
+  }
+
+  static async getProductReviewQueue(page = 1, limit = 10) {
+    const response = await ProductAPI.get<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/review-product-queue`,
+      { params: { page, limit } }
+    );
+    return response.data;
+  }
+
+  static async submitProductForReview(id: string) {
+    const response = await ProductAPI.post<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/${id}/submit-for-review`
+    );
+    return response.data;
+  }
+
+  static async reviewProduct(id: string, action: 'approve' | 'reject', note?: string) {
+    const response = await ProductAPI.post<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/${id}/review`,
+      { action, note }
+    );
+    return response.data;
+  }
+
+  static async archiveProduct(id: string) {
+    const response = await ProductAPI.post<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/${id}/archive`
+    );
+    return response.data;
+  }
+
+  static async toggleProductActivation(id: string) {
+    const response = await ProductAPI.post<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/${id}/toggle-activation`
+    );
+    return response.data;
+  }
+
+  static async updateProduct(id: string, data: any) {
+    const response = await ProductAPI.put<ApiResponse<any>>(
+      `${ProductApiService.BASE_PATH}/${id}`,
+      data
     );
     return response.data;
   }

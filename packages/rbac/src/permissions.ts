@@ -10,6 +10,9 @@ export enum Permission {
   CATALOG_VIEW          = 'catalog:view',
   CATALOG_MANAGE        = 'catalog:manage',
 
+  // ── Product Review/Moderation ──────────
+  PRODUCT_REVIEW        = 'product:review',
+
   // ── Orders ────────────────────────────
   ORDER_VIEW            = 'order:view',
   ORDER_MANAGE          = 'order:manage',
