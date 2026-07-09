@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from '@celebs/shared-ui/components/form';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronRight, FileClock, Info } from 'lucide-react';
+import { useAuthContext } from '@/context/auth-provider';
 import { CreateProductRequest, ProductApiService } from '../api';
 import { useProductForm } from '../hooks/useProductForm';
 import type { FieldSpec } from '../renderer/UiRegistry';
@@ -786,6 +787,7 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
   const { toast } = useToast();
+  const { role } = useAuthContext();
   const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
   const [schemaFields, setSchemaFields] = useState<FieldSpec[]>([]);
   const [schemaHasBrand, setSchemaHasBrand] = useState(false);
@@ -1006,7 +1008,10 @@ const AddProduct = () => {
   const handleSubmitProduct = async (
     status: CreateProductRequest['status'],
   ) => {
+    console.log('[DEBUG] handleSubmitProduct called with status:', status);
+    console.log('[DEBUG] schemaReady:', schemaReady);
     if (!schemaReady) {
+      console.warn('[DEBUG] handleSubmitProduct blocked: schema is not ready');
       toast({
         title: 'Form is still loading',
         description:
@@ -1017,6 +1022,7 @@ const AddProduct = () => {
     }
 
     const currentValues = form.getValues() as Record<string, unknown>;
+    console.log('[DEBUG] currentValues:', currentValues);
     const currentSections = buildSidebarSections({
       fieldErrors: flattenFormErrors(form.formState.errors),
       schemaFields,
@@ -1027,11 +1033,13 @@ const AddProduct = () => {
         label: variant.label,
       })),
     });
+    console.log('[DEBUG] currentSections validation status:', currentSections);
     const firstInvalidSection = currentSections.find(
       (section) => !section.status,
     );
 
     if (firstInvalidSection) {
+      console.warn('[DEBUG] handleSubmitProduct blocked by invalid section:', firstInvalidSection);
       scrollToSection(firstInvalidSection.anchorId);
       toast({
         title: 'Complete the required sections',
@@ -1041,6 +1049,7 @@ const AddProduct = () => {
       return;
     }
 
+    console.log('[DEBUG] Setting isSubmitting to true and building payload');
     setIsSubmitting(true);
 
     try {
@@ -1050,15 +1059,22 @@ const AddProduct = () => {
         values: currentValues,
       });
 
-      await ProductApiService.createProduct(payload);
+      if (isEditMode && id) {
+        await ProductApiService.updateProduct(id, payload);
+        toast({
+          title: 'Product updated',
+          description: 'The product has been updated successfully.',
+        });
+      } else {
+        await ProductApiService.createProduct(payload);
+        toast({
+          title: 'Product created',
+          description: 'The product has been created successfully.',
+        });
+      }
 
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
       form.reset(form.getValues());
-
-      toast({
-        title: 'Product created',
-        description: 'The product has been submitted successfully.',
-      });
 
       navigate(MANAGE_PRODUCTS_PATH);
     } catch (error: any) {
@@ -1109,6 +1125,9 @@ const AddProduct = () => {
       </div>
     );
   }
+
+  const { user } = useAuthContext();
+  const submitStatus = user?.role === 'VENDOR' ? 'pending_review' : 'published';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -1171,8 +1190,14 @@ const AddProduct = () => {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(
-                  () => handleSubmitProduct('published'),
-                  handleFormInvalid,
+                  (data) => {
+                    console.log('[DEBUG] Form submission VALID. Data:', data);
+                    return handleSubmitProduct(role === 'VENDOR' ? 'pending_review' : 'published');
+                  },
+                  (errors) => {
+                    console.warn('[DEBUG] Form submission INVALID. Errors:', errors);
+                    handleFormInvalid(errors);
+                  },
                 )}
                 className="space-y-6"
               >

@@ -46,6 +46,7 @@ export function getMenuList(role?: string): Group[] {
   // Only Admin/SuperAdmin can manage categories
   if (isAdmin || isSuperAdmin) {
     productSubmenus.push({ href: "/categories", label: "Categories" });
+    productSubmenus.push({ href: "/products/review-product-queue", label: "Review Queue" });
   }
 
   list.push({

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
@@ -31,131 +31,70 @@ import { Badge } from '@celebs/shared-ui/components/badge';
 import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
 import {
   ShoppingBag,
-  MoreHorizontal,
   Plus,
-  Edit,
-  Trash2,
   Search,
-  Filter,
-  Download,
   AlertTriangle,
   Info,
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-const mockProducts = [
-  {
-    id: '1',
-    name: 'Regular Fit Essential Zip Through Hoodie',
-    category: "Men's Clothing",
-    subcategory: 'Hoodies',
-    price: 3000,
-    stock: 2,
-    variants: 3,
-    status: 'active',
-    contentScore: 'excellent',
-    createdAt: '2023-05-12',
-    image: '/placeholder.svg',
-    sku: '174174876-1733656171557-0',
-    lowStock: true,
-  },
-  {
-    id: '2',
-    name: 'Black Chest 52',
-    category: "Men's Clothing",
-    subcategory: 'T-Shirts',
-    price: 3000,
-    stock: 1,
-    variants: 2,
-    status: 'active',
-    contentScore: 'good',
-    createdAt: '2023-05-10',
-    image: '/placeholder.svg',
-    sku: '174174876-1733656171561-1',
-    lowStock: true,
-  },
-  {
-    id: '3',
-    name: 'Grey Chest 52',
-    category: "Men's Clothing",
-    subcategory: 'T-Shirts',
-    price: 3000,
-    stock: 1,
-    variants: 2,
-    status: 'active',
-    contentScore: 'good',
-    createdAt: '2023-05-08',
-    image: '/placeholder.svg',
-    sku: '174174876-1733656171561-1',
-    lowStock: true,
-  },
-  {
-    id: '4',
-    name: 'Summer Collection Dress',
-    category: "Women's Clothing",
-    subcategory: 'Dresses',
-    price: 4500,
-    stock: 15,
-    variants: 4,
-    status: 'draft',
-    contentScore: 'needs_improvement',
-    createdAt: '2023-05-05',
-    image: '/placeholder.svg',
-    sku: 'WD-2023-001',
-    lowStock: false,
-  },
-  {
-    id: '5',
-    name: 'Vintage Denim Jacket',
-    category: "Men's Clothing",
-    subcategory: 'Jackets',
-    price: 5500,
-    stock: 0,
-    variants: 3,
-    status: 'inactive',
-    contentScore: 'excellent',
-    createdAt: '2023-05-03',
-    image: '/placeholder.svg',
-    sku: 'MJ-2023-VDJ',
-    lowStock: false,
-  },
-];
+import { ProductApiService } from '../api';
+import { useAuthContext } from '@/context/auth-provider';
 
 const productStatusTabs = [
-  { id: 'all', label: 'All', count: 5 },
-  { id: 'active', label: 'Active', count: 3, hasAlert: true },
-  { id: 'inactive', label: 'Inactive', count: 1 },
-  { id: 'draft', label: 'Draft', count: 1 },
-  { id: 'pending_qc', label: 'Pending QC', count: 0 },
-  { id: 'violation', label: 'Violation', count: 0 },
-  { id: 'deleted', label: 'Deleted', count: 0 },
+  { id: 'all', label: 'All' },
+  { id: 'draft', label: 'Draft' },
+  { id: 'pending_review', label: 'Pending Review' },
+  { id: 'published', label: 'Active (Published)' },
+  { id: 'rejected', label: 'Rejected' },
+  { id: 'deactivated', label: 'Deactivated' },
 ];
 
 const ManageProduct = () => {
   const { toast } = useToast();
-
-  const [products, setProducts] = useState(mockProducts);
+  const { role } = useAuthContext();
+  const [products, setProducts] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('');
   const [showHelpNotification, setShowHelpNotification] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      filterCategory === '' ||
-      filterCategory === 'all-categories' ||
-      product.category === filterCategory;
-    const matchesStatus =
-      filterStatus === 'all' || product.status === filterStatus;
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const res = await ProductApiService.getProducts({
+        search: searchTerm || undefined,
+        status: filterStatus === 'all' ? undefined : filterStatus,
+        page,
+        limit: 10,
+      });
+      setProducts(res.data?.products ?? []);
+      setTotal(res.data?.total ?? 0);
+    } catch (err: any) {
+      toast({
+        title: 'Failed to load products',
+        description: err.message || 'Operation failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  useEffect(() => {
+    fetchProducts();
+  }, [filterStatus, page]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchProducts();
+  };
 
   const handleSelectProduct = (productId: string, checked: boolean) => {
     if (checked) {
@@ -167,77 +106,62 @@ const ManageProduct = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(filteredProducts.map((p) => p.id));
+      setSelectedProducts(products.map((p) => p._id));
     } else {
       setSelectedProducts([]);
     }
   };
 
-  const handleBulkAction = (action: string) => {
-    if (selectedProducts.length === 0) {
+  const handleToggleActivation = async (id: string) => {
+    try {
+      await ProductApiService.toggleProductActivation(id);
       toast({
-        title: 'No products selected',
-        description: 'Please select products to perform bulk actions.',
+        title: 'Status Updated',
+        description: 'Successfully toggled product status.',
+      });
+      fetchProducts();
+    } catch (err: any) {
+      toast({
+        title: 'Action failed',
+        description: err.message,
         variant: 'destructive',
       });
-      return;
-    }
-
-    switch (action) {
-      case 'deactivate':
-        setProducts(
-          products.map((p) =>
-            selectedProducts.includes(p.id) ? { ...p, status: 'inactive' } : p,
-          ),
-        );
-        toast({
-          title: 'Products deactivated',
-          description: `${selectedProducts.length} products have been deactivated.`,
-        });
-        break;
-      case 'delete':
-        setProducts(products.filter((p) => !selectedProducts.includes(p.id)));
-        toast({
-          title: 'Products deleted',
-          description: `${selectedProducts.length} products have been deleted.`,
-        });
-        break;
-      case 'export':
-        toast({
-          title: 'Export started',
-          description: `Exporting ${selectedProducts.length} selected products.`,
-        });
-        break;
-    }
-    setSelectedProducts([]);
-  };
-
-  const getContentScoreBadge = (score: string) => {
-    switch (score) {
-      case 'excellent':
-        return (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            ● Excellent
-          </Badge>
-        );
-      case 'good':
-        return (
-          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-            ● Good
-          </Badge>
-        );
-      case 'needs_improvement':
-        return (
-          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-            ● Needs Improvement
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">● Unknown</Badge>;
     }
   };
 
-  const activeTab = productStatusTabs.find((tab) => tab.id === filterStatus);
+  const handleArchive = async (id: string) => {
+    try {
+      await ProductApiService.archiveProduct(id);
+      toast({
+        title: 'Product Archived',
+        description: 'The product was successfully soft deleted.',
+      });
+      fetchProducts();
+    } catch (err: any) {
+      toast({
+        title: 'Archive failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleResubmit = async (id: string) => {
+    try {
+      await ProductApiService.submitProductForReview(id);
+      toast({
+        title: 'Product Submitted',
+        description: 'Product has been queued for review successfully.',
+      });
+      fetchProducts();
+    } catch (err: any) {
+      toast({
+        title: 'Submission failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -252,30 +176,6 @@ const ManageProduct = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="bg-orange-50 text-orange-600 border-orange-200"
-          >
-            Product Data
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="bg-orange-50 text-orange-600 border-orange-200"
-              >
-                Bulk Manage ▼
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleBulkAction('export')}>
-                Bulk Export
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkAction('deactivate')}>
-                Bulk Deactivate
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
           <Link to="/products/new">
             <Button className="bg-orange-500 hover:bg-orange-600">
               + New Product
@@ -290,27 +190,8 @@ const ManageProduct = () => {
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700 flex items-center justify-between">
             <div>
-              <span className="font-medium">
-                Welcome to Product Management Page.
-              </span>{' '}
-              <a href="#" className="text-blue-600 underline">
-                Learn More
-              </a>
-              <br />
-              <span className="text-sm">
-                Try the New Size Chart Tool to enrich your fashion products
-                information.{' '}
-                <a href="#" className="text-blue-600 underline">
-                  Learn how to use
-                </a>
-              </span>
-              <br />
-              <span className="text-sm mt-2 block">
-                Your store is on Holiday Mode and all products cannot be
-                purchased by buyers. You can manually turn off Holiday Mode by
-                going to My Account &gt; Setting &gt; Holiday Mode and wait 1-2
-                hours to resume normal sales.
-              </span>
+              <span className="font-medium">Welcome to Product Management.</span>{' '}
+              Sellers can view status and submit drafts for review. Admins can approve items.
             </div>
             <Button
               variant="ghost"
@@ -328,7 +209,7 @@ const ManageProduct = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5" />
-            Product Management
+            Product List
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -337,228 +218,144 @@ const ManageProduct = () => {
             {productStatusTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setFilterStatus(tab.id)}
+                onClick={() => { setFilterStatus(tab.id); setPage(1); }}
                 className={`pb-3 px-1 border-b-2 transition-colors ${
                   filterStatus === tab.id
                     ? 'border-orange-500 text-orange-600 font-medium'
                     : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  {tab.label}
-                  {tab.hasAlert && (
-                    <span className="bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                      !
-                    </span>
-                  )}
-                </span>
+                {tab.label}
               </button>
             ))}
           </div>
 
           {/* Filters and Search */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Please Input"
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-categories">Please Select</SelectItem>
-                  <SelectItem value="Men's Clothing">Men's Clothing</SelectItem>
-                  <SelectItem value="Women's Clothing">
-                    Women's Clothing
-                  </SelectItem>
-                  <SelectItem value="Accessories">Accessories</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Sort By" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Please Select</SelectItem>
-                  <SelectItem value="price_low">Price: Low to High</SelectItem>
-                  <SelectItem value="price_high">Price: High to Low</SelectItem>
-                  <SelectItem value="stock">Stock Level</SelectItem>
-                  <SelectItem value="date">Date Created</SelectItem>
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleSearch} className="flex gap-4 mb-6 max-w-md">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search products..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          </div>
-
-          {/* Bulk Actions */}
-          <div className="flex items-center gap-4 mb-4">
-            <span className="text-sm text-gray-600">
-              {selectedProducts.length} products selected
-            </span>
-            {selectedProducts.length > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction('deactivate')}
-                >
-                  Deactivate
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction('delete')}
-                >
-                  Delete
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction('export')}
-                >
-                  Export Selected Products
-                </Button>
-              </div>
-            )}
-          </div>
+            <Button type="submit">Search</Button>
+          </form>
 
           {/* Products Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={
-                        selectedProducts.length === filteredProducts.length &&
-                        filteredProducts.length > 0
-                      }
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Product Info</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Stock</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Content Score</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
+          {isLoading ? (
+            <div className="py-8 text-center text-sm text-gray-500">Loading products...</div>
+          ) : products.length === 0 ? (
+            <div className="py-8 text-center text-sm text-gray-500">No products found.</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedProducts.includes(product.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectProduct(product.id, !!checked)
-                        }
+                        checked={selectedProducts.length === products.length && products.length > 0}
+                        onCheckedChange={handleSelectAll}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-12 h-12 rounded border object-cover"
+                    </TableHead>
+                    <TableHead>Product Info</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ownership</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product._id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedProducts.includes(product._id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectProduct(product._id, !!checked)
+                          }
                         />
+                      </TableCell>
+                      <TableCell>
                         <div>
                           <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-gray-500">
-                            <div>📷 0 📝 0 💎 {product.variants}</div>
-                            <div className="text-xs">
-                              Seller Sku: {product.sku}
-                            </div>
-                          </div>
+                          {product.brand && (
+                            <div className="text-xs text-gray-500">Brand: {product.brand}</div>
+                          )}
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      Rs. {product.price.toLocaleString()} 💵
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <span>{product.stock}</span>
-                        {product.lowStock && (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
-                        {product.stock === 0 && (
-                          <span className="text-red-500">📝</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div
-                          className={`w-12 h-6 rounded-full p-1 transition-colors ${
-                            product.status === 'active'
-                              ? 'bg-orange-500'
-                              : 'bg-gray-300'
-                          }`}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        Rs. {product.price.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            product.status === 'published'
+                              ? 'default'
+                              : product.status === 'pending_review'
+                              ? 'secondary'
+                              : product.status === 'rejected'
+                              ? 'destructive'
+                              : 'outline'
+                          }
                         >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                              product.status === 'active'
-                                ? 'translate-x-6'
-                                : 'translate-x-0'
-                            }`}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getContentScoreBadge(product.contentScore)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Link to={`/products/edit/${product.id}`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:bg-blue-50"
-                          >
-                            Edit
-                          </Button>
-                        </Link>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-blue-600 hover:bg-blue-50"
-                            >
-                              More ▼
+                          {product.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {product.vendorName || 'Independent Seller'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {role === 'VENDOR' && (product.status === 'draft' || product.status === 'rejected') && (
+                            <Button size="sm" onClick={() => handleResubmit(product._id)}>
+                              Submit
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                            <DropdownMenuItem>Archive</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          )}
+                          
+                          {role === 'VENDOR' && (product.status === 'published' || product.status === 'deactivated') && (
+                            <Button size="sm" variant="outline" onClick={() => handleToggleActivation(product._id)}>
+                              {product.status === 'published' ? 'Deactivate' : 'Activate'}
+                            </Button>
+                          )}
 
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No products found matching your filters.
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                More ▼
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/products/edit/${product._id}`}>Edit</Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleArchive(product._id)}>
+                                Archive (Delete)
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {total > 10 && (
+            <div className="flex justify-between items-center mt-4">
+              <Button disabled={page === 1} onClick={() => setPage(page - 1)} variant="outline">
+                Previous
+              </Button>
+              <span className="text-sm text-gray-500">
+                Page {page} of {Math.ceil(total / 10)}
+              </span>
+              <Button disabled={page * 10 >= total} onClick={() => setPage(page + 1)} variant="outline">
+                Next
+              </Button>
             </div>
           )}
         </CardContent>
@@ -568,4 +365,3 @@ const ManageProduct = () => {
 };
 
 export default ManageProduct;
-

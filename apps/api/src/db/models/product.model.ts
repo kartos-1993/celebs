@@ -52,7 +52,12 @@ export interface IProduct extends Document {
   dynamicData?: Record<string, unknown>;
   tags: string[];
   featured: boolean;
-  status: 'draft' | 'published' | 'archived';
+  status: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
+  vendorId?: mongoose.Types.ObjectId;
+  vendorName?: string;
+  reviewNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: Date;
   createdBy: string;
   updatedBy: string;
   createdAt: Date;
@@ -173,8 +178,28 @@ const ProductSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['draft', 'published', 'archived'],
+      enum: ['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived'],
       default: 'draft',
+      index: true,
+    },
+    vendorId: {
+      type: Schema.Types.ObjectId,
+      index: true,
+      default: null,
+    },
+    vendorName: {
+      type: String,
+      trim: true,
+    },
+    reviewNote: {
+      type: String,
+      trim: true,
+    },
+    reviewedBy: {
+      type: String,
+    },
+    reviewedAt: {
+      type: Date,
     },
     createdBy: {
       type: String,
@@ -189,6 +214,10 @@ const ProductSchema: Schema = new Schema(
     timestamps: true,
   },
 );
+
+// Indexes
+ProductSchema.index({ status: 1, createdAt: -1 });
+ProductSchema.index({ name: 'text', tags: 'text' });
 
 // Add pre-save hook to generate slug if not provided
 ProductSchema.pre<IProduct>('save', function (next) {
