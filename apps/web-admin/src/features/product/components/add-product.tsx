@@ -113,19 +113,40 @@ const serializeDraftValue = (value: unknown): unknown => {
 const isHexColor = (value: string) =>
   /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 
+const flattenObject = (obj: any, prefix = ''): Record<string, any> => {
+  const result: Record<string, any> = {};
+  if (!obj || typeof obj !== 'object') return result;
+
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    if (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      !(value instanceof File)
+    ) {
+      Object.assign(result, flattenObject(value, newKey));
+    } else {
+      result[newKey] = value;
+    }
+  }
+  return result;
+};
+
 const getFirstPrice = (
   values: Record<string, unknown>,
   suffix: '.price' | '.specialPrice',
 ) => {
+  const flat = flattenObject(values);
   const preferredKeys = [
     `sku.default${suffix}`,
-    ...Object.keys(values)
+    ...Object.keys(flat)
       .filter((key) => key.startsWith('sku.variants.') && key.endsWith(suffix))
       .sort(),
   ];
 
   for (const key of preferredKeys) {
-    const numeric = toPositiveNumber(values[key]);
+    const numeric = toPositiveNumber(flat[key]);
     if (numeric !== undefined) {
       return numeric;
     }
@@ -249,13 +270,19 @@ const isFieldFilled = (field: FieldSpec, value: unknown) => {
 const uniqueMessages = (messages: string[]) =>
   Array.from(new Set(messages.filter(Boolean)));
 
+const getNestedValue = (obj: any, path: string): any => {
+  return path.split('.').reduce((acc, part) => {
+    return acc && typeof acc === 'object' ? acc[part] : undefined;
+  }, obj);
+};
+
 const getRequiredFieldErrors = (
   fields: FieldSpec[],
   values: Record<string, unknown>,
 ) =>
   fields
     .filter((field) => field.required && field.visible !== false)
-    .filter((field) => !isFieldFilled(field, values[field.name]))
+    .filter((field) => !isFieldFilled(field, getNestedValue(values, field.name)))
     .map((field) => `${field.label} is required.`);
 
 const flattenFormErrors = (
@@ -367,13 +394,13 @@ const collectPricingErrors = ({
   };
 
   const validateRow = (label: string, prefix: string) => {
-    const price = toPositiveNumber(values[`${prefix}.price`]);
-    const specialPriceRaw = normalizeText(values[`${prefix}.specialPrice`]);
+    const price = toPositiveNumber(getNestedValue(values, `${prefix}.price`));
+    const specialPriceRaw = normalizeText(getNestedValue(values, `${prefix}.specialPrice`));
     const specialPrice = specialPriceRaw
-      ? toPositiveNumber(values[`${prefix}.specialPrice`])
+      ? toPositiveNumber(getNestedValue(values, `${prefix}.specialPrice`))
       : undefined;
-    const stock = normalizeText(values[`${prefix}.stock`]);
-    const freeItems = normalizeText(values[`${prefix}.freeItems`]);
+    const stock = normalizeText(getNestedValue(values, `${prefix}.stock`));
+    const freeItems = normalizeText(getNestedValue(values, `${prefix}.freeItems`));
 
     if (price === undefined) {
       pushError(`${label}: add a valid price.`);
@@ -393,14 +420,14 @@ const collectPricingErrors = ({
 
     if (
       stock &&
-      toNonNegativeInteger(values[`${prefix}.stock`]) === undefined
+      toNonNegativeInteger(getNestedValue(values, `${prefix}.stock`)) === undefined
     ) {
       pushError(`${label}: stock cannot be negative.`);
     }
 
     if (
       freeItems &&
-      toNonNegativeInteger(values[`${prefix}.freeItems`]) === undefined
+      toNonNegativeInteger(getNestedValue(values, `${prefix}.freeItems`)) === undefined
     ) {
       pushError(`${label}: free items cannot be negative.`);
     }
@@ -414,7 +441,7 @@ const collectPricingErrors = ({
     key: variant.key,
     label: variant.label,
     labels: getLabelMap(fields, variant.key),
-    values: toStringArray(values[variant.key]),
+    values: toStringArray(getNestedValue(values, variant.key)),
   }));
 
   if (activeVariants.length === 0) {
@@ -619,6 +646,7 @@ async function buildProductPayload({
   status: CreateProductRequest['status'];
   values: Record<string, unknown>;
 }): Promise<CreateProductRequest> {
+  const flatValues = flattenObject(values);
   const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
   const sizeFieldName = variantMeta.find(
     (variant) => variant.kind === 'size',
@@ -647,18 +675,18 @@ async function buildProductPayload({
   for (const colorValue of selectedColors) {
     const prefix = `variants.colorMeta.${colorValue}`;
     const swatchUrls = await ProductApiService.uploadFiles([
-      values[`${prefix}.swatch`] as File | string | undefined,
+      flatValues[`${prefix}.swatch`] as File | string | undefined,
     ]);
     const images = await ProductApiService.uploadFiles(
-      Array.isArray(values[`${prefix}.images`])
-        ? (values[`${prefix}.images`] as Array<File | string>)
+      Array.isArray(flatValues[`${prefix}.images`])
+        ? (flatValues[`${prefix}.images`] as Array<File | string>)
         : [],
     );
 
     uploadedColorAssets[colorValue] = {
       swatch: swatchUrls[0],
       images,
-      hot: Boolean(values[`${prefix}.hot`]),
+      hot: Boolean(flatValues[`${prefix}.hot`]),
     };
   }
 
@@ -672,7 +700,7 @@ async function buildProductPayload({
     throw new Error('Discounted price must be less than the regular price.');
   }
 
-  const defaultStock = toNonNegativeInteger(values['sku.default.stock']) ?? 0;
+  const defaultStock = toNonNegativeInteger(flatValues['sku.default.stock']) ?? 0;
   const effectiveColors =
     selectedColors.length > 0 ? selectedColors : ['default'];
 
@@ -699,7 +727,7 @@ async function buildProductPayload({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
           toNonNegativeInteger(
-            values[
+            flatValues[
               `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
             ],
           ) ?? defaultStock,
@@ -710,7 +738,7 @@ async function buildProductPayload({
           size: 'default',
           quantity:
             toNonNegativeInteger(
-              values[`sku.variants.${colorFieldName}.${colorValue}.stock`],
+              flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`],
             ) ?? defaultStock,
         },
       ];
@@ -719,7 +747,7 @@ async function buildProductPayload({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
           toNonNegativeInteger(
-            values[`sku.variants.${sizeFieldName}.${sizeValue}.stock`],
+            flatValues[`sku.variants.${sizeFieldName}.${sizeValue}.stock`],
           ) ?? defaultStock,
       }));
     } else {

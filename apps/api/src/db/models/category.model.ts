@@ -48,9 +48,13 @@ const CategorySchema: Schema = new Schema(
   },
 );
 
-CategorySchema.virtual('parent').get(function(this: any) {
-  return this.parentCategory;
-});
+CategorySchema.virtual('parent')
+  .get(function(this: any) {
+    return this.parentCategory;
+  })
+  .set(function(this: any, val: any) {
+    this.parentCategory = val;
+  });
 
 // Add indexes
 CategorySchema.index({ path: 1 });

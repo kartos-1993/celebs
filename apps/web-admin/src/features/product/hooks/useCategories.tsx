@@ -10,7 +10,7 @@ function flattenTree(nodes: CategoryTreeNode[]): Category[] {
     out.push({
       id: n._id,
       name: n.name,
-      parentId: n.parent ?? null,
+      parentId: (n as any).parentCategory ?? n.parent ?? null,
       hasChildren: Array.isArray(n.children) && n.children.length > 0,
       level: n.level ?? Math.max(0, (n.path?.length ?? 1) - 1),
       path: n.path && n.path.length ? n.path : [n.name],
