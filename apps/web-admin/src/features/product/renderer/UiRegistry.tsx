@@ -34,6 +34,7 @@ import {
 } from '@celebs/shared-ui/components/tooltip';
 import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
 import { Multiselect } from '@celebs/shared-ui/components/multiselect';
+import { ProductApiService } from '../api';
 
 export type UiType =
   | 'input'
@@ -60,6 +61,41 @@ export interface FieldSpec {
 }
 
 type UiProps = { field: FieldSpec; control: Control<any> };
+type ImageValue = File | string;
+
+const imageValueKey = (value: ImageValue) =>
+  typeof value === 'string'
+    ? value
+    : `${value.name}-${value.size}-${value.lastModified}`;
+
+const uploadImageFiles = async (files: File[]) => {
+  if (files.length === 0) return [];
+
+  const urls = await ProductApiService.uploadFiles(files);
+  if (urls.length < files.length) {
+    throw new Error('Image upload did not return a URL. Try again.');
+  }
+
+  return urls;
+};
+
+const uploadErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Image upload failed. Try again.';
+
+const validateFileBasics = (
+  file: File,
+  options: { accept?: string[]; maxSize?: number },
+) => {
+  if (typeof options.maxSize === 'number' && file.size > options.maxSize) {
+    return `Each image must be <= ${Math.round(options.maxSize / 1024 / 1024)}MB`;
+  }
+
+  if (Array.isArray(options.accept) && !options.accept.includes(file.type)) {
+    return 'Invalid file type';
+  }
+
+  return null;
+};
 
 function rulesFrom(field: FieldSpec) {
   const rules: any = {};
@@ -304,9 +340,13 @@ function MainImageField({ field }: UiProps) {
     setError,
     clearErrors,
   } = useFormContext();
-  const files: File[] = watch(field.name) ?? [];
+  const files: ImageValue[] = watch(field.name) ?? [];
   const [previews, setPreviews] = React.useState<string[]>([]);
+  const [isUploading, setIsUploading] = React.useState(false);
   const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
+  const filesHash = (files || [])
+    .map((file) => imageValueKey(file))
+    .join('|');
 
   // Helpers: load image dims and validate against backend rules (size, type, aspect, dims)
   const getDims = React.useCallback((file: File) => {
@@ -348,7 +388,7 @@ function MainImageField({ field }: UiProps) {
     // Register field for validation (non-async guards)
     register(field.name as any, {
       validate: (v: any) => {
-        const arr: File[] = Array.isArray(v) ? v : [];
+        const arr: ImageValue[] = Array.isArray(v) ? v : [];
         if (field.required && arr.length === 0)
           return `${field.label} is required`;
         if (
@@ -358,28 +398,34 @@ function MainImageField({ field }: UiProps) {
           return `Max ${field.rule.maxItems} images`;
         if (
           Array.isArray(field.rule?.accept) &&
-          arr.some((f) => !field.rule.accept.includes(f.type))
+          arr.some((f) => f instanceof File && !field.rule.accept.includes(f.type))
         )
           return 'Invalid file type';
         if (
           typeof field.rule?.maxSize === 'number' &&
-          arr.some((f) => f.size > field.rule.maxSize)
+          arr.some((f) => f instanceof File && f.size > field.rule.maxSize)
         )
           return `Each image must be <= ${Math.round(field.rule.maxSize / 1024 / 1024)}MB`;
         return true;
       },
     });
     // generate previews
-    const urls = (files || []).map((f) => URL.createObjectURL(f));
+    const urls = (files || []).map((f) =>
+      typeof f === 'string' ? f : URL.createObjectURL(f),
+    );
     setPreviews((prev) => {
-      prev.forEach((u) => URL.revokeObjectURL(u));
+      prev.forEach((u) => {
+        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      });
       return urls;
     });
     return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.forEach((u) => {
+        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files?.length]);
+  }, [filesHash]);
 
   const prevalidateFile = async (f: File): Promise<string | null> => {
     const rule = field.rule || {};
@@ -410,36 +456,71 @@ function MainImageField({ field }: UiProps) {
   const onAddFiles = async (list: FileList | null) => {
     if (!list) return;
     const incoming = Array.from(list);
-    // Validate batch; keep only valid ones and surface first error
     const errors: string[] = [];
     const valids: File[] = [];
+
     for (const f of incoming) {
       const err = await prevalidateFile(f);
       if (err) errors.push(err);
       else valids.push(f);
     }
-    if (errors.length) {
-      setError(field.name as any, { type: 'validate', message: errors[0] });
-      // still add valid files if any
-    } else {
-      clearErrors(field.name as any);
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(field.name as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
     }
-    const next = [...(files || []), ...valids];
-    setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
-    trigger(field.name);
+
+    setIsUploading(true);
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const current = (watch(field.name) ?? []) as ImageValue[];
+      const next = [...current, ...uploadedUrls];
+      setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+      clearErrors(field.name as any);
+      trigger(field.name);
+    } catch (error) {
+      setError(field.name as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
+
   const onReplaceFile = async (idx: number, f: File | null) => {
     if (!f) return;
     const err = await prevalidateFile(f);
+
     if (err) {
       setError(field.name as any, { type: 'validate', message: err });
       return;
     }
-    clearErrors(field.name as any);
-    const next = [...(files || [])];
-    next[idx] = f;
-    setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
-    trigger(field.name);
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([f]);
+      const current = (watch(field.name) ?? []) as ImageValue[];
+      const next = [...current];
+      next[idx] = uploadedUrl;
+      setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+      clearErrors(field.name as any);
+      trigger(field.name);
+    } catch (error) {
+      setError(field.name as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   const onDelete = (idx: number) => {
     const next = (files || []).filter((_, i) => i !== idx);
@@ -531,7 +612,11 @@ function MainImageField({ field }: UiProps) {
             </TooltipProvider>
           ))}
           {/* Inline Add tile */}
-          <label className="grid h-20 w-20 cursor-pointer place-items-center rounded border text-sm text-muted-foreground hover:bg-accent/30">
+          <label
+            className={`grid h-20 w-20 cursor-pointer place-items-center rounded border text-sm text-muted-foreground hover:bg-accent/30 ${
+              isUploading ? 'pointer-events-none opacity-60' : ''
+            }`}
+          >
             <input
               ref={addInputRef}
               type="file"
@@ -542,9 +627,19 @@ function MainImageField({ field }: UiProps) {
                   : undefined
               }
               multiple
-              onChange={(e) => onAddFiles(e.target.files)}
+              disabled={isUploading}
+              onChange={(e) => {
+                const input = e.currentTarget;
+                void onAddFiles(input.files).finally(() => {
+                  input.value = '';
+                });
+              }}
             />
-            <ImagePlus className="h-5 w-5" />
+            {isUploading ? (
+              <Upload className="h-5 w-5 animate-pulse" />
+            ) : (
+              <ImagePlus className="h-5 w-5" />
+            )}
           </label>
         </div>
         {/* Helper text (only if backend provided rules) */}
@@ -1258,23 +1353,35 @@ function ColorMetaItem({
   accept?: string[];
   limits?: { maxImages?: number; maxSize?: number };
 }) {
-  const { control, setValue, watch, register, trigger, formState } =
-    useFormContext();
+  const {
+    control,
+    setValue,
+    watch,
+    register,
+    trigger,
+    formState,
+    setError,
+    clearErrors,
+  } = useFormContext();
   const { field: hot } = useController({ name: `${namePrefix}.hot`, control });
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
-  const images: File[] = watch(`${namePrefix}.images`) ?? [];
+  const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
   const swatchUrl = useObjectUrl(swatch);
+  const [isUploading, setIsUploading] = React.useState(false);
   const [imageUrls, setImageUrls] = React.useState<string[]>([]);
   const imagesHash = (images || [])
-    .map((f) => (typeof f === 'string' ? f : `${f.name}-${f.size}`))
+    .map((f) => imageValueKey(f))
     .join(',');
 
   React.useEffect(() => {
-    // Create object URLs for image previews (Files only)
-    const urls = (images || []).map((img) => URL.createObjectURL(img));
+    const urls = (images || []).map((img) =>
+      typeof img === 'string' ? img : URL.createObjectURL(img),
+    );
     setImageUrls(urls);
     return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.forEach((u) => {
+        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      });
     };
   }, [imagesHash]);
 
@@ -1296,7 +1403,7 @@ function ColorMetaItem({
     });
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
-        const arr: File[] = Array.isArray(v) ? v : [];
+        const arr: ImageValue[] = Array.isArray(v) ? v : [];
         if (
           typeof safeLimits?.maxImages === 'number' &&
           arr.length > safeLimits.maxImages
@@ -1318,32 +1425,126 @@ function ColorMetaItem({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namePrefix]);
 
-  const onSwatch = (file: File | null) => {
+  const onSwatch = async (file: File | null) => {
     if (!file) return;
-    setValue(`${namePrefix}.swatch`, file, {
-      shouldDirty: true,
-      shouldValidate: true,
+
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
     });
-    trigger(`${namePrefix}.swatch`);
+
+    if (err) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      setValue(`${namePrefix}.swatch`, uploadedUrl, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.swatch` as any);
+      trigger(`${namePrefix}.swatch`);
+    } catch (error) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
-  const onAddImages = (list: FileList | null) => {
+
+  const onAddImages = async (list: FileList | null) => {
     if (!list) return;
-    const next = [...images, ...Array.from(list)];
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
+    const incoming = Array.from(list);
+    const errors: string[] = [];
+    const valids: File[] = [];
+
+    incoming.forEach((file) => {
+      const err = validateFileBasics(file, {
+        accept,
+        maxSize: safeLimits.maxSize,
+      });
+
+      if (err) errors.push(err);
+      else valids.push(file);
     });
-    trigger(`${namePrefix}.images`);
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(`${namePrefix}.images` as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current, ...uploadedUrls];
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
-  const onReplaceImage = (idx: number, file: File | null) => {
+
+  const onReplaceImage = async (idx: number, file: File | null) => {
     if (!file) return;
-    const next = [...images];
-    next[idx] = file;
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
     });
-    trigger(`${namePrefix}.images`);
+
+    if (err) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current];
+      next[idx] = uploadedUrl;
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   const onDeleteImage = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
@@ -1375,7 +1576,13 @@ function ColorMetaItem({
               type="file"
               className="hidden"
               accept={Array.isArray(accept) ? accept.join(',') : undefined}
-              onChange={(e) => onSwatch(e.target.files?.[0] ?? null)}
+              disabled={isUploading}
+              onChange={(e) => {
+                const input = e.currentTarget;
+                void onSwatch(input.files?.[0] ?? null).finally(() => {
+                  input.value = '';
+                });
+              }}
             />
             {swatchUrl ? (
               <img
@@ -1426,11 +1633,12 @@ function ColorMetaItem({
                               input.accept = Array.isArray(accept)
                                 ? accept.join(',')
                                 : '';
-                              input.onchange = (e: any) =>
-                                onReplaceImage(
+                              input.onchange = (e: any) => {
+                                void onReplaceImage(
                                   idx,
                                   e.target.files?.[0] ?? null,
                                 );
+                              };
                               input.click();
                             }}
                           >
@@ -1465,11 +1673,12 @@ function ColorMetaItem({
                               input.accept = Array.isArray(accept)
                                 ? accept.join(',')
                                 : '';
-                              input.onchange = (e: any) =>
-                                onReplaceImage(
+                              input.onchange = (e: any) => {
+                                void onReplaceImage(
                                   idx,
                                   e.target.files?.[0] ?? null,
                                 );
+                              };
                               input.click();
                             }}
                           >
@@ -1496,7 +1705,13 @@ function ColorMetaItem({
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
-                onChange={(e) => onAddImages(e.target.files)}
+                disabled={isUploading}
+                onChange={(e) => {
+                  const input = e.currentTarget;
+                  void onAddImages(input.files).finally(() => {
+                    input.value = '';
+                  });
+                }}
               />
               <ImagePlus className="h-4 w-4" />
             </label>
@@ -1516,7 +1731,7 @@ function ColorMetaItem({
 }
 
 function ColorMetaField({ field }: UiProps) {
-  const { watch, setValue } = useFormContext();
+  const { watch, setValue, setError, clearErrors, trigger } = useFormContext();
   const colorField: string =
     field.dataSource?.colorField ??
     field.dataSource?.variants?.find((v: any) =>
@@ -1545,6 +1760,50 @@ function ColorMetaField({ field }: UiProps) {
     : selected
       ? [selected]
       : [];
+  const uploadColorImages = async (colorValue: string, list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    const errors: string[] = [];
+    const valids: File[] = [];
+
+    incoming.forEach((file) => {
+      const err = validateFileBasics(file, {
+        accept,
+        maxSize: limits.maxSize,
+      });
+
+      if (err) errors.push(err);
+      else valids.push(file);
+    });
+
+    const prefix = `variants.colorMeta.${colorValue}`;
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(`${prefix}.images` as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
+    }
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const prev: ImageValue[] = watch(`${prefix}.images`) ?? [];
+      setValue(`${prefix}.images`, [...prev, ...uploadedUrls], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${prefix}.images` as any);
+      trigger(`${prefix}.images`);
+    } catch (error) {
+      setError(`${prefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -1586,14 +1845,7 @@ function ColorMetaField({ field }: UiProps) {
                       ? accept.join(',')
                       : '';
                     input.onchange = (e: any) => {
-                      const files: FileList | null = e.target.files;
-                      const namePrefix = `variants.colorMeta.${c}`;
-                      const prev: File[] = watch(`${namePrefix}.images`) ?? [];
-                      const next = [...prev, ...Array.from(files ?? [])];
-                      setValue(`${namePrefix}.images`, next, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
+                      void uploadColorImages(c, e.target.files);
                     };
                     input.click();
                   }}
@@ -1611,14 +1863,7 @@ function ColorMetaField({ field }: UiProps) {
                       ? accept.join(',')
                       : '';
                     input.onchange = (e: any) => {
-                      const files: FileList | null = e.target.files;
-                      const namePrefix = `variants.colorMeta.${c}`;
-                      const prev: File[] = watch(`${namePrefix}.images`) ?? [];
-                      const next = [...prev, ...Array.from(files ?? [])];
-                      setValue(`${namePrefix}.images`, next, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
+                      void uploadColorImages(c, e.target.files);
                     };
                     input.click();
                   }}
@@ -1685,7 +1930,15 @@ function ColorInlineRow({
   accept?: string[];
   limits: { maxImages?: number; maxSize?: number };
 }) {
-  const { watch, setValue, trigger, register, formState } = useFormContext();
+  const {
+    watch,
+    setValue,
+    trigger,
+    register,
+    formState,
+    setError,
+    clearErrors,
+  } = useFormContext();
   const safeLimits = limits ?? {};
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
   const swatchUrl = React.useMemo(() => {
@@ -1693,10 +1946,11 @@ function ColorInlineRow({
     if (typeof swatch === 'string') return swatch;
     return URL.createObjectURL(swatch);
   }, [swatch]);
-  const images: File[] = watch(`${namePrefix}.images`) ?? [];
+  const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
+  const [isUploading, setIsUploading] = React.useState(false);
   const [urls, setUrls] = React.useState<string[]>([]);
   const imagesHash = (images || [])
-    .map((f) => (typeof f === 'string' ? f : `${f.name}-${f.size}`))
+    .map((f) => imageValueKey(f))
     .join(',');
 
   React.useEffect(() => {
@@ -1727,7 +1981,7 @@ function ColorInlineRow({
     });
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
-        const arr: File[] = Array.isArray(v) ? v : [];
+        const arr: ImageValue[] = Array.isArray(v) ? v : [];
         if (
           typeof safeLimits?.maxImages === 'number' &&
           arr.length > safeLimits.maxImages
@@ -1748,24 +2002,125 @@ function ColorInlineRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namePrefix]);
 
-  const addFiles = (list: FileList | null) => {
-    if (!list) return;
-    const next = [...images, ...Array.from(list)];
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    trigger(`${namePrefix}.images`);
-  };
-  const replaceAt = (idx: number, file: File | null) => {
+  const uploadSwatch = async (file: File | null) => {
     if (!file) return;
-    const next = [...images];
-    next[idx] = file;
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
     });
-    trigger(`${namePrefix}.images`);
+
+    if (err) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      setValue(`${namePrefix}.swatch`, uploadedUrl, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.swatch` as any);
+      trigger(`${namePrefix}.swatch`);
+    } catch (error) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const addFiles = async (list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    const errors: string[] = [];
+    const valids: File[] = [];
+
+    incoming.forEach((file) => {
+      const err = validateFileBasics(file, {
+        accept,
+        maxSize: safeLimits.maxSize,
+      });
+
+      if (err) errors.push(err);
+      else valids.push(file);
+    });
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(`${namePrefix}.images` as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current, ...uploadedUrls];
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const replaceAt = async (idx: number, file: File | null) => {
+    if (!file) return;
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
+    });
+
+    if (err) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current];
+      next[idx] = uploadedUrl;
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   const removeAt = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
@@ -1787,13 +2142,10 @@ function ColorInlineRow({
             className="hidden"
             accept={Array.isArray(accept) ? accept.join(',') : undefined}
             onChange={(e) => {
-              const file = e.target.files?.[0] ?? null;
-              if (!file) return;
-              setValue(`${namePrefix}.swatch`, file as any, {
-                shouldDirty: true,
-                shouldValidate: true,
+              const input = e.currentTarget;
+              void uploadSwatch(input.files?.[0] ?? null).finally(() => {
+                input.value = '';
               });
-              trigger(`${namePrefix}.swatch`);
             }}
           />
           {swatchUrl ? (
@@ -1831,7 +2183,9 @@ function ColorInlineRow({
                 input.type = 'file';
                 input.multiple = true;
                 input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                input.onchange = (e: any) => addFiles(e.target.files);
+                input.onchange = (e: any) => {
+                  void addFiles(e.target.files);
+                };
                 input.click();
               }}
             >
@@ -1869,8 +2223,9 @@ function ColorInlineRow({
                       input.accept = Array.isArray(accept)
                         ? accept.join(',')
                         : '';
-                      input.onchange = (e: any) =>
-                        replaceAt(idx, e.target.files?.[0] ?? null);
+                      input.onchange = (e: any) => {
+                        void replaceAt(idx, e.target.files?.[0] ?? null);
+                      };
                       input.click();
                     }}
                   >
@@ -1893,9 +2248,19 @@ function ColorInlineRow({
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
-                onChange={(e) => addFiles(e.target.files)}
+                disabled={isUploading}
+                onChange={(e) => {
+                  const input = e.currentTarget;
+                  void addFiles(input.files).finally(() => {
+                    input.value = '';
+                  });
+                }}
               />
-              <ImagePlus className="h-4 w-4" />
+              {isUploading ? (
+                <Upload className="h-4 w-4 animate-pulse" />
+              ) : (
+                <ImagePlus className="h-4 w-4" />
+              )}
             </label>
           </div>
           {(formState.errors as any)?.[`${namePrefix}.images`] ? (

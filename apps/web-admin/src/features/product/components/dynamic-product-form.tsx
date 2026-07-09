@@ -264,28 +264,26 @@ const ensureVariantSupportFields = (fields: FieldSpec[]) => {
       (field) => String(field.uiType) === 'SkuTableV2',
     );
 
-    if (variantsMeta.length > 0) {
-      if (skuIndex >= 0) {
-        const existing = merged[skuIndex];
-        const dataSource = existing.dataSource ?? {};
+    if (skuIndex >= 0) {
+      const existing = merged[skuIndex];
+      const dataSource = existing.dataSource ?? {};
 
-        if (!dataSource.fetch && !Array.isArray(dataSource)) {
-          merged[skuIndex] = {
-            ...existing,
-            dataSource: { ...dataSource, variants: variantsMeta },
-          };
-        }
-      } else {
-        merged.push({
-          name: 'sku.table',
-          uiType: 'SkuTableV2' as any,
-          label: 'Price & Stock',
-          group: 'sale',
-          required: false,
-          dataSource: { variants: variantsMeta },
-          visible: true,
-        });
+      if (!dataSource.fetch && !Array.isArray(dataSource)) {
+        merged[skuIndex] = {
+          ...existing,
+          dataSource: { ...dataSource, variants: variantsMeta },
+        };
       }
+    } else {
+      merged.push({
+        name: 'sku.table',
+        uiType: 'SkuTableV2' as any,
+        label: 'Price & Stock',
+        group: 'sale',
+        required: false,
+        dataSource: { variants: variantsMeta },
+        visible: true,
+      });
     }
 
     const colorVariantField = merged.find(
@@ -357,7 +355,7 @@ const sectionOrder: Array<{
   },
 ];
 
-export default function DynamicProductForm({
+function DynamicProductForm({
   catId,
   productId,
   onValuesChange,
@@ -660,4 +658,6 @@ function DetailsSection({
     </div>
   );
 }
+
+export default React.memo(DynamicProductForm);
 

@@ -75,7 +75,7 @@ async function ensureCategory(parent: any | null, name: string) {
   // Upsert so reseeding keeps structure consistent
   const res = await CategoryModel.findOneAndUpdate(
     { name },
-    { name, slug, level, parent: parent?._id || null, path: pathParts },
+    { name, slug, level, parentCategory: parent?._id || null, path: pathParts },
     { new: true, upsert: true, setDefaultsOnInsert: true },
   );
   return res;
