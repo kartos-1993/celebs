@@ -80,7 +80,7 @@ export class ProductService {
       tags: input.tags ?? [],
       featured: input.featured ?? false,
       status: input.status ?? 'draft',
-      vendorId: vendorId ? new Types.ObjectId(vendorId) : undefined,
+      vendorId: vendorId || undefined,
       vendorName: vendorName || undefined,
       createdBy: userId,
       updatedBy: userId,
@@ -103,7 +103,7 @@ export class ProductService {
     limit = 10,
   ): Promise<{ products: IProduct[]; total: number }> {
     const query: any = {
-      vendorId: new Types.ObjectId(vendorId),
+      vendorId,
       status: { $ne: 'archived' },
     };
 
@@ -146,7 +146,7 @@ export class ProductService {
     }
 
     if (filters.vendorId) {
-      query.vendorId = new Types.ObjectId(filters.vendorId);
+      query.vendorId = filters.vendorId;
     }
 
     if (filters.categoryId) {
