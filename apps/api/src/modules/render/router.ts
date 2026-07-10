@@ -9,11 +9,9 @@ const DEFAULT_POLICY = {
   media: {
     maxImages: 8,
     maxSizeBytes: 5 * 1024 * 1024,
-  accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
-    minWidth: 1340,
-    minHeight: 1785,
-    aspectRatio: '1340:1785',
-    ratioTolerance: 0.03,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+    maxWidth: 2000,
+    maxHeight: 2000,
   },
 };
 

@@ -92,6 +92,8 @@ export function composeSchema(params: {
       minHeight?: number;
       aspectRatio?: string; // e.g., '1:1'
       ratioTolerance?: number; // e.g., 0.03 for 3%
+      maxWidth?: number;
+      maxHeight?: number;
     };
   };
 }) {
@@ -109,10 +111,12 @@ export function composeSchema(params: {
         maxItems: params.policy.media.maxImages,
         accept: params.policy.media.accept,
         maxSize: params.policy.media.maxSizeBytes,
-  minWidth: params.policy.media.minWidth,
-  minHeight: params.policy.media.minHeight,
-  aspectRatio: params.policy.media.aspectRatio,
-  ratioTolerance: params.policy.media.ratioTolerance,
+        minWidth: params.policy.media.minWidth,
+        minHeight: params.policy.media.minHeight,
+        aspectRatio: params.policy.media.aspectRatio,
+        ratioTolerance: params.policy.media.ratioTolerance,
+        maxWidth: params.policy.media.maxWidth,
+        maxHeight: params.policy.media.maxHeight,
       },
     },
   );
@@ -147,6 +151,8 @@ export function composeSchema(params: {
         minHeight: params.policy.media.minHeight,
         aspectRatio: params.policy.media.aspectRatio,
         ratioTolerance: params.policy.media.ratioTolerance,
+        maxWidth: params.policy.media.maxWidth,
+        maxHeight: params.policy.media.maxHeight,
       },
       visible: true,
     });
@@ -172,6 +178,8 @@ export function composeSchema(params: {
     params.policy.media.aspectRatio ?? '',
     params.policy.media.maxImages,
     params.policy.media.maxSizeBytes,
+    params.policy.media.maxWidth ?? 0,
+    params.policy.media.maxHeight ?? 0,
   ].join(':');
   const renderTag = Buffer.from(`${String(params.category._id)}:${version}:${policyFingerprint}`).toString('base64');
 
