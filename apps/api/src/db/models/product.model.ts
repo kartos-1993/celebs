@@ -53,7 +53,7 @@ export interface IProduct extends Document {
   tags: string[];
   featured: boolean;
   status: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
-  vendorId?: mongoose.Types.ObjectId;
+  vendorId?: string;
   vendorName?: string;
   reviewNote?: string;
   reviewedBy?: string;
@@ -183,7 +183,7 @@ const ProductSchema: Schema = new Schema(
       index: true,
     },
     vendorId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       index: true,
       default: null,
     },
