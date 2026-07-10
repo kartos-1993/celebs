@@ -245,7 +245,7 @@ export class ProductService {
         });
 
         if (vendorProfile?.user?.email) {
-          const emailData = productRejectionEmailTemplate(product.name, product.reviewNote, 'Celebs', '#EF4444');
+          const emailData = productRejectionEmailTemplate(product.name, product.reviewNote || '', 'Celebs', '#EF4444');
           await sendEmail({
             to: vendorProfile.user.email,
             subject: emailData.subject,
@@ -385,9 +385,7 @@ export class ProductService {
     ) {
       resolvedCategoryId = subcategory.parentCategory
         ? String(subcategory.parentCategory)
-        : subcategory.parent
-          ? String(subcategory.parent)
-          : String(subcategory._id);
+        : String(subcategory._id);
     }
 
     const category = await CategoryModel.findById(resolvedCategoryId).lean();
