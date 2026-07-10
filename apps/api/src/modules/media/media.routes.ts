@@ -7,10 +7,8 @@ const router = Router();
 
 // Upload policy (keep in sync with render policy)
 const UPLOAD_POLICY = {
-  minWidth: 1340,
-  minHeight: 1785,
-  aspectRatio: 1340 / 1785,
-  ratioTolerance: 0.03, // 3%
+  maxWidth: 2000,
+  maxHeight: 2000,
 };
 
 // Configure Cloudinary storage for multer
@@ -97,27 +95,20 @@ router.post('/product-image', memoryUpload.single('image'), async (req, res) => 
       stream.end(file.buffer);
     });
 
-    // Validate original dimensions and aspect ratio
+    // Validate original dimensions
     const w = Number(result.width || 0);
     const h = Number(result.height || 0);
-    const ratio = w && h ? w / h : 0;
-    const withinAspect = Math.abs(ratio - UPLOAD_POLICY.aspectRatio) <= UPLOAD_POLICY.ratioTolerance;
-    const sizeOk = w >= UPLOAD_POLICY.minWidth && h >= UPLOAD_POLICY.minHeight;
+    const sizeOk = w <= UPLOAD_POLICY.maxWidth && h <= UPLOAD_POLICY.maxHeight;
 
-    if (!sizeOk || !withinAspect) {
+    if (!sizeOk) {
       // Best effort cleanup
       try {
         if (result.public_id) await cloudinary.uploader.destroy(result.public_id, { resource_type: 'image' });
       } catch {}
       return res.status(400).json({
-        message: 'Image does not meet upload policy',
-        policy: {
-          minWidth: UPLOAD_POLICY.minWidth,
-          minHeight: UPLOAD_POLICY.minHeight,
-          aspectRatio: '1340:1785',
-          ratioTolerance: UPLOAD_POLICY.ratioTolerance,
-        },
-        received: { width: w, height: h, aspect: ratio },
+        message: `Image dimensions must not exceed ${UPLOAD_POLICY.maxWidth}x${UPLOAD_POLICY.maxHeight}px`,
+        policy: UPLOAD_POLICY,
+        received: { width: w, height: h },
       });
     }
 

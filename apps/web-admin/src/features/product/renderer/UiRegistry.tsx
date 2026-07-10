@@ -436,6 +436,8 @@ function MainImageField({ field }: UiProps) {
     if (
       typeof rule?.minWidth === 'number' ||
       typeof rule?.minHeight === 'number' ||
+      typeof rule?.maxWidth === 'number' ||
+      typeof rule?.maxHeight === 'number' ||
       !!rule?.aspectRatio
     ) {
       try {
@@ -444,6 +446,10 @@ function MainImageField({ field }: UiProps) {
           return `Width must be >= ${rule.minWidth}px`;
         if (typeof rule.minHeight === 'number' && h < rule.minHeight)
           return `Height must be >= ${rule.minHeight}px`;
+        if (typeof rule.maxWidth === 'number' && w > rule.maxWidth)
+          return `Width must be <= ${rule.maxWidth}px`;
+        if (typeof rule.maxHeight === 'number' && h > rule.maxHeight)
+          return `Height must be <= ${rule.maxHeight}px`;
         if (!aspectOk(w, h))
           return `Image aspect ratio should be ${rule.aspectRatio}`;
       } catch {
@@ -648,7 +654,9 @@ function MainImageField({ field }: UiProps) {
         field.rule?.maxSize != null ||
         field.rule?.aspectRatio ||
         field.rule?.minWidth ||
-        field.rule?.minHeight ? (
+        field.rule?.minHeight ||
+        field.rule?.maxWidth ||
+        field.rule?.maxHeight ? (
           <div className="mt-2 text-xs text-muted-foreground">
             {field.rule?.maxItems != null ? (
               <>Max {field.rule.maxItems} images</>
@@ -681,6 +689,13 @@ function MainImageField({ field }: UiProps) {
                 {' '}
                 • Minimum dimensions: {field.rule?.minWidth ?? 0}×
                 {field.rule?.minHeight ?? 0}px
+              </>
+            ) : null}
+            {field.rule?.maxWidth || field.rule?.maxHeight ? (
+              <>
+                {' '}
+                • Maximum dimensions: {field.rule?.maxWidth ?? 0}×
+                {field.rule?.maxHeight ?? 0}px
               </>
             ) : null}
           </div>
