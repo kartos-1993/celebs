@@ -199,7 +199,7 @@ export class ProductController {
         req.params.id,
         payload,
         req.user.userId,
-        req.user.role,
+        req.user.role || '',
         req.user.vendorProfile?.id,
       );
 
@@ -226,7 +226,7 @@ export class ProductController {
       const product = await this.productService.archiveProduct(
         req.params.id,
         req.user.userId,
-        req.user.role,
+        req.user.role || '',
         req.user.vendorProfile?.id,
       );
 

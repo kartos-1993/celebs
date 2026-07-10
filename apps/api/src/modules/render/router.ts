@@ -10,9 +10,9 @@ const DEFAULT_POLICY = {
     maxImages: 8,
     maxSizeBytes: 5 * 1024 * 1024,
   accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
-    minWidth: 1500,
-    minHeight: 1500,
-    aspectRatio: '1:1',
+    minWidth: 1340,
+    minHeight: 1785,
+    aspectRatio: '1340:1785',
     ratioTolerance: 0.03,
   },
 };

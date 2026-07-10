@@ -165,7 +165,15 @@ export function composeSchema(params: {
   });
 
   const version = params.category.version ?? 1;
-  const renderTag = Buffer.from(`${String(params.category._id)}:${version}`).toString('base64');
+  // Include policy fingerprint so any policy change busts the ETag cache
+  const policyFingerprint = [
+    params.policy.media.minWidth ?? 0,
+    params.policy.media.minHeight ?? 0,
+    params.policy.media.aspectRatio ?? '',
+    params.policy.media.maxImages,
+    params.policy.media.maxSizeBytes,
+  ].join(':');
+  const renderTag = Buffer.from(`${String(params.category._id)}:${version}:${policyFingerprint}`).toString('base64');
 
   return { fields, renderTag };
 }

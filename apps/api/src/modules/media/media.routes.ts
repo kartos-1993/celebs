@@ -7,9 +7,9 @@ const router = Router();
 
 // Upload policy (keep in sync with render policy)
 const UPLOAD_POLICY = {
-  minWidth: 1500,
-  minHeight: 1500,
-  aspectRatio: 1, // 1:1 square
+  minWidth: 1340,
+  minHeight: 1785,
+  aspectRatio: 1340 / 1785,
   ratioTolerance: 0.03, // 3%
 };
 
@@ -114,7 +114,7 @@ router.post('/product-image', memoryUpload.single('image'), async (req, res) => 
         policy: {
           minWidth: UPLOAD_POLICY.minWidth,
           minHeight: UPLOAD_POLICY.minHeight,
-          aspectRatio: '1:1',
+          aspectRatio: '1340:1785',
           ratioTolerance: UPLOAD_POLICY.ratioTolerance,
         },
         received: { width: w, height: h, aspect: ratio },
