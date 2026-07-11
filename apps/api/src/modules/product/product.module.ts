@@ -22,4 +22,8 @@ export class ProductModule {
   getProductController(): ProductController {
     return this.productController;
   }
+
+  getProductService(): ProductService {
+    return this.productService;
+  }
 }

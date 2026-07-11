@@ -1,5 +1,5 @@
 import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
-import { config } from '../../config/app.config';
+import { config } from '@/config/app.config';
 import { registry } from './registry';
 
 // Register Security Scheme for Bearer Token

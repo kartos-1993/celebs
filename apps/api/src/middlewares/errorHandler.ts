@@ -4,8 +4,8 @@ import { HTTPSTATUS, AppError, ErrorCode } from '@celebs/shared-utils';
 import {
   clearAuthenticationCookies,
   REFRESH_PATH,
-} from '../common/utils/cookie';
-import { IApiResponse } from '../common/interface/api-response.interface';
+} from '@/common/utils/cookie';
+import { IApiResponse } from '@celebs/shared-types';
 
 const formatZodError = (res: Response, error: z.ZodError) => {
   const errors = error?.issues?.map((err) => ({

@@ -9,6 +9,7 @@ export interface ICategory extends Document {
   parentCategory: mongoose.Types.ObjectId | null;
   path: string[];
   attributes?: IAttribute[];
+  sizeChartColumns?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,7 @@ const CategorySchema: Schema = new Schema(
       index: true,
     },
     path: [{ type: String }],
+    sizeChartColumns: [{ type: String }],
   },
   {
     timestamps: true,
@@ -47,6 +49,14 @@ const CategorySchema: Schema = new Schema(
     toObject: { virtuals: true },
   },
 );
+
+CategorySchema.virtual('parent')
+  .get(function(this: any) {
+    return this.parentCategory;
+  })
+  .set(function(this: any, val: any) {
+    this.parentCategory = val;
+  });
 
 // Add indexes
 CategorySchema.index({ path: 1 });

@@ -1,5 +1,14 @@
 {
   "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@celebs/rbac": ["../../packages/rbac/src/index.ts"],
+      "@celebs/shared-utils": ["../../packages/shared-utils/src/index.ts"],
+      "@celebs/shared-types": ["../../packages/shared-types/src/index.ts"]
+    }
+  },
   "files": [],
   "include": [],
   "references": [

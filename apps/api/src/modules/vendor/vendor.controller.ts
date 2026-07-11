@@ -6,8 +6,8 @@ import {
   warehouseSchema,
   vendorDocumentsSchema,
   vendorBusinessInfoSchema,
+  IApiResponse,
 } from '@celebs/shared-types';
-import { IApiResponse } from '../../common/interface/api-response.interface';
 
 export class VendorController {
   private vendorService: VendorService;

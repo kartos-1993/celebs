@@ -2,7 +2,7 @@ import { HTMLAttributes, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@/lib/utils';
 import {
@@ -17,7 +17,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 
-import { loginMutationFn } from '@/lib/api';
+import { loginMutationFn, getUserSessionQueryFn } from '@/lib/api';
 
 type UserAuthFormProps = HTMLAttributes<HTMLDivElement>;
 
@@ -36,7 +36,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const location = useLocation();
   const successMessage = (location.state as any)?.successMessage;
 
-  const { mutate, isPending } = useMutation({
+  const { mutateAsync, isPending } = useMutation({
     mutationFn: loginMutationFn,
   });
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,35 +47,42 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const queryClient = useQueryClient();
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log('login submitting');
-    mutate(values, {
-      onSuccess: (response) => {
-        if (response.data?.mfaRequired) {
-          navigate(`/verify-mfa?email=${values.email}`);
-          return;
-        }
-        navigate('/');
-      },
-      onError: (error: any) => {
-        console.log('login failure', error);
-        if (error?.errors && Array.isArray(error.errors)) {
-          error.errors.forEach((err: any) => {
-            if (err.field) {
-              form.setError(err.field as any, {
-                type: 'server',
-                message: err.message,
-              });
-            }
-          });
-        } else if (error?.message) {
-          form.setError('password', {
-            type: 'server',
-            message: error.message,
-          });
-        }
-      },
-    });
+    try {
+      const response = await mutateAsync(values);
+      if (response.data?.mfaRequired) {
+        navigate(`/verify-mfa?email=${values.email}`);
+        return;
+      }
+      // Fetch the fresh session and set it directly into the existing query cache.
+      const sessionData = await getUserSessionQueryFn();
+      console.log('UserAuthForm onSubmit sessionData fetched:', sessionData);
+      console.log('Query cache keys before setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
+      queryClient.setQueryData(['authUser'], sessionData);
+      console.log('Query cache keys after setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
+      console.log('UserAuthForm onSubmit getQueryData after set:', queryClient.getQueryData(['authUser']));
+      navigate('/');
+    } catch (error: any) {
+      console.log('login failure', error);
+      if (error?.errors && Array.isArray(error.errors)) {
+        error.errors.forEach((err: any) => {
+          if (err.field) {
+            form.setError(err.field as any, {
+              type: 'server',
+              message: err.message,
+            });
+          }
+        });
+      } else if (error?.message) {
+        form.setError('password', {
+          type: 'server',
+          message: error.message,
+        });
+      }
+    }
   }
 
   return (

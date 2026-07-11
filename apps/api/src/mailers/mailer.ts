@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { config } from '../config/app.config';
+import { config } from '@/config/app.config';
 
 type Params = {
   to: string | string[];

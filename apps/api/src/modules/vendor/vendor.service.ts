@@ -1,5 +1,5 @@
 import { NotFoundException } from '@celebs/shared-utils';
-import prisma from '../../db';
+import prisma from '@/db';
 
 export class VendorService {
   public async getOnboardingStatus(userId: string) {

@@ -1,7 +1,7 @@
 import { ClientSession, Types } from 'mongoose';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
-import { CategoryModel, ICategory } from '../../db/models/category.model';
-import { AttributeModel, IAttribute } from '../../db/models/attribute.model';
+import { CategoryModel, ICategory } from '@/db/models/category.model';
+import { AttributeModel, IAttribute } from '@/db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
@@ -126,7 +126,7 @@ export class CategoryService {
     return results.map((c: any) => ({
       id: String(c._id),
       name: c.name,
-      parentId: c.parent ? String(c.parent) : null,
+      parentId: c.parentCategory ? String(c.parentCategory) : (c.parent ? String(c.parent) : null),
       hasChildren: false, // UI can expand via tree if needed
       level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
       path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
@@ -239,7 +239,9 @@ export class CategoryService {
    * Recursively deletes a category, its child categories, and all their attributes
    */
   private async deleteChildCategories(category: any): Promise<void> {
-    const childCategories = await CategoryModel.find({ parent: category._id });
+    const childCategories = await CategoryModel.find({
+      $or: [{ parentCategory: category._id }, { parent: category._id }],
+    });
 
     for (const childCategory of childCategories) {
       await this.deleteChildCategories(childCategory);
@@ -456,9 +458,10 @@ export class CategoryService {
     // Build parent-child relationships
     categories.forEach((cat) => {
       const categoryNode = categoryMap[cat._id.toString()];
+      const parentId = cat.parentCategory || cat.parent;
 
-      if (cat.parent) {
-        const parent = categoryMap[cat.parent.toString()];
+      if (parentId) {
+        const parent = categoryMap[parentId.toString()];
         if (parent) {
           parent.children.push(categoryNode);
         }

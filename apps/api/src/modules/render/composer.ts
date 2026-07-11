@@ -1,4 +1,4 @@
-import type { IAttribute } from '../../db/models/attribute.model';
+import type { IAttribute } from '@/db/models/attribute.model';
 
 // UI field types supported by the renderer
 export type UiType =
@@ -38,6 +38,7 @@ export interface CategoryDocLike {
   name: string;
   version?: number;
   attributes: IAttribute[] | any[];
+  sizeChartColumns?: string[];
 }
 
 function titleCase(s: string) {
@@ -92,6 +93,8 @@ export function composeSchema(params: {
       minHeight?: number;
       aspectRatio?: string; // e.g., '1:1'
       ratioTolerance?: number; // e.g., 0.03 for 3%
+      maxWidth?: number;
+      maxHeight?: number;
     };
   };
 }) {
@@ -109,10 +112,12 @@ export function composeSchema(params: {
         maxItems: params.policy.media.maxImages,
         accept: params.policy.media.accept,
         maxSize: params.policy.media.maxSizeBytes,
-  minWidth: params.policy.media.minWidth,
-  minHeight: params.policy.media.minHeight,
-  aspectRatio: params.policy.media.aspectRatio,
-  ratioTolerance: params.policy.media.ratioTolerance,
+        minWidth: params.policy.media.minWidth,
+        minHeight: params.policy.media.minHeight,
+        aspectRatio: params.policy.media.aspectRatio,
+        ratioTolerance: params.policy.media.ratioTolerance,
+        maxWidth: params.policy.media.maxWidth,
+        maxHeight: params.policy.media.maxHeight,
       },
     },
   );
@@ -147,6 +152,8 @@ export function composeSchema(params: {
         minHeight: params.policy.media.minHeight,
         aspectRatio: params.policy.media.aspectRatio,
         ratioTolerance: params.policy.media.ratioTolerance,
+        maxWidth: params.policy.media.maxWidth,
+        maxHeight: params.policy.media.maxHeight,
       },
       visible: true,
     });
@@ -164,8 +171,30 @@ export function composeSchema(params: {
     })),
   });
 
+  if (params.category.sizeChartColumns && params.category.sizeChartColumns.length > 0) {
+    fields.push({
+      name: 'sizes',
+      uiType: 'SizeMeasurementsTable' as any,
+      label: 'Size & Fit Measurements',
+      group: 'details',
+      required: false,
+      dataSource: params.category.sizeChartColumns,
+      visible: true,
+    });
+  }
+
   const version = params.category.version ?? 1;
-  const renderTag = Buffer.from(`${String(params.category._id)}:${version}`).toString('base64');
+  // Include policy fingerprint so any policy change busts the ETag cache
+  const policyFingerprint = [
+    params.policy.media.minWidth ?? 0,
+    params.policy.media.minHeight ?? 0,
+    params.policy.media.aspectRatio ?? '',
+    params.policy.media.maxImages,
+    params.policy.media.maxSizeBytes,
+    params.policy.media.maxWidth ?? 0,
+    params.policy.media.maxHeight ?? 0,
+  ].join(':');
+  const renderTag = Buffer.from(`${String(params.category._id)}:${version}:${policyFingerprint}`).toString('base64');
 
   return { fields, renderTag };
 }

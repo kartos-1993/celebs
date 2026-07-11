@@ -4,6 +4,11 @@ declare namespace Express {
     user?: {
       userId: string;
       sessionId: string;
+      role?: string;
+      vendorProfile?: {
+        id: string;
+        shopName: string;
+      };
     };
   }
   

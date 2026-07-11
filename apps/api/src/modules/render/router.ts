@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { composeSchema } from './composer';
-import { CategoryService } from '../category/category.service';
+import { CategoryService } from '@/modules/category/category.service';
 
 const router = Router();
 const categoryService = new CategoryService();
@@ -9,11 +9,9 @@ const DEFAULT_POLICY = {
   media: {
     maxImages: 8,
     maxSizeBytes: 5 * 1024 * 1024,
-  accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
-    minWidth: 1500,
-    minHeight: 1500,
-    aspectRatio: '1:1',
-    ratioTolerance: 0.03,
+    accept: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
+    maxWidth: 2000,
+    maxHeight: 2000,
   },
 };
 
@@ -32,6 +30,7 @@ router.get('/product-render', async (req, res) => {
         name: (category as any).name,
         version: (category as any).version ?? 1,
         attributes: (category as any).attributes || [],
+        sizeChartColumns: (category as any).sizeChartColumns || [],
       },
       locale,
       policy: DEFAULT_POLICY,

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { CategoryModule } from './category.module';
 import { asyncHandler, logger } from '@celebs/shared-utils';
-import { authenticateJWT } from '../../middlewares/auth.middleware';
+import { authenticateJWT } from '@/middlewares/auth.middleware';
 
 const categoryRoute = Router();
 const categoryController = CategoryModule.getInstance().getCategoryController();
@@ -21,7 +21,7 @@ categoryRoute.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-import { requirePermissions } from '../../middlewares/rbac.middleware';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 
 // Apply authentication middleware to all category routes

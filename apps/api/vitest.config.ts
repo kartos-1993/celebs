@@ -16,7 +16,7 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     testTimeout: 30000,
     include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
-    exclude: ['src/middlewares/__tests__/index.spec.ts'],
+    exclude: [],
     fileParallelism: false,
     env: {
       DATABASE_URL: 'postgresql://postgres:celebs@localhost:5432/celebs-test',

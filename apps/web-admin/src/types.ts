@@ -26,11 +26,7 @@ export interface UserData {
   vendorProfile?: VendorProfileData;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+import { IApiResponse as ApiResponse } from '@celebs/shared-types';
 
 export interface SessionData {
   id: string;

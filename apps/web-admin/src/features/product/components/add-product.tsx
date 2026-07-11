@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from '@celebs/shared-ui/components/form';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronRight, FileClock, Info } from 'lucide-react';
+import { useAuthContext } from '@/context/auth-provider';
 import { CreateProductRequest, ProductApiService } from '../api';
 import { useProductForm } from '../hooks/useProductForm';
 import type { FieldSpec } from '../renderer/UiRegistry';
@@ -112,19 +113,40 @@ const serializeDraftValue = (value: unknown): unknown => {
 const isHexColor = (value: string) =>
   /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 
+const flattenObject = (obj: any, prefix = ''): Record<string, any> => {
+  const result: Record<string, any> = {};
+  if (!obj || typeof obj !== 'object') return result;
+
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    if (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      !(value instanceof File)
+    ) {
+      Object.assign(result, flattenObject(value, newKey));
+    } else {
+      result[newKey] = value;
+    }
+  }
+  return result;
+};
+
 const getFirstPrice = (
   values: Record<string, unknown>,
   suffix: '.price' | '.specialPrice',
 ) => {
+  const flat = flattenObject(values);
   const preferredKeys = [
     `sku.default${suffix}`,
-    ...Object.keys(values)
+    ...Object.keys(flat)
       .filter((key) => key.startsWith('sku.variants.') && key.endsWith(suffix))
       .sort(),
   ];
 
   for (const key of preferredKeys) {
-    const numeric = toPositiveNumber(values[key]);
+    const numeric = toPositiveNumber(flat[key]);
     if (numeric !== undefined) {
       return numeric;
     }
@@ -248,13 +270,19 @@ const isFieldFilled = (field: FieldSpec, value: unknown) => {
 const uniqueMessages = (messages: string[]) =>
   Array.from(new Set(messages.filter(Boolean)));
 
+const getNestedValue = (obj: any, path: string): any => {
+  return path.split('.').reduce((acc, part) => {
+    return acc && typeof acc === 'object' ? acc[part] : undefined;
+  }, obj);
+};
+
 const getRequiredFieldErrors = (
   fields: FieldSpec[],
   values: Record<string, unknown>,
 ) =>
   fields
     .filter((field) => field.required && field.visible !== false)
-    .filter((field) => !isFieldFilled(field, values[field.name]))
+    .filter((field) => !isFieldFilled(field, getNestedValue(values, field.name)))
     .map((field) => `${field.label} is required.`);
 
 const flattenFormErrors = (
@@ -366,13 +394,13 @@ const collectPricingErrors = ({
   };
 
   const validateRow = (label: string, prefix: string) => {
-    const price = toPositiveNumber(values[`${prefix}.price`]);
-    const specialPriceRaw = normalizeText(values[`${prefix}.specialPrice`]);
+    const price = toPositiveNumber(getNestedValue(values, `${prefix}.price`));
+    const specialPriceRaw = normalizeText(getNestedValue(values, `${prefix}.specialPrice`));
     const specialPrice = specialPriceRaw
-      ? toPositiveNumber(values[`${prefix}.specialPrice`])
+      ? toPositiveNumber(getNestedValue(values, `${prefix}.specialPrice`))
       : undefined;
-    const stock = normalizeText(values[`${prefix}.stock`]);
-    const freeItems = normalizeText(values[`${prefix}.freeItems`]);
+    const stock = normalizeText(getNestedValue(values, `${prefix}.stock`));
+    const freeItems = normalizeText(getNestedValue(values, `${prefix}.freeItems`));
 
     if (price === undefined) {
       pushError(`${label}: add a valid price.`);
@@ -392,14 +420,14 @@ const collectPricingErrors = ({
 
     if (
       stock &&
-      toNonNegativeInteger(values[`${prefix}.stock`]) === undefined
+      toNonNegativeInteger(getNestedValue(values, `${prefix}.stock`)) === undefined
     ) {
       pushError(`${label}: stock cannot be negative.`);
     }
 
     if (
       freeItems &&
-      toNonNegativeInteger(values[`${prefix}.freeItems`]) === undefined
+      toNonNegativeInteger(getNestedValue(values, `${prefix}.freeItems`)) === undefined
     ) {
       pushError(`${label}: free items cannot be negative.`);
     }
@@ -413,7 +441,7 @@ const collectPricingErrors = ({
     key: variant.key,
     label: variant.label,
     labels: getLabelMap(fields, variant.key),
-    values: toStringArray(values[variant.key]),
+    values: toStringArray(getNestedValue(values, variant.key)),
   }));
 
   if (activeVariants.length === 0) {
@@ -618,6 +646,7 @@ async function buildProductPayload({
   status: CreateProductRequest['status'];
   values: Record<string, unknown>;
 }): Promise<CreateProductRequest> {
+  const flatValues = flattenObject(values);
   const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
   const sizeFieldName = variantMeta.find(
     (variant) => variant.kind === 'size',
@@ -646,18 +675,18 @@ async function buildProductPayload({
   for (const colorValue of selectedColors) {
     const prefix = `variants.colorMeta.${colorValue}`;
     const swatchUrls = await ProductApiService.uploadFiles([
-      values[`${prefix}.swatch`] as File | string | undefined,
+      flatValues[`${prefix}.swatch`] as File | string | undefined,
     ]);
     const images = await ProductApiService.uploadFiles(
-      Array.isArray(values[`${prefix}.images`])
-        ? (values[`${prefix}.images`] as Array<File | string>)
+      Array.isArray(flatValues[`${prefix}.images`])
+        ? (flatValues[`${prefix}.images`] as Array<File | string>)
         : [],
     );
 
     uploadedColorAssets[colorValue] = {
       swatch: swatchUrls[0],
       images,
-      hot: Boolean(values[`${prefix}.hot`]),
+      hot: Boolean(flatValues[`${prefix}.hot`]),
     };
   }
 
@@ -671,15 +700,21 @@ async function buildProductPayload({
     throw new Error('Discounted price must be less than the regular price.');
   }
 
-  const defaultStock = toNonNegativeInteger(values['sku.default.stock']) ?? 0;
+  const defaultStock = toNonNegativeInteger(flatValues['sku.default.stock']) ?? 0;
   const effectiveColors =
     selectedColors.length > 0 ? selectedColors : ['default'];
 
-  const sizes = selectedSizes.map((sizeValue) => ({
-    name: sizeLabelMap.get(sizeValue) || sizeValue,
-    productMeasurements: [],
-    bodyMeasurements: [],
-  }));
+  const sizes = selectedSizes.map((sizeValue) => {
+    const sizeName = sizeLabelMap.get(sizeValue) || sizeValue;
+    const formSizeObj = Array.isArray(values.sizes)
+      ? values.sizes.find((s: any) => s?.name === sizeName)
+      : null;
+    return {
+      name: sizeName,
+      productMeasurements: formSizeObj?.productMeasurements || [],
+      bodyMeasurements: formSizeObj?.bodyMeasurements || [],
+    };
+  });
 
   const colorVariants = effectiveColors.map((colorValue) => {
     const label =
@@ -698,7 +733,7 @@ async function buildProductPayload({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
           toNonNegativeInteger(
-            values[
+            flatValues[
               `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
             ],
           ) ?? defaultStock,
@@ -709,7 +744,7 @@ async function buildProductPayload({
           size: 'default',
           quantity:
             toNonNegativeInteger(
-              values[`sku.variants.${colorFieldName}.${colorValue}.stock`],
+              flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`],
             ) ?? defaultStock,
         },
       ];
@@ -718,7 +753,7 @@ async function buildProductPayload({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
           toNonNegativeInteger(
-            values[`sku.variants.${sizeFieldName}.${sizeValue}.stock`],
+            flatValues[`sku.variants.${sizeFieldName}.${sizeValue}.stock`],
           ) ?? defaultStock,
       }));
     } else {
@@ -786,6 +821,7 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
   const { toast } = useToast();
+  const { role } = useAuthContext();
   const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
   const [schemaFields, setSchemaFields] = useState<FieldSpec[]>([]);
   const [schemaHasBrand, setSchemaHasBrand] = useState(false);
@@ -983,7 +1019,7 @@ const AddProduct = () => {
     const unmappedMessages: string[] = [];
 
     apiErrors.forEach((entry: any) => {
-      const path = normalizeText(entry?.path);
+      const path = normalizeText(entry?.field || entry?.path);
       const message = normalizeText(entry?.message);
 
       if (!message) {
@@ -1006,7 +1042,10 @@ const AddProduct = () => {
   const handleSubmitProduct = async (
     status: CreateProductRequest['status'],
   ) => {
+    console.log('[DEBUG] handleSubmitProduct called with status:', status);
+    console.log('[DEBUG] schemaReady:', schemaReady);
     if (!schemaReady) {
+      console.warn('[DEBUG] handleSubmitProduct blocked: schema is not ready');
       toast({
         title: 'Form is still loading',
         description:
@@ -1017,6 +1056,7 @@ const AddProduct = () => {
     }
 
     const currentValues = form.getValues() as Record<string, unknown>;
+    console.log('[DEBUG] currentValues:', currentValues);
     const currentSections = buildSidebarSections({
       fieldErrors: flattenFormErrors(form.formState.errors),
       schemaFields,
@@ -1027,11 +1067,13 @@ const AddProduct = () => {
         label: variant.label,
       })),
     });
+    console.log('[DEBUG] currentSections validation status:', currentSections);
     const firstInvalidSection = currentSections.find(
       (section) => !section.status,
     );
 
     if (firstInvalidSection) {
+      console.warn('[DEBUG] handleSubmitProduct blocked by invalid section:', firstInvalidSection);
       scrollToSection(firstInvalidSection.anchorId);
       toast({
         title: 'Complete the required sections',
@@ -1041,6 +1083,7 @@ const AddProduct = () => {
       return;
     }
 
+    console.log('[DEBUG] Setting isSubmitting to true and building payload');
     setIsSubmitting(true);
 
     try {
@@ -1050,15 +1093,22 @@ const AddProduct = () => {
         values: currentValues,
       });
 
-      await ProductApiService.createProduct(payload);
+      if (isEditMode && id) {
+        await ProductApiService.updateProduct(id, payload);
+        toast({
+          title: 'Product updated',
+          description: 'The product has been updated successfully.',
+        });
+      } else {
+        await ProductApiService.createProduct(payload);
+        toast({
+          title: 'Product created',
+          description: 'The product has been created successfully.',
+        });
+      }
 
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
       form.reset(form.getValues());
-
-      toast({
-        title: 'Product created',
-        description: 'The product has been submitted successfully.',
-      });
 
       navigate(MANAGE_PRODUCTS_PATH);
     } catch (error: any) {
@@ -1109,6 +1159,9 @@ const AddProduct = () => {
       </div>
     );
   }
+
+  const { user } = useAuthContext();
+  const submitStatus = user?.role === 'VENDOR' ? 'pending_review' : 'published';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -1171,8 +1224,14 @@ const AddProduct = () => {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(
-                  () => handleSubmitProduct('published'),
-                  handleFormInvalid,
+                  (data) => {
+                    console.log('[DEBUG] Form submission VALID. Data:', data);
+                    return handleSubmitProduct(role === 'VENDOR' ? 'pending_review' : 'published');
+                  },
+                  (errors) => {
+                    console.warn('[DEBUG] Form submission INVALID. Errors:', errors);
+                    handleFormInvalid(errors);
+                  },
                 )}
                 className="space-y-6"
               >
