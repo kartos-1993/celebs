@@ -58,12 +58,12 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         return;
       }
       // Fetch the fresh session and set it directly into the existing query cache.
-      // IMPORTANT: Do NOT use removeQueries/fetchQuery — that disconnects the
-      // useQuery observer in AuthProvider, so it never picks up the new data.
-      // setQueryData updates the existing cache entry in-place, keeping the
-      // observer connected, so AuthProvider re-renders with the new role immediately.
       const sessionData = await getUserSessionQueryFn();
+      console.log('UserAuthForm onSubmit sessionData fetched:', sessionData);
+      console.log('Query cache keys before setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
       queryClient.setQueryData(['authUser'], sessionData);
+      console.log('Query cache keys after setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
+      console.log('UserAuthForm onSubmit getQueryData after set:', queryClient.getQueryData(['authUser']));
       navigate('/');
     } catch (error: any) {
       console.log('login failure', error);
