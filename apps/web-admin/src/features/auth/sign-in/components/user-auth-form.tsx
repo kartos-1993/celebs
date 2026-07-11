@@ -17,7 +17,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 
-import { loginMutationFn } from '@/lib/api';
+import { loginMutationFn, getUserSessionQueryFn } from '@/lib/api';
 
 type UserAuthFormProps = HTMLAttributes<HTMLDivElement>;
 
@@ -57,8 +57,13 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         navigate(`/verify-mfa?email=${values.email}`);
         return;
       }
-      // Await the session refetch so the sidebar role updates before navigation
-      await queryClient.invalidateQueries({ queryKey: ['authUser'] });
+      // Remove stale auth data and fetch fresh session before navigating
+      // This guarantees the sidebar has the correct role on first render
+      queryClient.removeQueries({ queryKey: ['authUser'] });
+      await queryClient.fetchQuery({
+        queryKey: ['authUser'],
+        queryFn: getUserSessionQueryFn,
+      });
       navigate('/');
     } catch (error: any) {
       console.log('login failure', error);
