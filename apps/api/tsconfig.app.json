@@ -2,12 +2,13 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": "../../",
     "outDir": "../../dist/out-tsc",
     "rootDir": "../../",
     "module": "commonjs",
     "types": ["node", "express", "multer"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["apps/api/src/*"]
     }
   },
   "include": ["src/**/*.ts"],
