@@ -1019,7 +1019,7 @@ const AddProduct = () => {
     const unmappedMessages: string[] = [];
 
     apiErrors.forEach((entry: any) => {
-      const path = normalizeText(entry?.path);
+      const path = normalizeText(entry?.field || entry?.path);
       const message = normalizeText(entry?.message);
 
       if (!message) {

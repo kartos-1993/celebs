@@ -2358,7 +2358,7 @@ function ColorInlineField({ field }: UiProps) {
 
 function SizeMeasurementsField({ field }: UiProps) {
   const columns: string[] = Array.isArray(field.dataSource) ? field.dataSource : [];
-  const { control: formControl, setValue, watch } = useFormContext();
+  const { control: formControl, register, setValue, getValues, watch, formState } = useFormContext();
   const [unit, setUnit] = React.useState<'CM' | 'IN'>('CM');
   const [activeTab, setActiveTab] = React.useState<'product' | 'body'>('product');
 
@@ -2371,24 +2371,83 @@ function SizeMeasurementsField({ field }: UiProps) {
   const activeSizesIndex = sizeFieldNames.findIndex((_, idx) => watchedSizes?.[idx] && watchedSizes[idx].length > 0);
   const selectedSizes = activeSizesIndex !== -1 ? (watchedSizes[activeSizesIndex] as string[]) : [];
 
-  // Initialize/sync sizes field array in formState when selectedSizes changes
+  // Sync size rows in formState when selectedSizes or columns change
   const sizesState = watch('sizes') || [];
   React.useEffect(() => {
-    // If selectedSizes changes, sync sizesState with it
+    const currentSizes = getValues('sizes') || [];
     const newSizesState = selectedSizes.map((sizeName) => {
-      const existing = sizesState.find((s: any) => s.name === sizeName);
-      if (existing) return existing;
+      const existing = currentSizes.find((s: any) => s.name === sizeName);
+      if (existing) {
+        // If columns changed (e.g. category changed), make sure to sync columns
+        const syncMeasurements = (list: any[]) => {
+          const listArr = Array.isArray(list) ? list : [];
+          return columns.map(col => {
+            const ext = listArr.find((m: any) => m.name === col);
+            return ext || { name: col, value: '', unit: unit.toLowerCase() };
+          });
+        };
+        return {
+          ...existing,
+          productMeasurements: syncMeasurements(existing.productMeasurements),
+          bodyMeasurements: syncMeasurements(existing.bodyMeasurements),
+        };
+      }
       return {
         name: sizeName,
-        productMeasurements: columns.map(c => ({ name: c, value: '', unit: 'cm' })),
-        bodyMeasurements: columns.map(c => ({ name: c, value: '', unit: 'cm' })),
+        productMeasurements: columns.map(c => ({ name: c, value: '', unit: unit.toLowerCase() })),
+        bodyMeasurements: columns.map(c => ({ name: c, value: '', unit: unit.toLowerCase() })),
       };
     });
-    // Only update if lengths or sizes changed to avoid infinite loop
-    if (JSON.stringify(sizesState.map((s: any) => s.name)) !== JSON.stringify(selectedSizes)) {
-      setValue('sizes', newSizesState, { shouldValidate: true });
+
+    const isDifferent =
+      JSON.stringify(currentSizes.map((s: any) => s.name)) !== JSON.stringify(selectedSizes) ||
+      currentSizes.some((s: any) => {
+        const prodNames = (s.productMeasurements || []).map((m: any) => m.name);
+        return JSON.stringify(prodNames) !== JSON.stringify(columns);
+      });
+
+    if (isDifferent) {
+      setValue('sizes', newSizesState, { shouldValidate: false });
     }
-  }, [selectedSizes, columns]);
+  }, [selectedSizes, columns, setValue, getValues, unit]);
+
+  const handleUnitToggle = (nextUnit: 'CM' | 'IN') => {
+    if (nextUnit === unit) return;
+    setUnit(nextUnit);
+
+    const currentSizes = getValues('sizes') || [];
+    const updated = currentSizes.map((sizeObj: any) => {
+      const convert = (list: any[]) => {
+        return (list || []).map((m: any) => {
+          if (!m.value) return { ...m, unit: nextUnit.toLowerCase() };
+          const numeric = parseFloat(m.value);
+          if (isNaN(numeric)) return { ...m, unit: nextUnit.toLowerCase() };
+
+          let convertedVal = m.value;
+          if (nextUnit === 'IN') {
+            // cm -> inches
+            convertedVal = String(Math.round((numeric / 2.54) * 10) / 10);
+          } else {
+            // inches -> cm
+            convertedVal = String(Math.round(numeric * 2.54 * 10) / 10);
+          }
+          return {
+            ...m,
+            value: convertedVal,
+            unit: nextUnit.toLowerCase(),
+          };
+        });
+      };
+
+      return {
+        ...sizeObj,
+        productMeasurements: convert(sizeObj.productMeasurements),
+        bodyMeasurements: convert(sizeObj.bodyMeasurements),
+      };
+    });
+
+    setValue('sizes', updated, { shouldValidate: true, shouldDirty: true });
+  };
 
   if (selectedSizes.length === 0) {
     return (
@@ -2397,54 +2456,6 @@ function SizeMeasurementsField({ field }: UiProps) {
       </div>
     );
   }
-
-  const handleCellChange = (sizeName: string, type: 'product' | 'body', colName: string, inputValue: string) => {
-    const nextState = (watch('sizes') || []).map((sizeObj: any) => {
-      if (sizeObj.name !== sizeName) return sizeObj;
-
-      const listKey = type === 'product' ? 'productMeasurements' : 'bodyMeasurements';
-      const measurements = Array.isArray(sizeObj[listKey]) ? [...sizeObj[listKey]] : [];
-      const index = measurements.findIndex((m: any) => m.name === colName);
-
-      // Convert input to cm if unit is IN
-      let cmValue = inputValue;
-      if (unit === 'IN' && inputValue) {
-        const val = parseFloat(inputValue);
-        if (!isNaN(val)) {
-          cmValue = String(Math.round(val * 2.54 * 10) / 10);
-        }
-      }
-
-      if (index !== -1) {
-        measurements[index] = { ...measurements[index], value: cmValue, unit: 'cm' };
-      } else {
-        measurements.push({ name: colName, value: cmValue, unit: 'cm' });
-      }
-
-      return {
-        ...sizeObj,
-        [listKey]: measurements,
-      };
-    });
-
-    setValue('sizes', nextState, { shouldValidate: true, shouldDirty: true });
-  };
-
-  const getCellValue = (sizeName: string, type: 'product' | 'body', colName: string): string => {
-    const sizeObj = sizesState.find((s: any) => s.name === sizeName);
-    if (!sizeObj) return '';
-    const listKey = type === 'product' ? 'productMeasurements' : 'bodyMeasurements';
-    const measurement = (sizeObj[listKey] || []).find((m: any) => m.name === colName);
-    const cmValue = measurement?.value || '';
-
-    if (unit === 'IN' && cmValue) {
-      const val = parseFloat(cmValue);
-      if (!isNaN(val)) {
-        return String(Math.round((val / 2.54) * 10) / 10);
-      }
-    }
-    return cmValue;
-  };
 
   return (
     <div className="space-y-4">
@@ -2475,7 +2486,7 @@ function SizeMeasurementsField({ field }: UiProps) {
               className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
                 unit === 'CM' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
-              onClick={() => setUnit('CM')}
+              onClick={() => handleUnitToggle('CM')}
             >
               CM
             </button>
@@ -2484,7 +2495,7 @@ function SizeMeasurementsField({ field }: UiProps) {
               className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
                 unit === 'IN' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
-              onClick={() => setUnit('IN')}
+              onClick={() => handleUnitToggle('IN')}
             >
               IN
             </button>
@@ -2503,24 +2514,42 @@ function SizeMeasurementsField({ field }: UiProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {selectedSizes.map((sizeName) => (
-              <TableRow key={sizeName}>
-                <TableCell className="font-semibold">{sizeName}</TableCell>
-                {columns.map((c) => (
-                  <TableCell key={c}>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      className="h-8 w-28 bg-transparent"
-                      placeholder="0"
-                      value={getCellValue(sizeName, activeTab, c)}
-                      onChange={(e) => handleCellChange(sizeName, activeTab, c, e.target.value)}
-                    />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+            {selectedSizes.map((sizeName, sizeIndex) => {
+              const sizeObj = sizesState.find((s: any) => s.name === sizeName);
+              const listKey = activeTab === 'product' ? 'productMeasurements' : 'bodyMeasurements';
+
+              return (
+                <TableRow key={sizeName}>
+                  <TableCell className="font-semibold">{sizeName}</TableCell>
+                  {columns.map((c) => {
+                    const colIndex = sizeObj ? (sizeObj[listKey] || []).findIndex((m: any) => m.name === c) : -1;
+                    const cellError = colIndex !== -1
+                      ? (formState.errors.sizes as any)?.[sizeIndex]?.[listKey]?.[colIndex]?.value?.message
+                      : undefined;
+
+                    return (
+                      <TableCell key={c}>
+                        <div className="space-y-1 py-1">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            className={`h-8 w-28 bg-transparent ${cellError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                            placeholder="0"
+                            {...register(`sizes.${sizeIndex}.${listKey}.${colIndex}.value` as const)}
+                          />
+                          {cellError && (
+                            <span className="text-[10px] text-red-500 block leading-tight font-medium">
+                              {cellError}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
