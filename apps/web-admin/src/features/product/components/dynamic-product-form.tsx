@@ -43,6 +43,7 @@ const uiAliases: Record<string, keyof typeof uiTypeRegistry> = {
   mainimage: 'MainImage',
   colormeta: 'ColorMeta',
   colorinline: 'ColorInline',
+  sizemeasurementstable: 'SizeMeasurementsTable',
 };
 
 const groupAliases: Record<string, string> = {

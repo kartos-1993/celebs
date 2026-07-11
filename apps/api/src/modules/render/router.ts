@@ -30,6 +30,7 @@ router.get('/product-render', async (req, res) => {
         name: (category as any).name,
         version: (category as any).version ?? 1,
         attributes: (category as any).attributes || [],
+        sizeChartColumns: (category as any).sizeChartColumns || [],
       },
       locale,
       policy: DEFAULT_POLICY,

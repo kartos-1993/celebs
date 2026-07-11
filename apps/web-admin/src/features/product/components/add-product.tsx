@@ -704,11 +704,17 @@ async function buildProductPayload({
   const effectiveColors =
     selectedColors.length > 0 ? selectedColors : ['default'];
 
-  const sizes = selectedSizes.map((sizeValue) => ({
-    name: sizeLabelMap.get(sizeValue) || sizeValue,
-    productMeasurements: [],
-    bodyMeasurements: [],
-  }));
+  const sizes = selectedSizes.map((sizeValue) => {
+    const sizeName = sizeLabelMap.get(sizeValue) || sizeValue;
+    const formSizeObj = Array.isArray(values.sizes)
+      ? values.sizes.find((s: any) => s?.name === sizeName)
+      : null;
+    return {
+      name: sizeName,
+      productMeasurements: formSizeObj?.productMeasurements || [],
+      bodyMeasurements: formSizeObj?.bodyMeasurements || [],
+    };
+  });
 
   const colorVariants = effectiveColors.map((colorValue) => {
     const label =
