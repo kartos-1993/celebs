@@ -29,7 +29,10 @@ export function UserNav() {
   const { mutate } = useMutation({
     mutationFn: logoutMutationFn,
     onSuccess: () => {
-      queryClient.clear();
+      queryClient.setQueryData(['authUser'], null);
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'authUser',
+      });
       navigate('/login');
     },
   });

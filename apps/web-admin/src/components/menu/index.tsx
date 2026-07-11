@@ -30,7 +30,10 @@ export function Menu({ isSideBarOpen }: MenuProps) {
   const { mutate: logout } = useMutation({
     mutationFn: logoutMutationFn,
     onSuccess: () => {
-      queryClient.clear();
+      queryClient.setQueryData(['authUser'], null);
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'authUser',
+      });
       navigate('/login');
     },
   });

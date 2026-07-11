@@ -25,6 +25,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const user = data?.data?.user;
   const role = user?.role;
 
+  console.log('AuthProvider data:', data);
+  console.log('AuthProvider user:', user);
+  console.log('AuthProvider role:', role);
+
   const isVendor = role === 'VENDOR';
   const isAdmin = role === 'ADMIN';
   const isSuperAdmin = role === 'SUPERADMIN';
