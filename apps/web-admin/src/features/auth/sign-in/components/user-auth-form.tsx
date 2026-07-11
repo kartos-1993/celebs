@@ -57,13 +57,13 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         navigate(`/verify-mfa?email=${values.email}`);
         return;
       }
-      // Remove stale auth data and fetch fresh session before navigating
-      // This guarantees the sidebar has the correct role on first render
-      queryClient.removeQueries({ queryKey: ['authUser'] });
-      await queryClient.fetchQuery({
-        queryKey: ['authUser'],
-        queryFn: getUserSessionQueryFn,
-      });
+      // Fetch the fresh session and set it directly into the existing query cache.
+      // IMPORTANT: Do NOT use removeQueries/fetchQuery — that disconnects the
+      // useQuery observer in AuthProvider, so it never picks up the new data.
+      // setQueryData updates the existing cache entry in-place, keeping the
+      // observer connected, so AuthProvider re-renders with the new role immediately.
+      const sessionData = await getUserSessionQueryFn();
+      queryClient.setQueryData(['authUser'], sessionData);
       navigate('/');
     } catch (error: any) {
       console.log('login failure', error);
