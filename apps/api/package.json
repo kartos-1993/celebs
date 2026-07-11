@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.app.json",
+    "build": "tsc -p tsconfig.app.json && tsc-alias -p tsconfig.app.json",
     "dev": "dotenv -e .env.development -- nodemon --watch src --ext ts --exec node -r tsconfig-paths/register -r @swc-node/register src/main.ts",
     "start": "node dist/apps/api/src/main.js",
     "test": "dotenv -e .env.test -- npx prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run",
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
+  },
+  "devDependencies": {
+    "tsc-alias": "^1.9.0"
   }
 }
