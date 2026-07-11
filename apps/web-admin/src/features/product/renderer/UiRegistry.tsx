@@ -46,7 +46,8 @@ export type UiType =
   | 'ColorInline' // compact per-color swatch + images row list
   | 'SkuTableV2'
   | 'MainImage'
-  | 'ColorMeta';
+  | 'ColorMeta'
+  | 'SizeMeasurementsTable';
 
 export interface FieldSpec {
   name: string;
@@ -2354,6 +2355,182 @@ function ColorInlineField({ field }: UiProps) {
   );
 }
 
+
+function SizeMeasurementsField({ field }: UiProps) {
+  const columns: string[] = Array.isArray(field.dataSource) ? field.dataSource : [];
+  const { control: formControl, setValue, watch } = useFormContext();
+  const [unit, setUnit] = React.useState<'CM' | 'IN'>('CM');
+  const [activeTab, setActiveTab] = React.useState<'product' | 'body'>('product');
+
+  const sizeFieldNames = ['Size', 'US Size', 'Waist Size'];
+  const watchedSizes = useWatch({
+    control: formControl,
+    name: sizeFieldNames,
+  });
+
+  const activeSizesIndex = sizeFieldNames.findIndex((_, idx) => watchedSizes?.[idx] && watchedSizes[idx].length > 0);
+  const selectedSizes = activeSizesIndex !== -1 ? (watchedSizes[activeSizesIndex] as string[]) : [];
+
+  // Initialize/sync sizes field array in formState when selectedSizes changes
+  const sizesState = watch('sizes') || [];
+  React.useEffect(() => {
+    // If selectedSizes changes, sync sizesState with it
+    const newSizesState = selectedSizes.map((sizeName) => {
+      const existing = sizesState.find((s: any) => s.name === sizeName);
+      if (existing) return existing;
+      return {
+        name: sizeName,
+        productMeasurements: columns.map(c => ({ name: c, value: '', unit: 'cm' })),
+        bodyMeasurements: columns.map(c => ({ name: c, value: '', unit: 'cm' })),
+      };
+    });
+    // Only update if lengths or sizes changed to avoid infinite loop
+    if (JSON.stringify(sizesState.map((s: any) => s.name)) !== JSON.stringify(selectedSizes)) {
+      setValue('sizes', newSizesState, { shouldValidate: true });
+    }
+  }, [selectedSizes, columns]);
+
+  if (selectedSizes.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        Select product sizes in the "Price, Stock & Variants" section to enter measurements.
+      </div>
+    );
+  }
+
+  const handleCellChange = (sizeName: string, type: 'product' | 'body', colName: string, inputValue: string) => {
+    const nextState = (watch('sizes') || []).map((sizeObj: any) => {
+      if (sizeObj.name !== sizeName) return sizeObj;
+
+      const listKey = type === 'product' ? 'productMeasurements' : 'bodyMeasurements';
+      const measurements = Array.isArray(sizeObj[listKey]) ? [...sizeObj[listKey]] : [];
+      const index = measurements.findIndex((m: any) => m.name === colName);
+
+      // Convert input to cm if unit is IN
+      let cmValue = inputValue;
+      if (unit === 'IN' && inputValue) {
+        const val = parseFloat(inputValue);
+        if (!isNaN(val)) {
+          cmValue = String(Math.round(val * 2.54 * 10) / 10);
+        }
+      }
+
+      if (index !== -1) {
+        measurements[index] = { ...measurements[index], value: cmValue, unit: 'cm' };
+      } else {
+        measurements.push({ name: colName, value: cmValue, unit: 'cm' });
+      }
+
+      return {
+        ...sizeObj,
+        [listKey]: measurements,
+      };
+    });
+
+    setValue('sizes', nextState, { shouldValidate: true, shouldDirty: true });
+  };
+
+  const getCellValue = (sizeName: string, type: 'product' | 'body', colName: string): string => {
+    const sizeObj = sizesState.find((s: any) => s.name === sizeName);
+    if (!sizeObj) return '';
+    const listKey = type === 'product' ? 'productMeasurements' : 'bodyMeasurements';
+    const measurement = (sizeObj[listKey] || []).find((m: any) => m.name === colName);
+    const cmValue = measurement?.value || '';
+
+    if (unit === 'IN' && cmValue) {
+      const val = parseFloat(cmValue);
+      if (!isNaN(val)) {
+        return String(Math.round((val / 2.54) * 10) / 10);
+      }
+    }
+    return cmValue;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={activeTab === 'product' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('product')}
+          >
+            Product Chart
+          </Button>
+          <Button
+            type="button"
+            variant={activeTab === 'body' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('body')}
+          >
+            Body Chart
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Switch to:</span>
+          <div className="inline-flex rounded-md bg-muted p-1">
+            <button
+              type="button"
+              className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
+                unit === 'CM' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setUnit('CM')}
+            >
+              CM
+            </button>
+            <button
+              type="button"
+              className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
+                unit === 'IN' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setUnit('IN')}
+            >
+              IN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-24">Size</TableHead>
+              {columns.map((c) => (
+                <TableHead key={c}>{c} ({unit.toLowerCase()})</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedSizes.map((sizeName) => (
+              <TableRow key={sizeName}>
+                <TableCell className="font-semibold">{sizeName}</TableCell>
+                {columns.map((c) => (
+                  <TableCell key={c}>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      className="h-8 w-28 bg-transparent"
+                      placeholder="0"
+                      value={getCellValue(sizeName, activeTab, c)}
+                      onChange={(e) => handleCellChange(sizeName, activeTab, c, e.target.value)}
+                    />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground italic">
+        *Measurements entered here will be saved and displayed to customers on the product detail page.
+      </p>
+    </div>
+  );
+}
+
 export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   input: InputField,
   number: NumberField,
@@ -2365,5 +2542,6 @@ export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   SkuTableV2: SkuTableField,
   ColorMeta: ColorMetaField,
   ColorInline: ColorInlineField,
+  SizeMeasurementsTable: SizeMeasurementsField,
 };
 

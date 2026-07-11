@@ -33,6 +33,7 @@ interface SeedAttr {
 
 interface SeedCategory {
   name: string;
+  sizeChartColumns?: string[];
   attributes?: SeedAttr[];
   children?: SeedCategory[];
 }
@@ -68,14 +69,21 @@ function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
   };
 }
 
-async function ensureCategory(parent: any | null, name: string) {
+async function ensureCategory(parent: any | null, name: string, sizeChartColumns?: string[]) {
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? (parent.level || 1) + 1 : 1;
   const pathParts = parent ? [...(parent.path || []), slug] : [slug];
   // Upsert so reseeding keeps structure consistent
   const res = await CategoryModel.findOneAndUpdate(
     { name },
-    { name, slug, level, parentCategory: parent?._id || null, path: pathParts },
+    { 
+      name, 
+      slug, 
+      level, 
+      parentCategory: parent?._id || null, 
+      path: pathParts,
+      ...(sizeChartColumns ? { sizeChartColumns } : {})
+    },
     { new: true, upsert: true, setDefaultsOnInsert: true },
   );
   return res;
@@ -124,7 +132,7 @@ async function seedTree(root: SeedCategory) {
   }
 
   async function walk(node: SeedCategory, parent: any | null) {
-    const cat = await ensureCategory(parent, node.name);
+    const cat = await ensureCategory(parent, node.name, node.sizeChartColumns);
     if (node.attributes?.length) {
       await createAttributes(cat._id as Types.ObjectId, node.attributes);
     }
@@ -147,6 +155,7 @@ const MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'T-Shirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -164,6 +173,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Shirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -193,6 +203,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Polos',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -203,6 +214,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Hoodies & Sweatshirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -215,6 +227,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Sweaters & Cardigans',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -226,6 +239,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Jackets & Coats',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -243,6 +257,7 @@ const MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Jeans',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Waist Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Numeric Sizes (28-44)' },
@@ -259,6 +274,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Pants',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Waist Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Numeric Sizes (28-44)' },
@@ -273,6 +289,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Shorts',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -391,6 +408,7 @@ const MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Sneakers',
+          sizeChartColumns: ['Insole Length', 'Foot Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
@@ -400,6 +418,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Boots',
+          sizeChartColumns: ['Insole Length', 'Foot Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
@@ -409,6 +428,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Sandals & Slides',
+          sizeChartColumns: ['Insole Length', 'Foot Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },
@@ -426,6 +446,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Dress Shoes',
+          sizeChartColumns: ['Insole Length', 'Foot Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
             { name: 'US Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'US Shoe Sizes (Men)' },

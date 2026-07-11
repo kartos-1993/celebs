@@ -38,6 +38,7 @@ export interface CategoryDocLike {
   name: string;
   version?: number;
   attributes: IAttribute[] | any[];
+  sizeChartColumns?: string[];
 }
 
 function titleCase(s: string) {
@@ -169,6 +170,18 @@ export function composeSchema(params: {
       type: p.variantType ?? 'custom',
     })),
   });
+
+  if (params.category.sizeChartColumns && params.category.sizeChartColumns.length > 0) {
+    fields.push({
+      name: 'sizes',
+      uiType: 'SizeMeasurementsTable' as any,
+      label: 'Size & Fit Measurements',
+      group: 'details',
+      required: false,
+      dataSource: params.category.sizeChartColumns,
+      visible: true,
+    });
+  }
 
   const version = params.category.version ?? 1;
   // Include policy fingerprint so any policy change busts the ETag cache
