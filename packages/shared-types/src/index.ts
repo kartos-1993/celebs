@@ -20,3 +20,6 @@ export type vendorProfileType = z.infer<typeof vendorProfileSchema>;
 export type warehouseType = z.infer<typeof warehouseSchema>;
 export type vendorDocumentsType = z.infer<typeof vendorDocumentsSchema>;
 export type vendorBusinessInfoType = z.infer<typeof vendorBusinessInfoSchema>;
+
+export * from './types/api';
+

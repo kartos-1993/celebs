@@ -34,6 +34,7 @@ import {
 } from '@celebs/shared-ui/components/tooltip';
 import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
 import { Multiselect } from '@celebs/shared-ui/components/multiselect';
+import { ProductApiService } from '../api';
 
 export type UiType =
   | 'input'
@@ -45,7 +46,8 @@ export type UiType =
   | 'ColorInline' // compact per-color swatch + images row list
   | 'SkuTableV2'
   | 'MainImage'
-  | 'ColorMeta';
+  | 'ColorMeta'
+  | 'SizeMeasurementsTable';
 
 export interface FieldSpec {
   name: string;
@@ -60,6 +62,41 @@ export interface FieldSpec {
 }
 
 type UiProps = { field: FieldSpec; control: Control<any> };
+type ImageValue = File | string;
+
+const imageValueKey = (value: ImageValue) =>
+  typeof value === 'string'
+    ? value
+    : `${value.name}-${value.size}-${value.lastModified}`;
+
+const uploadImageFiles = async (files: File[]) => {
+  if (files.length === 0) return [];
+
+  const urls = await ProductApiService.uploadFiles(files);
+  if (urls.length < files.length) {
+    throw new Error('Image upload did not return a URL. Try again.');
+  }
+
+  return urls;
+};
+
+const uploadErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Image upload failed. Try again.';
+
+const validateFileBasics = (
+  file: File,
+  options: { accept?: string[]; maxSize?: number },
+) => {
+  if (typeof options.maxSize === 'number' && file.size > options.maxSize) {
+    return `Each image must be <= ${Math.round(options.maxSize / 1024 / 1024)}MB`;
+  }
+
+  if (Array.isArray(options.accept) && !options.accept.includes(file.type)) {
+    return 'Invalid file type';
+  }
+
+  return null;
+};
 
 function rulesFrom(field: FieldSpec) {
   const rules: any = {};
@@ -304,9 +341,13 @@ function MainImageField({ field }: UiProps) {
     setError,
     clearErrors,
   } = useFormContext();
-  const files: File[] = watch(field.name) ?? [];
+  const files: ImageValue[] = watch(field.name) ?? [];
   const [previews, setPreviews] = React.useState<string[]>([]);
+  const [isUploading, setIsUploading] = React.useState(false);
   const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
+  const filesHash = (files || [])
+    .map((file) => imageValueKey(file))
+    .join('|');
 
   // Helpers: load image dims and validate against backend rules (size, type, aspect, dims)
   const getDims = React.useCallback((file: File) => {
@@ -348,7 +389,7 @@ function MainImageField({ field }: UiProps) {
     // Register field for validation (non-async guards)
     register(field.name as any, {
       validate: (v: any) => {
-        const arr: File[] = Array.isArray(v) ? v : [];
+        const arr: ImageValue[] = Array.isArray(v) ? v : [];
         if (field.required && arr.length === 0)
           return `${field.label} is required`;
         if (
@@ -358,28 +399,34 @@ function MainImageField({ field }: UiProps) {
           return `Max ${field.rule.maxItems} images`;
         if (
           Array.isArray(field.rule?.accept) &&
-          arr.some((f) => !field.rule.accept.includes(f.type))
+          arr.some((f) => f instanceof File && !field.rule.accept.includes(f.type))
         )
           return 'Invalid file type';
         if (
           typeof field.rule?.maxSize === 'number' &&
-          arr.some((f) => f.size > field.rule.maxSize)
+          arr.some((f) => f instanceof File && f.size > field.rule.maxSize)
         )
           return `Each image must be <= ${Math.round(field.rule.maxSize / 1024 / 1024)}MB`;
         return true;
       },
     });
     // generate previews
-    const urls = (files || []).map((f) => URL.createObjectURL(f));
+    const urls = (files || []).map((f) =>
+      typeof f === 'string' ? f : URL.createObjectURL(f),
+    );
     setPreviews((prev) => {
-      prev.forEach((u) => URL.revokeObjectURL(u));
+      prev.forEach((u) => {
+        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      });
       return urls;
     });
     return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.forEach((u) => {
+        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files?.length]);
+  }, [filesHash]);
 
   const prevalidateFile = async (f: File): Promise<string | null> => {
     const rule = field.rule || {};
@@ -390,6 +437,8 @@ function MainImageField({ field }: UiProps) {
     if (
       typeof rule?.minWidth === 'number' ||
       typeof rule?.minHeight === 'number' ||
+      typeof rule?.maxWidth === 'number' ||
+      typeof rule?.maxHeight === 'number' ||
       !!rule?.aspectRatio
     ) {
       try {
@@ -398,6 +447,10 @@ function MainImageField({ field }: UiProps) {
           return `Width must be >= ${rule.minWidth}px`;
         if (typeof rule.minHeight === 'number' && h < rule.minHeight)
           return `Height must be >= ${rule.minHeight}px`;
+        if (typeof rule.maxWidth === 'number' && w > rule.maxWidth)
+          return `Width must be <= ${rule.maxWidth}px`;
+        if (typeof rule.maxHeight === 'number' && h > rule.maxHeight)
+          return `Height must be <= ${rule.maxHeight}px`;
         if (!aspectOk(w, h))
           return `Image aspect ratio should be ${rule.aspectRatio}`;
       } catch {
@@ -410,36 +463,71 @@ function MainImageField({ field }: UiProps) {
   const onAddFiles = async (list: FileList | null) => {
     if (!list) return;
     const incoming = Array.from(list);
-    // Validate batch; keep only valid ones and surface first error
     const errors: string[] = [];
     const valids: File[] = [];
+
     for (const f of incoming) {
       const err = await prevalidateFile(f);
       if (err) errors.push(err);
       else valids.push(f);
     }
-    if (errors.length) {
-      setError(field.name as any, { type: 'validate', message: errors[0] });
-      // still add valid files if any
-    } else {
-      clearErrors(field.name as any);
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(field.name as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
     }
-    const next = [...(files || []), ...valids];
-    setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
-    trigger(field.name);
+
+    setIsUploading(true);
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const current = (watch(field.name) ?? []) as ImageValue[];
+      const next = [...current, ...uploadedUrls];
+      setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+      clearErrors(field.name as any);
+      trigger(field.name);
+    } catch (error) {
+      setError(field.name as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
+
   const onReplaceFile = async (idx: number, f: File | null) => {
     if (!f) return;
     const err = await prevalidateFile(f);
+
     if (err) {
       setError(field.name as any, { type: 'validate', message: err });
       return;
     }
-    clearErrors(field.name as any);
-    const next = [...(files || [])];
-    next[idx] = f;
-    setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
-    trigger(field.name);
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([f]);
+      const current = (watch(field.name) ?? []) as ImageValue[];
+      const next = [...current];
+      next[idx] = uploadedUrl;
+      setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+      clearErrors(field.name as any);
+      trigger(field.name);
+    } catch (error) {
+      setError(field.name as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   const onDelete = (idx: number) => {
     const next = (files || []).filter((_, i) => i !== idx);
@@ -531,7 +619,11 @@ function MainImageField({ field }: UiProps) {
             </TooltipProvider>
           ))}
           {/* Inline Add tile */}
-          <label className="grid h-20 w-20 cursor-pointer place-items-center rounded border text-sm text-muted-foreground hover:bg-accent/30">
+          <label
+            className={`grid h-20 w-20 cursor-pointer place-items-center rounded border text-sm text-muted-foreground hover:bg-accent/30 ${
+              isUploading ? 'pointer-events-none opacity-60' : ''
+            }`}
+          >
             <input
               ref={addInputRef}
               type="file"
@@ -542,9 +634,19 @@ function MainImageField({ field }: UiProps) {
                   : undefined
               }
               multiple
-              onChange={(e) => onAddFiles(e.target.files)}
+              disabled={isUploading}
+              onChange={(e) => {
+                const input = e.currentTarget;
+                void onAddFiles(input.files).finally(() => {
+                  input.value = '';
+                });
+              }}
             />
-            <ImagePlus className="h-5 w-5" />
+            {isUploading ? (
+              <Upload className="h-5 w-5 animate-pulse" />
+            ) : (
+              <ImagePlus className="h-5 w-5" />
+            )}
           </label>
         </div>
         {/* Helper text (only if backend provided rules) */}
@@ -553,7 +655,9 @@ function MainImageField({ field }: UiProps) {
         field.rule?.maxSize != null ||
         field.rule?.aspectRatio ||
         field.rule?.minWidth ||
-        field.rule?.minHeight ? (
+        field.rule?.minHeight ||
+        field.rule?.maxWidth ||
+        field.rule?.maxHeight ? (
           <div className="mt-2 text-xs text-muted-foreground">
             {field.rule?.maxItems != null ? (
               <>Max {field.rule.maxItems} images</>
@@ -586,6 +690,13 @@ function MainImageField({ field }: UiProps) {
                 {' '}
                 • Minimum dimensions: {field.rule?.minWidth ?? 0}×
                 {field.rule?.minHeight ?? 0}px
+              </>
+            ) : null}
+            {field.rule?.maxWidth || field.rule?.maxHeight ? (
+              <>
+                {' '}
+                • Maximum dimensions: {field.rule?.maxWidth ?? 0}×
+                {field.rule?.maxHeight ?? 0}px
               </>
             ) : null}
           </div>
@@ -1258,22 +1369,37 @@ function ColorMetaItem({
   accept?: string[];
   limits?: { maxImages?: number; maxSize?: number };
 }) {
-  const { control, setValue, watch, register, trigger, formState } =
-    useFormContext();
+  const {
+    control,
+    setValue,
+    watch,
+    register,
+    trigger,
+    formState,
+    setError,
+    clearErrors,
+  } = useFormContext();
   const { field: hot } = useController({ name: `${namePrefix}.hot`, control });
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
-  const images: File[] = watch(`${namePrefix}.images`) ?? [];
+  const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
   const swatchUrl = useObjectUrl(swatch);
+  const [isUploading, setIsUploading] = React.useState(false);
   const [imageUrls, setImageUrls] = React.useState<string[]>([]);
+  const imagesHash = (images || [])
+    .map((f) => imageValueKey(f))
+    .join(',');
 
   React.useEffect(() => {
-    // Create object URLs for image previews (Files only)
-    const urls = (images || []).map((img) => URL.createObjectURL(img));
+    const urls = (images || []).map((img) =>
+      typeof img === 'string' ? img : URL.createObjectURL(img),
+    );
     setImageUrls(urls);
     return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.forEach((u) => {
+        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      });
     };
-  }, [images]);
+  }, [imagesHash]);
 
   // Ensure limits is always a defined object to avoid undefined access
   const safeLimits = limits ?? {};
@@ -1293,7 +1419,7 @@ function ColorMetaItem({
     });
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
-        const arr: File[] = Array.isArray(v) ? v : [];
+        const arr: ImageValue[] = Array.isArray(v) ? v : [];
         if (
           typeof safeLimits?.maxImages === 'number' &&
           arr.length > safeLimits.maxImages
@@ -1315,32 +1441,126 @@ function ColorMetaItem({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namePrefix]);
 
-  const onSwatch = (file: File | null) => {
+  const onSwatch = async (file: File | null) => {
     if (!file) return;
-    setValue(`${namePrefix}.swatch`, file, {
-      shouldDirty: true,
-      shouldValidate: true,
+
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
     });
-    trigger(`${namePrefix}.swatch`);
+
+    if (err) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      setValue(`${namePrefix}.swatch`, uploadedUrl, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.swatch` as any);
+      trigger(`${namePrefix}.swatch`);
+    } catch (error) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
-  const onAddImages = (list: FileList | null) => {
+
+  const onAddImages = async (list: FileList | null) => {
     if (!list) return;
-    const next = [...images, ...Array.from(list)];
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
+    const incoming = Array.from(list);
+    const errors: string[] = [];
+    const valids: File[] = [];
+
+    incoming.forEach((file) => {
+      const err = validateFileBasics(file, {
+        accept,
+        maxSize: safeLimits.maxSize,
+      });
+
+      if (err) errors.push(err);
+      else valids.push(file);
     });
-    trigger(`${namePrefix}.images`);
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(`${namePrefix}.images` as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current, ...uploadedUrls];
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
-  const onReplaceImage = (idx: number, file: File | null) => {
+
+  const onReplaceImage = async (idx: number, file: File | null) => {
     if (!file) return;
-    const next = [...images];
-    next[idx] = file;
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
     });
-    trigger(`${namePrefix}.images`);
+
+    if (err) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current];
+      next[idx] = uploadedUrl;
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   const onDeleteImage = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
@@ -1372,7 +1592,13 @@ function ColorMetaItem({
               type="file"
               className="hidden"
               accept={Array.isArray(accept) ? accept.join(',') : undefined}
-              onChange={(e) => onSwatch(e.target.files?.[0] ?? null)}
+              disabled={isUploading}
+              onChange={(e) => {
+                const input = e.currentTarget;
+                void onSwatch(input.files?.[0] ?? null).finally(() => {
+                  input.value = '';
+                });
+              }}
             />
             {swatchUrl ? (
               <img
@@ -1423,11 +1649,12 @@ function ColorMetaItem({
                               input.accept = Array.isArray(accept)
                                 ? accept.join(',')
                                 : '';
-                              input.onchange = (e: any) =>
-                                onReplaceImage(
+                              input.onchange = (e: any) => {
+                                void onReplaceImage(
                                   idx,
                                   e.target.files?.[0] ?? null,
                                 );
+                              };
                               input.click();
                             }}
                           >
@@ -1462,11 +1689,12 @@ function ColorMetaItem({
                               input.accept = Array.isArray(accept)
                                 ? accept.join(',')
                                 : '';
-                              input.onchange = (e: any) =>
-                                onReplaceImage(
+                              input.onchange = (e: any) => {
+                                void onReplaceImage(
                                   idx,
                                   e.target.files?.[0] ?? null,
                                 );
+                              };
                               input.click();
                             }}
                           >
@@ -1493,7 +1721,13 @@ function ColorMetaItem({
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
-                onChange={(e) => onAddImages(e.target.files)}
+                disabled={isUploading}
+                onChange={(e) => {
+                  const input = e.currentTarget;
+                  void onAddImages(input.files).finally(() => {
+                    input.value = '';
+                  });
+                }}
               />
               <ImagePlus className="h-4 w-4" />
             </label>
@@ -1513,7 +1747,7 @@ function ColorMetaItem({
 }
 
 function ColorMetaField({ field }: UiProps) {
-  const { watch, setValue } = useFormContext();
+  const { watch, setValue, setError, clearErrors, trigger } = useFormContext();
   const colorField: string =
     field.dataSource?.colorField ??
     field.dataSource?.variants?.find((v: any) =>
@@ -1542,6 +1776,50 @@ function ColorMetaField({ field }: UiProps) {
     : selected
       ? [selected]
       : [];
+  const uploadColorImages = async (colorValue: string, list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    const errors: string[] = [];
+    const valids: File[] = [];
+
+    incoming.forEach((file) => {
+      const err = validateFileBasics(file, {
+        accept,
+        maxSize: limits.maxSize,
+      });
+
+      if (err) errors.push(err);
+      else valids.push(file);
+    });
+
+    const prefix = `variants.colorMeta.${colorValue}`;
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(`${prefix}.images` as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
+    }
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const prev: ImageValue[] = watch(`${prefix}.images`) ?? [];
+      setValue(`${prefix}.images`, [...prev, ...uploadedUrls], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${prefix}.images` as any);
+      trigger(`${prefix}.images`);
+    } catch (error) {
+      setError(`${prefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -1583,14 +1861,7 @@ function ColorMetaField({ field }: UiProps) {
                       ? accept.join(',')
                       : '';
                     input.onchange = (e: any) => {
-                      const files: FileList | null = e.target.files;
-                      const namePrefix = `variants.colorMeta.${c}`;
-                      const prev: File[] = watch(`${namePrefix}.images`) ?? [];
-                      const next = [...prev, ...Array.from(files ?? [])];
-                      setValue(`${namePrefix}.images`, next, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
+                      void uploadColorImages(c, e.target.files);
                     };
                     input.click();
                   }}
@@ -1608,14 +1879,7 @@ function ColorMetaField({ field }: UiProps) {
                       ? accept.join(',')
                       : '';
                     input.onchange = (e: any) => {
-                      const files: FileList | null = e.target.files;
-                      const namePrefix = `variants.colorMeta.${c}`;
-                      const prev: File[] = watch(`${namePrefix}.images`) ?? [];
-                      const next = [...prev, ...Array.from(files ?? [])];
-                      setValue(`${namePrefix}.images`, next, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
+                      void uploadColorImages(c, e.target.files);
                     };
                     input.click();
                   }}
@@ -1682,7 +1946,15 @@ function ColorInlineRow({
   accept?: string[];
   limits: { maxImages?: number; maxSize?: number };
 }) {
-  const { watch, setValue, trigger, register, formState } = useFormContext();
+  const {
+    watch,
+    setValue,
+    trigger,
+    register,
+    formState,
+    setError,
+    clearErrors,
+  } = useFormContext();
   const safeLimits = limits ?? {};
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
   const swatchUrl = React.useMemo(() => {
@@ -1690,8 +1962,13 @@ function ColorInlineRow({
     if (typeof swatch === 'string') return swatch;
     return URL.createObjectURL(swatch);
   }, [swatch]);
-  const images: File[] = watch(`${namePrefix}.images`) ?? [];
+  const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
+  const [isUploading, setIsUploading] = React.useState(false);
   const [urls, setUrls] = React.useState<string[]>([]);
+  const imagesHash = (images || [])
+    .map((f) => imageValueKey(f))
+    .join(',');
+
   React.useEffect(() => {
     const next = (images || []).map((f) =>
       typeof f === 'string' ? f : URL.createObjectURL(f),
@@ -1703,7 +1980,7 @@ function ColorInlineRow({
         if (u.startsWith('blob:')) URL.revokeObjectURL(u);
       });
     };
-  }, [images]);
+  }, [imagesHash]);
 
   React.useEffect(() => {
     register(`${namePrefix}.swatch` as any, {
@@ -1720,7 +1997,7 @@ function ColorInlineRow({
     });
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
-        const arr: File[] = Array.isArray(v) ? v : [];
+        const arr: ImageValue[] = Array.isArray(v) ? v : [];
         if (
           typeof safeLimits?.maxImages === 'number' &&
           arr.length > safeLimits.maxImages
@@ -1741,24 +2018,125 @@ function ColorInlineRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namePrefix]);
 
-  const addFiles = (list: FileList | null) => {
-    if (!list) return;
-    const next = [...images, ...Array.from(list)];
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    trigger(`${namePrefix}.images`);
-  };
-  const replaceAt = (idx: number, file: File | null) => {
+  const uploadSwatch = async (file: File | null) => {
     if (!file) return;
-    const next = [...images];
-    next[idx] = file;
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
     });
-    trigger(`${namePrefix}.images`);
+
+    if (err) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      setValue(`${namePrefix}.swatch`, uploadedUrl, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.swatch` as any);
+      trigger(`${namePrefix}.swatch`);
+    } catch (error) {
+      setError(`${namePrefix}.swatch` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const addFiles = async (list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    const errors: string[] = [];
+    const valids: File[] = [];
+
+    incoming.forEach((file) => {
+      const err = validateFileBasics(file, {
+        accept,
+        maxSize: safeLimits.maxSize,
+      });
+
+      if (err) errors.push(err);
+      else valids.push(file);
+    });
+
+    if (valids.length === 0) {
+      if (errors.length) {
+        setError(`${namePrefix}.images` as any, {
+          type: 'validate',
+          message: errors[0],
+        });
+      }
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const uploadedUrls = await uploadImageFiles(valids);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current, ...uploadedUrls];
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const replaceAt = async (idx: number, file: File | null) => {
+    if (!file) return;
+    const err = validateFileBasics(file, {
+      accept,
+      maxSize: safeLimits.maxSize,
+    });
+
+    if (err) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'validate',
+        message: err,
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const [uploadedUrl] = await uploadImageFiles([file]);
+      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
+      const next = [...current];
+      next[idx] = uploadedUrl;
+      setValue(`${namePrefix}.images`, next, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      clearErrors(`${namePrefix}.images` as any);
+      trigger(`${namePrefix}.images`);
+    } catch (error) {
+      setError(`${namePrefix}.images` as any, {
+        type: 'upload',
+        message: uploadErrorMessage(error),
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   const removeAt = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
@@ -1780,13 +2158,10 @@ function ColorInlineRow({
             className="hidden"
             accept={Array.isArray(accept) ? accept.join(',') : undefined}
             onChange={(e) => {
-              const file = e.target.files?.[0] ?? null;
-              if (!file) return;
-              setValue(`${namePrefix}.swatch`, file as any, {
-                shouldDirty: true,
-                shouldValidate: true,
+              const input = e.currentTarget;
+              void uploadSwatch(input.files?.[0] ?? null).finally(() => {
+                input.value = '';
               });
-              trigger(`${namePrefix}.swatch`);
             }}
           />
           {swatchUrl ? (
@@ -1824,7 +2199,9 @@ function ColorInlineRow({
                 input.type = 'file';
                 input.multiple = true;
                 input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                input.onchange = (e: any) => addFiles(e.target.files);
+                input.onchange = (e: any) => {
+                  void addFiles(e.target.files);
+                };
                 input.click();
               }}
             >
@@ -1862,8 +2239,9 @@ function ColorInlineRow({
                       input.accept = Array.isArray(accept)
                         ? accept.join(',')
                         : '';
-                      input.onchange = (e: any) =>
-                        replaceAt(idx, e.target.files?.[0] ?? null);
+                      input.onchange = (e: any) => {
+                        void replaceAt(idx, e.target.files?.[0] ?? null);
+                      };
                       input.click();
                     }}
                   >
@@ -1886,9 +2264,19 @@ function ColorInlineRow({
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
-                onChange={(e) => addFiles(e.target.files)}
+                disabled={isUploading}
+                onChange={(e) => {
+                  const input = e.currentTarget;
+                  void addFiles(input.files).finally(() => {
+                    input.value = '';
+                  });
+                }}
               />
-              <ImagePlus className="h-4 w-4" />
+              {isUploading ? (
+                <Upload className="h-4 w-4 animate-pulse" />
+              ) : (
+                <ImagePlus className="h-4 w-4" />
+              )}
             </label>
           </div>
           {(formState.errors as any)?.[`${namePrefix}.images`] ? (
@@ -1967,6 +2355,211 @@ function ColorInlineField({ field }: UiProps) {
   );
 }
 
+
+function SizeMeasurementsField({ field }: UiProps) {
+  const columns: string[] = Array.isArray(field.dataSource) ? field.dataSource : [];
+  const { control: formControl, register, setValue, getValues, watch, formState } = useFormContext();
+  const [unit, setUnit] = React.useState<'CM' | 'IN'>('CM');
+  const [activeTab, setActiveTab] = React.useState<'product' | 'body'>('product');
+
+  const sizeFieldNames = ['Size', 'US Size', 'Waist Size'];
+  const watchedSizes = useWatch({
+    control: formControl,
+    name: sizeFieldNames,
+  });
+
+  const activeSizesIndex = sizeFieldNames.findIndex((_, idx) => watchedSizes?.[idx] && watchedSizes[idx].length > 0);
+  const selectedSizes = activeSizesIndex !== -1 ? (watchedSizes[activeSizesIndex] as string[]) : [];
+
+  // Sync size rows in formState when selectedSizes or columns change
+  const sizesState = watch('sizes') || [];
+  React.useEffect(() => {
+    const currentSizes = getValues('sizes') || [];
+    const newSizesState = selectedSizes.map((sizeName) => {
+      const existing = currentSizes.find((s: any) => s.name === sizeName);
+      if (existing) {
+        // If columns changed (e.g. category changed), make sure to sync columns
+        const syncMeasurements = (list: any[]) => {
+          const listArr = Array.isArray(list) ? list : [];
+          return columns.map(col => {
+            const ext = listArr.find((m: any) => m.name === col);
+            return ext || { name: col, value: '', unit: unit.toLowerCase() };
+          });
+        };
+        return {
+          ...existing,
+          productMeasurements: syncMeasurements(existing.productMeasurements),
+          bodyMeasurements: syncMeasurements(existing.bodyMeasurements),
+        };
+      }
+      return {
+        name: sizeName,
+        productMeasurements: columns.map(c => ({ name: c, value: '', unit: unit.toLowerCase() })),
+        bodyMeasurements: columns.map(c => ({ name: c, value: '', unit: unit.toLowerCase() })),
+      };
+    });
+
+    const isDifferent =
+      JSON.stringify(currentSizes.map((s: any) => s.name)) !== JSON.stringify(selectedSizes) ||
+      currentSizes.some((s: any) => {
+        const prodNames = (s.productMeasurements || []).map((m: any) => m.name);
+        return JSON.stringify(prodNames) !== JSON.stringify(columns);
+      });
+
+    if (isDifferent) {
+      setValue('sizes', newSizesState, { shouldValidate: false });
+    }
+  }, [selectedSizes, columns, setValue, getValues, unit]);
+
+  const handleUnitToggle = (nextUnit: 'CM' | 'IN') => {
+    if (nextUnit === unit) return;
+    setUnit(nextUnit);
+
+    const currentSizes = getValues('sizes') || [];
+    const updated = currentSizes.map((sizeObj: any) => {
+      const convert = (list: any[]) => {
+        return (list || []).map((m: any) => {
+          if (!m.value) return { ...m, unit: nextUnit.toLowerCase() };
+          const numeric = parseFloat(m.value);
+          if (isNaN(numeric)) return { ...m, unit: nextUnit.toLowerCase() };
+
+          let convertedVal = m.value;
+          if (nextUnit === 'IN') {
+            // cm -> inches
+            convertedVal = String(Math.round((numeric / 2.54) * 10) / 10);
+          } else {
+            // inches -> cm
+            convertedVal = String(Math.round(numeric * 2.54 * 10) / 10);
+          }
+          return {
+            ...m,
+            value: convertedVal,
+            unit: nextUnit.toLowerCase(),
+          };
+        });
+      };
+
+      return {
+        ...sizeObj,
+        productMeasurements: convert(sizeObj.productMeasurements),
+        bodyMeasurements: convert(sizeObj.bodyMeasurements),
+      };
+    });
+
+    setValue('sizes', updated, { shouldValidate: true, shouldDirty: true });
+  };
+
+  if (selectedSizes.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        Select product sizes in the "Price, Stock & Variants" section to enter measurements.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={activeTab === 'product' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('product')}
+          >
+            Product Chart
+          </Button>
+          <Button
+            type="button"
+            variant={activeTab === 'body' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('body')}
+          >
+            Body Chart
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Switch to:</span>
+          <div className="inline-flex rounded-md bg-muted p-1">
+            <button
+              type="button"
+              className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
+                unit === 'CM' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => handleUnitToggle('CM')}
+            >
+              CM
+            </button>
+            <button
+              type="button"
+              className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
+                unit === 'IN' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => handleUnitToggle('IN')}
+            >
+              IN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-24">Size</TableHead>
+              {columns.map((c) => (
+                <TableHead key={c}>{c} ({unit.toLowerCase()})</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedSizes.map((sizeName, sizeIndex) => {
+              const sizeObj = sizesState.find((s: any) => s.name === sizeName);
+              const listKey = activeTab === 'product' ? 'productMeasurements' : 'bodyMeasurements';
+
+              return (
+                <TableRow key={sizeName}>
+                  <TableCell className="font-semibold">{sizeName}</TableCell>
+                  {columns.map((c) => {
+                    const colIndex = sizeObj ? (sizeObj[listKey] || []).findIndex((m: any) => m.name === c) : -1;
+                    const cellError = colIndex !== -1
+                      ? (formState.errors.sizes as any)?.[sizeIndex]?.[listKey]?.[colIndex]?.value?.message
+                      : undefined;
+
+                    return (
+                      <TableCell key={c}>
+                        <div className="space-y-1 py-1">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            className={`h-8 w-28 bg-transparent ${cellError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                            placeholder="0"
+                            {...register(`sizes.${sizeIndex}.${listKey}.${colIndex}.value` as const)}
+                          />
+                          {cellError && (
+                            <span className="text-[10px] text-red-500 block leading-tight font-medium">
+                              {cellError}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground italic">
+        *Measurements entered here will be saved and displayed to customers on the product detail page.
+      </p>
+    </div>
+  );
+}
+
 export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   input: InputField,
   number: NumberField,
@@ -1978,5 +2571,6 @@ export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   SkuTableV2: SkuTableField,
   ColorMeta: ColorMetaField,
   ColorInline: ColorInlineField,
+  SizeMeasurementsTable: SizeMeasurementsField,
 };
 

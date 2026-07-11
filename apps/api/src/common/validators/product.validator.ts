@@ -51,7 +51,9 @@ const baseProductSchema = {
   dynamicData: z.record(z.unknown()).optional().default({}),
   tags: z.array(z.string()).optional().default([]),
   featured: z.boolean().optional().default(false),
-  status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  status: z.enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived']).default('draft'),
+  vendorId: z.string().optional(),
+  vendorName: z.string().optional(),
 };
 
 // Schema for creating a new product
@@ -98,6 +100,12 @@ export const updateProductStockSchema = z.object({
   stocks: z.array(stockSchema),
 });
 
+// Schema for product review action
+export const productReviewActionSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  note: z.string().trim().optional(),
+});
+
 // Schema for product search and filtering
 export const productFilterSchema = z.object({
   search: z.string().optional(),
@@ -105,8 +113,9 @@ export const productFilterSchema = z.object({
   subcategoryId: idSchema.optional(),
   minPrice: z.number().optional(),
   maxPrice: z.number().optional(),
-  status: z.enum(['draft', 'published', 'archived']).optional(),
+  status: z.enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived']).optional(),
   featured: z.boolean().optional(),
+  vendorId: z.string().optional(),
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().optional().default(10),
   sortBy: z.enum(['createdAt', 'price', 'name']).optional().default('createdAt'),

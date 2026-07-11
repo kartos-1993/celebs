@@ -10,7 +10,9 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@celebs/shared-ui/components/tooltip";
-import { Link, useMatches, useLocation } from "react-router-dom";
+import { Link, useMatches, useLocation, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logoutMutationFn } from "@/lib/api";
 import { useAuthContext } from "@/context/auth-provider";
 
 interface MenuProps {
@@ -22,6 +24,19 @@ export function Menu({ isSideBarOpen }: MenuProps) {
   const menuList = getMenuList(role);
   const location = useLocation();
   const pathname = location.pathname;
+
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { mutate: logout } = useMutation({
+    mutationFn: logoutMutationFn,
+    onSuccess: () => {
+      queryClient.setQueryData(['authUser'], null);
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'authUser',
+      });
+      navigate('/login');
+    },
+  });
 
   return (
     <ScrollArea className="[&>div>div[style]]:!block">
@@ -99,7 +114,7 @@ export function Menu({ isSideBarOpen }: MenuProps) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => {}}
+                    onClick={() => logout()}
                     variant="outline"
                     className="w-full justify-center h-10 mt-5"
                   >

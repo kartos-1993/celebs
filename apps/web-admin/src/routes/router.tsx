@@ -21,6 +21,7 @@ import AppLayout from '@/layout/AppLayout';
 import Categories from '@/features/category';
 import ManageProduct from '@/features/product/components/manage-product';
 import AddProduct from '@/features/product/components/add-product';
+import ReviewProductQueue from '@/features/product/components/review-product-queue';
 import MediaCenter from '@/features/product/media-center';
 import Orders from '@/features/orders/orders';
 import ReturnOrders from '@/features/orders/return-orders';
@@ -41,7 +42,9 @@ const appLoader: ProtectedLoader = async ({ request }) => {
     const sessionResponse = await getUserSessionQueryFn();
     console.log('apploader firstName');
     
-    // Global onboarding redirect check in loader
+    if (!sessionResponse.data) {
+      throw new Error('Session data not found');
+    }
     const user = sessionResponse.data.user;
     const url = new URL(request.url);
     if (
@@ -114,6 +117,11 @@ export const router = createBrowserRouter([
             path: 'mediacenter',
             element: <MediaCenter />,
             handle: { crumb: 'Media Center' },
+          },
+          {
+            path: 'review-product-queue',
+            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}><ReviewProductQueue /></RoleGuard>,
+            handle: { crumb: 'Review Product Queue' },
           },
         ],
       },

@@ -1,8 +1,8 @@
-import { IApiResponse } from './../../common/interface/api-response.interface';
 import { Request, Response } from 'express';
 import { HTTPSTATUS, NotFoundException, asyncHandler } from '@celebs/shared-utils';
+import { IApiResponse } from '@celebs/shared-types';
 import { SessionService } from './session.service';
-import { verifyJwtToken } from '../../common/utils/jwt';
+import { verifyJwtToken } from '@/common/utils/jwt';
 
 export class SessionController {
   private sessionService: SessionService;
@@ -38,6 +38,12 @@ export class SessionController {
       message: 'Session retrieved successfully',
       data: session,
     };
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
+    );
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.status(HTTPSTATUS.OK).json(response); // Return the session data
   });
 }

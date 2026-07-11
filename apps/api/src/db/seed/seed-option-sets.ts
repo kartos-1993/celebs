@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import path from 'path';
 import dotenv from 'dotenv';
-import { OptionSetModel } from '../models/option-set.model';
+import { OptionSetModel } from '@/db/models/option-set.model';
 
 // Load env from project env file (development by default for local runs)
 dotenv.config({

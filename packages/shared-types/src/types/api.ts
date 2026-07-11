@@ -23,3 +23,17 @@ export interface IPaginationQuery {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+export interface VerifyEmailResponse {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    isEmailVerified: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  accessToken: string;
+  refreshToken: string;
+}
+

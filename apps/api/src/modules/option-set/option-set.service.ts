@@ -1,4 +1,4 @@
-import { OptionSetModel } from '../../db/models/option-set.model';
+import { OptionSetModel } from '@/db/models/option-set.model';
 
 const DEFAULT_SETS = [
   { name: 'Basic Colors', type: 'color' as const, values: ['Black','White','Red','Blue','Green','Yellow','Gray','Pink','Purple','Brown'] },

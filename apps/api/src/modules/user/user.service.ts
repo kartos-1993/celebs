@@ -1,4 +1,4 @@
-import prisma from '../../db';
+import prisma from '@/db';
 
 export class UserService {
   public async findUserById(userId: string) {

@@ -11,6 +11,7 @@ import { router } from "./routes/router.tsx";
 import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./context/theme-context.tsx";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { AuthProvider } from "./context/auth-provider.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,7 +19,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="theme">
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>

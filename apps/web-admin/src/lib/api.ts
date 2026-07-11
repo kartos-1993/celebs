@@ -81,7 +81,7 @@ export const mfaSetupQueryFn = async () => {
 export const revokeMFAMutationFn = async () => await AuthAPI.put(`/mfa/revoke`, {});
 
 export const getUserSessionQueryFn = async (): Promise<SessionResponse> =>
-  await AuthAPI.get(`/session/`).then((res) => res.data);
+  await AuthAPI.get(`/session/?t=${Date.now()}`).then((res) => res.data);
 
 export const sessionsQueryFn = async () => {
   const response = await AuthAPI.get<SessionResponseType>(`/session/all`);

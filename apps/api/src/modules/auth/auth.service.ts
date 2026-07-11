@@ -1,13 +1,12 @@
 import { ErrorCode, BadRequestException, ForbiddenException, HttpException, InternalServerException, NotFoundException, UnauthorizedException, HTTPSTATUS, logger } from '@celebs/shared-utils';
-import { VerificationEnum } from '../../common/enums/verification-code.enum';
+import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import {
-  LoginDto,
-  RegisterDto,
-  VendorRegisterDto,
-  resetPasswordDto,
+  loginType,
+  registerType,
+  vendorRegisterType,
+  setupSuperadminType,
   VerifyEmailResponse,
-  SetupSuperadminDto,
-} from '../../common/interface/auth.interface';
+} from '@celebs/shared-types';
 
 import {
   anHourFromNow,
@@ -15,24 +14,24 @@ import {
   fortyFiveMinutesFromNow,
   ONE_DAY_IN_MS,
   threeMinutesAgo,
-} from '../../common/utils/date-time';
-import { config } from '../../config/app.config';
+} from '@/common/utils/date-time';
+import { config } from '@/config/app.config';
 import {
   refreshTokenSignOptions,
   RefreshTPayload,
   signJwtToken,
   verifyJwtToken,
   AccessTPayload,
-} from '../../common/utils/jwt';
-import { sendEmail } from '../../mailers/mailer';
-import { verifyEmailTemplate } from '../../mailers/templates/template';
+} from '@/common/utils/jwt';
+import { sendEmail } from '@/mailers/mailer';
+import { verifyEmailTemplate } from '@/mailers/templates/template';
 
-import { hashValue, comparePassword } from '../../common/utils/bcrypt';
+import { hashValue, comparePassword } from '@/common/utils/bcrypt';
 
-import prisma from '../../db';
+import prisma from '@/db';
 
 export class AuthService {
-  public async register(registerData: RegisterDto) {
+  public async register(registerData: registerType) {
     const { name, email, password } = registerData;
 
     const existingUser = await prisma.user.findUnique({
@@ -98,7 +97,7 @@ export class AuthService {
     };
   }
 
-  public async vendorRegister(registerData: VendorRegisterDto) {
+  public async vendorRegister(registerData: vendorRegisterType) {
     const {
       name,
       email,
@@ -236,7 +235,7 @@ export class AuthService {
     };
   }
 
-  public async login(LoginData: LoginDto) {
+  public async login(LoginData: loginType) {
     const { email, password, userAgent } = LoginData;
     logger.info(`Login attempt for email: ${email}`);
     const user = await prisma.user.findUnique({
@@ -413,7 +412,7 @@ export class AuthService {
     });
   }
 
-  public async setupSuperadmin(setupData: SetupSuperadminDto) {
+  public async setupSuperadmin(setupData: setupSuperadminType) {
     const { name, email, password, setupSecret } = setupData;
 
     // Verify secret
