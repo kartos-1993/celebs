@@ -425,6 +425,16 @@ importers:
         version: 5.1.4(webpack-dev-server@5.2.1)(webpack@5.98.0)
 
   apps/api:
+    dependencies:
+      '@celebs/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
+      '@celebs/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@celebs/shared-utils':
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
     devDependencies:
       tsc-alias:
         specifier: ^1.9.0
