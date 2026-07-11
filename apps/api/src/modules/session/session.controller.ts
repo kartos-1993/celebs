@@ -38,6 +38,12 @@ export class SessionController {
       message: 'Session retrieved successfully',
       data: session,
     };
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
+    );
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.status(HTTPSTATUS.OK).json(response); // Return the session data
   });
 }
