@@ -3,10 +3,19 @@ export { z };
 import { loginSchema, registerSchema, verificationEmailSchema, resetPasswordSchema, vendorRegisterSchema, setupSuperadminSchema } from './validators/auth.validator';
 import { verifyMfaSchema, verifyMfaForLoginSchema } from './validators/mfa.validator';
 import { vendorProfileSchema, warehouseSchema, vendorDocumentsSchema, vendorBusinessInfoSchema } from './validators/vendor.validator';
+import {
+  createProductSchema,
+  updateProductSchema,
+  getProductByIdSchema,
+  updateProductStockSchema,
+  productReviewActionSchema,
+  productFilterSchema,
+} from './validators/product.validator';
 
 export * from './validators/auth.validator';
 export * from './validators/mfa.validator';
 export * from './validators/vendor.validator';
+export * from './validators/product.validator';
 
 export type loginType = z.infer<typeof loginSchema>;
 export type registerType = z.infer<typeof registerSchema>;
@@ -20,6 +29,9 @@ export type vendorProfileType = z.infer<typeof vendorProfileSchema>;
 export type warehouseType = z.infer<typeof warehouseSchema>;
 export type vendorDocumentsType = z.infer<typeof vendorDocumentsSchema>;
 export type vendorBusinessInfoType = z.infer<typeof vendorBusinessInfoSchema>;
+
+export type CreateProductType = z.infer<typeof createProductSchema>;
+export type UpdateProductType = z.infer<typeof updateProductSchema>;
 
 export * from './types/api';
 
