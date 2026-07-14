@@ -7,11 +7,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { router } from "./routes/router.tsx";
+import { router } from "./routes/router";
 import { RouterProvider } from "react-router-dom";
-import { ThemeProvider } from "./context/theme-context.tsx";
+import { ThemeProvider } from "./context/theme-context";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { AuthProvider } from "./context/auth-provider.tsx";
+import { AuthProvider } from "./context/auth-provider";
 
 const queryClient = new QueryClient();
 
