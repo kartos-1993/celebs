@@ -144,6 +144,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "pnpm --filter web-admin dev",
+    "dev:worker": "pnpm --filter api dev:worker",
     "build": "turbo run build",
     "build:services": "pnpm --filter api build",
     "build:web": "pnpm --filter web-admin build",
