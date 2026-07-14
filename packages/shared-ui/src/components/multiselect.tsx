@@ -69,8 +69,8 @@ export function Multiselect({
             </div>
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="p-0 w-56">
-          <ScrollArea className="max-h-56 p-2">
+        <PopoverContent align="start" className="p-0 w-[var(--radix-popover-trigger-width)] min-w-[200px]">
+          <ScrollArea className="max-h-80 p-2">
             <div className="space-y-1">
               {available.length === 0 ? (
                 <div className="px-2 py-1 text-sm text-muted-foreground">All options selected</div>
