@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '@/config/cloudinary.config';
+import { authenticateJWT } from '@/middlewares/auth.middleware';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
+import { Permission } from '@celebs/rbac';
+import { asyncHandler, logger } from '@celebs/shared-utils';
+import { putImage } from './storage.service';
+import { MediaModel } from '@/db/models/media.model';
+import { assetQueue } from '@/common/services/queue.service';
 
 const router = Router();
 
@@ -11,50 +17,96 @@ const UPLOAD_POLICY = {
   maxHeight: 2000,
 };
 
-// Configure Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async () => ({
-    folder: 'celebs/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1600, crop: 'limit' }],
-    resource_type: 'image',
-  }) as any,
-});
+const ALLOWED_MIME = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+]);
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
-});
-
-// Memory storage for custom Cloudinary upload with eager transforms
+// Memory storage for S3/MinIO PutObject uploads (and legacy Cloudinary stream)
 const memoryUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_MIME.has(file.mimetype)) {
+      return cb(new Error('Invalid file type. Allowed: jpeg, png, webp, avif'));
+    }
+    cb(null, true);
+  },
 });
+
+// All media routes require auth + product create permission
+router.use(authenticateJWT);
+router.use(requirePermissions(Permission.PRODUCT_CREATE));
 
 // POST /api/v1/media/upload
-// field name: files (can be multiple)
-router.post('/upload', upload.array('files', 12), async (req, res) => {
-  try {
-    const files = (req.files as any[]) || [];
-    const toUrl = (f: any) => f?.path || f?.secure_url || f?.url || '';
-    const toPublicId = (f: any) => f?.filename || f?.public_id || f?.publicId || '';
-    const payload = files.map((f) => ({
-      url: toUrl(f),
-      publicId: toPublicId(f),
-      bytes: f?.size ?? 0,
-      format: f?.mimetype || f?.format || 'image',
-      originalname: f?.originalname || '',
-    }));
+// field name: files (can be multiple) → MinIO/S3 via AWS SDK v3
+router.post(
+  '/upload',
+  memoryUpload.array('files', 12),
+  asyncHandler(async (req, res) => {
+    const files = (req.files as Express.Multer.File[]) || [];
+    if (files.length === 0) {
+      return res.status(400).json({ message: 'No files provided' });
+    }
+
+    const userId = req.user?.userId || 'unknown';
+    const payload = [];
+
+    for (const file of files) {
+      const stored = await putImage({
+        buffer: file.buffer,
+        originalname: file.originalname || 'image',
+        mimeType: file.mimetype,
+        folder: 'celebs/products',
+      });
+
+      let mediaDoc: any;
+      // Best-effort media catalog write (does not fail the upload response)
+      try {
+        mediaDoc = await MediaModel.create({
+          fileName: stored.key.split('/').pop() || stored.key,
+          originalname: stored.originalname,
+          mimeType: stored.contentType,
+          size: stored.bytes,
+          url: stored.url,
+          filePath: stored.key,
+          key: stored.key,
+          createdBy: userId,
+        });
+      } catch (err: any) {
+        logger.error({ err: err?.message || String(err) }, 'Failed to write media record to DB');
+      }
+
+      if (mediaDoc) {
+        try {
+          await assetQueue.add('process-image', {
+            mediaId: mediaDoc._id.toString(),
+            key: stored.key,
+            originalname: stored.originalname,
+            mimeType: file.mimetype,
+          });
+        } catch (err: any) {
+          logger.error({ err: err?.message || String(err) }, 'Failed to queue asset processing job');
+        }
+      }
+
+      payload.push({
+        url: stored.url,
+        publicId: stored.key,
+        bytes: stored.bytes,
+        format: file.mimetype || 'image',
+        originalname: stored.originalname,
+      });
+    }
+
     return res.json({ data: payload });
-  } catch (e: any) {
-    return res.status(500).json({ message: e?.message || 'Upload failed' });
-  }
-});
+  }),
+);
 
 // POST /api/v1/media/product-image
-// Upload a single product image (for main or color variant) and return derived variants
+// Legacy Cloudinary path (eager variants). Admin UI does not call this yet.
 // field name: image, optional fields: color, kind ("main" | "color")
 router.post('/product-image', memoryUpload.single('image'), async (req, res) => {
   try {
@@ -64,15 +116,25 @@ router.post('/product-image', memoryUpload.single('image'), async (req, res) => 
 
     const { color, kind = 'color' } = req.body || {};
 
-    // Eager transformations for product and thumbnail variants
     const eager = [
-      // Product image (squareish, good quality)
-      { width: 1000, height: 1000, crop: 'fill', gravity: 'auto', quality: 'auto:good', fetch_format: 'webp' },
-      // Thumbnail (smaller, lower quality)
-      { width: 300, height: 300, crop: 'fill', gravity: 'auto', quality: 'auto:eco', fetch_format: 'webp' },
+      {
+        width: 1000,
+        height: 1000,
+        crop: 'fill',
+        gravity: 'auto',
+        quality: 'auto:good',
+        fetch_format: 'webp',
+      },
+      {
+        width: 300,
+        height: 300,
+        crop: 'fill',
+        gravity: 'auto',
+        quality: 'auto:eco',
+        fetch_format: 'webp',
+      },
     ];
 
-    // Upload original with a reasonable cap and web delivery defaults
     const uploadOptions: any = {
       folder: 'celebs/products',
       resource_type: 'image',
@@ -84,27 +146,27 @@ router.post('/product-image', memoryUpload.single('image'), async (req, res) => 
       eager_async: false,
     };
 
-    // Upload from buffer via upload_stream
     const result: any = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, uploadResult) => {
         if (error) return reject(error);
         resolve(uploadResult);
       });
-      // req.file is guaranteed by earlier guard
       const file = req.file as Express.Multer.File;
       stream.end(file.buffer);
     });
 
-    // Validate original dimensions
     const w = Number(result.width || 0);
     const h = Number(result.height || 0);
     const sizeOk = w <= UPLOAD_POLICY.maxWidth && h <= UPLOAD_POLICY.maxHeight;
 
     if (!sizeOk) {
-      // Best effort cleanup
       try {
-        if (result.public_id) await cloudinary.uploader.destroy(result.public_id, { resource_type: 'image' });
-      } catch {}
+        if (result.public_id) {
+          await cloudinary.uploader.destroy(result.public_id, { resource_type: 'image' });
+        }
+      } catch {
+        /* best effort */
+      }
       return res.status(400).json({
         message: `Image dimensions must not exceed ${UPLOAD_POLICY.maxWidth}x${UPLOAD_POLICY.maxHeight}px`,
         policy: UPLOAD_POLICY,
@@ -112,7 +174,6 @@ router.post('/product-image', memoryUpload.single('image'), async (req, res) => 
       });
     }
 
-    // Map eager results: by order we defined above
     const [productVar, thumbVar] = (result.eager as any[]) || [];
 
     const payload = {
