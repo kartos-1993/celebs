@@ -118,7 +118,28 @@ async function createAttributes(categoryId: Types.ObjectId, attrs: SeedAttr[]) {
 async function seedTree(root: SeedCategory) {
   // Ensure default option sets exist (in case seeding order differs)
   const defaults = [
-    { name: 'Basic Colors', type: 'color', values: ['Black','White','Red','Blue','Green','Yellow','Gray','Pink','Purple','Brown'] },
+    {
+      name: 'Basic Colors',
+      type: 'color',
+      values: [
+        'White', 'Ivory', 'Cream', 'Off-White', 'Pearl', 'Vanilla', 'Alabaster',
+        'Beige', 'Khaki', 'Camel', 'Taupe', 'Sand', 'Apricot', 'Oatmeal', 'Mocha', 'Coffee', 'Chocolate', 'Chestnut', 'Caramel', 'Cocoa',
+        'Light Grey', 'Dark Grey', 'Charcoal', 'Slate', 'Ash', 'Heather Grey', 'Silver',
+        'Black', 'Obsidian', 'Jet Black',
+        'Red', 'Burgundy', 'Maroon', 'Wine', 'Crimson', 'Cherry', 'Brick Red', 'Tomato Red', 'Ruby', 'Scarlet',
+        'Pink', 'Baby Pink', 'Hot Pink', 'Fuchsia', 'Magenta', 'Rose', 'Dusty Rose', 'Blush', 'Bubblegum', 'Coral', 'Peach', 'Salmon',
+        'Orange', 'Burnt Orange', 'Neon Orange', 'Tangerine', 'Rust Orange', 'Papaya',
+        'Yellow', 'Mustard', 'Lemon', 'Neon Yellow', 'Gold', 'Amber', 'Butter Yellow', 'Sunflower',
+        'Mint', 'Seafoam', 'Sage', 'Lime', 'Neon Green', 'Chartreuse', 'Pistachio',
+        'Army Green', 'Olive', 'Khaki Green', 'Emerald', 'Forest Green', 'Hunter Green', 'Kelly Green', 'Pine', 'Avocado',
+        'Baby Blue', 'Sky Blue', 'Ice Blue', 'Aqua', 'Cyan', 'Powder Blue',
+        'Navy Blue', 'Royal Blue', 'Cobalt', 'Indigo', 'Sapphire', 'Denim Blue', 'Midnight Blue',
+        'Turquoise', 'Teal', 'Peacock Blue',
+        'Purple', 'Lilac', 'Lavender', 'Violet', 'Plum', 'Eggplant', 'Mauve', 'Amethyst', 'Orchid',
+        'Rose Gold', 'Bronze', 'Copper',
+        'Multicolor', 'Rainbow', 'Tie-Dye', 'Leopard Print', 'Floral', 'Geometric', 'Clear/Transparent'
+      ]
+    },
     { name: 'Alpha Sizes (XS-XXL)', type: 'size', values: ['XS','S','M','L','XL','XXL'] },
     { name: 'Numeric Sizes (28-44)', type: 'size', values: ['28','30','32','34','36','38','40','42','44'] },
     { name: 'US Shoe Sizes (Men)', type: 'size', values: ['6','7','8','9','10','11','12','13'] },
