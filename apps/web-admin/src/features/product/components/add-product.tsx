@@ -537,7 +537,7 @@ const buildSidebarSections = ({
       ? ['Product description must be at least 10 characters.']
       : []),
     ...(!normalizeText(values.categoryId) ||
-    !normalizeText(values.subcategoryId)
+      !normalizeText(values.subcategoryId)
       ? ['Select a product category before publishing.']
       : []),
   ]);
@@ -606,7 +606,7 @@ const buildSidebarSections = ({
         label: 'Price, Stock & Variants',
         anchorId:
           pricingErrors.length > 0 &&
-          groupedFields.variant.some((field) => field.required)
+            groupedFields.variant.some((field) => field.required)
             ? 'product-section-variant'
             : 'product-section-sale',
         status: pricingErrors.length === 0,
@@ -740,7 +740,7 @@ async function buildProductPayload({
         quantity:
           toNonNegativeInteger(
             flatValues[
-              `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
+            `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
             ],
           ) ?? defaultStock,
       }));
@@ -852,7 +852,7 @@ const SubmissionStateHeader = ({
     return Math.round(
       (sidebarSections.filter((section) => section.status).length /
         sidebarSections.length) *
-        100,
+      100,
     );
   }, [sidebarSections]);
 
@@ -904,7 +904,7 @@ const SubmissionProgressChecklist = ({
     return Math.round(
       (sidebarSections.filter((section) => section.status).length /
         sidebarSections.length) *
-        100,
+      100,
     );
   }, [sidebarSections]);
 
@@ -1012,7 +1012,7 @@ const AddProduct = () => {
       if (['name', 'brand', 'description', 'categoryId', 'subcategoryId', 'mainImage'].includes(field.name)) {
         return;
       }
-      
+
       const ui = field.uiType.toLowerCase();
       if (ui === 'input' || ui === 'text') {
         form.setValue(field.name, 'Premium Cotton Blend', { shouldValidate: true });
@@ -1375,69 +1375,69 @@ const AddProduct = () => {
   return (
     <Form {...form}>
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
-          <span>Catalog</span>
-          <ChevronRight className="h-4 w-4" />
-          <span>Manage Products</span>
-          <ChevronRight className="h-4 w-4" />
-          <span className="font-medium text-gray-700 dark:text-gray-200">
-            {isEditMode ? 'Edit Product' : 'Add Product'}
-          </span>
-        </div>
+        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+            <span>Catalog</span>
+            <ChevronRight className="h-4 w-4" />
+            <span>Manage Products</span>
+            <ChevronRight className="h-4 w-4" />
+            <span className="font-medium text-gray-700 dark:text-gray-200">
+              {isEditMode ? 'Edit Product' : 'Add Product'}
+            </span>
+          </div>
 
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
-              Product Publishing
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-                  {isEditMode ? 'Update Product' : 'Create a new product listing'}
-                </h1>
-                {process.env.NODE_ENV === 'development' && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAutofill}
-                    className="h-8 rounded-full border-orange-200 bg-orange-50/50 px-3 text-xs font-semibold text-orange-700 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
-                  >
-                    Autofill Form
-                  </Button>
-                )}
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+                Product Publishing
               </div>
-              <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
-                Complete the required catalog information, upload compliant
-                media, and verify pricing before submitting the product.
-              </p>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                    {isEditMode ? 'Update Product' : 'Create a new product listing'}
+                  </h1>
+                  {process.env.NODE_ENV === 'development' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutofill}
+                      className="h-8 rounded-full border-orange-200 bg-orange-50/50 px-3 text-xs font-semibold text-orange-700 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                    >
+                      Autofill Form
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
+                  Complete the required catalog information, upload compliant
+                  media, and verify pricing before submitting the product.
+                </p>
+              </div>
             </div>
+
+            <SubmissionStateHeader
+              schemaFields={schemaFields}
+              schemaHasName={schemaHasName}
+              variantMeta={variantMeta}
+            />
           </div>
 
-          <SubmissionStateHeader
-            schemaFields={schemaFields}
-            schemaHasName={schemaHasName}
-            variantMeta={variantMeta}
-          />
-        </div>
-
-        {restoredDraftAt ? (
-          <div className="mb-6 flex items-start gap-3 rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-            <FileClock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-            <div>
-              <p className="font-semibold">Local draft restored</p>
-              <p className="mt-1 text-amber-800 dark:text-amber-300">
-                This form was restored from a browser draft saved on{' '}
-                {new Date(restoredDraftAt).toLocaleString()}.
-              </p>
+          {restoredDraftAt ? (
+            <div className="mb-6 flex items-start gap-3 rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <FileClock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+              <div>
+                <p className="font-semibold">Local draft restored</p>
+                <p className="mt-1 text-amber-800 dark:text-amber-300">
+                  This form was restored from a browser draft saved on{' '}
+                  {new Date(restoredDraftAt).toLocaleString()}.
+                </p>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-6">
-            <form
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-6">
+              <form
                 onSubmit={form.handleSubmit(
                   (data) => {
                     console.log('[DEBUG] Form submission VALID. Data:', data);
@@ -1506,31 +1506,31 @@ const AddProduct = () => {
                   </div>
                 )}
               </form>
-          </div>
+            </div>
 
-          {canShowAdditionalSections ? (
-            <div className="lg:sticky lg:top-6 lg:self-start">
-              <SubmissionProgressChecklist
-                schemaFields={schemaFields}
-                schemaHasName={schemaHasName}
-                variantMeta={variantMeta}
-                onSectionClick={scrollToSection}
-              />
-            </div>
-          ) : (
-            <div className="rounded-[28px] border border-gray-200 bg-white p-5 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-              <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
-                <p>
-                  The sidebar checklist appears once a category has been chosen
-                  and the category-specific form has loaded.
-                </p>
+            {canShowAdditionalSections ? (
+              <div className="lg:sticky lg:top-6 lg:self-start">
+                <SubmissionProgressChecklist
+                  schemaFields={schemaFields}
+                  schemaHasName={schemaHasName}
+                  variantMeta={variantMeta}
+                  onSectionClick={scrollToSection}
+                />
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="rounded-[28px] border border-gray-200 bg-white p-5 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                <div className="flex items-start gap-3">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                  <p>
+                    The sidebar checklist appears once a category has been chosen
+                    and the category-specific form has loaded.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </Form>
   );
 };
