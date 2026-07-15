@@ -4,6 +4,7 @@ import { CategoryModel, ICategory } from '@/db/models/category.model';
 import { AttributeModel, IAttribute } from '@/db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
+import { CategoryFilterModel, ICategoryFilter } from '@/db/models/category-filter.model';
 
 
 interface CategoryAttribute {
@@ -161,6 +162,16 @@ export class CategoryService {
   async getCategoryTreeWithAttributes(): Promise<CategoryTreeNode[]> {
     const categories = await this.fetchCategoriesWithAttributes();
     return this.buildCategoryTree(categories);
+  }
+
+  /**
+   * Retrieves storefront filters for a category
+   */
+  async getCategoryFilters(categoryId: string): Promise<ICategoryFilter[]> {
+    this.validateObjectId(categoryId);
+    return await CategoryFilterModel.find({ categoryId })
+      .populate('attributeId')
+      .sort({ displayOrder: 1 });
   }
 
   /**
