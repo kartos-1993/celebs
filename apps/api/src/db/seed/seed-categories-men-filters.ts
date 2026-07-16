@@ -197,6 +197,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Denim Jackets',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             { name: 'Type', type: 'select', values: ['Shacket', 'Windbreaker', 'Other', 'Vest', 'Teddy'] },
@@ -214,6 +215,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Denim Tops',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             { name: 'Type', type: 'select', values: ['Top', 'Other'] },
@@ -229,6 +231,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Denim Shorts',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
             colorAttr, sizeAttr,
@@ -243,6 +246,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Jeans',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
             { name: 'Type', type: 'select', values: ['Skinny', 'Harem/Genie', 'Wide Leg'] },
@@ -266,6 +270,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Shorts',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
             colorAttr, sizeAttr,
@@ -280,6 +285,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Pants',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Style', type: 'select', values: ['Street', 'Casual'] },
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
@@ -297,6 +303,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Sweatpants',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
             { name: 'Type', type: 'select', values: ['Skinny', 'Harem/Genie', 'Wide Leg'] },
@@ -319,6 +326,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Sweatshirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose'] },
             colorAttr, sizeAttr,
@@ -333,6 +341,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Zip-up Hoodies',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             colorAttr, sizeAttr,
@@ -348,6 +357,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Hoodies',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose'] },
             colorAttr, sizeAttr,
@@ -368,6 +378,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Blazers',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Style', type: 'select', values: ['Work', 'Casual'] },
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
@@ -383,6 +394,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Suits',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Skinny', 'Loose', 'Slim Fit'] },
             colorAttr, sizeAttr,
@@ -398,6 +410,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Suit Pants',
+          sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
             colorAttr, sizeAttr,
@@ -419,6 +432,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Sweaters',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             { name: 'Type', type: 'select', values: ['Pullovers', 'Basic Tops'] },
@@ -434,6 +448,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Knit Tops',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             colorAttr, sizeAttr,
@@ -454,6 +469,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Winter Coats',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             { name: 'Type', type: 'select', values: ['Quilted', 'Vest'] },
@@ -470,6 +486,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Shackets',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose'] },
             colorAttr, sizeAttr,
@@ -492,6 +509,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Asian Wear',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Skinny', 'Loose'] },
             colorAttr, sizeAttr,
@@ -514,6 +532,7 @@ const NEW_MEN_TREE: SeedCategory = {
       children: [
         {
           name: 'Men Shirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Style', type: 'select', values: ['Casual', 'Elegant', 'Boho'] },
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
@@ -530,6 +549,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men T-Shirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Style', type: 'select', values: ['Street', 'Casual'] },
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
@@ -547,6 +567,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Polo Shirts',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             colorAttr, sizeAttr,
@@ -563,6 +584,7 @@ const NEW_MEN_TREE: SeedCategory = {
         },
         {
           name: 'Men Tank Tops',
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             colorAttr, sizeAttr,

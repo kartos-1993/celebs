@@ -14,6 +14,8 @@ import { config } from './config/app.config';
 import { connectMongoDB } from './db/mongodb';
 import prisma from './db';
 import { logger } from '@celebs/shared-utils';
+import { verifyRedisConnection } from './common/services/queue.service';
+import { verifyS3Connection } from './common/utils/s3.client';
 
 const port = config.PORT;
 
@@ -24,6 +26,10 @@ const startServer = async () => {
     // Connect and verify Postgres connection
     await prisma.$connect();
     logger.info('Postgres Database Connected successfully');
+
+    // Connect and verify Redis and S3 connections
+    await verifyRedisConnection();
+    await verifyS3Connection();
 
     const server = app.listen(port, () => {
       console.log(`Listening at http://localhost:${port}`);

@@ -2,6 +2,7 @@ import {
   PutBucketCorsCommand,
   PutBucketPolicyCommand,
   S3Client,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { config } from '@/config/app.config';
 import { logger } from '@celebs/shared-utils';
@@ -22,6 +23,29 @@ export const s3Client = new S3Client({
   endpoint: isDev && config.S3.ENDPOINT ? config.S3.ENDPOINT : undefined,
   forcePathStyle: isDev ? true : false,
 });
+
+/**
+ * Verify S3 connection by running a HeadBucket command
+ */
+export async function verifyS3Connection(): Promise<void> {
+  try {
+    await s3Client.send(new HeadBucketCommand({ Bucket: config.S3.BUCKET_NAME }));
+    logger.info({ bucket: config.S3.BUCKET_NAME }, 'S3/MinIO Connected and bucket verified successfully');
+  } catch (error: any) {
+    if (isDev) {
+      logger.warn(
+        { bucket: config.S3.BUCKET_NAME, error: error?.message || String(error) },
+        'S3/MinIO Connection verification failed in development. Server will continue running but S3 uploads will fail.'
+      );
+      return;
+    }
+    logger.error(
+      { bucket: config.S3.BUCKET_NAME, error: error?.message || String(error) },
+      'S3/MinIO Connection verification failed'
+    );
+    throw error;
+  }
+}
 
 /**
  * Build a publicly reachable object URL for the current environment.

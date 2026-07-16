@@ -13,6 +13,8 @@ import { connectMongoDB } from './db/mongodb';
 import prisma from './db';
 import { logger } from '@celebs/shared-utils';
 import { assetWorker } from './modules/media/asset.worker';
+import { verifyRedisConnection } from './common/services/queue.service';
+import { verifyS3Connection } from './common/utils/s3.client';
 
 const startWorker = async () => {
   try {
@@ -21,6 +23,10 @@ const startWorker = async () => {
     await connectMongoDB();
     await prisma.$connect();
     logger.info('Database connections established successfully for Worker');
+
+    // Connect and verify Redis and S3 connections for Worker
+    await verifyRedisConnection();
+    await verifyS3Connection();
 
     logger.info('BullMQ Worker is active and listening to queue: asset-processing');
 
