@@ -15,4 +15,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-module.exports = config;
+const { withNativeWind } = require('nativewind/metro');
+
+module.exports = withNativeWind(config, { input: './src/global.css' });

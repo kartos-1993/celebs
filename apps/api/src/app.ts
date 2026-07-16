@@ -28,6 +28,7 @@ import renderRoutes from './modules/render/router';
 import vendorRoutes from './modules/vendor/vendor.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import staffRoutes from './modules/staff/staff.routes';
+import mobileRoutes from './modules/mobile/mobile.routes';
 import swaggerUi from 'swagger-ui-express';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 
@@ -119,6 +120,7 @@ app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 app.use(`${config.BASE_PATH}/vendor`, vendorRoutes);
 app.use(`${config.BASE_PATH}/admin`, adminRoutes);
 app.use(`${config.BASE_PATH}/staff`, staffRoutes);
+app.use(`${config.BASE_PATH}/mobile`, mobileRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {
