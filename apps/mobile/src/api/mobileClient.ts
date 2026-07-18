@@ -90,3 +90,13 @@ export const useInfiniteProducts = (category: string = 'men') => {
     getNextPageParam: (lastPage: any) => lastPage.nextCursor || null,
   });
 };
+
+export const useCategories = () => {
+  return useQuery({
+    queryKey: ['mobileCategories'],
+    queryFn: async () => {
+      const { data } = await mobileClient.get('/mobile/categories');
+      return data.data as { id: string; label: string }[];
+    },
+  });
+};

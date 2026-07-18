@@ -7,10 +7,12 @@ import { CategoryTabs } from '@/components/CategoryTabs';
 import { PromoBanner } from '@/components/PromoBanner';
 import { FilterChips } from '@/components/FilterChips';
 import { ProductCard } from '@/components/ProductCard';
-import { useHomeFeed, useInfiniteProducts, Product } from '@/api/mobileClient';
+import { useHomeFeed, useInfiniteProducts, useCategories, Product } from '@/api/mobileClient';
 
 export default function HomeScreen() {
   const [activeCategory, setActiveCategory] = useState('men');
+  
+  const { data: categories = [] } = useCategories();
   
   const { data: homeFeed, isLoading: isLoadingFeed } = useHomeFeed(activeCategory);
   
@@ -40,6 +42,7 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <Header />
       <CategoryTabs 
+        categories={categories}
         activeCategory={activeCategory} 
         onSelect={setActiveCategory} 
       />

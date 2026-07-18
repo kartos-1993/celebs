@@ -1,5 +1,6 @@
 import express from 'express';
 import { json } from 'express';
+import path from 'path';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from './middlewares/passport';
@@ -36,6 +37,7 @@ const app = express();
 app.use(json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/seed-images', express.static(path.join(__dirname, '../public/seed-images')));
 
 logger.info(
   { APP_ORIGIN_CONFIG: config.APP_ORIGIN },

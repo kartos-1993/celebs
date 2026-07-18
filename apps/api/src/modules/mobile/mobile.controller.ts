@@ -20,6 +20,19 @@ export class MobileController {
     }
   };
 
+  getCategories = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const categories = await this.mobileService.getCategories();
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Categories retrieved successfully',
+        data: categories,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const cursor = req.query.cursor as string;

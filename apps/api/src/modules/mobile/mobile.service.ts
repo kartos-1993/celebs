@@ -35,18 +35,11 @@ export class MobileService {
   }
 
   async getProducts(cursor?: string, limit: number = 20, categorySlug?: string) {
-    const query: any = { status: 'published' };
+    const query = await this.buildCategoryQuery(categorySlug);
     
     // Add cursor logic for infinite scroll
     if (cursor) {
       query._id = { $gt: cursor };
-    }
-
-    if (categorySlug) {
-      const category = await CategoryModel.findOne({ slug: categorySlug.toLowerCase() });
-      if (category) {
-        query.category = category._id;
-      }
     }
     
     const products = await ProductModel.find(query)
@@ -56,22 +49,44 @@ export class MobileService {
     return products.map(this.formatProductPayload);
   }
 
+  async getCategories() {
+    const categories = await CategoryModel.find({ level: 1 }).sort({ name: 1 }).lean();
+    return categories.map(c => ({
+      id: c.slug,
+      label: c.name,
+    }));
+  }
+
   // --- Helpers ---
+
+  private async buildCategoryQuery(categorySlug?: string) {
+    const query: any = { status: 'published' };
+    if (categorySlug) {
+      const category = await CategoryModel.findOne({ slug: categorySlug.toLowerCase() });
+      if (category) {
+        // Find all subcategories in this tree (e.g. all that start with this path)
+        const subCats = await CategoryModel.find({ path: category.slug });
+        const catIds = subCats.map((c: any) => c._id);
+        
+        query.$or = [
+          { category: { $in: catIds } },
+          { subcategory: { $in: catIds } }
+        ];
+      }
+    }
+    return query;
+  }
 
   private async fetchBanners(category: string) {
     // Mock Banners
     return [
-      { id: '1', imageUrl: 'https://via.placeholder.com/800x400?text=Hot+Deals', link: '/deals' },
-      { id: '2', imageUrl: 'https://via.placeholder.com/800x400?text=Super+Start', link: '/super-start' }
+      { id: '1', imageUrl: 'http://192.168.1.69:3333/seed-images/shein_mens_promo_banner_v2.png', link: '/deals' },
+      { id: '2', imageUrl: 'https://images.unsplash.com/photo-1489980557514-251d61e3eeb6?q=80&w=800', link: '/super-start' }
     ];
   }
 
   private async fetchHotDeals(categorySlug: string) {
-    const query: any = { status: 'published' };
-    const category = await CategoryModel.findOne({ slug: categorySlug.toLowerCase() });
-    if (category) {
-      query.category = category._id;
-    }
+    const query = await this.buildCategoryQuery(categorySlug);
     const products = await ProductModel.find(query)
       .sort({ discount: -1 })
       .limit(5)
@@ -80,11 +95,7 @@ export class MobileService {
   }
 
   private async fetchPopularPicks(categorySlug: string) {
-    const query: any = { status: 'published' };
-    const category = await CategoryModel.findOne({ slug: categorySlug.toLowerCase() });
-    if (category) {
-      query.category = category._id;
-    }
+    const query = await this.buildCategoryQuery(categorySlug);
     const products = await ProductModel.find(query)
       .limit(5)
       .lean();
@@ -95,11 +106,7 @@ export class MobileService {
     // Implementing TrendScore logic (Mocking views/ATC for now, sorting by created date as fallback)
     // Products created in last 7 days get a boost. 
     // In actual implementation, we'd multiply interactions by weight.
-    const query: any = { status: 'published' };
-    const category = await CategoryModel.findOne({ slug: categorySlug.toLowerCase() });
-    if (category) {
-      query.category = category._id;
-    }
+    const query = await this.buildCategoryQuery(categorySlug);
     const products = await ProductModel.find(query)
       .sort({ featured: -1, createdAt: -1 })
       .limit(5)

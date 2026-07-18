@@ -1,24 +1,17 @@
 import React from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 
-const CATEGORIES = [
-  { id: 'men', label: 'Men' },
-  { id: 'women', label: 'Women' },
-  { id: 'kids', label: 'Kids' },
-  { id: 'beauty', label: 'Beauty' },
-  { id: 'home', label: 'Home' },
-];
-
 interface CategoryTabsProps {
+  categories: { id: string; label: string }[];
   activeCategory: string;
   onSelect: (id: string) => void;
 }
 
-export const CategoryTabs = ({ activeCategory, onSelect }: CategoryTabsProps) => {
+export const CategoryTabs = ({ categories, activeCategory, onSelect }: CategoryTabsProps) => {
   return (
     <View className="bg-white border-b border-gray-100">
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-        {CATEGORIES.map((category) => {
+        {categories.map((category) => {
           const isActive = activeCategory === category.id;
           return (
             <Pressable 

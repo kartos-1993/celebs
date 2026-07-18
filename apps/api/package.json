@@ -9,7 +9,7 @@
     "start": "node dist/apps/api/src/main.js",
     "start:worker": "node dist/apps/api/src/worker-main.js",
     "test": "dotenv -e .env.test -- npx prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run",
-    "seed:products": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products.ts",
+    "seed:products": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-vendors-products.ts",
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {
@@ -23,6 +23,8 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@types/duckduckgo-images-api": "^1.0.3",
+    "duckduckgo-images-api": "^1.0.5",
     "tsc-alias": "^1.9.0"
   }
 }

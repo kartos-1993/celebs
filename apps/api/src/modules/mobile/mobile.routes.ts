@@ -7,5 +7,6 @@ const mobileController = MobileModule.getInstance().getMobileController();
 
 mobileRoutes.get('/home', asyncHandler(mobileController.getHomeFeed));
 mobileRoutes.get('/products', asyncHandler(mobileController.getProducts));
+mobileRoutes.get('/categories', asyncHandler(mobileController.getCategories));
 
 export default mobileRoutes;
