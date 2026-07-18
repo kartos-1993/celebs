@@ -100,14 +100,38 @@ if (!config.JWT.SECRET) {
   );
 }
 
+let sessionStore;
+
+if (config.REDIS.HOST && config.REDIS.PORT) {
+  const isTls = config.REDIS.HOST.includes('upstash.io') || config.NODE_ENV === 'production' || config.NODE_ENV === 'staging';
+  const protocol = isTls ? 'rediss' : 'redis';
+  const credentials = config.REDIS.PASSWORD ? `default:${config.REDIS.PASSWORD}@` : '';
+  const redisUrl = `${protocol}://${credentials}${config.REDIS.HOST}:${config.REDIS.PORT}`;
+
+  const redisClient = createClient({ url: redisUrl });
+  redisClient.connect()
+    .then(() => logger.info('Redis connected successfully for sessions'))
+    .catch((err) => logger.error({ err }, 'Redis connection failed'));
+
+  sessionStore = new RedisStore({
+    client: redisClient,
+    prefix: 'celebs_sess:',
+  });
+} else {
+  logger.warn('No Redis configuration found. Using in-memory session store (not recommended for production/staging)');
+}
+
 app.use(
   session({
+    store: sessionStore,
     secret: config.JWT.SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: config.NODE_ENV === 'production', // Only set to true if using HTTPS
-      httpOnly: true,
+      secure: config.COOKIE.SECURE,
+      httpOnly: config.COOKIE.HTTPONLY,
+      sameSite: config.COOKIE.SAME_SITE,
+      domain: config.COOKIE.DOMAIN || undefined,
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
   })
