@@ -1,52 +1,83 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '@/config/cloudinary.config';
+import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '../../config/s3.config';
+import { config } from '../../config/app.config';
 
 const router = Router();
 
 // Upload policy (keep in sync with render policy)
 const UPLOAD_POLICY = {
-  maxWidth: 2000,
-  maxHeight: 2000,
+  minWidth: 1500,
+  minHeight: 1500,
+  aspectRatio: 1, // 1:1 square
+  ratioTolerance: 0.03, // 3%
 };
 
-// Configure Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async () => ({
-    folder: 'celebs/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1600, crop: 'limit' }],
-    resource_type: 'image',
-  }) as any,
-});
-
-const upload = multer({
-  storage,
+// Memory storage for S3 uploads
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
 });
 
-// Memory storage for custom Cloudinary upload with eager transforms
-const memoryUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+// Helper function to upload file buffer to S3 / R2
+const uploadToS3 = async (
+  buffer: Buffer,
+  originalname: string,
+  mimetype: string,
+  folder: string = 'media'
+) => {
+  const ext = originalname.split('.').pop() || 'webp';
+  const key = `${folder}/${uuidv4()}.${ext}`;
+
+  if (!config.S3.BUCKET_NAME) {
+    throw new Error('S3_BUCKET_NAME is not configured');
+  }
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: config.S3.BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: mimetype,
+      CacheControl: 'public, max-age=31536000',
+    })
+  );
+
+  const baseUrl = config.S3.PUBLIC_BASE_URL
+    ? config.S3.PUBLIC_BASE_URL.replace(/\/$/, '')
+    : `${config.S3.ENDPOINT.replace(/\/$/, '')}/${config.S3.BUCKET_NAME}`;
+
+  return {
+    url: `${baseUrl}/${key}`,
+    publicId: key,
+  };
+};
 
 // POST /api/v1/media/upload
 // field name: files (can be multiple)
-router.post('/upload', upload.array('files', 12), async (req, res) => {
+router.post('/upload', memoryUpload.array('files', 12), async (req, res) => {
   try {
-    const files = (req.files as any[]) || [];
-    const toUrl = (f: any) => f?.path || f?.secure_url || f?.url || '';
-    const toPublicId = (f: any) => f?.filename || f?.public_id || f?.publicId || '';
-    const payload = files.map((f) => ({
-      url: toUrl(f),
-      publicId: toPublicId(f),
-      bytes: f?.size ?? 0,
-      format: f?.mimetype || f?.format || 'image',
-      originalname: f?.originalname || '',
-    }));
+    const files = (req.files as Express.Multer.File[]) || [];
+    const payload = await Promise.all(
+      files.map(async (file) => {
+        const uploadResult = await uploadToS3(
+          file.buffer,
+          file.originalname,
+          file.mimetype,
+          'media'
+        );
+        return {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId,
+          bytes: file.size,
+          format: file.mimetype.split('/').pop() || 'image',
+          originalname: file.originalname,
+        };
+      })
+    );
     return res.json({ data: payload });
   } catch (e: any) {
     return res.status(500).json({ message: e?.message || 'Upload failed' });
@@ -64,82 +95,75 @@ router.post('/product-image', memoryUpload.single('image'), async (req, res) => 
 
     const { color, kind = 'color' } = req.body || {};
 
-    // Eager transformations for product and thumbnail variants
-    const eager = [
-      // Product image (squareish, good quality)
-      { width: 1000, height: 1000, crop: 'fill', gravity: 'auto', quality: 'auto:good', fetch_format: 'webp' },
-      // Thumbnail (smaller, lower quality)
-      { width: 300, height: 300, crop: 'fill', gravity: 'auto', quality: 'auto:eco', fetch_format: 'webp' },
-    ];
+    const image = sharp(req.file.buffer);
+    const metadata = await image.metadata();
 
-    // Upload original with a reasonable cap and web delivery defaults
-    const uploadOptions: any = {
-      folder: 'celebs/products',
-      resource_type: 'image',
-      use_filename: true,
-      unique_filename: true,
-      overwrite: false,
-      transformation: [{ width: 2000, crop: 'limit', quality: 'auto', fetch_format: 'webp' }],
-      eager,
-      eager_async: false,
-    };
+    // Validate original dimensions and aspect ratio
+    const w = Number(metadata.width || 0);
+    const h = Number(metadata.height || 0);
+    const ratio = w && h ? w / h : 0;
+    const withinAspect = Math.abs(ratio - UPLOAD_POLICY.aspectRatio) <= UPLOAD_POLICY.ratioTolerance;
+    const sizeOk = w >= UPLOAD_POLICY.minWidth && h >= UPLOAD_POLICY.minHeight;
 
-    // Upload from buffer via upload_stream
-    const result: any = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, uploadResult) => {
-        if (error) return reject(error);
-        resolve(uploadResult);
-      });
-      // req.file is guaranteed by earlier guard
-      const file = req.file as Express.Multer.File;
-      stream.end(file.buffer);
-    });
-
-    // Validate original dimensions
-    const w = Number(result.width || 0);
-    const h = Number(result.height || 0);
-    const sizeOk = w <= UPLOAD_POLICY.maxWidth && h <= UPLOAD_POLICY.maxHeight;
-
-    if (!sizeOk) {
-      // Best effort cleanup
-      try {
-        if (result.public_id) await cloudinary.uploader.destroy(result.public_id, { resource_type: 'image' });
-      } catch {}
+    if (!sizeOk || !withinAspect) {
       return res.status(400).json({
-        message: `Image dimensions must not exceed ${UPLOAD_POLICY.maxWidth}x${UPLOAD_POLICY.maxHeight}px`,
-        policy: UPLOAD_POLICY,
-        received: { width: w, height: h },
+        message: 'Image does not meet upload policy',
+        policy: {
+          minWidth: UPLOAD_POLICY.minWidth,
+          minHeight: UPLOAD_POLICY.minHeight,
+          aspectRatio: '1:1',
+          ratioTolerance: UPLOAD_POLICY.ratioTolerance,
+        },
+        received: { width: w, height: h, aspect: ratio },
       });
     }
 
-    // Map eager results: by order we defined above
-    const [productVar, thumbVar] = (result.eager as any[]) || [];
+    // Generate product and thumbnail WebP buffers locally
+    const originalBuffer = await image
+      .resize(2000, null, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    const productBuffer = await image
+      .resize(1000, 1000, { fit: 'cover', position: 'center' })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    const thumbBuffer = await image
+      .resize(300, 300, { fit: 'cover', position: 'center' })
+      .webp({ quality: 75 })
+      .toBuffer();
+
+    const id = uuidv4();
+    const folder = 'products';
+
+    const originalRes = await uploadToS3(originalBuffer, `${id}-original.webp`, 'image/webp', folder);
+    const productRes = await uploadToS3(productBuffer, `${id}-product.webp`, 'image/webp', folder);
+    const thumbRes = await uploadToS3(thumbBuffer, `${id}-thumb.webp`, 'image/webp', folder);
+
+    const originalMetadata = await sharp(originalBuffer).metadata();
 
     const payload = {
       kind,
       color: color || null,
       original: {
-        url: result.secure_url || result.url,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-        bytes: result.bytes,
-        format: result.format,
+        url: originalRes.url,
+        publicId: originalRes.publicId,
+        width: originalMetadata.width,
+        height: originalMetadata.height,
+        bytes: originalBuffer.length,
+        format: 'webp',
       },
-      product: productVar
-        ? {
-            url: productVar.secure_url || productVar.url,
-            width: productVar.width,
-            height: productVar.height,
-          }
-        : null,
-      thumbnail: thumbVar
-        ? {
-            url: thumbVar.secure_url || thumbVar.url,
-            width: thumbVar.width,
-            height: thumbVar.height,
-          }
-        : null,
+      product: {
+        url: productRes.url,
+        width: 1000,
+        height: 1000,
+      },
+      thumbnail: {
+        url: thumbRes.url,
+        width: 300,
+        height: 300,
+      },
     };
 
     return res.json({ data: payload });
