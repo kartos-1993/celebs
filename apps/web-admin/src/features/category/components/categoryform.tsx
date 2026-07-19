@@ -20,7 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -32,6 +32,8 @@ import {
 } from '@celebs/shared-ui/components/dialog';
 import React, { useState } from 'react';
 import { ProductAPI } from '@/lib/axios-client';
+import { useAuthContext } from '@/context/auth-provider';
+import { ProductApiService } from '../../product/api';
 
 const attributeValueSchema = z.object({
   id: z.string().optional(),
@@ -195,6 +197,7 @@ const categorySchema = z.object({
     .max(100, 'Category name must be less than 100 characters'),
   parent: z.string().nullable(),
   attributes: z.array(attributeSchema).default([]),
+  imageUrl: z.string().optional().nullable(),
   hasVariants: z.boolean().default(false),
   variantAttributes: z.array(z.string()).default([]),
   hasShippingAttributes: z.boolean().default(false),
@@ -253,12 +256,15 @@ const CategoryForm = ({
   categories = [],
 }: CategoryFormProps) => {
   const { toast } = useToast();
+  const { role } = useAuthContext();
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: initialData?.name || '',
       parent: initialData?.parent || null,
       attributes: initialData?.attributes || [],
+      imageUrl: initialData?.imageUrl || null,
       hasVariants: initialData?.hasVariants || false,
       hasShippingAttributes: initialData?.hasShippingAttributes || false,
       hasCustomFields: initialData?.hasCustomFields || false,
@@ -381,6 +387,73 @@ const CategoryForm = ({
             </FormItem>
           )}
         />
+
+        {role === 'SUPERADMIN' && (
+          <div className="space-y-2 border-t pt-4">
+            <FormLabel className="text-base font-semibold">Category Image (Superadmin Only)</FormLabel>
+            <div className="flex items-center space-x-4">
+              {form.watch('imageUrl') ? (
+                <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
+                  <img
+                    src={form.watch('imageUrl') || ''}
+                    alt="Category image"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => form.setValue('imageUrl', null)}
+                    className="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="w-16 h-16 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-fashion-500 transition-colors">
+                  {isUploadingImage ? (
+                    <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className="h-6 w-6 text-gray-400" />
+                      <span className="text-[10px] text-gray-500 mt-1">Upload</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploadingImage}
+                    onChange={async (e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        try {
+                          setIsUploadingImage(true);
+                          const file = e.target.files[0];
+                          const urls = await ProductApiService.uploadFiles([file]);
+                          if (urls && urls.length > 0) {
+                            form.setValue('imageUrl', urls[0]);
+                          }
+                        } catch (error) {
+                          toast({
+                            title: 'Image upload failed',
+                            description: 'Failed to upload category image. Please try again.',
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setIsUploadingImage(false);
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              )}
+              <div className="text-xs text-gray-500 space-y-1">
+                <p>Category image styled at 62x62 pixels on shein.com.</p>
+                <p>Upload a square image (JPEG, PNG, WebP, AVIF) up to 5MB.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <FormField
           control={form.control}

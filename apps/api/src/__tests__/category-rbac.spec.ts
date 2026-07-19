@@ -80,7 +80,7 @@ describe('Category RBAC & Tree Operations', () => {
     )}`;
   });
 
-  it('should allow admin to create a category with attributes', async () => {
+  it('should allow superadmin to create a category with attributes', async () => {
     const payload = {
       name: 'Footwear',
       parent: null,
@@ -99,7 +99,7 @@ describe('Category RBAC & Tree Operations', () => {
 
     const res = await request(app)
       .post('/api/v1/category')
-      .set('Cookie', [adminToken])
+      .set('Cookie', [superadminToken])
       .send(payload);
 
     expect(res.status).toBe(201);
@@ -113,6 +113,21 @@ describe('Category RBAC & Tree Operations', () => {
     const attributes = await AttributeModel.find({ categoryId: cat!._id });
     expect(attributes.length).toBe(1);
     expect(attributes[0].name).toBe('Size');
+  });
+
+  it('should block admin from creating a category', async () => {
+    const payload = {
+      name: 'Illegal Category',
+      parent: null,
+      attributes: [],
+    };
+
+    const res = await request(app)
+      .post('/api/v1/category')
+      .set('Cookie', [adminToken])
+      .send(payload);
+
+    expect(res.status).toBe(403);
   });
 
   it('should block vendor from creating a category', async () => {

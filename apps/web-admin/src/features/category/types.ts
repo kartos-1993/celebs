@@ -27,6 +27,7 @@ export interface Category {
   parent: string | null;
   path: string[];
   attributes: CategoryAttribute[];
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   __v?: number;
@@ -43,6 +44,7 @@ export interface CreateCategoryRequest {
     CategoryAttribute,
     '_id' | 'categoryId' | 'createdAt' | 'updatedAt'
   >[];
+  imageUrl?: string | null;
 }
 
 export interface UpdateCategoryRequest extends Partial<CreateCategoryRequest> {
@@ -73,6 +75,7 @@ export interface CategoryFormData {
   variantAttributes?: string[];
   hasShippingAttributes: boolean;
   hasCustomFields: boolean;
+  imageUrl?: string | null;
 }
 
 // UI State Types
