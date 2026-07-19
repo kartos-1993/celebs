@@ -33,12 +33,36 @@ const startServer = async () => {
 
     const server = app.listen(port, () => {
       console.log(`Listening at http://localhost:${port}`);
+      startSelfPing();
     });
     server.on('error', console.error);
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
+};
+
+const startSelfPing = () => {
+  const externalUrl = process.env.RENDER_EXTERNAL_URL;
+  if (!externalUrl) {
+    logger.info('RENDER_EXTERNAL_URL is not set. Self-pinging is disabled.');
+    return;
+  }
+
+  // Ping every 14 minutes (840,000 ms) to keep the instance from sleeping
+  const intervalMs = 14 * 60 * 1000;
+  const pingUrl = `${externalUrl.replace(/\/$/, '')}/health`;
+
+  logger.info(`Starting self-ping service targeting: ${pingUrl} (every 14 minutes)`);
+
+  setInterval(async () => {
+    try {
+      const response = await fetch(pingUrl);
+      logger.info(`Self-ping status: ${response.status} ${response.statusText}`);
+    } catch (err: any) {
+      logger.error({ err: err?.message || String(err) }, 'Self-ping failed');
+    }
+  }, intervalMs);
 };
 
 startServer();
