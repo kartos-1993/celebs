@@ -3,10 +3,17 @@ import Redis from 'ioredis';
 import { config } from '@/config/app.config';
 import { logger } from '@celebs/shared-utils';
 
+const isTls = config.REDIS.HOST && (
+  config.REDIS.HOST.includes('upstash.io') ||
+  config.NODE_ENV === 'production' ||
+  config.NODE_ENV === 'staging'
+);
+
 export const redisConnection = {
   host: config.REDIS.HOST,
   port: config.REDIS.PORT,
   password: config.REDIS.PASSWORD || undefined,
+  ...(isTls ? { tls: {} } : {}),
 };
 
 export async function verifyRedisConnection(): Promise<void> {
