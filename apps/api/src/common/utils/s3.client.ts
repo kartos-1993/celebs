@@ -20,7 +20,7 @@ export const s3Client = new S3Client({
     accessKeyId: config.S3.ACCESS_KEY_ID,
     secretAccessKey: config.S3.SECRET_ACCESS_KEY,
   },
-  endpoint: isDev && config.S3.ENDPOINT ? config.S3.ENDPOINT : undefined,
+  endpoint: config.S3.ENDPOINT || undefined,
   forcePathStyle: isDev ? true : false,
 });
 
