@@ -38,6 +38,14 @@ export const appConfig = () => {
       PORT: getEnv('REDIS_PORT', ''),
       PASSWORD: getEnv('REDIS_PASSWORD', ''),
     },
+    S3: {
+      ENDPOINT: getEnv('S3_ENDPOINT', ''),
+      BUCKET_NAME: getEnv('S3_BUCKET_NAME', ''),
+      REGION: getEnv('S3_REGION', 'auto'),
+      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID', ''),
+      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY', ''),
+      PUBLIC_BASE_URL: getEnv('MEDIA_PUBLIC_BASE_URL', ''),
+    },
     CLOUDINARY: {
       CLOUD_NAME: getEnv('CLOUDINARY_CLOUD_NAME'),
       API_KEY: getEnv('CLOUDINARY_API_KEY'),

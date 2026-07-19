@@ -54,13 +54,17 @@ projects:
                 sync: false
               - key: MONGODB_URI
                 sync: false
-              - key: CLOUDINARY_CLOUD_NAME
+              - key: S3_ENDPOINT
                 sync: false
-              - key: CLOUDINARY_API_KEY
+              - key: S3_BUCKET_NAME
                 sync: false
-              - key: CLOUDINARY_API_SECRET
+              - key: S3_REGION
                 sync: false
-              - key: CLOUDINARY_FOLDER
+              - key: AWS_ACCESS_KEY_ID
+                sync: false
+              - key: AWS_SECRET_ACCESS_KEY
+                sync: false
+              - key: MEDIA_PUBLIC_BASE_URL
                 sync: false
             region: singapore
             dockerContext: .
