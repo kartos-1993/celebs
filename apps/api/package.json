@@ -12,9 +12,11 @@
   "dependencies": {
     "@celebs/rbac": "workspace:*",
     "@celebs/shared-types": "workspace:*",
-    "@celebs/shared-utils": "workspace:*"
+    "@celebs/shared-utils": "workspace:*",
+    "multer": "^2.0.0"
   },
   "devDependencies": {
+    "@types/multer": "^1.4.12",
     "tsc-alias": "^1.9.0"
   }
 }
