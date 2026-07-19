@@ -45,9 +45,9 @@ projects:
               - key: REDIS_PASSWORD
                 sync: false
               - key: REDIS_PORT
-                sync: false
+                value: "6379"
               - key: REDIS_HOST
-                sync: false
+                value: promoted-mastodon-182323.upstash.io
               - key: DATABASE_URL
                 sync: false
               - key: DIRECT_URL
@@ -55,17 +55,17 @@ projects:
               - key: MONGODB_URI
                 sync: false
               - key: S3_ENDPOINT
-                sync: false
+                value: https://cba1249fa7c3e183b8e2081761beb0b4.r2.cloudflarestorage.com
               - key: S3_BUCKET_NAME
-                sync: false
+                value: celebs-media-staging
               - key: S3_REGION
-                sync: false
+                value: auto
               - key: AWS_ACCESS_KEY_ID
                 sync: false
               - key: AWS_SECRET_ACCESS_KEY
                 sync: false
               - key: MEDIA_PUBLIC_BASE_URL
-                sync: false
+                value: https://pub-1b2c37e4039f4ce1982591fe7985a04c.r2.dev
             region: singapore
             dockerContext: .
             dockerfilePath: Dockerfile
