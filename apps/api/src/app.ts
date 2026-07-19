@@ -18,6 +18,8 @@ import pinoHttp from 'pino-http';
 
 
 import session from 'express-session';
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 import sessionRoutes from './modules/session/session.routes';
 
 import categoryRoutes from './modules/category/category.routes';
@@ -108,7 +110,7 @@ if (config.REDIS.HOST && config.REDIS.PORT) {
   const redisClient = createClient({ url: redisUrl });
   redisClient.connect()
     .then(() => logger.info('Redis connected successfully for sessions'))
-    .catch((err) => logger.error({ err }, 'Redis connection failed'));
+    .catch((err: any) => logger.error({ err }, 'Redis connection failed'));
 
   sessionStore = new RedisStore({
     client: redisClient,
