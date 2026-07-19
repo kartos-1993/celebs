@@ -26,6 +26,7 @@ interface CategoryInput {
   level: number;
   path: string[];
   attributes: CategoryAttribute[];
+  imageUrl?: string | null;
 }
 
 interface CategoryUpdateInput extends Partial<Omit<CategoryInput, 'parent'>> {
@@ -362,6 +363,7 @@ export class CategoryService {
       slug: categoryData.slug,
       level: categoryData.level,
       path: categoryData.path,
+      imageUrl: categoryData.imageUrl ?? null,
     });
   }
 

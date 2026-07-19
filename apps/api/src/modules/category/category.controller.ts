@@ -95,7 +95,7 @@ export class CategoryController {
       );
 
       const validatedData = categoryInputSchema.parse(req.body);
-      const { name, parent, attributes } = validatedData;
+      const { name, parent, attributes, imageUrl } = validatedData;
 
       // Generate slug
       const slug = slugify(name, { lower: true, strict: true });
@@ -126,6 +126,7 @@ export class CategoryController {
         level,
         path,
         attributes: attributes || [],
+        imageUrl: imageUrl || null,
       };
 
       const category = await this.categoryService.createCategory(categoryInput);

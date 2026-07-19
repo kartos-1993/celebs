@@ -127,7 +127,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'categories',
-        element: <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}><Categories /></RoleGuard>,
+        element: <RoleGuard allowedRoles={['SUPERADMIN']}><Categories /></RoleGuard>,
         handle: { crumb: 'Categories' },
       },
       {

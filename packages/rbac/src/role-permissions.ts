@@ -31,7 +31,6 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.PRODUCT_PUBLISH,
     Permission.PRODUCT_REVIEW,
     Permission.CATALOG_VIEW,
-    Permission.CATALOG_MANAGE,
     Permission.ORDER_VIEW,
     Permission.ORDER_MANAGE,
     Permission.FINANCE_VIEW,

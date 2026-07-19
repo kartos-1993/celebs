@@ -36,6 +36,7 @@ interface SeedCategory {
   sizeChartColumns?: string[];
   attributes?: SeedAttr[];
   children?: SeedCategory[];
+  imageUrl?: string;
 }
 
 // Helpers to get option set ids by name
@@ -69,7 +70,7 @@ function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
   };
 }
 
-async function ensureCategory(parent: any | null, name: string, sizeChartColumns?: string[]) {
+async function ensureCategory(parent: any | null, name: string, sizeChartColumns?: string[], imageUrl?: string) {
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? (parent.level || 1) + 1 : 1;
   const pathParts = parent ? [...(parent.path || []), slug] : [slug];
@@ -82,6 +83,7 @@ async function ensureCategory(parent: any | null, name: string, sizeChartColumns
       level, 
       parentCategory: parent?._id || null, 
       path: pathParts,
+      imageUrl: imageUrl || null,
       ...(sizeChartColumns ? { sizeChartColumns } : {})
     },
     { new: true, upsert: true, setDefaultsOnInsert: true },
@@ -153,7 +155,7 @@ async function seedTree(root: SeedCategory) {
   }
 
   async function walk(node: SeedCategory, parent: any | null) {
-    const cat = await ensureCategory(parent, node.name, node.sizeChartColumns);
+    const cat = await ensureCategory(parent, node.name, node.sizeChartColumns, node.imageUrl);
     if (node.attributes?.length) {
       await createAttributes(cat._id as Types.ObjectId, node.attributes);
     }
@@ -173,6 +175,7 @@ const MEN_TREE: SeedCategory = {
   children: [
     {
       name: 'Tops',
+      imageUrl: 'https://img.ltwebstatic.com/v4/j/pi/2026/05/14/a8/1778740343963c2b0dd78a87a96d024c3ffc1c8b6c_thumbnail_192x.avif',
       children: [
         {
           name: 'T-Shirts',
@@ -194,6 +197,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Shirts',
+          imageUrl: 'https://img.ltwebstatic.com/images3_pi/2024/03/27/0d/1711520585c24c69cb10309d78a680d7177d850600_thumbnail_192x.avif',
           sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
@@ -235,6 +239,7 @@ const MEN_TREE: SeedCategory = {
         },
         {
           name: 'Hoodies & Sweatshirts',
+          imageUrl: 'https://img.ltwebstatic.com/v4/j/spmp/2026/05/09/32/1778320185e247b92240b7d73e6f1586935e0ab7ca_thumbnail_192x.avif',
           sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
@@ -275,9 +280,11 @@ const MEN_TREE: SeedCategory = {
     },
     {
       name: 'Bottoms',
+      imageUrl: 'https://img.ltwebstatic.com/images3_pi/2024/12/14/d2/17341595318535136d9f2ea60c1cdf7096a92122ff_thumbnail_192x.avif',
       children: [
         {
           name: 'Jeans',
+          imageUrl: 'https://img.ltwebstatic.com/images3_spmp/2024/12/27/b0/17352798664b0a4e502a1cb1e7a028337029f4c765_thumbnail_192x.avif',
           sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
           attributes: [
             { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
@@ -335,6 +342,7 @@ const MEN_TREE: SeedCategory = {
     },
     {
       name: 'Suits & Blazers',
+      imageUrl: 'https://img.ltwebstatic.com/v4/j/spmp/2025/08/08/bb/17546246612207e1317e039faf2baa854bc0d75e80_thumbnail_192x.avif',
       attributes: [
         { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
         { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -347,6 +355,7 @@ const MEN_TREE: SeedCategory = {
     },
     {
       name: 'Sets & Co-ords',
+      imageUrl: 'https://img.ltwebstatic.com/v4/j/pi/2026/03/16/fb/1773624865e853e43d1b5521b51622f15c53cc53bf_thumbnail_192x.avif',
       attributes: [
         { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
         { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },
@@ -380,6 +389,7 @@ const MEN_TREE: SeedCategory = {
     },
     {
       name: 'Underwear & Sleepwear',
+      imageUrl: 'https://img.ltwebstatic.com/v4/j/pi/2025/04/17/a6/1744855448ee0b2bcb0969064851157c8d007aa7c7_thumbnail_192x.avif',
       children: [
         {
           name: 'Underwear',
@@ -414,6 +424,7 @@ const MEN_TREE: SeedCategory = {
     },
     {
       name: 'Swimwear',
+      imageUrl: 'https://img.ltwebstatic.com/v4/p/ccc/2025/07/01/5a/1751349782aea47b0caef1b0722ae4351a1bd5ef0f_thumbnail_192x.avif',
       attributes: [
         { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' },
         { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XS-XXL)' },

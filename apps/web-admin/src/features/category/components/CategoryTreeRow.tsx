@@ -62,6 +62,13 @@ export const CategoryTreeRow: React.FC<CategoryTreeRowProps> = ({
           )}
 
           <span className="flex items-center gap-2">
+            {category.imageUrl && (
+              <img
+                src={category.imageUrl}
+                alt={category.name}
+                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+              />
+            )}
             {category.name}
             <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
               Level {category.level}

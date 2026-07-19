@@ -10,6 +10,7 @@ export interface ICategory extends Document {
   path: string[];
   attributes?: IAttribute[];
   sizeChartColumns?: string[];
+  imageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +43,7 @@ const CategorySchema: Schema = new Schema(
     },
     path: [{ type: String }],
     sizeChartColumns: [{ type: String }],
+    imageUrl: { type: String, default: null },
   },
   {
     timestamps: true,

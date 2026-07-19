@@ -43,10 +43,12 @@ export function getMenuList(role?: string): Group[] {
     { href: "/products/mediacenter", label: "Media Center" },
   ];
 
-  // Only Admin/SuperAdmin can manage categories
+  // Only Admin/SuperAdmin can review products, only SuperAdmin can manage categories
   if (isAdmin || isSuperAdmin) {
-    productSubmenus.push({ href: "/categories", label: "Categories" });
     productSubmenus.push({ href: "/products/review-product-queue", label: "Review Queue" });
+  }
+  if (isSuperAdmin) {
+    productSubmenus.push({ href: "/categories", label: "Categories" });
   }
 
   list.push({
