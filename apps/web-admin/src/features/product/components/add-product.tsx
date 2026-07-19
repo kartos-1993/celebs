@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldErrors } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from '@celebs/shared-ui/components/form';
+import { Button } from '@celebs/shared-ui/components/button';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronRight, FileClock, Info } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { CreateProductRequest, ProductApiService } from '../api';
 import { useProductForm } from '../hooks/useProductForm';
-import type { FieldSpec } from '../renderer/UiRegistry';
-import { extractVariantsMeta } from '../renderer/variant-utils';
+import type { FieldSpec } from '../fields/UiRegistry';
+import { extractVariantsMeta } from '../fields/variant-utils';
 import BasicInfoSection from './basic-info-section';
 import DynamicProductForm from './dynamic-product-form';
 import ProductFormActions from './product-form-action';
@@ -535,7 +537,7 @@ const buildSidebarSections = ({
       ? ['Product description must be at least 10 characters.']
       : []),
     ...(!normalizeText(values.categoryId) ||
-    !normalizeText(values.subcategoryId)
+      !normalizeText(values.subcategoryId)
       ? ['Select a product category before publishing.']
       : []),
   ]);
@@ -604,7 +606,7 @@ const buildSidebarSections = ({
         label: 'Price, Stock & Variants',
         anchorId:
           pricingErrors.length > 0 &&
-          groupedFields.variant.some((field) => field.required)
+            groupedFields.variant.some((field) => field.required)
             ? 'product-section-variant'
             : 'product-section-sale',
         status: pricingErrors.length === 0,
@@ -711,8 +713,12 @@ async function buildProductPayload({
       : null;
     return {
       name: sizeName,
-      productMeasurements: formSizeObj?.productMeasurements || [],
-      bodyMeasurements: formSizeObj?.bodyMeasurements || [],
+      productMeasurements: (formSizeObj?.productMeasurements || []).filter(
+        (m: any) => m.value && String(m.value).trim() !== '',
+      ),
+      bodyMeasurements: (formSizeObj?.bodyMeasurements || []).filter(
+        (m: any) => m.value && String(m.value).trim() !== '',
+      ),
     };
   });
 
@@ -734,7 +740,7 @@ async function buildProductPayload({
         quantity:
           toNonNegativeInteger(
             flatValues[
-              `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
+            `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
             ],
           ) ?? defaultStock,
       }));
@@ -816,6 +822,157 @@ async function buildProductPayload({
   };
 }
 
+const SubmissionStateHeader = ({
+  schemaFields,
+  schemaHasName,
+  variantMeta,
+}: {
+  schemaFields: FieldSpec[];
+  schemaHasName: boolean;
+  variantMeta: any[];
+}) => {
+  const { control, formState: { errors } } = useFormContext();
+  const formValues = useWatch({ control }) as Record<string, unknown>;
+  const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
+
+  const sidebarSections = useMemo(
+    () =>
+      buildSidebarSections({
+        fieldErrors,
+        schemaFields,
+        schemaHasName,
+        values: formValues,
+        variantMeta,
+      }),
+    [fieldErrors, formValues, schemaFields, schemaHasName, variantMeta],
+  );
+
+  const completionPercentage = useMemo(() => {
+    if (sidebarSections.length === 0) return 0;
+    return Math.round(
+      (sidebarSections.filter((section) => section.status).length /
+        sidebarSections.length) *
+      100,
+    );
+  }, [sidebarSections]);
+
+  return (
+    <div className="rounded-[28px] border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">
+        Submission State
+      </p>
+      <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        {completionPercentage === 100 ? 'Ready to submit' : 'In progress'}
+      </p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        {sidebarSections.filter((section) => section.status).length} of{' '}
+        {sidebarSections.length} sections completed.
+      </p>
+    </div>
+  );
+};
+
+const SubmissionProgressChecklist = ({
+  schemaFields,
+  schemaHasName,
+  variantMeta,
+  onSectionClick,
+}: {
+  schemaFields: FieldSpec[];
+  schemaHasName: boolean;
+  variantMeta: any[];
+  onSectionClick: (anchorId: string) => void;
+}) => {
+  const { control, formState: { errors } } = useFormContext();
+  const formValues = useWatch({ control }) as Record<string, unknown>;
+  const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
+
+  const sidebarSections = useMemo(
+    () =>
+      buildSidebarSections({
+        fieldErrors,
+        schemaFields,
+        schemaHasName,
+        values: formValues,
+        variantMeta,
+      }),
+    [fieldErrors, formValues, schemaFields, schemaHasName, variantMeta],
+  );
+
+  const completionPercentage = useMemo(() => {
+    if (sidebarSections.length === 0) return 0;
+    return Math.round(
+      (sidebarSections.filter((section) => section.status).length /
+        sidebarSections.length) *
+      100,
+    );
+  }, [sidebarSections]);
+
+  return (
+    <ProductFormSidebar
+      completionPercentage={completionPercentage}
+      sections={sidebarSections}
+      onSectionClick={onSectionClick}
+      tips={[
+        'Use at least three clear product images for a stronger listing.',
+        'Fill every required attribute generated from the selected category.',
+        'Check special prices against regular prices before submitting.',
+      ]}
+    />
+  );
+};
+
+const ProductFormActionsContainer = ({
+  schemaFields,
+  schemaHasName,
+  variantMeta,
+  onSaveAsDraft,
+  onCancel,
+  isSubmitting,
+  isDirty,
+  schemaReady,
+}: {
+  schemaFields: FieldSpec[];
+  schemaHasName: boolean;
+  variantMeta: any[];
+  onSaveAsDraft: () => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+  isDirty: boolean;
+  schemaReady: boolean;
+}) => {
+  const { control, formState: { errors } } = useFormContext();
+  const formValues = useWatch({ control }) as Record<string, unknown>;
+  const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
+
+  const sidebarSections = useMemo(
+    () =>
+      buildSidebarSections({
+        fieldErrors,
+        schemaFields,
+        schemaHasName,
+        values: formValues,
+        variantMeta: variantMeta.map((variant) => ({
+          key: variant.key,
+          label: variant.label,
+        })),
+      }),
+    [fieldErrors, formValues, schemaFields, schemaHasName, variantMeta],
+  );
+
+  const isReady = schemaReady && sidebarSections.every((section) => section.status);
+
+  return (
+    <ProductFormActions
+      isDirty={isDirty}
+      isReady={isReady}
+      onSaveAsDraft={onSaveAsDraft}
+      onCancel={onCancel}
+      isSubmitting={isSubmitting}
+    />
+  );
+};
+
 const AddProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -831,15 +988,95 @@ const AddProduct = () => {
 
   const { form, isLoading, updateBasicField, handleSubcategoryChange } =
     useProductForm(id);
-  const formValues = form.watch() as Record<string, unknown>;
 
-  const watchedCategoryId = String(formValues.categoryId || '');
-  const watchedSubcategoryId = String(formValues.subcategoryId || '');
+  const watchedCategoryId = String(form.watch('categoryId') || '');
+  const watchedSubcategoryId = String(form.watch('subcategoryId') || '');
 
   const { variants: variantMeta } = useMemo(
     () => extractVariantsMeta(schemaFields),
     [schemaFields],
   );
+
+  const handleAutofill = () => {
+    form.setValue('name', "Manfinity Hypemode Men's Solid Ribbed Long Sleeve Polo Shirt, Old Money Style", { shouldValidate: true });
+    form.setValue('description', "High-quality ribbed knit polo shirt featuring a soft cotton blend, clean button placket, and classic tailoring. Highly breathable, perfect for styling in formal, transition, or casual settings.", { shouldValidate: true });
+    form.setValue('brand', 'Manfinity', { shouldValidate: true });
+
+    // Populate main images (mock pre-uploaded links)
+    form.setValue('mainImage', [
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941142/celebs/products/bln3u0xtadrgtioonfsn.png',
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941153/celebs/products/dy4aw7qrlnj3uzglqbk5.png'
+    ], { shouldValidate: true });
+
+    schemaFields.forEach(field => {
+      if (['name', 'brand', 'description', 'categoryId', 'subcategoryId', 'mainImage'].includes(field.name)) {
+        return;
+      }
+
+      const ui = field.uiType.toLowerCase();
+      if (ui === 'input' || ui === 'text') {
+        form.setValue(field.name, 'Premium Cotton Blend', { shouldValidate: true });
+      } else if (ui === 'number') {
+        form.setValue(field.name, 12, { shouldValidate: true });
+      } else if (ui === 'switch') {
+        form.setValue(field.name, true, { shouldValidate: true });
+      } else if (ui === 'select') {
+        const firstOpt = Array.isArray(field.dataSource) ? field.dataSource[0]?.value : undefined;
+        if (firstOpt) {
+          form.setValue(field.name, firstOpt, { shouldValidate: true });
+        }
+      } else if (ui === 'multiselect') {
+        const opts = Array.isArray(field.dataSource) ? field.dataSource.slice(0, 2).map((o: any) => o.value) : [];
+        form.setValue(field.name, opts, { shouldValidate: true });
+      } else if (ui === 'variantlist') {
+        const opts = Array.isArray(field.dataSource) ? field.dataSource.slice(0, 2).map((o: any) => o.value) : ['Blue', 'White'];
+        form.setValue(field.name, opts, { shouldValidate: true });
+      }
+    });
+
+    // Populate SKU default price and stock
+    form.setValue('sku.default.price' as any, '1200', { shouldValidate: true });
+    form.setValue('sku.default.specialPrice' as any, '1100', { shouldValidate: true });
+    form.setValue('sku.default.stock' as any, '15', { shouldValidate: true });
+    form.setValue('sku.default.sellerSku' as any, 'POLO-SHIRT-MOCK', { shouldValidate: true });
+    form.setValue('sku.default.available' as any, true, { shouldValidate: true });
+
+    // Populate color metadata mock images
+    const colors = form.getValues('Color' as any) || ['Blue', 'White'];
+    if (Array.isArray(colors)) {
+      colors.forEach(color => {
+        const prefix = `variants.colorMeta.${color}`;
+        form.setValue(`${prefix}.hot` as any, false);
+        form.setValue(`${prefix}.swatch` as any, 'https://res.cloudinary.com/celebsnp/image/upload/v1783941189/celebs/products/qrxlasu3b8wercsjciod.png');
+        form.setValue(`${prefix}.images` as any, [
+          'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
+          'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png'
+        ]);
+      });
+    }
+
+    // Populate sizes and measurements
+    const sizes = form.getValues('Size' as any) || ['XS', 'M', 'S'];
+    const currentSizes = (form.getValues('sizes' as any) as any[]) || [];
+    if (Array.isArray(sizes) && Array.isArray(currentSizes)) {
+      const updated = currentSizes.map((sizeObj: any) => {
+        const populateList = (list: any[]) => {
+          return (list || []).map(m => ({ ...m, value: '45.5' }));
+        };
+        return {
+          ...sizeObj,
+          productMeasurements: populateList(sizeObj.productMeasurements),
+          bodyMeasurements: populateList(sizeObj.bodyMeasurements),
+        };
+      });
+      form.setValue('sizes' as any, updated, { shouldValidate: true });
+    }
+
+    toast({
+      title: "Form Autofilled",
+      description: "Mock data loaded. Skips Cloudinary uploads.",
+    });
+  };
 
   useEffect(() => {
     if (isEditMode) {
@@ -877,35 +1114,7 @@ const AddProduct = () => {
     }
   }, [form, isEditMode]);
 
-  const fieldErrors = useMemo(
-    () => flattenFormErrors(form.formState.errors),
-    [form.formState.errors],
-  );
 
-  const sidebarSections = useMemo(
-    () =>
-      buildSidebarSections({
-        fieldErrors,
-        schemaFields,
-        schemaHasName,
-        values: formValues,
-        variantMeta: variantMeta.map((variant) => ({
-          key: variant.key,
-          label: variant.label,
-        })),
-      }),
-    [fieldErrors, formValues, schemaFields, schemaHasName, variantMeta],
-  );
-
-  const completionPercentage = useMemo(() => {
-    if (sidebarSections.length === 0) return 0;
-
-    return Math.round(
-      (sidebarSections.filter((section) => section.status).length /
-        sidebarSections.length) *
-        100,
-    );
-  }, [sidebarSections]);
 
   const canShowAdditionalSections = Boolean(
     watchedCategoryId && watchedSubcategoryId,
@@ -1164,64 +1373,70 @@ const AddProduct = () => {
   const submitStatus = user?.role === 'VENDOR' ? 'pending_review' : 'published';
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
-          <span>Catalog</span>
-          <ChevronRight className="h-4 w-4" />
-          <span>Manage Products</span>
-          <ChevronRight className="h-4 w-4" />
-          <span className="font-medium text-gray-700 dark:text-gray-200">
-            {isEditMode ? 'Edit Product' : 'Add Product'}
-          </span>
-        </div>
-
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
-              Product Publishing
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-                {isEditMode ? 'Update Product' : 'Create a new product listing'}
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
-                Complete the required catalog information, upload compliant
-                media, and verify pricing before submitting the product.
-              </p>
-            </div>
+    <Form {...form}>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+            <span>Catalog</span>
+            <ChevronRight className="h-4 w-4" />
+            <span>Manage Products</span>
+            <ChevronRight className="h-4 w-4" />
+            <span className="font-medium text-gray-700 dark:text-gray-200">
+              {isEditMode ? 'Edit Product' : 'Add Product'}
+            </span>
           </div>
 
-          <div className="rounded-[28px] border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">
-              Submission State
-            </p>
-            <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {completionPercentage === 100 ? 'Ready to submit' : 'In progress'}
-            </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {sidebarSections.filter((section) => section.status).length} of{' '}
-              {sidebarSections.length} sections completed.
-            </p>
-          </div>
-        </div>
-
-        {restoredDraftAt ? (
-          <div className="mb-6 flex items-start gap-3 rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-            <FileClock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-            <div>
-              <p className="font-semibold">Local draft restored</p>
-              <p className="mt-1 text-amber-800 dark:text-amber-300">
-                This form was restored from a browser draft saved on{' '}
-                {new Date(restoredDraftAt).toLocaleString()}.
-              </p>
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+                Product Publishing
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                    {isEditMode ? 'Update Product' : 'Create a new product listing'}
+                  </h1>
+                  {process.env.NODE_ENV === 'development' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutofill}
+                      className="h-8 rounded-full border-orange-200 bg-orange-50/50 px-3 text-xs font-semibold text-orange-700 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                    >
+                      Autofill Form
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
+                  Complete the required catalog information, upload compliant
+                  media, and verify pricing before submitting the product.
+                </p>
+              </div>
             </div>
-          </div>
-        ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-6">
-            <Form {...form}>
+            <SubmissionStateHeader
+              schemaFields={schemaFields}
+              schemaHasName={schemaHasName}
+              variantMeta={variantMeta}
+            />
+          </div>
+
+          {restoredDraftAt ? (
+            <div className="mb-6 flex items-start gap-3 rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <FileClock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+              <div>
+                <p className="font-semibold">Local draft restored</p>
+                <p className="mt-1 text-amber-800 dark:text-amber-300">
+                  This form was restored from a browser draft saved on{' '}
+                  {new Date(restoredDraftAt).toLocaleString()}.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-6">
               <form
                 onSubmit={form.handleSubmit(
                   (data) => {
@@ -1274,12 +1489,12 @@ const AddProduct = () => {
                 ) : null}
 
                 {canShowAdditionalSections ? (
-                  <ProductFormActions
+                  <ProductFormActionsContainer
                     isDirty={form.formState.isDirty}
-                    isReady={
-                      schemaReady &&
-                      sidebarSections.every((section) => section.status)
-                    }
+                    schemaReady={schemaReady}
+                    schemaFields={schemaFields}
+                    schemaHasName={schemaHasName}
+                    variantMeta={variantMeta}
                     onSaveAsDraft={handleSaveAsDraft}
                     onCancel={() => navigate(MANAGE_PRODUCTS_PATH)}
                     isSubmitting={isSubmitting}
@@ -1291,36 +1506,32 @@ const AddProduct = () => {
                   </div>
                 )}
               </form>
-            </Form>
-          </div>
+            </div>
 
-          {canShowAdditionalSections ? (
-            <div className="lg:sticky lg:top-6 lg:self-start">
-              <ProductFormSidebar
-                completionPercentage={completionPercentage}
-                sections={sidebarSections}
-                onSectionClick={scrollToSection}
-                tips={[
-                  'Use at least three clear product images for a stronger listing.',
-                  'Fill every required attribute generated from the selected category.',
-                  'Check special prices against regular prices before submitting.',
-                ]}
-              />
-            </div>
-          ) : (
-            <div className="rounded-[28px] border border-gray-200 bg-white p-5 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-              <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
-                <p>
-                  The sidebar checklist appears once a category has been chosen
-                  and the category-specific form has loaded.
-                </p>
+            {canShowAdditionalSections ? (
+              <div className="lg:sticky lg:top-6 lg:self-start">
+                <SubmissionProgressChecklist
+                  schemaFields={schemaFields}
+                  schemaHasName={schemaHasName}
+                  variantMeta={variantMeta}
+                  onSectionClick={scrollToSection}
+                />
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="rounded-[28px] border border-gray-200 bg-white p-5 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                <div className="flex items-start gap-3">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                  <p>
+                    The sidebar checklist appears once a category has been chosen
+                    and the category-specific form has loaded.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </Form>
   );
 };
 
