@@ -472,6 +472,13 @@ const MEN_TREE: SeedCategory = {
 async function run() {
   await mongoose.connect(MONGODB_URI);
   try {
+    if (process.env.CLEAR_ALL === '1') {
+      // eslint-disable-next-line no-console
+      console.log('Clearing existing categories, attributes, and option sets...');
+      await CategoryModel.deleteMany({});
+      await AttributeModel.deleteMany({});
+      await OptionSetModel.deleteMany({});
+    }
     await seedTree(MEN_TREE);
     // eslint-disable-next-line no-console
     console.log('Seeded Men categories and attributes.');
