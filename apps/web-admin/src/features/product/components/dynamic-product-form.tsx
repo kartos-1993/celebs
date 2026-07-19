@@ -9,9 +9,9 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { ProductAPI } from '@/lib/axios-client';
 import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { CategoryApiService } from '../../category/api';
-import type { FieldSpec } from '../renderer/UiRegistry';
-import { uiTypeRegistry } from '../renderer/UiRegistry';
-import { extractVariantsMeta } from '../renderer/variant-utils';
+import type { FieldSpec } from '../fields/UiRegistry';
+import { uiTypeRegistry } from '../fields/UiRegistry';
+import { extractVariantsMeta } from '../fields/variant-utils';
 import CollapsibleFormSection from './collapsible-form-section';
 
 interface DynamicProductFormProps {

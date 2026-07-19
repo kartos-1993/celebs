@@ -73,3 +73,24 @@ export function extractVariantsMeta(fields: FieldSpec[]): {
   const colorFieldName = variants.find((v) => v.kind === 'color')?.key;
   return { variants, colorFieldName };
 }
+
+export const getLabelMap = (fields: FieldSpec[], fieldName?: string) => {
+  if (!fieldName) {
+    return new Map<string, string>();
+  }
+
+  const field = fields.find((entry) => entry.name === fieldName);
+  if (!field || !Array.isArray(field.dataSource)) {
+    return new Map<string, string>();
+  }
+
+  return new Map<string, string>(
+    field.dataSource
+      .filter(
+        (option: any): option is { value: string; label: string } =>
+          Boolean(option?.value) && Boolean(option?.label),
+      )
+      .map((option: any) => [String(option.value), String(option.label)]),
+  );
+};
+

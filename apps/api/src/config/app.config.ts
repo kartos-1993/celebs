@@ -33,24 +33,25 @@ export const appConfig = () => {
     },
     SETUP_SECRET: getEnv('SETUP_SECRET', 'celebs-superadmin-secret-2026'),
     MONGODB_URI: getEnv('MONGODB_URI', 'mongodb://localhost:27017/fashion-ecommerce'),
-    REDIS: {
-      HOST: getEnv('REDIS_HOST', ''),
-      PORT: getEnv('REDIS_PORT', ''),
-      PASSWORD: getEnv('REDIS_PASSWORD', ''),
-    },
-    S3: {
-      ENDPOINT: getEnv('S3_ENDPOINT', ''),
-      BUCKET_NAME: getEnv('S3_BUCKET_NAME', ''),
-      REGION: getEnv('S3_REGION', 'auto'),
-      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID', ''),
-      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY', ''),
-      PUBLIC_BASE_URL: getEnv('MEDIA_PUBLIC_BASE_URL', ''),
-    },
     CLOUDINARY: {
       CLOUD_NAME: getEnv('CLOUDINARY_CLOUD_NAME'),
       API_KEY: getEnv('CLOUDINARY_API_KEY'),
       API_SECRET: getEnv('CLOUDINARY_API_SECRET'),
       FOLDER: getEnv('CLOUDINARY_FOLDER', 'celebs_media'),
+    },
+    S3: {
+      REGION: getEnv('S3_REGION', 'ap-south-1'),
+      BUCKET_NAME: getEnv('S3_BUCKET_NAME', 'celebs'),
+      ENDPOINT: getEnv('S3_ENDPOINT', ''),
+      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID'),
+      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY'),
+      /** Optional CDN / public base (e.g. CloudFront). When set, public URLs use this prefix. */
+      PUBLIC_BASE_URL: getEnv('MEDIA_PUBLIC_BASE_URL', getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', '')),
+    },
+    REDIS: {
+      HOST: getEnv('REDIS_HOST', 'localhost'),
+      PORT: parseInt(getEnv('REDIS_PORT', '6379'), 10),
+      PASSWORD: getEnv('REDIS_PASSWORD', ''),
     },
   };
 };

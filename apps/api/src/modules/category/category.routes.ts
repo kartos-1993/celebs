@@ -34,6 +34,7 @@ categoryRoute.get(
   '/tree-with-attributes',
   asyncHandler(categoryController.getCategoryTreeWithAttributes),
 );
+categoryRoute.get('/:id/filters', asyncHandler(categoryController.getCategoryFilters));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 categoryRoute.post('/', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.createCategory));
 categoryRoute.put('/:id', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.updateCategory));

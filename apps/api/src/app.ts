@@ -18,10 +18,7 @@ import pinoHttp from 'pino-http';
 
 
 import session from 'express-session';
-import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
 import sessionRoutes from './modules/session/session.routes';
-// import { config } from './config';
 
 import categoryRoutes from './modules/category/category.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';

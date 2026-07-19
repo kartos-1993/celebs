@@ -220,4 +220,25 @@ export class CategoryController {
       next(error);
     }
   };
+
+  /**
+   * Get filters for a specific category
+   */
+  getCategoryFilters = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const { id } = req.params;
+      const filters = await this.categoryService.getCategoryFilters(id);
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category filters retrieved successfully',
+        data: filters,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -1,5 +1,10 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - apps/*
+  - packages/*
+
 ignoredBuiltDependencies:
   - nx
+
+onlyBuiltDependencies:
+  - msgpackr-extract
+  - sharp
