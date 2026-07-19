@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
@@ -58,7 +58,7 @@ const uploadToS3 = async (
 
 // POST /api/v1/media/upload
 // field name: files (can be multiple)
-router.post('/upload', memoryUpload.array('files', 12), async (req, res) => {
+router.post('/upload', memoryUpload.array('files', 12), async (req: Request, res: Response) => {
   try {
     const files = (req.files as Express.Multer.File[]) || [];
     const payload = await Promise.all(
@@ -87,7 +87,7 @@ router.post('/upload', memoryUpload.array('files', 12), async (req, res) => {
 // POST /api/v1/media/product-image
 // Upload a single product image (for main or color variant) and return derived variants
 // field name: image, optional fields: color, kind ("main" | "color")
-router.post('/product-image', memoryUpload.single('image'), async (req, res) => {
+router.post('/product-image', memoryUpload.single('image'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file provided' });
