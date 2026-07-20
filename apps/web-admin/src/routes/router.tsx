@@ -34,6 +34,7 @@ import OnboardingWizard from '@/features/vendor-onboarding/onboarding-wizard';
 import VendorList from '@/features/vendors/vendor-list';
 import UserList from '@/features/users/user-list';
 import StaffList from '@/features/staff/staff-list';
+import Banners from '@/features/platform-settings/banners';
 
 import { RoleGuard } from '@/components/role-guard';
 
@@ -191,6 +192,11 @@ export const router = createBrowserRouter([
         path: 'finance',
         element: <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN']}><Finance /></RoleGuard>,
         handle: { crumb: 'Finance' },
+      },
+      {
+        path: 'platform-settings/banners',
+        element: <RoleGuard allowedRoles={['SUPERADMIN']}><Banners /></RoleGuard>,
+        handle: { crumb: 'Banner Settings' },
       },
     ],
   },
