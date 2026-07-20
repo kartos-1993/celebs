@@ -3,7 +3,9 @@ import request from 'supertest';
 import app from '@/app';
 import { CategoryModel } from '@/db/models/category.model';
 import { AttributeModel } from '@/db/models/attribute.model';
+import { ProductModel } from '@/db/models/product.model';
 import prisma from '@/db';
+import mongoose from 'mongoose';
 import { config } from '@/config/app.config';
 import { hashValue } from '@/common/utils/bcrypt';
 
@@ -153,5 +155,88 @@ describe('Category RBAC & Tree Operations', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  describe('Category Deletion Protection (Approach 1)', () => {
+    let parentCatId: string;
+    let childCatId: string;
+
+    beforeEach(async () => {
+      // Clean MongoDB collections
+      await CategoryModel.deleteMany({});
+      await ProductModel.deleteMany({});
+
+      // Create parent category
+      const parent = await CategoryModel.create({
+        name: 'Electronics',
+        slug: 'electronics',
+        level: 1,
+        path: ['electronics'],
+      });
+      parentCatId = parent._id.toString();
+
+      // Create child category
+      const child = await CategoryModel.create({
+        name: 'Laptops',
+        slug: 'laptops',
+        level: 2,
+        parentCategory: parent._id,
+        path: ['electronics', 'laptops'],
+      });
+      childCatId = child._id.toString();
+    });
+
+    it('should block deletion of parent category if it has subcategories', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/category/${parentCatId}`)
+        .set('Cookie', [superadminToken]);
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('subcategory');
+    });
+
+    it('should block deletion of category if it is assigned to products', async () => {
+      // Create mock product in MongoDB referencing the child category
+      await ProductModel.create({
+        name: 'MacBook Pro',
+        slug: 'macbook-pro',
+        description: 'Test laptop description',
+        price: 1999,
+        category: new mongoose.Types.ObjectId(parentCatId),
+        subcategory: new mongoose.Types.ObjectId(childCatId),
+        sizes: [],
+        colorVariants: [],
+        mainImages: ['test.jpg'],
+        tags: [],
+        featured: false,
+        status: 'published',
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+      });
+
+      // Try to delete the child category (which has 1 product assigned)
+      const res = await request(app)
+        .delete(`/api/v1/category/${childCatId}`)
+        .set('Cookie', [superadminToken]);
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('product');
+    });
+
+    it('should successfully delete category if it has no children and no products', async () => {
+      // Delete the child category first (no subcategories, no products assigned)
+      const res = await request(app)
+        .delete(`/api/v1/category/${childCatId}`)
+        .set('Cookie', [superadminToken]);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      // Verify it was removed from MongoDB
+      const found = await CategoryModel.findById(childCatId);
+      expect(found).toBeNull();
+    });
   });
 });
