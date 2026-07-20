@@ -153,8 +153,8 @@ export function getMenuList(role?: string): Group[] {
     list.push({
       menus: [
         {
-          href: "/platform-settings",
-          label: "Platform Settings",
+          href: "/platform-settings/banners",
+          label: "Banner Settings",
           icon: Shield,
         },
       ],
