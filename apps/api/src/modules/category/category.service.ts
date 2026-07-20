@@ -5,6 +5,7 @@ import { AttributeModel, IAttribute } from '@/db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 import { CategoryFilterModel, ICategoryFilter } from '@/db/models/category-filter.model';
+import { ProductModel } from '@/db/models/product.model';
 
 
 interface CategoryAttribute {
@@ -266,9 +267,11 @@ export class CategoryService {
   }
 
   /**
-   * Deletes a category and cascades to delete its children and attributes
+   * Deletes a category safely. Restricts deletion if in use (has child categories or products).
    */
   async deleteCategoryWithCascade(categoryId: string): Promise<void> {
+    this.validateObjectId(categoryId);
+
     const category = await this.getCategoryById(categoryId);
     if (!category) {
       throw new AppError(
@@ -278,8 +281,43 @@ export class CategoryService {
       );
     }
 
-    // Start the recursive deletion process
-    await this.deleteChildCategories(category);
+    // Check for child subcategories
+    const childCategoriesCount = await CategoryModel.countDocuments({
+      parentCategory: categoryId,
+    });
+
+    if (childCategoriesCount > 0) {
+      throw new AppError(
+        `Cannot delete category "${category.name}" because it has ${childCategoriesCount} subcategory(ies) associated with it. Please delete or move them first.`,
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    // Check for active products using this category or subcategory
+    const productsCount = await ProductModel.countDocuments({
+      $or: [
+        { category: categoryId },
+        { subcategory: categoryId },
+      ],
+    });
+
+    if (productsCount > 0) {
+      throw new AppError(
+        `Cannot delete category "${category.name}" because it is currently assigned to ${productsCount} product(s). Please reassign or delete the products first.`,
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    // Delete associated attributes
+    await this.deleteAttributesByCategoryId(categoryId);
+
+    // Delete associated filters (clean up DB)
+    await CategoryFilterModel.deleteMany({ categoryId });
+
+    // Delete the category itself
+    await CategoryModel.findByIdAndDelete(categoryId);
   }
 
   // Attribute Management Methods
