@@ -1,9 +1,9 @@
 [build]
-  command = "pnpm nx build web-admin --configuration=production"
+  command = "pnpm --filter web-admin build:staging"
   publish = "dist/apps/web-admin"
 
 [context.staging]
-  command = "pnpm nx build web-admin --configuration=staging"
+  command = "pnpm --filter web-admin build:staging"
 
 [[redirects]]
   from = "/*"
