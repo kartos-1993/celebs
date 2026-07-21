@@ -30,10 +30,10 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
     }));
 
     React.useEffect(() => {
-      if (loadMoreTrigger && loadMoreTrigger > 0) {
+      if (loadMoreTrigger && loadMoreTrigger > 0 && !loading && !loadingMore && hasMore) {
         loadMore();
       }
-    }, [loadMoreTrigger, loadMore]);
+    }, [loadMoreTrigger, loading, loadingMore, hasMore, loadMore]);
 
   const filteredProducts = React.useMemo(() => {
     let result = products;

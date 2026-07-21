@@ -28,10 +28,15 @@ const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction
 // Rate limiter for public/search endpoints
 const productSearchRateLimit = rateLimit({
   windowMs: 60 * 1000,
-  max: 60,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => !!req.user,
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later.',
+    errorCode: 'TOO_MANY_REQUESTS'
+  }
 });
 
 // Public / Storefront Product Routes (Optional Auth)
