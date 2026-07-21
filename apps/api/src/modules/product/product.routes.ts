@@ -12,7 +12,12 @@ const productController = ProductModule.getInstance().getProductController();
 
 // Optional JWT authentication: populates req.user if token is present, but doesn't block unauthenticated storefront users
 const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('jwt', { session: false }, (err: any, user: any) => {
+  const hasAuthHeader = !!req.headers.authorization;
+  const hasCookieToken = !!req.cookies?.accessToken;
+  if (!hasAuthHeader && !hasCookieToken) {
+    return next();
+  }
+  passport.authenticate('jwt', { session: false }, (_err: any, user: any) => {
     if (user) {
       req.user = user;
     }

@@ -7,17 +7,33 @@ import { Colors, Spacing } from '@/constants/theme';
 import { ProductCard } from './product-card';
 import { useProducts, Product } from '../hooks/use-products';
 
+export interface ProductGridRef {
+  loadMore: () => void;
+}
+
 interface ProductGridProps {
   onProductPress?: (product: Product) => void;
+  loadMoreTrigger?: number;
 }
 
 const FILTER_CHIPS = ['All', 'Top Selling', 'New In', 'Super Savings', 'Sets'];
 
-export function ProductGrid({ onProductPress }: ProductGridProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { products, loading, loadingMore, hasMore, loadMore } = useProducts(10);
-  const [selectedFilter, setSelectedFilter] = React.useState('All');
+export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
+  ({ onProductPress, loadMoreTrigger }, ref) => {
+    const scheme = useColorScheme();
+    const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+    const { products, loading, loadingMore, hasMore, loadMore } = useProducts(10);
+    const [selectedFilter, setSelectedFilter] = React.useState('All');
+
+    React.useImperativeHandle(ref, () => ({
+      loadMore,
+    }));
+
+    React.useEffect(() => {
+      if (loadMoreTrigger && loadMoreTrigger > 0) {
+        loadMore();
+      }
+    }, [loadMoreTrigger, loadMore]);
 
   const filteredProducts = React.useMemo(() => {
     if (selectedFilter === 'Top Selling') {
