@@ -31,6 +31,27 @@ const MOCK_NAMES = [
 
 const MOCK_BRANDS = ["Manfinity", "Celebs Co.", "Hypemode", "UrbanStyle", "OldMoney"];
 
+const FASHION_PRODUCT_IMAGES = [
+  'https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?q=80&w=800',
+  'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800',
+  'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=800',
+  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800',
+  'https://images.unsplash.com/photo-1626497764746-6dc36546b388?q=80&w=800',
+  'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800',
+  'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=800',
+  'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800',
+  'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800',
+  'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800',
+  'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=800',
+  'https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=800',
+  'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800',
+  'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?q=80&w=800',
+  'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?q=80&w=800',
+  'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800',
+  'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=800',
+  'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=800',
+];
+
 async function run() {
   console.log(`Connecting to MongoDB at: ${MONGODB_URI}`);
   await mongoose.connect(MONGODB_URI);
@@ -65,6 +86,10 @@ async function run() {
       
       const price = 800 + (i * 25) % 2000;
       const discountedPrice = price > 1000 ? Math.round(price * 0.9) : undefined;
+
+      const img1 = FASHION_PRODUCT_IMAGES[i % FASHION_PRODUCT_IMAGES.length];
+      const img2 = FASHION_PRODUCT_IMAGES[(i + 1) % FASHION_PRODUCT_IMAGES.length];
+      const mainImages = [img1, img2];
       
       // Dynamic attributes mapping
       const dynamicValues: Record<string, any> = {
@@ -92,11 +117,12 @@ async function run() {
 
       // Color variants
       const activeColors = MOCK_COLORS.slice(0, 2 + (i % 2));
-      const colorVariants = activeColors.map(color => {
+      const colorVariants = activeColors.map((color, cIdx) => {
+        const variantImg = FASHION_PRODUCT_IMAGES[(i + cIdx * 2) % FASHION_PRODUCT_IMAGES.length];
         return {
           name: color.name,
           colorCode: color.code,
-          images: color.images,
+          images: [variantImg],
           stocks: selectedSizes.map(size => ({
             size,
             quantity: 10 + (i % 5)
@@ -105,18 +131,14 @@ async function run() {
       });
 
       const colorMeta: Record<string, any> = {};
-      activeColors.forEach(color => {
+      activeColors.forEach((color, cIdx) => {
+        const variantImg = FASHION_PRODUCT_IMAGES[(i + cIdx * 2) % FASHION_PRODUCT_IMAGES.length];
         colorMeta[color.name] = {
-          swatch: color.swatch,
-          images: color.images,
+          swatch: variantImg,
+          images: [variantImg],
           hot: i % 5 === 0
         };
       });
-
-      const mainImages = [
-        'https://res.cloudinary.com/celebsnp/image/upload/v1783941142/celebs/products/bln3u0xtadrgtioonfsn.png',
-        'https://res.cloudinary.com/celebsnp/image/upload/v1783941153/celebs/products/dy4aw7qrlnj3uzglqbk5.png'
-      ];
 
       const skuVariants: Record<string, any> = {};
       activeColors.forEach(color => {
