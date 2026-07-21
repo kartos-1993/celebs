@@ -2,7 +2,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 import { Spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CAROUSEL_HEIGHT = SCREEN_WIDTH * (9 / 16);
+const CAROUSEL_HEIGHT = SCREEN_WIDTH * 1.1; // Balanced portrait aspect ratio to match SHEIN's design
 
 export const styles = StyleSheet.create({
   container: {
