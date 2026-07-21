@@ -43,11 +43,19 @@ export function useProducts(initialLimit = 10) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const fetchedCursorsRef = useRef<Set<string>>(new Set());
+  const isFetchingRef = useRef(false);
 
   const fetchProducts = useCallback(async (cursor?: string | null, isRefresh = false) => {
-    if (cursor && fetchedCursorsRef.current.has(cursor)) {
+    if (isFetchingRef.current) {
+      console.log('⏸️ [useProducts] Request already in-flight - ignoring duplicate call.');
       return;
     }
+    if (cursor && fetchedCursorsRef.current.has(cursor)) {
+      console.log('⏹️ [useProducts] Cursor already fetched - ignoring duplicate call:', cursor);
+      return;
+    }
+
+    isFetchingRef.current = true;
     if (cursor) {
       fetchedCursorsRef.current.add(cursor);
     } else {
@@ -105,6 +113,7 @@ export function useProducts(initialLimit = 10) {
       setHasMore(false);
       setNextCursor(null);
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
       setLoadingMore(false);
     }
