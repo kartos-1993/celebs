@@ -31,6 +31,11 @@ export interface FieldSpec {
   dataSource?: any;
   rule?: any;
   visible?: boolean;
+  placeholder?: string;
+  info?: {
+    help?: string;
+    top?: string;
+  };
 }
 
 export interface CategoryDocLike {
@@ -59,10 +64,12 @@ function selectDataSource(attr: IAttribute) {
 function attributeToField(attr: IAttribute): FieldSpec {
   const base = {
     name: attr.name,
-    label: titleCase(attr.name),
+    label: attr.label || titleCase(attr.name),
     group: ((attr as any).isVariant ? 'variant' : (((attr as any).group as FieldGroup) || 'details')) as FieldGroup,
     required: !!attr.isRequired,
     visible: true,
+    placeholder: attr.placeholder,
+    info: attr.info,
   } as const;
 
   switch (attr.type) {

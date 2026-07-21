@@ -22,8 +22,7 @@ export { CategoryApiService } from './api';
 
 // Components
 export { CategoryFormDialog } from './components/CategoryFormDialog';
-export { CategoryTreeTable } from './components/CategoryTreeTable';
-export { CategoryTreeRow } from './components/CategoryTreeRow';
+export { CategoryTree } from './components/CategoryTree';
 export { DeleteCategoryDialog } from './components/DeleteCategoryDialog';
 export { EmptyState } from './components/EmptyState';
 export { ErrorState } from './components/ErrorState';

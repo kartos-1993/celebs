@@ -10,7 +10,7 @@ import { FolderTree, FolderPlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 import { CategoryFormDialog } from './CategoryFormDialog';
-import { CategoryTreeTable } from './CategoryTreeTable';
+import { CategoryTree } from './CategoryTree';
 import { DeleteCategoryDialog } from './DeleteCategoryDialog';
 import { EmptyState } from './EmptyState';
 import { ErrorState } from './ErrorState';
@@ -35,6 +35,24 @@ export const Categories: React.FC = () => {
   } = useCategories();
 
   const { uiState, actions } = useCategoryState();
+
+  const handleToggleActive = async (categoryId: string, isActive: boolean) => {
+    try {
+      await updateCategory(categoryId, { isActive });
+      toast({
+        title: isActive ? 'Category activated' : 'Category deactivated',
+        description: `Successfully set category status.`,
+      });
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error updating status',
+        description: err?.message || 'Please try again later.',
+      });
+      // Throw error to reset ToggleSwitch state inside child component if needed
+      throw err;
+    }
+  };
 
   const handleSaveCategory = async (formData: any) => {
     try {
@@ -113,13 +131,12 @@ export const Categories: React.FC = () => {
           ) : categoryTree.length === 0 ? (
             <EmptyState onAddCategory={actions.openAddCategoryForm} />
           ) : (
-            <CategoryTreeTable
+            <CategoryTree
               categoryTree={categoryTree}
-              expandedCategories={uiState.expandedCategories}
-              onToggleExpand={actions.toggleCategory}
               onEdit={actions.openEditForm}
               onDelete={actions.openDeleteDialog}
               onAddSubcategory={actions.openAddSubcategoryForm}
+              onToggleActive={handleToggleActive}
             />
           )}
         </CardContent>

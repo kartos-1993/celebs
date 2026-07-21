@@ -22,12 +22,40 @@ const attributeValueSchema = z.string().min(1, 'Value is required');
 export const attributeInputSchema = z
   .object({
   name: z.string().min(1, 'Attribute name is required').trim(),
-  type: z.enum(['text', 'select', 'multiselect', 'number', 'boolean'], {
+  type: z.enum([
+    'text',
+    'select',
+    'multiselect',
+    'number',
+    'boolean',
+    'richText',
+    'image',
+    'video',
+    'marketImages',
+    'mainImage',
+    'customEditor',
+    'translateInput',
+    'listEditor',
+    'packageWeight',
+    'packageVolume',
+    'color-with-image',
+    'measurement-group',
+    'size-guide',
+  ], {
     message: 'Invalid attribute type',
   }),
   values: z.array(attributeValueSchema).optional().default([]),
   isRequired: z.boolean().default(false),
   group: z.string().optional(),
+  label: z.string().optional().nullable(),
+  placeholder: z.string().optional().nullable(),
+  info: z
+    .object({
+      help: z.string().optional().nullable(),
+      top: z.string().optional().nullable(),
+    })
+    .optional()
+    .nullable(),
   // NEW: variant + option set support
   isVariant: z.boolean().optional().default(false),
   // prefer variantType; accept variantAxis for backward compatibility

@@ -9,5 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint src"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3"
   }
 }
