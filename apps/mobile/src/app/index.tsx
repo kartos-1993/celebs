@@ -5,7 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
-import { SummerTrends } from '@/features/home/components/summer-trends';
+import { ProductGrid } from '@/features/products/components/product-grid';
 import { styles } from '@/features/home/styles/home.styles';
 
 export default function HomeScreen() {
@@ -50,8 +50,8 @@ export default function HomeScreen() {
           {/* Categories Grid */}
           <CategoryGrid key={`cat-${refreshKey}`} />
 
-          {/* Summer Trends Listings */}
-          <SummerTrends />
+          {/* Dynamic SHEIN-Style Product Feed */}
+          <ProductGrid key={`prod-${refreshKey}`} />
         </ThemedView>
       </ScrollView>
 
