@@ -20,7 +20,18 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { X, Plus, Upload, Loader2 } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@celebs/shared-ui/components/tabs';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@celebs/shared-ui/components/collapsible';
+import { X, Plus, Upload, Loader2, ChevronDown, ChevronUp, SlidersHorizontal, Layers, FolderTree } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -388,431 +399,144 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 py-2 pb-4"
       >
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter category name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="basic" className="flex items-center gap-2">
+              <FolderTree className="h-4 w-4" />
+              Basic Info
+            </TabsTrigger>
+            <TabsTrigger value="attributes" className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4" />
+              Attributes ({attributeFields.length})
+            </TabsTrigger>
+            <TabsTrigger value="variants" className="flex items-center gap-2">
+              <Layers className="h-4 w-4" />
+              Variants & Sizing
+            </TabsTrigger>
+          </TabsList>
 
-        {role === 'SUPERADMIN' && (
-          <div className="space-y-2 border-t pt-4">
-            <FormLabel className="text-base font-semibold">Category Image (Superadmin Only)</FormLabel>
-            <div className="flex items-center space-x-4">
-              {form.watch('imageUrl') ? (
-                <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
-                  <img
-                    src={form.watch('imageUrl') || ''}
-                    alt="Category image"
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => form.setValue('imageUrl', null)}
-                    className="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    size="icon"
-                    variant="ghost"
+          {/* TAB 1: BASIC INFORMATION */}
+          <TabsContent value="basic" className="space-y-4 pt-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter category name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="parent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent Category (Optional)</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || 'ROOT_CATEGORY'}
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <label className="w-16 h-16 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-fashion-500 transition-colors">
-                  {isUploadingImage ? (
-                    <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select parent category (leave empty for root category)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ROOT_CATEGORY">
+                        No Parent (Root Category)
+                      </SelectItem>
+                      {availableParents.map((category) => (
+                        <SelectItem key={category._id} value={category._id}>
+                          {'  '.repeat(category.level - 1)}
+                          {category.name} (Level {category.level})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {role === 'SUPERADMIN' && (
+              <div className="space-y-2 border-t pt-4">
+                <FormLabel className="text-base font-semibold">Category Image (Superadmin Only)</FormLabel>
+                <div className="flex items-center space-x-4">
+                  {form.watch('imageUrl') ? (
+                    <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
+                      <img
+                        src={form.watch('imageUrl') || ''}
+                        alt="Category image"
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => form.setValue('imageUrl', null)}
+                        className="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        size="icon"
+                        variant="ghost"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ) : (
-                    <>
-                      <Upload className="h-6 w-6 text-gray-400" />
-                      <span className="text-[10px] text-gray-500 mt-1">Upload</span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={isUploadingImage}
-                    onChange={async (e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        try {
-                          setIsUploadingImage(true);
-                          const file = e.target.files[0];
-                          const urls = await ProductApiService.uploadFiles([file]);
-                          if (urls && urls.length > 0) {
-                            form.setValue('imageUrl', urls[0]);
+                    <label className="w-16 h-16 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-fashion-500 transition-colors">
+                      {isUploadingImage ? (
+                        <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="h-6 w-6 text-gray-400" />
+                          <span className="text-[10px] text-gray-500 mt-1">Upload</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingImage}
+                        onChange={async (e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            try {
+                              setIsUploadingImage(true);
+                              const file = e.target.files[0];
+                              const urls = await ProductApiService.uploadFiles([file]);
+                              if (urls && urls.length > 0) {
+                                form.setValue('imageUrl', urls[0]);
+                              }
+                            } catch (error) {
+                              toast({
+                                title: 'Image upload failed',
+                                description: 'Failed to upload category image. Please try again.',
+                                variant: 'destructive',
+                              });
+                            } finally {
+                              setIsUploadingImage(false);
+                            }
                           }
-                        } catch (error) {
-                          toast({
-                            title: 'Image upload failed',
-                            description: 'Failed to upload category image. Please try again.',
-                            variant: 'destructive',
-                          });
-                        } finally {
-                          setIsUploadingImage(false);
-                        }
-                      }
-                    }}
-                  />
-                </label>
-              )}
-              <div className="text-xs text-gray-500 space-y-1">
-                <p>Category image styled at 62x62 pixels on shein.com.</p>
-                <p>Upload a square image (JPEG, PNG, WebP, AVIF) up to 5MB.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <FormField
-          control={form.control}
-          name="parent"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Parent Category (Optional)</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value || 'ROOT_CATEGORY'}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select parent category (leave empty for root category)" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="ROOT_CATEGORY">
-                    No Parent (Root Category)
-                  </SelectItem>
-                  {availableParents.map((category) => (
-                    <SelectItem key={category._id} value={category._id}>
-                      {'  '.repeat(category.level - 1)}
-                      {category.name} (Level {category.level})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Category Features */}
-        <div className="space-y-4 border-t pt-4">
-          <Label className="text-lg font-semibold">Category Features</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-0.5">
-                    <FormLabel>Active Status</FormLabel>
-                    <div className="text-xs text-gray-500">
-                      Show this category in the mobile storefront
-                    </div>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="hasVariants"
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-0.5">
-                    <FormLabel>Enable Variants</FormLabel>
-                    <div className="text-xs text-gray-500">
-                      Allow products in this category to have multiple variations
-                    </div>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="hasShippingAttributes"
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-0.5">
-                    <FormLabel>Shipping Attributes</FormLabel>
-                    <div className="text-xs text-gray-500">
-                      Add shipping-specific fields like weight and dimensions
-                    </div>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="hasCustomFields"
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-0.5">
-                    <FormLabel>Custom Fields</FormLabel>
-                    <div className="text-xs text-gray-500">
-                      Allow custom fields specific to this category
-                    </div>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Variant Configuration */}
-        {form.watch('hasVariants') && (
-          <div className="space-y-4 border-t pt-4">
-            <Label className="text-lg font-semibold">Variant Configuration</Label>
-            
-            {/* Color Variants */}
-            <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label>Color Variants</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Predefined color options from provided JSON
-                const predefinedColors = [
-                  { name: "Black", colorCode: "#000000" },
-                  { name: "Beige", colorCode: "#F5F5DC" },
-                  { name: "Blue", colorCode: "#0000FF" },
-                  { name: "Brown", colorCode: "#A52A2A" },
-                  { name: "Gold", colorCode: "#FFD700" },
-                  { name: "Green", colorCode: "#008000" },
-                  { name: "Grey", colorCode: "#808080" },
-                  { name: "Multicolor", colorCode: "#FFFFFF" },
-                  { name: "Orange", colorCode: "#FFA500" },
-                  { name: "Pink", colorCode: "#FFC0CB" },
-                  { name: "Purple", colorCode: "#800080" },
-                  { name: "Red", colorCode: "#FF0000" },
-                  { name: "Silver", colorCode: "#C0C0C0" },
-                  { name: "White", colorCode: "#FFFFFF" },
-                  { name: "Yellow", colorCode: "#FFFF00" },
-                  { name: "Navy Blue", colorCode: "#000080" },
-                  { name: "Burgundy", colorCode: "#800020" },
-                  { name: "Khaki", colorCode: "#F0E68C" },
-                  { name: "Cream", colorCode: "#FFFDD0" },
-                  { name: "Maroon", colorCode: "#800000" }
-                ];
-                form.setValue('variantConfig.colors', predefinedColors);
-                toast({
-                  title: "Colors Auto-Populated",
-                  description: `Added ${predefinedColors.length} color options`,
-                  variant: "default",
-                });
-              }}
-            >
-              Auto-Fill Colors
-            </Button>
-          </div>
-          <div className="grid gap-4">
-            {form.watch('variantConfig.colors')?.map((color, idx) => (
-              <div key={idx} className="flex items-center space-x-4">
-                <FormField
-                  control={form.control}
-                  name={`variantConfig.colors.${idx}.name`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder={`Color name: ${color.name}`} {...field} />
-                      </FormControl>
-                    </FormItem>
+                        }}
+                      />
+                    </label>
                   )}
-                />
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>Category image styled at 62x62 pixels on storefront.</p>
+                    <p>Upload a square image (JPEG, PNG, WebP, AVIF) up to 5MB.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Category Features & Toggles */}
+            <div className="space-y-4 border-t pt-4">
+              <Label className="text-lg font-semibold">Category Configuration & Features</Label>
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name={`variantConfig.colors.${idx}.colorCode`}
-                  render={({ field }) => (
-                    <FormItem className="w-32">
-                      <FormControl>
-                        <Input type="color" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    const colors = form.getValues('variantConfig.colors') || [];
-                    colors.splice(idx, 1);
-                    form.setValue('variantConfig.colors', colors);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const colors = form.getValues('variantConfig.colors') || [];
-                form.setValue('variantConfig.colors', [...colors, { name: '', colorCode: '#000000' }]);
-              }}
-            >
-              Add Color
-            </Button>
-          </div>
-            </div>
-
-            {/* Size Configuration */}
-            <div className="space-y-2">
-              <Label>Size Configuration</Label>
-              <div className="grid gap-4">
-                {form.watch('variantConfig.sizes')?.map((size, idx) => (
-                  <div key={idx} className="flex items-center space-x-4">
-                    <FormField
-                      control={form.control}
-                      name={`variantConfig.sizes.${idx}.name`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                            <Input placeholder={`Size name: ${size.name}`} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        const sizes = form.getValues('variantConfig.sizes') || [];
-                        sizes.splice(idx, 1);
-                        form.setValue('variantConfig.sizes', sizes);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const sizes = form.getValues('variantConfig.sizes') || [];
-                    form.setValue('variantConfig.sizes', [...sizes, { name: '' }]);
-                  }}
-                >
-                  Add Size
-                </Button>
-              </div>
-            </div>
-
-            {/* Measurement Units */}
-            <div className="space-y-2">
-              <Label>Measurement Units</Label>
-              <div className="grid gap-4">
-                {Object.entries(form.watch('measurementUnits') || {}).map(([key], idx) => (
-                  <div key={idx} className="flex items-center space-x-4">
-                    <FormField
-                      control={form.control}
-                      name={`measurementUnits.${key}.name` as const}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>Measurement Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter measurement name" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`measurementUnits.${key}.unit` as const}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>Unit</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="inches">Inches</SelectItem>
-                              <SelectItem value="cm">Centimeters</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        const measurementUnits = { ...form.getValues('measurementUnits') };
-                        delete measurementUnits[key];
-                        form.setValue('measurementUnits', measurementUnits);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const measurementUnits = { ...form.getValues('measurementUnits') };
-                    const newKey = `unit${Object.keys(measurementUnits).length + 1}`;
-                    measurementUnits[newKey] = { name: '', unit: 'inches' };
-                    form.setValue('measurementUnits', measurementUnits);
-                  }}
-                >
-                  Add Measurement Unit
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Attribute Groups */}
-        <div className="space-y-4 border-t pt-4">
-          <Label className="text-lg font-semibold">Attribute Groups</Label>
-          <div className="grid gap-4">
-            {form.getValues('attributeGroups')?.map((group, idx) => (
-              <div key={group.name} className="flex items-center space-x-4">
-                <FormField
-                  control={form.control}
-                  name={`attributeGroups.${idx}.visible`}
+                  name="isActive"
                   render={({ field }) => (
                     <FormItem className="flex items-center space-x-2">
                       <FormControl>
@@ -821,57 +545,395 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <FormLabel>{group.label}</FormLabel>
+                      <div className="space-y-0.5">
+                        <FormLabel>Active Status</FormLabel>
+                        <div className="text-xs text-gray-500">
+                          Show this category in storefront catalog
+                        </div>
+                      </div>
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name={`attributeGroups.${idx}.order`}
+                  name="hasVariants"
                   render={({ field }) => (
-                    <FormItem className="w-24">
+                    <FormItem className="flex items-center space-x-2">
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Order"
-                          {...field}
-                          onChange={e => field.onChange(parseInt(e.target.value))}
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>Enable Variants</FormLabel>
+                        <div className="text-xs text-gray-500">
+                          Allow products to have variation options (Color, Size)
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="hasShippingAttributes"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>Shipping Attributes</FormLabel>
+                        <div className="text-xs text-gray-500">
+                          Add weight and dimensions requirements
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="hasCustomFields"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>Custom Fields</FormLabel>
+                        <div className="text-xs text-gray-500">
+                          Allow custom specifications for this category
+                        </div>
+                      </div>
                     </FormItem>
                   )}
                 />
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Attributes</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddAttribute}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Attribute
-            </Button>
-          </div>
+          {/* TAB 2: ATTRIBUTES & FIELDS */}
+          <TabsContent value="attributes" className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-semibold">Category Attributes</Label>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Define product attributes (e.g., Fabric, Fit Type, Style) and option values.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddAttribute}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Attribute
+              </Button>
+            </div>
 
-          {attributeFields.map((field, index) => (
-            <AttributeFieldSet
-              key={field.id}
-              index={index}
-              form={form}
-              onRemove={() => removeAttribute(index)}
-            />
-          ))}
-        </div>
+            {attributeFields.length === 0 ? (
+              <div className="text-center py-8 border-2 border-dashed rounded-lg border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500">No custom attributes added yet.</p>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  onClick={handleAddAttribute}
+                  className="mt-2 text-fashion-600"
+                >
+                  Click here to add the first attribute
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {attributeFields.map((field, index) => (
+                  <AttributeFieldSet
+                    key={field.id}
+                    index={index}
+                    form={form}
+                    onRemove={() => removeAttribute(index)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-        <div className="flex justify-end gap-2 pt-4">
-          {' '}
+          {/* TAB 3: VARIANTS & SIZING */}
+          <TabsContent value="variants" className="space-y-4 pt-2">
+            {/* Attribute Groups */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Attribute Visibility Groups</Label>
+              <div className="grid gap-4 border rounded-md p-4 bg-gray-50 dark:bg-gray-900">
+                {form.getValues('attributeGroups')?.map((group, idx) => (
+                  <div key={group.name} className="flex items-center justify-between space-x-4">
+                    <FormField
+                      control={form.control}
+                      name={`attributeGroups.${idx}.visible`}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel>{group.label}</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`attributeGroups.${idx}.order`}
+                      render={({ field }) => (
+                        <FormItem className="w-24">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Order"
+                              {...field}
+                              onChange={e => field.onChange(parseInt(e.target.value))}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Variant Configuration */}
+            {form.watch('hasVariants') ? (
+              <div className="space-y-4 border-t pt-4">
+                <Label className="text-base font-semibold">Variant Options Preset</Label>
+                
+                {/* Color Variants */}
+                <div className="space-y-2 border rounded-md p-4 bg-gray-50 dark:bg-gray-900">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="font-semibold">Color Options</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const predefinedColors = [
+                          { name: "Black", colorCode: "#000000" },
+                          { name: "Beige", colorCode: "#F5F5DC" },
+                          { name: "Blue", colorCode: "#0000FF" },
+                          { name: "Brown", colorCode: "#A52A2A" },
+                          { name: "Gold", colorCode: "#FFD700" },
+                          { name: "Green", colorCode: "#008000" },
+                          { name: "Grey", colorCode: "#808080" },
+                          { name: "Multicolor", colorCode: "#FFFFFF" },
+                          { name: "Orange", colorCode: "#FFA500" },
+                          { name: "Pink", colorCode: "#FFC0CB" },
+                          { name: "Purple", colorCode: "#800080" },
+                          { name: "Red", colorCode: "#FF0000" },
+                          { name: "Silver", colorCode: "#C0C0C0" },
+                          { name: "White", colorCode: "#FFFFFF" },
+                          { name: "Yellow", colorCode: "#FFFF00" },
+                          { name: "Navy Blue", colorCode: "#000080" },
+                          { name: "Burgundy", colorCode: "#800020" },
+                          { name: "Khaki", colorCode: "#F0E68C" },
+                          { name: "Cream", colorCode: "#FFFDD0" },
+                          { name: "Maroon", colorCode: "#800000" }
+                        ];
+                        form.setValue('variantConfig.colors', predefinedColors);
+                        toast({
+                          title: "Colors Auto-Populated",
+                          description: `Added ${predefinedColors.length} color options`,
+                        });
+                      }}
+                    >
+                      Auto-Fill Standard Colors
+                    </Button>
+                  </div>
+                  <div className="grid gap-3">
+                    {form.watch('variantConfig.colors')?.map((color, idx) => (
+                      <div key={idx} className="flex items-center space-x-3">
+                        <FormField
+                          control={form.control}
+                          name={`variantConfig.colors.${idx}.name`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input placeholder={`Color name: ${color.name}`} {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`variantConfig.colors.${idx}.colorCode`}
+                          render={({ field }) => (
+                            <FormItem className="w-24">
+                              <FormControl>
+                                <Input type="color" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            const colors = form.getValues('variantConfig.colors') || [];
+                            colors.splice(idx, 1);
+                            form.setValue('variantConfig.colors', colors);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const colors = form.getValues('variantConfig.colors') || [];
+                        form.setValue('variantConfig.colors', [...colors, { name: '', colorCode: '#000000' }]);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Color
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Size Configuration */}
+                <div className="space-y-2 border rounded-md p-4 bg-gray-50 dark:bg-gray-900">
+                  <Label className="font-semibold mb-2 block">Size Options</Label>
+                  <div className="grid gap-3">
+                    {form.watch('variantConfig.sizes')?.map((size, idx) => (
+                      <div key={idx} className="flex items-center space-x-3">
+                        <FormField
+                          control={form.control}
+                          name={`variantConfig.sizes.${idx}.name`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input placeholder={`Size name: ${size.name}`} {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            const sizes = form.getValues('variantConfig.sizes') || [];
+                            sizes.splice(idx, 1);
+                            form.setValue('variantConfig.sizes', sizes);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const sizes = form.getValues('variantConfig.sizes') || [];
+                        form.setValue('variantConfig.sizes', [...sizes, { name: '' }]);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Size
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Measurement Units */}
+                <div className="space-y-2 border rounded-md p-4 bg-gray-50 dark:bg-gray-900">
+                  <Label className="font-semibold mb-2 block">Measurement Units</Label>
+                  <div className="grid gap-3">
+                    {Object.entries(form.watch('measurementUnits') || {}).map(([key], idx) => (
+                      <div key={idx} className="flex items-center space-x-3">
+                        <FormField
+                          control={form.control}
+                          name={`measurementUnits.${key}.name` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>Measurement Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter measurement name" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`measurementUnits.${key}.unit` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>Unit</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="inches">Inches</SelectItem>
+                                  <SelectItem value="cm">Centimeters</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            const measurementUnits = { ...form.getValues('measurementUnits') };
+                            delete measurementUnits[key];
+                            form.setValue('measurementUnits', measurementUnits);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const measurementUnits = { ...form.getValues('measurementUnits') };
+                        const newKey = `unit${Object.keys(measurementUnits).length + 1}`;
+                        measurementUnits[newKey] = { name: '', unit: 'inches' };
+                        form.setValue('measurementUnits', measurementUnits);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Measurement Unit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 border-2 border-dashed rounded-lg border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500">Variants are disabled for this category.</p>
+                <p className="text-xs text-gray-400 mt-1">Enable "Enable Variants" in the Basic Info tab to configure colors and sizes.</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
@@ -1305,284 +1367,294 @@ const AttributeFieldSet = ({
         />
       </div>
 
-      {/* Max Items Configuration */}
-      {showMaxItems && (
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.maxItems`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Max Items</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
+      {/* Advanced Validation Rules & Media Configurations */}
+      {(showRules || showMaxItems || showMultiLanguage || ['image', 'marketImages', 'mainImage', 'video'].includes(attributeType)) && (
+        <Collapsible className="border-t pt-2 mt-2">
+          <CollapsibleTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="w-full flex justify-between items-center text-xs text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-0 h-8">
+              <span>Advanced Rules & Media Configurations</span>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-2">
+            {/* Max Items Configuration */}
+            {showMaxItems && (
+              <FormField
+                control={form.control}
+                name={`attributes.${index}.maxItems`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Items</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-      {/* Multi-language Support */}
-      {showMultiLanguage && (
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.multiLanguage.enabled`}
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel>Enable Multi-language</FormLabel>
-            </FormItem>
-          )}
-        />
-      )}
+            {/* Multi-language Support */}
+            {showMultiLanguage && (
+              <FormField
+                control={form.control}
+                name={`attributes.${index}.multiLanguage.enabled`}
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel>Enable Multi-language</FormLabel>
+                  </FormItem>
+                )}
+              />
+            )}
 
-      {/* Rules Configuration */}
-      {/* Image Configuration */}
-      {['image', 'marketImages', 'mainImage'].includes(attributeType) && (
-        <div className="space-y-4 border-t pt-4 mt-4">
-          <Label>Image Configuration</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.longImageShow`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Show Long Image</FormLabel>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.squareImageShow`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Show Square Image</FormLabel>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.allowEmpty`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Allow Empty</FormLabel>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.showImageBankBtn`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Show Image Bank</FormLabel>
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Upload Configuration */}
-      {['image', 'marketImages', 'mainImage', 'video'].includes(attributeType) && (
-        <div className="space-y-4 border-t pt-4 mt-4">
-          <Label>Upload Configuration</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.uploadConfig.mediaLocalUpload`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Allow Local Upload</FormLabel>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.uploadConfig.dragable`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Allow Drag & Drop</FormLabel>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.uploadConfig.multiple`}
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Allow Multiple</FormLabel>
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Validation Rules */}
-      {showRules && (
-        <div className="space-y-4 border-t pt-4 mt-4">
-          <Label>Validation Rules</Label>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Image Rules */}
+            {/* Image Configuration */}
             {['image', 'marketImages', 'mainImage'].includes(attributeType) && (
-              <>
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.rule.minWidth`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Min Width (px)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.rule.maxWidth`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Width (px)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.rule.minHeight`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Min Height (px)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.rule.maxHeight`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Height (px)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.rule.maxSize`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Size (bytes)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </>
+              <div className="space-y-4 border-t pt-3">
+                <Label className="text-xs font-semibold">Image Configuration</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.longImageShow`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel>Show Long Image</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.squareImageShow`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel>Show Square Image</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.allowEmpty`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel>Allow Empty</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.showImageBankBtn`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel>Show Image Bank</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             )}
 
-            {/* Measurement Rules */}
-            {attributeType === 'measurement-group' && (
-              <>
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.measurementType`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Measurement Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+            {/* Upload Configuration */}
+            {['image', 'marketImages', 'mainImage', 'video'].includes(attributeType) && (
+              <div className="space-y-4 border-t pt-3">
+                <Label className="text-xs font-semibold">Upload Configuration</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.uploadConfig.mediaLocalUpload`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select measurement type" />
-                          </SelectTrigger>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="product">Product Measurements</SelectItem>
-                          <SelectItem value="body">Body Measurements</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`attributes.${index}.unit`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormLabel>Allow Local Upload</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.uploadConfig.dragable`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="inches">Inches</SelectItem>
-                          <SelectItem value="cm">Centimeters</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-              </>
+                        <FormLabel>Allow Drag & Drop</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`attributes.${index}.uploadConfig.multiple`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel>Allow Multiple</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             )}
-          </div>
-        </div>
+
+            {/* Validation Rules */}
+            {showRules && (
+              <div className="space-y-4 border-t pt-3">
+                <Label className="text-xs font-semibold">Validation Rules</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {['image', 'marketImages', 'mainImage'].includes(attributeType) && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.rule.minWidth`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Min Width (px)</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.rule.maxWidth`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Width (px)</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.rule.minHeight`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Min Height (px)</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.rule.maxHeight`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Height (px)</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.rule.maxSize`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Size (bytes)</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+
+                  {attributeType === 'measurement-group' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.measurementType`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Measurement Type</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select measurement type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="product">Product Measurements</SelectItem>
+                                <SelectItem value="body">Body Measurements</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`attributes.${index}.unit`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Unit</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="inches">Inches</SelectItem>
+                                <SelectItem value="cm">Centimeters</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {(attributeType === 'select' || attributeType === 'multiselect') && (

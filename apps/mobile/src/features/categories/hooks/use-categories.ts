@@ -23,35 +23,37 @@ export function useCategories() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const url = `${getApiUrl()}/category/tree-with-attributes?activeOnly=true`;
+      const url = `${getApiUrl()}/category/tree-with-attributes`;
       const response = await fetch(url);
       const resData = await response.json();
       if (resData.success && Array.isArray(resData.data)) {
+
         // Find the 'Men' root category or fallback to the first root category
         const rootCategory = resData.data.find((c: any) => c.slug === 'men') || resData.data[0];
         if (rootCategory && Array.isArray(rootCategory.children)) {
-          
+
           const flattened: Category[] = [];
           const prefixRegex = new RegExp(`^${rootCategory.name}\\s+`, 'i');
-          
+
           const processNodes = (nodes: any[]) => {
             nodes.forEach(node => {
               // Create display name without prefix
               const displayName = node.name.replace(prefixRegex, '');
-              
+
               flattened.push({
                 ...node,
                 displayName,
               });
-              
+
               if (node.children && node.children.length > 0) {
                 processNodes(node.children);
               }
             });
           };
-          
+
           processNodes(rootCategory.children);
           setCategories(flattened);
+          console.log('dfdfdf', flattened);
         } else {
           setCategories([]);
         }
