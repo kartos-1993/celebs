@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -897,12 +897,22 @@ const AttributeFieldSet = ({
   form: any;
   onRemove: () => void;
 }) => {
-  const attributeType = form.watch(`attributes.${index}.type`);
-  const isVariant = form.watch(`attributes.${index}.isVariant`);
-  const variantType = form.watch(`attributes.${index}.variantType`);
-  const useStandardOptions = form.watch(
-    `attributes.${index}.useStandardOptions`,
-  );
+  const attributeType = useWatch({
+    control: form.control,
+    name: `attributes.${index}.type`,
+  });
+  const isVariant = useWatch({
+    control: form.control,
+    name: `attributes.${index}.isVariant`,
+  });
+  const variantType = useWatch({
+    control: form.control,
+    name: `attributes.${index}.variantType`,
+  });
+  const useStandardOptions = useWatch({
+    control: form.control,
+    name: `attributes.${index}.useStandardOptions`,
+  });
   // const optionSetId = form.watch(`attributes.${index}.optionSetId`);
 
   const {
