@@ -89,35 +89,4 @@ export const styles = StyleSheet.create({
     minHeight: 300,
     zIndex: 15,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    marginBottom: Spacing.four,
-  },
-  seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendGrid: {
-    flexDirection: 'row',
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-  },
-  gridItem: {
-    flex: 1,
-    borderRadius: 12,
-    padding: Spacing.three,
-  },
-  gridItemImg: {
-    width: '100%',
-    height: 140,
-    borderRadius: 8,
-    marginBottom: Spacing.two,
-  },
-  gridItemTitle: {
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
 });
