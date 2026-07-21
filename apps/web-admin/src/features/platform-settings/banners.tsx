@@ -52,12 +52,17 @@ const Banners: React.FC = () => {
 
       setBanners(initializedBanners);
       
-      if (fetchedCategoriesData?.data?.categories) {
-        setCategories(fetchedCategoriesData.data.categories);
-      }
-      if (fetchedProductsData?.data) {
-        setProducts(fetchedProductsData.data);
-      }
+      const categoriesList = 
+        fetchedCategoriesData?.data?.categories || 
+        (Array.isArray(fetchedCategoriesData?.data) ? fetchedCategoriesData.data : []) || 
+        (Array.isArray(fetchedCategoriesData) ? fetchedCategoriesData : []);
+      setCategories(categoriesList);
+
+      const productsList = 
+        fetchedProductsData?.data?.products || 
+        (Array.isArray(fetchedProductsData?.data) ? fetchedProductsData.data : []) || 
+        (Array.isArray(fetchedProductsData) ? fetchedProductsData : []);
+      setProducts(productsList);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -261,7 +266,7 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {categories.map((c) => (
+                                {(Array.isArray(categories) ? categories : []).map((c) => (
                                   <SelectItem key={c._id} value={c._id}>
                                     {c.name}
                                   </SelectItem>
@@ -277,7 +282,7 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Product" />
                               </SelectTrigger>
                               <SelectContent>
-                                {products.map((p) => (
+                                {(Array.isArray(products) ? products : []).map((p) => (
                                   <SelectItem key={p._id} value={p._id}>
                                     {p.name}
                                   </SelectItem>
