@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import passport from 'passport';
 import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
@@ -9,19 +10,30 @@ import rateLimit from 'express-rate-limit';
 const productRoutes = Router();
 const productController = ProductModule.getInstance().getProductController();
 
-// Rate limiter for public/search endpoints (authenticated bypasses it)
+// Optional JWT authentication: populates req.user if token is present, but doesn't block unauthenticated storefront users
+const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate('jwt', { session: false }, (err: any, user: any) => {
+    if (user) {
+      req.user = user;
+    }
+    next();
+  })(req, res, next);
+};
+
+// Rate limiter for public/search endpoints
 const productSearchRateLimit = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests per minute
+  windowMs: 60 * 1000,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !!req.user, // skip rate limit if logged in
+  skip: (req) => !!req.user,
 });
 
-productRoutes.use(authenticateJWT);
+// Public / Storefront Product Routes (Optional Auth)
+productRoutes.get('/', productSearchRateLimit, optionalAuthenticateJWT, asyncHandler(productController.getProducts));
 
-// Routes
-productRoutes.get('/', productSearchRateLimit, requirePermissions(Permission.PRODUCT_VIEW), asyncHandler(productController.getProducts));
+// Protected Admin / Vendor Routes (Require Auth & Permissions)
+productRoutes.use(authenticateJWT);
 productRoutes.get('/review-product-queue', requirePermissions(Permission.PRODUCT_REVIEW), asyncHandler(productController.getProductReviewQueue));
 productRoutes.get('/:id', productSearchRateLimit, requirePermissions(Permission.PRODUCT_VIEW), asyncHandler(productController.getProductById));
 
