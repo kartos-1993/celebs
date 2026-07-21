@@ -937,10 +937,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            className="bg-fashion-700 hover:bg-fashion-800 text-white dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
-          >
+          <Button type="submit">
             Save Category
           </Button>
         </div>

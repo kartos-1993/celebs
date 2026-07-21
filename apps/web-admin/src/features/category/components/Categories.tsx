@@ -110,7 +110,6 @@ export const Categories: React.FC = () => {
         </div>
 
         <Button
-          className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
           onClick={actions.openAddCategoryForm}
         >
           <FolderPlus className="mr-2 h-4 w-4" />
