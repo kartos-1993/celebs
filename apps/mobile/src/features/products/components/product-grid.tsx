@@ -140,7 +140,7 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
