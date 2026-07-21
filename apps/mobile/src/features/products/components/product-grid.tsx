@@ -118,23 +118,10 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
             ))}
           </View>
 
-          {/* Pagination Load More Button / Spinner */}
-          {hasMore && (
+          {/* Infinite Scroll Bottom Spinner */}
+          {loadingMore && (
             <View style={styles.paginationFooter}>
-              {loadingMore ? (
-                <ActivityIndicator size="small" color={colors.text} />
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={[
-                    styles.loadMoreButton,
-                    { backgroundColor: scheme === 'dark' ? '#2c2c2e' : '#f2f2f7' }
-                  ]}
-                  onPress={loadMore}
-                >
-                  <ThemedText style={styles.loadMoreText}>Discover More</ThemedText>
-                </TouchableOpacity>
-              )}
+              <ActivityIndicator size="small" color={colors.text} />
             </View>
           )}
         </>

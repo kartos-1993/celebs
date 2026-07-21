@@ -39,8 +39,18 @@ export function useProducts(initialLimit = 10) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const fetchedCursorsRef = React.useRef<Set<string>>(new Set());
 
   const fetchProducts = useCallback(async (cursor?: string | null, isRefresh = false) => {
+    if (cursor && fetchedCursorsRef.current.has(cursor)) {
+      return;
+    }
+    if (cursor) {
+      fetchedCursorsRef.current.add(cursor);
+    } else {
+      fetchedCursorsRef.current.clear();
+    }
+
     try {
       if (!cursor && !isRefresh) {
         setLoading(true);
@@ -102,13 +112,14 @@ export function useProducts(initialLimit = 10) {
   }, [fetchProducts]);
 
   const loadMore = useCallback(() => {
-    if (!loading && !loadingMore && hasMore) {
+    if (!loading && !loadingMore && hasMore && nextCursor) {
       fetchProducts(nextCursor);
     }
   }, [fetchProducts, loading, loadingMore, hasMore, nextCursor]);
 
   const refetch = useCallback(() => {
     setNextCursor(null);
+    fetchedCursorsRef.current.clear();
     return fetchProducts(null, true);
   }, [fetchProducts]);
 
