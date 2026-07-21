@@ -64,7 +64,7 @@ export function useProducts(initialLimit = 10) {
         const serverHasMore = typeof resData.data.hasMore === 'boolean' ? resData.data.hasMore : rawProducts.length >= initialLimit;
 
         if (!cursor || isRefresh) {
-          setProducts(rawProducts.length > 0 ? rawProducts : MOCK_SHEIN_PRODUCTS);
+          setProducts(rawProducts);
         } else {
           setProducts((prev) => {
             const existingIds = new Set(prev.map((p) => p._id));
@@ -74,13 +74,15 @@ export function useProducts(initialLimit = 10) {
         }
 
         setNextCursor(serverCursor);
-        setHasMore(rawProducts.length > 0 ? serverHasMore : false);
+        setHasMore(serverHasMore);
       } else {
-        setProducts(MOCK_SHEIN_PRODUCTS);
+        setProducts([]);
+        setHasMore(false);
       }
     } catch (error) {
-      console.warn('Error fetching products, using SHEIN feed fallback:', error);
-      setProducts(MOCK_SHEIN_PRODUCTS);
+      console.warn('Error fetching API products:', error);
+      setProducts([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -92,7 +94,7 @@ export function useProducts(initialLimit = 10) {
   }, [fetchProducts]);
 
   const loadMore = useCallback(() => {
-    if (!loading && !loadingMore && hasMore && nextCursor) {
+    if (!loading && !loadingMore && hasMore) {
       fetchProducts(nextCursor);
     }
   }, [fetchProducts, loading, loadingMore, hasMore, nextCursor]);
@@ -111,110 +113,3 @@ export function useProducts(initialLimit = 10) {
     refetch,
   };
 }
-
-export const MOCK_SHEIN_PRODUCTS: Product[] = [
-  {
-    _id: 'shein-1',
-    name: 'Men Quarter Zip Contrast Collar Striped Knit Polo Shirt',
-    price: 21.99,
-    discountedPrice: 14.49,
-    status: 'published',
-    featured: true,
-    mainImages: ['https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?q=80&w=800'],
-    colorVariants: [
-      { name: 'Black/White', colorCode: '#1c1c1e' },
-      { name: 'Beige', colorCode: '#d4c5b9' },
-      { name: 'Navy', colorCode: '#1d2d44' },
-    ],
-  },
-  {
-    _id: 'shein-2',
-    name: 'Men Vintage Casual Linen Short Sleeve Button Down Shirt',
-    price: 18.99,
-    discountedPrice: 12.99,
-    status: 'published',
-    featured: true,
-    mainImages: ['https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800'],
-    colorVariants: [
-      { name: 'Olive', colorCode: '#556b2f' },
-      { name: 'Black', colorCode: '#000000' },
-      { name: 'White', colorCode: '#ffffff' },
-    ],
-  },
-  {
-    _id: 'shein-3',
-    name: 'Men 3PCS Multi-Color Thermal Seamless Balaclava Face Mask',
-    price: 11.99,
-    discountedPrice: 7.49,
-    status: 'published',
-    featured: false,
-    mainImages: ['https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800'],
-    colorVariants: [
-      { name: 'Multi', colorCode: '#3a5a40' },
-    ],
-  },
-  {
-    _id: 'shein-4',
-    name: 'Men Contrast Block Short Sleeve Cuban Collar Summer Shirt',
-    price: 24.99,
-    discountedPrice: 16.99,
-    status: 'published',
-    featured: true,
-    mainImages: ['https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=800'],
-    colorVariants: [
-      { name: 'Teal/White', colorCode: '#2a9d8f' },
-      { name: 'Black/Grey', colorCode: '#264653' },
-    ],
-  },
-  {
-    _id: 'shein-5',
-    name: 'Men 6-Pack Seamless Moisture Wicking Boxer Briefs',
-    price: 19.99,
-    discountedPrice: 11.99,
-    status: 'published',
-    featured: false,
-    mainImages: ['https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800'],
-    colorVariants: [
-      { name: 'Assorted', colorCode: '#4a4e69' },
-    ],
-  },
-  {
-    _id: 'shein-6',
-    name: 'Men Two-Tone Zip Top & Elastic Waistband Shorts Tracksuit Set',
-    price: 32.99,
-    discountedPrice: 22.49,
-    status: 'published',
-    featured: true,
-    mainImages: ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800'],
-    colorVariants: [
-      { name: 'Grey', colorCode: '#8d99ae' },
-      { name: 'Navy', colorCode: '#2b2d42' },
-    ],
-  },
-  {
-    _id: 'shein-7',
-    name: 'Men Vertical Striped Slim Fit Summer Short Sleeve Polo',
-    price: 22.99,
-    discountedPrice: 15.99,
-    status: 'published',
-    featured: true,
-    mainImages: ['https://images.unsplash.com/photo-1626497764746-6dc36546b388?q=80&w=800'],
-    colorVariants: [
-      { name: 'Striped Black', colorCode: '#000000' },
-      { name: 'Striped Navy', colorCode: '#1d3557' },
-    ],
-  },
-  {
-    _id: 'shein-8',
-    name: 'Men Mandarin Collar Slim Fit Single Breasted Formal Suit Jacket',
-    price: 49.99,
-    discountedPrice: 34.99,
-    status: 'published',
-    featured: true,
-    mainImages: ['https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800'],
-    colorVariants: [
-      { name: 'White', colorCode: '#f8f9fa' },
-      { name: 'Black', colorCode: '#212529' },
-    ],
-  },
-];

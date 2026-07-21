@@ -12,6 +12,7 @@ export default function HomeScreen() {
   const scheme = useColorScheme();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -20,6 +21,14 @@ export default function HomeScreen() {
       setRefreshKey((prev) => prev + 1);
       setRefreshing(false);
     }, 1000);
+  }, []);
+
+  const handleScroll = useCallback((event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 300;
+    if (isCloseToBottom) {
+      setLoadMoreTrigger((prev) => prev + 1);
+    }
   }, []);
 
   return (
@@ -33,6 +42,8 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}
+        onScroll={handleScroll}
+        scrollEventThrottle={200}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -51,7 +62,7 @@ export default function HomeScreen() {
           <CategoryGrid key={`cat-${refreshKey}`} />
 
           {/* Dynamic SHEIN-Style Product Feed */}
-          <ProductGrid key={`prod-${refreshKey}`} />
+          <ProductGrid key={`prod-${refreshKey}`} loadMoreTrigger={loadMoreTrigger} />
         </ThemedView>
       </ScrollView>
 
