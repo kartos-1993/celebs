@@ -36,16 +36,17 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
     }, [loadMoreTrigger, loadMore]);
 
   const filteredProducts = React.useMemo(() => {
+    let result = products;
     if (selectedFilter === 'Top Selling') {
-      return products.filter((p) => p.featured);
+      const match = products.filter((p) => p.featured);
+      result = match.length > 0 ? match : products;
+    } else if (selectedFilter === 'Super Savings') {
+      const match = products.filter((p) => p.discountedPrice && p.discountedPrice < p.price);
+      result = match.length > 0 ? match : products;
+    } else if (selectedFilter === 'New In') {
+      result = [...products].reverse();
     }
-    if (selectedFilter === 'Super Savings') {
-      return products.filter((p) => p.discountedPrice && p.discountedPrice < p.price);
-    }
-    if (selectedFilter === 'New In') {
-      return [...products].reverse();
-    }
-    return products;
+    return result;
   }, [products, selectedFilter]);
 
   return (
