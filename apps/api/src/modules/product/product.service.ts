@@ -173,7 +173,7 @@ export class ProductService {
 
     const hasMore = rawProducts.length > limit;
     const products = hasMore ? rawProducts.slice(0, limit) : rawProducts;
-    const nextCursor = products.length > 0 ? (products[products.length - 1]._id as Types.ObjectId).toString() : undefined;
+    const nextCursor = hasMore && products.length > 0 ? (products[products.length - 1]._id as Types.ObjectId).toString() : undefined;
 
     return { products, total, nextCursor, hasMore };
   }
