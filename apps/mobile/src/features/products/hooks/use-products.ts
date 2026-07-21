@@ -115,7 +115,11 @@ export function useProducts(initialLimit = 10) {
   }, [fetchProducts]);
 
   const loadMore = useCallback(() => {
-    if (!loading && !loadingMore && hasMore && nextCursor) {
+    if (!hasMore || !nextCursor) {
+      console.log('⏹️ [useProducts] Reached end of catalog - NO API call made. (hasMore:', hasMore, ', nextCursor:', nextCursor, ')');
+      return;
+    }
+    if (!loading && !loadingMore) {
       fetchProducts(nextCursor);
     }
   }, [fetchProducts, loading, loadingMore, hasMore, nextCursor]);
