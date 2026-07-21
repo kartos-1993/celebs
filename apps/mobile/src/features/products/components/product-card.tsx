@@ -21,8 +21,14 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Get image URI from mainImages or fallback
-  const primaryImage = product.mainImages?.[0] || product.colorVariants?.[0]?.images?.[0] || '';
+  // Get image URI from mainImages, dynamicData, uploadedAssets or colorVariants
+  const primaryImage =
+    product.mainImages?.[0] ||
+    (product as any).dynamicData?.values?.mainImage?.[0] ||
+    (product as any).dynamicData?.mainImage?.[0] ||
+    (product as any).uploadedAssets?.mainImages?.[0] ||
+    product.colorVariants?.[0]?.images?.[0] ||
+    '';
   const imageUrl = resolveImageUrl(primaryImage);
 
   // Calculate discount percentage if original price is higher
