@@ -24,10 +24,7 @@ categoryRoute.use((req: Request, res: Response, next: NextFunction) => {
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 
-// Apply authentication middleware to all category routes
-categoryRoute.use(authenticateJWT);
-
-// Category routes
+// Public Category routes
 categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
 categoryRoute.get('/search', asyncHandler(categoryController.searchCategories));
 categoryRoute.get(
@@ -36,6 +33,10 @@ categoryRoute.get(
 );
 categoryRoute.get('/:id/filters', asyncHandler(categoryController.getCategoryFilters));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
+
+// Apply authentication middleware to admin category routes
+categoryRoute.use(authenticateJWT);
+
 categoryRoute.post('/', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.createCategory));
 categoryRoute.put('/:id', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.updateCategory));
 categoryRoute.delete('/:id', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.deleteCategory));
