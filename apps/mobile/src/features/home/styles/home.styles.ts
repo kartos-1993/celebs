@@ -2,7 +2,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 import { Spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CAROUSEL_HEIGHT = SCREEN_WIDTH * 0.85; // Shorter aspect ratio to fit the screen better
+const CAROUSEL_HEIGHT = SCREEN_WIDTH * 0.75; // Shorter aspect ratio to fit the screen better
 
 export const styles = StyleSheet.create({
   container: {
