@@ -62,29 +62,35 @@ export function useProducts(initialLimit = 10) {
           ? resData.data
           : [];
 
-        const displayList = rawProducts.length > 0 ? rawProducts : MOCK_SHEIN_PRODUCTS;
-        const serverCursor = resData.data.nextCursor || (displayList.length > 0 ? displayList[displayList.length - 1]._id : null);
+        const serverCursor = resData.data.nextCursor || null;
+        const serverHasMore = typeof resData.data.hasMore === 'boolean'
+          ? resData.data.hasMore
+          : (rawProducts.length >= initialLimit && Boolean(serverCursor));
 
         if (!cursor || isRefresh) {
-          setProducts(displayList);
+          setProducts(rawProducts.length > 0 ? rawProducts : MOCK_SHEIN_PRODUCTS);
         } else {
-          setProducts((prev) => {
-            const existingIds = new Set(prev.map((p) => p._id));
-            const newUnique = displayList.filter((p) => !existingIds.has(p._id));
-            return [...prev, ...newUnique];
-          });
+          if (rawProducts.length > 0) {
+            setProducts((prev) => {
+              const existingIds = new Set(prev.map((p) => p._id));
+              const newUnique = rawProducts.filter((p) => !existingIds.has(p._id));
+              return [...prev, ...newUnique];
+            });
+          }
         }
 
         setNextCursor(serverCursor);
-        setHasMore(true);
+        setHasMore(rawProducts.length > 0 ? serverHasMore : false);
       } else {
-        setProducts(MOCK_SHEIN_PRODUCTS);
-        setHasMore(true);
+        setProducts((prev) => (prev.length > 0 ? prev : MOCK_SHEIN_PRODUCTS));
+        setHasMore(false);
+        setNextCursor(null);
       }
     } catch (error) {
-      console.warn('Error fetching API products, using SHEIN fallback:', error);
-      setProducts(MOCK_SHEIN_PRODUCTS);
-      setHasMore(true);
+      console.warn('Error fetching API products, stopping pagination:', error);
+      setProducts((prev) => (prev.length > 0 ? prev : MOCK_SHEIN_PRODUCTS));
+      setHasMore(false);
+      setNextCursor(null);
     } finally {
       setLoading(false);
       setLoadingMore(false);
