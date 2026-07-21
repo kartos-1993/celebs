@@ -211,7 +211,8 @@ export class CategoryController {
     next: NextFunction,
   ) => {
     try {
-      const tree = await this.categoryService.getCategoryTreeWithAttributes();
+      const activeOnly = req.query.activeOnly === 'true';
+      const tree = await this.categoryService.getCategoryTreeWithAttributes(activeOnly);
       return res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Category tree with attributes retrieved successfully',
