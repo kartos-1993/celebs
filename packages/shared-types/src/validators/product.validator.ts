@@ -120,6 +120,7 @@ export const productFilterSchema = z.object({
   status: z.enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived']).optional(),
   featured: z.boolean().optional(),
   vendorId: z.string().optional(),
+  cursor: z.string().optional(),
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().optional().default(10),
   sortBy: z.enum(['createdAt', 'price', 'name']).optional().default('createdAt'),
