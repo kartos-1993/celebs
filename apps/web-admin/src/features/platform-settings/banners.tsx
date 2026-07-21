@@ -153,7 +153,6 @@ const Banners: React.FC = () => {
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-fashion-700 hover:bg-fashion-800 dark:bg-fashion-600 dark:hover:bg-fashion-700 dark:text-white"
         >
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Configuration
@@ -321,7 +320,7 @@ const Banners: React.FC = () => {
                     onClick={() => setActivePreviewIndex(i)}
                     className={`w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
                       activePreviewIndex === i
-                        ? 'bg-fashion-700 text-white'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                     }`}
                   >
