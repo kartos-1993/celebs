@@ -28,6 +28,7 @@ export interface Category {
   path: string[];
   attributes: CategoryAttribute[];
   imageUrl?: string | null;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
   __v?: number;
@@ -76,6 +77,7 @@ export interface CategoryFormData {
   hasShippingAttributes: boolean;
   hasCustomFields: boolean;
   imageUrl?: string | null;
+  isActive: boolean;
 }
 
 // UI State Types

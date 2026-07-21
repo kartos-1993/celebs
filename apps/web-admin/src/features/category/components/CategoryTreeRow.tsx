@@ -78,6 +78,15 @@ export const CategoryTreeRow: React.FC<CategoryTreeRowProps> = ({
                 Subcategory
               </span>
             )}
+            {category.isActive !== false ? (
+              <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">
+                Active
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium border border-gray-200">
+                Inactive
+              </span>
+            )}
           </span>
         </div>
       </TableCell>

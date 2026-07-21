@@ -50,6 +50,7 @@ export const categoryBaseSchema = z
     parent: objectIdSchema.optional().default(null),
     attributes: z.array(attributeInputSchema).optional().default([]),
     imageUrl: z.string().url().or(z.string().length(0)).optional().nullable(),
+    isActive: z.boolean().optional().default(true),
   });
 
 // Zod schema for the category request body

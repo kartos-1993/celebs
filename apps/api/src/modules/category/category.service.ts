@@ -28,6 +28,7 @@ interface CategoryInput {
   path: string[];
   attributes: CategoryAttribute[];
   imageUrl?: string | null;
+  isActive?: boolean;
 }
 
 interface CategoryUpdateInput extends Partial<Omit<CategoryInput, 'parent'>> {
@@ -161,8 +162,8 @@ export class CategoryService {
    * Builds and returns the complete category tree with attributes
    * Optimized for UI consumption with clear separation of children and attributes
    */
-  async getCategoryTreeWithAttributes(): Promise<CategoryTreeNode[]> {
-    const categories = await this.fetchCategoriesWithAttributes();
+  async getCategoryTreeWithAttributes(activeOnly = false): Promise<CategoryTreeNode[]> {
+    const categories = await this.fetchCategoriesWithAttributes(activeOnly);
     return this.buildCategoryTree(categories);
   }
 
@@ -402,6 +403,7 @@ export class CategoryService {
       level: categoryData.level,
       path: categoryData.path,
       imageUrl: categoryData.imageUrl ?? null,
+      isActive: categoryData.isActive !== false,
     });
   }
 
@@ -478,8 +480,12 @@ export class CategoryService {
   /**
    * Fetches all categories with their attributes from the database
    */
-  private async fetchCategoriesWithAttributes(): Promise<any[]> {
-    return await CategoryModel.aggregate([
+  private async fetchCategoriesWithAttributes(activeOnly = false): Promise<any[]> {
+    const pipeline: any[] = [];
+    if (activeOnly) {
+      pipeline.push({ $match: { isActive: { $ne: false } } });
+    }
+    pipeline.push(
       {
         $lookup: {
           from: 'attributes',
@@ -488,8 +494,9 @@ export class CategoryService {
           as: 'attributes',
         },
       },
-      { $sort: { name: 1 } },
-    ]);
+      { $sort: { name: 1 } }
+    );
+    return await CategoryModel.aggregate(pipeline);
   }
 
   /**

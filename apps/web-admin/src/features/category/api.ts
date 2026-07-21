@@ -25,9 +25,18 @@ export class CategoryApiService {
   static async createCategory(
     data: CreateCategoryRequest,
   ): Promise<ApiResponse<Category>> {
+    const mappedData = {
+      ...data,
+      attributes: (data.attributes || []).map((attr: any) => ({
+        ...attr,
+        values: (attr.values || [])
+          .map((v: any) => (typeof v === 'string' ? v : v.value ?? v.name ?? ''))
+          .filter(Boolean),
+      })),
+    };
     const response = await ProductAPI.post<ApiResponse<Category>>(
       CategoryApiService.BASE_PATH,
-      data,
+      mappedData,
     );
     return response.data;
   }
@@ -83,9 +92,20 @@ export class CategoryApiService {
     id: string,
     data: UpdateCategoryRequest,
   ): Promise<ApiResponse<Category>> {
+    const mappedData = {
+      ...data,
+      attributes: data.attributes
+        ? data.attributes.map((attr: any) => ({
+            ...attr,
+            values: (attr.values || [])
+              .map((v: any) => (typeof v === 'string' ? v : v.value ?? v.name ?? ''))
+              .filter(Boolean),
+          }))
+        : undefined,
+    };
     const response = await ProductAPI.put<ApiResponse<Category>>(
       `${CategoryApiService.BASE_PATH}/${id}`,
-      data,
+      mappedData,
     );
     return response.data;
   }

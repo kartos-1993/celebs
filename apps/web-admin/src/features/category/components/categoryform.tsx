@@ -199,6 +199,7 @@ const categorySchema = z.object({
   attributes: z.array(attributeSchema).default([]),
   imageUrl: z.string().optional().nullable(),
   hasVariants: z.boolean().default(false),
+  isActive: z.boolean().default(true),
   variantAttributes: z.array(z.string()).default([]),
   hasShippingAttributes: z.boolean().default(false),
   hasCustomFields: z.boolean().default(false),
@@ -240,21 +241,26 @@ interface Category {
   level: number;
   parent: string | null;
   path: string[];
+  isActive?: boolean;
+  imageUrl?: string | null;
+  hasVariants?: boolean;
+  hasShippingAttributes?: boolean;
+  hasCustomFields?: boolean;
 }
 
 interface CategoryFormProps {
-  initialData?: any;
-  onSave: (data: CategoryFormData) => void;
+  initialData?: Partial<Category> | null;
+  categories: Category[];
+  onSave: (data: any) => void;
   onCancel: () => void;
-  categories?: Category[];
 }
 
-const CategoryForm = ({
+const CategoryForm: React.FC<CategoryFormProps> = ({
   initialData,
+  categories,
   onSave,
   onCancel,
-  categories = [],
-}: CategoryFormProps) => {
+}) => {
   const { toast } = useToast();
   const { role } = useAuthContext();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -263,16 +269,24 @@ const CategoryForm = ({
     defaultValues: {
       name: initialData?.name || '',
       parent: initialData?.parent || null,
-      attributes: initialData?.attributes || [],
+      attributes: ((initialData as any)?.attributes || []).map((attr: any) => ({
+        ...attr,
+        values: (attr.values || []).map((v: any) =>
+          typeof v === 'string'
+            ? { id: crypto.randomUUID(), name: v, value: v }
+            : v
+        ),
+      })),
       imageUrl: initialData?.imageUrl || null,
       hasVariants: initialData?.hasVariants || false,
+      isActive: initialData?.isActive !== false,
       hasShippingAttributes: initialData?.hasShippingAttributes || false,
       hasCustomFields: initialData?.hasCustomFields || false,
       variantConfig: {
         colors: [],
         sizes: []
       },
-      measurementUnits: initialData?.measurementUnits || {},
+      measurementUnits: (initialData as any)?.measurementUnits || {},
       attributeGroups: [
         { name: 'basic', label: 'Basic Information', order: 1, visible: true },
         { name: 'variant', label: 'Variants', order: 2, visible: true },
@@ -365,7 +379,7 @@ const CategoryForm = ({
   // Filter categories to show only potential parents (avoid circular references)
   const availableParents = categories.filter(
     (cat) =>
-      cat._id !== initialData?._id && !cat.path?.includes(initialData?._id),
+      cat._id !== initialData?._id && !cat.path?.includes(initialData?._id || ''),
   );
 
   return (
@@ -491,6 +505,27 @@ const CategoryForm = ({
         <div className="space-y-4 border-t pt-4">
           <Label className="text-lg font-semibold">Category Features</Label>
           <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-0.5">
+                    <FormLabel>Active Status</FormLabel>
+                    <div className="text-xs text-gray-500">
+                      Show this category in the mobile storefront
+                    </div>
+                  </div>
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="hasVariants"
@@ -915,9 +950,12 @@ const AttributeFieldSet = ({
     try {
       const res = await ProductAPI.get(`/option-sets/${id}`);
       const data = res.data;
-      const values: string[] = (data?.data?.values ?? data?.values ?? [])
-        .map((v: any) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
-        .filter(Boolean);
+      const values = (data?.data?.values ?? data?.values ?? [])
+        .map((v: any) => {
+          const valStr = typeof v === 'string' ? v : v?.label ?? v?.name ?? '';
+          return { id: crypto.randomUUID(), name: valStr, value: valStr };
+        })
+        .filter((v: any) => v.value);
       form.setValue(`attributes.${index}.values`, values, {
         shouldValidate: true,
         shouldDirty: true,

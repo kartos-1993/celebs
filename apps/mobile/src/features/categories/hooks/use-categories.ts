@@ -23,7 +23,7 @@ export function useCategories() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const url = `${getApiUrl()}/category/tree-with-attributes`;
+      const url = `${getApiUrl()}/category/tree-with-attributes?activeOnly=true`;
       const response = await fetch(url);
       const resData = await response.json();
       if (resData.success && Array.isArray(resData.data)) {
