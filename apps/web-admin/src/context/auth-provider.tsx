@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, Context } from "react";
 import useAuth from "@/hooks/use-auth";
 import { UserData } from "@/types";
 
@@ -16,7 +16,9 @@ type AuthContextType = {
   isStaff: boolean;
 };
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Keep context reference stable across Vite HMR hot reloads in development
+const globalContexts = (globalThis as any).__contexts || ((globalThis as any).__contexts = {});
+const AuthContext: Context<AuthContextType | null> = globalContexts.AuthContext || (globalContexts.AuthContext = createContext<AuthContextType | null>(null));
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
