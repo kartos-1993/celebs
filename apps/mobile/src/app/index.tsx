@@ -23,10 +23,16 @@ export default function HomeScreen() {
     }, 1000);
   }, []);
 
+  const lastScrollY = useRef(0);
+
   const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const isNearEnd = layoutMeasurement.height + contentOffset.y >= contentSize.height - 250;
-    if (isNearEnd) {
+    const currentY = contentOffset.y;
+    const isScrollingDown = currentY > lastScrollY.current;
+    lastScrollY.current = currentY;
+
+    const isNearEnd = layoutMeasurement.height + currentY >= contentSize.height - 400;
+    if (isNearEnd && isScrollingDown) {
       productGridRef.current?.loadMore();
     }
   }, []);
@@ -43,7 +49,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}
         onScroll={handleScroll}
-        scrollEventThrottle={300}
+        scrollEventThrottle={100}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
