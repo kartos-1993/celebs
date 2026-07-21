@@ -28,6 +28,9 @@ const getApiUrl = () => {
 // Helper to resolve local IP for media hosted on the developer machine
 export const resolveImageUrl = (url: string) => {
   if (!url) return '';
+  if (url.startsWith('https://') || url.startsWith('http://img.')) {
+    return url;
+  }
   const debuggerHost = Constants.expoConfig?.hostUri;
   const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
   return url.replace(/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/g, localhost);
