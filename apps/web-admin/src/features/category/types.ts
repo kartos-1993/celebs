@@ -6,7 +6,12 @@
 export interface CategoryAttribute {
   _id?: string;
   name: string;
-  label:string
+  label: string;
+  placeholder?: string;
+  info?: {
+    help?: string;
+    top?: string;
+  };
   type: "text" | "select" | "multiselect" | "number" | "boolean" | 
         "richText" | "image" | "video" | "marketImages" | "mainImage" | 
         "customEditor" | "translateInput" | "listEditor" | "packageWeight" | 
@@ -46,6 +51,7 @@ export interface CreateCategoryRequest {
     '_id' | 'categoryId' | 'createdAt' | 'updatedAt'
   >[];
   imageUrl?: string | null;
+  isActive?: boolean;
 }
 
 export interface UpdateCategoryRequest extends Partial<CreateCategoryRequest> {

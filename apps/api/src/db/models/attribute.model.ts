@@ -1,12 +1,38 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export type AttributeType =
+  | 'text'
+  | 'select'
+  | 'multiselect'
+  | 'number'
+  | 'boolean'
+  | 'richText'
+  | 'image'
+  | 'video'
+  | 'marketImages'
+  | 'mainImage'
+  | 'customEditor'
+  | 'translateInput'
+  | 'listEditor'
+  | 'packageWeight'
+  | 'packageVolume'
+  | 'color-with-image'
+  | 'measurement-group'
+  | 'size-guide';
+
 // Interface for Attribute document
 export interface IAttribute extends Document {
   categoryId: mongoose.Types.ObjectId;
   name: string;
-  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
+  type: AttributeType;
   values: string[];
   isRequired: boolean;
+  label?: string;
+  placeholder?: string;
+  info?: {
+    help?: string;
+    top?: string;
+  };
   group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
   isVariant?: boolean;
   variantType?: 'color' | 'size' | null;
@@ -33,7 +59,26 @@ const AttributeSchema: Schema = new Schema(
     },
     type: {
       type: String,
-      enum: ['text', 'select', 'multiselect', 'number', 'boolean'],
+      enum: [
+        'text',
+        'select',
+        'multiselect',
+        'number',
+        'boolean',
+        'richText',
+        'image',
+        'video',
+        'marketImages',
+        'mainImage',
+        'customEditor',
+        'translateInput',
+        'listEditor',
+        'packageWeight',
+        'packageVolume',
+        'color-with-image',
+        'measurement-group',
+        'size-guide',
+      ],
       required: true,
     },
     values: [
@@ -42,6 +87,18 @@ const AttributeSchema: Schema = new Schema(
         required: true,
       },
     ],
+    label: {
+      type: String,
+      trim: true,
+    },
+    placeholder: {
+      type: String,
+      trim: true,
+    },
+    info: {
+      help: { type: String, trim: true },
+      top: { type: String, trim: true },
+    },
 
     group: {
       type: String,
