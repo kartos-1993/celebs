@@ -87,9 +87,14 @@ app.use(compression());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: config.NODE_ENV === 'production' ? 100 : 1000, // limit based on environment
+    max: 10000, // Generous limit for local mobile app testing
     standardHeaders: true,
     legacyHeaders: false,
+    message: {
+      success: false,
+      message: 'Too many requests, please try again later.',
+      errorCode: 'TOO_MANY_REQUESTS',
+    },
   })
 );
 

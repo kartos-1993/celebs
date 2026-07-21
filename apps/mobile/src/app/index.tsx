@@ -23,10 +23,14 @@ export default function HomeScreen() {
     }, 1000);
   }, []);
 
+  const lastTriggerTime = React.useRef(0);
+
   const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 300;
-    if (isCloseToBottom) {
+    const now = Date.now();
+    if (isCloseToBottom && now - lastTriggerTime.current > 1500) {
+      lastTriggerTime.current = now;
       setLoadMoreTrigger((prev) => prev + 1);
     }
   }, []);
