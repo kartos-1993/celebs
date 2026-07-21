@@ -132,7 +132,7 @@ export class ProductService {
     filters: any = {},
     page = 1,
     limit = 10,
-  ): Promise<{ products: IProduct[]; total: number }> {
+  ): Promise<{ products: IProduct[]; total: number; nextCursor?: string; hasMore?: boolean }> {
     const query: any = {};
 
     if (filters.status) {
@@ -153,18 +153,29 @@ export class ProductService {
       query.category = new Types.ObjectId(filters.categoryId);
     }
 
-    const skip = (page - 1) * limit;
-    const [products, total] = await Promise.all([
+    // Cursor-based pagination logic
+    if (filters.cursor && Types.ObjectId.isValid(filters.cursor)) {
+      query._id = { $lt: new Types.ObjectId(filters.cursor) };
+    }
+
+    const fetchLimit = limit + 1;
+    const skip = filters.cursor ? 0 : (page - 1) * limit;
+
+    const [rawProducts, total] = await Promise.all([
       ProductModel.find(query)
-        .sort({ createdAt: -1 })
+        .sort({ _id: -1 })
         .skip(skip)
-        .limit(limit)
+        .limit(fetchLimit)
         .populate('category')
         .populate('subcategory'),
       ProductModel.countDocuments(query),
     ]);
 
-    return { products, total };
+    const hasMore = rawProducts.length > limit;
+    const products = hasMore ? rawProducts.slice(0, limit) : rawProducts;
+    const nextCursor = products.length > 0 ? (products[products.length - 1]._id as Types.ObjectId).toString() : undefined;
+
+    return { products, total, nextCursor, hasMore };
   }
 
   async getProductReviewQueue(

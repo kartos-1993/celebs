@@ -54,12 +54,16 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
           </View>
         )}
 
-        {/* Discount Badge Pill */}
-        {hasDiscount && (
+        {/* Top Seller / NEW Badge Pill */}
+        {product.featured ? (
+          <View style={styles.topSellerBadge}>
+            <ThemedText style={styles.topSellerText}>Top Seller</ThemedText>
+          </View>
+        ) : hasDiscount ? (
           <View style={styles.discountBadge}>
             <ThemedText style={styles.discountText}>-{discountPercent}%</ThemedText>
           </View>
-        )}
+        ) : null}
 
         {/* Wishlist Heart Button */}
         <TouchableOpacity
@@ -92,6 +96,13 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
               ${originalPrice.toFixed(2)}
             </ThemedText>
           )}
+        </View>
+
+        {/* SHEIN Rating Stars & Reviews */}
+        <View style={styles.ratingRow}>
+          <ThemedText style={styles.starIcon}>★</ThemedText>
+          <ThemedText style={styles.ratingText}>4.9</ThemedText>
+          <ThemedText style={styles.reviewCountText}>(1.2k+)</ThemedText>
         </View>
 
         {/* Color Swatch Dots */}
@@ -160,6 +171,35 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
+  topSellerBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: '#ffb703',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 5,
+  },
+  topSellerText: {
+    color: '#000000',
+    fontSize: 9,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  promoTagContainer: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#fff0f3',
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 3,
+    marginBottom: 4,
+  },
+  promoTagText: {
+    color: '#e63946',
+    fontSize: 9,
+    fontWeight: '700',
+  },
   heartButton: {
     position: 'absolute',
     top: 8,
@@ -178,19 +218,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   detailsContainer: {
-    padding: Spacing.three,
+    padding: 8,
   },
   productName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
-    lineHeight: 17,
+    lineHeight: 16,
     marginBottom: 4,
   },
   priceRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    marginBottom: 4,
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 3,
   },
   currentPrice: {
     fontSize: 15,
@@ -201,6 +241,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#8e8e93',
     textDecorationLine: 'line-through',
+  },
+  miniDiscountTag: {
+    backgroundColor: '#fff0f3',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  miniDiscountText: {
+    color: '#e63946',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginBottom: 4,
+  },
+  starIcon: {
+    fontSize: 11,
+    color: '#ffb703',
+  },
+  ratingText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  reviewCountText: {
+    fontSize: 10,
+    color: '#8e8e93',
   },
   colorRow: {
     flexDirection: 'row',
