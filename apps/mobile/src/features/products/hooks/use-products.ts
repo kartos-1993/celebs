@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Constants from 'expo-constants';
 
 export interface Product {
@@ -39,7 +39,7 @@ export function useProducts(initialLimit = 10) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const fetchedCursorsRef = React.useRef<Set<string>>(new Set());
+  const fetchedCursorsRef = useRef<Set<string>>(new Set());
 
   const fetchProducts = useCallback(async (cursor?: string | null, isRefresh = false) => {
     if (cursor && fetchedCursorsRef.current.has(cursor)) {

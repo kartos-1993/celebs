@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { ScrollView, StatusBar, useColorScheme, RefreshControl } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
@@ -12,7 +12,7 @@ export default function HomeScreen() {
   const scheme = useColorScheme();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const productGridRef = React.useRef<ProductGridRef>(null);
+  const productGridRef = useRef<ProductGridRef>(null);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
