@@ -5,7 +5,7 @@ import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
 import { ProductModule } from './product.module';
-import rateLimit from 'express-rate-limit';
+import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
 const productRoutes = Router();
 const productController = ProductModule.getInstance().getProductController();
@@ -25,27 +25,13 @@ const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction
   })(req, res, next);
 };
 
-// Rate limiter for public/search endpoints
-const productSearchRateLimit = rateLimit({
-  windowMs: 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => !!req.user,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.',
-    errorCode: 'TOO_MANY_REQUESTS'
-  }
-});
-
 // Public / Storefront Product Routes (Optional Auth)
-productRoutes.get('/', productSearchRateLimit, optionalAuthenticateJWT, asyncHandler(productController.getProducts));
+productRoutes.get('/', searchRateLimiter, optionalAuthenticateJWT, asyncHandler(productController.getProducts));
 
 // Protected Admin / Vendor Routes (Require Auth & Permissions)
 productRoutes.use(authenticateJWT);
 productRoutes.get('/review-product-queue', requirePermissions(Permission.PRODUCT_REVIEW), asyncHandler(productController.getProductReviewQueue));
-productRoutes.get('/:id', productSearchRateLimit, requirePermissions(Permission.PRODUCT_VIEW), asyncHandler(productController.getProductById));
+productRoutes.get('/:id', searchRateLimiter, requirePermissions(Permission.PRODUCT_VIEW), asyncHandler(productController.getProductById));
 
 productRoutes.post('/', requirePermissions(Permission.PRODUCT_CREATE), asyncHandler(productController.createProduct));
 productRoutes.put('/:id', requirePermissions(Permission.PRODUCT_EDIT), asyncHandler(productController.updateProduct));

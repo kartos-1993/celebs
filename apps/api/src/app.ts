@@ -12,7 +12,7 @@ import authRoutes from './modules/auth/auth.routes';
 import { authenticateJWT } from './common/strategies/jwt.strategy';
 import helmet from 'helmet';
 import compression from 'compression';
-import rateLimit from 'express-rate-limit';
+import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
 
 import pinoHttp from 'pino-http';
 
@@ -84,19 +84,7 @@ app.use(
 );
 app.use(helmet());
 app.use(compression());
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10000, // Generous limit for local mobile app testing
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-      success: false,
-      message: 'Too many requests, please try again later.',
-      errorCode: 'TOO_MANY_REQUESTS',
-    },
-  })
-);
+app.use(globalRateLimiter);
 
 // Session management setup
 if (!config.JWT.SECRET) {

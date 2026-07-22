@@ -5,7 +5,7 @@ import prisma from '@/db';
 import { Role } from '@/generated/prisma';
 
 // Mock the mailer to avoid making external HTTP calls
-vi.mock('../mailers/mailer', () => ({
+vi.mock('@/mailers/mailer', () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),
 }));
 

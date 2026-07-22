@@ -8,8 +8,10 @@ import { asyncHandler, logger } from '@celebs/shared-utils';
 import { putImage } from './storage.service';
 import { MediaModel } from '@/db/models/media.model';
 import { assetQueue } from '@/common/services/queue.service';
+import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
 const router = Router();
+router.use(uploadRateLimiter);
 
 // Upload policy (keep in sync with render policy)
 const UPLOAD_POLICY = {
