@@ -1,0 +1,123 @@
+[
+  {
+    "sku": "sm240822160541901001",
+    "title": "Manfinity EMRG Men's Flap Pocket Button Front Denim Jacket With Fleece Lining",
+    "slug": "manfinity-emrg-mens-flap-pocket-button-front-denim-jacket-fleece-lining",
+    "category": "Denim Jackets",
+    "attributes": {
+      "closureType": "Single Breasted",
+      "details": ["Pocket", "Button", "Flap Pocket", "Fleece Lined"],
+      "patternType": "Plain",
+      "style": "Streetwear",
+      "fitType": "Regular Fit",
+      "fabricElasticity": "Non-Stretch",
+      "material": "Denim",
+      "composition": "100% Cotton, Lining: 100% Polyester",
+      "careInstructions": "Machine wash, do not dry clean",
+      "body": "Fleece Lined",
+      "sheer": false
+    },
+    "measurements": {
+      "unit": "CM",
+      "modelInfo": "Wearing M, Height: 185.0cm, Chest: 98.0cm",
+      "sizeChart": [
+        { "size": "S", "shoulder": 48.0, "chest": 110.0, "length": 66.0, "sleeveLength": 63.0 },
+        { "size": "M", "shoulder": 50.0, "chest": 115.0, "length": 68.0, "sleeveLength": 64.0 },
+        { "size": "L", "shoulder": 52.0, "chest": 120.0, "length": 70.0, "sleeveLength": 65.0 },
+        { "size": "XL", "shoulder": 54.0, "chest": 125.0, "length": 72.0, "sleeveLength": 66.0 },
+        { "size": "XXL", "shoulder": 56.0, "chest": 130.0, "length": 74.0, "sleeveLength": 67.0 }
+      ]
+    },
+    "variants": [
+      {
+        "color": "Blue",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/fd/177828483243e6da771d947a4415a70c77c010fcff.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/2f/17782848342548003cd184a66abadd8d1601e9e312.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/a5/17782848360812aa8801115843b338113c4ae7def7.webp"
+        ]
+      },
+      {
+        "color": "Black",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/15/80/1757920347c419f1247b7ee63f266624a95d38e49b.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/15/38/1757920349d7fd5eb81575560c6a591be217c1f95c.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "sku": "sm240822160541901002",
+    "title": "Manfinity Homme Men's Vintage Washed Oversized Trucker Denim Jacket",
+    "slug": "manfinity-homme-mens-vintage-washed-oversized-trucker-denim-jacket",
+    "category": "Denim Jackets",
+    "attributes": {
+      "closureType": "Single Breasted",
+      "details": ["Distressed", "Button", "Pocket", "Raw Hem"],
+      "patternType": "Washed",
+      "style": "Vintage",
+      "fitType": "Oversized",
+      "fabricElasticity": "Non-Stretch",
+      "material": "Denim",
+      "composition": "100% Cotton",
+      "careInstructions": "Hand wash recommended",
+      "body": "Unlined",
+      "sheer": false
+    },
+    "measurements": {
+      "unit": "CM",
+      "modelInfo": "Wearing L, Height: 188.0cm",
+      "sizeChart": [
+        { "size": "S", "shoulder": 52.0, "chest": 116.0, "length": 68.0, "sleeveLength": 62.0 },
+        { "size": "M", "shoulder": 54.0, "chest": 121.0, "length": 70.0, "sleeveLength": 63.0 },
+        { "size": "L", "shoulder": 56.0, "chest": 126.0, "length": 72.0, "sleeveLength": 64.0 },
+        { "size": "XL", "shoulder": 58.0, "chest": 131.0, "length": 74.0, "sleeveLength": 65.0 }
+      ]
+    },
+    "variants": [
+      {
+        "color": "Light Wash",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/04/17/30/177641034588ae8ee511e1aaea8360ccba126b9baa.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/04/17/96/1776410348ea70d5fcbd17eb5941098c363383efc4.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "sku": "sm240822160541901003",
+    "title": "Manfinity Spmode Men's Ripped Graphic Embroidery Denim Jacket",
+    "slug": "manfinity-spmode-mens-ripped-graphic-embroidery-denim-jacket",
+    "category": "Denim Jackets",
+    "attributes": {
+      "closureType": "Button Front",
+      "details": ["Ripped", "Embroidery", "Pocket"],
+      "patternType": "Graphic",
+      "style": "Streetwear",
+      "fitType": "Loose",
+      "fabricElasticity": "Non-Stretch",
+      "material": "Denim",
+      "composition": "85% Cotton, 15% Polyester",
+      "careInstructions": "Machine wash",
+      "body": "Unlined",
+      "sheer": false
+    },
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "M", "shoulder": 51.0, "chest": 118.0, "length": 69.0, "sleeveLength": 63.5 },
+        { "size": "L", "shoulder": 53.0, "chest": 123.0, "length": 71.0, "sleeveLength": 64.5 },
+        { "size": "XL", "shoulder": 55.0, "chest": 128.0, "length": 73.0, "sleeveLength": 65.5 }
+      ]
+    },
+    "variants": [
+      {
+        "color": "Dark Wash",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/ad/1781539476470359eb5aabe0a0a16bce0e9a5aa991.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/06/1781539477cb75c1761e2bf3014af7c4f66c33615f.webp"
+        ]
+      }
+    ]
+  }
+]
