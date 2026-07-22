@@ -37,6 +37,7 @@ interface IColorVariant {
 
 // Interface for Product document
 export interface IProduct extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   brand?: string;
   slug: string;

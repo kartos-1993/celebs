@@ -3,6 +3,7 @@ import { IAttribute } from './attribute.model';
 
 // Interface for Category document
 export interface ICategory extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   slug: string;
   level: number;

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '@/app';
-import { CategoryModel } from '@/db/models/category.model';
+import { CategoryModel, ICategory } from '@/db/models/category.model';
 import { AttributeModel } from '@/db/models/attribute.model';
 import { ProductModel } from '@/db/models/product.model';
 import prisma from '@/db';
@@ -173,17 +173,17 @@ describe('Category RBAC & Tree Operations', () => {
         level: 1,
         path: ['electronics'],
       });
-      parentCatId = parent._id.toString();
+      parentCatId = (parent as ICategory)._id.toString();
 
       // Create child category
       const child = await CategoryModel.create({
         name: 'Laptops',
         slug: 'laptops',
         level: 2,
-        parentCategory: parent._id,
+        parentCategory: (parent as ICategory)._id,
         path: ['electronics', 'laptops'],
       });
-      childCatId = child._id.toString();
+      childCatId = (child as ICategory)._id.toString();
     });
 
     it('should block deletion of parent category if it has subcategories', async () => {
