@@ -10,6 +10,7 @@
     "start:worker": "node dist/apps/api/src/worker-main.js",
     "test": "dotenv -e .env.test -- npx prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run",
     "seed:products": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products.ts",
+    "seed:denim-jeans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-denim-jeans.ts",
     "seed:categories": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-categories-men-filters.ts",
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
