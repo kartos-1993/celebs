@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import { ProductModule } from '@/modules/product/product.module';
 import { ProductService } from '@/modules/product/product.service';
@@ -11,7 +11,7 @@ describe('Product Cursor-Based Pagination & Storefront API', () => {
   let mockCategory: ICategory;
   let createdProductIds: string[] = [];
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     productService = ProductModule.getInstance().getProductService();
 
     mockCategory = await CategoryModel.create({
@@ -29,6 +29,7 @@ describe('Product Cursor-Based Pagination & Storefront API', () => {
         description: `Description for product ${i}`,
         price: 100 + i * 10,
         category: mockCategory._id,
+        subcategory: mockCategory._id,
         status: 'published',
         mainImages: ['https://example.com/image.jpg'],
         createdBy: 'system-test',
@@ -38,7 +39,7 @@ describe('Product Cursor-Based Pagination & Storefront API', () => {
     }
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await ProductModel.deleteMany({ _id: { $in: createdProductIds } });
     await CategoryModel.deleteOne({ _id: mockCategory._id });
   });

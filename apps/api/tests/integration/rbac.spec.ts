@@ -181,7 +181,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       expect(res.body.success).toBe(false);
     });
 
-    it('should allow ADMIN access to manage categories (201 or normal flow)', async () => {
+    it('should deny ADMIN access to manage categories (403 Forbidden)', async () => {
       // Register, verify, and promote to ADMIN
       await request(app).post('/api/v1/auth/register').send(customerPayload);
       const codeRecord = await prisma.verificationCode.findFirst({});
@@ -199,14 +199,13 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
         data: { role: Role.ADMIN },
       });
 
-      // Admin attempts to create a category (expecting 400 validation error instead of 403 Forbidden, since body is empty/invalid)
+      // Admin attempts to create a category (expecting 403 Forbidden)
       const res = await request(app)
         .post('/api/v1/category')
         .set('Cookie', authCookie)
         .send({});
 
-      expect(res.status).not.toBe(403);
-      expect(res.status).not.toBe(401);
+      expect(res.status).toBe(403);
     });
   });
 });
