@@ -149,7 +149,12 @@ export class ProductService {
       query.vendorId = filters.vendorId;
     }
 
-    if (filters.categoryId) {
+    if (filters.category) {
+      const cat = await CategoryModel.findOne({ slug: filters.category }).lean();
+      if (cat) {
+        query.category = cat._id;
+      }
+    } else if (filters.categoryId && Types.ObjectId.isValid(filters.categoryId)) {
       query.category = new Types.ObjectId(filters.categoryId);
     }
 
