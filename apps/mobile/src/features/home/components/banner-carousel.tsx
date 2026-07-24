@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -38,16 +38,59 @@ interface Banner {
   order: number;
 }
 
+const MOCK_BANNERS: Banner[] = [
+  {
+    _id: 'mock1',
+    imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
+    linkType: 'EXTERNAL',
+    linkValue: 'https://shein.com',
+    title: 'Summer Collection',
+    order: 1
+  },
+  {
+    _id: 'mock2',
+    imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
+    linkType: 'NONE',
+    title: 'New Trends',
+    order: 2
+  },
+  {
+    _id: 'mock3',
+    imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
+    linkType: 'NONE',
+    title: 'Street Style',
+    order: 3
+  }
+];
+
+import { useQuery } from '@tanstack/react-query';
+
 export function BannerCarousel() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
   const autoPlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const fetchBanners = async (): Promise<Banner[]> => {
+    const url = `${getApiUrl()}/banners`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch');
+    const resData = await response.json();
+    if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
+      return resData.data;
+    }
+    return MOCK_BANNERS;
+  };
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['banners'],
+    queryFn: fetchBanners,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+
+  const banners = useMemo(() => data || [], [data]);
+
   useEffect(() => {
-    fetchBanners();
     return () => stopAutoPlay();
   }, []);
 
@@ -57,71 +100,6 @@ export function BannerCarousel() {
     }
     return () => stopAutoPlay();
   }, [banners, activeIndex]);
-
-  const fetchBanners = async () => {
-    try {
-      setLoading(true);
-      const url = `${getApiUrl()}/banners`;
-      const response = await fetch(url);
-      const resData = await response.json();
-      if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
-        setBanners(resData.data);
-      } else {
-        setBanners([
-          {
-            _id: 'mock1',
-            imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
-            linkType: 'EXTERNAL',
-            linkValue: 'https://shein.com',
-            title: 'Summer Collection',
-            order: 1
-          },
-          {
-            _id: 'mock2',
-            imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
-            linkType: 'NONE',
-            title: 'New Trends',
-            order: 2
-          },
-          {
-            _id: 'mock3',
-            imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
-            linkType: 'NONE',
-            title: 'Street Style',
-            order: 3
-          }
-        ]);
-      }
-    } catch (error) {
-      console.warn('Error fetching banners:', error);
-      setBanners([
-        {
-          _id: 'mock1',
-          imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
-          linkType: 'EXTERNAL',
-          linkValue: 'https://shein.com',
-          title: 'Summer Collection',
-          order: 1
-        },
-        {
-          _id: 'mock2',
-          imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
-          linkType: 'NONE',
-          title: 'New Trends',
-          order: 2
-        },
-        {
-          _id: 'mock3',
-          imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
-          linkType: 'NONE',
-          title: 'Street Style',
-          order: 3
-        }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const startAutoPlay = () => {
     stopAutoPlay();

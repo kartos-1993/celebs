@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 
 export interface ProductMeasurement {
@@ -58,155 +59,91 @@ export const resolveImageUrl = (url: string) => {
 };
 
 export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const fetchedCursorsRef = useRef<Set<string>>(new Set());
-  const isFetchingRef = useRef(false);
+  const fetchProductsPage = async ({ pageParam = null }: { pageParam: string | null }) => {
+    const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
+    const categoryParam = categorySlugOrId ? `&category=${encodeURIComponent(categorySlugOrId)}` : '';
+    const url = `${getApiUrl()}/products?limit=${initialLimit}${categoryParam}${cursorParam}`;
+    console.log('Fetching products from:', url);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Network response was not ok');
+    return await response.json();
+  };
 
-  const fetchProducts = useCallback(async (cursor?: string | null, isRefresh = false) => {
-    if (isFetchingRef.current) {
-      console.log('⏸️ [useProducts] Request already in-flight - ignoring duplicate call.');
-      return;
-    }
-    if (cursor && fetchedCursorsRef.current.has(cursor)) {
-      console.log('⏹️ [useProducts] Cursor already fetched - ignoring duplicate call:', cursor);
-      return;
-    }
-
-    isFetchingRef.current = true;
-    if (cursor) {
-      fetchedCursorsRef.current.add(cursor);
-    } else {
-      fetchedCursorsRef.current.clear();
-    }
-
-    try {
-      if (!cursor && !isRefresh) {
-        setLoading(true);
-      } else if (cursor) {
-        setLoadingMore(true);
-      }
-
-      const cursorParam = cursor ? `&cursor=${cursor}` : '';
-      const categoryParam = categorySlugOrId ? `&category=${encodeURIComponent(categorySlugOrId)}` : '';
-      const url = `${getApiUrl()}/products?limit=${initialLimit}${categoryParam}${cursorParam}`;
-      console.log('Fetching products from:', url);
-      const response = await fetch(url);
-      const resData = await response.json();
-      console.log('Products API resData success:', resData.success, 'count:', resData.data?.products?.length);
-
-      if (resData.success && resData.data) {
-        const rawProducts: Product[] = Array.isArray(resData.data.products)
-          ? resData.data.products
-          : Array.isArray(resData.data)
-          ? resData.data
-          : [];
-
-        const serverCursor = resData.data.nextCursor || null;
-        const serverHasMore = typeof resData.data.hasMore === 'boolean'
-          ? resData.data.hasMore
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['products', { limit: initialLimit, category: categorySlugOrId }],
+    queryFn: fetchProductsPage,
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => {
+      if (lastPage?.success && lastPage?.data) {
+        const rawProducts = Array.isArray(lastPage.data.products)
+          ? lastPage.data.products
+          : Array.isArray(lastPage.data) ? lastPage.data : [];
+        
+        const serverCursor = lastPage.data.nextCursor || null;
+        const serverHasMore = typeof lastPage.data.hasMore === 'boolean'
+          ? lastPage.data.hasMore
           : (rawProducts.length >= initialLimit && Boolean(serverCursor));
-
-        if (!cursor || isRefresh) {
-          setProducts(rawProducts);
-        } else {
-          if (rawProducts.length > 0) {
-            setProducts((prev) => {
-              const existingIds = new Set(prev.map((p) => p._id));
-              const newUnique = rawProducts.filter((p) => !existingIds.has(p._id));
-              return [...prev, ...newUnique];
-            });
-          }
-        }
-
-        setNextCursor(serverCursor);
-        setHasMore(rawProducts.length > 0 ? serverHasMore : false);
-      } else {
-        setProducts((prev) => (prev.length > 0 ? prev : []));
-        setHasMore(false);
-        setNextCursor(null);
+        
+        return serverHasMore ? serverCursor : null;
       }
-    } catch (error) {
-      console.warn('Error fetching API products, stopping pagination:', error);
-      setProducts((prev) => (prev.length > 0 ? prev : []));
-      setHasMore(false);
-      setNextCursor(null);
-    } finally {
-      isFetchingRef.current = false;
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [initialLimit, categorySlugOrId]);
+      return null;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
 
-  useEffect(() => {
-    fetchProducts(null);
-  }, [fetchProducts]);
+  const products = useMemo(() => {
+    if (!data) return [];
+    return data.pages.flatMap((page) => {
+      if (page?.success && page?.data) {
+        return Array.isArray(page.data.products)
+          ? page.data.products
+          : Array.isArray(page.data) ? page.data : [];
+      }
+      return [];
+    });
+  }, [data]);
 
   const loadMore = useCallback(() => {
-    if (!hasMore || !nextCursor) {
-      console.log('⏹️ [useProducts] Reached end of catalog - NO API call made. (hasMore:', hasMore, ', nextCursor:', nextCursor, ')');
-      return;
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-    if (!loading && !loadingMore) {
-      fetchProducts(nextCursor);
-    }
-  }, [fetchProducts, loading, loadingMore, hasMore, nextCursor]);
-
-  const refetch = useCallback(() => {
-    setNextCursor(null);
-    fetchedCursorsRef.current.clear();
-    return fetchProducts(null, true);
-  }, [fetchProducts]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return {
     products,
-    loading,
-    loadingMore,
-    hasMore,
+    loading: isLoading,
+    loadingMore: isFetchingNextPage,
+    hasMore: !!hasNextPage,
     loadMore,
     refetch,
   };
 }
 
 export function useProduct(id: string) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetchSingleProduct = async () => {
+    const response = await fetch(`${getApiUrl()}/products/${id}`);
+    if (!response.ok) throw new Error('Failed to load product');
+    const resData = await response.json();
+    if (resData.success && resData.data) {
+      return resData.data as Product;
+    } else {
+      throw new Error(resData.error || 'Product not found');
+    }
+  };
 
-  useEffect(() => {
-    if (!id) return;
-    let isMounted = true;
-    const fetchSingleProduct = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${getApiUrl()}/products/${id}`);
-        const resData = await response.json();
-        if (isMounted) {
-          if (resData.success && resData.data) {
-            setProduct(resData.data);
-          } else {
-            setError(resData.error || 'Product not found');
-          }
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.message || 'Failed to load product');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
+  const { data: product, isLoading: loading, error } = useQuery({
+    queryKey: ['product', id],
+    queryFn: fetchSingleProduct,
+    enabled: !!id,
+    staleTime: 1000 * 30, // 30 seconds
+  });
 
-    fetchSingleProduct();
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
-
-  return { product, loading, error };
+  return { product: product || null, loading, error: error?.message || null };
 }

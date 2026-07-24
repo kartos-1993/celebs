@@ -204,7 +204,7 @@ export default function CategoryProductsScreen() {
     // Color filter
     if (selectedColors.length > 0) {
       list = list.filter((p) => {
-        const variantColors = p.colorVariants?.map((v) => v.name.toLowerCase()) || [];
+        const variantColors = p.colorVariants?.map((v: any) => v.name.toLowerCase()) || [];
         return selectedColors.some((c) => variantColors.includes(c.toLowerCase()));
       });
     }
