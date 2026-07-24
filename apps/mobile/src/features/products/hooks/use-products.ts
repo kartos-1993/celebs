@@ -36,7 +36,7 @@ export const resolveImageUrl = (url: string) => {
   return url.replace(/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/g, localhost);
 };
 
-export function useProducts(initialLimit = 10) {
+export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -70,7 +70,8 @@ export function useProducts(initialLimit = 10) {
       }
 
       const cursorParam = cursor ? `&cursor=${cursor}` : '';
-      const url = `${getApiUrl()}/products?limit=${initialLimit}${cursorParam}`;
+      const categoryParam = categorySlugOrId ? `&category=${encodeURIComponent(categorySlugOrId)}` : '';
+      const url = `${getApiUrl()}/products?limit=${initialLimit}${categoryParam}${cursorParam}`;
       console.log('Fetching products from:', url);
       const response = await fetch(url);
       const resData = await response.json();
@@ -117,7 +118,7 @@ export function useProducts(initialLimit = 10) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [initialLimit]);
+  }, [initialLimit, categorySlugOrId]);
 
   useEffect(() => {
     fetchProducts(null);

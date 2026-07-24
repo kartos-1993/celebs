@@ -1,6 +1,7 @@
-import { Types } from 'mongoose';
+import { Types, FilterQuery } from 'mongoose';
 import slugify from 'slugify';
 import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
+import { ProductFilterType } from '@celebs/shared-types';
 import { CategoryModel } from '@/db/models/category.model';
 import { IProduct, ProductModel } from '@/db/models/product.model';
 import { sendEmail } from '@/mailers/mailer';
@@ -71,8 +72,8 @@ export class ProductService {
       description: input.description.trim(),
       price: input.price,
       discountedPrice: input.discountedPrice,
-      category: new Types.ObjectId(categoryId),
-      subcategory: new Types.ObjectId(subcategoryId),
+      category: new Types.ObjectId(String(categoryId)),
+      subcategory: new Types.ObjectId(String(subcategoryId)),
       sizes: input.sizes ?? [],
       colorVariants: input.colorVariants,
       mainImages: input.mainImages ?? [],
@@ -91,49 +92,65 @@ export class ProductService {
     if (!Types.ObjectId.isValid(id)) {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
-    return await ProductModel.findById(id)
-      .populate('category')
-      .populate('subcategory');
+    return (await ProductModel.findById(id)
+      .populate('category', 'name slug path level')
+      .populate('subcategory', 'name slug path level')
+      .lean()) as IProduct | null;
   }
 
   async getProductsByVendor(
     vendorId: string,
-    filters: any = {},
+    filters: ProductFilterType = {},
     page = 1,
     limit = 10,
   ): Promise<{ products: IProduct[]; total: number }> {
-    const query: any = {
+    const query: FilterQuery<IProduct> = {
       vendorId,
-      status: { $ne: 'archived' },
+      status: filters.status ? filters.status : { $ne: 'archived' },
     };
 
-    if (filters.status) {
-      query.status = filters.status;
-    }
     if (filters.search) {
       query.$text = { $search: filters.search };
     }
+    if (typeof filters.featured === 'boolean') {
+      query.featured = filters.featured;
+    }
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      query.price = {};
+      if (filters.minPrice !== undefined) query.price.$gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) query.price.$lte = filters.maxPrice;
+    }
+    if (filters.subcategoryId && Types.ObjectId.isValid(filters.subcategoryId)) {
+      query.subcategory = new Types.ObjectId(String(filters.subcategoryId));
+    } else if (filters.categoryId && Types.ObjectId.isValid(filters.categoryId)) {
+      query.category = new Types.ObjectId(String(filters.categoryId));
+    }
+
+    const sortField = filters.sortBy || 'createdAt';
+    const sortDir = filters.sortOrder === 'asc' ? 1 : -1;
+    const sortOptions: Record<string, 1 | -1> = { [sortField]: sortDir };
 
     const skip = (page - 1) * limit;
     const [products, total] = await Promise.all([
       ProductModel.find(query)
-        .sort({ createdAt: -1 })
+        .sort(sortOptions)
         .skip(skip)
         .limit(limit)
-        .populate('category')
-        .populate('subcategory'),
+        .populate('category', 'name slug path level')
+        .populate('subcategory', 'name slug path level')
+        .lean(),
       ProductModel.countDocuments(query),
     ]);
 
-    return { products, total };
+    return { products: products as any, total };
   }
 
   async getAllProducts(
-    filters: any = {},
+    filters: ProductFilterType = {},
     page = 1,
     limit = 10,
   ): Promise<{ products: IProduct[]; total: number; nextCursor?: string; hasMore?: boolean }> {
-    const query: any = {};
+    const query: FilterQuery<IProduct> = {};
 
     if (filters.status) {
       query.status = filters.status;
@@ -149,38 +166,71 @@ export class ProductService {
       query.vendorId = filters.vendorId;
     }
 
+    if (typeof filters.featured === 'boolean') {
+      query.featured = filters.featured;
+    }
+
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      query.price = {};
+      if (filters.minPrice !== undefined) query.price.$gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) query.price.$lte = filters.maxPrice;
+    }
+
+    if (filters.subcategoryId && Types.ObjectId.isValid(filters.subcategoryId)) {
+      query.subcategory = new Types.ObjectId(String(filters.subcategoryId));
+    }
+
     if (filters.category) {
-      const cat = await CategoryModel.findOne({ slug: filters.category }).lean();
+      const cat = await CategoryModel.findOne({
+        $or: [
+          { slug: filters.category },
+          { name: new RegExp(filters.category.replace(/-/g, ' '), 'i') },
+        ],
+      })
+        .select('_id')
+        .lean();
       if (cat) {
-        query.category = cat._id;
+        query.$or = [{ category: cat._id }, { subcategory: cat._id }];
+      } else {
+        // Fallback: match category or tags or name by string
+        const reg = new RegExp(filters.category.replace(/-/g, ' '), 'i');
+        query.$or = [{ name: reg }, { tags: reg }];
       }
     } else if (filters.categoryId && Types.ObjectId.isValid(filters.categoryId)) {
-      query.category = new Types.ObjectId(filters.categoryId);
+      query.$or = [
+        { category: new Types.ObjectId(String(filters.categoryId)) },
+        { subcategory: new Types.ObjectId(String(filters.categoryId)) },
+      ];
     }
 
     // Cursor-based pagination logic
     if (filters.cursor && Types.ObjectId.isValid(filters.cursor)) {
-      query._id = { $lt: new Types.ObjectId(filters.cursor) };
+      query._id = { $lt: new Types.ObjectId(String(filters.cursor)) };
     }
+
+    const sortField = filters.sortBy || '_id';
+    const sortDir = filters.sortOrder === 'asc' ? 1 : -1;
+    const sortOptions: Record<string, 1 | -1> = { [sortField]: sortDir };
 
     const fetchLimit = limit + 1;
     const skip = filters.cursor ? 0 : (page - 1) * limit;
 
     const [rawProducts, total] = await Promise.all([
       ProductModel.find(query)
-        .sort({ _id: -1 })
+        .sort(sortOptions)
         .skip(skip)
         .limit(fetchLimit)
-        .populate('category')
-        .populate('subcategory'),
-      ProductModel.countDocuments(query),
+        .populate('category', 'name slug path level')
+        .populate('subcategory', 'name slug path level')
+        .lean(),
+      filters.cursor ? Promise.resolve(0) : ProductModel.countDocuments(query),
     ]);
 
     const hasMore = rawProducts.length > limit;
     const products = hasMore ? rawProducts.slice(0, limit) : rawProducts;
     const nextCursor = hasMore && products.length > 0 ? (products[products.length - 1]._id as Types.ObjectId).toString() : undefined;
 
-    return { products, total, nextCursor, hasMore };
+    return { products: products as any, total, nextCursor, hasMore };
   }
 
   async getProductReviewQueue(
@@ -195,12 +245,13 @@ export class ProductService {
         .sort({ createdAt: 1 }) // Oldest first to satisfy queue order
         .skip(skip)
         .limit(limit)
-        .populate('category')
-        .populate('subcategory'),
+        .populate('category', 'name slug path level')
+        .populate('subcategory', 'name slug path level')
+        .lean(),
       ProductModel.countDocuments(query),
     ]);
 
-    return { products, total };
+    return { products: products as any, total };
   }
 
   async submitProductForReview(id: string, vendorId: string): Promise<IProduct> {
@@ -310,8 +361,8 @@ export class ProductService {
         updateData.categoryId || String(product.category),
         updateData.subcategoryId || String(product.subcategory),
       );
-      (updateData as any).category = new Types.ObjectId(resolved.categoryId);
-      (updateData as any).subcategory = new Types.ObjectId(resolved.subcategoryId);
+      (updateData as any).category = new Types.ObjectId(String(resolved.categoryId));
+      (updateData as any).subcategory = new Types.ObjectId(String(resolved.subcategoryId));
       delete updateData.categoryId;
       delete updateData.subcategoryId;
     }

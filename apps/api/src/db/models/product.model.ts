@@ -216,8 +216,10 @@ const ProductSchema: Schema = new Schema(
   },
 );
 
-// Indexes
-ProductSchema.index({ status: 1, createdAt: -1 });
+// Minimal Essential Compound Indexes for High-Performance Catalog Queries
+ProductSchema.index({ category: 1, status: 1, _id: -1 });
+ProductSchema.index({ subcategory: 1, status: 1, _id: -1 });
+ProductSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text', tags: 'text' });
 
 // Add pre-save hook to generate slug if not provided
