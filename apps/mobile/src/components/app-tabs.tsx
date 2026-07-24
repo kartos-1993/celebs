@@ -104,6 +104,16 @@ export default function AppTabs() {
           ),
         }}
       />
+
+      {/* 6. Category Products Detail Screen (Hidden from bottom tab bar) */}
+      <Tabs.Screen
+        name="category/[slug]"
+        options={{
+          href: null,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }

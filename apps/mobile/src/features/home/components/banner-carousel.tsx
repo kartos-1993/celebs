@@ -64,12 +64,36 @@ export function BannerCarousel() {
       const url = `${getApiUrl()}/banners`;
       const response = await fetch(url);
       const resData = await response.json();
-      if (resData.success && Array.isArray(resData.data)) {
+      if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
         setBanners(resData.data);
+      } else {
+        setBanners([
+          {
+            _id: 'mock1',
+            imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
+            linkType: 'EXTERNAL',
+            linkValue: 'https://shein.com',
+            title: 'Summer Collection',
+            order: 1
+          },
+          {
+            _id: 'mock2',
+            imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
+            linkType: 'NONE',
+            title: 'New Trends',
+            order: 2
+          },
+          {
+            _id: 'mock3',
+            imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
+            linkType: 'NONE',
+            title: 'Street Style',
+            order: 3
+          }
+        ]);
       }
     } catch (error) {
       console.warn('Error fetching banners:', error);
-      // Fallback mocks if server is offline during development
       setBanners([
         {
           _id: 'mock1',

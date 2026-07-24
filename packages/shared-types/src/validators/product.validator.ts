@@ -127,3 +127,6 @@ export const productFilterSchema = z.object({
   sortBy: z.enum(['createdAt', 'price', 'name']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
+
+export type ProductFilterInput = z.input<typeof productFilterSchema>;
+export type ProductFilterType = z.output<typeof productFilterSchema>;

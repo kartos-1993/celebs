@@ -1,13 +1,13 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, useColorScheme } from 'react-native';
 import { Image } from 'expo-image';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { useCategories } from '../hooks/use-categories';
 import { styles } from '../styles/categories.styles';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from 'react-native';
 
 // Helper to resolve local IP for media hosted on the developer machine
 const resolveImageUrl = (url: string) => {
@@ -21,6 +21,15 @@ export function CategoryGrid() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const { categories, loading } = useCategories();
+  const router = useRouter();
+
+  const handleCategoryPress = (cat: any) => {
+    const slug = cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
+    router.push({
+      pathname: '/category/[slug]',
+      params: { slug, title: cat.displayName || cat.name },
+    });
+  };
 
   if (loading) {
     return (
@@ -39,7 +48,12 @@ export function CategoryGrid() {
       >
         <View style={styles.categoriesGrid}>
           {categories.map((cat) => (
-            <TouchableOpacity key={cat._id} style={styles.categoryItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={cat._id}
+              style={styles.categoryItem}
+              activeOpacity={0.7}
+              onPress={() => handleCategoryPress(cat)}
+            >
               <View style={styles.categoryImageContainer}>
                 {cat.imageUrl ? (
                   <Image

@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 export interface Category {
   _id: string;
   name: string;
+  slug?: string;
   displayName?: string;
   imageUrl?: string | null;
   level: number;
