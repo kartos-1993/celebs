@@ -132,14 +132,15 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: 6,
     marginTop: Spacing.four,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.three,
+    paddingHorizontal: 2,
   },
   titleWithIcon: {
     flexDirection: 'row',
@@ -151,14 +152,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   filterBar: {
-    paddingBottom: Spacing.four,
-    gap: 8,
+    paddingBottom: Spacing.three,
+    gap: 6,
   },
   chipButton: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 18,
-    marginRight: 6,
+    marginRight: 4,
   },
   chipActive: {
     backgroundColor: '#000000',
