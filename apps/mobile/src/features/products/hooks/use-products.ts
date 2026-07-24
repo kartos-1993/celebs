@@ -1,6 +1,30 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Constants from 'expo-constants';
 
+export interface ProductMeasurement {
+  name: string;
+  value: string;
+  unit: string;
+}
+
+export interface ProductSize {
+  name: string;
+  productMeasurements?: ProductMeasurement[];
+  bodyMeasurements?: ProductMeasurement[];
+}
+
+export interface ProductStock {
+  size: string;
+  quantity: number;
+}
+
+export interface ProductColorVariant {
+  name: string;
+  colorCode: string;
+  images?: string[];
+  stocks?: ProductStock[];
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -9,11 +33,8 @@ export interface Product {
   price: number;
   discountedPrice?: number;
   mainImages: string[];
-  colorVariants?: Array<{
-    name: string;
-    colorCode: string;
-    images?: string[];
-  }>;
+  sizes?: ProductSize[];
+  colorVariants?: ProductColorVariant[];
   status: string;
   featured?: boolean;
 }
@@ -148,4 +169,44 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
     loadMore,
     refetch,
   };
+}
+
+export function useProduct(id: string) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    let isMounted = true;
+    const fetchSingleProduct = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${getApiUrl()}/products/${id}`);
+        const resData = await response.json();
+        if (isMounted) {
+          if (resData.success && resData.data) {
+            setProduct(resData.data);
+          } else {
+            setError(resData.error || 'Product not found');
+          }
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err.message || 'Failed to load product');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchSingleProduct();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  return { product, loading, error };
 }

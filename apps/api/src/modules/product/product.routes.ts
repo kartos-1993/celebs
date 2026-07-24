@@ -27,11 +27,11 @@ const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction
 
 // Public / Storefront Product Routes (Optional Auth)
 productRoutes.get('/', searchRateLimiter, optionalAuthenticateJWT, asyncHandler(productController.getProducts));
+productRoutes.get('/review-product-queue', authenticateJWT, requirePermissions(Permission.PRODUCT_REVIEW), asyncHandler(productController.getProductReviewQueue));
+productRoutes.get('/:id', searchRateLimiter, optionalAuthenticateJWT, asyncHandler(productController.getProductById));
 
 // Protected Admin / Vendor Routes (Require Auth & Permissions)
 productRoutes.use(authenticateJWT);
-productRoutes.get('/review-product-queue', requirePermissions(Permission.PRODUCT_REVIEW), asyncHandler(productController.getProductReviewQueue));
-productRoutes.get('/:id', searchRateLimiter, requirePermissions(Permission.PRODUCT_VIEW), asyncHandler(productController.getProductById));
 
 productRoutes.post('/', requirePermissions(Permission.PRODUCT_CREATE), asyncHandler(productController.createProduct));
 productRoutes.put('/:id', requirePermissions(Permission.PRODUCT_EDIT), asyncHandler(productController.updateProduct));
