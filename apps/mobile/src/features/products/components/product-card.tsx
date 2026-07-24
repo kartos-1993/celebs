@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 import { Image } from 'expo-image';
 import { Heart, ShoppingBag, ChevronRight } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
@@ -20,6 +21,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps) {
+  const router = useRouter();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
@@ -52,11 +54,22 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   // Brand / Store Name
   const storeName = product.brand || (product as any).vendorName || 'BODI';
 
+  const handlePress = () => {
+    if (onPress) {
+      onPress(product);
+    } else {
+      router.push({
+        pathname: '/product/[id]',
+        params: { id: product._id },
+      });
+    }
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
       style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}
-      onPress={() => onPress?.(product)}
+      onPress={handlePress}
     >
       {/* 3:4 Aspect Ratio Image Container */}
       <View style={[styles.imageContainer, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
