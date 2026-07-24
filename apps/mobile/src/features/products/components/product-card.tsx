@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 import { Image } from 'expo-image';
-import { Heart } from 'lucide-react-native';
+import { Heart, ShoppingBag, ChevronRight } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { Product, resolveImageUrl } from '../hooks/use-products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// Calculate width for 2-column grid with padding
-const CARD_WIDTH = (SCREEN_WIDTH - Spacing.four * 2 - Spacing.three) / 2;
+const GRID_PADDING = 6;
+const COLUMN_GAP = 6;
+// Calculate width for 2-column grid with minimal 6px padding
+const CARD_WIDTH = (SCREEN_WIDTH - GRID_PADDING * 2 - COLUMN_GAP) / 2;
 
 interface ProductCardProps {
   product: Product;
   onPress?: (product: Product) => void;
+  onAddToCart?: (product: Product) => void;
 }
 
-export function ProductCard({ product, onPress }: ProductCardProps) {
+export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps) {
   const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -32,21 +36,30 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
   const imageUrl = resolveImageUrl(primaryImage);
 
   // Calculate discount percentage if original price is higher
-  const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
+  const hasDiscount = Boolean(product.discountedPrice && product.discountedPrice < product.price);
   const currentPrice = hasDiscount ? product.discountedPrice! : product.price;
-  const originalPrice = hasDiscount ? product.price : null;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
-    : 0;
+    : (product as any).discountPercent || 15;
+
+  // Price text color: Apple System Warm Coral/Orange (#FF5000 / #FF9F0A) when discounted, standard theme color when regular price
+  const priceColor = hasDiscount ? (isDark ? '#FF9F0A' : '#FF5000') : (isDark ? '#ffffff' : '#000000');
+
+  // Format Price: Integer part & decimal part separately for e-commerce styling
+  const integerPart = Math.floor(currentPrice);
+  const decimalPart = (currentPrice % 1).toFixed(2).substring(1); // e.g. ".60" or ".00"
+
+  // Brand / Store Name
+  const storeName = product.brand || (product as any).vendorName || 'BODI';
 
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#ffffff' }]}
+      style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}
       onPress={() => onPress?.(product)}
     >
       {/* 3:4 Aspect Ratio Image Container */}
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -55,81 +68,105 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
             transition={200}
           />
         ) : (
-          <View style={[styles.placeholderImage, { backgroundColor: scheme === 'dark' ? '#2c2c2e' : '#f2f2f7' }]}>
+          <View style={[styles.placeholderImage, { backgroundColor: isDark ? '#2c2c2e' : '#f2f2f7' }]}>
             <ThemedText type="small" style={{ opacity: 0.4 }}>No Image</ThemedText>
           </View>
         )}
 
-        {/* Top Seller / NEW Badge Pill */}
-        {product.featured ? (
-          <View style={styles.topSellerBadge}>
-            <ThemedText style={styles.topSellerText}>Top Seller</ThemedText>
-          </View>
-        ) : hasDiscount ? (
-          <View style={styles.discountBadge}>
-            <ThemedText style={styles.discountText}>-{discountPercent}%</ThemedText>
-          </View>
-        ) : null}
-
-        {/* Wishlist Heart Button */}
+        {/* Wishlist Heart Button Top-Right */}
         <TouchableOpacity
           activeOpacity={0.8}
-          style={styles.heartButton}
+          style={[styles.heartButton, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.85)' }]}
           onPress={() => setIsFavorite(!isFavorite)}
         >
           <Heart
-            size={16}
-            color={isFavorite ? '#ff3b30' : '#1c1c1e'}
+            size={14}
+            color={isFavorite ? '#ff3b30' : isDark ? '#ffffff' : '#1c1c1e'}
             fill={isFavorite ? '#ff3b30' : 'transparent'}
           />
         </TouchableOpacity>
-      </View>
 
-      {/* Content Details */}
-      <View style={styles.detailsContainer}>
-        {/* Brand / Name */}
-        <ThemedText numberOfLines={2} style={styles.productName}>
-          {product.name}
-        </ThemedText>
-
-        {/* Price Row */}
-        <View style={styles.priceRow}>
-          <ThemedText style={styles.currentPrice}>
-            ${currentPrice.toFixed(2)}
-          </ThemedText>
-          {originalPrice && (
-            <ThemedText style={styles.originalPrice}>
-              ${originalPrice.toFixed(2)}
-            </ThemedText>
-          )}
-        </View>
-
-        {/* SHEIN Rating Stars & Reviews */}
-        <View style={styles.ratingRow}>
-          <ThemedText style={styles.starIcon}>★</ThemedText>
-          <ThemedText style={styles.ratingText}>4.9</ThemedText>
-          <ThemedText style={styles.reviewCountText}>(1.2k+)</ThemedText>
-        </View>
-
-        {/* Color Swatch Dots */}
+        {/* Vertical Color Swatch Capsule Overlay (Bottom-Right of Image) */}
         {product.colorVariants && product.colorVariants.length > 0 && (
-          <View style={styles.colorRow}>
-            {product.colorVariants.slice(0, 4).map((variant, idx) => (
+          <View style={styles.imageColorCapsule}>
+            {product.colorVariants.slice(0, 3).map((variant, idx) => (
               <View
                 key={idx}
                 style={[
-                  styles.colorDot,
+                  styles.capsuleColorDot,
                   { backgroundColor: variant.colorCode || '#8e8e93' }
                 ]}
               />
             ))}
-            {product.colorVariants.length > 4 && (
-              <ThemedText style={styles.moreColorsText}>
-                +{product.colorVariants.length - 4}
-              </ThemedText>
-            )}
+            <ThemedText style={styles.capsuleCountText}>
+              {product.colorVariants.length}
+            </ThemedText>
           </View>
         )}
+      </View>
+
+      {/* Content Details */}
+      <View style={styles.detailsContainer}>
+        {/* Brand Badge Line (e.g. Trends | BODI >) */}
+        <View style={styles.brandBadgeRow}>
+          <View style={styles.trendsBadge}>
+            <ThemedText style={styles.trendsText}>Trends</ThemedText>
+          </View>
+          <TouchableOpacity style={[styles.storeBadge, { backgroundColor: isDark ? '#3b0764' : '#faf5ff' }]} activeOpacity={0.7}>
+            <ThemedText style={[styles.storeText, { color: isDark ? '#d8b4fe' : '#6b21a8' }]}>{storeName}</ThemedText>
+            <ChevronRight size={9} color={isDark ? '#d8b4fe' : '#7c3aed'} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Product Title (Truncated to Single Line) */}
+        <ThemedText numberOfLines={1} style={[styles.productName, { color: isDark ? '#f4f4f5' : '#27272a' }]}>
+          {product.name}
+        </ThemedText>
+
+        {/* Bestseller / Ranking Tag (Orange/Gold) */}
+        {product.featured ? (
+          <TouchableOpacity activeOpacity={0.8} style={styles.bestsellerRow}>
+            <ThemedText numberOfLines={1} style={styles.bestsellerText}>
+              #1 Bestseller <ThemedText style={styles.bestsellerSub}>in Men Collection</ThemedText>
+            </ThemedText>
+            <ChevronRight size={10} color="#d97706" />
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Sales / New Arrival Row */}
+        <View style={styles.salesRow}>
+          <View style={[styles.newArrivalBadge, { backgroundColor: isDark ? '#064e3b' : '#ecfdf5' }]}>
+            <ThemedText style={[styles.newArrivalText, { color: isDark ? '#6ee7b7' : '#047857' }]}>NEW ARRIVAL</ThemedText>
+          </View>
+          <ThemedText style={[styles.soldText, { color: isDark ? '#a1a1aa' : '#71717a' }]}>80+ sold</ThemedText>
+        </View>
+
+        {/* Bottom 2-Column Price & Quick Add Row */}
+        <View style={styles.bottomPriceRow}>
+          {/* Column 1: Single Current Price + -xx% Discount Tag */}
+          <View style={styles.priceLeftCol}>
+            <View style={styles.mainPriceGroup}>
+              <ThemedText style={[styles.currencySymbol, { color: priceColor }]}>Rs.</ThemedText>
+              <ThemedText style={[styles.integerPrice, { color: priceColor }]}>{integerPart}</ThemedText>
+              <ThemedText style={[styles.decimalPrice, { color: priceColor }]}>{decimalPart}</ThemedText>
+            </View>
+
+            {hasDiscount && (
+              <View style={styles.discountTagPill}>
+                <ThemedText style={styles.discountTagText}>-{discountPercent}%</ThemedText>
+              </View>
+            )}
+          </View>
+
+          {/* Column 2: Add to Cart Action Button */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[styles.cartActionButton, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5', borderColor: isDark ? '#3a3a3c' : '#e4e4e7' }]}
+            onPress={() => onAddToCart?.(product)}
+          >
+            <ShoppingBag size={14} color={isDark ? '#ffffff' : '#1c1c1e'} strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -137,20 +174,14 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
 
 const styles = StyleSheet.create({
   cardContainer: {
-    borderRadius: 12,
-    marginBottom: Spacing.four,
+    borderRadius: 8,
+    marginBottom: Spacing.three,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   imageContainer: {
     width: '100%',
     aspectRatio: 3 / 4,
     position: 'relative',
-    backgroundColor: '#f2f2f7',
   },
   productImage: {
     width: '100%',
@@ -162,137 +193,188 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  discountBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: '#e63946',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    zIndex: 5,
-  },
-  discountText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  topSellerBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: '#ffb703',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    zIndex: 5,
-  },
-  topSellerText: {
-    color: '#000000',
-    fontSize: 9,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  promoTagContainer: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#fff0f3',
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  promoTagText: {
-    color: '#e63946',
-    fontSize: 9,
-    fontWeight: '700',
-  },
   heartButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    top: 6,
+    right: 6,
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 3,
   },
+
+  /* Vertical Color Swatch Capsule Overlay (Tighter gap & larger dots) */
+  imageColorCapsule: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    borderRadius: 10,
+    paddingHorizontal: 3.5,
+    paddingVertical: 4,
+    alignItems: 'center',
+    gap: 2.5,
+    zIndex: 5,
+  },
+  capsuleColorDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    borderWidth: 1,
+    borderColor: '#ffffff',
+  },
+  capsuleCountText: {
+    fontSize: 8,
+    lineHeight: 9,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginTop: 1,
+    textAlign: 'center',
+  },
+
+  /* Details Area */
   detailsContainer: {
-    padding: 8,
+    padding: 6,
+    paddingTop: 4,
   },
-  productName: {
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-    marginBottom: 4,
-  },
-  priceRow: {
+
+  /* Brand Badge Row */
+  brandBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 3,
+    marginBottom: 2,
   },
-  currentPrice: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#e63946',
-  },
-  originalPrice: {
-    fontSize: 11,
-    color: '#8e8e93',
-    textDecorationLine: 'line-through',
-  },
-  miniDiscountTag: {
-    backgroundColor: '#fff0f3',
+  trendsBadge: {
+    backgroundColor: '#f3e8ff',
     paddingHorizontal: 3,
-    paddingVertical: 1,
+    paddingVertical: 0.5,
     borderRadius: 2,
   },
-  miniDiscountText: {
-    color: '#e63946',
-    fontSize: 9,
+  trendsText: {
+    color: '#7e22ce',
+    fontSize: 8,
+    fontWeight: '800',
+    fontStyle: 'italic',
+  },
+  storeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 1,
+    paddingHorizontal: 3,
+    paddingVertical: 0.5,
+    borderRadius: 2,
+  },
+  storeText: {
+    fontSize: 8,
     fontWeight: '700',
   },
-  ratingRow: {
+
+  /* Product Title */
+  productName: {
+    fontSize: 11.5,
+    fontWeight: '400',
+    lineHeight: 15,
+    marginBottom: 2,
+  },
+
+  /* Bestseller Row */
+  bestsellerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  starIcon: {
-    fontSize: 11,
-    color: '#ffb703',
+  bestsellerText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#d97706',
   },
-  ratingText: {
-    fontSize: 10,
-    fontWeight: '700',
+  bestsellerSub: {
+    fontSize: 9,
+    fontWeight: '500',
+    color: '#b45309',
   },
-  reviewCountText: {
-    fontSize: 10,
-    color: '#8e8e93',
-  },
-  colorRow: {
+
+  /* Sales / New Arrival Row */
+  salesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    marginBottom: 3,
+  },
+  newArrivalBadge: {
+    paddingHorizontal: 3,
+    paddingVertical: 0.5,
+    borderRadius: 2,
+  },
+  newArrivalText: {
+    fontSize: 7.5,
+    fontWeight: '800',
+  },
+  soldText: {
+    fontSize: 9,
+    fontWeight: '500',
+  },
+
+  /* 2-Column Bottom Price & Add to Cart Row */
+  bottomPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
     marginTop: 2,
   },
-  colorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
+  priceLeftCol: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 2,
+    flexWrap: 'nowrap',
+    flex: 1,
+    marginRight: 4,
   },
-  moreColorsText: {
-    fontSize: 10,
-    color: '#8e8e93',
+  mainPriceGroup: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  currencySymbol: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    marginRight: 1,
+  },
+  integerPrice: {
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  decimalPrice: {
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+
+  /* Compact Discount Percent Badge Pill Next to Price (Apple System Warm Coral #FF5000 / #FF9F0A) */
+  discountTagPill: {
+    backgroundColor: '#fff0ed',
+    paddingHorizontal: 2.5,
+    paddingVertical: 0.5,
+    borderRadius: 2,
     marginLeft: 2,
+  },
+  discountTagText: {
+    color: '#FF5000',
+    fontSize: 7.5,
+    lineHeight: 9,
+    fontWeight: '800',
+  },
+
+  /* Cart Quick Add Button */
+  cartActionButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
   },
 });

@@ -12,8 +12,10 @@ import {
   Dimensions,
   SafeAreaView,
   Platform,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import {
   ChevronLeft,
   Search,
@@ -23,6 +25,8 @@ import {
   X,
   Check,
   Sparkles,
+  Menu,
+  Heart,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,11 +38,48 @@ import { ProductCard } from '@/features/products/components/product-card';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Subcategory Pills based on category
-const SUB_CATEGORIES_MAP: Record<string, string[]> = {
-  'denim-jeans': ['All', 'Wide Leg', 'Straight Leg', 'Loose Fit', 'Distressed/Ripped', 'Cargo', 'Light Wash', 'Dark Wash'],
-  'denim-jackets': ['All', 'Fleece/Shearling', 'Oversized', 'Flap Pocket', 'Distressed', 'Vintage', 'Short', 'Ripped'],
-  default: ['All', 'Top Selling', 'New Arrivals', 'Oversized', 'Casual', 'Streetwear', 'Classic'],
+interface SubCategoryAvatar {
+  name: string;
+  image: string;
+}
+
+// Category-Specific Subcategory Circular Avatars with High-Res Image Thumbnails
+const SUBCATEGORY_AVATARS_MAP: Record<string, SubCategoryAvatar[]> = {
+  'denim-jeans': [
+    { name: 'Long', image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200&q=80' },
+    { name: 'Cropped', image: 'https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=200&q=80' },
+    { name: 'Extra Long', image: 'https://images.unsplash.com/photo-1604176354204-9268737828e4?w=200&q=80' },
+    { name: 'Capris', image: 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=200&q=80' },
+    { name: 'Soft', image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=200&q=80' },
+  ],
+  'shirts': [
+    { name: 'Multicolor', image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=200&q=80' },
+    { name: 'Black & White', image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=200&q=80' },
+    { name: 'Red & White', image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=200&q=80' },
+    { name: 'Blue & White', image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&q=80' },
+    { name: 'Black', image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=200&q=80' },
+  ],
+  't-shirts': [
+    { name: 'Multicolor', image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=200&q=80' },
+    { name: 'Black & White', image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=200&q=80' },
+    { name: 'Red & White', image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=200&q=80' },
+    { name: 'Blue & White', image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&q=80' },
+    { name: 'Black', image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=200&q=80' },
+  ],
+  'denim-jackets': [
+    { name: 'Fleece', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=200&q=80' },
+    { name: 'Oversized', image: 'https://images.unsplash.com/photo-1548883354-7622d03aca27?w=200&q=80' },
+    { name: 'Flap Pocket', image: 'https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=200&q=80' },
+    { name: 'Distressed', image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=200&q=80' },
+    { name: 'Vintage', image: 'https://images.unsplash.com/photo-1525457136159-8878648a7ad0?w=200&q=80' },
+  ],
+  default: [
+    { name: 'All', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=200&q=80' },
+    { name: 'Casual', image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=200&q=80' },
+    { name: 'Streetwear', image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=200&q=80' },
+    { name: 'Classic', image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=200&q=80' },
+    { name: 'Oversized', image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200&q=80' },
+  ],
 };
 
 // Filter options definition
@@ -58,10 +99,10 @@ const FIT_OPTIONS = ['Loose', 'Oversized', 'Regular Fit', 'Slim Fit', 'Wide Leg'
 const STYLE_OPTIONS = ['Streetwear', 'Vintage', 'Casual - Modern Casual', 'Avant-Garde', 'Amekaji'];
 const DETAILS_OPTIONS = ['Pocket', 'Button', 'Zipper', 'Ripped', 'Distressed', 'Flap Pocket', 'Fleece Lined'];
 const PRICE_RANGES = [
-  { label: 'Under $25', min: 0, max: 25 },
-  { label: '$25 - $50', min: 25, max: 50 },
-  { label: '$50 - $100', min: 50, max: 100 },
-  { label: 'Over $100', min: 100, max: 9999 },
+  { label: 'Under Rs. 2500', min: 0, max: 2500 },
+  { label: 'Rs. 2500 - Rs. 5000', min: 2500, max: 5000 },
+  { label: 'Rs. 5000 - Rs. 10000', min: 5000, max: 10000 },
+  { label: 'Over Rs. 10000', min: 10000, max: 999999 },
 ];
 
 const SORT_OPTIONS = [
@@ -82,6 +123,9 @@ export default function CategoryProductsScreen() {
 
   const categorySlug = (Array.isArray(slug) ? slug[0] : slug) || 'denim-jeans';
   const categoryTitle = (Array.isArray(title) ? title[0] : title) || categorySlug.replace(/-/g, ' ').toUpperCase();
+
+  // Search Query State
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch API products for category
   const { products, loading, loadingMore, hasMore, loadMore, refetch } = useProducts(20, categorySlug);
@@ -105,7 +149,7 @@ export default function CategoryProductsScreen() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<'all' | 'color' | 'fit' | 'style' | 'size'>('all');
 
-  const subCatList = SUB_CATEGORIES_MAP[categorySlug] || SUB_CATEGORIES_MAP.default;
+  const avatarSubCats = SUBCATEGORY_AVATARS_MAP[categorySlug] || SUBCATEGORY_AVATARS_MAP.default;
 
   // Toggle helper
   const toggleSelection = (item: string, currentList: string[], setList: (val: string[]) => void) => {
@@ -124,6 +168,7 @@ export default function CategoryProductsScreen() {
     setSelectedDetails([]);
     setSelectedPriceRange(null);
     setSelectedSubCat('All');
+    setSearchQuery('');
   };
 
   const activeFilterCount =
@@ -138,6 +183,12 @@ export default function CategoryProductsScreen() {
   // Computed & Filtered Products List
   const filteredProducts = useMemo(() => {
     let list = [...products];
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((p) => p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
+    }
 
     // Subcategory pill filter
     if (selectedSubCat !== 'All') {
@@ -194,7 +245,7 @@ export default function CategoryProductsScreen() {
     }
 
     return list;
-  }, [products, selectedSubCat, selectedColors, selectedFits, selectedStyles, selectedPriceRange, sortBy]);
+  }, [products, searchQuery, selectedSubCat, selectedColors, selectedFits, selectedStyles, selectedPriceRange, sortBy]);
 
   const openSpecificFilter = (section: 'color' | 'fit' | 'style' | 'size') => {
     setActiveFilterSection(section);
@@ -205,65 +256,76 @@ export default function CategoryProductsScreen() {
     <ThemedView style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent={false} />
 
-      {/* Sticky SHEIN Header */}
+      {/* SINGLE HORIZONTAL TOP HEADER BAR */}
       <View
         style={[
           styles.headerBar,
           {
-            paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 6,
+            paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 4,
             backgroundColor: isDark ? '#121212' : '#ffffff',
             borderBottomColor: isDark ? '#2c2c2e' : '#f2f2f7',
           },
         ]}
       >
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.back()}>
-          <ChevronLeft size={24} color={colors.text} strokeWidth={2.2} />
+        {/* Back Button (<) */}
+        <TouchableOpacity style={styles.iconBtnCompact} activeOpacity={0.7} onPress={() => router.back()}>
+          <ChevronLeft size={22} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
 
-        {/* Title & Count */}
-        <View style={styles.headerTitleCenter}>
-          <ThemedText style={styles.headerCategoryTitle} numberOfLines={1}>
-            {categoryTitle}
-          </ThemedText>
-          <ThemedText style={styles.headerSubtitleText}>
-            {filteredProducts.length} Items
-          </ThemedText>
-        </View>
+        {/* Hamburger Menu Icon (☰) */}
+        <TouchableOpacity style={styles.iconBtnCompact} activeOpacity={0.7} onPress={() => router.push('/explore')}>
+          <Menu size={20} color={colors.text} strokeWidth={2} />
+        </TouchableOpacity>
 
-        {/* Right Actions */}
-        <View style={styles.headerRightGroup}>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.push('/explore')}>
-            <Search size={20} color={colors.text} strokeWidth={2} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.push('/cart')}>
-            <ShoppingCart size={20} color={colors.text} strokeWidth={2} />
-            <View style={styles.cartBadge}>
-              <ThemedText style={styles.cartBadgeText}>2</ThemedText>
-            </View>
+        {/* Search Bar (TextInput + Search Icon Action Button) */}
+        <View style={[styles.searchBarBox, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder={`${categoryTitle}`}
+            placeholderTextColor="#8e8e93"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchActionBtn} activeOpacity={0.8}>
+            <Search size={13} color="#ffffff" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
+
+        {/* Wishlist Heart Icon (♡) */}
+        <TouchableOpacity style={styles.iconBtnCompact} activeOpacity={0.7}>
+          <Heart size={20} color={colors.text} strokeWidth={2} />
+        </TouchableOpacity>
+
+        {/* Shopping Cart Icon (🛒) */}
+        <TouchableOpacity style={styles.iconBtnCompact} activeOpacity={0.7} onPress={() => router.push('/cart')}>
+          <ShoppingCart size={20} color={colors.text} strokeWidth={2} />
+          <View style={styles.cartBadge}>
+            <ThemedText style={styles.cartBadgeText}>2</ThemedText>
+          </View>
+        </TouchableOpacity>
       </View>
 
-      {/* Subcategory Pills Bar */}
-      <View style={[styles.subCatBarWrapper, { backgroundColor: isDark ? '#1a1a1a' : '#fafafa' }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subCatScrollContent}>
-          {subCatList.map((item) => {
-            const isActive = selectedSubCat === item;
+      {/* CIRCULAR CATEGORY AVATARS HORIZONTAL SCROLL BAR */}
+      <View style={[styles.avatarBarWrapper, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarScrollContent}>
+          {avatarSubCats.map((item) => {
+            const isActive = selectedSubCat === item.name;
             return (
               <TouchableOpacity
-                key={item}
+                key={item.name}
                 activeOpacity={0.8}
-                onPress={() => setSelectedSubCat(item)}
-                style={[
-                  styles.subCatPill,
-                  isActive
-                    ? styles.subCatPillActive
-                    : { backgroundColor: isDark ? '#2c2c2e' : '#ffffff', borderColor: isDark ? '#3a3a3c' : '#e5e7eb' },
-                ]}
+                onPress={() => setSelectedSubCat(isActive ? 'All' : item.name)}
+                style={styles.avatarItemContainer}
               >
-                <ThemedText style={[styles.subCatText, isActive && styles.subCatTextActive]}>
-                  {item}
+                <View style={[styles.avatarCircle, isActive && styles.avatarCircleActive]}>
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.avatarImage}
+                    contentFit="cover"
+                  />
+                </View>
+                <ThemedText style={[styles.avatarLabelText, isActive && styles.avatarLabelTextActive]} numberOfLines={1}>
+                  {item.name}
                 </ThemedText>
               </TouchableOpacity>
             );
@@ -271,84 +333,52 @@ export default function CategoryProductsScreen() {
         </ScrollView>
       </View>
 
-      {/* Sticky Filter & Sort Toolbar */}
-      <View style={[styles.filterToolbar, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderBottomColor: isDark ? '#27272a' : '#e5e7eb' }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterToolbarScroll}>
-          {/* Sort Dropdown Button */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.toolbarChip, { backgroundColor: isDark ? '#27272a' : '#f4f4f5' }]}
-            onPress={() => setIsSortModalOpen(true)}
-          >
-            <ThemedText style={styles.toolbarChipText}>
-              {SORT_OPTIONS.find((s) => s.key === sortBy)?.label}
-            </ThemedText>
-            <ChevronDown size={14} color={colors.text} style={{ marginLeft: 3 }} />
-          </TouchableOpacity>
+      {/* SORT & FILTER TOOLBAR (SHEIN STYLE) */}
+      <View style={[styles.sortFilterBar, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderBottomColor: isDark ? '#27272a' : '#f2f2f7' }]}>
+        <TouchableOpacity style={styles.sortOptionTab} onPress={() => setIsSortModalOpen(true)}>
+          <ThemedText style={styles.sortOptionLabel}>Recommended</ThemedText>
+          <ChevronDown size={13} color={colors.text} style={{ marginLeft: 2 }} />
+        </TouchableOpacity>
 
-          {/* Quick Attribute Chips */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.toolbarChip, selectedColors.length > 0 && styles.toolbarChipSelected, { backgroundColor: selectedColors.length > 0 ? '#111827' : (isDark ? '#27272a' : '#f4f4f5') }]}
-            onPress={() => openSpecificFilter('color')}
-          >
-            <ThemedText style={[styles.toolbarChipText, selectedColors.length > 0 && { color: '#ffffff' }]}>
-              Color {selectedColors.length > 0 ? `(${selectedColors.length})` : ''}
-            </ThemedText>
-            <ChevronDown size={14} color={selectedColors.length > 0 ? '#ffffff' : colors.text} style={{ marginLeft: 3 }} />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.sortOptionTab} onPress={() => setSortBy('top_selling')}>
+          <ThemedText style={[styles.sortOptionLabel, sortBy === 'top_selling' && styles.activeSortLabel]}>Most Popular</ThemedText>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.toolbarChip, selectedFits.length > 0 && styles.toolbarChipSelected, { backgroundColor: selectedFits.length > 0 ? '#111827' : (isDark ? '#27272a' : '#f4f4f5') }]}
-            onPress={() => openSpecificFilter('fit')}
-          >
-            <ThemedText style={[styles.toolbarChipText, selectedFits.length > 0 && { color: '#ffffff' }]}>
-              Fit {selectedFits.length > 0 ? `(${selectedFits.length})` : ''}
-            </ThemedText>
-            <ChevronDown size={14} color={selectedFits.length > 0 ? '#ffffff' : colors.text} style={{ marginLeft: 3 }} />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.sortOptionTab} onPress={() => setSortBy(sortBy === 'price_low' ? 'price_high' : 'price_low')}>
+          <ThemedText style={styles.sortOptionLabel}>Price ⇅</ThemedText>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.toolbarChip, selectedSizes.length > 0 && styles.toolbarChipSelected, { backgroundColor: selectedSizes.length > 0 ? '#111827' : (isDark ? '#27272a' : '#f4f4f5') }]}
-            onPress={() => openSpecificFilter('size')}
-          >
-            <ThemedText style={[styles.toolbarChipText, selectedSizes.length > 0 && { color: '#ffffff' }]}>
-              Size {selectedSizes.length > 0 ? `(${selectedSizes.length})` : ''}
-            </ThemedText>
-            <ChevronDown size={14} color={selectedSizes.length > 0 ? '#ffffff' : colors.text} style={{ marginLeft: 3 }} />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.filterBtnTab} onPress={() => { setActiveFilterSection('all'); setIsFilterDrawerOpen(true); }}>
+          <ThemedText style={styles.filterTabLabel}>Filter 🗰</ThemedText>
+          {activeFilterCount > 0 && (
+            <View style={styles.activeFilterCountCircle}>
+              <ThemedText style={styles.activeFilterCountText}>{activeFilterCount}</ThemedText>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.toolbarChip, selectedStyles.length > 0 && styles.toolbarChipSelected, { backgroundColor: selectedStyles.length > 0 ? '#111827' : (isDark ? '#27272a' : '#f4f4f5') }]}
-            onPress={() => openSpecificFilter('style')}
-          >
-            <ThemedText style={[styles.toolbarChipText, selectedStyles.length > 0 && { color: '#ffffff' }]}>
-              Style {selectedStyles.length > 0 ? `(${selectedStyles.length})` : ''}
-            </ThemedText>
-            <ChevronDown size={14} color={selectedStyles.length > 0 ? '#ffffff' : colors.text} style={{ marginLeft: 3 }} />
+      {/* SECONDARY FILTER TAG SCROLL BAR */}
+      <View style={[styles.filterTagRow, { backgroundColor: isDark ? '#18181b' : '#ffffff' }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagScroll}>
+          <View style={styles.purpleTrendsPill}>
+            <Sparkles size={11} color="#7e22ce" />
+            <ThemedText style={styles.purpleTrendsText}>Trends</ThemedText>
+          </View>
+          <TouchableOpacity style={styles.tagChipBtn} onPress={() => openSpecificFilter('color')}>
+            <ThemedText style={styles.tagChipText}>Category ∨</ThemedText>
           </TouchableOpacity>
-
-          {/* Filter Drawer Button */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.filterDrawerBtn, activeFilterCount > 0 && styles.filterDrawerBtnActive]}
-            onPress={() => {
-              setActiveFilterSection('all');
-              setIsFilterDrawerOpen(true);
-            }}
-          >
-            <SlidersHorizontal size={14} color={activeFilterCount > 0 ? '#ffffff' : colors.text} />
-            <ThemedText style={[styles.filterDrawerBtnText, activeFilterCount > 0 && { color: '#ffffff' }]}>
-              Filter
-            </ThemedText>
-            {activeFilterCount > 0 && (
-              <View style={styles.activeBadgeCircle}>
-                <ThemedText style={styles.activeBadgeText}>{activeFilterCount}</ThemedText>
-              </View>
-            )}
+          <TouchableOpacity style={styles.tagChipBtn} onPress={() => openSpecificFilter('size')}>
+            <ThemedText style={styles.tagChipText}>Size ∨</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tagChipBtn} onPress={() => openSpecificFilter('color')}>
+            <ThemedText style={styles.tagChipText}>Color ∨</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tagChipBtn} onPress={() => openSpecificFilter('fit')}>
+            <ThemedText style={styles.tagChipText}>Fabric Elasticity ∨</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tagChipBtn} onPress={() => openSpecificFilter('fit')}>
+            <ThemedText style={styles.tagChipText}>Fit Type ∨</ThemedText>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -368,6 +398,7 @@ export default function CategoryProductsScreen() {
         {/* Active Filter Tags Bar */}
         {activeFilterCount > 0 && (
           <View style={styles.activeTagsRow}>
+
             <TouchableOpacity style={styles.clearAllChip} onPress={clearAllFilters}>
               <ThemedText style={styles.clearAllText}>Clear All</ThemedText>
             </TouchableOpacity>
@@ -636,109 +667,187 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingBottom: 10,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
     borderBottomWidth: 1,
+    gap: 2,
   },
-  iconBtn: {
-    padding: 6,
-    borderRadius: 20,
+  iconBtnCompact: {
+    padding: 5,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  searchBarBox: {
+    flex: 1,
+    height: 34,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e4e4e7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 8,
+    paddingRight: 3,
+    marginHorizontal: 3,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 12,
+    paddingVertical: 0,
+    fontWeight: '500',
+  },
+  searchActionBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 4,
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitleCenter: {
-    flex: 1,
+  cartBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#e63946',
+    borderRadius: 7,
+    minWidth: 14,
+    height: 14,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 8,
+    paddingHorizontal: 2,
   },
-  headerCategoryTitle: {
-    fontSize: 16,
+  cartBadgeText: {
+    color: '#ffffff',
+    fontSize: 8.5,
     fontWeight: '800',
-    textTransform: 'capitalize',
-    letterSpacing: 0.3,
   },
-  headerSubtitleText: {
-    fontSize: 11,
-    color: '#8e8e93',
+
+  /* Circular Category Avatars Row */
+  avatarBarWrapper: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f4f4f5',
+  },
+  avatarScrollContent: {
+    paddingHorizontal: Spacing.four,
+    gap: 14,
+  },
+  avatarItemContainer: {
+    alignItems: 'center',
+    width: 56,
+  },
+  avatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#e4e4e7',
+    backgroundColor: '#f4f4f5',
+    marginBottom: 4,
+  },
+  avatarCircleActive: {
+    borderColor: '#000000',
+    borderWidth: 2,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarLabelText: {
+    fontSize: 10.5,
     fontWeight: '500',
-    marginTop: 1,
+    color: '#4b5563',
+    textAlign: 'center',
   },
-  headerRightGroup: {
+  avatarLabelTextActive: {
+    fontWeight: '800',
+    color: '#000000',
+  },
+
+  /* SHEIN Sort & Filter Toolbar */
+  sortFilterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  sortOptionTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sortOptionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#18181b',
+  },
+  activeSortLabel: {
+    fontWeight: '800',
+    color: '#000000',
+  },
+  filterBtnTab: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  cartBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
+  filterTabLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#18181b',
+  },
+  activeFilterCountCircle: {
     backgroundColor: '#e63946',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 3,
   },
-  cartBadgeText: {
+  activeFilterCountText: {
     color: '#ffffff',
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '800',
   },
 
-  /* Subcategory Horizontal Pills */
-  subCatBarWrapper: {
-    paddingVertical: 8,
-  },
-  subCatScrollContent: {
-    paddingHorizontal: Spacing.four,
-    gap: 8,
-  },
-  subCatPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-    borderWidth: 1,
-  },
-  subCatPillActive: {
-    backgroundColor: '#111827',
-    borderColor: '#111827',
-  },
-  subCatText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4b5563',
-  },
-  subCatTextActive: {
-    color: '#ffffff',
-  },
-
-  /* Sticky Toolbar */
-  filterToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
-  filterToolbarScroll: {
-    paddingHorizontal: Spacing.four,
-    gap: 8,
-    alignItems: 'center',
-  },
-  toolbarChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
+  /* Secondary Tag Filter Row */
+  filterTagRow: {
     paddingVertical: 6,
-    borderRadius: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f4f4f5',
   },
-  toolbarChipSelected: {
-    backgroundColor: '#111827',
+  filterTagScroll: {
+    paddingHorizontal: Spacing.four,
+    gap: 6,
+    alignItems: 'center',
   },
-  toolbarChipText: {
-    fontSize: 12,
+  purpleTrendsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#f3e8ff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  purpleTrendsText: {
+    color: '#7e22ce',
+    fontSize: 11,
+    fontWeight: '800',
+    fontStyle: 'italic',
+  },
+  tagChipBtn: {
+    backgroundColor: '#f4f4f5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  tagChipText: {
+    fontSize: 11,
     fontWeight: '600',
+    color: '#3f3f46',
   },
   filterDrawerBtn: {
     flexDirection: 'row',
@@ -774,7 +883,7 @@ const styles = StyleSheet.create({
 
   /* Scroll Content & Grid */
   scrollContent: {
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: 6,
     paddingTop: Spacing.three,
     paddingBottom: 100,
   },
