@@ -145,6 +145,35 @@ export class AuthController {
     }
   );
 
+  public refreshToken = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const refreshToken =
+        req.cookies?.refreshToken ||
+        req.headers['x-refresh-token'] ||
+        req.headers.authorization?.replace('Bearer ', '');
+
+      const { user, accessToken, refreshToken: newRefreshToken } =
+        await this.authService.refreshToken(refreshToken as string);
+
+      setAuthenticationCookies({
+        res,
+        accessToken,
+        refreshToken: newRefreshToken,
+      });
+
+      const response: IApiResponse<{
+        user: typeof user;
+        accessToken: string;
+        refreshToken: string;
+      }> = {
+        success: true,
+        message: 'Token refreshed successfully',
+        data: { user, accessToken, refreshToken: newRefreshToken },
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
+
   public getSetupStatus = asyncHandler(
     async (req: Request, res: Response): Promise<any> => {
       const setupRequired = await this.authService.isSuperadminSetupRequired();
