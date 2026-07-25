@@ -1,6 +1,8 @@
-import { createContext, useContext, Context } from "react";
+import { createContext, useContext, useCallback } from "react";
 import useAuth from "@/hooks/use-auth";
 import { UserData } from "@/types";
+import { useIdleTimer } from "@/hooks/use-idle-timer";
+import { apiClient } from "@/lib/axios-client";
 
 // Define the context shape
 type AuthContextType = {
@@ -42,6 +44,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const isAdmin = role === 'ADMIN';
   const isSuperAdmin = role === 'SUPERADMIN';
   const isStaff = role === 'STAFF';
+
+  const handleIdle = useCallback(async () => {
+    if (user) {
+      console.warn("User idle for 15 minutes. Logging out for security.");
+      try {
+        await apiClient.post("/auth/logout");
+      } catch (e) {
+        console.error("Logout on idle failed:", e);
+      } finally {
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      }
+    }
+  }, [user]);
+
+  // Trigger idle timer (15 minutes)
+  useIdleTimer(handleIdle, 15 * 60 * 1000);
 
   return (
     <AuthContext.Provider
