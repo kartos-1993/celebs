@@ -448,6 +448,71 @@ export class AuthService {
     };
   }
 
+  public async refreshToken(token: string) {
+    if (!token) {
+      throw new UnauthorizedException(
+        'Refresh token missing',
+        ErrorCode.AUTH_TOKEN_NOT_FOUND
+      );
+    }
+
+    const { payload, error } = verifyJwtToken<RefreshTPayload>(token);
+    if (error || !payload?.sessionId) {
+      throw new UnauthorizedException(
+        'Invalid or expired refresh token',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+      );
+    }
+
+    // Check if session exists in DB
+    const session = await prisma.session.findUnique({
+      where: { id: payload.sessionId },
+      include: { user: { include: { vendorProfile: true } } },
+    });
+
+    if (!session || !session.user) {
+      throw new UnauthorizedException(
+        'Session expired or invalid',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+      );
+    }
+
+    const user = session.user;
+    if (user.role === 'VENDOR' && user.vendorProfile) {
+      const status = user.vendorProfile.status;
+      if (status === 'REJECTED' || status === 'SUSPENDED') {
+        throw new ForbiddenException(
+          'Access denied: Seller account is suspended or rejected.',
+          ErrorCode.FORBIDDEN_ACCESS
+        );
+      }
+    }
+
+    // Generate new Access and Refresh tokens (Refresh Token Rotation)
+    const accessTokenPayload: AccessTPayload = {
+      userId: user.id,
+      sessionId: session.id,
+    };
+
+    const refreshTokenPayload: RefreshTPayload = {
+      sessionId: session.id,
+    };
+
+    const newAccessToken = signJwtToken(accessTokenPayload);
+    const newRefreshToken = signJwtToken(
+      refreshTokenPayload,
+      refreshTokenSignOptions
+    );
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  }
+
   public async isSuperadminSetupRequired() {
     const superadminExists = await prisma.user.findFirst({
       where: { role: 'SUPERADMIN' },

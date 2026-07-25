@@ -8,6 +8,7 @@ const authRoutes = Router();
 authRoutes.post('/register', authRateLimiter, authController.register);
 authRoutes.post('/vendor/register', authRateLimiter, authController.vendorRegister);
 authRoutes.post('/login', authRateLimiter, authController.login);
+authRoutes.post('/refresh', authRateLimiter, authController.refreshToken);
 authRoutes.post('/verify-email', authRateLimiter, authController.verifyEmail);
 authRoutes.post('/logout', authenticateJWT, authController.logout);
 authRoutes.post('/setup-superadmin', authRateLimiter, authController.setupSuperadmin);
