@@ -14,6 +14,7 @@ import {
 interface MeasurementItem {
   name?: string;
   value?: unknown;
+  unit?: string;
 }
 
 interface SizeFormValue {
@@ -98,10 +99,18 @@ export async function buildProductPayload({
       name: sizeName,
       productMeasurements: (formSizeObj?.productMeasurements || [])
         .filter((m) => m.value && String(m.value).trim() !== '')
-        .map((m) => ({ name: String(m.name || ''), value: String(m.value || '') })),
+        .map((m) => ({
+          name: String(m.name || ''),
+          value: String(m.value || ''),
+          unit: String(m.unit || 'cm'),
+        })),
       bodyMeasurements: (formSizeObj?.bodyMeasurements || [])
         .filter((m) => m.value && String(m.value).trim() !== '')
-        .map((m) => ({ name: String(m.name || ''), value: String(m.value || '') })),
+        .map((m) => ({
+          name: String(m.name || ''),
+          value: String(m.value || ''),
+          unit: String(m.unit || 'cm'),
+        })),
     };
   });
 
