@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Form,
@@ -113,23 +114,24 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Password</FormLabel>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput placeholder="********" {...field} />
+                  </FormControl>
+                  <div className="flex justify-end pt-0.5">
                     <Link
                       to="/forgot-password"
-                      className="text-sm font-medium text-muted-foreground hover:opacity-75"
+                      className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
                     >
                       Forgot password?
                     </Link>
                   </div>
-                  <FormControl>
-                    <PasswordInput placeholder="********" {...field} />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <Button className="mt-2" disabled={isPending}>
+              {isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
               Login
             </Button>
           </div>
