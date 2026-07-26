@@ -53,11 +53,20 @@ export default function ProductDetailScreen() {
   const topCartBtnRef = useRef<View>(null);
   const topCartScale = useSharedValue(1);
 
+  const isMountedRef = useRef(true);
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Measure top header cart icon target position
   const measureTopCartIcon = React.useCallback(() => {
     requestAnimationFrame(() => {
+      if (!isMountedRef.current) return;
       topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
-        if (typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
+        if (isMountedRef.current && typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
           setCartIconCoords({
             x: x + width / 2,
             y: y + height / 2,
@@ -137,9 +146,9 @@ export default function ProductDetailScreen() {
       startFlyAnimation({
         imageUrl: flyImage,
         startX: startCoords?.x ?? SCREEN_WIDTH / 2,
-        startY: startCoords?.y ?? SCREEN_HEIGHT - 100,
-        startWidth: 65,
-        startHeight: 65,
+        startY: startCoords?.y ?? SCREEN_HEIGHT - 90,
+        startWidth: 75,
+        startHeight: 95,
       });
     }
 
@@ -151,7 +160,7 @@ export default function ProductDetailScreen() {
         quantity: 1,
       });
 
-      // Allow the fly animation (~650ms) to complete before navigating back
+      // Allow the smooth fly animation (~550ms) to complete before navigating back
       setTimeout(() => {
         if (router.canGoBack()) {
           router.back();
@@ -584,7 +593,10 @@ export default function ProductDetailScreen() {
         onSelectSizeAndConfirm={(size, startCoords) => {
           setSelectedSize(size);
           setIsSizeModalOpen(false);
-          executeAddToCart(size, startCoords);
+          // 280ms delay allows Redmi / MIUI window manager to finish unmounting SizeRequiredModal before fly animation launches
+          setTimeout(() => {
+            executeAddToCart(size, startCoords);
+          }, 280);
         }}
       />
 

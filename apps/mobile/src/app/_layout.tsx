@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -22,9 +22,11 @@ export default function TabLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <CartProvider>
           <FlyToCartProvider>
-            <AnimatedSplashOverlay />
-            <AppTabs />
-            <FlyToCartOverlay />
+            <View style={{ flex: 1 }}>
+              <AnimatedSplashOverlay />
+              <AppTabs />
+              <FlyToCartOverlay />
+            </View>
           </FlyToCartProvider>
         </CartProvider>
       </ThemeProvider>
