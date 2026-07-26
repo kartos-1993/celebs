@@ -177,7 +177,6 @@ export function BannerCarousel() {
                   contentFit="cover"
                   transition={300}
                 />
-                <View style={styles.imageOverlay} />
               </TouchableOpacity>
             )}
           />

@@ -291,8 +291,8 @@ const styles = StyleSheet.create({
   },
   trendsBadge: {
     backgroundColor: '#f3e8ff',
-    paddingHorizontal: 3,
-    paddingVertical: 0.5,
+    paddingHorizontal: 2,
+    paddingVertical: 1,
     borderRadius: 2,
   },
   trendsText: {
@@ -300,18 +300,20 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize(8.5),
     fontWeight: '800',
     fontStyle: 'italic',
+    lineHeight: responsiveFontSize(10),
   },
   storeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 1,
-    paddingHorizontal: 3,
-    paddingVertical: 0.5,
+    paddingHorizontal: 2,
+    paddingVertical: 1,
     borderRadius: 2,
   },
   storeText: {
     fontSize: responsiveFontSize(8.5),
     fontWeight: '700',
+    lineHeight: responsiveFontSize(10),
   },
 
   /* Product Title */
@@ -348,13 +350,14 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   newArrivalBadge: {
-    paddingHorizontal: 3,
-    paddingVertical: 0.5,
+    paddingHorizontal: 2,
+    paddingVertical: 1,
     borderRadius: 2,
   },
   newArrivalText: {
     fontSize: responsiveFontSize(8),
     fontWeight: '800',
+    lineHeight: responsiveFontSize(9.5),
   },
   soldText: {
     fontSize: responsiveFontSize(9.5),

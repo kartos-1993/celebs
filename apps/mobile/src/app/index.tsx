@@ -23,11 +23,14 @@ export default function HomeScreen() {
     }, 1000);
   }, []);
 
+  const [scrollY, setScrollY] = useState(0);
   const lastScrollY = useRef(0);
 
   const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const currentY = contentOffset.y;
+    setScrollY(currentY);
+
     const isScrollingDown = currentY > lastScrollY.current;
     lastScrollY.current = currentY;
 
@@ -40,7 +43,7 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <StatusBar 
-        barStyle="light-content" 
+        barStyle={scrollY > 50 ? (scheme === 'dark' ? 'light-content' : 'dark-content') : 'light-content'} 
         translucent={true} 
         backgroundColor="transparent" 
       />
@@ -49,7 +52,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}
         onScroll={handleScroll}
-        scrollEventThrottle={100}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -73,7 +76,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Transparent Floating AppHeader */}
-      <AppHeader transparent={true} showSubHeader={true} initialSubTab="Men" />
+      <AppHeader transparent={true} scrollY={scrollY} showSubHeader={true} initialSubTab="Men" />
     </ThemedView>
   );
 }

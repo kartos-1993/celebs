@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: CAROUSEL_HEIGHT,
     position: 'relative',
-    backgroundColor: '#1c1c1e',
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
   },
   imageOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'transparent',
   },
   dotContainer: {
     position: 'absolute',
