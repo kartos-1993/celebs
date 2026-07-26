@@ -265,8 +265,10 @@ export function SkuTableInputField({ field }: UiProps) {
         <Table className="mb-4">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[120px]">Price</TableHead>
-              <TableHead>Special Price</TableHead>
+              <TableHead className="w-[120px]">
+                Price <span className="text-red-500 ml-0.5">*</span>
+              </TableHead>
+              <TableHead>Special Price (Optional)</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>SellerSKU</TableHead>
               <TableHead>Free Items</TableHead>
@@ -323,7 +325,9 @@ export function SkuTableInputField({ field }: UiProps) {
             </Select>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">Price</div>
+            <div className="text-xs text-muted-foreground">
+              Price <span className="text-red-500 ml-0.5">*</span>
+            </div>
             <NumberInput
               value={applyAll.price ?? ''}
               onChange={(e) =>
@@ -333,7 +337,7 @@ export function SkuTableInputField({ field }: UiProps) {
             />
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">Special Price</div>
+            <div className="text-xs text-muted-foreground">Special Price (Optional)</div>
             <NumberInput
               value={applyAll.specialPrice ?? ''}
               onChange={(e) =>
@@ -397,8 +401,10 @@ export function SkuTableInputField({ field }: UiProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[160px]">{variants[0].label}</TableHead>
-              <TableHead className="w-[120px]">Price</TableHead>
-              <TableHead className="w-[120px]">Special Price</TableHead>
+              <TableHead className="w-[120px]">
+                Price <span className="text-red-500 ml-0.5">*</span>
+              </TableHead>
+              <TableHead className="w-[120px]">Special Price (Optional)</TableHead>
               <TableHead className="w-[120px]">Stock</TableHead>
               <TableHead className="w-[140px]">SellerSKU</TableHead>
               <TableHead className="w-[120px]">Free Items</TableHead>
@@ -458,8 +464,10 @@ export function SkuTableInputField({ field }: UiProps) {
             <TableRow>
               <TableHead className="w-[160px]">{variants[0].label}</TableHead>
               <TableHead className="w-[160px]">{variants[1].label}</TableHead>
-              <TableHead className="w-[120px]">Price</TableHead>
-              <TableHead className="w-[120px]">Special Price</TableHead>
+              <TableHead className="w-[120px]">
+                Price <span className="text-red-500 ml-0.5">*</span>
+              </TableHead>
+              <TableHead className="w-[120px]">Special Price (Optional)</TableHead>
               <TableHead className="w-[120px]">Stock</TableHead>
               <TableHead className="w-[140px]">SellerSKU</TableHead>
               <TableHead className="w-[120px]">Free Items</TableHead>
