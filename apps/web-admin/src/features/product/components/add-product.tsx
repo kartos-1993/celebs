@@ -14,913 +14,20 @@ import { extractVariantsMeta } from '../fields/variant-utils';
 import BasicInfoSection from './basic-info-section';
 import DynamicProductForm from './dynamic-product-form';
 import ProductFormActions from './product-form-action';
-import ProductFormSidebar, {
-  ProductSidebarSection,
-} from './productform-sidebar';
-
-const MANAGE_PRODUCTS_PATH = '/products/manage';
-const DRAFT_STORAGE_KEY = 'web-admin.product-draft.add';
-
-type PageSectionKey =
-  | 'basic'
-  | 'images'
-  | 'specification'
-  | 'pricing'
-  | 'shipping'
-  | 'terms';
-
-interface FlattenedError {
-  message: string;
-  path: string;
-}
-
-const normalizeText = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
-
-const toStringArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value.map((entry) => normalizeText(entry)).filter(Boolean);
-  }
-
-  const text = normalizeText(value);
-  return text ? [text] : [];
-};
-
-const toPositiveNumber = (value: unknown) => {
-  const raw = String(value ?? '').trim();
-  if (!raw) return undefined;
-
-  const numeric = Number(raw);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
-};
-
-const toNonNegativeInteger = (value: unknown) => {
-  const raw = String(value ?? '').trim();
-  if (!raw) return undefined;
-
-  const numeric = Number(raw);
-  return Number.isFinite(numeric) && numeric >= 0
-    ? Math.trunc(numeric)
-    : undefined;
-};
-
-const serializeDynamicValue = (value: unknown): unknown => {
-  if (value instanceof File) {
-    return {
-      name: value.name,
-      size: value.size,
-      type: value.type,
-    };
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((entry) => serializeDynamicValue(entry));
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
-        key,
-        serializeDynamicValue(entry),
-      ]),
-    );
-  }
-
-  return value;
-};
-
-const serializeDraftValue = (value: unknown): unknown => {
-  if (value instanceof File) {
-    return undefined;
-  }
-
-  if (Array.isArray(value)) {
-    const next = value
-      .map((entry) => serializeDraftValue(entry))
-      .filter((entry) => typeof entry !== 'undefined');
-    return next;
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .map(([key, entry]) => [key, serializeDraftValue(entry)])
-        .filter(([, entry]) => typeof entry !== 'undefined'),
-    );
-  }
-
-  return value;
-};
-
-const isHexColor = (value: string) =>
-  /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
-
-const flattenObject = (obj: any, prefix = ''): Record<string, any> => {
-  const result: Record<string, any> = {};
-  if (!obj || typeof obj !== 'object') return result;
-
-  for (const [key, value] of Object.entries(obj)) {
-    const newKey = prefix ? `${prefix}.${key}` : key;
-    if (
-      value &&
-      typeof value === 'object' &&
-      !Array.isArray(value) &&
-      !(value instanceof File)
-    ) {
-      Object.assign(result, flattenObject(value, newKey));
-    } else {
-      result[newKey] = value;
-    }
-  }
-  return result;
-};
-
-const getFirstPrice = (
-  values: Record<string, unknown>,
-  suffix: '.price' | '.specialPrice',
-) => {
-  const flat = flattenObject(values);
-  const preferredKeys = [
-    `sku.default${suffix}`,
-    ...Object.keys(flat)
-      .filter((key) => key.startsWith('sku.variants.') && key.endsWith(suffix))
-      .sort(),
-  ];
-
-  for (const key of preferredKeys) {
-    const numeric = toPositiveNumber(flat[key]);
-    if (numeric !== undefined) {
-      return numeric;
-    }
-  }
-
-  return undefined;
-};
-
-const getLabelMap = (fields: FieldSpec[], fieldName?: string) => {
-  if (!fieldName) {
-    return new Map<string, string>();
-  }
-
-  const field = fields.find((entry) => entry.name === fieldName);
-  if (!field || !Array.isArray(field.dataSource)) {
-    return new Map<string, string>();
-  }
-
-  return new Map<string, string>(
-    field.dataSource
-      .filter(
-        (option): option is { value: string; label: string } =>
-          Boolean(option?.value) && Boolean(option?.label),
-      )
-      .map((option) => [String(option.value), String(option.label)]),
-  );
-};
-
-const normalizeGroup = (value?: string) =>
-  (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-const mapSchemaGroup = (value?: string) => {
-  const normalized = normalizeGroup(value);
-
-  if (
-    ['base', 'productimages', 'images', 'mainimage', 'media'].includes(
-      normalized,
-    )
-  ) {
-    return 'base';
-  }
-  if (
-    [
-      'details',
-      'productspecification',
-      'specification',
-      'attributes',
-      'basic',
-      'basicinfo',
-      'general',
-      'info',
-      'title',
-      'productname',
-      'brand',
-    ].includes(normalized)
-  ) {
-    return 'details';
-  }
-  if (
-    [
-      'variant',
-      'variants',
-      'variant1',
-      'variant2',
-      'sku',
-      'color',
-      'size',
-    ].includes(normalized)
-  ) {
-    return 'variant';
-  }
-  if (
-    ['sale', 'pricestock', 'priceandstock', 'pricing', 'stock'].includes(
-      normalized,
-    )
-  ) {
-    return 'sale';
-  }
-  if (
-    ['package', 'shippingandwarranty', 'shipping', 'warranty'].includes(
-      normalized,
-    )
-  ) {
-    return 'package';
-  }
-  if (['termcondition', 'termsandconditions', 'terms'].includes(normalized)) {
-    return 'termcondition';
-  }
-
-  return normalized || 'details';
-};
-
-const isFieldFilled = (field: FieldSpec, value: unknown) => {
-  const uiType = normalizeGroup(field.uiType);
-
-  if (uiType === 'switch') {
-    return value !== undefined && value !== null;
-  }
-
-  if (
-    uiType === 'multiselect' ||
-    uiType === 'variantlist' ||
-    uiType === 'mainimage' ||
-    uiType === 'colorinline' ||
-    uiType === 'colormeta'
-  ) {
-    return Array.isArray(value) ? value.length > 0 : false;
-  }
-
-  if (uiType === 'skutablev2') {
-    return true;
-  }
-
-  if (typeof value === 'number') {
-    return Number.isFinite(value);
-  }
-
-  return normalizeText(value).length > 0;
-};
-
-const uniqueMessages = (messages: string[]) =>
-  Array.from(new Set(messages.filter(Boolean)));
-
-const getNestedValue = (obj: any, path: string): any => {
-  return path.split('.').reduce((acc, part) => {
-    return acc && typeof acc === 'object' ? acc[part] : undefined;
-  }, obj);
-};
-
-const getRequiredFieldErrors = (
-  fields: FieldSpec[],
-  values: Record<string, unknown>,
-) =>
-  fields
-    .filter((field) => field.required && field.visible !== false)
-    .filter((field) => !isFieldFilled(field, getNestedValue(values, field.name)))
-    .map((field) => `${field.label} is required.`);
-
-const flattenFormErrors = (
-  errors: FieldErrors<any> | Record<string, unknown> | undefined,
-  parentPath = '',
-): FlattenedError[] => {
-  if (!errors || typeof errors !== 'object') {
-    return [];
-  }
-
-  return Object.entries(errors).flatMap(([key, value]) => {
-    const path = parentPath ? `${parentPath}.${key}` : key;
-    const entry = value as Record<string, unknown> | undefined;
-
-    if (!entry || typeof entry !== 'object') {
-      return [];
-    }
-
-    const ownMessage =
-      typeof entry.message === 'string'
-        ? [{ path, message: entry.message }]
-        : [];
-
-    const childEntries = flattenFormErrors(
-      Object.fromEntries(
-        Object.entries(entry).filter(
-          ([childKey]) => !['message', 'type', 'ref'].includes(childKey),
-        ),
-      ),
-      path,
-    );
-
-    return [...ownMessage, ...childEntries];
-  });
-};
-
-const resolveSchemaFieldForPath = (schemaFields: FieldSpec[], path: string) => {
-  const parts = path.split('.');
-
-  for (let index = parts.length; index > 0; index -= 1) {
-    const candidate = parts.slice(0, index).join('.');
-    const match = schemaFields.find((field) => field.name === candidate);
-    if (match) {
-      return match;
-    }
-  }
-
-  return undefined;
-};
-
-const resolvePageSectionKey = (
-  path: string,
-  schemaFields: FieldSpec[],
-): PageSectionKey => {
-  if (
-    ['name', 'brand', 'description', 'categoryId', 'subcategoryId'].includes(
-      path,
-    )
-  ) {
-    return 'basic';
-  }
-
-  if (path.startsWith('mainImage')) {
-    return 'images';
-  }
-
-  if (path.startsWith('sku.')) {
-    return 'pricing';
-  }
-
-  const matchedField = resolveSchemaFieldForPath(schemaFields, path);
-  const group = mapSchemaGroup(matchedField?.group);
-
-  switch (group) {
-    case 'base':
-      return 'images';
-    case 'details':
-      return 'specification';
-    case 'variant':
-    case 'sale':
-      return 'pricing';
-    case 'package':
-      return 'shipping';
-    case 'termcondition':
-      return 'terms';
-    default:
-      return 'specification';
-  }
-};
-
-const collectPricingErrors = ({
-  fields,
-  values,
-  variantMeta,
-}: {
-  fields: FieldSpec[];
-  values: Record<string, unknown>;
-  variantMeta: Array<{ key: string; label: string }>;
-}) => {
-  const errors: string[] = [];
-  let truncated = false;
-
-  const pushError = (message: string) => {
-    if (errors.length < 6) {
-      errors.push(message);
-    } else {
-      truncated = true;
-    }
-  };
-
-  const validateRow = (label: string, prefix: string) => {
-    const price = toPositiveNumber(getNestedValue(values, `${prefix}.price`));
-    const specialPriceRaw = normalizeText(getNestedValue(values, `${prefix}.specialPrice`));
-    const specialPrice = specialPriceRaw
-      ? toPositiveNumber(getNestedValue(values, `${prefix}.specialPrice`))
-      : undefined;
-    const stock = normalizeText(getNestedValue(values, `${prefix}.stock`));
-    const freeItems = normalizeText(getNestedValue(values, `${prefix}.freeItems`));
-
-    if (price === undefined) {
-      pushError(`${label}: add a valid price.`);
-    }
-
-    if (specialPriceRaw && specialPrice === undefined) {
-      pushError(`${label}: special price must be greater than 0.`);
-    }
-
-    if (
-      specialPrice !== undefined &&
-      price !== undefined &&
-      specialPrice >= price
-    ) {
-      pushError(`${label}: special price must be lower than price.`);
-    }
-
-    if (
-      stock &&
-      toNonNegativeInteger(getNestedValue(values, `${prefix}.stock`)) === undefined
-    ) {
-      pushError(`${label}: stock cannot be negative.`);
-    }
-
-    if (
-      freeItems &&
-      toNonNegativeInteger(getNestedValue(values, `${prefix}.freeItems`)) === undefined
-    ) {
-      pushError(`${label}: free items cannot be negative.`);
-    }
-  };
-
-  if (variantMeta.length > 2) {
-    pushError('Only two variant groups are supported in the pricing matrix.');
-  }
-
-  const activeVariants = variantMeta.slice(0, 2).map((variant) => ({
-    key: variant.key,
-    label: variant.label,
-    labels: getLabelMap(fields, variant.key),
-    values: toStringArray(getNestedValue(values, variant.key)),
-  }));
-
-  if (activeVariants.length === 0) {
-    validateRow('Default SKU', 'sku.default');
-  } else if (activeVariants.some((variant) => variant.values.length === 0)) {
-    // Required variant selectors are handled elsewhere.
-  } else if (activeVariants.length === 1) {
-    activeVariants[0].values.forEach((variantValue) => {
-      const label = activeVariants[0].labels.get(variantValue) || variantValue;
-      validateRow(
-        `${activeVariants[0].label}: ${label}`,
-        `sku.variants.${activeVariants[0].key}.${variantValue}`,
-      );
-    });
-  } else {
-    activeVariants[0].values.forEach((firstValue) => {
-      activeVariants[1].values.forEach((secondValue) => {
-        const firstLabel =
-          activeVariants[0].labels.get(firstValue) || firstValue;
-        const secondLabel =
-          activeVariants[1].labels.get(secondValue) || secondValue;
-
-        validateRow(
-          `${activeVariants[0].label}: ${firstLabel}, ${activeVariants[1].label}: ${secondLabel}`,
-          `sku.variants.${activeVariants[0].key}.${firstValue}.${activeVariants[1].key}.${secondValue}`,
-        );
-      });
-    });
-  }
-
-  if (truncated) {
-    errors.push('More pricing rows still need attention.');
-  }
-
-  return errors;
-};
-
-const buildSidebarSections = ({
-  fieldErrors,
-  schemaFields,
-  schemaHasName,
-  values,
-  variantMeta,
-}: {
-  fieldErrors: FlattenedError[];
-  schemaFields: FieldSpec[];
-  schemaHasName: boolean;
-  values: Record<string, unknown>;
-  variantMeta: Array<{ key: string; label: string }>;
-}): ProductSidebarSection[] => {
-  const groupedErrors = fieldErrors.reduce<Record<PageSectionKey, string[]>>(
-    (acc, error) => {
-      const key = resolvePageSectionKey(error.path, schemaFields);
-      acc[key].push(error.message);
-      return acc;
-    },
-    {
-      basic: [],
-      images: [],
-      specification: [],
-      pricing: [],
-      shipping: [],
-      terms: [],
-    },
-  );
-
-  const groupedFields = {
-    base: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'base',
-    ),
-    details: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'details',
-    ),
-    variant: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'variant',
-    ),
-    package: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'package',
-    ),
-    terms: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'termcondition',
-    ),
-  };
-
-  const basicErrors = uniqueMessages([
-    ...groupedErrors.basic,
-    ...(!schemaHasName && normalizeText(values.name).length < 2
-      ? ['Product name must be at least 2 characters.']
-      : []),
-    ...(normalizeText(values.description).length < 10
-      ? ['Product description must be at least 10 characters.']
-      : []),
-    ...(!normalizeText(values.categoryId) ||
-      !normalizeText(values.subcategoryId)
-      ? ['Select a product category before publishing.']
-      : []),
-  ]);
-
-  const imageErrors = uniqueMessages([
-    ...groupedErrors.images,
-    ...getRequiredFieldErrors(groupedFields.base, values),
-  ]);
-
-  const specificationErrors = uniqueMessages([
-    ...groupedErrors.specification,
-    ...getRequiredFieldErrors(groupedFields.details, values),
-  ]);
-
-  const pricingErrors = uniqueMessages([
-    ...groupedErrors.pricing,
-    ...getRequiredFieldErrors(
-      groupedFields.variant.filter((field) => field.uiType !== 'ColorInline'),
-      values,
-    ),
-    ...collectPricingErrors({
-      fields: schemaFields,
-      values,
-      variantMeta,
-    }),
-  ]);
-
-  const shippingErrors = uniqueMessages([
-    ...groupedErrors.shipping,
-    ...getRequiredFieldErrors(groupedFields.package, values),
-  ]);
-
-  const termsErrors = uniqueMessages([
-    ...groupedErrors.terms,
-    ...getRequiredFieldErrors(groupedFields.terms, values),
-  ]);
-
-  const sections: ProductSidebarSection[] = [
-    {
-      key: 'basic',
-      label: 'Basic Information',
-      anchorId: 'product-section-basic',
-      status: basicErrors.length === 0,
-      errors: basicErrors,
-    },
-  ];
-
-  if (schemaFields.length > 0) {
-    sections.push(
-      {
-        key: 'images',
-        label: 'Product Images',
-        anchorId: 'product-section-base',
-        status: imageErrors.length === 0,
-        errors: imageErrors,
-      },
-      {
-        key: 'specification',
-        label: 'Product Specification',
-        anchorId: 'product-section-details',
-        status: specificationErrors.length === 0,
-        errors: specificationErrors,
-      },
-      {
-        key: 'pricing',
-        label: 'Price, Stock & Variants',
-        anchorId:
-          pricingErrors.length > 0 &&
-            groupedFields.variant.some((field) => field.required)
-            ? 'product-section-variant'
-            : 'product-section-sale',
-        status: pricingErrors.length === 0,
-        errors: pricingErrors,
-      },
-      {
-        key: 'shipping',
-        label: 'Shipping & Warranty',
-        anchorId: 'product-section-package',
-        status: shippingErrors.length === 0,
-        errors: shippingErrors,
-      },
-    );
-
-    if (
-      groupedFields.terms.some(
-        (field) => field.required || field.visible !== false,
-      )
-    ) {
-      sections.push({
-        key: 'terms',
-        label: 'Terms & Conditions',
-        anchorId: 'product-section-termcondition',
-        status: termsErrors.length === 0,
-        errors: termsErrors,
-      });
-    }
-  }
-
-  return sections;
-};
-
-async function buildProductPayload({
-  fields,
-  status,
-  values,
-}: {
-  fields: FieldSpec[];
-  status: CreateProductRequest['status'];
-  values: Record<string, unknown>;
-}): Promise<CreateProductRequest> {
-  const flatValues = flattenObject(values);
-  const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
-  const sizeFieldName = variantMeta.find(
-    (variant) => variant.kind === 'size',
-  )?.key;
-  const colorLabelMap = getLabelMap(fields, colorFieldName);
-  const sizeLabelMap = getLabelMap(fields, sizeFieldName);
-
-  const mainImages = await ProductApiService.uploadFiles(
-    Array.isArray(values.mainImage)
-      ? (values.mainImage as Array<File | string>)
-      : [],
-  );
-
-  const selectedColors = colorFieldName
-    ? toStringArray(values[colorFieldName])
-    : [];
-  const selectedSizes = sizeFieldName
-    ? toStringArray(values[sizeFieldName])
-    : [];
-
-  const uploadedColorAssets: Record<
-    string,
-    { hot: boolean; images: string[]; swatch?: string }
-  > = {};
-
-  for (const colorValue of selectedColors) {
-    const prefix = `variants.colorMeta.${colorValue}`;
-    const swatchUrls = await ProductApiService.uploadFiles([
-      flatValues[`${prefix}.swatch`] as File | string | undefined,
-    ]);
-    const images = await ProductApiService.uploadFiles(
-      Array.isArray(flatValues[`${prefix}.images`])
-        ? (flatValues[`${prefix}.images`] as Array<File | string>)
-        : [],
-    );
-
-    uploadedColorAssets[colorValue] = {
-      swatch: swatchUrls[0],
-      images,
-      hot: Boolean(flatValues[`${prefix}.hot`]),
-    };
-  }
-
-  const price = getFirstPrice(values, '.price');
-  if (price === undefined) {
-    throw new Error('Add a valid price before publishing the product.');
-  }
-
-  const discountedPrice = getFirstPrice(values, '.specialPrice');
-  if (discountedPrice !== undefined && discountedPrice >= price) {
-    throw new Error('Discounted price must be less than the regular price.');
-  }
-
-  const defaultStock = toNonNegativeInteger(flatValues['sku.default.stock']) ?? 0;
-  const effectiveColors =
-    selectedColors.length > 0 ? selectedColors : ['default'];
-
-  const sizes = selectedSizes.map((sizeValue) => {
-    const sizeName = sizeLabelMap.get(sizeValue) || sizeValue;
-    const formSizeObj = Array.isArray(values.sizes)
-      ? values.sizes.find((s: any) => s?.name === sizeName)
-      : null;
-    return {
-      name: sizeName,
-      productMeasurements: (formSizeObj?.productMeasurements || []).filter(
-        (m: any) => m.value && String(m.value).trim() !== '',
-      ),
-      bodyMeasurements: (formSizeObj?.bodyMeasurements || []).filter(
-        (m: any) => m.value && String(m.value).trim() !== '',
-      ),
-    };
-  });
-
-  const colorVariants = effectiveColors.map((colorValue) => {
-    const label =
-      colorValue === 'default'
-        ? 'Default'
-        : colorLabelMap.get(colorValue) || colorValue;
-
-    let stocks: Array<{ size: string; quantity: number }> = [];
-
-    if (
-      selectedColors.length > 0 &&
-      sizeFieldName &&
-      selectedSizes.length > 0
-    ) {
-      stocks = selectedSizes.map((sizeValue) => ({
-        size: sizeLabelMap.get(sizeValue) || sizeValue,
-        quantity:
-          toNonNegativeInteger(
-            flatValues[
-            `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
-            ],
-          ) ?? defaultStock,
-      }));
-    } else if (selectedColors.length > 0 && colorFieldName) {
-      stocks = [
-        {
-          size: 'default',
-          quantity:
-            toNonNegativeInteger(
-              flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`],
-            ) ?? defaultStock,
-        },
-      ];
-    } else if (sizeFieldName && selectedSizes.length > 0) {
-      stocks = selectedSizes.map((sizeValue) => ({
-        size: sizeLabelMap.get(sizeValue) || sizeValue,
-        quantity:
-          toNonNegativeInteger(
-            flatValues[`sku.variants.${sizeFieldName}.${sizeValue}.stock`],
-          ) ?? defaultStock,
-      }));
-    } else {
-      stocks = [{ size: 'default', quantity: defaultStock }];
-    }
-
-    const assets = uploadedColorAssets[colorValue];
-
-    return {
-      name: label,
-      colorCode:
-        colorValue === 'default'
-          ? '#000000'
-          : isHexColor(colorValue)
-            ? colorValue
-            : isHexColor(label)
-              ? label
-              : colorValue,
-      images: assets?.images?.length ? assets.images : mainImages,
-      stocks,
-    };
-  });
-
-  return {
-    name: normalizeText(values.name),
-    brand: normalizeText(values.brand) || undefined,
-    description: normalizeText(values.description),
-    price,
-    discountedPrice,
-    categoryId: String(values.categoryId || ''),
-    subcategoryId: String(values.subcategoryId || ''),
-    sizes,
-    colorVariants,
-    mainImages,
-    dynamicData: {
-      values: Object.fromEntries(
-        Object.entries(values)
-          .filter(
-            ([key]) =>
-              ![
-                'name',
-                'brand',
-                'description',
-                'categoryId',
-                'subcategoryId',
-                'status',
-              ].includes(key),
-          )
-          .map(([key, value]) => [key, serializeDynamicValue(value)]),
-      ),
-      uploadedAssets: {
-        mainImages,
-        colorMeta: uploadedColorAssets,
-      },
-      variantFields: variantMeta,
-    },
-    tags: [],
-    featured: false,
-    status,
-  };
-}
-
-const SubmissionStateHeader = ({
-  schemaFields,
-  schemaHasName,
-  variantMeta,
-}: {
-  schemaFields: FieldSpec[];
-  schemaHasName: boolean;
-  variantMeta: any[];
-}) => {
-  const { control, formState: { errors } } = useFormContext();
-  const formValues = useWatch({ control }) as Record<string, unknown>;
-  const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
-
-  const sidebarSections = useMemo(
-    () =>
-      buildSidebarSections({
-        fieldErrors,
-        schemaFields,
-        schemaHasName,
-        values: formValues,
-        variantMeta,
-      }),
-    [fieldErrors, formValues, schemaFields, schemaHasName, variantMeta],
-  );
-
-  const completionPercentage = useMemo(() => {
-    if (sidebarSections.length === 0) return 0;
-    return Math.round(
-      (sidebarSections.filter((section) => section.status).length /
-        sidebarSections.length) *
-      100,
-    );
-  }, [sidebarSections]);
-
-  return (
-    <div className="rounded-[28px] border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">
-        Submission State
-      </p>
-      <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-        {completionPercentage === 100 ? 'Ready to submit' : 'In progress'}
-      </p>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        {sidebarSections.filter((section) => section.status).length} of{' '}
-        {sidebarSections.length} sections completed.
-      </p>
-    </div>
-  );
-};
-
-const SubmissionProgressChecklist = ({
-  schemaFields,
-  schemaHasName,
-  variantMeta,
-  onSectionClick,
-}: {
-  schemaFields: FieldSpec[];
-  schemaHasName: boolean;
-  variantMeta: any[];
-  onSectionClick: (anchorId: string) => void;
-}) => {
-  const { control, formState: { errors } } = useFormContext();
-  const formValues = useWatch({ control }) as Record<string, unknown>;
-  const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
-
-  const sidebarSections = useMemo(
-    () =>
-      buildSidebarSections({
-        fieldErrors,
-        schemaFields,
-        schemaHasName,
-        values: formValues,
-        variantMeta,
-      }),
-    [fieldErrors, formValues, schemaFields, schemaHasName, variantMeta],
-  );
-
-  const completionPercentage = useMemo(() => {
-    if (sidebarSections.length === 0) return 0;
-    return Math.round(
-      (sidebarSections.filter((section) => section.status).length /
-        sidebarSections.length) *
-      100,
-    );
-  }, [sidebarSections]);
-
-  return (
-    <ProductFormSidebar
-      completionPercentage={completionPercentage}
-      sections={sidebarSections}
-      onSectionClick={onSectionClick}
-      tips={[
-        'Use at least three clear product images for a stronger listing.',
-        'Fill every required attribute generated from the selected category.',
-        'Check special prices against regular prices before submitting.',
-      ]}
-    />
-  );
-};
+import SubmissionStateHeader from './submission-state-header';
+import SubmissionProgressChecklist from './submission-progress-checklist';
+import {
+  DRAFT_STORAGE_KEY,
+  MANAGE_PRODUCTS_PATH,
+  normalizeText,
+  serializeDraftValue,
+  uniqueMessages,
+} from '../utils/add-product-helpers';
+import {
+  buildSidebarSections,
+  flattenFormErrors,
+} from '../utils/add-product-validation';
+import { buildProductPayload } from '../utils/add-product-payload';
 
 const ProductFormActionsContainer = ({
   schemaFields,
@@ -934,7 +41,7 @@ const ProductFormActionsContainer = ({
 }: {
   schemaFields: FieldSpec[];
   schemaHasName: boolean;
-  variantMeta: any[];
+  variantMeta: Array<{ key: string; label: string }>;
   onSaveAsDraft: () => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -1002,7 +109,6 @@ const AddProduct = () => {
     form.setValue('description', "High-quality ribbed knit polo shirt featuring a soft cotton blend, clean button placket, and classic tailoring. Highly breathable, perfect for styling in formal, transition, or casual settings.", { shouldValidate: true });
     form.setValue('brand', 'Manfinity', { shouldValidate: true });
 
-    // Populate main images (mock pre-uploaded links)
     form.setValue('mainImage', [
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941142/celebs/products/bln3u0xtadrgtioonfsn.png',
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941153/celebs/products/dy4aw7qrlnj3uzglqbk5.png'
@@ -1026,42 +132,47 @@ const AddProduct = () => {
           form.setValue(field.name, firstOpt, { shouldValidate: true });
         }
       } else if (ui === 'multiselect') {
-        const opts = Array.isArray(field.dataSource) ? field.dataSource.slice(0, 2).map((o: any) => o.value) : [];
+        const opts = Array.isArray(field.dataSource)
+          ? field.dataSource.slice(0, 2).map((o) => (o as { value?: string }).value)
+          : [];
         form.setValue(field.name, opts, { shouldValidate: true });
       } else if (ui === 'variantlist') {
-        const opts = Array.isArray(field.dataSource) ? field.dataSource.slice(0, 2).map((o: any) => o.value) : ['Blue', 'White'];
+        const opts = Array.isArray(field.dataSource)
+          ? field.dataSource.slice(0, 2).map((o) => (o as { value?: string }).value)
+          : ['Blue', 'White'];
         form.setValue(field.name, opts, { shouldValidate: true });
       }
     });
 
-    // Populate SKU default price and stock
     form.setValue('sku.default.price' as any, '1200', { shouldValidate: true });
     form.setValue('sku.default.specialPrice' as any, '1100', { shouldValidate: true });
     form.setValue('sku.default.stock' as any, '15', { shouldValidate: true });
     form.setValue('sku.default.sellerSku' as any, 'POLO-SHIRT-MOCK', { shouldValidate: true });
     form.setValue('sku.default.available' as any, true, { shouldValidate: true });
 
-    // Populate color metadata mock images
-    const colors = form.getValues('Color' as any) || ['Blue', 'White'];
+    const colors = (form.getValues('Color' as any) as string[] | undefined) || ['Blue', 'White'];
     if (Array.isArray(colors)) {
-      colors.forEach(color => {
+      colors.forEach((color) => {
         const prefix = `variants.colorMeta.${color}`;
         form.setValue(`${prefix}.hot` as any, false);
         form.setValue(`${prefix}.swatch` as any, 'https://res.cloudinary.com/celebsnp/image/upload/v1783941189/celebs/products/qrxlasu3b8wercsjciod.png');
         form.setValue(`${prefix}.images` as any, [
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
-          'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png'
+          'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png',
         ]);
       });
     }
 
-    // Populate sizes and measurements
-    const sizes = form.getValues('Size' as any) || ['XS', 'M', 'S'];
-    const currentSizes = (form.getValues('sizes' as any) as any[]) || [];
-    if (Array.isArray(sizes) && Array.isArray(currentSizes)) {
-      const updated = currentSizes.map((sizeObj: any) => {
-        const populateList = (list: any[]) => {
-          return (list || []).map(m => ({ ...m, value: '45.5' }));
+    const currentSizes = (form.getValues('sizes' as any) as Array<{
+      name?: string;
+      productMeasurements?: Array<{ name?: string; value?: string }>;
+      bodyMeasurements?: Array<{ name?: string; value?: string }>;
+    }>) || [];
+
+    if (Array.isArray(currentSizes)) {
+      const updated = currentSizes.map((sizeObj) => {
+        const populateList = (list?: Array<{ name?: string; value?: string }>) => {
+          return (list || []).map((m) => ({ ...m, value: '45.5' }));
         };
         return {
           ...sizeObj,
@@ -1113,8 +224,6 @@ const AddProduct = () => {
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
   }, [form, isEditMode]);
-
-
 
   const canShowAdditionalSections = Boolean(
     watchedCategoryId && watchedSubcategoryId,
@@ -1218,25 +327,27 @@ const AddProduct = () => {
     });
   };
 
-  const applyServerErrors = (error: any) => {
-    const apiErrors = Array.isArray(error?.data)
-      ? error.data
-      : Array.isArray(error?.response?.data?.data)
-        ? error.response.data.data
+  const applyServerErrors = (error: unknown): string[] => {
+    const errObj = error as { data?: unknown; response?: { data?: { data?: unknown } } } | undefined;
+    const apiErrors = Array.isArray(errObj?.data)
+      ? errObj.data
+      : Array.isArray(errObj?.response?.data?.data)
+        ? errObj.response.data.data
         : [];
 
     const unmappedMessages: string[] = [];
 
-    apiErrors.forEach((entry: any) => {
-      const path = normalizeText(entry?.field || entry?.path);
-      const message = normalizeText(entry?.message);
+    apiErrors.forEach((entry: unknown) => {
+      const item = entry as { field?: string; path?: string; message?: string } | undefined;
+      const path = normalizeText(item?.field || item?.path);
+      const message = normalizeText(item?.message);
 
       if (!message) {
         return;
       }
 
       if (path) {
-        form.setError(path as any, {
+        form.setError(path as unknown as keyof typeof form.getValues, {
           type: 'server',
           message,
         });
@@ -1251,10 +362,7 @@ const AddProduct = () => {
   const handleSubmitProduct = async (
     status: CreateProductRequest['status'],
   ) => {
-    console.log('[DEBUG] handleSubmitProduct called with status:', status);
-    console.log('[DEBUG] schemaReady:', schemaReady);
     if (!schemaReady) {
-      console.warn('[DEBUG] handleSubmitProduct blocked: schema is not ready');
       toast({
         title: 'Form is still loading',
         description:
@@ -1265,7 +373,6 @@ const AddProduct = () => {
     }
 
     const currentValues = form.getValues() as Record<string, unknown>;
-    console.log('[DEBUG] currentValues:', currentValues);
     const currentSections = buildSidebarSections({
       fieldErrors: flattenFormErrors(form.formState.errors),
       schemaFields,
@@ -1276,13 +383,11 @@ const AddProduct = () => {
         label: variant.label,
       })),
     });
-    console.log('[DEBUG] currentSections validation status:', currentSections);
     const firstInvalidSection = currentSections.find(
       (section) => !section.status,
     );
 
     if (firstInvalidSection) {
-      console.warn('[DEBUG] handleSubmitProduct blocked by invalid section:', firstInvalidSection);
       scrollToSection(firstInvalidSection.anchorId);
       toast({
         title: 'Complete the required sections',
@@ -1292,7 +397,6 @@ const AddProduct = () => {
       return;
     }
 
-    console.log('[DEBUG] Setting isSubmitting to true and building payload');
     setIsSubmitting(true);
 
     try {
@@ -1320,14 +424,14 @@ const AddProduct = () => {
       form.reset(form.getValues());
 
       navigate(MANAGE_PRODUCTS_PATH);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const serverMessages = applyServerErrors(error);
 
       toast({
         title: 'Unable to save product',
         description:
           serverMessages[0] ||
-          error?.message ||
+          (error as Error)?.message ||
           'Review the highlighted fields and try again.',
         variant: 'destructive',
       });
@@ -1336,7 +440,7 @@ const AddProduct = () => {
     }
   };
 
-  const handleFormInvalid = (errors: FieldErrors<any>) => {
+  const handleFormInvalid = (errors: FieldErrors<Record<string, unknown>>) => {
     const sections = buildSidebarSections({
       fieldErrors: flattenFormErrors(errors),
       schemaFields,
@@ -1368,9 +472,6 @@ const AddProduct = () => {
       </div>
     );
   }
-
-  const { user } = useAuthContext();
-  const submitStatus = user?.role === 'VENDOR' ? 'pending_review' : 'published';
 
   return (
     <Form {...form}>
@@ -1423,29 +524,28 @@ const AddProduct = () => {
           </div>
 
           {restoredDraftAt ? (
-            <div className="mb-6 flex items-start gap-3 rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
               <FileClock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
               <div>
-                <p className="font-semibold">Local draft restored</p>
-                <p className="mt-1 text-amber-800 dark:text-amber-300">
-                  This form was restored from a browser draft saved on{' '}
+                <p className="font-semibold text-xs">Local draft restored</p>
+                <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+                  Restored from local draft saved on{' '}
                   {new Date(restoredDraftAt).toLocaleString()}.
                 </p>
               </div>
             </div>
           ) : null}
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          {/* Compact 240px sidebar column for extra main product form width */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
             <div className="space-y-6">
               <form
                 onSubmit={form.handleSubmit(
-                  (data) => {
-                    console.log('[DEBUG] Form submission VALID. Data:', data);
+                  () => {
                     return handleSubmitProduct(role === 'VENDOR' ? 'pending_review' : 'published');
                   },
                   (errors) => {
-                    console.warn('[DEBUG] Form submission INVALID. Errors:', errors);
-                    handleFormInvalid(errors);
+                    handleFormInvalid(errors as FieldErrors<Record<string, unknown>>);
                   },
                 )}
                 className="space-y-6"
@@ -1500,9 +600,8 @@ const AddProduct = () => {
                     isSubmitting={isSubmitting}
                   />
                 ) : (
-                  <div className="rounded-[28px] border border-gray-200 bg-white px-5 py-4 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-                    Select a category to unlock the product specification,
-                    pricing, and shipping sections.
+                  <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                    Select a category to unlock specifications, pricing, and shipping.
                   </div>
                 )}
               </form>
@@ -1518,12 +617,11 @@ const AddProduct = () => {
                 />
               </div>
             ) : (
-              <div className="rounded-[28px] border border-gray-200 bg-white p-5 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-                <div className="flex items-start gap-3">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 text-xs text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                <div className="flex items-start gap-2.5">
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
                   <p>
-                    The sidebar checklist appears once a category has been chosen
-                    and the category-specific form has loaded.
+                    Checklist appears once a category is chosen.
                   </p>
                 </div>
               </div>
@@ -1536,4 +634,3 @@ const AddProduct = () => {
 };
 
 export default AddProduct;
-
