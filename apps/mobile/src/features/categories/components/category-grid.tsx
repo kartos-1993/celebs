@@ -31,6 +31,15 @@ export function CategoryGrid() {
     });
   };
 
+  // Chunk categories into groups of 3 per column to guarantee exactly 3 rows on any device
+  const columns = React.useMemo(() => {
+    const cols: (typeof categories)[] = [];
+    for (let i = 0; i < categories.length; i += 3) {
+      cols.push(categories.slice(i, i + 3));
+    }
+    return cols;
+  }, [categories]);
+
   if (loading) {
     return (
       <View style={{ paddingVertical: 20, justifyContent: 'center', alignItems: 'center' }}>
@@ -46,35 +55,39 @@ export function CategoryGrid() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesScrollContent}
       >
-        <View style={styles.categoriesGrid}>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat._id}
-              style={styles.categoryItem}
-              activeOpacity={0.7}
-              onPress={() => handleCategoryPress(cat)}
-            >
-              <View style={styles.categoryImageContainer}>
-                {cat.imageUrl ? (
-                  <Image
-                    source={{ uri: resolveImageUrl(cat.imageUrl) }}
-                    style={styles.categoryImage}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View style={[styles.categoryImage, { backgroundColor: 'rgba(150,150,150,0.1)' }]} />
-                )}
-              </View>
-              <ThemedText
-                style={styles.categoryName}
-                numberOfLines={2}
-                adjustsFontSizeToFit={true}
-                minimumFontScale={0.75}
-                maxFontSizeMultiplier={1.15}
-              >
-                {cat.displayName || cat.name}
-              </ThemedText>
-            </TouchableOpacity>
+        <View style={styles.categoriesRowWrapper}>
+          {columns.map((col, colIdx) => (
+            <View key={colIdx} style={styles.categoryColumn}>
+              {col.map((cat) => (
+                <TouchableOpacity
+                  key={cat._id}
+                  style={styles.categoryItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleCategoryPress(cat)}
+                >
+                  <View style={styles.categoryImageContainer}>
+                    {cat.imageUrl ? (
+                      <Image
+                        source={{ uri: resolveImageUrl(cat.imageUrl) }}
+                        style={styles.categoryImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View style={[styles.categoryImage, { backgroundColor: 'rgba(150,150,150,0.1)' }]} />
+                    )}
+                  </View>
+                  <ThemedText
+                    style={styles.categoryName}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.75}
+                    maxFontSizeMultiplier={1.15}
+                  >
+                    {cat.displayName || cat.name}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </View>
           ))}
         </View>
       </ScrollView>

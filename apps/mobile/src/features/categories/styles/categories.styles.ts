@@ -9,18 +9,17 @@ export const styles = StyleSheet.create({
   categoriesScrollContent: {
     paddingHorizontal: Spacing.four,
   },
-  categoriesGrid: {
+  categoriesRowWrapper: {
+    flexDirection: 'row',
+    gap: moderateScale(10),
+  },
+  categoryColumn: {
     flexDirection: 'column',
-    flexWrap: 'wrap',
-    height: moderateScale(270),
-    alignContent: 'flex-start',
-    gap: moderateScale(8),
+    gap: moderateScale(10),
   },
   categoryItem: {
     width: moderateScale(66),
     alignItems: 'center',
-    marginRight: moderateScale(8),
-    marginBottom: moderateScale(6),
   },
   categoryImageContainer: {
     width: moderateScale(56),
@@ -43,4 +42,5 @@ export const styles = StyleSheet.create({
     minHeight: responsiveFontSize(26),
   },
 });
+
 
