@@ -145,7 +145,6 @@ const AddProduct = () => {
     });
 
     form.setValue('sku.default.price' as any, '1200', { shouldValidate: true });
-    form.setValue('sku.default.specialPrice' as any, '1100', { shouldValidate: true });
     form.setValue('sku.default.stock' as any, '15', { shouldValidate: true });
     form.setValue('sku.default.sellerSku' as any, 'POLO-SHIRT-MOCK', { shouldValidate: true });
     form.setValue('sku.default.available' as any, true, { shouldValidate: true });
