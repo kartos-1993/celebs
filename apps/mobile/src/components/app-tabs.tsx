@@ -76,6 +76,7 @@ export default function AppTabs() {
           fontWeight: '600',
           marginTop: 2,
         },
+        tabBarMaxFontSizeMultiplier: 1.15,
       }}
     >
       {/* 1. Shop Tab (index) */}
