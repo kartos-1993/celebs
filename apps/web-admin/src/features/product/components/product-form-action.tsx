@@ -1,5 +1,5 @@
 import { Button } from '@celebs/shared-ui/components/button';
-import { FileText, Loader2, Upload } from 'lucide-react';
+import { FileText, Loader, Upload } from 'lucide-react';
 
 interface ProductFormActionsProps {
   isDirty: boolean;
@@ -55,7 +55,7 @@ const ProductFormActions = ({
           className="rounded-full bg-orange-500 px-5 text-white hover:bg-orange-600"
         >
           {isSubmitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Upload className="mr-2 h-4 w-4" />
           )}

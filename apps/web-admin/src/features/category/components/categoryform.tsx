@@ -31,7 +31,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
-import { X, Plus, Upload, Loader2, ChevronDown, ChevronUp, SlidersHorizontal, Layers, FolderTree } from 'lucide-react';
+import { X, Plus, Upload, Loader, ChevronDown, ChevronUp, SlidersHorizontal, Layers, FolderTree } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -487,7 +487,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                   ) : (
                     <label className="w-16 h-16 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-fashion-500 transition-colors">
                       {isUploadingImage ? (
-                        <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <>
                           <Upload className="h-6 w-6 text-gray-400" />

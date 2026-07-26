@@ -5,7 +5,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@celebs/shared-ui/components/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, ExternalLink, Link2, Smartphone, Eye, Check } from 'lucide-react';
+import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye, Check } from 'lucide-react';
 import { PlatformSettingsApiService, Banner } from './api';
 import { CategoryApiService } from '../category/api';
 import { ProductApiService } from '../product/api';
@@ -133,7 +133,7 @@ const Banners: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-fashion-700" />
+        <Loader className="w-10 h-10 animate-spin text-primary" />
         <p className="text-gray-500 font-medium">Loading banner settings...</p>
       </div>
     );
@@ -154,7 +154,7 @@ const Banners: React.FC = () => {
           onClick={handleSave}
           disabled={isSaving}
         >
-          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSaving && <Loader className="mr-2 h-4 w-4 animate-spin" />}
           Save Configuration
         </Button>
       </div>
@@ -201,7 +201,7 @@ const Banners: React.FC = () => {
                       ) : (
                         <div className="text-center p-3">
                           {uploadingIndex === index ? (
-                            <Loader2 className="w-6 h-6 animate-spin text-fashion-500 mx-auto" />
+                            <Loader className="w-6 h-6 animate-spin text-primary mx-auto" />
                           ) : (
                             <Upload className="w-6 h-6 text-zinc-400 mx-auto mb-1" />
                           )}
