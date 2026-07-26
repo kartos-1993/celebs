@@ -46,7 +46,6 @@ async function run() {
     // Determine parent category ID for products
     const parentCategoryId = denimCategory.parentCategory || denimCategory._id;
     const subcategoryId = denimCategory._id;
-
     // 2. Read denim_jeans.json data
     const jsonPath = path.join(__dirname, 'data', 'denim_jeans.json');
     const rawData = fs.readFileSync(jsonPath, 'utf-8');
@@ -98,7 +97,7 @@ async function run() {
 
       const productDoc = {
         name: item.title,
-        slug: item.slug || `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`,
+        slug: item.slug ? `${item.slug}-${i}` : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`,
         brand: item.title.split(' ')[0] || 'Celebs',
         description: `High quality denim jeans. Details: ${(item.attributes?.details || []).join(', ')}. Fit: ${item.attributes?.fitType || 'Regular'}. Material: ${item.attributes?.composition || 'Denim'}.`,
         price,

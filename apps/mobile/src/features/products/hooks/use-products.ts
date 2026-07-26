@@ -100,13 +100,19 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
 
   const products = useMemo(() => {
     if (!data) return [];
-    return data.pages.flatMap((page) => {
+    const allProducts = data.pages.flatMap((page) => {
       if (page?.success && page?.data) {
         return Array.isArray(page.data.products)
           ? page.data.products
           : Array.isArray(page.data) ? page.data : [];
       }
       return [];
+    });
+    const seen = new Set<string>();
+    return allProducts.filter((product) => {
+      if (!product?._id || seen.has(product._id)) return false;
+      seen.add(product._id);
+      return true;
     });
   }, [data]);
 

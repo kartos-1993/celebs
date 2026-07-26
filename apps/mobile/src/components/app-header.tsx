@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
+import { useCart } from '@/features/cart/context/cart-context';
 
 interface AppHeaderProps {
   showSubHeader?: boolean;
@@ -27,7 +28,9 @@ export function AppHeader({
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const router = useRouter();
+  const { itemCount } = useCart();
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
+
 
   const handleSubTabPress = (tab: string) => {
     setActiveSubTab(tab);
@@ -98,9 +101,15 @@ export function AppHeader({
             onPress={() => router.push('/cart')}
           >
             <ShoppingCart size={22} color={textColor} strokeWidth={2} />
+            {itemCount > 0 && (
+              <View style={styles.cartBadge}>
+                <ThemedText style={styles.cartBadgeText}>{itemCount > 99 ? '99+' : itemCount}</ThemedText>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
+
 
       {/* Sub Header (Horizontal Scrolling Category Tabs) */}
       {showSubHeader && (
@@ -200,4 +209,22 @@ const styles = StyleSheet.create({
   subTabActiveText: {
     fontWeight: '700',
   },
+  cartBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#ff3b30',
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cartBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '800',
+  },
 });
+

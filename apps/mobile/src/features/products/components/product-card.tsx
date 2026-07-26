@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { Product, resolveImageUrl } from '../hooks/use-products';
+import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 6;
@@ -26,6 +27,8 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const isDark = scheme === 'dark';
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const [isFavorite, setIsFavorite] = useState(false);
+  const { startFlyAnimation } = useFlyToCart();
+  const imageRef = React.useRef<View>(null);
 
   // Get image URI from mainImages, dynamicData, uploadedAssets or colorVariants
   const primaryImage =
@@ -36,6 +39,34 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
     product.colorVariants?.[0]?.images?.[0] ||
     '';
   const imageUrl = resolveImageUrl(primaryImage);
+
+  const handleAddToCart = (evt?: any) => {
+    const touchX = evt?.nativeEvent?.pageX;
+    const touchY = evt?.nativeEvent?.pageY;
+
+    if (imageRef.current && imageUrl) {
+      imageRef.current.measureInWindow((x, y, width, height) => {
+        const startX = (typeof x === 'number' && !isNaN(x) && x !== 0) ? x + width / 2 : (touchX || SCREEN_WIDTH / 2);
+        const startY = (typeof y === 'number' && !isNaN(y) && y !== 0) ? y + height / 2 : (touchY || 300);
+        startFlyAnimation({
+          imageUrl,
+          startX,
+          startY,
+          startWidth: width || 80,
+          startHeight: height || 80,
+        });
+      });
+    } else if (imageUrl && touchX && touchY) {
+      startFlyAnimation({
+        imageUrl,
+        startX: touchX,
+        startY: touchY,
+        startWidth: 80,
+        startHeight: 80,
+      });
+    }
+    onAddToCart?.(product);
+  };
 
   // Calculate discount percentage if original price is higher
   const hasDiscount = Boolean(product.discountedPrice && product.discountedPrice < product.price);
@@ -72,7 +103,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
       onPress={handlePress}
     >
       {/* 3:4 Aspect Ratio Image Container */}
-      <View style={[styles.imageContainer, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
+      <View ref={imageRef} collapsable={false} style={[styles.imageContainer, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -175,7 +206,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           <TouchableOpacity
             activeOpacity={0.85}
             style={[styles.cartActionButton, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5', borderColor: isDark ? '#3a3a3c' : '#e4e4e7' }]}
-            onPress={() => onAddToCart?.(product)}
+            onPress={handleAddToCart}
           >
             <ShoppingBag size={14} color={isDark ? '#ffffff' : '#1c1c1e'} strokeWidth={2.2} />
           </TouchableOpacity>

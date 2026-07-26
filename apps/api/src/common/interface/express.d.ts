@@ -1,15 +1,19 @@
 // Express declaration merging to add user type to Request
 declare namespace Express {
-  export interface Request {
-    user?: {
-      userId: string;
-      sessionId: string;
-      role?: string;
-      vendorProfile?: {
-        id: string;
-        shopName: string;
-      };
+  export interface User {
+    id?: string;
+    userId: string;
+    sessionId: string;
+    role?: string;
+    vendorProfile?: {
+      id: string;
+      shopName: string;
     };
+  }
+
+  export interface Request {
+    user?: User;
+    sessionId?: string;
   }
   
   // Make sure Multer namespace is correctly declared
@@ -27,3 +31,4 @@ declare namespace Express {
     }
   }
 }
+

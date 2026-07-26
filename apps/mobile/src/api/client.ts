@@ -1,13 +1,20 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { API_CONFIG } from '../constants/config';
+import { API_CONFIG, getDevBaseUrl } from '../constants/config';
 import { ApiError } from './types';
 
 const TOKEN_KEY = 'auth_access_token';
 
+/**
+ * Dynamically resolve backend API base URL for Expo apps.
+ */
+export const getApiBaseUrl = (): string => {
+  return getDevBaseUrl();
+};
+
 export const apiClient = axios.create({
-  baseURL: API_CONFIG.baseURL,
   timeout: API_CONFIG.timeout,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -20,9 +27,12 @@ declare module 'axios' {
   }
 }
 
-// Request Interceptor: Attach Auth Token if available and not skipped
+// Request Interceptor: Dynamically resolve baseURL per request + attach Auth Token
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
+    config.baseURL = getApiBaseUrl();
+    console.log(`[apiClient] ${config.method?.toUpperCase()} -> ${config.baseURL}${config.url}`);
+
     if (!config.skipAuth) {
       try {
         const token = await SecureStore.getItemAsync(TOKEN_KEY);
@@ -38,11 +48,11 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Uniform error handling & 401 handling
+// Response Interceptor: Uniform error handling & 401 token cleanup
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const isPublicEndpoint = (error.config as any)?.skipAuth;
+    const isPublicEndpoint = (error.config as AxiosError['config'] & { skipAuth?: boolean })?.skipAuth;
 
     if (error.response?.status === 401 && !isPublicEndpoint) {
       try {
@@ -52,7 +62,7 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const responseData = error.response?.data as any;
+    const responseData = error.response?.data as { message?: string; code?: string; errors?: unknown } | undefined;
     const formattedError: ApiError = {
       message:
         responseData?.message ||
