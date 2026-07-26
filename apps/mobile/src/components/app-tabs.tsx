@@ -63,7 +63,7 @@ export default function AppTabs() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: 'rgba(255, 255, 255, 0.55)',
+          backgroundColor: '#ffffff',
           borderTopWidth: 0,
           height: Platform.OS === 'ios' ? 88 : 64,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
@@ -76,7 +76,6 @@ export default function AppTabs() {
           fontWeight: '600',
           marginTop: 2,
         },
-        tabBarMaxFontSizeMultiplier: 1.15,
       }}
     >
       {/* 1. Shop Tab (index) */}

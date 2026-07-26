@@ -15,6 +15,7 @@ interface AppHeaderProps {
   initialSubTab?: string;
   onSubTabChange?: (tab: string) => void;
   transparent?: boolean;
+  scrollY?: number;
 }
 
 const SUB_TABS = ['All', 'Women', 'Men', 'Kids', 'Curve', 'Home'];
@@ -24,6 +25,7 @@ export function AppHeader({
   initialSubTab = 'Men',
   onSubTabChange,
   transparent = false,
+  scrollY = 0,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
@@ -40,13 +42,18 @@ export function AppHeader({
     }
   };
 
-  // Determine styles and colors based on transparency
-  const headerBgColor = transparent ? 'transparent' : colors.background;
-  const textColor = transparent ? '#ffffff' : colors.text;
-  const secondaryTextColor = transparent ? 'rgba(255, 255, 255, 0.65)' : colors.textSecondary;
-  const borderBottomColor = transparent 
-    ? 'transparent' 
-    : 'rgba(0, 0, 0, 0.05)';
+  // Calculate opacity transition (0 at top, 1 after scrolling 100px)
+  const scrollProgress = transparent ? Math.min(1, Math.max(0, scrollY / 100)) : 1;
+
+  // Determine styles and colors based on transparency and scroll progress
+  const isSolid = !transparent || scrollProgress > 0.5;
+  const headerBgColor = transparent 
+    ? `rgba(${scheme === 'dark' ? '0, 0, 0' : '255, 255, 255'}, ${scrollProgress})`
+    : colors.background;
+  
+  const textColor = isSolid ? colors.text : '#ffffff';
+  const secondaryTextColor = isSolid ? colors.textSecondary : 'rgba(255, 255, 255, 0.65)';
+  const borderBottomColor = isSolid ? 'rgba(0, 0, 0, 0.05)' : 'transparent';
 
   return (
     <View
@@ -56,7 +63,7 @@ export function AppHeader({
           backgroundColor: headerBgColor,
           paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 6,
           borderBottomColor: borderBottomColor,
-          borderBottomWidth: transparent ? 0 : 1,
+          borderBottomWidth: isSolid ? 1 : 0,
         },
         transparent && styles.absoluteHeader,
       ]}
