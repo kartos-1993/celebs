@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
+import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 interface AppHeaderProps {
   showSubHeader?: boolean;
@@ -130,6 +131,7 @@ export function AppHeader({
                   onPress={() => handleSubTabPress(tab)}
                 >
                   <ThemedText
+                    maxFontSizeMultiplier={1.15}
                     style={[
                       styles.subTabText,
                       isActive && styles.subTabActiveText,

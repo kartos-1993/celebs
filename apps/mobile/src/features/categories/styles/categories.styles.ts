@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { Spacing } from '@/constants/theme';
+import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 export const styles = StyleSheet.create({
   categoriesSection: {
@@ -11,33 +12,35 @@ export const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: 'column',
     flexWrap: 'wrap',
-    height: 275, // Fits exactly 3 rows with the new spacing
+    height: moderateScale(270),
     alignContent: 'flex-start',
-    gap: 8,
+    gap: moderateScale(8),
   },
   categoryItem: {
-    width: 60,
+    width: moderateScale(66),
     alignItems: 'center',
-    marginRight: 8,
-    marginBottom: 6,
+    marginRight: moderateScale(8),
+    marginBottom: moderateScale(6),
   },
   categoryImageContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: moderateScale(56),
+    height: moderateScale(56),
+    borderRadius: moderateScale(28),
     backgroundColor: '#f5f5f5',
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: moderateScale(4),
   },
   categoryImage: {
     width: '100%',
     height: '100%',
   },
   categoryName: {
-    fontSize: 8,
+    fontSize: responsiveFontSize(10.5),
+    lineHeight: responsiveFontSize(13),
     textAlign: 'center',
-    lineHeight: 10,
-    fontWeight: '400',
-    height: 20, // Forces alignment across 2 lines of text
+    fontWeight: '500',
+    color: '#374151',
+    minHeight: responsiveFontSize(26),
   },
 });
+

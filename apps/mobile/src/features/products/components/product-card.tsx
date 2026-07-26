@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { Product, resolveImageUrl } from '../hooks/use-products';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { moderateScale, responsiveFontSize, responsiveIconSize } from '@/utils/responsive';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 6;
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   },
   trendsText: {
     color: '#7e22ce',
-    fontSize: 8,
+    fontSize: responsiveFontSize(8.5),
     fontWeight: '800',
     fontStyle: 'italic',
   },
@@ -309,15 +310,15 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   storeText: {
-    fontSize: 8,
+    fontSize: responsiveFontSize(8.5),
     fontWeight: '700',
   },
 
   /* Product Title */
   productName: {
-    fontSize: 11.5,
+    fontSize: responsiveFontSize(11.5),
     fontWeight: '400',
-    lineHeight: 15,
+    lineHeight: responsiveFontSize(15),
     marginBottom: 2,
   },
 
@@ -329,12 +330,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bestsellerText: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9),
     fontWeight: '800',
     color: '#d97706',
   },
   bestsellerSub: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9),
     fontWeight: '500',
     color: '#b45309',
   },
@@ -352,11 +353,11 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   newArrivalText: {
-    fontSize: 7.5,
+    fontSize: responsiveFontSize(8),
     fontWeight: '800',
   },
   soldText: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9.5),
     fontWeight: '500',
   },
 
@@ -380,21 +381,21 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   currencySymbol: {
-    fontSize: 9.5,
+    fontSize: responsiveFontSize(9.5),
     fontWeight: '800',
     marginRight: 1,
   },
   integerPrice: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14.5),
     fontWeight: '900',
-    lineHeight: 16,
+    lineHeight: responsiveFontSize(16.5),
   },
   decimalPrice: {
-    fontSize: 9.5,
+    fontSize: responsiveFontSize(9.5),
     fontWeight: '800',
   },
 
-  /* Compact Discount Percent Badge Pill Next to Price (Apple System Warm Coral #FF5000 / #FF9F0A) */
+  /* Compact Discount Percent Badge Pill Next to Price */
   discountTagPill: {
     backgroundColor: '#fff0ed',
     paddingHorizontal: 2.5,
@@ -404,16 +405,16 @@ const styles = StyleSheet.create({
   },
   discountTagText: {
     color: '#FF5000',
-    fontSize: 7.5,
-    lineHeight: 9,
+    fontSize: responsiveFontSize(8),
+    lineHeight: responsiveFontSize(9.5),
     fontWeight: '800',
   },
 
   /* Cart Quick Add Button */
   cartActionButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: moderateScale(28),
+    height: moderateScale(28),
+    borderRadius: moderateScale(6),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,

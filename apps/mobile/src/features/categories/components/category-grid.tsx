@@ -65,7 +65,13 @@ export function CategoryGrid() {
                   <View style={[styles.categoryImage, { backgroundColor: 'rgba(150,150,150,0.1)' }]} />
                 )}
               </View>
-              <ThemedText style={styles.categoryName} numberOfLines={2}>
+              <ThemedText
+                style={styles.categoryName}
+                numberOfLines={2}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.75}
+                maxFontSizeMultiplier={1.15}
+              >
                 {cat.displayName || cat.name}
               </ThemedText>
             </TouchableOpacity>
