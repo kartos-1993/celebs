@@ -31,6 +31,7 @@ import vendorRoutes from './modules/vendor/vendor.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import staffRoutes from './modules/staff/staff.routes';
 import bannerRoutes from './modules/banner/banner.routes';
+import cartRoutes from './modules/cart/cart.routes';
 import swaggerUi from 'swagger-ui-express';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 
@@ -47,6 +48,7 @@ app.use(
   cors({
     origin: config.APP_ORIGIN,
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'X-Session-Id', 'Accept', 'Origin'],
   })
 );
 
@@ -140,6 +142,7 @@ app.use(`${config.BASE_PATH}/vendor`, vendorRoutes);
 app.use(`${config.BASE_PATH}/admin`, adminRoutes);
 app.use(`${config.BASE_PATH}/staff`, staffRoutes);
 app.use(`${config.BASE_PATH}/banners`, bannerRoutes);
+app.use(`${config.BASE_PATH}/cart`, cartRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {

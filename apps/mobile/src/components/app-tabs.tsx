@@ -19,6 +19,47 @@ function CategoryIcon({ color, size }: { color: any; size: number }) {
   );
 }
 
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withSpring } from 'react-native-reanimated';
+import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+
+function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
+  const { pulseTrigger, setCartIconCoords } = useFlyToCart();
+  const scale = useSharedValue(1);
+  const iconRef = React.useRef<View>(null);
+
+  React.useEffect(() => {
+    if (pulseTrigger > 0) {
+      scale.value = withSequence(
+        withSpring(1.35, { damping: 6, stiffness: 200 }),
+        withSpring(1.0, { damping: 10, stiffness: 180 })
+      );
+    }
+  }, [pulseTrigger, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handleLayout = () => {
+    iconRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
+      if (pageX && pageY) {
+        setCartIconCoords({
+          x: pageX + width / 2,
+          y: pageY + height / 2,
+        });
+      }
+    });
+  };
+
+  return (
+    <View ref={iconRef} onLayout={handleLayout} collapsable={false}>
+      <Animated.View style={animatedStyle}>
+        <ShoppingCart size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function AppTabs() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
@@ -89,7 +130,7 @@ export default function AppTabs() {
         options={{
           title: 'Cart',
           tabBarIcon: ({ color, focused }) => (
-            <ShoppingCart size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+            <CartTabIcon color={color} focused={focused} />
           ),
         }}
       />
@@ -114,8 +155,19 @@ export default function AppTabs() {
           tabBarStyle: { display: 'none' },
         }}
       />
+
+      {/* 7. Product Detail Screen (Hidden from bottom tab bar) */}
+      <Tabs.Screen
+        name="product/[id]"
+        options={{
+          href: null,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
+
 }
 
 const styles = StyleSheet.create({

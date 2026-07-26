@@ -16,6 +16,7 @@ export * from './validators/auth.validator';
 export * from './validators/mfa.validator';
 export * from './validators/vendor.validator';
 export * from './validators/product.validator';
+export * from './validators/cart.validator';
 
 export type loginType = z.infer<typeof loginSchema>;
 export type registerType = z.infer<typeof registerSchema>;
@@ -35,4 +36,6 @@ export type UpdateProductType = z.infer<typeof updateProductSchema>;
 export type ProductFilterType = z.input<typeof productFilterSchema>;
 
 export * from './types/api';
+export * from './types/cart';
+
 

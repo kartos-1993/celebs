@@ -44,6 +44,7 @@ model User {
 
   vendorId        String?
   vendor          VendorProfile?   @relation("VendorStaff", fields: [vendorId], references: [id], onDelete: SetNull)
+  cart            Cart?
 
   @@index([vendorId])
 }
@@ -133,6 +134,58 @@ model Warehouse {
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  inventories     ProductInventory[]
 
   @@index([vendorProfileId])
 }
+
+model ProductInventory {
+  id               String      @id @default(dbgenerated("gen_random_uuid()"))
+  productId        String      @map("product_id")
+  colorVariantName String      @map("color_variant_name")
+  size             String
+  sku              String      @unique
+  quantity         Int         @default(0)
+  reservedQuantity Int         @default(0) @map("reserved_quantity")
+  warehouseId      String?     @map("warehouse_id")
+  warehouse        Warehouse?  @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  cartItems        CartItem[]
+
+  @@unique([productId, colorVariantName, size])
+  @@index([productId])
+}
+
+model Cart {
+  id        String     @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String?    @unique @map("user_id")
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String?    @unique @map("session_id")
+
+  items     CartItem[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model CartItem {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()"))
+  cartId             String           @map("cart_id")
+  cart               Cart             @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  inventoryId        String           @map("inventory_id")
+  inventory          ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+
+  quantity           Int              @default(1)
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([cartId, inventoryId])
+}
+

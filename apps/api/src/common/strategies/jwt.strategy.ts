@@ -30,12 +30,10 @@ const options: StrategyOptionsWithRequest = {
         return cookieToken;
       }
 
-      throw new UnauthorizedException(
-        'Access token not found',
-        ErrorCode.AUTH_TOKEN_NOT_FOUND
-      );
+      return null;
     },
   ]),
+
   secretOrKey: config.JWT.SECRET,
   audience: ['user'],
   algorithms: ['HS256'],
@@ -100,4 +98,17 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   );
 };
 
+import { Request, Response, NextFunction } from 'express';
+
 export const authenticateJWT = passport.authenticate('jwt', { session: false });
+
+export const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+  passport.authenticate('jwt', { session: false }, (_err: unknown, user: Express.User | false) => {
+    if (user) {
+      req.user = user;
+    }
+    next();
+  })(req, res, next);
+};
+
+

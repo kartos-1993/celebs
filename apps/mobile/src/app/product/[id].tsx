@@ -33,6 +33,10 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useProduct, resolveImageUrl } from '@/features/products/hooks/use-products';
+import { useCart } from '@/features/cart/context/cart-context';
+import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const IMAGE_HEIGHT = SCREEN_WIDTH * 1.33; // 3:4 aspect ratio
@@ -43,8 +47,39 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
-
+  const { addToCart, itemCount } = useCart();
   const { product, loading, error } = useProduct(id || '');
+  const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
+  const topCartBtnRef = useRef<View>(null);
+  const topCartScale = useSharedValue(1);
+
+  // Measure top header cart icon target position
+  const measureTopCartIcon = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
+        if (typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
+          setCartIconCoords({
+            x: x + width / 2,
+            y: y + height / 2,
+          });
+        }
+      });
+    });
+  }, [setCartIconCoords]);
+
+  // Pulse top cart icon when fly animation lands
+  React.useEffect(() => {
+    if (pulseTrigger > 0) {
+      topCartScale.value = withSequence(
+        withSpring(1.4, { damping: 6, stiffness: 200 }),
+        withSpring(1.0, { damping: 10, stiffness: 180 })
+      );
+    }
+  }, [pulseTrigger, topCartScale]);
+
+  const animatedTopCartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: topCartScale.value }],
+  }));
 
   // State
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -53,6 +88,8 @@ export default function ProductDetailScreen() {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const mainFlatListRef = useRef<FlatList>(null);
   const modalFlatListRef = useRef<FlatList>(null);
@@ -81,12 +118,63 @@ export default function ProductDetailScreen() {
     return [];
   }, [product, activeColorVariant]);
 
-  // Set default selected size when availableSizes is computed
-  React.useEffect(() => {
-    if (availableSizes.length > 0 && (!selectedSize || !availableSizes.includes(selectedSize))) {
-      setSelectedSize(availableSizes[0]);
+  // Compute live stock for selected size & color variant
+  const currentStockCount = useMemo(() => {
+    if (!activeColorVariant || !activeColorVariant.stocks || !selectedSize) return 10;
+    const item = activeColorVariant.stocks.find(
+      (s) => s.size.toLowerCase() === selectedSize.toLowerCase()
+    );
+    return item ? item.quantity : 10;
+  }, [activeColorVariant, selectedSize]);
+
+  // Execute Add to Cart for a confirmed size
+  const executeAddToCart = async (confirmedSize: string, startCoords?: { x: number; y: number }) => {
+    if (!product || !confirmedSize) return;
+
+    // Trigger fly-to-cart animation to top cart icon
+    const flyImage = galleryImages[0] || (product.mainImages?.[0] ? resolveImageUrl(product.mainImages[0]) : '');
+    if (flyImage) {
+      startFlyAnimation({
+        imageUrl: flyImage,
+        startX: startCoords?.x ?? SCREEN_WIDTH / 2,
+        startY: startCoords?.y ?? SCREEN_HEIGHT - 100,
+        startWidth: 65,
+        startHeight: 65,
+      });
     }
-  }, [availableSizes]);
+
+    try {
+      await addToCart({
+        productId: product._id,
+        colorVariantName: activeColorVariant?.name || 'Default',
+        size: confirmedSize,
+        quantity: 1,
+      });
+
+      // Allow the fly animation (~650ms) to complete before navigating back
+      setTimeout(() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.push('/');
+        }
+      }, 600);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to add to cart';
+      setToastMsg(msg);
+      setTimeout(() => setToastMsg(null), 3500);
+    }
+  };
+
+  // Open Size & Confirmation Sheet whenever Add to Cart is pressed
+  const handleAddToCartPress = () => {
+    if (availableSizes.length === 0) {
+      executeAddToCart('FREE');
+    } else {
+      setIsSizeModalOpen(true);
+    }
+  };
+
 
   // Format real measurements from database for the selected size
   const currentMeasurementsText = useMemo(() => {
@@ -202,12 +290,22 @@ export default function ProductDetailScreen() {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.push('/cart')}>
-            <ShoppingCart size={20} color={isDark ? '#ffffff' : '#1c1c1e'} />
-            <View style={styles.cartBadge}>
-              <ThemedText style={styles.cartBadgeText}>2</ThemedText>
-            </View>
-          </TouchableOpacity>
+          <View ref={topCartBtnRef} collapsable={false} onLayout={measureTopCartIcon}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              onPress={() => router.push('/cart')}
+            >
+              <Animated.View style={animatedTopCartStyle}>
+                <ShoppingCart size={20} color={isDark ? '#ffffff' : '#1c1c1e'} />
+              </Animated.View>
+              {itemCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
             <Share2 size={19} color={isDark ? '#ffffff' : '#1c1c1e'} />
@@ -346,7 +444,7 @@ export default function ProductDetailScreen() {
           <View style={[styles.sectionCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
             <TouchableOpacity style={styles.sectionHeaderRow} activeOpacity={0.7}>
               <ThemedText style={styles.sectionTitle}>
-                Size: <ThemedText style={styles.sectionTitleSub}>{selectedSize}</ThemedText>
+                Size: <ThemedText style={styles.sectionTitleSub}>{selectedSize || 'Select a size'}</ThemedText>
               </ThemedText>
               <ChevronRight size={16} color={isDark ? '#a1a1aa' : '#71717a'} />
             </TouchableOpacity>
@@ -446,8 +544,53 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* STICKY BOTTOM ACTION BAR */}
+      <View
+        style={[
+          styles.bottomActionBar,
+          {
+            paddingBottom: insets.bottom + 8,
+            backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
+            borderTopColor: isDark ? '#2c2c2e' : '#e5e7eb',
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={[styles.addToCartBtn, { backgroundColor: isDark ? '#ffffff' : '#000000' }]}
+          activeOpacity={0.8}
+          onPress={() => handleAddToCartPress()}
+        >
+          <ThemedText style={[styles.addToCartText, { color: isDark ? '#000000' : '#ffffff' }]}>
+            Add to Cart
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      {/* TOAST FEEDBACK NOTIFICATION */}
+      {Boolean(toastMsg) && (
+        <View style={[styles.toastBanner, { top: insets.top + 60 }]}>
+          <ThemedText style={styles.toastText}>{toastMsg}</ThemedText>
+        </View>
+      )}
+
+      {/* SIZE REQUIRED MODAL */}
+      <SizeRequiredModal
+        visible={isSizeModalOpen}
+        availableSizes={availableSizes}
+        productName={product?.name || ''}
+        initialSize={selectedSize}
+        imageUrl={galleryImages[0]}
+        onClose={() => setIsSizeModalOpen(false)}
+        onSelectSizeAndConfirm={(size, startCoords) => {
+          setSelectedSize(size);
+          setIsSizeModalOpen(false);
+          executeAddToCart(size, startCoords);
+        }}
+      />
+
       {/* FULL-SCREEN HIGH-RES DARK MODAL VIEWER */}
       <Modal visible={isModalOpen} animationType="fade" transparent={false} onRequestClose={() => setIsModalOpen(false)}>
+
         <View style={styles.modalContainer}>
           <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
@@ -844,4 +987,84 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+
+  /* Sticky Bottom Action Bar */
+  bottomActionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    gap: 10,
+    zIndex: 25,
+  },
+  cartIconBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  bottomCartBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#ff3b30',
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomCartBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  addToCartBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addToCartText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  buyNowBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#ff3b30',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buyNowText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  /* Toast Notification */
+  toastBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    zIndex: 99,
+  },
+  toastText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });
+
