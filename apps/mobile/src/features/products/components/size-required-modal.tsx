@@ -32,8 +32,6 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   onClose,
   onSelectSizeAndConfirm,
 }) => {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
   const [selectedSize, setSelectedSize] = useState<string>(initialSize);
   const confirmBtnRef = React.useRef<View>(null);
 
@@ -63,7 +61,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
         <View
           style={[
             styles.sheetContainer,
-            { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' },
+            { backgroundColor: '#ffffff' },
           ]}
         >
           {/* Header Bar */}
@@ -75,11 +73,11 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
               </ThemedText>
             </View>
             <TouchableOpacity
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}
+              style={[styles.closeBtn, { backgroundColor: '#f4f4f5' }]}
               onPress={onClose}
               activeOpacity={0.7}
             >
-              <X size={18} color={isDark ? '#ffffff' : '#1c1c1e'} />
+              <X size={18} color="#1c1c1e" />
             </TouchableOpacity>
           </View>
 
@@ -96,16 +94,16 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
                   style={[
                     styles.sizePill,
                     isSelected
-                      ? { backgroundColor: isDark ? '#ffffff' : '#000000' }
-                      : { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' },
+                      ? { backgroundColor: '#000000' }
+                      : { backgroundColor: '#f4f4f5' },
                   ]}
                 >
                   <ThemedText
                     style={[
                       styles.sizeText,
                       isSelected
-                        ? { color: isDark ? '#000000' : '#ffffff', fontWeight: '800' }
-                        : { color: isDark ? '#ffffff' : '#1c1c1e' },
+                        ? { color: '#ffffff', fontWeight: '800' }
+                        : { color: '#1c1c1e' },
                     ]}
                   >
                     {size}
@@ -113,7 +111,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
                   {isSelected && (
                     <Check
                       size={14}
-                      color={isDark ? '#000000' : '#ffffff'}
+                      color="#ffffff"
                       style={{ marginLeft: 4 }}
                     />
                   )}

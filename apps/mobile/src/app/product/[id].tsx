@@ -45,8 +45,6 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
   const { addToCart, itemCount } = useCart();
   const { product, loading, error } = useProduct(id || '');
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
@@ -214,7 +212,7 @@ export default function ProductDetailScreen() {
   const discountPercent = hasDiscount
     ? Math.round(((product!.price - product!.discountedPrice!) / product!.price) * 100)
     : 15;
-  const priceColor = hasDiscount ? (isDark ? '#FF9F0A' : '#FF5000') : isDark ? '#ffffff' : '#000000';
+  const priceColor = hasDiscount ? '#FF5000' : '#000000';
   const integerPart = Math.floor(currentPrice);
   const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
 
@@ -247,8 +245,8 @@ export default function ProductDetailScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centerBox, { backgroundColor: isDark ? '#121212' : '#ffffff' }]}>
-        <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#000000'} />
+      <View style={[styles.centerBox, { backgroundColor: '#ffffff' }]}>
+        <ActivityIndicator size="large" color="#000000" />
         <ThemedText style={{ marginTop: 12, opacity: 0.6 }}>Loading Product...</ThemedText>
       </View>
     );
@@ -256,7 +254,7 @@ export default function ProductDetailScreen() {
 
   if (error || !product) {
     return (
-      <View style={[styles.centerBox, { backgroundColor: isDark ? '#121212' : '#ffffff' }]}>
+      <View style={[styles.centerBox, { backgroundColor: '#ffffff' }]}>
         <ThemedText style={{ fontSize: 16, fontWeight: '700' }}>Product Not Found</ThemedText>
         <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
           <ThemedText style={{ color: '#ffffff', fontWeight: '700' }}>Go Back</ThemedText>
@@ -269,7 +267,7 @@ export default function ProductDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent={false} />
+      <StatusBar barStyle="dark-content" translucent={false} />
 
       {/* FLOATING TOP NAVIGATION BAR */}
       <View
@@ -277,13 +275,13 @@ export default function ProductDetailScreen() {
           styles.topHeaderBar,
           {
             paddingTop: insets.top + 4,
-            backgroundColor: isDark ? 'rgba(18, 18, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            borderBottomColor: isDark ? '#2c2c2e' : '#f2f2f7',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderBottomColor: '#f2f2f7',
           },
         ]}
       >
         <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.back()}>
-          <ChevronLeft size={22} color={isDark ? '#ffffff' : '#1c1c1e'} strokeWidth={2.2} />
+          <ChevronLeft size={22} color="#1c1c1e" strokeWidth={2.2} />
         </TouchableOpacity>
 
         <ThemedText style={styles.headerTitleText} numberOfLines={1}>
@@ -294,7 +292,7 @@ export default function ProductDetailScreen() {
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => setIsFavorite(!isFavorite)}>
             <Heart
               size={20}
-              color={isFavorite ? '#ff3b30' : isDark ? '#ffffff' : '#1c1c1e'}
+              color={isFavorite ? '#ff3b30' : '#1c1c1e'}
               fill={isFavorite ? '#ff3b30' : 'transparent'}
             />
           </TouchableOpacity>
@@ -306,7 +304,7 @@ export default function ProductDetailScreen() {
               onPress={() => router.push('/cart')}
             >
               <Animated.View style={animatedTopCartStyle}>
-                <ShoppingCart size={20} color={isDark ? '#ffffff' : '#1c1c1e'} />
+                <ShoppingCart size={20} color="#1c1c1e" />
               </Animated.View>
               {itemCount > 0 && (
                 <View style={styles.cartBadge}>
@@ -317,7 +315,7 @@ export default function ProductDetailScreen() {
           </View>
 
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-            <Share2 size={19} color={isDark ? '#ffffff' : '#1c1c1e'} />
+            <Share2 size={19} color="#1c1c1e" />
           </TouchableOpacity>
         </View>
       </View>
@@ -353,22 +351,22 @@ export default function ProductDetailScreen() {
         </View>
 
         {/* PRODUCT TITLE & PRICE INFO */}
-        <View style={[styles.infoSection, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+        <View style={[styles.infoSection, { backgroundColor: '#ffffff' }]}>
           {/* Brand & Trends Tag */}
           <View style={styles.brandRow}>
             <View style={styles.trendsBadge}>
               <ThemedText style={styles.trendsText}>Trends</ThemedText>
             </View>
-            <TouchableOpacity style={[styles.storeBadge, { backgroundColor: isDark ? '#3b0764' : '#faf5ff' }]}>
-              <ThemedText style={[styles.storeText, { color: isDark ? '#d8b4fe' : '#6b21a8' }]}>
+            <TouchableOpacity style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]}>
+              <ThemedText style={[styles.storeText, { color: '#6b21a8' }]}>
                 {product.brand || 'BODI'}
               </ThemedText>
-              <ChevronRight size={10} color={isDark ? '#d8b4fe' : '#7c3aed'} />
+              <ChevronRight size={10} color="#7c3aed" />
             </TouchableOpacity>
           </View>
 
           {/* Product Name */}
-          <ThemedText style={[styles.productTitle, { color: isDark ? '#ffffff' : '#1c1c1e' }]}>
+          <ThemedText style={[styles.productTitle, { color: '#1c1c1e' }]}>
             {product.name}
           </ThemedText>
 
@@ -399,23 +397,23 @@ export default function ProductDetailScreen() {
 
           {/* Sales & New Arrival Badge */}
           <View style={styles.salesRow}>
-            <View style={[styles.newArrivalBadge, { backgroundColor: isDark ? '#064e3b' : '#ecfdf5' }]}>
-              <ThemedText style={[styles.newArrivalText, { color: isDark ? '#6ee7b7' : '#047857' }]}>
+            <View style={[styles.newArrivalBadge, { backgroundColor: '#ecfdf5' }]}>
+              <ThemedText style={[styles.newArrivalText, { color: '#047857' }]}>
                 NEW ARRIVAL
               </ThemedText>
             </View>
-            <ThemedText style={[styles.soldText, { color: isDark ? '#a1a1aa' : '#71717a' }]}>80+ sold</ThemedText>
+            <ThemedText style={[styles.soldText, { color: '#71717a' }]}>80+ sold</ThemedText>
           </View>
         </View>
 
         {/* COLOR SELECTION ROW */}
         {product.colorVariants && product.colorVariants.length > 0 && (
-          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+          <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
             <TouchableOpacity style={styles.sectionHeaderRow} activeOpacity={0.7}>
               <ThemedText style={styles.sectionTitle}>
                 Color: <ThemedText style={styles.sectionTitleSub}>{selectedColorName}</ThemedText>
               </ThemedText>
-              <ChevronRight size={16} color={isDark ? '#a1a1aa' : '#71717a'} />
+              <ChevronRight size={16} color="#71717a" />
             </TouchableOpacity>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorScroll}>
@@ -430,9 +428,9 @@ export default function ProductDetailScreen() {
                     onPress={() => handleSelectColor(index)}
                     style={[
                       styles.colorBox,
-                      { borderColor: isDark ? '#3a3a3c' : '#e4e4e7' },
+                      { borderColor: '#e4e4e7' },
                       isSelected && {
-                        borderColor: isDark ? '#ffffff' : '#000000',
+                        borderColor: '#000000',
                         borderWidth: 2,
                       },
                     ]}
@@ -450,12 +448,12 @@ export default function ProductDetailScreen() {
 
         {/* SIZE SELECTION ROW */}
         {availableSizes.length > 0 && (
-          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+          <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
             <TouchableOpacity style={styles.sectionHeaderRow} activeOpacity={0.7}>
               <ThemedText style={styles.sectionTitle}>
                 Size: <ThemedText style={styles.sectionTitleSub}>{selectedSize || 'Select a size'}</ThemedText>
               </ThemedText>
-              <ChevronRight size={16} color={isDark ? '#a1a1aa' : '#71717a'} />
+              <ChevronRight size={16} color="#71717a" />
             </TouchableOpacity>
 
             {/* Size Buttons */}
@@ -470,16 +468,16 @@ export default function ProductDetailScreen() {
                     style={[
                       styles.sizePill,
                       isSelected
-                        ? { backgroundColor: isDark ? '#ffffff' : '#000000' }
-                        : { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' },
+                        ? { backgroundColor: '#000000' }
+                        : { backgroundColor: '#f4f4f5' },
                     ]}
                   >
                     <ThemedText
                       style={[
                         styles.sizeText,
                         isSelected
-                          ? { color: isDark ? '#000000' : '#ffffff', fontWeight: '800' }
-                          : { color: isDark ? '#ffffff' : '#1c1c1e' },
+                          ? { color: '#ffffff', fontWeight: '800' }
+                          : { color: '#1c1c1e' },
                       ]}
                     >
                       {size}
@@ -491,8 +489,8 @@ export default function ProductDetailScreen() {
 
             {/* Dynamic Measurements Bar */}
             {Boolean(currentMeasurementsText) && (
-              <View style={[styles.measurementsBox, { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }]}>
-                <ThemedText style={[styles.measurementsText, { color: isDark ? '#d1d5db' : '#4b5563' }]}>
+              <View style={[styles.measurementsBox, { backgroundColor: '#f8f8f8' }]}>
+                <ThemedText style={[styles.measurementsText, { color: '#4b5563' }]}>
                   {currentMeasurementsText}
                 </ThemedText>
               </View>
@@ -501,13 +499,13 @@ export default function ProductDetailScreen() {
         )}
 
         {/* SHIPPING & GUARANTEE INFO BLOCK */}
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+        <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
           {/* Destination Header */}
           <TouchableOpacity style={styles.shippingHeaderRow} activeOpacity={0.8}>
             <ThemedText style={styles.shippingTitleText}>
-              Shipping to <MapPin size={13} color={isDark ? '#ffffff' : '#000000'} /> Algeria
+              Shipping to <MapPin size={13} color="#000000" /> Algeria
             </ThemedText>
-            <ChevronRight size={16} color={isDark ? '#a1a1aa' : '#71717a'} />
+            <ChevronRight size={16} color="#71717a" />
           </TouchableOpacity>
 
           {/* Free Shipping Line */}
@@ -515,37 +513,37 @@ export default function ProductDetailScreen() {
             <Truck size={17} color="#059669" style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <ThemedText style={styles.freeShippingText}>Free Shipping (Orders ≥ $99.00)</ThemedText>
-              <ThemedText style={[styles.estDeliveryText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
+              <ThemedText style={[styles.estDeliveryText, { color: '#6b7280' }]}>
                 Est. Delivery: Aug 13 - Aug 23
               </ThemedText>
             </View>
-            <ChevronRight size={15} color={isDark ? '#9ca3af' : '#9ca3af'} />
+            <ChevronRight size={15} color="#9ca3af" />
           </View>
 
           {/* Returns Accepted */}
           <View style={styles.shippingItemRow}>
-            <RotateCcw size={16} color={isDark ? '#ffffff' : '#374151'} style={{ marginTop: 1 }} />
+            <RotateCcw size={16} color="#374151" style={{ marginTop: 1 }} />
             <ThemedText style={[styles.shippingItemLabel, { flex: 1 }]}>Returns Accepted</ThemedText>
-            <ChevronRight size={15} color={isDark ? '#9ca3af' : '#9ca3af'} />
+            <ChevronRight size={15} color="#9ca3af" />
           </View>
 
           {/* Safe Payments */}
           <View style={styles.shippingItemRow}>
-            <ShieldCheck size={16} color={isDark ? '#ffffff' : '#374151'} style={{ marginTop: 1 }} />
+            <ShieldCheck size={16} color="#374151" style={{ marginTop: 1 }} />
             <ThemedText style={[styles.shippingItemLabel, { flex: 1 }]}>
               Safe Payments · Privacy Protection
             </ThemedText>
-            <ChevronRight size={15} color={isDark ? '#9ca3af' : '#9ca3af'} />
+            <ChevronRight size={15} color="#9ca3af" />
           </View>
         </View>
 
         {/* RATING & REVIEWS PREVIEW */}
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+        <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
           <View style={styles.sectionHeaderRow}>
             <ThemedText style={styles.sectionTitle}>
               Customer Reviews <Star size={13} color="#f59e0b" fill="#f59e0b" /> 4.85 (250+)
             </ThemedText>
-            <ChevronRight size={16} color={isDark ? '#a1a1aa' : '#71717a'} />
+            <ChevronRight size={16} color="#71717a" />
           </View>
           <ThemedText style={{ fontSize: 11.5, opacity: 0.6, marginTop: 4 }}>
             Fits true to size. Great denim quality & comfort.
@@ -559,17 +557,17 @@ export default function ProductDetailScreen() {
           styles.bottomActionBar,
           {
             paddingBottom: insets.bottom + 8,
-            backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
-            borderTopColor: isDark ? '#2c2c2e' : '#e5e7eb',
+            backgroundColor: '#ffffff',
+            borderTopColor: '#e5e7eb',
           },
         ]}
       >
         <TouchableOpacity
-          style={[styles.addToCartBtn, { backgroundColor: isDark ? '#ffffff' : '#000000' }]}
+          style={[styles.addToCartBtn, { backgroundColor: '#000000' }]}
           activeOpacity={0.8}
           onPress={() => handleAddToCartPress()}
         >
-          <ThemedText style={[styles.addToCartText, { color: isDark ? '#000000' : '#ffffff' }]}>
+          <ThemedText style={[styles.addToCartText, { color: '#ffffff' }]}>
             Add to Cart
           </ThemedText>
         </TouchableOpacity>
