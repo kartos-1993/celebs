@@ -31,7 +31,6 @@ const resolveImageUrl = (url?: string | null) => {
 
 export default function CategoryExploreScreen() {
   const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const router = useRouter();
   const { categories, loading } = useCategories();
@@ -45,7 +44,7 @@ export default function CategoryExploreScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent={false} />
+      <StatusBar barStyle="dark-content" translucent={false} />
 
       {/* Sticky App Header */}
       <AppHeader showSubHeader={true} initialSubTab="Men" />
@@ -80,7 +79,7 @@ export default function CategoryExploreScreen() {
                   activeOpacity={0.8}
                   style={[
                     styles.categoryCard,
-                    { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' },
+                    { backgroundColor: '#ffffff' },
                   ]}
                   onPress={() => handleCategoryClick(catSlug, catTitle)}
                 >

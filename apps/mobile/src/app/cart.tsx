@@ -23,8 +23,6 @@ import { CartItemHydrated } from '@celebs/shared-types';
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
 
   const { cart, loading, error, subtotal, itemCount, updateQuantity, removeItem, clearCart } =
     useCart();
@@ -63,8 +61,8 @@ export default function CartScreen() {
 
   if (loading && items.length === 0) {
     return (
-      <View style={[styles.centerBox, { backgroundColor: isDark ? '#121212' : '#ffffff' }]}>
-        <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#000000'} />
+      <View style={[styles.centerBox, { backgroundColor: '#ffffff' }]}>
+        <ActivityIndicator size="large" color="#000000" />
         <ThemedText style={{ marginTop: 12, opacity: 0.6 }}>Loading Cart...</ThemedText>
       </View>
     );
@@ -77,10 +75,10 @@ export default function CartScreen() {
           <View
             style={[
               styles.emptyIconCircle,
-              { backgroundColor: isDark ? '#1c1c1e' : '#f3f4f6' },
+              { backgroundColor: '#f3f4f6' },
             ]}
           >
-            <ShoppingBag size={48} color={isDark ? '#9ca3af' : '#6b7280'} />
+            <ShoppingBag size={48} color="#6b7280" />
           </View>
           <ThemedText style={styles.emptyTitle}>Your Cart is Empty</ThemedText>
           <ThemedText style={styles.emptyDescription}>
@@ -109,8 +107,8 @@ export default function CartScreen() {
           styles.headerBar,
           {
             paddingTop: insets.top + 8,
-            backgroundColor: isDark ? '#121212' : '#ffffff',
-            borderBottomColor: isDark ? '#2c2c2e' : '#f3f4f6',
+            backgroundColor: '#ffffff',
+            borderBottomColor: '#f3f4f6',
           },
         ]}
       >
@@ -128,9 +126,9 @@ export default function CartScreen() {
       >
         {/* Stock Issue Banner */}
         {hasStockIssues && (
-          <View style={[styles.warningBanner, { backgroundColor: isDark ? '#451a03' : '#fffbeb' }]}>
+          <View style={[styles.warningBanner, { backgroundColor: '#fffbeb' }]}>
             <AlertTriangle size={18} color="#d97706" />
-            <ThemedText style={[styles.warningText, { color: isDark ? '#fcd34d' : '#b45309' }]}>
+            <ThemedText style={[styles.warningText, { color: '#b45309' }]}>
               Some items in your cart have limited or updated stock availability.
             </ThemedText>
           </View>
@@ -147,7 +145,7 @@ export default function CartScreen() {
               key={item.id}
               style={[
                 styles.itemCard,
-                { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' },
+                { backgroundColor: '#ffffff' },
                 !item.isAvailable && { opacity: 0.7 },
               ]}
             >
@@ -196,7 +194,7 @@ export default function CartScreen() {
                   <View
                     style={[
                       styles.stepperContainer,
-                      { backgroundColor: isDark ? '#2c2c2e' : '#f3f4f6' },
+                      { backgroundColor: '#f3f4f6' },
                     ]}
                   >
                     <TouchableOpacity
@@ -205,11 +203,11 @@ export default function CartScreen() {
                       onPress={() => handleDecrement(item.id, item.quantity)}
                       style={styles.stepperBtn}
                     >
-                      <Minus size={14} color={isDark ? '#ffffff' : '#1c1c1e'} />
+                      <Minus size={14} color="#1c1c1e" />
                     </TouchableOpacity>
 
                     {isBusy ? (
-                      <ActivityIndicator size="small" color={isDark ? '#ffffff' : '#000000'} />
+                      <ActivityIndicator size="small" color="#000000" />
                     ) : (
                       <ThemedText style={styles.stepperQty}>{item.quantity}</ThemedText>
                     )}
@@ -223,7 +221,7 @@ export default function CartScreen() {
                         item.quantity >= item.availableStock && { opacity: 0.3 },
                       ]}
                     >
-                      <Plus size={14} color={isDark ? '#ffffff' : '#1c1c1e'} />
+                      <Plus size={14} color="#1c1c1e" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -233,7 +231,7 @@ export default function CartScreen() {
         })}
 
         {/* Order Summary */}
-        <View style={[styles.summaryCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+        <View style={[styles.summaryCard, { backgroundColor: '#ffffff' }]}>
           <ThemedText style={styles.summaryTitle}>Order Summary</ThemedText>
 
           <View style={styles.summaryRow}>
@@ -270,8 +268,8 @@ export default function CartScreen() {
           styles.checkoutBar,
           {
             bottom: Platform.OS === 'ios' ? 88 : 64,
-            backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
-            borderTopColor: isDark ? '#2c2c2e' : '#e5e7eb',
+            backgroundColor: '#ffffff',
+            borderTopColor: '#e5e7eb',
           },
         ]}
       >

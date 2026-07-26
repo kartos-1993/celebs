@@ -39,15 +39,13 @@ export function AppHeader({
     }
   };
 
-  const isDark = scheme === 'dark';
-
   // Determine styles and colors based on transparency
   const headerBgColor = transparent ? 'transparent' : colors.background;
   const textColor = transparent ? '#ffffff' : colors.text;
   const secondaryTextColor = transparent ? 'rgba(255, 255, 255, 0.65)' : colors.textSecondary;
   const borderBottomColor = transparent 
     ? 'transparent' 
-    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)');
+    : 'rgba(0, 0, 0, 0.05)';
 
   return (
     <View

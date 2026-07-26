@@ -118,7 +118,6 @@ export default function CategoryProductsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
   const categorySlug = (Array.isArray(slug) ? slug[0] : slug) || 'denim-jeans';
@@ -254,7 +253,7 @@ export default function CategoryProductsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent={false} />
+      <StatusBar barStyle="dark-content" translucent={false} />
 
       {/* SINGLE HORIZONTAL TOP HEADER BAR */}
       <View
@@ -262,8 +261,8 @@ export default function CategoryProductsScreen() {
           styles.headerBar,
           {
             paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 4,
-            backgroundColor: isDark ? '#121212' : '#ffffff',
-            borderBottomColor: isDark ? '#2c2c2e' : '#f2f2f7',
+            backgroundColor: '#ffffff',
+            borderBottomColor: '#f2f2f7',
           },
         ]}
       >
@@ -278,7 +277,7 @@ export default function CategoryProductsScreen() {
         </TouchableOpacity>
 
         {/* Search Bar (TextInput + Search Icon Action Button) */}
-        <View style={[styles.searchBarBox, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
+        <View style={[styles.searchBarBox, { backgroundColor: '#f4f4f5' }]}>
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder={`${categoryTitle}`}
@@ -306,7 +305,7 @@ export default function CategoryProductsScreen() {
       </View>
 
       {/* CIRCULAR CATEGORY AVATARS HORIZONTAL SCROLL BAR */}
-      <View style={[styles.avatarBarWrapper, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+      <View style={[styles.avatarBarWrapper, { backgroundColor: '#ffffff' }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarScrollContent}>
           {avatarSubCats.map((item) => {
             const isActive = selectedSubCat === item.name;
@@ -334,7 +333,7 @@ export default function CategoryProductsScreen() {
       </View>
 
       {/* SORT & FILTER TOOLBAR (SHEIN STYLE) */}
-      <View style={[styles.sortFilterBar, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderBottomColor: isDark ? '#27272a' : '#f2f2f7' }]}>
+      <View style={[styles.sortFilterBar, { backgroundColor: '#ffffff', borderBottomColor: '#f2f2f7' }]}>
         <TouchableOpacity style={styles.sortOptionTab} onPress={() => setIsSortModalOpen(true)}>
           <ThemedText style={styles.sortOptionLabel}>Recommended</ThemedText>
           <ChevronDown size={13} color={colors.text} style={{ marginLeft: 2 }} />
@@ -359,7 +358,7 @@ export default function CategoryProductsScreen() {
       </View>
 
       {/* SECONDARY FILTER TAG SCROLL BAR */}
-      <View style={[styles.filterTagRow, { backgroundColor: isDark ? '#18181b' : '#ffffff' }]}>
+      <View style={[styles.filterTagRow, { backgroundColor: '#ffffff' }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagScroll}>
           <View style={styles.purpleTrendsPill}>
             <Sparkles size={11} color="#7e22ce" />
@@ -454,7 +453,7 @@ export default function CategoryProductsScreen() {
       {/* SORT MODAL */}
       <Modal visible={isSortModalOpen} transparent animationType="fade" onRequestClose={() => setIsSortModalOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setIsSortModalOpen(false)}>
-          <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}>
+          <View style={[styles.sortModalCard, { backgroundColor: '#ffffff' }]}>
             <View style={styles.modalHeaderRow}>
               <ThemedText style={styles.modalHeaderTitle}>Sort By</ThemedText>
               <TouchableOpacity onPress={() => setIsSortModalOpen(false)}>
@@ -488,9 +487,9 @@ export default function CategoryProductsScreen() {
       <Modal visible={isFilterDrawerOpen} transparent animationType="slide" onRequestClose={() => setIsFilterDrawerOpen(false)}>
         <View style={styles.drawerOverlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setIsFilterDrawerOpen(false)} />
-          <View style={[styles.drawerContentCard, { backgroundColor: isDark ? '#18181b' : '#ffffff' }]}>
+          <View style={[styles.drawerContentCard, { backgroundColor: '#ffffff' }]}>
             {/* Drawer Header */}
-            <View style={[styles.drawerHeader, { borderBottomColor: isDark ? '#27272a' : '#f3f4f6' }]}>
+            <View style={[styles.drawerHeader, { borderBottomColor: '#f3f4f6' }]}>
               <TouchableOpacity onPress={clearAllFilters}>
                 <ThemedText style={styles.drawerResetText}>Clear All</ThemedText>
               </TouchableOpacity>
@@ -545,7 +544,7 @@ export default function CategoryProductsScreen() {
                           style={[
                             styles.boxChip,
                             isSelected && styles.boxChipSelected,
-                            { backgroundColor: isSelected ? '#111827' : isDark ? '#27272a' : '#f4f4f5' },
+                            { backgroundColor: isSelected ? '#111827' : '#f4f4f5' },
                           ]}
                           onPress={() => toggleSelection(sz, selectedSizes, setSelectedSizes)}
                         >
@@ -572,7 +571,7 @@ export default function CategoryProductsScreen() {
                           style={[
                             styles.boxChip,
                             isSelected && styles.boxChipSelected,
-                            { backgroundColor: isSelected ? '#111827' : isDark ? '#27272a' : '#f4f4f5' },
+                            { backgroundColor: isSelected ? '#111827' : '#f4f4f5' },
                           ]}
                           onPress={() => toggleSelection(fit, selectedFits, setSelectedFits)}
                         >
@@ -599,7 +598,7 @@ export default function CategoryProductsScreen() {
                           style={[
                             styles.boxChip,
                             isSelected && styles.boxChipSelected,
-                            { backgroundColor: isSelected ? '#111827' : isDark ? '#27272a' : '#f4f4f5' },
+                            { backgroundColor: isSelected ? '#111827' : '#f4f4f5' },
                           ]}
                           onPress={() => toggleSelection(st, selectedStyles, setSelectedStyles)}
                         >
@@ -626,7 +625,7 @@ export default function CategoryProductsScreen() {
                           style={[
                             styles.boxChip,
                             isSelected && styles.boxChipSelected,
-                            { backgroundColor: isSelected ? '#111827' : isDark ? '#27272a' : '#f4f4f5' },
+                            { backgroundColor: isSelected ? '#111827' : '#f4f4f5' },
                           ]}
                           onPress={() => setSelectedPriceRange(isSelected ? null : { min: pr.min, max: pr.max })}
                         >
@@ -642,7 +641,7 @@ export default function CategoryProductsScreen() {
             </ScrollView>
 
             {/* Drawer Bottom Apply Action */}
-            <View style={[styles.drawerFooter, { borderTopColor: isDark ? '#27272a' : '#f3f4f6' }]}>
+            <View style={[styles.drawerFooter, { borderTopColor: '#f3f4f6' }]}>
               <TouchableOpacity
                 style={styles.drawerApplyBtn}
                 activeOpacity={0.85}

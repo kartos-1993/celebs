@@ -51,20 +51,19 @@ function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
 export default function AppTabs() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const isDark = scheme === 'dark';
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: isDark ? '#CCCCCC' : '#555555',
+        tabBarInactiveTintColor: '#555555',
         tabBarStyle: {
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.55)',
+          backgroundColor: 'rgba(255, 255, 255, 0.55)',
           borderTopWidth: 0,
           height: Platform.OS === 'ios' ? 88 : 64,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,

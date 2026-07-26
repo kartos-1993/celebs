@@ -23,9 +23,6 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps) {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const [isFavorite, setIsFavorite] = useState(false);
   const { startFlyAnimation } = useFlyToCart();
   const imageRef = React.useRef<View>(null);
@@ -41,6 +38,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const imageUrl = resolveImageUrl(primaryImage);
 
   const handleAddToCart = (evt?: any) => {
+    evt?.stopPropagation?.();
     const touchX = evt?.nativeEvent?.pageX;
     const touchY = evt?.nativeEvent?.pageY;
 
@@ -68,19 +66,18 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
     onAddToCart?.(product);
   };
 
-  // Calculate discount percentage if original price is higher
-  const hasDiscount = Boolean(product.discountedPrice && product.discountedPrice < product.price);
-  const currentPrice = hasDiscount ? product.discountedPrice! : product.price;
+  // Price calculations
+  const currentPrice = product.discountedPrice || product.price;
+  const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
     : (product as any).discountPercent || 15;
 
-  // Price text color: Apple System Warm Coral/Orange (#FF5000 / #FF9F0A) when discounted, standard theme color when regular price
-  const priceColor = hasDiscount ? (isDark ? '#FF9F0A' : '#FF5000') : (isDark ? '#ffffff' : '#000000');
+  const priceColor = hasDiscount ? '#FF5000' : '#000000';
 
-  // Format Price: Integer part & decimal part separately for e-commerce styling
+  // Format Price
   const integerPart = Math.floor(currentPrice);
-  const decimalPart = (currentPrice % 1).toFixed(2).substring(1); // e.g. ".60" or ".00"
+  const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
 
   // Brand / Store Name
   const storeName = product.brand || (product as any).vendorName || 'BODI';
@@ -99,11 +96,11 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: isDark ? '#1c1c1e' : '#ffffff' }]}
+      style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: '#ffffff' }]}
       onPress={handlePress}
     >
       {/* 3:4 Aspect Ratio Image Container */}
-      <View ref={imageRef} collapsable={false} style={[styles.imageContainer, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5' }]}>
+      <View ref={imageRef} collapsable={false} style={[styles.imageContainer, { backgroundColor: '#f4f4f5' }]}>
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -112,7 +109,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
             transition={200}
           />
         ) : (
-          <View style={[styles.placeholderImage, { backgroundColor: isDark ? '#2c2c2e' : '#f2f2f7' }]}>
+          <View style={[styles.placeholderImage, { backgroundColor: '#f2f2f7' }]}>
             <ThemedText type="small" style={{ opacity: 0.4 }}>No Image</ThemedText>
           </View>
         )}
@@ -120,12 +117,12 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
         {/* Wishlist Heart Button Top-Right */}
         <TouchableOpacity
           activeOpacity={0.8}
-          style={[styles.heartButton, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.85)' }]}
+          style={[styles.heartButton, { backgroundColor: 'rgba(255, 255, 255, 0.85)' }]}
           onPress={() => setIsFavorite(!isFavorite)}
         >
           <Heart
             size={14}
-            color={isFavorite ? '#ff3b30' : isDark ? '#ffffff' : '#1c1c1e'}
+            color={isFavorite ? '#ff3b30' : '#1c1c1e'}
             fill={isFavorite ? '#ff3b30' : 'transparent'}
           />
         </TouchableOpacity>
@@ -156,14 +153,14 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           <View style={styles.trendsBadge}>
             <ThemedText style={styles.trendsText}>Trends</ThemedText>
           </View>
-          <TouchableOpacity style={[styles.storeBadge, { backgroundColor: isDark ? '#3b0764' : '#faf5ff' }]} activeOpacity={0.7}>
-            <ThemedText style={[styles.storeText, { color: isDark ? '#d8b4fe' : '#6b21a8' }]}>{storeName}</ThemedText>
-            <ChevronRight size={9} color={isDark ? '#d8b4fe' : '#7c3aed'} />
+          <TouchableOpacity style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]} activeOpacity={0.7}>
+            <ThemedText style={[styles.storeText, { color: '#6b21a8' }]}>{storeName}</ThemedText>
+            <ChevronRight size={9} color="#7c3aed" />
           </TouchableOpacity>
         </View>
 
         {/* Product Title (Truncated to Single Line) */}
-        <ThemedText numberOfLines={1} style={[styles.productName, { color: isDark ? '#f4f4f5' : '#27272a' }]}>
+        <ThemedText numberOfLines={1} style={[styles.productName, { color: '#27272a' }]}>
           {product.name}
         </ThemedText>
 
@@ -179,10 +176,10 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
 
         {/* Sales / New Arrival Row */}
         <View style={styles.salesRow}>
-          <View style={[styles.newArrivalBadge, { backgroundColor: isDark ? '#064e3b' : '#ecfdf5' }]}>
-            <ThemedText style={[styles.newArrivalText, { color: isDark ? '#6ee7b7' : '#047857' }]}>NEW ARRIVAL</ThemedText>
+          <View style={[styles.newArrivalBadge, { backgroundColor: '#ecfdf5' }]}>
+            <ThemedText style={[styles.newArrivalText, { color: '#047857' }]}>NEW ARRIVAL</ThemedText>
           </View>
-          <ThemedText style={[styles.soldText, { color: isDark ? '#a1a1aa' : '#71717a' }]}>80+ sold</ThemedText>
+          <ThemedText style={[styles.soldText, { color: '#71717a' }]}>80+ sold</ThemedText>
         </View>
 
         {/* Bottom 2-Column Price & Quick Add Row */}
@@ -205,10 +202,10 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           {/* Column 2: Add to Cart Action Button */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.cartActionButton, { backgroundColor: isDark ? '#2c2c2e' : '#f4f4f5', borderColor: isDark ? '#3a3a3c' : '#e4e4e7' }]}
+            style={[styles.cartActionButton, { backgroundColor: '#f4f4f5', borderColor: '#e4e4e7' }]}
             onPress={handleAddToCart}
           >
-            <ShoppingBag size={14} color={isDark ? '#ffffff' : '#1c1c1e'} strokeWidth={2.2} />
+            <ShoppingBag size={14} color="#1c1c1e" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
       </View>
