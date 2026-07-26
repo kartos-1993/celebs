@@ -1,15 +1,19 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Modal } from 'react-native';
+import { StyleSheet, View, Modal, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   Easing,
   runOnJS,
+  ReduceMotion,
 } from 'react-native-reanimated';
 import { Image as ExpoImage } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export function FlyToCartOverlay() {
   const { activeAnimation, onAnimationComplete } = useFlyToCart();
@@ -17,7 +21,14 @@ export function FlyToCartOverlay() {
   if (!activeAnimation) return null;
 
   return (
-    <Modal visible={true} transparent={true} animationType="none" statusBarTranslucent>
+    <Modal
+      visible={true}
+      transparent={true}
+      animationType="none"
+      statusBarTranslucent={true}
+      hardwareAccelerated={true}
+      onRequestClose={() => {}}
+    >
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <FlyItem
           key={activeAnimation.id}
@@ -36,26 +47,31 @@ function FlyItem({
   item: any;
   onComplete: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
 
-  const startX = item.startX;
-  const startY = item.startY;
-  const startW = item.startWidth || 80;
-  const startH = item.startHeight || 80;
+  // Dynamic header bar cart icon coordinates for any device
+  const defaultStartX = SCREEN_WIDTH / 2;
+  const defaultStartY = SCREEN_HEIGHT - 100;
+  const defaultTargetX = SCREEN_WIDTH - 28;
+  const defaultTargetY = (insets.top || 30) + 20;
 
-  const targetX = item.targetX ?? startX;
-  const targetY = item.targetY ?? startY;
+  const startX = item.startX && item.startX > 0 ? item.startX : defaultStartX;
+  const startY = item.startY && item.startY > 0 ? item.startY : defaultStartY;
+  const targetX = item.targetX && item.targetX > 50 ? item.targetX : defaultTargetX;
+  const targetY = item.targetY && item.targetY > 20 ? item.targetY : defaultTargetY;
 
-  // Arc height for parabolic effect
-  const arcHeight = Math.max(120, Math.abs(startY - targetY) * 0.4);
+  const startW = item.startWidth || 70;
+  const startH = item.startHeight || 90;
 
   useEffect(() => {
     progress.value = 0;
     progress.value = withTiming(
       1,
       {
-        duration: 650,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        duration: 520,
+        easing: Easing.out(Easing.quad),
+        reduceMotion: ReduceMotion.Never, // Force animation on devices with Reduced Motion enabled
       },
       (finished) => {
         if (finished) {
@@ -69,26 +85,19 @@ function FlyItem({
     'worklet';
     const p = progress.value;
 
-    // Linear X interpolation
+    // Direct trajectory with smooth gentle arc to top right cart icon
     const currentX = startX + (targetX - startX) * p;
+    const directY = startY + (targetY - startY) * p;
+    const arcLift = Math.sin(Math.PI * p) * 30;
+    const currentY = directY - arcLift;
 
-    // Parabolic Y arc: Y_start + (Y_target - Y_start) * p - arc * sin(pi * p)
-    const linearY = startY + (targetY - startY) * p;
-    const arcOffset = arcHeight * Math.sin(Math.PI * p);
-    const currentY = linearY - arcOffset;
+    // Scale down smoothly from initial size into the top cart icon
+    const scale = Math.max(0.08, 1 - p * 0.85);
 
-    // Zoom phase (0 -> 0.2): scale 1.0 to 1.25, then shrink to 0.2
-    let scale = 1.0;
-    if (p < 0.2) {
-      scale = 1.0 + (p / 0.2) * 0.25; // 1.0 -> 1.25
-    } else {
-      scale = 1.25 - ((p - 0.2) / 0.8) * 1.05; // 1.25 -> 0.2
-    }
-
-    // Fade out near landing (0.85 -> 1.0)
-    let opacity = 1.0;
-    if (p > 0.85) {
-      opacity = 1 - (p - 0.85) / 0.15;
+    // Fade out right as it lands into the cart icon
+    let opacity = 1;
+    if (p > 0.82) {
+      opacity = (1 - p) / 0.18;
     }
 
     return {
@@ -97,44 +106,37 @@ function FlyItem({
       width: startW,
       height: startH,
       opacity,
-      transform: [
-        { scale: Math.max(0.1, scale) },
-        { rotate: `${p * 360}deg` },
-      ],
+      transform: [{ scale }],
     };
   });
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Animated.View style={[styles.flyingThumbnail, animatedStyle]}>
-        <ExpoImage
-          source={{ uri: item.imageUrl }}
-          style={styles.image}
-          contentFit="cover"
-        />
-      </Animated.View>
-    </View>
+    <Animated.View style={[styles.flyingCard, animatedStyle]}>
+      <ExpoImage
+        source={{ uri: item.imageUrl }}
+        style={styles.image}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="high"
+      />
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  flyingThumbnail: {
+  flyingCard: {
     position: 'absolute',
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 9999,
-    zIndex: 9999,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+    borderRadius: 8,
   },
 });

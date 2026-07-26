@@ -23,9 +23,8 @@ import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, w
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
 function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
-  const { pulseTrigger, setCartIconCoords } = useFlyToCart();
+  const { pulseTrigger } = useFlyToCart();
   const scale = useSharedValue(1);
-  const iconRef = React.useRef<View>(null);
 
   React.useEffect(() => {
     if (pulseTrigger > 0) {
@@ -40,19 +39,8 @@ function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
     transform: [{ scale: scale.value }],
   }));
 
-  const handleLayout = () => {
-    iconRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
-      if (pageX && pageY) {
-        setCartIconCoords({
-          x: pageX + width / 2,
-          y: pageY + height / 2,
-        });
-      }
-    });
-  };
-
   return (
-    <View ref={iconRef} onLayout={handleLayout} collapsable={false}>
+    <View collapsable={false}>
       <Animated.View style={animatedStyle}>
         <ShoppingCart size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
       </Animated.View>
