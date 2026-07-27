@@ -12,7 +12,7 @@ export const MANAGE_PRODUCTS_PATH = '/products/manage';
 export const DRAFT_STORAGE_KEY = 'web-admin.product-draft.add';
 
 export const normalizeText = (value: unknown): string =>
-  typeof value === 'string' ? value.trim() : '';
+  value !== null && value !== undefined ? String(value).trim() : '';
 
 export const toStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {

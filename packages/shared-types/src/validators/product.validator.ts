@@ -6,45 +6,52 @@ export const idSchema = z
   .regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId');
 
 // Product measurement schema
-const productMeasurementSchema = z.object({
+export const productMeasurementSchema = z.object({
   name: z.string().trim().min(1, 'Measurement name is required'),
   value: z.string().trim().min(1, 'Measurement value is required'),
   unit: z.string().trim().min(1, 'Measurement unit is required'),
 });
 
 // Body measurement schema
-const bodyMeasurementSchema = z.object({
+export const bodyMeasurementSchema = z.object({
   name: z.string().trim().min(1, 'Measurement name is required'),
   value: z.string().trim().min(1, 'Measurement value is required'),
   unit: z.string().trim().min(1, 'Measurement unit is required'),
 });
 
 // Size schema
-const sizeSchema = z.object({
+export const sizeSchema = z.object({
   name: z.string().trim().min(1, 'Size name is required'),
   productMeasurements: z.array(productMeasurementSchema).optional().default([]),
   bodyMeasurements: z.array(bodyMeasurementSchema).optional().default([]),
 });
 
 // Stock schema
-const stockSchema = z.object({
+export const stockSchema = z.object({
   size: z.string().trim().min(1, 'Size is required'),
   quantity: z.number().int().min(0, 'Quantity cannot be negative'),
 });
 
 // Color variant schema
-const colorVariantSchema = z.object({
+export const colorVariantSchema = z.object({
   name: z.string().trim().min(1, 'Color name is required'),
   colorCode: z.string().trim().min(1, 'Color code is required'),
   images: z.array(z.string().url('Image must be a valid URL')).optional().default([]),
   stocks: z.array(stockSchema).optional().default([]),
 });
 
+export type ProductMeasurementType = z.infer<typeof productMeasurementSchema>;
+export type BodyMeasurementType = z.infer<typeof bodyMeasurementSchema>;
+export type ProductSizeType = z.infer<typeof sizeSchema>;
+export type ProductStockType = z.infer<typeof stockSchema>;
+export type ProductColorVariantType = z.infer<typeof colorVariantSchema>;
+
+
 // Base product schema fields
 const baseProductSchemaFields = {
   name: z.string().trim().min(2, 'Product name must be at least 2 characters').max(200),
   brand: z.string().trim().min(1, 'Brand is required').max(100).optional().or(z.literal('')),
-  description: z.string().trim().min(10, 'Product description must be at least 10 characters'),
+  description: z.string().trim().max(4000, 'Description must be less than 4000 characters').optional().or(z.literal('')).default(''),
   price: z.number().positive('Price must be positive'),
   discountedPrice: z.number().positive('Discounted price must be positive').optional(),
   categoryId: idSchema,
@@ -60,10 +67,13 @@ const baseProductSchemaFields = {
   vendorName: z.string().optional(),
 };
 
-// Schema for creating a new product
-export const createProductSchema = z.object({
+// Base product object schema (without refinements)
+export const baseProductSchema = z.object({
   ...baseProductSchemaFields,
-}).refine(
+});
+
+// Schema for creating a new product
+export const createProductSchema = baseProductSchema.refine(
   (data) => {
     if (data.discountedPrice && data.discountedPrice >= data.price) {
       return false;

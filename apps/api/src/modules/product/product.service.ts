@@ -1,55 +1,26 @@
 import { Types, FilterQuery } from 'mongoose';
 import slugify from 'slugify';
 import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
-import { ProductFilterType } from '@celebs/shared-types';
+import {
+  ProductFilterType,
+  CreateProductType,
+  ProductSizeType,
+  ProductColorVariantType,
+  ProductStockType,
+  ProductMeasurementType,
+} from '@celebs/shared-types';
 import { CategoryModel } from '@/db/models/category.model';
 import { IProduct, ProductModel } from '@/db/models/product.model';
 import { sendEmail } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 import prisma from '@/db';
 
-interface ProductMeasurementInput {
-  name: string;
-  value: string;
-  unit: string;
-}
+export type CreateProductInput = CreateProductType;
+export type ProductMeasurementInput = ProductMeasurementType;
+export type ProductSizeInput = ProductSizeType;
+export type ProductStockInput = ProductStockType;
+export type ProductColorVariantInput = ProductColorVariantType;
 
-interface ProductSizeInput {
-  name: string;
-  productMeasurements?: ProductMeasurementInput[];
-  bodyMeasurements?: ProductMeasurementInput[];
-}
-
-interface ProductStockInput {
-  size: string;
-  quantity: number;
-}
-
-interface ProductColorVariantInput {
-  name: string;
-  colorCode: string;
-  images?: string[];
-  stocks?: ProductStockInput[];
-}
-
-export interface CreateProductInput {
-  name: string;
-  brand?: string;
-  description: string;
-  price: number;
-  discountedPrice?: number;
-  categoryId: string;
-  subcategoryId: string;
-  sizes?: ProductSizeInput[];
-  colorVariants: ProductColorVariantInput[];
-  mainImages?: string[];
-  dynamicData?: Record<string, unknown>;
-  tags?: string[];
-  featured?: boolean;
-  status?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
-  vendorId?: string;
-  vendorName?: string;
-}
 
 export class ProductService {
   async createProduct(
@@ -69,7 +40,7 @@ export class ProductService {
       name: input.name.trim(),
       brand: input.brand?.trim() || undefined,
       slug,
-      description: input.description.trim(),
+      description: input.description?.trim() || '',
       price: input.price,
       discountedPrice: input.discountedPrice,
       category: new Types.ObjectId(String(categoryId)),

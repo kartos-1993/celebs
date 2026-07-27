@@ -1,39 +1,18 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { baseProductSchema, type CreateProductType } from '@celebs/shared-types';
 
-const productFormSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, 'Product name must be at least 2 characters')
-    .max(200, 'Product name must be less than 200 characters'),
-  brand: z
-    .string()
-    .trim()
-    .max(100, 'Brand must be less than 100 characters')
-    .optional()
-    .or(z.literal('')),
-  description: z
-    .string()
-    .trim()
-    .max(4000, 'Description must be less than 4000 characters')
-    .optional()
-    .or(z.literal('')),
-  categoryId: z.string().trim().min(1, 'Category is required'),
-  subcategoryId: z.string().trim().min(1, 'Subcategory is required'),
-  status: z.enum(['draft', 'published', 'archived']).default('draft'),
-});
+export type ProductFormValues = Partial<CreateProductType> & Record<string, unknown>;
 
-export type ProductFormValues = z.infer<typeof productFormSchema> &
-  Record<string, unknown>;
+const productFormBasicSchema = baseProductSchema.partial();
+
 
 export const useProductForm = (_productId?: string) => {
   const [isLoading] = useState(false);
 
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productFormSchema),
+    resolver: zodResolver(productFormBasicSchema),
     defaultValues: {
       name: '',
       brand: '',

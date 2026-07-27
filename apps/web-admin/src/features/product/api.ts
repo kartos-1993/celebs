@@ -1,30 +1,8 @@
 import { ProductAPI } from '@/lib/axios-client';
+import type { CreateProductType } from '@celebs/shared-types';
 
-export interface CreateProductRequest {
-  name: string;
-  brand?: string;
-  description: string;
-  price: number;
-  discountedPrice?: number;
-  categoryId: string;
-  subcategoryId: string;
-  sizes: Array<{
-    name: string;
-    productMeasurements: Array<{ name: string; value: string; unit: string }>;
-    bodyMeasurements: Array<{ name: string; value: string; unit: string }>;
-  }>;
-  colorVariants: Array<{
-    name: string;
-    colorCode: string;
-    images: string[];
-    stocks: Array<{ size: string; quantity: number }>;
-  }>;
-  mainImages: string[];
-  dynamicData?: Record<string, unknown>;
-  tags?: string[];
-  featured?: boolean;
-  status: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
-}
+export type CreateProductRequest = CreateProductType;
+
 
 interface ApiResponse<T> {
   success?: boolean;
