@@ -41,7 +41,7 @@ export interface IProduct extends Document {
   name: string;
   brand?: string;
   slug: string;
-  description: string;
+  description?: string;
   price: number;
   discountedPrice?: number;
   category: mongoose.Types.ObjectId;
@@ -50,7 +50,7 @@ export interface IProduct extends Document {
   sizes: ISize[];
   colorVariants: IColorVariant[];
   mainImages: string[];
-  dynamicData?: Record<string, unknown>;
+  dynamicData: Record<string, unknown>;
   tags: string[];
   featured: boolean;
   status: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
@@ -59,14 +59,14 @@ export interface IProduct extends Document {
   reviewNote?: string;
   reviewedBy?: string;
   reviewedAt?: Date;
-  createdBy: string;
-  updatedBy: string;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 // Schema for Product
-const ProductSchema: Schema = new Schema(
+const ProductSchema = new Schema<IProduct>(
   {
     name: {
       type: String,
@@ -85,7 +85,7 @@ const ProductSchema: Schema = new Schema(
     },
     description: {
       type: String,
-      required: true,
+      default: '',
     },
     price: {
       type: Number,

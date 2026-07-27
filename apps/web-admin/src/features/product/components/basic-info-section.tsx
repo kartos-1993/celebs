@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Control } from 'react-hook-form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
@@ -214,5 +214,5 @@ const BasicInfoSection = ({
   );
 };
 
-export default BasicInfoSection;
+export default memo(BasicInfoSection);
 

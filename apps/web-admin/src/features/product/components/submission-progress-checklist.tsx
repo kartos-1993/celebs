@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldSpec } from '../fields/UiRegistry';
 import ProductFormSidebar from './productform-sidebar';
@@ -14,7 +14,7 @@ interface SubmissionProgressChecklistProps {
   onSectionClick: (anchorId: string) => void;
 }
 
-export const SubmissionProgressChecklist = ({
+const SubmissionProgressChecklistComponent = ({
   schemaFields,
   schemaHasName,
   variantMeta,
@@ -58,5 +58,7 @@ export const SubmissionProgressChecklist = ({
     />
   );
 };
+
+export const SubmissionProgressChecklist = memo(SubmissionProgressChecklistComponent);
 
 export default SubmissionProgressChecklist;

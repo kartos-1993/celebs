@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldSpec } from '../fields/UiRegistry';
 import {
@@ -12,7 +12,7 @@ interface SubmissionStateHeaderProps {
   variantMeta: Array<{ key: string; label: string }>;
 }
 
-export const SubmissionStateHeader = ({
+const SubmissionStateHeaderComponent = ({
   schemaFields,
   schemaHasName,
   variantMeta,
@@ -57,5 +57,7 @@ export const SubmissionStateHeader = ({
     </div>
   );
 };
+
+export const SubmissionStateHeader = memo(SubmissionStateHeaderComponent);
 
 export default SubmissionStateHeader;
