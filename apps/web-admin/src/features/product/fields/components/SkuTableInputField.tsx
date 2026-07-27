@@ -3,6 +3,7 @@ import { useController, useFormContext, useWatch } from 'react-hook-form';
 import { ProductAPI } from '@/lib/axios-client';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Button } from '@celebs/shared-ui/components/button';
+import { Sparkles } from 'lucide-react';
 import { Input } from '@celebs/shared-ui/components/input';
 import { NumberInput } from '@celebs/shared-ui/components/number-input';
 import {
@@ -22,7 +23,10 @@ import {
 } from '@celebs/shared-ui/components/table';
 import type { UiProps } from '../UiRegistry';
 import { LabelWithRequired, FieldError } from './shared';
-import { getLabelMap } from '../variant-utils'; // Wait, let's make sure it's exported or we copy it
+import {
+  generateCollisionProofBaseSku,
+  cleanSkuAttributeCode,
+} from '../../utils/generate-sku-helpers';
 
 export function SkuTableInputField({ field }: UiProps) {
   const ds = field.dataSource;
@@ -73,7 +77,7 @@ export function SkuTableInputField({ field }: UiProps) {
     Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants,
   ]);
 
-  const { control: formControl, setValue } = useFormContext();
+  const { control: formControl, setValue, getValues } = useFormContext();
 
   const watchedValues = useWatch({
     control: formControl,
@@ -252,13 +256,54 @@ export function SkuTableInputField({ field }: UiProps) {
     }
   };
 
+  const handleAutoGenerateSkus = () => {
+    const fill = (name: string, value: any) =>
+      setValue(name, value, { shouldDirty: true, shouldValidate: true });
+
+    const basePrefix = generateCollisionProofBaseSku(getValues('brand'));
+
+    if (variants.length === 0) {
+      fill('sku.default.sellerSku', `${basePrefix}-DEF`);
+    } else if (variants.length === 1) {
+      for (const opt of variants[0].values) {
+        const code = cleanSkuAttributeCode(labelOf(variants[0].key, opt));
+        fill(pathFor(variants[0].key, opt, 'sellerSku'), `${basePrefix}-${code}`);
+      }
+    } else if (variants.length >= 2) {
+      for (const opt1 of variants[0].values) {
+        for (const opt2 of variants[1].values) {
+          const code1 = cleanSkuAttributeCode(labelOf(variants[0].key, opt1));
+          const code2 = cleanSkuAttributeCode(labelOf(variants[1].key, opt2));
+          fill(
+            pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku'),
+            `${basePrefix}-${code1}-${code2}`,
+          );
+        }
+      }
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <div className="font-medium">{field.label}</div>
-      <div className="text-sm text-muted-foreground">
-        {variants.length
-          ? `SKU Matrix generated from: ${variants.map((a) => a.label).join(' × ')}`
-          : 'No variants selected. Using default SKU.'}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-medium">{field.label}</div>
+          <div className="text-sm text-muted-foreground">
+            {variants.length
+              ? `SKU Matrix generated from: ${variants.map((a) => a.label).join(' × ')}`
+              : 'No variants selected. Using default SKU.'}
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs h-8"
+          onClick={handleAutoGenerateSkus}
+        >
+          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+          Auto-Generate SKUs
+        </Button>
       </div>
 
       {variants.length === 0 && (
@@ -268,11 +313,11 @@ export function SkuTableInputField({ field }: UiProps) {
               <TableHead className="w-[120px]">
                 Price <span className="text-red-500 ml-0.5">*</span>
               </TableHead>
-              <TableHead>Special Price (Optional)</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>SellerSKU</TableHead>
-              <TableHead>Free Items</TableHead>
-              <TableHead>Availability</TableHead>
+              <TableHead className="w-[140px]">Special Price (Optional)</TableHead>
+              <TableHead className="w-[100px]">Stock</TableHead>
+              <TableHead className="w-[220px]">SellerSKU</TableHead>
+              <TableHead className="w-[100px]">Free Items</TableHead>
+              <TableHead className="w-[110px]">Availability</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -404,11 +449,11 @@ export function SkuTableInputField({ field }: UiProps) {
               <TableHead className="w-[120px]">
                 Price <span className="text-red-500 ml-0.5">*</span>
               </TableHead>
-              <TableHead className="w-[120px]">Special Price (Optional)</TableHead>
-              <TableHead className="w-[120px]">Stock</TableHead>
-              <TableHead className="w-[140px]">SellerSKU</TableHead>
-              <TableHead className="w-[120px]">Free Items</TableHead>
-              <TableHead className="w-[120px]">Availability</TableHead>
+              <TableHead className="w-[140px]">Special Price (Optional)</TableHead>
+              <TableHead className="w-[100px]">Stock</TableHead>
+              <TableHead className="w-[220px]">SellerSKU</TableHead>
+              <TableHead className="w-[100px]">Free Items</TableHead>
+              <TableHead className="w-[110px]">Availability</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -467,11 +512,11 @@ export function SkuTableInputField({ field }: UiProps) {
               <TableHead className="w-[120px]">
                 Price <span className="text-red-500 ml-0.5">*</span>
               </TableHead>
-              <TableHead className="w-[120px]">Special Price (Optional)</TableHead>
-              <TableHead className="w-[120px]">Stock</TableHead>
-              <TableHead className="w-[140px]">SellerSKU</TableHead>
-              <TableHead className="w-[120px]">Free Items</TableHead>
-              <TableHead className="w-[120px]">Availability</TableHead>
+              <TableHead className="w-[140px]">Special Price (Optional)</TableHead>
+              <TableHead className="w-[100px]">Stock</TableHead>
+              <TableHead className="w-[220px]">SellerSKU</TableHead>
+              <TableHead className="w-[100px]">Free Items</TableHead>
+              <TableHead className="w-[110px]">Availability</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -628,6 +673,7 @@ function VariantFieldInput({
         <Input
           required={required}
           placeholder=""
+          title={String(field.value ?? '')}
           className={
             fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
           }
