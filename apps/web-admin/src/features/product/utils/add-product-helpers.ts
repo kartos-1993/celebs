@@ -11,6 +11,9 @@ export type PageSectionKey =
 export const MANAGE_PRODUCTS_PATH = '/products/manage';
 export const DRAFT_STORAGE_KEY = 'web-admin.product-draft.add';
 
+export const getDraftStorageKey = (userId?: string): string =>
+  userId ? `${DRAFT_STORAGE_KEY}.${userId}` : DRAFT_STORAGE_KEY;
+
 export const normalizeText = (value: unknown): string =>
   value !== null && value !== undefined ? String(value).trim() : '';
 

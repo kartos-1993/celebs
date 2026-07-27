@@ -56,6 +56,8 @@ const BasicInfoSection = ({
         level: Math.max(0, categoryPath.length - 1),
         path: categoryPath,
       });
+    } else if (!selectedSubcategoryId || !categoryPath?.length) {
+      setSelectedCategory(null);
     }
   }, [categoryPath, selectedSubcategoryId]);
 

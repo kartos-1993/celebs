@@ -6,7 +6,6 @@ import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 import { useOptions } from './DropdownInputField';
 
 export function MultiSelectInputField({ field, control }: UiProps) {
-  const { setValue } = useFormContext();
   const { field: f, fieldState } = useController({
     name: field.name,
     control,
@@ -23,10 +22,7 @@ export function MultiSelectInputField({ field, control }: UiProps) {
         options={opts}
         value={value}
         onChange={(next) => {
-          setValue(field.name, next, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+          f.onChange(next);
         }}
         placeholder={`Select ${field.label}`}
       />

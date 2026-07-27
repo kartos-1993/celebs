@@ -276,6 +276,12 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     setGlobalSearchResults([]);
   };
 
+  useEffect(() => {
+    if (!selectedCategory) {
+      resetDropdownState();
+    }
+  }, [selectedCategory]);
+
   const getCategoriesForColumn = (column: ColumnData): Category[] => {
     if (column.searchQuery) {
       return searchCategories(column.searchQuery, column.parentId || undefined);
@@ -320,21 +326,21 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         </PopoverTrigger>
         
         <PopoverContent 
-          className="p-0 w-[800px] bg-background border shadow-lg z-50"
+          className="p-0 w-[min(800px,95vw)] bg-background border shadow-xl z-50 max-h-[var(--radix-popover-content-available-height)] overflow-hidden"
           align="start"
           side="bottom"
           sideOffset={4}
           avoidCollisions={true}
         >
-          <div className="p-4 space-y-4 max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="p-3 sm:p-4 space-y-3 max-h-[var(--radix-popover-content-available-height)] overflow-hidden flex flex-col">
             {/* Global Search at Top */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search categories globally..."
                 value={globalSearchQuery}
                 onChange={(e) => handleGlobalSearchChange(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9 text-xs sm:text-sm"
               />
               {isSearching && (
                 <div className="absolute right-3 top-2.5">
@@ -345,7 +351,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
             {/* Global Search Results */}
             {globalSearchResults.length > 0 && (
-              <div className="border rounded-lg max-h-40 overflow-y-auto">
+              <div className="border rounded-lg max-h-40 overflow-y-auto flex-shrink-0">
                 <div className="p-2 bg-muted/30 border-b text-sm font-medium">Search Results</div>
                 <div className="p-1">
                   {globalSearchResults.map((category) => (
@@ -364,15 +370,15 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
             {/* Recently Used Section */}
             {recentCategories.length > 0 && !globalSearchQuery && (
-              <div>
-                <div className="text-sm text-muted-foreground mb-2">
+              <div className="flex-shrink-0">
+                <div className="text-xs text-muted-foreground">
                   Recently used: {' '}
                   {recentCategories.slice(0, 2).map((recent, index) => (
                     <Button
                       key={recent.id}
                       variant="link"
                       size="sm"
-                      className="h-auto p-0 text-blue-600 hover:text-blue-800"
+                      className="h-auto p-0 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
                       onClick={() => handleRecentSelect({
                         id: recent.id,
                         name: recent.name,
@@ -383,7 +389,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                       })}
                     >
                       {recent.name}
-                      {index < Math.min(recentCategories.length, 2) - 1 && <span className="ml-2">•</span>}
+                      {index < Math.min(recentCategories.length, 2) - 1 && <span className="ml-1.5">•</span>}
                     </Button>
                   ))}
                 </div>
@@ -394,14 +400,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             {!globalSearchQuery && (
               <div className="border rounded-lg overflow-hidden flex-1 min-h-0">
                 <div className="overflow-x-auto">
-                  <div className="flex h-64 w-max min-w-full">
+                  <div className="flex h-56 w-max min-w-full">
                   {columns.map((column, columnIndex) => {
                     const categoriesForColumn = getCategoriesForColumn(column);
                     
                     return (
-                      <div key={columnIndex} className="w-64 shrink-0 border-r border-border last:border-r-0 min-w-64 flex flex-col">
+                      <div key={columnIndex} className="w-56 sm:w-64 shrink-0 border-r border-border last:border-r-0 flex flex-col">
                         {/* Column Header with Filter */}
-                        <div className="p-3 border-b border-border bg-muted/30 flex-shrink-0">
+                        <div className="p-2 border-b border-border bg-muted/30 flex-shrink-0">
                           <div className="relative">
                             <Search className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
                             <Input
@@ -423,7 +429,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                                 className={cn(
                                   "w-full justify-between text-left h-8 px-2 text-xs font-normal",
                                   selectedPath.some(cat => cat.id === category.id) && "bg-accent",
-                                  tempSelectedPath.some(cat => cat.id === category.id) && "bg-primary/10 text-primary"
+                                  tempSelectedPath.some(cat => cat.id === category.id) && "bg-primary/10 text-primary font-semibold"
                                 )}
                                 ref={(el) => {
                                   const k = `${columnIndex}:${category.id}`;
@@ -450,30 +456,37 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
             {/* Current Selection */}
             {currentSelectionText && (
-              <div className="p-3 bg-muted/50 rounded border flex-shrink-0">
-                <div className="text-sm">
+              <div className="p-2.5 bg-muted/50 rounded-lg border flex-shrink-0">
+                <div className="text-xs sm:text-sm">
                   <span className="text-muted-foreground">Current selection: </span>
-                  <span className="font-medium text-primary">{currentSelectionText}</span>
+                  <span className="font-semibold text-primary">{currentSelectionText}</span>
                 </div>
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-2 pt-2 flex-shrink-0">
-              <Button variant="outline" onClick={resetDropdownState} size="sm">
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleConfirm} 
-                size="sm"
-                disabled={
-                  tempSelectedPath.length === 0 ||
-                  (tempSelectedPath.length > 0 && tempSelectedPath[tempSelectedPath.length - 1].hasChildren)
-                }
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                Confirm
-              </Button>
+            {/* Action Buttons Footer */}
+            <div className="flex items-center justify-between border-t border-border pt-2.5 flex-shrink-0 bg-background">
+              <span className="text-xs text-muted-foreground">
+                {tempSelectedPath.length > 0 && !tempSelectedPath[tempSelectedPath.length - 1].hasChildren
+                  ? 'Ready to confirm selection'
+                  : 'Select a final subcategory'}
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={resetDropdownState} size="sm">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleConfirm} 
+                  size="sm"
+                  disabled={
+                    tempSelectedPath.length === 0 ||
+                    (tempSelectedPath.length > 0 && tempSelectedPath[tempSelectedPath.length - 1].hasChildren)
+                  }
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-4"
+                >
+                  Confirm Selection
+                </Button>
+              </div>
             </div>
           </div>
         </PopoverContent>

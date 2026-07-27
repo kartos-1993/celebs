@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from '@celebs/shared-ui/components/form';
 import { Button } from '@celebs/shared-ui/components/button';
 import { useToast } from '@/hooks/use-toast';
-import { FileClock, Info } from 'lucide-react';
+import { FileClock, Info, RotateCcw } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { CreateProductRequest, ProductApiService } from '../api';
 import { useProductForm } from '../hooks/useProductForm';
@@ -14,12 +14,11 @@ import { extractVariantsMeta } from '../fields/variant-utils';
 import BasicInfoSection from './basic-info-section';
 import DynamicProductForm from './dynamic-product-form';
 import ProductFormActions from './product-form-action';
-import SubmissionStateHeader from './submission-state-header';
 import SubmissionProgressChecklist from './submission-progress-checklist';
 import {
-  DRAFT_STORAGE_KEY,
   MANAGE_PRODUCTS_PATH,
   flattenObject,
+  getDraftStorageKey,
   normalizeText,
   serializeDraftValue,
   uniqueMessages,
@@ -38,6 +37,7 @@ const DraftAutoSaver = memo(({
   watchedSubcategoryId,
   categoryPath,
   getValues,
+  userId,
 }: {
   control: any;
   draftRestored: boolean;
@@ -46,6 +46,7 @@ const DraftAutoSaver = memo(({
   watchedSubcategoryId: string;
   categoryPath: string[] | undefined;
   getValues: () => Record<string, unknown>;
+  userId?: string;
 }) => {
   const watchedFormValues = useWatch({ control });
 
@@ -57,7 +58,7 @@ const DraftAutoSaver = memo(({
       const values = getValues();
       if (values.categoryId && values.subcategoryId) {
         window.localStorage.setItem(
-          DRAFT_STORAGE_KEY,
+          getDraftStorageKey(userId),
           JSON.stringify({
             categoryPath,
             savedAt: new Date().toISOString(),
@@ -67,7 +68,7 @@ const DraftAutoSaver = memo(({
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [draftRestored, watchedFormValues, categoryPath, isEditMode, watchedCategoryId, watchedSubcategoryId, getValues]);
+  }, [draftRestored, watchedFormValues, categoryPath, isEditMode, watchedCategoryId, watchedSubcategoryId, getValues, userId]);
 
   return null;
 });
@@ -128,7 +129,9 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
   const { toast } = useToast();
-  const { role } = useAuthContext();
+  const { role, user } = useAuthContext();
+  const userId = user?.id || user?.email;
+
   const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
   const [schemaFields, setSchemaFields] = useState<FieldSpec[]>([]);
   const [schemaHasBrand, setSchemaHasBrand] = useState(false);
@@ -146,6 +149,32 @@ const AddProduct = () => {
     () => extractVariantsMeta(schemaFields),
     [schemaFields],
   );
+
+  const handleDiscardDraft = useCallback(() => {
+    const draftKey = getDraftStorageKey(userId);
+    window.localStorage.removeItem(draftKey);
+
+    form.reset({
+      name: '',
+      brand: '',
+      description: '',
+      categoryId: '',
+      subcategoryId: '',
+      status: 'draft',
+    });
+
+    setCategoryPath(undefined);
+    setSchemaFields([]);
+    setSchemaHasBrand(false);
+    setSchemaHasName(false);
+    setRestoredDraftAt(null);
+    form.clearErrors();
+
+    toast({
+      title: 'Draft Discarded',
+      description: 'Cleared saved draft. Starting a fresh product entry.',
+    });
+  }, [form, userId, toast]);
 
   const handleAutofill = () => {
     form.setValue('name', "Manfinity Hypemode Men's Solid Ribbed Long Sleeve Polo Shirt, Old Money Style", { shouldValidate: true });
@@ -241,7 +270,8 @@ const AddProduct = () => {
       return;
     }
 
-    const rawDraft = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    const draftKey = getDraftStorageKey(userId);
+    const rawDraft = window.localStorage.getItem(draftKey);
     if (!rawDraft) {
       setDraftRestored(true);
       return;
@@ -295,7 +325,7 @@ const AddProduct = () => {
     } finally {
       setDraftRestored(true);
     }
-  }, [form, isEditMode, schemaFields.length]);
+  }, [form, isEditMode, schemaFields.length, userId]);
 
   // 2. Auto-save form state is handled by isolated DraftAutoSaver sub-component below
 
@@ -311,21 +341,35 @@ const AddProduct = () => {
   };
 
   const clearDynamicState = (categoryId: string) => {
-    const currentValues = form.getValues();
+    // 1. Remove saved local draft for current user to prevent lingering data
+    const draftKey = getDraftStorageKey(userId);
+    window.localStorage.removeItem(draftKey);
 
+    // 2. Complete form reset to clean default values for the new category
     form.reset({
-      name: String(currentValues.name || ''),
-      brand: String(currentValues.brand || ''),
-      description: String(currentValues.description || ''),
+      name: '',
+      brand: '',
+      description: '',
       categoryId,
-      subcategoryId: '',
-      status:
-        (currentValues.status as 'draft' | 'published' | 'archived') || 'draft',
+      subcategoryId: categoryId,
+      status: 'draft',
+      mainImage: [],
+      sku: {
+        default: {
+          price: '',
+          stock: '',
+          sellerSku: '',
+          available: true,
+        },
+      },
     });
 
+    // 3. Clear dynamic schema & draft states
+    setCategoryPath(undefined);
     setSchemaFields([]);
     setSchemaHasBrand(false);
     setSchemaHasName(false);
+    setRestoredDraftAt(null);
     form.clearErrors();
   };
 
@@ -382,8 +426,9 @@ const AddProduct = () => {
   }, []);
 
   const handleSaveAsDraft = () => {
+    const draftKey = getDraftStorageKey(userId);
     window.localStorage.setItem(
-      DRAFT_STORAGE_KEY,
+      draftKey,
       JSON.stringify({
         categoryPath,
         savedAt: new Date().toISOString(),
@@ -397,7 +442,7 @@ const AddProduct = () => {
     toast({
       title: 'Draft saved locally',
       description:
-        'Text, category, and pricing fields were saved locally. Images will need to be uploaded again.',
+        'Text, category, and pricing fields were saved locally for your account.',
     });
   };
 
@@ -498,7 +543,9 @@ const AddProduct = () => {
         });
       }
 
-      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      const draftKey = getDraftStorageKey(userId);
+      window.localStorage.removeItem(draftKey);
+      setRestoredDraftAt(null);
       form.reset(form.getValues());
 
       navigate(MANAGE_PRODUCTS_PATH);
@@ -570,9 +617,9 @@ const AddProduct = () => {
         watchedSubcategoryId={watchedSubcategoryId}
         categoryPath={categoryPath}
         getValues={form.getValues}
+        userId={userId}
       />
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <div className="mx-auto max-w-[1600px] px-3 pt-2 pb-6 sm:px-6 lg:px-8">
+      <div className="space-y-6">
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex items-center gap-3">
@@ -596,23 +643,33 @@ const AddProduct = () => {
                 media, and verify pricing before submitting the product.
               </p>
             </div>
-
-            <SubmissionStateHeader
-              schemaFields={schemaFields}
-              schemaHasName={schemaHasName}
-              variantMeta={variantMeta}
-            />
           </div>
 
           {restoredDraftAt ? (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-              <FileClock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-              <div>
-                <p className="font-semibold text-xs">Local draft restored</p>
-                <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
-                  Restored from local draft saved on{' '}
-                  {new Date(restoredDraftAt).toLocaleString()}.
-                </p>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-center gap-3">
+                <FileClock className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" />
+                <div>
+                  <p className="font-semibold text-xs text-amber-900 dark:text-amber-100">
+                    Saved draft auto-restored
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+                    Loaded unfinished draft saved on{' '}
+                    {new Date(restoredDraftAt).toLocaleString()}.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDiscardDraft}
+                  className="h-8 rounded-xl border-amber-300 bg-white/90 px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100 hover:text-amber-950 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/80"
+                >
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5 text-amber-700 dark:text-amber-300" />
+                  Discard Draft & Start Fresh
+                </Button>
               </div>
             </div>
           ) : null}
@@ -709,8 +766,7 @@ const AddProduct = () => {
             )}
           </div>
         </div>
-      </div>
-    </Form>
+      </Form>
   );
 };
 

@@ -41,9 +41,22 @@ const ProductFormSidebar = ({
   tips = [],
 }: ProductFormSidebarProps) => {
   const score = scoreMeta(completionPercentage);
+  const completedCount = sections.filter((s) => s.status).length;
 
   return (
     <div className="space-y-3">
+      <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+          Submission State
+        </p>
+        <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {completionPercentage === 100 ? 'Ready to submit' : 'In progress'}
+        </p>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          {completedCount} of {sections.length} sections done
+        </p>
+      </div>
+
       <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between gap-2">
           <div>
