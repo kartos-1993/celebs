@@ -1,27 +1,25 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
 import { ProductAPI } from '@/lib/axios-client';
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from '@celebs/shared-ui/components/select';
+import { SearchableSelect } from '@celebs/shared-ui/components/searchable-select';
 import type { FieldSpec, UiProps } from '../UiRegistry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 
 export function useOptions(field: FieldSpec) {
-  const [opts, setOpts] = React.useState<
+  const ds = field.dataSource;
+  const isArray = Array.isArray(ds);
+  const fetchUrl = typeof ds === 'object' && ds !== null && 'fetch' in ds ? (ds as any).fetch : undefined;
+
+  const [asyncOpts, setAsyncOpts] = React.useState<
     Array<{ label: string; value: string }>
   >([]);
+
   React.useEffect(() => {
+    if (!fetchUrl) return;
+    let isMounted = true;
     (async () => {
-      const ds = field.dataSource;
-      if (!ds) return setOpts([]);
-      if (Array.isArray(ds)) return setOpts(ds);
-      if (ds.fetch) {
-        const res = await ProductAPI.get(ds.fetch);
+      try {
+        const res = await ProductAPI.get(fetchUrl);
         const data = res.data;
         const values =
           data?.data?.values ??
@@ -40,11 +38,29 @@ export function useOptions(field: FieldSpec) {
                   },
             )
           : [];
-        setOpts(normalized);
+        if (isMounted) setAsyncOpts(normalized);
+      } catch (err) {
+        console.error('Failed to fetch field options:', err);
       }
     })();
-  }, [field.dataSource]);
-  return opts;
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchUrl]);
+
+  return React.useMemo(() => {
+    if (isArray) {
+      return (ds as any[]).map((v: any) =>
+        typeof v === 'string'
+          ? { label: v, value: v }
+          : {
+              label: v.label ?? v.name ?? String(v.value),
+              value: v.value ?? v.label ?? v.name,
+            },
+      );
+    }
+    return asyncOpts;
+  }, [ds, isArray, asyncOpts]);
 }
 
 export function DropdownInputField({ field, control }: UiProps) {
@@ -59,18 +75,12 @@ export function DropdownInputField({ field, control }: UiProps) {
       <LabelWithRequired required={field.required}>
         {field.label}
       </LabelWithRequired>
-      <Select value={f.value ?? ''} onValueChange={(v) => f.onChange(v)}>
-        <SelectTrigger>
-          <SelectValue placeholder={`Select ${field.label}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {opts.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableSelect
+        options={opts}
+        value={f.value ?? ''}
+        onChange={(val) => f.onChange(val)}
+        placeholder={`Select ${field.label}`}
+      />
       <FieldError message={fieldState.error?.message} />
     </div>
   );
