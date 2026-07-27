@@ -47,7 +47,7 @@ const BasicInfoSection = ({
     useState<DropdownCategory | null>(null);
 
   useEffect(() => {
-    if (!selectedCategory && categoryPath?.length && selectedSubcategoryId) {
+    if (categoryPath?.length && selectedSubcategoryId) {
       setSelectedCategory({
         id: selectedSubcategoryId,
         name: categoryPath[categoryPath.length - 1] || 'Selected',
@@ -57,7 +57,7 @@ const BasicInfoSection = ({
         path: categoryPath,
       });
     }
-  }, [categoryPath, selectedCategory, selectedSubcategoryId]);
+  }, [categoryPath, selectedSubcategoryId]);
 
   const hasCategory = useMemo(
     () => !!selectedCategory || !!selectedSubcategoryId,
@@ -182,8 +182,7 @@ const BasicInfoSection = ({
               <FormItem>
                 <div className="flex items-center justify-between gap-3">
                   <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Product Description{' '}
-                    <span className="text-orange-500">*</span>
+                    Product Description <span className="font-normal text-xs text-gray-500">(Optional)</span>
                   </FormLabel>
                   <span className="text-xs text-gray-400 dark:text-gray-500">
                     {String(field.value || '').length}/4000
