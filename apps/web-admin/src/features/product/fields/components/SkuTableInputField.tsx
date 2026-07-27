@@ -305,306 +305,318 @@ export function SkuTableInputField({ field }: UiProps) {
           Auto-Generate SKUs
         </Button>
       </div>
-
       {variants.length === 0 && (
-        <Table className="mb-4">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[120px]">
-                Price <span className="text-red-500 ml-0.5">*</span>
-              </TableHead>
-              <TableHead className="w-[140px]">Special Price (Optional)</TableHead>
-              <TableHead className="w-[100px]">Stock</TableHead>
-              <TableHead className="w-[220px]">SellerSKU</TableHead>
-              <TableHead className="w-[100px]">Free Items</TableHead>
-              <TableHead className="w-[110px]">Availability</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>
-                <VariantFieldInput
-                  name="sku.default.price"
-                  type="number"
-                  required
-                />
-              </TableCell>
-              <TableCell>
-                <VariantFieldInput
-                  name="sku.default.specialPrice"
-                  type="number"
-                />
-              </TableCell>
-              <TableCell>
-                <VariantFieldInput name="sku.default.stock" type="number" />
-              </TableCell>
-              <TableCell>
-                <VariantFieldInput name="sku.default.sellerSku" />
-              </TableCell>
-              <TableCell>
-                <VariantFieldInput name="sku.default.freeItems" type="number" />
-              </TableCell>
-              <TableCell>
-                <VariantAvailability name="sku.default.available" />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <div className="border rounded-md overflow-x-auto mb-4">
+          <Table className="w-full min-w-[650px] table-fixed text-[11px] sm:text-xs">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[15%] px-1.5 py-2">
+                  Price <span className="text-red-500 ml-0.5">*</span>
+                </TableHead>
+                <TableHead className="w-[18%] px-1.5 py-2">Special Price</TableHead>
+                <TableHead className="w-[12%] px-1.5 py-2">Stock</TableHead>
+                <TableHead className="w-[30%] px-1.5 py-2">SellerSKU</TableHead>
+                <TableHead className="w-[12%] px-1.5 py-2">Free</TableHead>
+                <TableHead className="w-[13%] px-1.5 py-2">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="p-1.5">
+                  <VariantFieldInput
+                    name="sku.default.price"
+                    type="number"
+                    required
+                  />
+                </TableCell>
+                <TableCell className="p-1.5">
+                  <VariantFieldInput
+                    name="sku.default.specialPrice"
+                    type="number"
+                  />
+                </TableCell>
+                <TableCell className="p-1.5">
+                  <VariantFieldInput name="sku.default.stock" type="number" />
+                </TableCell>
+                <TableCell className="p-1.5">
+                  <VariantFieldInput name="sku.default.sellerSku" />
+                </TableCell>
+                <TableCell className="p-1.5">
+                  <VariantFieldInput name="sku.default.freeItems" type="number" />
+                </TableCell>
+                <TableCell className="p-1.5">
+                  <VariantAvailability name="sku.default.available" />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {variants.length > 0 && (
-        <div className="mb-3 grid grid-cols-2 sm:grid-cols-8 gap-2 items-end">
-          <div>
-            <div className="text-xs text-muted-foreground">Select Variant</div>
-            <Select value={applyScope} onValueChange={(v) => setApplyScope(v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {scopeOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="mb-4 p-3 border rounded-lg bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Batch Edit Variants
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">
-              Price <span className="text-red-500 ml-0.5">*</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 items-end">
+            <div className="col-span-2 sm:col-span-2 md:col-span-2">
+              <div className="text-xs text-muted-foreground mb-1">Select Scope</div>
+              <Select value={applyScope} onValueChange={(v) => setApplyScope(v)}>
+                <SelectTrigger className="bg-background h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {scopeOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value} className="text-xs">
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <NumberInput
-              value={applyAll.price ?? ''}
-              onChange={(e) =>
-                setApplyAll((p) => ({ ...p, price: e.target.value }))
-              }
-              placeholder="0"
-            />
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">
+                Price <span className="text-red-500 ml-0.5">*</span>
+              </div>
+              <NumberInput
+                className="bg-background h-8 text-xs"
+                value={applyAll.price ?? ''}
+                onChange={(e) =>
+                  setApplyAll((p) => ({ ...p, price: e.target.value }))
+                }
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Spl Price</div>
+              <NumberInput
+                className="bg-background h-8 text-xs"
+                value={applyAll.specialPrice ?? ''}
+                onChange={(e) =>
+                  setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))
+                }
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Stock</div>
+              <NumberInput
+                className="bg-background h-8 text-xs"
+                value={applyAll.stock ?? ''}
+                onChange={(e) =>
+                  setApplyAll((p) => ({ ...p, stock: e.target.value }))
+                }
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">SellerSKU</div>
+              <Input
+                className="bg-background font-mono text-xs h-8"
+                value={applyAll.sellerSku ?? ''}
+                onChange={(e) =>
+                  setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))
+                }
+                placeholder="SKU"
+              />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Free</div>
+              <NumberInput
+                className="bg-background h-8 text-xs"
+                value={applyAll.freeItems ?? ''}
+                onChange={(e) =>
+                  setApplyAll((p) => ({ ...p, freeItems: e.target.value }))
+                }
+                placeholder="0"
+              />
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Special Price (Optional)</div>
-            <NumberInput
-              value={applyAll.specialPrice ?? ''}
-              onChange={(e) =>
-                setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))
-              }
-              placeholder="0"
-            />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Stock</div>
-            <NumberInput
-              value={applyAll.stock ?? ''}
-              onChange={(e) =>
-                setApplyAll((p) => ({ ...p, stock: e.target.value }))
-              }
-              placeholder="0"
-            />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">SellerSKU</div>
-            <Input
-              value={applyAll.sellerSku ?? ''}
-              onChange={(e) =>
-                setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))
-              }
-              placeholder="SKU"
-            />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Free Items</div>
-            <NumberInput
-              value={applyAll.freeItems ?? ''}
-              onChange={(e) =>
-                setApplyAll((p) => ({ ...p, freeItems: e.target.value }))
-              }
-              placeholder="0"
-            />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Availability</div>
-            <label className="flex items-center gap-2 text-xs border rounded px-2 h-9">
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center gap-2 text-xs cursor-pointer">
               <Checkbox
                 checked={!!applyAll.available}
                 onCheckedChange={(v) =>
                   setApplyAll((p) => ({ ...p, available: !!v }))
                 }
               />
-              <span>Available</span>
+              <span className="text-xs font-medium">Mark as Available</span>
             </label>
-          </div>
-          <div className="flex items-end">
-            <Button type="button" className="w-full" onClick={applyToAll}>
-              Apply to All
+            <Button type="button" size="sm" className="h-8 text-xs px-3" onClick={applyToAll}>
+              Apply to Selected
             </Button>
           </div>
         </div>
       )}
 
       {variants.length === 1 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[160px]">{variants[0].label}</TableHead>
-              <TableHead className="w-[120px]">
-                Price <span className="text-red-500 ml-0.5">*</span>
-              </TableHead>
-              <TableHead className="w-[140px]">Special Price (Optional)</TableHead>
-              <TableHead className="w-[100px]">Stock</TableHead>
-              <TableHead className="w-[220px]">SellerSKU</TableHead>
-              <TableHead className="w-[100px]">Free Items</TableHead>
-              <TableHead className="w-[110px]">Availability</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {variants[0].values.map((opt) => (
-              <TableRow key={opt}>
-                <TableCell className="capitalize">
-                  {labelOf(variants[0].key, opt)}
-                </TableCell>
-                <TableCell>
-                  <VariantFieldInput
-                    name={pathFor(variants[0].key, opt, 'price')}
-                    type="number"
-                    required
-                  />
-                </TableCell>
-                <TableCell>
-                  <VariantFieldInput
-                    name={pathFor(variants[0].key, opt, 'specialPrice')}
-                    type="number"
-                  />
-                </TableCell>
-                <TableCell>
-                  <VariantFieldInput
-                    name={pathFor(variants[0].key, opt, 'stock')}
-                    type="number"
-                  />
-                </TableCell>
-                <TableCell>
-                  <VariantFieldInput
-                    name={pathFor(variants[0].key, opt, 'sellerSku')}
-                  />
-                </TableCell>
-                <TableCell>
-                  <VariantFieldInput
-                    name={pathFor(variants[0].key, opt, 'freeItems')}
-                    type="number"
-                  />
-                </TableCell>
-                <TableCell>
-                  <VariantAvailability
-                    name={pathFor(variants[0].key, opt, 'available')}
-                  />
-                </TableCell>
+        <div className="border rounded-md overflow-x-auto">
+          <Table className="w-full min-w-[700px] table-fixed text-[11px] sm:text-xs">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[12%] px-1.5 py-2">{variants[0].label}</TableHead>
+                <TableHead className="w-[14%] px-1.5 py-2">
+                  Price <span className="text-red-500 ml-0.5">*</span>
+                </TableHead>
+                <TableHead className="w-[16%] px-1.5 py-2">Special Price</TableHead>
+                <TableHead className="w-[11%] px-1.5 py-2">Stock</TableHead>
+                <TableHead className="w-[28%] px-1.5 py-2">SellerSKU</TableHead>
+                <TableHead className="w-[10%] px-1.5 py-2">Free</TableHead>
+                <TableHead className="w-[9%] px-1 py-2 text-center">Status</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {variants.length >= 2 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[160px]">{variants[0].label}</TableHead>
-              <TableHead className="w-[160px]">{variants[1].label}</TableHead>
-              <TableHead className="w-[120px]">
-                Price <span className="text-red-500 ml-0.5">*</span>
-              </TableHead>
-              <TableHead className="w-[140px]">Special Price (Optional)</TableHead>
-              <TableHead className="w-[100px]">Stock</TableHead>
-              <TableHead className="w-[220px]">SellerSKU</TableHead>
-              <TableHead className="w-[100px]">Free Items</TableHead>
-              <TableHead className="w-[110px]">Availability</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {variants[0].values.flatMap((opt1) =>
-              variants[1].values.map((opt2) => (
-                <TableRow key={`${opt1}-${opt2}`}>
-                  <TableCell className="capitalize">
-                    {labelOf(variants[0].key, opt1)}
+            </TableHeader>
+            <TableBody>
+              {variants[0].values.map((opt) => (
+                <TableRow key={opt}>
+                  <TableCell className="capitalize font-medium text-xs px-1.5 py-1.5 truncate">
+                    {labelOf(variants[0].key, opt)}
                   </TableCell>
-                  <TableCell className="capitalize">
-                    {labelOf(variants[1].key, opt2)}
-                  </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1.5">
                     <VariantFieldInput
-                      name={pathFor(
-                        variants[0].key,
-                        opt1,
-                        variants[1].key,
-                        opt2,
-                        'price',
-                      )}
+                      name={pathFor(variants[0].key, opt, 'price')}
                       type="number"
                       required
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1.5">
                     <VariantFieldInput
-                      name={pathFor(
-                        variants[0].key,
-                        opt1,
-                        variants[1].key,
-                        opt2,
-                        'specialPrice',
-                      )}
+                      name={pathFor(variants[0].key, opt, 'specialPrice')}
                       type="number"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1.5">
                     <VariantFieldInput
-                      name={pathFor(
-                        variants[0].key,
-                        opt1,
-                        variants[1].key,
-                        opt2,
-                        'stock',
-                      )}
+                      name={pathFor(variants[0].key, opt, 'stock')}
                       type="number"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1.5">
                     <VariantFieldInput
-                      name={pathFor(
-                        variants[0].key,
-                        opt1,
-                        variants[1].key,
-                        opt2,
-                        'sellerSku',
-                      )}
+                      name={pathFor(variants[0].key, opt, 'sellerSku')}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1.5">
                     <VariantFieldInput
-                      name={pathFor(
-                        variants[0].key,
-                        opt1,
-                        variants[1].key,
-                        opt2,
-                        'freeItems',
-                      )}
+                      name={pathFor(variants[0].key, opt, 'freeItems')}
                       type="number"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1 text-center">
                     <VariantAvailability
-                      name={pathFor(
-                        variants[0].key,
-                        opt1,
-                        variants[1].key,
-                        opt2,
-                        'available',
-                      )}
+                      name={pathFor(variants[0].key, opt, 'available')}
                     />
                   </TableCell>
                 </TableRow>
-              )),
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {variants.length >= 2 && (
+        <div className="border rounded-md overflow-x-auto">
+          <Table className="w-full min-w-[750px] table-fixed text-[11px] sm:text-xs">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[10%] px-1.5 py-2">{variants[0].label}</TableHead>
+                <TableHead className="w-[4%] px-0.5 py-2 text-center">{variants[1].label}</TableHead>
+                <TableHead className="w-[13%] px-1.5 py-2">
+                  Price <span className="text-red-500 ml-0.5">*</span>
+                </TableHead>
+                <TableHead className="w-[15%] px-1.5 py-2">Special Price</TableHead>
+                <TableHead className="w-[10%] px-1.5 py-2">Stock</TableHead>
+                <TableHead className="w-[31%] px-1.5 py-2">SellerSKU</TableHead>
+                <TableHead className="w-[11%] px-1 py-2">Free</TableHead>
+                <TableHead className="w-[6%] px-0.5 py-2 text-center" title="Availability">Active</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {variants[0].values.flatMap((opt1) =>
+                variants[1].values.map((opt2) => (
+                  <TableRow key={`${opt1}-${opt2}`}>
+                    <TableCell className="capitalize font-medium text-[11px] sm:text-xs px-1.5 py-1.5 truncate">
+                      {labelOf(variants[0].key, opt1)}
+                    </TableCell>
+                    <TableCell className="capitalize font-medium text-[11px] sm:text-xs px-0.5 py-1.5 text-center truncate">
+                      {labelOf(variants[1].key, opt2)}
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <VariantFieldInput
+                        name={pathFor(
+                          variants[0].key,
+                          opt1,
+                          variants[1].key,
+                          opt2,
+                          'price',
+                        )}
+                        type="number"
+                        required
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <VariantFieldInput
+                        name={pathFor(
+                          variants[0].key,
+                          opt1,
+                          variants[1].key,
+                          opt2,
+                          'specialPrice',
+                        )}
+                        type="number"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <VariantFieldInput
+                        name={pathFor(
+                          variants[0].key,
+                          opt1,
+                          variants[1].key,
+                          opt2,
+                          'stock',
+                        )}
+                        type="number"
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <VariantFieldInput
+                        name={pathFor(
+                          variants[0].key,
+                          opt1,
+                          variants[1].key,
+                          opt2,
+                          'sellerSku',
+                        )}
+                      />
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <VariantFieldInput
+                        name={pathFor(
+                          variants[0].key,
+                          opt1,
+                          variants[1].key,
+                          opt2,
+                          'freeItems',
+                        )}
+                        type="number"
+                      />
+                    </TableCell>
+                    <TableCell className="p-0.5 text-center">
+                      <VariantAvailability
+                        name={pathFor(
+                          variants[0].key,
+                          opt1,
+                          variants[1].key,
+                          opt2,
+                          'available',
+                        )}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )),
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );
@@ -667,6 +679,7 @@ function VariantFieldInput({
           required={required}
           placeholder="0"
           invalid={!!fieldState.error}
+          className="text-[11px] sm:text-xs px-1 h-7 sm:h-8"
           {...field}
         />
       ) : (
@@ -674,9 +687,9 @@ function VariantFieldInput({
           required={required}
           placeholder=""
           title={String(field.value ?? '')}
-          className={
+          className={`font-mono text-[11px] sm:text-xs px-1.5 h-7 sm:h-8 ${
             fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
-          }
+          }`}
           {...field}
         />
       )}
@@ -689,12 +702,11 @@ function VariantAvailability({ name }: { name: string }) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });
   return (
-    <label className="flex items-center gap-2 text-xs">
+    <div className="flex justify-center items-center">
       <Checkbox
         checked={!!field.value}
         onCheckedChange={(v) => field.onChange(!!v)}
       />
-      <span>Available</span>
-    </label>
+    </div>
   );
 }

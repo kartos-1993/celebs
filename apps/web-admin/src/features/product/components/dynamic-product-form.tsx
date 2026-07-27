@@ -409,11 +409,14 @@ function DynamicProductForm({
           Object.keys(defaults).length > 0
         ) {
           Object.entries(defaults).forEach(([key, value]) => {
-            form.setValue(key, value, {
-              shouldDirty: false,
-              shouldTouch: false,
-              shouldValidate: false,
-            });
+            const existingVal = form.getValues(key);
+            if (existingVal === undefined || existingVal === null || existingVal === '') {
+              form.setValue(key, value, {
+                shouldDirty: false,
+                shouldTouch: false,
+                shouldValidate: false,
+              });
+            }
           });
 
           Object.entries(defaults).forEach(([key, value]) => {

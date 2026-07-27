@@ -225,9 +225,6 @@ export const buildSidebarSections = ({
     ...(!schemaHasName && normalizeText(values.name).length < 2
       ? ['Product name must be at least 2 characters.']
       : []),
-    ...(normalizeText(values.description).length < 10
-      ? ['Product description must be at least 10 characters.']
-      : []),
     ...(!normalizeText(values.categoryId) ||
       !normalizeText(values.subcategoryId)
       ? ['Select a product category before publishing.']

@@ -18,8 +18,9 @@ const productFormSchema = z.object({
   description: z
     .string()
     .trim()
-    .min(10, 'Description must be at least 10 characters')
-    .max(4000, 'Description must be less than 4000 characters'),
+    .max(4000, 'Description must be less than 4000 characters')
+    .optional()
+    .or(z.literal('')),
   categoryId: z.string().trim().min(1, 'Category is required'),
   subcategoryId: z.string().trim().min(1, 'Subcategory is required'),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
@@ -42,7 +43,7 @@ export const useProductForm = (_productId?: string) => {
       status: 'draft',
     },
     mode: 'onChange',
-    shouldUnregister: true,
+    shouldUnregister: false,
   });
 
   const updateBasicField = (

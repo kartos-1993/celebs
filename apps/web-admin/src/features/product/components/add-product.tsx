@@ -19,6 +19,7 @@ import SubmissionProgressChecklist from './submission-progress-checklist';
 import {
   DRAFT_STORAGE_KEY,
   MANAGE_PRODUCTS_PATH,
+  flattenObject,
   normalizeText,
   serializeDraftValue,
   uniqueMessages,
@@ -188,13 +189,19 @@ const AddProduct = () => {
     });
   };
 
+  // 1. Track whether initial draft restoration has finished
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // 1. Restore draft on mount & re-bind values when dynamic schema fields finish loading
   useEffect(() => {
     if (isEditMode) {
+      setDraftRestored(true);
       return;
     }
 
     const rawDraft = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!rawDraft) {
+      setDraftRestored(true);
       return;
     }
 
@@ -205,13 +212,6 @@ const AddProduct = () => {
         values?: Record<string, unknown>;
       };
 
-      if (draft.values) {
-        form.reset({
-          ...draft.values,
-          status: 'draft',
-        });
-      }
-
       if (Array.isArray(draft.categoryPath)) {
         setCategoryPath(draft.categoryPath);
       }
@@ -219,10 +219,63 @@ const AddProduct = () => {
       if (draft.savedAt) {
         setRestoredDraftAt(draft.savedAt);
       }
-    } catch {
-      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+
+      if (draft.values) {
+        const valObj = draft.values as Record<string, any>;
+        const flatVals = flattenObject(valObj);
+
+        // Ensure categoryId and subcategoryId are set first
+        if (valObj.categoryId && !form.getValues('categoryId')) {
+          form.setValue('categoryId', valObj.categoryId, { shouldValidate: true });
+        }
+        if (valObj.subcategoryId && !form.getValues('subcategoryId')) {
+          form.setValue('subcategoryId', valObj.subcategoryId, { shouldValidate: true });
+        }
+
+        // Full reset with all saved values
+        form.reset({
+          ...form.getValues(),
+          ...valObj,
+          ...flatVals,
+          status: 'draft',
+        });
+
+        // Batch set values across all fields
+        Object.entries({ ...valObj, ...flatVals }).forEach(([key, val]) => {
+          if (val !== undefined && val !== null) {
+            form.setValue(key as any, val, { shouldDirty: true, shouldValidate: false });
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Failed to restore draft:', err);
+      // Don't wipe storage on transient JSON parse errors during HMR
+    } finally {
+      setDraftRestored(true);
     }
-  }, [form, isEditMode]);
+  }, [form, isEditMode, schemaFields.length]);
+
+  // 2. Auto-save form state to local storage on changes (ONLY AFTER initial draft restore is done)
+  const watchedFormValues = useWatch({ control: form.control });
+  useEffect(() => {
+    if (!draftRestored || isEditMode || !watchedCategoryId || !watchedSubcategoryId) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      const values = form.getValues();
+      if (values.categoryId && values.subcategoryId) {
+        window.localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({
+            categoryPath,
+            savedAt: new Date().toISOString(),
+            values: serializeDraftValue(values),
+          }),
+        );
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [draftRestored, watchedFormValues, categoryPath, isEditMode, watchedCategoryId, watchedSubcategoryId, form]);
 
   const canShowAdditionalSections = Boolean(
     watchedCategoryId && watchedSubcategoryId,
@@ -475,7 +528,7 @@ const AddProduct = () => {
   return (
     <Form {...form}>
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] px-3 py-6 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
             <span>Catalog</span>
             <ChevronRight className="h-4 w-4" />
@@ -535,8 +588,8 @@ const AddProduct = () => {
             </div>
           ) : null}
 
-          {/* Compact 240px sidebar column for extra main product form width */}
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+          {/* Ultra-compact 190px sidebar column to maximize main form & SKU table width */}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_190px]">
             <div className="space-y-6">
               <form
                 onSubmit={form.handleSubmit(
