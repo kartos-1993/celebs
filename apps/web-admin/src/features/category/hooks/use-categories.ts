@@ -5,6 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/lib/error-utils';
 import { CategoryApiService } from '../api';
 import type { UseCategoriesReturn, UpdateCategoryRequest } from '../types';
 
@@ -60,12 +61,10 @@ export function useCategories(): UseCategoriesReturn {
       });
     },
     onError: (error: unknown) => {
-      const errResponse = error as { response?: { data?: { message?: string } } };
       toast({
         variant: 'destructive',
         title: 'Error',
-        description:
-          errResponse?.response?.data?.message || 'Failed to create category',
+        description: getErrorMessage(error, 'Failed to create category'),
       });
     },
   });
@@ -82,12 +81,10 @@ export function useCategories(): UseCategoriesReturn {
       });
     },
     onError: (error: unknown) => {
-      const errResponse = error as { response?: { data?: { message?: string } } };
       toast({
         variant: 'destructive',
         title: 'Error',
-        description:
-          errResponse?.response?.data?.message || 'Failed to update category',
+        description: getErrorMessage(error, 'Failed to update category'),
       });
     },
   });
@@ -111,12 +108,10 @@ export function useCategories(): UseCategoriesReturn {
       });
     },
     onError: (error: unknown) => {
-      const errResponse = error as { response?: { data?: { message?: string } } };
       toast({
         variant: 'destructive',
         title: 'Error',
-        description:
-          errResponse?.response?.data?.message || 'Failed to delete category',
+        description: getErrorMessage(error, 'Failed to delete category'),
       });
     },
   });

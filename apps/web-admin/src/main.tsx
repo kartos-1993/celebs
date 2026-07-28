@@ -10,10 +10,23 @@ import "./index.css";
 import { router } from "@/routes/router";
 import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "@/context/theme-context";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { QueryClientProvider, QueryClient, MutationCache, QueryCache } from "@tanstack/react-query";
 import { AuthProvider } from "@/context/auth-provider";
+import { showErrorToast } from "@/lib/error-utils";
+import { Toaster } from "@/components/toaster";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      showErrorToast(error);
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      showErrorToast(error);
+    },
+  }),
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -21,6 +34,7 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider defaultTheme="dark" storageKey="theme">
         <AuthProvider>
           <RouterProvider router={router} />
+          <Toaster />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
