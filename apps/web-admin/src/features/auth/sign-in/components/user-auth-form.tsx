@@ -1,4 +1,4 @@
-import { HTMLAttributes, useState } from 'react';
+import { HTMLAttributes, useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -52,6 +52,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const queryClient = useQueryClient();
 
   const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (serverError) {
+        setServerError(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, serverError]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setServerError(null);
