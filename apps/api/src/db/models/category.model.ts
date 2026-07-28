@@ -24,7 +24,6 @@ const CategorySchema: Schema = new Schema(
       type: String,
       required: true,
       trim: true,
-      unique: true,
     },
     slug: {
       type: String,
@@ -69,6 +68,8 @@ CategorySchema.virtual('parent')
 
 // Add indexes
 CategorySchema.index({ path: 1 });
+CategorySchema.index({ name: 1, parentCategory: 1 }, { unique: true });
+
 
 export const CategoryModel = mongoose.model<ICategory>(
   'Category',

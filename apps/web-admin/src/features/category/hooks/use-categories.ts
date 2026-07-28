@@ -123,33 +123,9 @@ export function useCategories(): UseCategoriesReturn {
     categoryTree: treeData?.data || [],
     isLoading,
     error,
-    createCategory: async (data) => {
-      const result = await createMutation.mutateAsync(data);
-      // Ensure query invalidation and UI updates are finished
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.list() }),
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.tree() }),
-      ]);
-      return result;
-    },
-    updateCategory: async (id, data) => {
-      const result = await updateMutation.mutateAsync({ id, data });
-      // Ensure query invalidation and UI updates are finished
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.list() }),
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.tree() }),
-      ]);
-      return result;
-    },
-    deleteCategory: async (id) => {
-      const result = await deleteMutation.mutateAsync(id);
-      // Ensure query invalidation and UI updates are finished
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.list() }),
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.tree() }),
-      ]);
-      return result;
-    },
+    createCategory: (data) => createMutation.mutateAsync(data),
+    updateCategory: (id, data) => updateMutation.mutateAsync({ id, data }),
+    deleteCategory: (id) => deleteMutation.mutateAsync(id),
     refetch: () => {
       refetchCategories();
       refetchTree();

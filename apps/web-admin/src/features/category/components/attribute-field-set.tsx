@@ -248,7 +248,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
             <FormItem>
               <FormLabel>Display Label (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Select Fit Type" {...field} />
+                <Input placeholder="e.g. Select Fit Type" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -321,7 +321,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
             <FormItem>
               <FormLabel>Placeholder</FormLabel>
               <FormControl>
-                <Input placeholder="Field placeholder text" {...field} />
+                <Input placeholder="Field placeholder text" {...field} value={field.value ?? ''} />
               </FormControl>
             </FormItem>
           )}
@@ -333,7 +333,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
             <FormItem>
               <FormLabel>Help Text</FormLabel>
               <FormControl>
-                <Input placeholder="Tooltip help text for admin" {...field} />
+                <Input placeholder="Tooltip help text for admin" {...field} value={field.value ?? ''} />
               </FormControl>
             </FormItem>
           )}
