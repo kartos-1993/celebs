@@ -1,4 +1,4 @@
-import { HTMLAttributes } from 'react';
+import { HTMLAttributes, useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
@@ -43,7 +43,19 @@ export default function VendorRegister() {
     },
   });
 
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (serverError) {
+        setServerError(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, serverError]);
+
   function onSubmit(values: FormValues) {
+    setServerError(null);
     mutate(values, {
       onSuccess: () => {
         navigate('/login', {
@@ -51,11 +63,34 @@ export default function VendorRegister() {
         });
       },
       onError: (error: any) => {
-        const errorMsg = error?.response?.data?.message || error?.message || 'Registration failed';
-        form.setError('confirmPassword', {
-          type: 'server',
-          message: errorMsg,
-        });
+        const errorData = error?.response?.data || error;
+        if (errorData?.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+          errorData.errors.forEach((err: any) => {
+            if (err.field) {
+              form.setError(err.field as any, {
+                type: 'server',
+                message: err.message,
+              });
+            }
+          });
+        } else if (errorData?.message) {
+          const msg = errorData.message.toLowerCase();
+          if (msg.includes('email')) {
+            form.setError('email', { type: 'server', message: errorData.message });
+          } else if (msg.includes('shop')) {
+            form.setError('shopName', { type: 'server', message: errorData.message });
+          } else if (msg.includes('phone')) {
+            form.setError('phoneNumber', { type: 'server', message: errorData.message });
+          } else if (msg.includes('pan')) {
+            form.setError('panNumber', { type: 'server', message: errorData.message });
+          } else if (msg.includes('citizenship')) {
+            form.setError('citizenshipNumber', { type: 'server', message: errorData.message });
+          } else {
+            setServerError(errorData.message);
+          }
+        } else {
+          setServerError('Registration failed. Please try again.');
+        }
       },
     });
   }
@@ -93,6 +128,12 @@ export default function VendorRegister() {
               Submit your basic information to get started.
             </p>
           </div>
+
+          {serverError && (
+            <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md mb-2">
+              {serverError}
+            </div>
+          )}
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
