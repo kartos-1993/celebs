@@ -58,7 +58,12 @@ export class ProductService {
       updatedBy: userId,
     });
 
-    await this.syncInventoryToPostgres(product._id.toString(), input.colorVariants);
+    try {
+      await this.syncInventoryToPostgres(product._id.toString(), input.colorVariants);
+    } catch (error) {
+      await ProductModel.deleteOne({ _id: product._id });
+      throw error;
+    }
 
     return product;
   }
@@ -394,6 +399,11 @@ export class ProductService {
           });
         } catch (err) {
           console.error('[ProductService] Failed to sync inventory to PostgreSQL:', err);
+          throw new AppError(
+            `Failed to sync inventory stock for variant "${colorVariantName}" (${size})`,
+            HTTPSTATUS.INTERNAL_SERVER_ERROR,
+            ErrorCode.INTERNAL_SERVER_ERROR,
+          );
         }
       }
     }
