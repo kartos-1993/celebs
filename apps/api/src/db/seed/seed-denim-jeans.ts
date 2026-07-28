@@ -34,7 +34,7 @@ async function run() {
         slug: 'denim-jeans',
         level: parentCat ? 2 : 1,
         parentCategory: parentCat ? parentCat._id : null,
-        path: parentCat ? [...parentCat.path, 'Denim Jeans'] : ['Denim Jeans'],
+        path: parentCat ? [...parentCat.path, 'denim-jeans'] : ['denim-jeans'],
         isActive: true,
         sizeChartColumns: ['Waist', 'Hip', 'Inseam', 'Thigh']
       });

@@ -114,19 +114,17 @@ export class CategoryController {
           );
         }
         level = parentCategory.level + 1;
-        path = [...parentCategory.path.map((p) => p.toString()), name];
+        path = [...parentCategory.path.map((p) => p.toString()), slug];
       } else {
-        path = [name];
+        path = [slug];
       }
 
       const categoryInput = {
-        name,
+        ...validatedData,
         parent: parent?.toString() || null,
         slug,
         level,
         path,
-        attributes: attributes || [],
-        imageUrl: imageUrl || null,
       };
 
       const category = await this.categoryService.createCategory(categoryInput);

@@ -28,7 +28,7 @@ async function run() {
         slug: 'denim-jackets',
         level: parentCat ? 2 : 1,
         parentCategory: parentCat ? parentCat._id : null,
-        path: parentCat ? [...parentCat.path, 'Denim Jackets'] : ['Denim Jackets'],
+        path: parentCat ? [...parentCat.path, 'denim-jackets'] : ['denim-jackets'],
         isActive: true,
         sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length']
       });

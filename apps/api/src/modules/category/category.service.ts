@@ -8,39 +8,28 @@ import { CategoryFilterModel, ICategoryFilter } from '@/db/models/category-filte
 import { ProductModel } from '@/db/models/product.model';
 
 
-export interface CategoryAttribute {
-  _id?: string;
-  name: string;
-  type: AttributeType;
-  values?: string[];
-  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
-  isRequired?: boolean;
-  label?: string | null;
-  placeholder?: string | null;
-  info?: {
-    help?: string | null;
-    top?: string | null;
-  } | null;
-  isVariant?: boolean;
-  variantType?: 'color' | 'size' | null;
-  useStandardOptions?: boolean;
-  optionSetId?: string | Types.ObjectId | null;
-}
+import type {
+  CategoryAttributeType,
+  CreateCategoryType,
+  UpdateCategoryType,
+} from '@celebs/shared-types';
 
-export interface CategoryInput {
-  name: string;
-  parent: string | null;
+export type CategoryAttribute = CategoryAttributeType & {
+  _id?: string;
+};
+
+export type CategoryInput = CreateCategoryType & {
   slug: string;
   level: number;
   path: string[];
-  attributes: CategoryAttribute[];
-  imageUrl?: string | null;
-  isActive?: boolean;
-}
+};
 
-export interface CategoryUpdateInput extends Partial<Omit<CategoryInput, 'parent'>> {
-  parent?: string | null;
-}
+export type CategoryUpdateInput = UpdateCategoryType & {
+  slug?: string;
+  level?: number;
+  path?: string[];
+};
+
 
 interface CategoryDeleteResult {
   success: boolean;
@@ -73,7 +62,7 @@ export class CategoryService {
    */  async createCategory(categoryData: CategoryInput): Promise<ICategory> {
     await this.validateCategoryUniqueness(
       categoryData.name,
-      categoryData.parent,
+      categoryData.parent ?? null,
     );
 
     const categoryDoc = await this.createCategoryDocument(categoryData);
@@ -373,13 +362,23 @@ export class CategoryService {
   // Private Helper Methods
 
   /**
+   * Helper to safely parse ObjectId for option set ID
+   */
+  private parseOptionSetId(optionSetId: any): Types.ObjectId | null {
+    if (!optionSetId) return null;
+    const str = String(optionSetId);
+    return Types.ObjectId.isValid(str) ? new Types.ObjectId(str) : null;
+  }
+
+  /**
    * Validates that a category name is unique within the same parent
    */
   private async validateCategoryUniqueness(
     name: string,
     parent: string | null,
   ): Promise<void> {
-    const existingCategory = await CategoryModel.findOne({ name, parent });
+    const parentId = parent && Types.ObjectId.isValid(parent) ? new Types.ObjectId(parent) : null;
+    const existingCategory = await CategoryModel.findOne({ name, parentCategory: parentId });
 
     if (existingCategory) {
       throw new AppError(
@@ -389,6 +388,7 @@ export class CategoryService {
       );
     }
   }
+
   /**
    * Creates the core category document
    */
@@ -397,7 +397,7 @@ export class CategoryService {
   ): Promise<ICategory> {
     return await CategoryModel.create({
       name: categoryData.name,
-      parent: categoryData.parent,
+      parentCategory: categoryData.parent && Types.ObjectId.isValid(categoryData.parent) ? new Types.ObjectId(categoryData.parent) : null,
       slug: categoryData.slug,
       level: categoryData.level,
       path: categoryData.path,
@@ -432,11 +432,7 @@ export class CategoryService {
           isVariant: !!attr.isVariant,
           variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
           useStandardOptions: !!attr.useStandardOptions,
-          optionSetId: attr.optionSetId
-            ? typeof attr.optionSetId === 'string'
-              ? new Types.ObjectId(attr.optionSetId)
-              : (attr.optionSetId as any)
-            : null,
+          optionSetId: this.parseOptionSetId(attr.optionSetId),
         }),
       ),
     );
@@ -626,9 +622,12 @@ export class CategoryService {
     categoryId: string,
     existingCategory: any,
   ): Promise<void> {
+    const parentVal = updateData.parent !== undefined ? updateData.parent : existingCategory.parentCategory;
+    const parentId = parentVal && Types.ObjectId.isValid(String(parentVal)) ? new Types.ObjectId(String(parentVal)) : null;
+
     const duplicateCategory = await CategoryModel.findOne({
       name: updateData.name,
-      parent: updateData.parent ?? existingCategory.parent,
+      parentCategory: parentId,
       _id: { $ne: categoryId },
     });
 
@@ -644,27 +643,30 @@ export class CategoryService {
   }
 
   /**
-   * Updates category attributes (creates new or updates existing)
+   * Updates category attributes (creates new, updates existing, and deletes orphaned)
    */
   private async updateCategoryAttributes(
     categoryId: any,
     attributes: CategoryAttribute[],
     session?: ClientSession,
   ): Promise<void> {
+    const updatedAttrIds: Types.ObjectId[] = [];
+
     for (const attr of attributes) {
       const values = this.processAttributeValues(attr);
+      const optionSetId = this.parseOptionSetId(attr.optionSetId);
 
-      const existingAttr = await AttributeModel.findOne(
-        {
-          categoryId,
-          name: attr.name,
-        },
-        null,
-        session ? { session } : undefined,
-      );
+      const existingAttr = attr._id && Types.ObjectId.isValid(String(attr._id))
+        ? await AttributeModel.findById(attr._id, null, session ? { session } : undefined)
+        : await AttributeModel.findOne(
+            { categoryId, name: attr.name },
+            null,
+            session ? { session } : undefined,
+          );
 
       if (existingAttr) {
         // Update existing attribute
+        existingAttr.name = attr.name;
         existingAttr.values = values;
         existingAttr.isRequired = !!attr.isRequired;
         existingAttr.type = attr.type;
@@ -672,15 +674,12 @@ export class CategoryService {
         existingAttr.isVariant = !!attr.isVariant;
         (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
         existingAttr.useStandardOptions = !!attr.useStandardOptions;
-        existingAttr.optionSetId = attr.optionSetId
-          ? typeof attr.optionSetId === 'string'
-            ? new Types.ObjectId(attr.optionSetId)
-            : (attr.optionSetId as any)
-          : null;
+        existingAttr.optionSetId = optionSetId;
         await existingAttr.save({ session });
+        updatedAttrIds.push(existingAttr._id as Types.ObjectId);
       } else {
         // Create new attribute
-        await AttributeModel.create(
+        const created = await AttributeModel.create(
           [
             {
               categoryId,
@@ -689,27 +688,33 @@ export class CategoryService {
               values,
               isRequired: !!attr.isRequired,
               group: (attr.group as any) ?? 'basic',
-              // new fields
               isVariant: !!attr.isVariant,
               variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
               useStandardOptions: !!attr.useStandardOptions,
-              optionSetId: attr.optionSetId
-                ? typeof attr.optionSetId === 'string'
-                  ? new Types.ObjectId(attr.optionSetId)
-                  : (attr.optionSetId as any)
-                : null,
+              optionSetId,
             },
           ],
           session ? { session } : undefined,
         );
+        if (created[0]) {
+          updatedAttrIds.push(created[0]._id as Types.ObjectId);
+        }
       }
     }
-  } /**
+
+    // Delete orphaned attributes for this category that were removed from the form
+    await AttributeModel.deleteMany(
+      { categoryId, _id: { $nin: updatedAttrIds } },
+      session ? { session } : undefined,
+    );
+  }
+
+  /**
    * Gets the total number of child categories
    */
   private async getChildCategoriesCount(categoryId: string): Promise<number> {
     const childCount = await CategoryModel.countDocuments({
-      parent: categoryId,
+      parentCategory: categoryId,
     });
     return childCount;
   }

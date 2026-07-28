@@ -1,32 +1,14 @@
-/**
- * Category-related TypeScript types and interfaces
- * Centralized type definitions for better maintainability
- */
+import type {
+  CategoryAttributeType,
+  CreateCategoryType,
+  UpdateCategoryType,
+} from '@celebs/shared-types';
 
-export interface CategoryAttribute {
-  _id?: string;
-  name: string;
-  label?: string;
-  placeholder?: string;
-  info?: {
-    help?: string;
-    top?: string;
-  };
-  type: "text" | "select" | "multiselect" | "number" | "boolean" | 
-        "richText" | "image" | "video" | "marketImages" | "mainImage" | 
-        "customEditor" | "translateInput" | "listEditor" | "packageWeight" | 
-        "packageVolume" | "color-with-image" | "measurement-group" | "size-guide";
-  values: string[];
-  isRequired: boolean;
+export type CategoryAttribute = CategoryAttributeType & {
   categoryId?: string;
-  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
-  isVariant?: boolean;
-  variantType?: 'color' | 'size' | null;
-  useStandardOptions?: boolean;
-  optionSetId?: string | null;
   createdAt?: string;
   updatedAt?: string;
-}
+};
 
 export interface Category {
   _id: string;
@@ -48,23 +30,8 @@ export interface CategoryTreeNode extends Category {
   children: CategoryTreeNode[];
 }
 
-export interface CreateCategoryRequest {
-  name: string;
-  parent: string | null;
-  attributes: Omit<
-    CategoryAttribute,
-    '_id' | 'categoryId' | 'createdAt' | 'updatedAt'
-  >[];
-  sizeChartColumns?: string[];
-  imageUrl?: string | null;
-  isActive?: boolean;
-}
-
-export interface UpdateCategoryRequest extends Partial<CreateCategoryRequest> {
-  slug?: string;
-  level?: number;
-  path?: string[];
-}
+export type CreateCategoryRequest = CreateCategoryType;
+export type UpdateCategoryRequest = UpdateCategoryType;
 
 export interface PaginatedCategoriesResponse {
   categories: Category[];
@@ -80,14 +47,8 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export interface CategoryFormData {
-  name: string;
-  parent: string | null;
-  attributes: CategoryAttribute[];
-  sizeChartColumns?: string[];
-  imageUrl?: string | null;
-  isActive: boolean;
-}
+export type CategoryFormData = CreateCategoryType;
+
 
 // UI State Types
 export interface CategoryUIState {
