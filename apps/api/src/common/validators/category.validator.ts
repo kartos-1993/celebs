@@ -4,7 +4,9 @@ import {
   attributeSchema,
   createCategorySchema,
   updateCategorySchema,
+  baseCategorySchema,
   CreateCategoryType,
+  UpdateCategoryType,
 } from '@celebs/shared-types';
 
 // Zod schema for a Mongoose ObjectId (or null)
@@ -22,8 +24,9 @@ export const idSchema = z
   });
 
 export const attributeInputSchema = attributeSchema;
-export const categoryBaseSchema = createCategorySchema;
+export const categoryBaseSchema = baseCategorySchema;
 export const categoryInputSchema = createCategorySchema;
 export const categoryUpdateSchema = updateCategorySchema;
 
 export type CategoryInput = CreateCategoryType;
+export type CategoryUpdateInput = UpdateCategoryType;

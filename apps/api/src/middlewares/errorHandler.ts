@@ -57,6 +57,34 @@ export const errorHandler: ErrorRequestHandler = (
     return formatZodError(res, error);
   }
 
+  // Handle MongoDB Duplicate Key Error (E11000) centrally
+  if (
+    error?.code === 11000 ||
+    error?.name === 'MongoServerError' ||
+    error?.message?.includes('E11000')
+  ) {
+    const keyValue = error?.keyValue || {};
+    const keys = Object.keys(keyValue);
+    const fieldName = keys.length ? keys.join(', ') : 'field';
+    const fieldValue = keys.length ? keys.map((k) => `"${keyValue[k]}"`).join(', ') : '';
+
+    const message = fieldValue
+      ? `A record with ${fieldName} ${fieldValue} already exists.`
+      : 'A record with this unique value already exists.';
+
+    const response: IApiResponse = {
+      success: false,
+      message,
+      errors: keys.map((key) => ({
+        field: key,
+        message: `${key} must be unique`,
+      })),
+      data: null,
+      errorCode: ErrorCode.INVALID_REQUEST,
+    };
+    return res.status(HTTPSTATUS.CONFLICT).json(response);
+  }
+
   if (error instanceof AppError) {
     const response: IApiResponse = {
       success: false,

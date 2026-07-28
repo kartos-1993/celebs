@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { HTTPSTATUS, AppError, ErrorCode, logger } from '@celebs/shared-utils';
-import { categoryInputSchema, categoryBaseSchema } from '@/common/validators/category.validator';
+import { categoryInputSchema, categoryUpdateSchema } from '@/common/validators/category.validator';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
@@ -164,13 +164,11 @@ export class CategoryController {
   updateCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-  // Validate input (use base schema for .partial() to avoid effects on refined schema)
-  const updateSchema = categoryBaseSchema.partial();
-      const validatedData = updateSchema.parse(req.body);
+      const validatedData = categoryUpdateSchema.parse(req.body);
 
       // Prepare update data
       const updateData: any = { ...validatedData };
-      console.log(updateData, 111111111111)
+      
       // If name is present, generate new slug
       if (updateData.name) {
         updateData.slug = slugify(updateData.name, {

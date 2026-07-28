@@ -1,26 +1,33 @@
 import { ClientSession, Types } from 'mongoose';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import { CategoryModel, ICategory } from '@/db/models/category.model';
-import { AttributeModel, IAttribute } from '@/db/models/attribute.model';
+import { AttributeModel, IAttribute, AttributeType } from '@/db/models/attribute.model';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 import { CategoryFilterModel, ICategoryFilter } from '@/db/models/category-filter.model';
 import { ProductModel } from '@/db/models/product.model';
 
 
-interface CategoryAttribute {
+export interface CategoryAttribute {
+  _id?: string;
   name: string;
-  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
-  values: string[];
+  type: AttributeType;
+  values?: string[];
   group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
-  isRequired: boolean;
+  isRequired?: boolean;
+  label?: string | null;
+  placeholder?: string | null;
+  info?: {
+    help?: string | null;
+    top?: string | null;
+  } | null;
   isVariant?: boolean;
   variantType?: 'color' | 'size' | null;
   useStandardOptions?: boolean;
   optionSetId?: string | Types.ObjectId | null;
 }
 
-interface CategoryInput {
+export interface CategoryInput {
   name: string;
   parent: string | null;
   slug: string;
@@ -31,7 +38,7 @@ interface CategoryInput {
   isActive?: boolean;
 }
 
-interface CategoryUpdateInput extends Partial<Omit<CategoryInput, 'parent'>> {
+export interface CategoryUpdateInput extends Partial<Omit<CategoryInput, 'parent'>> {
   parent?: string | null;
 }
 
@@ -63,41 +70,22 @@ export class CategoryService {
    * Creates a new category with its associated attributes
    * @param categoryData - The category data including attributes
    * @returns Promise<ICategory> - The created category with attributes
-   */ async createCategory(categoryData: CategoryInput): Promise<ICategory> {
+   */  async createCategory(categoryData: CategoryInput): Promise<ICategory> {
     await this.validateCategoryUniqueness(
       categoryData.name,
       categoryData.parent,
     );
 
-    try {
-      const categoryDoc = await this.createCategoryDocument(categoryData);
+    const categoryDoc = await this.createCategoryDocument(categoryData);
 
-      if (this.hasAttributes(categoryData)) {
-        await this.createCategoryAttributes(
-          categoryDoc._id,
-          categoryData.attributes,
-        );
-      }
-
-      return await this.getCategoryWithAttributes(String(categoryDoc._id));
-    } catch (error: any) {
-      if (
-        error?.code === 11000 ||
-        error?.message?.includes('E11000') ||
-        error?.message?.includes('duplicate key')
-      ) {
-        throw new AppError(
-          'A category with this name already exists',
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.BAD_REQUEST,
-        );
-      }
-      throw new AppError(
-        `Failed to create category: ${error.message}`,
-        HTTPSTATUS.INTERNAL_SERVER_ERROR,
-        ErrorCode.INTERNAL_SERVER_ERROR,
+    if (this.hasAttributes(categoryData)) {
+      await this.createCategoryAttributes(
+        categoryDoc._id,
+        categoryData.attributes,
       );
     }
+
+    return await this.getCategoryWithAttributes(String(categoryDoc._id));
   }
 
   /**
@@ -459,7 +447,12 @@ export class CategoryService {
    */
   private processAttributeValues(attr: CategoryAttribute): string[] {
     if (attr.type === 'select' || attr.type === 'multiselect') {
-      return Array.isArray(attr.values) ? attr.values : [attr.values];
+      if (Array.isArray(attr.values)) {
+        return attr.values;
+      }
+      if (attr.values) {
+        return [attr.values as unknown as string];
+      }
     }
     return [];
   }
@@ -673,11 +666,11 @@ export class CategoryService {
       if (existingAttr) {
         // Update existing attribute
         existingAttr.values = values;
-        existingAttr.isRequired = attr.isRequired;
+        existingAttr.isRequired = !!attr.isRequired;
         existingAttr.type = attr.type;
-    (existingAttr as any).group = (attr.group as any) ?? (existingAttr as any).group ?? 'basic';
-  existingAttr.isVariant = !!attr.isVariant;
-  (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
+        (existingAttr as any).group = (attr.group as any) ?? (existingAttr as any).group ?? 'basic';
+        existingAttr.isVariant = !!attr.isVariant;
+        (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
         existingAttr.useStandardOptions = !!attr.useStandardOptions;
         existingAttr.optionSetId = attr.optionSetId
           ? typeof attr.optionSetId === 'string'
@@ -694,8 +687,8 @@ export class CategoryService {
               name: attr.name,
               type: attr.type,
               values,
-              isRequired: attr.isRequired,
-      group: (attr.group as any) ?? 'basic',
+              isRequired: !!attr.isRequired,
+              group: (attr.group as any) ?? 'basic',
               // new fields
               isVariant: !!attr.isVariant,
               variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
