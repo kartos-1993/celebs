@@ -26,6 +26,7 @@ export default function VendorRegister() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: vendorRegisterMutationFn,
+    meta: { suppressErrorToast: true },
   });
 
   const form = useForm<FormValues>({
