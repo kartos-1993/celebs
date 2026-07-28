@@ -41,7 +41,25 @@ const processQueue = (error: any = null) => {
 };
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      response.data.success === false
+    ) {
+      const errorData = response.data as Record<string, unknown>;
+      return Promise.reject({
+        status: response.status,
+        message:
+          typeof errorData.message === 'string'
+            ? errorData.message
+            : 'Operation failed',
+        errorCode: errorData.errorCode,
+        ...errorData,
+      });
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;

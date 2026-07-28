@@ -13,6 +13,13 @@ import {
   ApiResponse,
 } from './types';
 
+function checkResponseSuccess<T>(data: ApiResponse<T>): ApiResponse<T> {
+  if (data && data.success === false) {
+    throw new Error(data.message || 'API request failed');
+  }
+  return data;
+}
+
 /**
  * API Endpoints for category operations
  */
@@ -29,7 +36,7 @@ export class CategoryApiService {
       CategoryApiService.BASE_PATH,
       data,
     );
-    return response.data;
+    return checkResponseSuccess(response.data);
   }
 
   /**
@@ -42,7 +49,7 @@ export class CategoryApiService {
     const response = await ProductAPI.get<
       ApiResponse<PaginatedCategoriesResponse>
     >(`${CategoryApiService.BASE_PATH}?page=${page}&limit=${limit}`);
-    return response.data;
+    return checkResponseSuccess(response.data);
   }
 
   /**
@@ -52,7 +59,7 @@ export class CategoryApiService {
     const response = await ProductAPI.get<ApiResponse<CategoryTreeNode[]>>(
       `${CategoryApiService.BASE_PATH}/tree-with-attributes`,
     );
-    return response.data;
+    return checkResponseSuccess(response.data);
   }
 
   /**
@@ -63,6 +70,9 @@ export class CategoryApiService {
       `${CategoryApiService.BASE_PATH}/search`,
       { params: { q: query, limit: 20 } },
     );
+    if (response.data && response.data.success === false) {
+      throw new Error(response.data.message || 'Search failed');
+    }
     return response.data?.data ?? response.data ?? [];
   }
 
@@ -73,7 +83,7 @@ export class CategoryApiService {
     const response = await ProductAPI.get<ApiResponse<Category>>(
       `${CategoryApiService.BASE_PATH}/${id}`,
     );
-    return response.data;
+    return checkResponseSuccess(response.data);
   }
 
   /**
@@ -87,7 +97,7 @@ export class CategoryApiService {
       `${CategoryApiService.BASE_PATH}/${id}`,
       data,
     );
-    return response.data;
+    return checkResponseSuccess(response.data);
   }
 
   /**
@@ -99,7 +109,7 @@ export class CategoryApiService {
     const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(
       `${CategoryApiService.BASE_PATH}/${id}`,
     );
-    return response.data;
+    return checkResponseSuccess(response.data);
   }
 }
 
