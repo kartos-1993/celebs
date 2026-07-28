@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import { Types } from 'mongoose';
+import {
+  attributeSchema,
+  createCategorySchema,
+  updateCategorySchema,
+  CreateCategoryType,
+} from '@celebs/shared-types';
 
 // Zod schema for a Mongoose ObjectId (or null)
 const objectIdSchema = z
@@ -15,85 +21,9 @@ export const idSchema = z
     message: 'Invalid ObjectId',
   });
 
-// Zod schema for attribute values
-const attributeValueSchema = z.string().min(1, 'Value is required');
+export const attributeInputSchema = attributeSchema;
+export const categoryBaseSchema = createCategorySchema;
+export const categoryInputSchema = createCategorySchema;
+export const categoryUpdateSchema = updateCategorySchema;
 
-// Zod schema for an attribute
-export const attributeInputSchema = z
-  .object({
-  name: z.string().min(1, 'Attribute name is required').trim(),
-  type: z.enum([
-    'text',
-    'select',
-    'multiselect',
-    'number',
-    'boolean',
-    'richText',
-    'image',
-    'video',
-    'marketImages',
-    'mainImage',
-    'customEditor',
-    'translateInput',
-    'listEditor',
-    'packageWeight',
-    'packageVolume',
-    'color-with-image',
-    'measurement-group',
-    'size-guide',
-  ], {
-    message: 'Invalid attribute type',
-  }),
-  values: z.array(attributeValueSchema).optional().default([]),
-  isRequired: z.boolean().default(false),
-  group: z.string().optional(),
-  label: z.string().optional().nullable(),
-  placeholder: z.string().optional().nullable(),
-  info: z
-    .object({
-      help: z.string().optional().nullable(),
-      top: z.string().optional().nullable(),
-    })
-    .optional()
-    .nullable(),
-  // NEW: variant + option set support
-  isVariant: z.boolean().optional().default(false),
-  // prefer variantType; accept variantAxis for backward compatibility
-  variantType: z.enum(['color', 'size']).optional().nullable(),
-  variantAxis: z.enum(['color', 'size']).optional().nullable(),
-  useStandardOptions: z.boolean().optional().default(false),
-  optionSetId: objectIdSchema.optional().default(null),
-  })
-  // normalize variantAxis -> variantType
-  .transform((val) => {
-    const variantType = (val as any).variantType ?? (val as any).variantAxis ?? null;
-    const { variantAxis, ...rest } = val as any;
-    return { ...rest, variantType } as any;
-  });
-
-// Base schema (no refinements) for reuse (e.g., in updates with .partial())
-export const categoryBaseSchema = z
-  .object({
-    name: z.string().min(1, 'Name is required').trim(),
-    parent: objectIdSchema.optional().default(null),
-    attributes: z.array(attributeInputSchema).optional().default([]),
-    imageUrl: z.string().url().or(z.string().length(0)).optional().nullable(),
-    isActive: z.boolean().optional().default(true),
-  });
-
-// Zod schema for the category request body
-export const categoryInputSchema = categoryBaseSchema
-  .refine((val) => {
-    const attrs = val.attributes || [];
-    const axes = attrs
-      .filter((a: any) => a.isVariant && (a.variantType ?? a.variantAxis))
-      .map((a: any) => a.variantType ?? a.variantAxis);
-    const unique = new Set(axes);
-    return unique.size <= 2;
-  }, {
-    message: 'You can select at most two distinct variation types (e.g., Color and Size)',
-    path: ['attributes'],
-  });
-
-// TypeScript type for the validated input
-export type CategoryInput = z.infer<typeof categoryInputSchema>;
+export type CategoryInput = CreateCategoryType;
