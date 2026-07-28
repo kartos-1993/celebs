@@ -12,21 +12,26 @@ describe('Product Review & Moderation Lifecycle', () => {
   beforeAll(async () => {
     productService = ProductModule.getInstance().getProductService();
 
-    // Create a mock parent category and subcategory
-    mockCategory = await CategoryModel.create({
-      name: 'Electronics',
-      slug: 'electronics',
-      level: 1,
-      path: ['electronics'],
-    });
+    mockCategory = await CategoryModel.findOne({ slug: 'electronics-lifecycle' });
+    if (!mockCategory) {
+      mockCategory = await CategoryModel.create({
+        name: 'Electronics Lifecycle Test',
+        slug: 'electronics-lifecycle',
+        level: 1,
+        path: ['electronics-lifecycle'],
+      });
+    }
 
-    mockSubcategory = await CategoryModel.create({
-      name: 'Smartphones',
-      slug: 'smartphones',
-      level: 2,
-      parentCategory: mockCategory._id,
-      path: ['electronics', 'smartphones'],
-    });
+    mockSubcategory = await CategoryModel.findOne({ slug: 'smartphones-lifecycle' });
+    if (!mockSubcategory) {
+      mockSubcategory = await CategoryModel.create({
+        name: 'Smartphones Lifecycle Test',
+        slug: 'smartphones-lifecycle',
+        level: 2,
+        parentCategory: mockCategory._id,
+        path: ['electronics-lifecycle', 'smartphones-lifecycle'],
+      });
+    }
   });
 
   it('should create a product as draft with vendor ownership info', async () => {

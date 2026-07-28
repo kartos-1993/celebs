@@ -36,7 +36,7 @@ export class ProductService {
 
     const slug = await this.generateUniqueSlug(input.name);
 
-    return await ProductModel.create({
+    const product = await ProductModel.create({
       name: input.name.trim(),
       brand: input.brand?.trim() || undefined,
       slug,
@@ -57,6 +57,10 @@ export class ProductService {
       createdBy: userId,
       updatedBy: userId,
     });
+
+    await this.syncInventoryToPostgres(product._id.toString(), input.colorVariants);
+
+    return product;
   }
 
   async getProductById(id: string): Promise<IProduct | null> {
@@ -113,7 +117,7 @@ export class ProductService {
       ProductModel.countDocuments(query),
     ]);
 
-    return { products: products as any, total };
+    return { products: products as unknown as IProduct[], total };
   }
 
   async getAllProducts(
@@ -347,7 +351,52 @@ export class ProductService {
     product.updatedBy = userId;
 
     await product.save();
+    await this.syncInventoryToPostgres(product._id.toString(), product.colorVariants);
     return product;
+  }
+
+  private async syncInventoryToPostgres(
+    productId: string,
+    colorVariants: ProductColorVariantInput[],
+  ) {
+    if (!colorVariants || !Array.isArray(colorVariants)) return;
+
+    for (const variant of colorVariants) {
+      const colorVariantName = variant.name;
+      if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
+
+      for (const stockItem of variant.stocks) {
+        const size = stockItem.size;
+        const quantity = stockItem.quantity ?? 0;
+        const sku = `SKU-${productId.substring(productId.length - 6)}-${colorVariantName
+          .substring(0, 3)
+          .toUpperCase()}-${size.toUpperCase()}`;
+
+        try {
+          await prisma.productInventory.upsert({
+            where: {
+              productId_colorVariantName_size: {
+                productId,
+                colorVariantName,
+                size,
+              },
+            },
+            update: {
+              quantity,
+            },
+            create: {
+              productId,
+              colorVariantName,
+              size,
+              sku,
+              quantity,
+            },
+          });
+        } catch (err) {
+          console.error('[ProductService] Failed to sync inventory to PostgreSQL:', err);
+        }
+      }
+    }
   }
 
   async archiveProduct(id: string, userId: string, role: string, vendorId?: string): Promise<IProduct> {
