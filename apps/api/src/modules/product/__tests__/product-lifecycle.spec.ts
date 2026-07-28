@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import mongoose from 'mongoose';
 import { ProductModule } from '@/modules/product/product.module';
 import { CategoryModel } from '@/db/models/category.model';
 import { ProductModel } from '@/db/models/product.model';
+import prisma from '@/db';
 
 describe('Product Review & Moderation Lifecycle', () => {
   let productService: any;
@@ -34,7 +35,7 @@ describe('Product Review & Moderation Lifecycle', () => {
     }
   });
 
-  it('should create a product as draft with vendor ownership info', async () => {
+  it('should create a product as draft with vendor ownership info and sync inventory to PostgreSQL', async () => {
     const input = {
       name: 'iPhone 15 Pro',
       brand: 'Apple',
@@ -62,6 +63,50 @@ describe('Product Review & Moderation Lifecycle', () => {
     expect(product.vendorId.toString()).toBe(vendorId);
     expect(product.vendorName).toBe(vendorName);
     expect(product.slug).toContain('iphone-15-pro');
+
+    // Verify PostgreSQL inventory single source of truth
+    const pgInventory = await prisma.productInventory.findUnique({
+      where: {
+        productId_colorVariantName_size: {
+          productId: product._id.toString(),
+          colorVariantName: 'Natural Titanium',
+          size: '128GB',
+        },
+      },
+    });
+
+    expect(pgInventory).toBeDefined();
+    expect(pgInventory?.quantity).toBe(10);
+  });
+
+  it('should roll back MongoDB product creation if PostgreSQL inventory sync fails', async () => {
+    const input = {
+      name: 'Faulty Product Rollback Test',
+      price: 500,
+      categoryId: String(mockCategory._id),
+      subcategoryId: String(mockSubcategory._id),
+      colorVariants: [
+        {
+          name: 'Black',
+          colorCode: '#000000',
+          stocks: [{ size: 'Default', quantity: 5 }],
+        },
+      ],
+    };
+
+    // Force prisma upsert to throw an error safely without corrupting proxy method
+    const originalUpsert = prisma.productInventory.upsert;
+    prisma.productInventory.upsert = vi.fn().mockRejectedValueOnce(new Error('PostgreSQL Database Failure'));
+
+    await expect(
+      productService.createProduct(input, 'user-id-123', 'vendor-id-fail', 'Fail Store')
+    ).rejects.toThrow();
+
+    // Verify MongoDB document was rolled back (deleted)
+    const rolledBackProduct = await ProductModel.findOne({ name: 'Faulty Product Rollback Test' });
+    expect(rolledBackProduct).toBeNull();
+
+    prisma.productInventory.upsert = originalUpsert;
   });
 
   it('should submit a product draft for review successfully', async () => {
