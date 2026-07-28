@@ -5,7 +5,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 
-import { useCategories } from '../hooks/useCategories';
+import { useCategories } from '../hooks/use-categories';
 import { CategoryApiService } from '../../category/api';
 import { cn } from '../../../lib/utils';
 

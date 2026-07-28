@@ -4,7 +4,7 @@
  */
 
 // Main component
-export { default } from './components/Categories';
+export { default } from './components/categories';
 
 // Types
 export * from './types';
@@ -14,16 +14,18 @@ export {
   useCategories,
   useCategory,
   CATEGORY_QUERY_KEYS,
-} from './hooks/useCategories';
-export { useCategoryState } from './hooks/useCategoryState';
+} from './hooks/use-categories';
+export { useCategoryState } from './hooks/use-category-state';
+export { useCategoryForm } from './hooks/use-category-form';
 
 // API
 export { CategoryApiService } from './api';
 
 // Components
-export { CategoryFormDialog } from './components/CategoryFormDialog';
-export { CategoryTree } from './components/CategoryTree';
-export { DeleteCategoryDialog } from './components/DeleteCategoryDialog';
-export { EmptyState } from './components/EmptyState';
-export { ErrorState } from './components/ErrorState';
-export { LoadingState } from './components/LoadingState';
+export { CategoryFormDialog } from './components/category-form-dialog';
+export { CategoryTree } from './components/category-tree';
+export { DeleteCategoryDialog } from './components/delete-category-dialog';
+export { EmptyState } from './components/empty-state';
+export { ErrorState } from './components/error-state';
+export { LoadingState } from './components/loading-state';
+export { CategoryForm } from './components/category-form';

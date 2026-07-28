@@ -6,7 +6,7 @@
 export interface CategoryAttribute {
   _id?: string;
   name: string;
-  label: string;
+  label?: string;
   placeholder?: string;
   info?: {
     help?: string;
@@ -16,10 +16,14 @@ export interface CategoryAttribute {
         "richText" | "image" | "video" | "marketImages" | "mainImage" | 
         "customEditor" | "translateInput" | "listEditor" | "packageWeight" | 
         "packageVolume" | "color-with-image" | "measurement-group" | "size-guide";
-  values: { name: string; value: string; id?: string }[];
+  values: string[];
   isRequired: boolean;
   categoryId?: string;
-  group?: string;
+  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
+  isVariant?: boolean;
+  variantType?: 'color' | 'size' | null;
+  useStandardOptions?: boolean;
+  optionSetId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -32,6 +36,7 @@ export interface Category {
   parent: string | null;
   path: string[];
   attributes: CategoryAttribute[];
+  sizeChartColumns?: string[];
   imageUrl?: string | null;
   isActive?: boolean;
   createdAt: string;
@@ -50,6 +55,7 @@ export interface CreateCategoryRequest {
     CategoryAttribute,
     '_id' | 'categoryId' | 'createdAt' | 'updatedAt'
   >[];
+  sizeChartColumns?: string[];
   imageUrl?: string | null;
   isActive?: boolean;
 }
@@ -78,10 +84,7 @@ export interface CategoryFormData {
   name: string;
   parent: string | null;
   attributes: CategoryAttribute[];
-   hasVariants: boolean;
-  variantAttributes?: string[];
-  hasShippingAttributes: boolean;
-  hasCustomFields: boolean;
+  sizeChartColumns?: string[];
   imageUrl?: string | null;
   isActive: boolean;
 }
@@ -105,8 +108,8 @@ export interface UseCategoriesReturn {
   categoryTree: CategoryTreeNode[];
   isLoading: boolean;
   error: Error | null;
-  createCategory: (data: CreateCategoryRequest) => Promise<any>;
-  updateCategory: (id: string, data: UpdateCategoryRequest) => Promise<any>;
-  deleteCategory: (id: string) => Promise<any>;
+  createCategory: (data: CreateCategoryRequest) => Promise<ApiResponse<Category>>;
+  updateCategory: (id: string, data: UpdateCategoryRequest) => Promise<ApiResponse<Category>>;
+  deleteCategory: (id: string) => Promise<ApiResponse<{ success: boolean }>>;
   refetch: () => void;
 }

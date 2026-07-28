@@ -9,15 +9,16 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { FolderTree, FolderPlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-import { CategoryFormDialog } from './CategoryFormDialog';
-import { CategoryTree } from './CategoryTree';
-import { DeleteCategoryDialog } from './DeleteCategoryDialog';
-import { EmptyState } from './EmptyState';
-import { ErrorState } from './ErrorState';
-import { LoadingState } from './LoadingState';
+import { CategoryFormDialog } from './category-form-dialog';
+import { CategoryTree } from './category-tree';
+import { DeleteCategoryDialog } from './delete-category-dialog';
+import { EmptyState } from './empty-state';
+import { ErrorState } from './error-state';
+import { LoadingState } from './loading-state';
 
-import { useCategories } from '../hooks/useCategories';
-import { useCategoryState } from '../hooks/useCategoryState';
+import { useCategories } from '../hooks/use-categories';
+import { useCategoryState } from '../hooks/use-category-state';
+import { CategoryFormData } from '../schemas/category-form-schema';
 
 /**
  * Main Categories Page Component
@@ -43,18 +44,19 @@ export const Categories: React.FC = () => {
         title: isActive ? 'Category activated' : 'Category deactivated',
         description: `Successfully set category status.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err as Error;
       toast({
         variant: 'destructive',
         title: 'Error updating status',
-        description: err?.message || 'Please try again later.',
+        description: errorObj?.message || 'Please try again later.',
       });
       // Throw error to reset ToggleSwitch state inside child component if needed
       throw err;
     }
   };
 
-  const handleSaveCategory = async (formData: any) => {
+  const handleSaveCategory = async (formData: CategoryFormData) => {
     try {
       if (uiState.editingCategory) {
         await updateCategory(uiState.editingCategory._id, formData);
