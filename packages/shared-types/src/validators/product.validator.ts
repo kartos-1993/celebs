@@ -140,3 +140,19 @@ export const productFilterSchema = z.object({
 
 export type ProductFilterInput = z.input<typeof productFilterSchema>;
 export type ProductFilterType = z.output<typeof productFilterSchema>;
+
+// Full product record entity schema
+export const productSchema = baseProductSchema.extend({
+  _id: z.string(),
+  slug: z.string(),
+  category: z.union([z.string(), z.object({ _id: z.string(), name: z.string(), slug: z.string() })]),
+  subcategory: z.union([z.string(), z.object({ _id: z.string(), name: z.string(), slug: z.string() })]),
+  reviewNote: z.string().optional(),
+  reviewedBy: z.string().optional(),
+  reviewedAt: z.union([z.string(), z.date()]).optional(),
+  createdAt: z.union([z.string(), z.date()]).optional(),
+  updatedAt: z.union([z.string(), z.date()]).optional(),
+});
+
+export type ProductType = z.infer<typeof productSchema>;
+
