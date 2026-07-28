@@ -28,6 +28,7 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
 
   const { mutate, isPending } = useMutation({
     mutationFn: setupSuperadminMutationFn,
+    meta: { suppressErrorToast: true },
   });
 
   const form = useForm<FormValues>({

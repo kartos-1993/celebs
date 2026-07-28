@@ -39,6 +39,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: loginMutationFn,
+    meta: { suppressErrorToast: true },
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
