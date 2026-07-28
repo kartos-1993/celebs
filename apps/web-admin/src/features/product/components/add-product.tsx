@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileClock, Info, RotateCcw } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { CreateProductRequest, ProductApiService } from '../api';
-import { useProductForm } from '../hooks/useProductForm';
+import { useProductForm } from '../hooks/use-product-form';
 import type { FieldSpec } from '../fields/UiRegistry';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import BasicInfoSection from './basic-info-section';

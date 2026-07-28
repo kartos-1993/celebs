@@ -9,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import CategoryForm from './categoryform.tsx';
-import { Category, CategoryFormData } from '../types';
+import CategoryForm from './category-form';
+import { Category } from '../types';
+import { CategoryFormData } from '../schemas/category-form-schema';
 
 interface CategoryFormDialogProps {
   open: boolean;

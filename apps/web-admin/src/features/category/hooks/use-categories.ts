@@ -59,12 +59,13 @@ export function useCategories(): UseCategoriesReturn {
         description: 'Category created successfully',
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const errResponse = error as { response?: { data?: { message?: string } } };
       toast({
         variant: 'destructive',
         title: 'Error',
         description:
-          error?.response?.data?.message || 'Failed to create category',
+          errResponse?.response?.data?.message || 'Failed to create category',
       });
     },
   });
@@ -80,12 +81,13 @@ export function useCategories(): UseCategoriesReturn {
         description: 'Category updated successfully',
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const errResponse = error as { response?: { data?: { message?: string } } };
       toast({
         variant: 'destructive',
         title: 'Error',
         description:
-          error?.response?.data?.message || 'Failed to update category',
+          errResponse?.response?.data?.message || 'Failed to update category',
       });
     },
   });
@@ -108,12 +110,13 @@ export function useCategories(): UseCategoriesReturn {
           : `Category '${category?.name}' was deleted successfully`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const errResponse = error as { response?: { data?: { message?: string } } };
       toast({
         variant: 'destructive',
         title: 'Error',
         description:
-          error?.response?.data?.message || 'Failed to delete category',
+          errResponse?.response?.data?.message || 'Failed to delete category',
       });
     },
   });
