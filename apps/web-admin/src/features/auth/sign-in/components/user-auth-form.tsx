@@ -51,7 +51,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   const queryClient = useQueryClient();
 
+  const [serverError, setServerError] = useState<string | null>(null);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setServerError(null);
     console.log('login submitting');
     try {
       const response = await mutateAsync(values);
@@ -69,7 +72,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       navigate('/');
     } catch (error: any) {
       console.log('login failure', error);
-      if (error?.errors && Array.isArray(error.errors)) {
+      if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
         error.errors.forEach((err: any) => {
           if (err.field) {
             form.setError(err.field as any, {
@@ -79,10 +82,9 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           }
         });
       } else if (error?.message) {
-        form.setError('password', {
-          type: 'server',
-          message: error.message,
-        });
+        setServerError(error.message);
+      } else {
+        setServerError('Invalid email or password');
       }
     }
   }
@@ -90,8 +92,13 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-800 p-3 rounded text-sm mb-2">
+        <div className="bg-green-500/15 border border-green-500/30 text-green-700 dark:text-green-400 p-3 rounded-md text-sm mb-2">
           {successMessage}
+        </div>
+      )}
+      {serverError && (
+        <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md mb-2">
+          {serverError}
         </div>
       )}
       <Form {...form}>
