@@ -81,6 +81,17 @@ export class CategoryService {
 
       return await this.getCategoryWithAttributes(String(categoryDoc._id));
     } catch (error: any) {
+      if (
+        error?.code === 11000 ||
+        error?.message?.includes('E11000') ||
+        error?.message?.includes('duplicate key')
+      ) {
+        throw new AppError(
+          'A category with this name already exists',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.BAD_REQUEST,
+        );
+      }
       throw new AppError(
         `Failed to create category: ${error.message}`,
         HTTPSTATUS.INTERNAL_SERVER_ERROR,
