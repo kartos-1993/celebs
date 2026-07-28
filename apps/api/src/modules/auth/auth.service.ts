@@ -88,7 +88,14 @@ export class AuthService {
         { err, email: newUser.email },
         'Failed to send verification email'
       );
-      throw new InternalServerException('Failed to send verification email');
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn(
+          { verificationUrl, email: newUser.email },
+          '[DEV FALLBACK] Verification email failed to send. Click link in logs to verify manually.'
+        );
+      } else {
+        throw new InternalServerException('Failed to send verification email');
+      }
     }
 
     const { password: _, ...userWithoutPassword } = newUser;
@@ -226,7 +233,14 @@ export class AuthService {
         { err, email: newUser.email },
         'Failed to send verification email to vendor'
       );
-      throw new InternalServerException('Failed to send verification email');
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn(
+          { verificationUrl, email: newUser.email },
+          '[DEV FALLBACK] Vendor verification email failed to send. Click link in logs to verify manually.'
+        );
+      } else {
+        throw new InternalServerException('Failed to send verification email');
+      }
     }
 
     const { password: _, ...userWithoutPassword } = newUser;
