@@ -97,7 +97,7 @@ export class CategoryService {
           localField: '_id',
           foreignField: 'categoryId',
           as: 'attributes',
-          pipeline: [{ $sort: { displayOrder: 1 } }],
+          pipeline: [{ $sort: { createdAt: 1, name: 1 } }],
         },
       },
     ]);
@@ -139,7 +139,7 @@ export class CategoryService {
           localField: '_id',
           foreignField: 'categoryId',
           as: 'attributes',
-          pipeline: [{ $sort: { displayOrder: 1 } }],
+          pipeline: [{ $sort: { createdAt: 1, name: 1 } }],
         },
       },
     ]);
@@ -442,13 +442,13 @@ export class CategoryService {
    * Processes attribute values based on type
    */
   private processAttributeValues(attr: CategoryAttribute): string[] {
-    if (attr.type === 'select' || attr.type === 'multiselect') {
-      if (Array.isArray(attr.values)) {
-        return attr.values;
-      }
-      if (attr.values) {
-        return [attr.values as unknown as string];
-      }
+    if (Array.isArray(attr.values)) {
+      return attr.values
+        .map((v) => (typeof v === 'string' ? v.trim() : String(v).trim()))
+        .filter(Boolean);
+    }
+    if (attr.values !== undefined && attr.values !== null && attr.values !== '') {
+      return [String(attr.values).trim()].filter(Boolean);
     }
     return [];
   }
@@ -460,7 +460,8 @@ export class CategoryService {
     categoryId: string,
   ): Promise<ICategory> {
     const attributes = await AttributeModel.find({ categoryId }).sort({
-      displayOrder: 1,
+      createdAt: 1,
+      name: 1,
     });
     const category = await CategoryModel.findById(categoryId);
 
@@ -667,14 +668,27 @@ export class CategoryService {
       if (existingAttr) {
         // Update existing attribute
         existingAttr.name = attr.name;
+        existingAttr.label = attr.label ?? existingAttr.label;
+        existingAttr.placeholder = attr.placeholder ?? existingAttr.placeholder;
+        if (attr.info) {
+          existingAttr.info = {
+            help: attr.info.help ?? existingAttr.info?.help,
+            top: attr.info.top ?? existingAttr.info?.top,
+          };
+        }
         existingAttr.values = values;
         existingAttr.isRequired = !!attr.isRequired;
         existingAttr.type = attr.type;
         (existingAttr as any).group = (attr.group as any) ?? (existingAttr as any).group ?? 'basic';
         existingAttr.isVariant = !!attr.isVariant;
-        (existingAttr as any).variantType = (attr as any).variantType ?? (attr as any).variantAxis ?? null;
+        (existingAttr as any).variantType = attr.isVariant ? ((attr as any).variantType ?? (attr as any).variantAxis ?? null) : null;
         existingAttr.useStandardOptions = !!attr.useStandardOptions;
         existingAttr.optionSetId = optionSetId;
+
+        existingAttr.markModified('values');
+        existingAttr.markModified('type');
+        existingAttr.markModified('info');
+
         await existingAttr.save({ session });
         updatedAttrIds.push(existingAttr._id as Types.ObjectId);
       } else {
@@ -684,12 +698,15 @@ export class CategoryService {
             {
               categoryId,
               name: attr.name,
+              label: attr.label,
+              placeholder: attr.placeholder,
+              info: attr.info,
               type: attr.type,
               values,
               isRequired: !!attr.isRequired,
               group: (attr.group as any) ?? 'basic',
               isVariant: !!attr.isVariant,
-              variantType: (attr as any).variantType ?? (attr as any).variantAxis ?? null,
+              variantType: attr.isVariant ? ((attr as any).variantType ?? (attr as any).variantAxis ?? null) : null,
               useStandardOptions: !!attr.useStandardOptions,
               optionSetId,
             },

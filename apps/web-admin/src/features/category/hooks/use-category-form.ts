@@ -30,6 +30,15 @@ export interface UseCategoryFormReturn {
   handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
+/**
+ * Safely extracts the document identifier (_id or id) for an attribute item
+ */
+function getAttributeId(attr: { _id?: string; id?: string }): string | undefined {
+  if (attr._id) return String(attr._id);
+  if (attr.id) return String(attr.id);
+  return undefined;
+}
+
 export const useCategoryForm = ({
   initialData,
   onSave,
@@ -44,6 +53,7 @@ export const useCategoryForm = ({
       name: initialData?.name || '',
       parent: initialData?.parent || null,
       attributes: (initialData?.attributes || []).map((attr) => ({
+        _id: getAttributeId(attr),
         name: attr.name || '',
         label: attr.label || '',
         type: attr.type || 'text',
@@ -140,6 +150,7 @@ export const useCategoryForm = ({
           : null,
       attributes: values.attributes.map((attr) => ({
         ...attr,
+        _id: attr._id || undefined,
         values: attr.values ?? [],
         isVariant: attr.isVariant ?? false,
         variantType: attr.isVariant ? attr.variantType || null : null,

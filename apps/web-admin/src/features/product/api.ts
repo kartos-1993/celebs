@@ -27,6 +27,14 @@ interface UploadedFileResponse {
   originalname?: string;
 }
 
+export interface ReviewProductRequestPayload {
+  action: 'approve' | 'reject';
+  note?: string;
+  rejectionCategory?: string;
+  rejectionSubcategories?: string[];
+  rejectionFields?: string[];
+}
+
 export class ProductApiService {
   private static readonly BASE_PATH = '/products';
 
@@ -68,10 +76,15 @@ export class ProductApiService {
     return response.data;
   }
 
-  static async reviewProduct(id: string, action: 'approve' | 'reject', note?: string): Promise<ApiResponse<ProductRecord>> {
+  static async reviewProduct(
+    id: string,
+    payload: ReviewProductRequestPayload | 'approve' | 'reject',
+    note?: string
+  ): Promise<ApiResponse<ProductRecord>> {
+    const body = typeof payload === 'object' ? payload : { action: payload, note };
     const response = await ProductAPI.post<ApiResponse<ProductRecord>>(
       `${ProductApiService.BASE_PATH}/${id}/review`,
-      { action, note }
+      body
     );
     return response.data;
   }

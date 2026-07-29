@@ -118,7 +118,12 @@ export const updateProductStockSchema = z.object({
 export const productReviewActionSchema = z.object({
   action: z.enum(['approve', 'reject']),
   note: z.string().trim().optional(),
+  rejectionCategory: z.string().trim().optional(),
+  rejectionSubcategories: z.array(z.string()).optional(),
+  rejectionFields: z.array(z.string()).optional(),
 });
+
+export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
 
 // Schema for product search and filtering
 export const productFilterSchema = z.object({

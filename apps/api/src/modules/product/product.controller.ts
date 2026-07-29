@@ -168,17 +168,23 @@ export class ProductController {
         throw new AppError('Authentication required', HTTPSTATUS.UNAUTHORIZED, ErrorCode.AUTH_TOKEN_MISSING);
       }
 
-      const { action, note } = productReviewActionSchema.parse(req.body);
+      const parsed = productReviewActionSchema.parse(req.body);
       const product = await this.productService.reviewProduct(
         req.params.id,
-        action,
-        req.user.userId,
-        note,
+        {
+          action: parsed.action,
+          reviewerId: req.user.userId,
+          reviewerName: req.user.email || 'Superadmin',
+          note: parsed.note,
+          rejectionCategory: parsed.rejectionCategory,
+          rejectionSubcategories: parsed.rejectionSubcategories,
+          rejectionFields: parsed.rejectionFields,
+        }
       );
 
       return res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: `Product ${action}ed successfully`,
+        message: `Product ${parsed.action}ed successfully`,
         data: product,
       });
     } catch (error) {

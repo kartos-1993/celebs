@@ -1,5 +1,6 @@
 /**
  * Category form dialog wrapper component
+ * Fetches fresh category details by ID when editing to guarantee latest database state.
  */
 
 import React from 'react';
@@ -9,9 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
+import { Loader2 } from 'lucide-react';
 import CategoryForm from './category-form';
 import { Category } from '../types';
 import { CategoryFormData } from '../schemas/category-form-schema';
+import { useCategory } from '../hooks/use-categories';
 
 interface CategoryFormDialogProps {
   open: boolean;
@@ -32,6 +35,13 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   onSave,
   onCancel,
 }) => {
+  const editingId = editingCategory?._id || '';
+
+  // Fetch fresh category detail directly from server database when editing
+  const { data: categoryDetailRes, isLoading: isLoadingDetail } = useCategory(editingId);
+
+  const freshCategoryData = categoryDetailRes?.data || editingCategory;
+
   const getDialogTitle = () => {
     if (editingCategory) return 'Edit Category';
     if (parentCategoryId) return 'Add Subcategory';
@@ -54,17 +64,27 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
             ? 'Add a subcategory under the selected parent category.'
             : 'Add a new category to the list.'}
         </div>
-        <CategoryForm
-          initialData={
-            editingCategory ||
-            (parentCategoryId ? { parent: parentCategoryId } : undefined)
-          }
-          categories={categories}
-          onSave={onSave}
-          onCancel={onCancel}
-        />
+
+        {editingId && isLoadingDetail ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-sm font-medium">Fetching fresh category specifications...</span>
+          </div>
+        ) : (
+          <CategoryForm
+            key={freshCategoryData?._id || parentCategoryId || 'new-category'}
+            initialData={
+              freshCategoryData ||
+              (parentCategoryId ? { parent: parentCategoryId } : undefined)
+            }
+            categories={categories}
+            onSave={onSave}
+            onCancel={onCancel}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
 };
 
+export default CategoryFormDialog;

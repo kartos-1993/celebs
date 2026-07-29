@@ -10,10 +10,11 @@ import {
   ProductMeasurementType,
 } from '@celebs/shared-types';
 import { CategoryModel } from '@/db/models/category.model';
-import { IProduct, ProductModel } from '@/db/models/product.model';
+import { IProduct, IReviewHistoryItem, ProductModel } from '@/db/models/product.model';
 import { sendEmail } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 import prisma from '@/db';
+import { calculateProductQCScore } from './utils/product-qc';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -220,7 +221,7 @@ export class ProductService {
     const query = { status: 'pending_review' };
     const skip = (page - 1) * limit;
 
-    const [products, total] = await Promise.all([
+    const [rawProducts, total] = await Promise.all([
       ProductModel.find(query)
         .sort({ createdAt: 1 }) // Oldest first to satisfy queue order
         .skip(skip)
@@ -231,7 +232,15 @@ export class ProductService {
       ProductModel.countDocuments(query),
     ]);
 
-    return { products: products as any, total };
+    const products = rawProducts.map((p) => {
+      const qcResult = calculateProductQCScore(p);
+      return {
+        ...p,
+        qualityScore: qcResult.score,
+      };
+    }) as unknown as IProduct[];
+
+    return { products, total };
   }
 
   async submitProductForReview(id: string, vendorId: string): Promise<IProduct> {
@@ -257,7 +266,20 @@ export class ProductService {
     return product;
   }
 
-  async reviewProduct(id: string, action: 'approve' | 'reject', reviewerId: string, note?: string): Promise<IProduct> {
+  async reviewProduct(
+    id: string,
+    actionOrPayload: 'approve' | 'reject' | {
+      action: 'approve' | 'reject';
+      reviewerId?: string;
+      reviewerName?: string;
+      note?: string;
+      rejectionCategory?: string;
+      rejectionSubcategories?: string[];
+      rejectionFields?: string[];
+    },
+    reviewerIdArg?: string,
+    noteArg?: string
+  ): Promise<IProduct> {
     if (!Types.ObjectId.isValid(id)) {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
@@ -271,28 +293,85 @@ export class ProductService {
       throw new AppError('Product is not pending review', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
+    let action: 'approve' | 'reject';
+    let reviewerId: string;
+    let reviewerName: string | undefined;
+    let note: string | undefined;
+    let category: string | undefined;
+    let subcategories: string[] = [];
+    let flaggedFields: string[] = [];
+
+    if (typeof actionOrPayload === 'object') {
+      action = actionOrPayload.action;
+      reviewerId = actionOrPayload.reviewerId || reviewerIdArg || 'system-admin';
+      reviewerName = actionOrPayload.reviewerName;
+      note = actionOrPayload.note;
+      category = actionOrPayload.rejectionCategory;
+      subcategories = actionOrPayload.rejectionSubcategories || [];
+      flaggedFields = actionOrPayload.rejectionFields || [];
+    } else {
+      action = actionOrPayload;
+      reviewerId = reviewerIdArg || 'system-admin';
+      note = noteArg;
+    }
+
+    // Compute quality control score
+    const qcResult = calculateProductQCScore(product.toObject());
+    product.qualityScore = qcResult.score;
+
     if (action === 'approve') {
       product.status = 'published';
+      product.reviewNote = undefined;
+      product.rejectionReasonCategory = undefined;
+      product.rejectionSubcategories = [];
+      product.rejectionFields = [];
     } else {
       product.status = 'rejected';
       product.reviewNote = note || 'No specific feedback provided.';
+      product.rejectionReasonCategory = category;
+      product.rejectionSubcategories = subcategories;
+      product.rejectionFields = flaggedFields;
     }
 
     product.reviewedBy = reviewerId;
     product.reviewedAt = new Date();
 
+    const historyItem: IReviewHistoryItem = {
+      action,
+      reviewerId,
+      reviewerName,
+      rejectionReasonCategory: category,
+      rejectionSubcategories: subcategories,
+      rejectionFields: flaggedFields,
+      note: product.reviewNote,
+      reviewedAt: new Date(),
+    };
+
+    if (!product.reviewHistory) {
+      product.reviewHistory = [];
+    }
+    product.reviewHistory.push(historyItem);
+
     await product.save();
 
     if (action === 'reject' && product.vendorId) {
       try {
-        // Find vendor user email via prisma
         const vendorProfile = await prisma.vendorProfile.findUnique({
           where: { id: String(product.vendorId) },
           include: { user: true },
         });
 
         if (vendorProfile?.user?.email) {
-          const emailData = productRejectionEmailTemplate(product.name, product.reviewNote || '', 'Celebs', '#EF4444');
+          const emailData = productRejectionEmailTemplate({
+            productName: product.name,
+            rejectionReason: product.reviewNote || '',
+            category: category,
+            subcategories: subcategories,
+            flaggedFields: flaggedFields,
+            brandName: 'Celebs Marketplace',
+            brandColor: '#EF4444',
+          });
+
           await sendEmail({
             to: vendorProfile.user.email,
             subject: emailData.subject,
@@ -301,7 +380,6 @@ export class ProductService {
           });
         }
       } catch (err) {
-        // Log error but do not fail the request transaction
         console.error('Failed to send rejection email to vendor:', err);
       }
     }
