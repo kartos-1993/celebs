@@ -157,6 +157,91 @@ describe('Category RBAC & Tree Operations', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
+  it('should update category attribute types and values correctly', async () => {
+    // 1. Create a category
+    const createRes = await request(app)
+      .post('/api/v1/category')
+      .set('Cookie', [superadminToken])
+      .send({
+        name: 'Mens Mechanical Watches',
+        parent: null,
+        attributes: [
+          {
+            name: 'Style',
+            type: 'text',
+            values: [],
+            isRequired: false,
+            group: 'details',
+          },
+          {
+            name: 'Strap Color',
+            type: 'select',
+            values: ['black'],
+            isRequired: false,
+            group: 'variant',
+            isVariant: true,
+            variantType: 'color',
+          },
+        ],
+      });
+
+    expect(createRes.status).toBe(201);
+    const categoryId = createRes.body.data._id;
+    const existingAttrs = createRes.body.data.attributes;
+    expect(existingAttrs.length).toBe(2);
+
+    // 2. Update category: change Style to select with values, update Strap Color values
+    const updatePayload = {
+      name: 'Mens Mechanical Watches',
+      parent: null,
+      attributes: [
+        {
+          _id: existingAttrs[0]._id,
+          name: 'Style',
+          type: 'select',
+          values: [
+            'Casual',
+            'Elegant',
+            'Vintage',
+            'Sporty',
+            'Business',
+          ],
+          isRequired: false,
+          group: 'details',
+        },
+        {
+          _id: existingAttrs[1]._id,
+          name: 'Strap Color',
+          type: 'multiselect',
+          values: ['gold', 'silver'],
+          isRequired: false,
+          group: 'variant',
+          isVariant: true,
+          variantType: 'color',
+        },
+      ],
+    };
+
+    const updateRes = await request(app)
+      .put(`/api/v1/category/${categoryId}`)
+      .set('Cookie', [superadminToken])
+      .send(updatePayload);
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.success).toBe(true);
+    const updatedAttrs = updateRes.body.data.attributes;
+
+    const styleAttr = updatedAttrs.find((a: any) => a.name === 'Style');
+    expect(styleAttr).toBeDefined();
+    expect(styleAttr.type).toBe('select');
+    expect(styleAttr.values).toEqual(['Casual', 'Elegant', 'Vintage', 'Sporty', 'Business']);
+
+    const strapAttr = updatedAttrs.find((a: any) => a.name === 'Strap Color');
+    expect(strapAttr).toBeDefined();
+    expect(strapAttr.type).toBe('multiselect');
+    expect(strapAttr.values).toEqual(['gold', 'silver']);
+  });
+
   describe('Category Deletion Protection (Approach 1)', () => {
     let parentCatId: string;
     let childCatId: string;

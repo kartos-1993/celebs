@@ -36,6 +36,7 @@ export type CreateProductType = z.infer<typeof createProductSchema>;
 export type UpdateProductType = z.infer<typeof updateProductSchema>;
 export type ProductFilterType = z.input<typeof productFilterSchema>;
 export type ProductType = z.infer<typeof productSchema>;
+export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
 
 export * from './types/api';
 export * from './types/cart';

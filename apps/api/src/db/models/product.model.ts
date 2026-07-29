@@ -35,6 +35,17 @@ interface IColorVariant {
   stocks: IStock[];
 }
 
+export interface IReviewHistoryItem {
+  action: 'approve' | 'reject' | 'submit';
+  reviewerId?: string;
+  reviewerName?: string;
+  rejectionReasonCategory?: string;
+  rejectionSubcategories?: string[];
+  rejectionFields?: string[];
+  note?: string;
+  reviewedAt: Date;
+}
+
 // Interface for Product document
 export interface IProduct extends Document {
   _id: mongoose.Types.ObjectId;
@@ -57,6 +68,11 @@ export interface IProduct extends Document {
   vendorId?: string;
   vendorName?: string;
   reviewNote?: string;
+  rejectionReasonCategory?: string;
+  rejectionSubcategories?: string[];
+  rejectionFields?: string[];
+  qualityScore?: number;
+  reviewHistory?: IReviewHistoryItem[];
   reviewedBy?: string;
   reviewedAt?: Date;
   createdBy?: string;
@@ -196,6 +212,37 @@ const ProductSchema = new Schema<IProduct>(
       type: String,
       trim: true,
     },
+    rejectionReasonCategory: {
+      type: String,
+      trim: true,
+    },
+    rejectionSubcategories: [
+      {
+        type: String,
+      },
+    ],
+    rejectionFields: [
+      {
+        type: String,
+      },
+    ],
+    qualityScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+    },
+    reviewHistory: [
+      {
+        action: { type: String, required: true },
+        reviewerId: { type: String },
+        reviewerName: { type: String },
+        rejectionReasonCategory: { type: String },
+        rejectionSubcategories: [{ type: String }],
+        rejectionFields: [{ type: String }],
+        note: { type: String },
+        reviewedAt: { type: Date, default: Date.now },
+      },
+    ],
     reviewedBy: {
       type: String,
     },
