@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { composeSchema } from './composer';
+import { composeSchema } from './schema-composer';
 import { CategoryService } from '@/modules/category/category.service';
 
 const router = Router();
@@ -26,11 +26,11 @@ router.get('/product-render', async (req, res) => {
 
     const { fields, renderTag } = composeSchema({
       category: {
-        _id: String((category as any)._id),
-        name: (category as any).name,
-        version: (category as any).version ?? 1,
-        attributes: (category as any).attributes || [],
-        sizeChartColumns: (category as any).sizeChartColumns || [],
+        _id: String(category._id),
+        name: category.name,
+        version: category.version ?? category.__v ?? 1,
+        attributes: category.attributes || [],
+        sizeChartColumns: category.sizeChartColumns || [],
       },
       locale,
       policy: DEFAULT_POLICY,

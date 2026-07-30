@@ -13,6 +13,8 @@ export interface ICategory extends Document {
   sizeChartColumns?: string[];
   imageUrl?: string | null;
   isActive: boolean;
+  version?: number;
+  __v?: number;
   createdAt: Date;
   updatedAt: Date;
 }

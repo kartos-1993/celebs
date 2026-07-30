@@ -26,7 +26,7 @@ import categoryRoutes from './modules/category/category.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
 import productRoutes from './modules/product/product.routes';
 import mediaRoutes from './modules/media/media.routes';
-import renderRoutes from './modules/render/router';
+import renderRoutes from './modules/product/product-render.routes';
 import vendorRoutes from './modules/vendor/vendor.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import staffRoutes from './modules/staff/staff.routes';
