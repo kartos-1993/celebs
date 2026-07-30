@@ -15,7 +15,7 @@ const AppLayout = () => {
     const currentMatch = matches[matches.length - 1];
     const handle = currentMatch?.handle as { title?: string; crumb?: string } | undefined;
     const title = handle?.title || handle?.crumb;
-    document.title = title ? `${title} | Celebs Admin` : 'Celebs Admin';
+    document.title = title ? `${title} | Celebs Seller Center` : 'Celebs Seller Center';
   }, [matches]);
 
   return (
