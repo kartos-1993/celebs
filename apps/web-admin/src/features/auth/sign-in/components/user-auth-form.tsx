@@ -76,9 +76,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       console.log('UserAuthForm onSubmit sessionData fetched:', sessionData);
       console.log('Query cache keys before setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
       queryClient.setQueryData(['authUser'], sessionData);
-      console.log('Query cache keys after setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
-      console.log('UserAuthForm onSubmit getQueryData after set:', queryClient.getQueryData(['authUser']));
-      navigate('/');
+      const searchParams = new URLSearchParams(location.search);
+      const returnUrlParam = searchParams.get('returnUrl');
+      const targetUrl = returnUrlParam ? decodeURIComponent(returnUrlParam) : '/';
+      navigate(targetUrl, { replace: true });
     } catch (error: any) {
       console.log('login failure', error);
       if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {

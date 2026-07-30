@@ -48,16 +48,25 @@ const appLoader: ProtectedLoader = async ({ request }) => {
 
     return json<ProtectedLoaderData>({ user });
   } catch (error) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    if (pathname && pathname !== '/' && pathname !== '/login') {
+      const returnUrl = encodeURIComponent(pathname + url.search);
+      return redirect(`/login?returnUrl=${returnUrl}`);
+    }
     return redirect('/login');
   }
 };
 
 // Loader for login route to redirect if already logged in
-const loginLoader: ProtectedLoader = async () => {
+const loginLoader: ProtectedLoader = async ({ request }) => {
   try {
     const sessionResponse = await getUserSessionQueryFn();
     if (sessionResponse.data && sessionResponse.data.user) {
-      return redirect('/');
+      const url = new URL(request.url);
+      const returnUrl = url.searchParams.get('returnUrl');
+      const target = returnUrl ? decodeURIComponent(returnUrl) : '/';
+      return redirect(target);
     }
     return null;
   } catch (error) {

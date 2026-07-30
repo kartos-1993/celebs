@@ -34,7 +34,13 @@ export function Menu({ isSideBarOpen }: MenuProps) {
       queryClient.removeQueries({
         predicate: (query) => query.queryKey[0] !== 'authUser',
       });
-      navigate('/login');
+      const currentPath = window.location.pathname + window.location.search;
+      if (currentPath && currentPath !== '/' && currentPath !== '/login') {
+        const returnUrl = encodeURIComponent(currentPath);
+        navigate(`/login?returnUrl=${returnUrl}`);
+      } else {
+        navigate('/login');
+      }
     },
   });
 
