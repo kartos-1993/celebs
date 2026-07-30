@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 import { RoleGuard } from '@/components/role-guard';
 
-const Categories = lazy(() => import('./index'));
+const Categories = lazy(() => import('./components/categories'));
 
 export const categoryRoutes: RouteObject = {
   path: 'categories',
