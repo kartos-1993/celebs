@@ -13,7 +13,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import CategoryForm from './category-form';
 import { Category } from '../types';
-import { CategoryFormData } from '../schemas/category-form-schema';
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { useCategory } from '../hooks/use-categories';
 
 interface CategoryFormDialogProps {

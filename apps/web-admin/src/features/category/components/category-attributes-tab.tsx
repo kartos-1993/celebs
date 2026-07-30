@@ -4,7 +4,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Label } from '@celebs/shared-ui/components/label';
 import { Plus } from 'lucide-react';
 import { AttributeFieldSet } from './attribute-field-set';
-import { CategoryFormData } from '../schemas/category-form-schema';
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface CategoryAttributesTabProps {
   form: UseFormReturn<CategoryFormData>;

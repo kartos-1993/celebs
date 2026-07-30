@@ -21,7 +21,7 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { X, Plus, Upload, Loader } from 'lucide-react';
 import { Category } from '../types';
-import { CategoryFormData } from '../schemas/category-form-schema';
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface CategoryBasicInfoTabProps {
   form: UseFormReturn<CategoryFormData>;

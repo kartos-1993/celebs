@@ -18,7 +18,7 @@ import { LoadingState } from './loading-state';
 
 import { useCategories } from '../hooks/use-categories';
 import { useCategoryState } from '../hooks/use-category-state';
-import { CategoryFormData } from '../schemas/category-form-schema';
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 /**
  * Main Categories Page Component
