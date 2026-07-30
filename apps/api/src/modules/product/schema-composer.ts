@@ -33,10 +33,10 @@ export interface FieldSpec {
 }
 
 export interface CategoryDocLike {
-  _id: string | any;
+  _id: string;
   name: string;
   version?: number;
-  attributes: IAttribute[] | any[];
+  attributes: IAttribute[];
   sizeChartColumns?: string[];
 }
 
@@ -48,18 +48,19 @@ function titleCase(s: string) {
 
 function selectDataSource(attr: IAttribute) {
   // Prefer standard option sets; client will call this path via ProductAPI base URL
-  if ((attr as any).useStandardOptions && (attr as any).optionSetId) {
-    return { optionSetId: String((attr as any).optionSetId), fetch: `/option-sets/${String((attr as any).optionSetId)}` };
+  if (attr.useStandardOptions && attr.optionSetId) {
+    return { optionSetId: String(attr.optionSetId), fetch: `/option-sets/${String(attr.optionSetId)}` };
   }
   const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
   return vals.map((v) => ({ label: v, value: v }));
 }
 
 function attributeToField(attr: IAttribute): FieldSpec {
+  const group: FieldGroup = attr.isVariant ? 'variant' : (attr.group || 'details');
   const base = {
     name: attr.name,
     label: attr.label || titleCase(attr.name),
-    group: ((attr as any).isVariant ? 'variant' : (((attr as any).group as FieldGroup) || 'details')) as FieldGroup,
+    group,
     required: !!attr.isRequired,
     visible: true,
     placeholder: attr.placeholder,
@@ -125,16 +126,16 @@ export function composeSchema(params: {
 
   // Category-authored fields
   for (const attr of params.category.attributes || []) {
-    fields.push(attributeToField(attr as IAttribute));
+    fields.push(attributeToField(attr));
   }
 
   // Variations -> SKU matrix
-  const saleProps = (params.category.attributes || []).filter((a: any) => a.isVariant);
+  const saleProps = (params.category.attributes || []).filter((a) => a.isVariant);
 
   // If there's a Color variant, add per-color images field with same media rules
-  const colorAttr = (params.category.attributes || []).find((a: any) => {
-    const key = String(a?.name || '').toLowerCase();
-    return a?.isVariant && key.includes('color');
+  const colorAttr = (params.category.attributes || []).find((a) => {
+    const key = String(a.name || '').toLowerCase();
+    return a.isVariant && key.includes('color');
   });
   if (colorAttr) {
     fields.push({
@@ -164,7 +165,7 @@ export function composeSchema(params: {
     label: 'Price & Stock',
     group: 'sale',
     required: true,
-    dataSource: saleProps.map((p: any) => ({
+    dataSource: saleProps.map((p) => ({
       key: p.name,
       label: titleCase(p.name),
       type: 'custom',
@@ -174,7 +175,7 @@ export function composeSchema(params: {
   if (params.category.sizeChartColumns && params.category.sizeChartColumns.length > 0) {
     fields.push({
       name: 'sizes',
-      uiType: 'SizeMeasurementsTable' as any,
+      uiType: 'SizeMeasurementsTable' as unknown as UiType,
       label: 'Size & Fit Measurements',
       group: 'details',
       required: false,
