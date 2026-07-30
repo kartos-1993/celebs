@@ -1,4 +1,5 @@
-import React, { useState, useEffect, KeyboardEvent } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -71,78 +72,44 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
 
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
   const [newOptionInput, setNewOptionInput] = useState<string>('');
-  const [optionSets, setOptionSets] = useState<OptionSetItem[]>([]);
-  const [optionSetValues, setOptionSetValues] = useState<string[]>([]);
-  const [loadingSets, setLoadingSets] = useState<boolean>(false);
 
-  // Fetch available option sets
-  useEffect(() => {
-    if (useStandardOptions && isVariant) {
-      let isMounted = true;
-      setLoadingSets(true);
-      ProductAPI.get<{ data?: Array<{ id?: string; _id?: string; name: string }> }>('/option-sets')
-        .then((res) => {
-          if (isMounted) {
-            const rawData = res.data;
-            const sets = Array.isArray(rawData?.data)
-              ? rawData.data
-              : Array.isArray(rawData)
-              ? (rawData as Array<{ id?: string; _id?: string; name: string }>)
-              : [];
-            setOptionSets(
-              sets.map((s) => ({
-                id: String(s.id || s._id || ''),
-                name: s.name,
-              }))
-            );
-          }
-        })
-        .catch(() => {
-          if (isMounted) setOptionSets([]);
-        })
-        .finally(() => {
-          if (isMounted) setLoadingSets(false);
-        });
-      return () => {
-        isMounted = false;
-      };
-    } else {
-      setOptionSets([]);
-    }
-  }, [useStandardOptions, isVariant]);
+  // Fetch available option sets via TanStack Query
+  const { data: optionSets = [], isLoading: loadingSets } = useQuery<OptionSetItem[]>({
+    queryKey: ['option-sets'],
+    queryFn: async () => {
+      const res = await ProductAPI.get<{ data?: Array<{ id?: string; _id?: string; name: string }> }>('/option-sets');
+      const rawData = res.data;
+      const sets = Array.isArray(rawData?.data)
+        ? rawData.data
+        : Array.isArray(rawData)
+        ? (rawData as Array<{ id?: string; _id?: string; name: string }>)
+        : [];
+      return sets.map((s) => ({
+        id: String(s.id || s._id || ''),
+        name: s.name,
+      }));
+    },
+    enabled: !!(useStandardOptions && isVariant),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // Load preview of standard option set values when selectedOptionSetId changes
-  useEffect(() => {
-    if (useStandardOptions && selectedOptionSetId) {
-      let isMounted = true;
-      ProductAPI.get<{ data?: { values?: Array<string | { label?: string; name?: string }> }; values?: Array<string | { label?: string; name?: string }> }>(
-        `/option-sets/${selectedOptionSetId}`
-      )
-        .then((res) => {
-          if (isMounted) {
-            const rawData = res.data;
-            const rawVals =
-              rawData?.data?.values ?? rawData?.values ?? [];
-            const strVals = rawVals
-              .map((v) =>
-                typeof v === 'string'
-                  ? v
-                  : v?.label ?? v?.name ?? ''
-              )
-              .filter(Boolean);
-            setOptionSetValues(strVals);
-          }
-        })
-        .catch(() => {
-          if (isMounted) setOptionSetValues([]);
-        });
-      return () => {
-        isMounted = false;
-      };
-    } else {
-      setOptionSetValues([]);
-    }
-  }, [useStandardOptions, selectedOptionSetId]);
+  // Load preview of standard option set values when selectedOptionSetId changes via TanStack Query
+  const { data: optionSetValues = [] } = useQuery<string[]>({
+    queryKey: ['option-set-values', selectedOptionSetId],
+    queryFn: async () => {
+      const res = await ProductAPI.get<{
+        data?: { values?: Array<string | { label?: string; name?: string }> };
+        values?: Array<string | { label?: string; name?: string }>;
+      }>(`/option-sets/${selectedOptionSetId}`);
+      const rawData = res.data;
+      const rawVals = rawData?.data?.values ?? rawData?.values ?? [];
+      return rawVals
+        .map((v) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
+        .filter(Boolean);
+    },
+    enabled: !!(useStandardOptions && selectedOptionSetId),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const handleAddManualValue = () => {
     const trimmed = newOptionInput.trim();
