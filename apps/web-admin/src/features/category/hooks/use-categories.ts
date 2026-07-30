@@ -6,6 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/error-utils';
+import { PRODUCT_SCHEMA_QUERY_KEYS } from '@/features/product/hooks/use-product-schema';
 import { CategoryApiService } from '../api';
 import type { UseCategoriesReturn, UpdateCategoryRequest } from '../types';
 
@@ -25,6 +26,11 @@ export const CATEGORY_QUERY_KEYS = {
 export function useCategories(): UseCategoriesReturn {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.all });
+    queryClient.invalidateQueries({ queryKey: PRODUCT_SCHEMA_QUERY_KEYS.all });
+  };
 
   // Fetch categories list
   const {
@@ -54,7 +60,7 @@ export function useCategories(): UseCategoriesReturn {
   const createMutation = useMutation({
     mutationFn: CategoryApiService.createCategory,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.all });
+      invalidateAll();
       toast({
         title: 'Success',
         description: 'Category created successfully',
@@ -74,7 +80,7 @@ export function useCategories(): UseCategoriesReturn {
     mutationFn: ({ id, data }: { id: string; data: UpdateCategoryRequest }) =>
       CategoryApiService.updateCategory(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.all });
+      invalidateAll();
       toast({
         title: 'Success',
         description: 'Category updated successfully',
@@ -92,7 +98,7 @@ export function useCategories(): UseCategoriesReturn {
   const deleteMutation = useMutation({
     mutationFn: CategoryApiService.deleteCategory,
     onSuccess: (_, categoryId) => {
-      queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.all });
+      invalidateAll();
       const category = categoriesData?.data?.categories.find(
         (c) => c._id === categoryId,
       );

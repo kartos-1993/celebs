@@ -30,8 +30,6 @@ export const attributeGroupSchema = z.enum([
   'variant',
 ]);
 
-export const variantTypeSchema = z.enum(['color', 'size']);
-
 export const attributeSchema = z.object({
   _id: z.string().optional(),
   name: z.string().trim().min(1, 'Attribute name is required'),
@@ -49,7 +47,6 @@ export const attributeSchema = z.object({
     .optional()
     .nullable(),
   isVariant: z.boolean().optional().default(false),
-  variantType: variantTypeSchema.optional().nullable(),
   useStandardOptions: z.boolean().optional().default(false),
   optionSetId: z.string().optional().nullable(),
 });
@@ -64,40 +61,12 @@ export const baseCategorySchemaFields = {
 };
 
 export const baseCategorySchema = z.object(baseCategorySchemaFields);
-
-export const createCategorySchema = baseCategorySchema.refine(
-  (val) => {
-    const attrs = val.attributes || [];
-    const axes = attrs
-      .filter((a) => a.isVariant && a.variantType)
-      .map((a) => a.variantType);
-    const unique = new Set(axes);
-    return unique.size <= 2;
-  },
-  {
-    message: 'You can select at most two distinct variation types (Color and Size)',
-    path: ['attributes'],
-  }
-);
-
-export const updateCategorySchema = baseCategorySchema.partial().refine(
-  (val) => {
-    const attrs = val.attributes || [];
-    const axes = attrs
-      .filter((a) => a && a.isVariant && a.variantType)
-      .map((a) => a!.variantType);
-    const unique = new Set(axes);
-    return unique.size <= 2;
-  },
-  {
-    message: 'You can select at most two distinct variation types (Color and Size)',
-    path: ['attributes'],
-  }
-);
+export const createCategorySchema = baseCategorySchema;
+export const updateCategorySchema = baseCategorySchema.partial();
 
 export type AttributeType = z.infer<typeof attributeTypeSchema>;
 export type AttributeGroup = z.infer<typeof attributeGroupSchema>;
-export type VariantType = z.infer<typeof variantTypeSchema>;
 export type CategoryAttributeType = z.infer<typeof attributeSchema>;
+export type BaseCategoryType = z.infer<typeof baseCategorySchema>;
 export type CreateCategoryType = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryType = z.infer<typeof updateCategorySchema>;

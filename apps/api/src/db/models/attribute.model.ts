@@ -35,7 +35,6 @@ export interface IAttribute extends Document {
   };
   group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
   isVariant?: boolean;
-  variantType?: 'color' | 'size' | null;
   useStandardOptions?: boolean;
   optionSetId?: mongoose.Types.ObjectId | null;
   createdAt: Date;
@@ -117,12 +116,6 @@ const AttributeSchema: Schema = new Schema(
       default: false,
       index: true,
     },
-    variantType: {
-      type: String,
-      enum: ['color', 'size'],
-      default: undefined,
-    },
-    
     useStandardOptions: {
       type: Boolean,
       default: false,

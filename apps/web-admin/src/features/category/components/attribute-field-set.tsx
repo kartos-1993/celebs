@@ -55,10 +55,6 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
     control: form.control,
     name: `attributes.${index}.isVariant`,
   });
-  const variantType = useWatch({
-    control: form.control,
-    name: `attributes.${index}.variantType`,
-  });
   const useStandardOptions = useWatch({
     control: form.control,
     name: `attributes.${index}.useStandardOptions`,
@@ -79,25 +75,19 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
   const [optionSetValues, setOptionSetValues] = useState<string[]>([]);
   const [loadingSets, setLoadingSets] = useState<boolean>(false);
 
-  // Fetch available option sets for color or size
+  // Fetch available option sets
   useEffect(() => {
-    if (
-      useStandardOptions &&
-      isVariant &&
-      (variantType === 'color' || variantType === 'size')
-    ) {
+    if (useStandardOptions && isVariant) {
       let isMounted = true;
       setLoadingSets(true);
-      ProductAPI.get<{ data?: Array<{ id?: string; _id?: string; name: string }> }>('/option-sets', {
-        params: { type: variantType },
-      })
+      ProductAPI.get<{ data?: Array<{ id?: string; _id?: string; name: string }> }>('/option-sets')
         .then((res) => {
           if (isMounted) {
             const rawData = res.data;
             const sets = Array.isArray(rawData?.data)
               ? rawData.data
               : Array.isArray(rawData)
-              ? (rawData as unknown as Array<{ id?: string; _id?: string; name: string }>)
+              ? (rawData as Array<{ id?: string; _id?: string; name: string }>)
               : [];
             setOptionSets(
               sets.map((s) => ({
@@ -118,9 +108,8 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
       };
     } else {
       setOptionSets([]);
-      setOptionSetValues([]);
     }
-  }, [useStandardOptions, isVariant, variantType]);
+  }, [useStandardOptions, isVariant]);
 
   // Load preview of standard option set values when selectedOptionSetId changes
   useEffect(() => {
@@ -185,7 +174,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
               variant="outline"
               className="text-xs bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800"
             >
-              Variation Axis ({variantType || 'Custom'})
+              Variant Option
             </Badge>
           )}
         </h4>
@@ -378,68 +367,38 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
 
       {isVariant && (
         <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-md border border-purple-100 dark:border-purple-900/50 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name={`attributes.${index}.variantType`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Variation Axis Type</FormLabel>
-                  <Select
-                    onValueChange={(v) => {
-                      field.onChange(v);
-                      form.setValue(`attributes.${index}.optionSetId`, null);
+          <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
+            ✨ Product Variant Option: Sellers will choose values for this attribute (e.g., Strap Material, Dial Color, Ring Size, Storage Capacity) to generate product SKUs.
+          </p>
+
+          <FormField
+            control={form.control}
+            name={`attributes.${index}.useStandardOptions`}
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(val) => {
+                      field.onChange(val);
+                      if (!val) {
+                        form.setValue(`attributes.${index}.optionSetId`, null);
+                      }
                     }}
-                    value={field.value || undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select axis (Color or Size)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="color">Color Swatch Axis</SelectItem>
-                      <SelectItem value="size">Size Box Axis</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {(variantType === 'color' || variantType === 'size') && (
-              <FormField
-                control={form.control}
-                name={`attributes.${index}.useStandardOptions`}
-                render={({ field }) => (
-                  <FormItem className="flex flex-col justify-end">
-                    <div className="flex items-center space-x-2 py-2">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(val) => {
-                            field.onChange(val);
-                            if (!val) {
-                              form.setValue(`attributes.${index}.optionSetId`, null);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormLabel className="cursor-pointer">Use Standard Option Set</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
+                  />
+                </FormControl>
+                <FormLabel className="cursor-pointer text-xs">Link to Standard Option Set (e.g. Ring Sizes, Basic Colors)</FormLabel>
+              </FormItem>
             )}
-          </div>
+          />
 
-          {useStandardOptions && (variantType === 'color' || variantType === 'size') && (
+          {useStandardOptions && (
             <FormField
               control={form.control}
               name={`attributes.${index}.optionSetId`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Linked Option Set</FormLabel>
+                  <FormLabel className="text-xs">Linked Option Set</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>

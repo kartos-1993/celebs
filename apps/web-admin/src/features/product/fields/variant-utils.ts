@@ -25,7 +25,7 @@ export function normalizeUi(
   const ui = String(uiType || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '');
-  const map: Record<string, any> = {
+  const map: Record<string, 'input' | 'number' | 'Switch' | 'select' | 'multiselect' | 'VariantList' | 'MainImage' | 'SkuTableV2' | 'ColorMeta' | 'ColorInline'> = {
     input: 'input',
     number: 'number',
     switch: 'Switch',
@@ -38,19 +38,16 @@ export function normalizeUi(
     colorinline: 'ColorInline',
     variantlist: 'VariantList',
   };
-  return map[ui] ?? (uiType as any);
+  return map[ui] ?? 'input';
 }
 
 export function detectVariantKind(f: FieldSpec): VariantKind | null {
   const group = String(f.group || '').toLowerCase();
   if (!group.includes('variant')) return null;
-  const vType = String((f as any).variantType || (f as any).variantAxis || '')
-    .toLowerCase()
-    .trim();
   const name = f.name?.toLowerCase?.() ?? '';
   const label = f.label?.toLowerCase?.() ?? '';
-  if (vType === 'color' || name === 'color' || label.includes('color')) return 'color';
-  if (vType === 'size' || name === 'size' || label.includes('size')) return 'size';
+  if (name === 'color' || label.includes('color')) return 'color';
+  if (name === 'size' || label.includes('size')) return 'size';
   return 'other';
 }
 
@@ -66,15 +63,15 @@ export function extractVariantsMeta(fields: FieldSpec[]): {
   const variants: VariantMetaItem[] = variantFields
     .filter((f) => ['select', 'multiselect', 'VariantList'].includes(String(normalizeUi(f.uiType))))
     .map((f) => {
-      const ui = normalizeUi(f.uiType);
+      const ui = normalizeUi(f.uiType) as 'select' | 'multiselect' | 'VariantList';
       const kind = detectVariantKind(f) ?? 'other';
-      return { key: f.name, label: f.label, kind, ui: ui as any } as VariantMetaItem;
+      return { key: f.name, label: f.label, kind, ui };
     });
   const colorFieldName = variants.find((v) => v.kind === 'color')?.key;
   return { variants, colorFieldName };
 }
 
-export const getLabelMap = (fields: FieldSpec[], fieldName?: string) => {
+export const getLabelMap = (fields: FieldSpec[], fieldName?: string): Map<string, string> => {
   if (!fieldName) {
     return new Map<string, string>();
   }
@@ -87,10 +84,14 @@ export const getLabelMap = (fields: FieldSpec[], fieldName?: string) => {
   return new Map<string, string>(
     field.dataSource
       .filter(
-        (option: any): option is { value: string; label: string } =>
-          Boolean(option?.value) && Boolean(option?.label),
+        (option): option is { value: string; label: string } =>
+          typeof option === 'object' &&
+          option !== null &&
+          'value' in option &&
+          'label' in option &&
+          Boolean(option.value) &&
+          Boolean(option.label),
       )
-      .map((option: any) => [String(option.value), String(option.label)]),
+      .map((option) => [String(option.value), String(option.label)]),
   );
 };
-

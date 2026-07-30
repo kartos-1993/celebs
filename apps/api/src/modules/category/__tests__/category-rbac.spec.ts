@@ -94,7 +94,6 @@ describe('Category RBAC & Tree Operations', () => {
           isRequired: true,
           group: 'variant',
           isVariant: true,
-          variantType: 'size',
         },
       ],
     };
@@ -180,7 +179,6 @@ describe('Category RBAC & Tree Operations', () => {
             isRequired: false,
             group: 'variant',
             isVariant: true,
-            variantType: 'color',
           },
         ],
       });
@@ -217,7 +215,6 @@ describe('Category RBAC & Tree Operations', () => {
           isRequired: false,
           group: 'variant',
           isVariant: true,
-          variantType: 'color',
         },
       ],
     };

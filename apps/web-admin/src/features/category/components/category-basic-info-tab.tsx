@@ -154,44 +154,6 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
         </div>
       )}
 
-      {/* Size Chart Columns Setup */}
-      <div className="space-y-3 border-t pt-4">
-        <Label className="text-base font-semibold">Size Chart Columns (Size Guide)</Label>
-        <p className="text-xs text-gray-500">
-          Define measurement fields required for products in this category (e.g., Bust, Shoulder, Waist Size, Length).
-        </p>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add column header (e.g. Waist Size)"
-            value={newColumnInput}
-            onChange={(e) => setNewColumnInput(e.target.value)}
-            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddSizeColumn();
-              }
-            }}
-          />
-          <Button type="button" variant="outline" onClick={handleAddSizeColumn}>
-            <Plus className="h-4 w-4 mr-1" /> Add
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2 pt-1">
-          {sizeChartColumns.map((col) => (
-            <Badge key={col} variant="secondary" className="flex items-center gap-1 py-1 px-3">
-              <span>{col}</span>
-              <X
-                className="h-3 w-3 cursor-pointer text-gray-500 hover:text-red-500"
-                onClick={() => handleRemoveSizeColumn(col)}
-              />
-            </Badge>
-          ))}
-          {sizeChartColumns.length === 0 && (
-            <span className="text-xs text-gray-400 italic">No size chart measurement columns added yet.</span>
-          )}
-        </div>
-      </div>
-
       {/* Active Status */}
       <div className="space-y-4 border-t pt-4">
         <FormField

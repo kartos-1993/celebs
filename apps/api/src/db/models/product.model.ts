@@ -35,6 +35,22 @@ interface IColorVariant {
   stocks: IStock[];
 }
 
+export interface ISkuItem {
+  _id?: mongoose.Types.ObjectId | string;
+  skuCode: string;
+  selectedOptions: Record<string, string>;
+  price: number;
+  discountedPrice?: number;
+  stock: number;
+  image?: string;
+  isDefault?: boolean;
+}
+
+export interface IVariantOption {
+  name: string;
+  values: string[];
+}
+
 export interface IReviewHistoryItem {
   action: 'approve' | 'reject' | 'submit';
   reviewerId?: string;
@@ -60,6 +76,8 @@ export interface IProduct extends Document {
 
   sizes: ISize[];
   colorVariants: IColorVariant[];
+  skus: ISkuItem[];
+  variantOptions: IVariantOption[];
   mainImages: string[];
   dynamicData: Record<string, unknown>;
   tags: string[];
@@ -173,6 +191,23 @@ const ProductSchema = new Schema<IProduct>(
             },
           },
         ],
+      },
+    ],
+    skus: [
+      {
+        skuCode: { type: String, required: true, trim: true },
+        selectedOptions: { type: Schema.Types.Mixed, default: {} },
+        price: { type: Number, required: true, min: 0 },
+        discountedPrice: { type: Number, min: 0 },
+        stock: { type: Number, required: true, min: 0, default: 0 },
+        image: { type: String },
+        isDefault: { type: Boolean, default: false },
+      },
+    ],
+    variantOptions: [
+      {
+        name: { type: String, required: true, trim: true },
+        values: [{ type: String, required: true }],
       },
     ],
     mainImages: [

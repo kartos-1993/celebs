@@ -30,9 +30,6 @@ export interface UseCategoryFormReturn {
   handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
-/**
- * Safely extracts the document identifier (_id or id) for an attribute item
- */
 function getAttributeId(attr: { _id?: string; id?: string }): string | undefined {
   if (attr._id) return String(attr._id);
   if (attr.id) return String(attr.id);
@@ -65,7 +62,6 @@ export const useCategoryForm = ({
         placeholder: attr.placeholder || '',
         info: attr.info || { help: '', top: '' },
         isVariant: !!attr.isVariant,
-        variantType: attr.variantType || null,
         useStandardOptions: !!attr.useStandardOptions,
         optionSetId: attr.optionSetId ? String(attr.optionSetId) : null,
       })),
@@ -95,7 +91,6 @@ export const useCategoryForm = ({
       placeholder: '',
       info: { help: '', top: '' },
       isVariant: false,
-      variantType: null,
       useStandardOptions: false,
       optionSetId: null,
     });
@@ -153,7 +148,6 @@ export const useCategoryForm = ({
         _id: attr._id || undefined,
         values: attr.values ?? [],
         isVariant: attr.isVariant ?? false,
-        variantType: attr.isVariant ? attr.variantType || null : null,
         useStandardOptions: attr.isVariant ? (attr.useStandardOptions ?? false) : false,
         optionSetId:
           attr.isVariant && attr.useStandardOptions && attr.optionSetId
