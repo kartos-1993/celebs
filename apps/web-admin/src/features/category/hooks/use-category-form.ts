@@ -5,10 +5,10 @@ import { useToast } from '@/hooks/use-toast';
 import { uploadFiles } from '@/features/product/api';
 import { Category } from '../types';
 import {
-  categoryFormSchema,
-  CategoryFormData,
-  AttributeFormInput,
-} from '../schemas/category-form-schema';
+  createCategorySchema as categoryFormSchema,
+  CreateCategoryType as CategoryFormData,
+  CategoryAttributeType as AttributeFormInput,
+} from '@celebs/shared-types';
 
 export interface UseCategoryFormProps {
   initialData?: Partial<Category> | null;

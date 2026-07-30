@@ -10,7 +10,7 @@ import {
 import { SlidersHorizontal, FolderTree } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { Category } from '../types';
-import { CategoryFormData } from '../schemas/category-form-schema';
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { useCategoryForm } from '../hooks/use-category-form';
 import { CategoryBasicInfoTab } from './category-basic-info-tab';
 import { CategoryAttributesTab } from './category-attributes-tab';

@@ -29,7 +29,7 @@ import {
 } from '@celebs/shared-ui/components/dialog';
 import { X, Plus } from 'lucide-react';
 import { ProductAPI } from '@/lib/axios-client';
-import { CategoryFormData } from '../schemas/category-form-schema';
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface AttributeFieldSetProps {
   index: number;
