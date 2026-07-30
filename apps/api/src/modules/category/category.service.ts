@@ -191,6 +191,7 @@ export class CategoryService {
         // Update own slug and paths
         await CategoryModel.findByIdAndUpdate(categoryId, {
           ...updateData,
+          $inc: { version: 1 },
           path: existingCategory.path.map((slug) =>
             slug === oldSlug ? newSlug : slug,
           ),
@@ -200,7 +201,10 @@ export class CategoryService {
         await this.updateCategoryPathsRecursively(categoryId, oldSlug, newSlug);
       } else {
         // If name is not updated, just update other fields
-        await CategoryModel.findByIdAndUpdate(categoryId, updateData);
+        await CategoryModel.findByIdAndUpdate(categoryId, {
+          ...updateData,
+          $inc: { version: 1 },
+        });
       }
 
       // Update attributes if provided
