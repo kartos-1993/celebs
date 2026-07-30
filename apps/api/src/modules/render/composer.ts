@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import type { IAttribute } from '@/db/models/attribute.model';
 
 // UI field types supported by the renderer
@@ -182,8 +183,8 @@ export function composeSchema(params: {
     });
   }
 
-  const version = params.category.version ?? 1;
-  // Include policy fingerprint so any policy change busts the ETag cache
+  const fieldsHash = crypto.createHash('md5').update(JSON.stringify(fields)).digest('hex');
+  // Include policy fingerprint and fields content hash so any change busts the ETag cache
   const policyFingerprint = [
     params.policy.media.minWidth ?? 0,
     params.policy.media.minHeight ?? 0,
@@ -193,7 +194,7 @@ export function composeSchema(params: {
     params.policy.media.maxWidth ?? 0,
     params.policy.media.maxHeight ?? 0,
   ].join(':');
-  const renderTag = Buffer.from(`${String(params.category._id)}:${version}:${policyFingerprint}`).toString('base64');
+  const renderTag = Buffer.from(`${String(params.category._id)}:${fieldsHash}:${policyFingerprint}`).toString('base64');
 
   return { fields, renderTag };
 }
