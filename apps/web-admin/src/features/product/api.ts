@@ -142,4 +142,18 @@ export async function uploadFiles(files: Array<File | string | null | undefined>
   return [...existingUrls, ...uploadedUrls];
 }
 
+export const ProductApiService = {
+  createProduct,
+  getProducts,
+  getProductById,
+  getProductReviewQueue,
+  submitProductForReview,
+  reviewProduct,
+  archiveProduct,
+  toggleProductActivation,
+  updateProduct,
+  uploadFiles,
+};
+
+
 
