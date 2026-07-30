@@ -35,7 +35,7 @@ export type vendorBusinessInfoType = z.infer<typeof vendorBusinessInfoSchema>;
 export type CreateProductType = z.infer<typeof createProductSchema>;
 export type UpdateProductType = z.infer<typeof updateProductSchema>;
 export type ProductFilterType = z.input<typeof productFilterSchema>;
-export type ProductType = z.infer<typeof productSchema>;
+export type ProductType = z.infer<typeof createProductSchema>;
 export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
 
 export * from './types/api';

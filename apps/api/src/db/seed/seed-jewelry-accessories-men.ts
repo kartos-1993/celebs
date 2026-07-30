@@ -12,7 +12,7 @@ import { AttributeModel } from '@/db/models/attribute.model';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/celebs';
 
-type AllowedGroup = 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
+import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 interface SeedAttr {
   name: string;

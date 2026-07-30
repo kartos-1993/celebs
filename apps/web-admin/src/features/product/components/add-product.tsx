@@ -7,7 +7,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { useToast } from '@/hooks/use-toast';
 import { FileClock, Info, RotateCcw } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
-import { CreateProductRequest, ProductApiService } from '../api';
+import { CreateProductRequest, createProduct, updateProduct } from '../api';
 import { useProductForm } from '../hooks/use-product-form';
 import type { FieldSpec } from '../fields/UiRegistry';
 import { extractVariantsMeta } from '../fields/variant-utils';
@@ -530,13 +530,13 @@ const AddProduct = () => {
       console.log('Submitting product payload to API:', payload);
 
       if (isEditMode && id) {
-        await ProductApiService.updateProduct(id, payload);
+        await updateProduct(id, payload);
         toast({
           title: 'Product updated',
           description: 'The product has been updated successfully.',
         });
       } else {
-        await ProductApiService.createProduct(payload);
+        await createProduct(payload);
         toast({
           title: 'Product created',
           description: 'The product has been created successfully.',

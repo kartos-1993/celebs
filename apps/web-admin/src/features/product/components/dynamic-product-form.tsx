@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, type Control } from 'react-hook-form';
 import {
   Collapsible,
   CollapsibleContent,
@@ -8,7 +8,8 @@ import {
 import { Button } from '@celebs/shared-ui/components/button';
 import { ProductAPI } from '@/lib/axios-client';
 import { ImageIcon, Palette, Ruler } from 'lucide-react';
-import { CategoryApiService } from '../../category/api';
+import { getCategoryById } from '../../category/api';
+import type { CategoryAttribute } from '../../category/types';
 import type { FieldSpec } from '../fields/UiRegistry';
 import { uiTypeRegistry } from '../fields/UiRegistry';
 import { extractVariantsMeta } from '../fields/variant-utils';
@@ -25,80 +26,18 @@ interface DynamicProductFormProps {
   onSchemaLoaded?: (fields: FieldSpec[]) => void;
 }
 
-const normalizeGroup = (value?: string) =>
-  (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-const normalizeUiType = (value?: string) =>
-  String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '');
-
-const uiAliases: Record<string, keyof typeof uiTypeRegistry> = {
-  input: 'input',
-  text: 'input',
-  number: 'number',
-  switch: 'Switch',
-  select: 'select',
-  multiselect: 'multiselect',
-  skutablev2: 'SkuTableV2',
-  mainimage: 'MainImage',
-  colormeta: 'ColorMeta',
-  colorinline: 'ColorInline',
-  sizemeasurementstable: 'SizeMeasurementsTable',
-};
-
-const groupAliases: Record<string, string> = {
-  base: 'base',
-  productimages: 'base',
-  images: 'base',
-  mainimage: 'base',
-  media: 'base',
-  details: 'details',
-  productspecification: 'details',
-  specification: 'details',
-  attributes: 'details',
-  basic: 'details',
-  basicinfo: 'details',
-  general: 'details',
-  info: 'details',
-  title: 'details',
-  productname: 'details',
-  brand: 'details',
-  variant: 'variant',
-  variants: 'variant',
-  variant1: 'variant',
-  variant2: 'variant',
-  sku: 'variant',
-  color: 'variant',
-  size: 'variant',
-  sale: 'sale',
-  pricestock: 'sale',
-  priceandstock: 'sale',
-  pricing: 'sale',
-  stock: 'sale',
-  package: 'package',
-  shippingandwarranty: 'package',
-  shipping: 'package',
-  warranty: 'package',
-  termcondition: 'termcondition',
-  termsandconditions: 'termcondition',
-  terms: 'termcondition',
-};
-
-const resolveFieldComponent = (field: FieldSpec) =>
-  uiTypeRegistry[
-    uiAliases[normalizeUiType(field.uiType)] ??
-      (field.uiType as keyof typeof uiTypeRegistry)
-  ];
+const resolveFieldComponent = (field: FieldSpec) => uiTypeRegistry[field.uiType];
 
 export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   let merged = Array.isArray(next) ? [...next] : [];
 
   try {
-    const cat = await CategoryApiService.getCategoryById(catId);
-    const attrs: any[] = (cat as any)?.data?.attributes ?? [];
+    const cat = await getCategoryById(catId);
+    const attrs: CategoryAttribute[] = Array.isArray(cat?.data?.attributes)
+      ? cat.data.attributes
+      : [];
 
-    if (!Array.isArray(attrs) || attrs.length === 0) {
+    if (attrs.length === 0) {
       return merged;
     }
 
@@ -109,7 +48,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     const extra: FieldSpec[] = [];
     let colorFieldKey: string | null = null;
 
-    const toField = (attribute: any): FieldSpec | null => {
+    const toField = (attribute: CategoryAttribute): FieldSpec | null => {
       const attrName = String(attribute.name || '').trim();
       if (!attrName) return null;
 
@@ -127,19 +66,28 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
                 ? 'Switch'
                 : 'input';
 
-      let dataSource: any;
+      let dataSource: FieldSpec['dataSource'];
       if (isSelect) {
         if (attribute.useStandardOptions && attribute.optionSetId) {
           dataSource = { fetch: `/option-sets/${attribute.optionSetId}` };
         } else if (Array.isArray(attribute.values)) {
-          dataSource = attribute.values.map((value: any) =>
+          dataSource = attribute.values.map((value: unknown) =>
             typeof value === 'string'
               ? { label: value, value }
-              : {
-                  label:
-                    value.label ?? value.name ?? String(value.value ?? value),
-                  value: value.value ?? value.label ?? value.name,
-                },
+              : typeof value === 'object' && value !== null
+                ? {
+                    label: String(
+                      (value as Record<string, unknown>).label ??
+                        (value as Record<string, unknown>).name ??
+                        (value as Record<string, unknown>).value ??
+                        value,
+                    ),
+                    value:
+                      (value as Record<string, unknown>).value ??
+                      (value as Record<string, unknown>).label ??
+                      (value as Record<string, unknown>).name,
+                  }
+                : { label: String(value), value: String(value) },
           );
         } else {
           dataSource = [];
@@ -148,7 +96,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
 
       return {
         name: attrName,
-        uiType: uiType as any,
+        uiType: uiType as FieldSpec['uiType'],
         label: String(attribute.label || attribute.name || attrName),
         group: attribute.isVariant ? 'variant' : 'details',
         required: !!attribute.isRequired,
@@ -175,7 +123,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     if (colorFieldKey && !existingNames.has('variants.colorMeta')) {
       extra.push({
         name: 'variants.colorMeta',
-        uiType: 'ColorInline' as any,
+        uiType: 'ColorInline',
         label: 'Color Images',
         group: 'variant',
         required: false,
@@ -232,7 +180,7 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
     } else {
       merged.push({
         name: 'sku.table',
-        uiType: 'SkuTableV2' as any,
+        uiType: 'SkuTableV2',
         label: 'Price & Stock',
         group: 'sale',
         required: false,
@@ -243,7 +191,7 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
 
     const colorVariantField = merged.find(
       (field) =>
-        normalizeGroup(field.group).includes('variant') &&
+        field.group === 'variant' &&
         (field.name === 'color' ||
           field.label?.toLowerCase?.().includes('color')),
     );
@@ -254,7 +202,7 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
     if (colorVariantField && !hasColorImages) {
       merged.push({
         name: 'variants.colorMeta',
-        uiType: 'ColorInline' as any,
+        uiType: 'ColorInline',
         label: 'Color Images',
         group: 'variant',
         required: false,
@@ -368,10 +316,9 @@ function DynamicProductForm({
     const grouped: Record<string, FieldSpec[]> = {};
 
     fields.forEach((field) => {
-      const mappedKey =
-        groupAliases[normalizeGroup(field.group)] ?? field.group;
-      grouped[mappedKey] = grouped[mappedKey] || [];
-      grouped[mappedKey].push(field);
+      const groupKey = field.group || 'details';
+      grouped[groupKey] = grouped[groupKey] || [];
+      grouped[groupKey].push(field);
     });
 
     return grouped;
@@ -525,7 +472,7 @@ function DetailsSection({
   onOpenChange,
 }: {
   fields: FieldSpec[];
-  control: any;
+  control: Control<any>;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {

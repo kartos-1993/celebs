@@ -1,4 +1,4 @@
-import { CreateProductRequest, ProductApiService } from '../api';
+import { CreateProductRequest, uploadFiles } from '../api';
 import type { FieldSpec } from '../fields/UiRegistry';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import {
@@ -40,7 +40,7 @@ export async function buildProductPayload({
   const colorLabelMap = getLabelMap(fields, colorFieldName);
   const sizeLabelMap = getLabelMap(fields, sizeFieldName);
 
-  const mainImages = await ProductApiService.uploadFiles(
+  const mainImages = await uploadFiles(
     Array.isArray(values.mainImage)
       ? (values.mainImage as Array<File | string>)
       : [],
@@ -60,10 +60,10 @@ export async function buildProductPayload({
 
   for (const colorValue of selectedColors) {
     const prefix = `variants.colorMeta.${colorValue}`;
-    const swatchUrls = await ProductApiService.uploadFiles([
+    const swatchUrls = await uploadFiles([
       flatValues[`${prefix}.swatch`] as File | string | undefined,
     ]);
-    const images = await ProductApiService.uploadFiles(
+    const images = await uploadFiles(
       Array.isArray(flatValues[`${prefix}.images`])
         ? (flatValues[`${prefix}.images`] as Array<File | string>)
         : [],

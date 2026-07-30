@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+import type { AttributeGroup } from '@celebs/shared-types';
+
 export type AttributeType =
   | 'text'
   | 'select'
@@ -33,7 +35,7 @@ export interface IAttribute extends Document {
     help?: string;
     top?: string;
   };
-  group?: 'basic' | 'sale' | 'package' | 'details' | 'termcondition' | 'variant';
+  group?: AttributeGroup;
   isVariant?: boolean;
   useStandardOptions?: boolean;
   optionSetId?: mongoose.Types.ObjectId | null;

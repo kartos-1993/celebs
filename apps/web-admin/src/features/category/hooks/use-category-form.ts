@@ -2,7 +2,7 @@ import { useState, ChangeEvent } from 'react';
 import { useForm, useFieldArray, UseFormReturn, UseFieldArrayRemove } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
-import { ProductApiService } from '@/features/product/api';
+import { uploadFiles } from '@/features/product/api';
 import { Category } from '../types';
 import {
   categoryFormSchema,
@@ -120,7 +120,7 @@ export const useCategoryForm = ({
       try {
         setIsUploadingImage(true);
         const file = e.target.files[0];
-        const urls = await ProductApiService.uploadFiles([file]);
+        const urls = await uploadFiles([file]);
         if (urls && urls.length > 0) {
           form.setValue('imageUrl', urls[0], { shouldDirty: true });
         }

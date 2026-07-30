@@ -38,7 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ProductApiService } from '../api';
+import { getProducts, toggleProductActivation, archiveProduct } from '../api';
 import { useAuthContext } from '@/context/auth-provider';
 
 const productStatusTabs = [
@@ -67,7 +67,7 @@ const ManageProduct = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const res = await ProductApiService.getProducts({
+      const res = await getProducts({
         search: searchTerm || undefined,
         status: filterStatus === 'all' ? undefined : filterStatus,
         page,
@@ -114,7 +114,7 @@ const ManageProduct = () => {
 
   const handleToggleActivation = async (id: string) => {
     try {
-      await ProductApiService.toggleProductActivation(id);
+      await toggleProductActivation(id);
       toast({
         title: 'Status Updated',
         description: 'Successfully toggled product status.',
@@ -131,7 +131,7 @@ const ManageProduct = () => {
 
   const handleArchive = async (id: string) => {
     try {
-      await ProductApiService.archiveProduct(id);
+      await archiveProduct(id);
       toast({
         title: 'Product Archived',
         description: 'The product was successfully soft deleted.',
