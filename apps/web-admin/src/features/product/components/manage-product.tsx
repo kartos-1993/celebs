@@ -38,7 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getProducts, toggleProductActivation, archiveProduct } from '../api';
+import { getProducts, toggleProductActivation, archiveProduct, submitProductForReview, ProductApiService } from '../api';
 import { useAuthContext } from '@/context/auth-provider';
 
 const productStatusTabs = [
@@ -69,7 +69,7 @@ const ManageProduct = () => {
     try {
       const res = await getProducts({
         search: searchTerm || undefined,
-        status: filterStatus === 'all' ? undefined : filterStatus,
+        status: filterStatus === 'all' ? undefined : (filterStatus as any),
         page,
         limit: 10,
       });

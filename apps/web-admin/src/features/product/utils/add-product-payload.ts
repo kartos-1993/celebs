@@ -210,6 +210,8 @@ export async function buildProductPayload({
     },
     tags: [],
     featured: false,
+    skus: (values as any).skus ?? [],
+    variantOptions: (values as any).variantOptions ?? [],
     status,
   };
 }
