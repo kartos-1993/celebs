@@ -19,7 +19,7 @@ export { useCategoryState } from './hooks/use-category-state';
 export { useCategoryForm } from './hooks/use-category-form';
 
 // API
-export { CategoryApiService } from './api';
+export * from './api';
 
 // Components
 export { CategoryFormDialog } from './components/category-form-dialog';

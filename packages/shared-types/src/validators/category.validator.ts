@@ -22,6 +22,7 @@ export const attributeTypeSchema = z.enum([
 ]);
 
 export const attributeGroupSchema = z.enum([
+  'base',
   'basic',
   'sale',
   'package',

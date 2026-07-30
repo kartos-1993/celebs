@@ -12,14 +12,7 @@ export type UiType =
   | 'ColorInline'
   | 'ColorMeta';
 
-export type FieldGroup =
-  | 'basic'
-  | 'sale'
-  | 'package'
-  | 'details'
-  | 'termcondition'
-  | 'variant'
-  | 'base';
+import type { AttributeGroup as FieldGroup } from '@celebs/shared-types';
 
 export interface FieldSpec {
   name: string;

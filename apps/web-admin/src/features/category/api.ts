@@ -1,6 +1,6 @@
 /**
  * Category API Service
- * Centralized API calls with proper error handling and type safety
+ * Centralized API calls with proper type safety
  */
 
 import { ProductAPI } from '../../lib/axios-client';
@@ -13,116 +13,96 @@ import {
   ApiResponse,
 } from './types';
 
-function checkResponseSuccess<T>(data: ApiResponse<T>): ApiResponse<T> {
-  if (data && data.success === false) {
-    throw new Error(data.message || 'API request failed');
-  }
-  return data;
+const BASE_PATH = '/category';
+
+/**
+ * Creates a new category
+ */
+export async function createCategory(
+  data: CreateCategoryRequest,
+): Promise<ApiResponse<Category>> {
+  const response = await ProductAPI.post<ApiResponse<Category>>(BASE_PATH, data);
+  return response.data;
 }
 
 /**
- * API Endpoints for category operations
+ * Retrieves paginated list of categories
  */
-export class CategoryApiService {
-  private static readonly BASE_PATH = '/category';
-
-  /**
-   * Creates a new category
-   */
-  static async createCategory(
-    data: CreateCategoryRequest,
-  ): Promise<ApiResponse<Category>> {
-    const response = await ProductAPI.post<ApiResponse<Category>>(
-      CategoryApiService.BASE_PATH,
-      data,
-    );
-    return checkResponseSuccess(response.data);
-  }
-
-  /**
-   * Retrieves paginated list of categories
-   */
-  static async getCategories(
-    page = 1,
-    limit = 50,
-  ): Promise<ApiResponse<PaginatedCategoriesResponse>> {
-    const response = await ProductAPI.get<
-      ApiResponse<PaginatedCategoriesResponse>
-    >(`${CategoryApiService.BASE_PATH}?page=${page}&limit=${limit}`);
-    return checkResponseSuccess(response.data);
-  }
-
-  /**
-   * Retrieves category tree with attributes optimized for UI
-   */
-  static async getCategoryTree(): Promise<ApiResponse<CategoryTreeNode[]>> {
-    const response = await ProductAPI.get<ApiResponse<CategoryTreeNode[]>>(
-      `${CategoryApiService.BASE_PATH}/tree-with-attributes`,
-    );
-    return checkResponseSuccess(response.data);
-  }
-
-  /**
-   * Global search for categories (flat list for dropdown)
-   */
-  static async searchCategories(query: string) {
-    const response = await ProductAPI.get(
-      `${CategoryApiService.BASE_PATH}/search`,
-      { params: { q: query, limit: 20 } },
-    );
-    if (response.data && response.data.success === false) {
-      throw new Error(response.data.message || 'Search failed');
-    }
-    return response.data?.data ?? response.data ?? [];
-  }
-
-  /**
-   * Retrieves a single category by ID
-   */
-  static async getCategoryById(id: string): Promise<ApiResponse<Category>> {
-    const response = await ProductAPI.get<ApiResponse<Category>>(
-      `${CategoryApiService.BASE_PATH}/${id}`,
-    );
-    return checkResponseSuccess(response.data);
-  }
-
-  /**
-   * Updates an existing category
-   */
-  static async updateCategory(
-    id: string,
-    data: UpdateCategoryRequest,
-  ): Promise<ApiResponse<Category>> {
-    const response = await ProductAPI.put<ApiResponse<Category>>(
-      `${CategoryApiService.BASE_PATH}/${id}`,
-      data,
-    );
-    return checkResponseSuccess(response.data);
-  }
-
-  /**
-   * Deletes a category
-   */
-  static async deleteCategory(
-    id: string,
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(
-      `${CategoryApiService.BASE_PATH}/${id}`,
-    );
-    return checkResponseSuccess(response.data);
-  }
+export async function getCategories(
+  page = 1,
+  limit = 50,
+): Promise<ApiResponse<PaginatedCategoriesResponse>> {
+  const response = await ProductAPI.get<ApiResponse<PaginatedCategoriesResponse>>(
+    `${BASE_PATH}?page=${page}&limit=${limit}`,
+  );
+  return response.data;
 }
 
-// Legacy functions for backwards compatibility
-// TODO: Gradually migrate to CategoryApiService class
+/**
+ * Retrieves category tree with attributes optimized for UI
+ */
+export async function getCategoryTree(): Promise<ApiResponse<CategoryTreeNode[]>> {
+  const response = await ProductAPI.get<ApiResponse<CategoryTreeNode[]>>(
+    `${BASE_PATH}/tree-with-attributes`,
+  );
+  return response.data;
+}
 
-export const createCategoryMutationFn = CategoryApiService.createCategory;
-export const getcategoryQueryFn = () => CategoryApiService.getCategories();
-export const getCategoryTreeWithAttributesQueryFn =
-  CategoryApiService.getCategoryTree;
-export const getCategoryByIdQueryFn = CategoryApiService.getCategoryById;
-export const updateCategoryMutationFn = CategoryApiService.updateCategory;
-export const deleteCategoryMutationFn = CategoryApiService.deleteCategory;
+/**
+ * Global search for categories (flat list for dropdown)
+ */
+export async function searchCategories(query: string) {
+  const response = await ProductAPI.get(`${BASE_PATH}/search`, {
+    params: { q: query, limit: 20 },
+  });
+  return response.data?.data ?? response.data ?? [];
+}
+
+/**
+ * Retrieves a single category by ID
+ */
+export async function getCategoryById(id: string): Promise<ApiResponse<Category>> {
+  const response = await ProductAPI.get<ApiResponse<Category>>(`${BASE_PATH}/${id}`);
+  return response.data;
+}
+
+/**
+ * Updates an existing category
+ */
+export async function updateCategory(
+  id: string,
+  data: UpdateCategoryRequest,
+): Promise<ApiResponse<Category>> {
+  const response = await ProductAPI.put<ApiResponse<Category>>(
+    `${BASE_PATH}/${id}`,
+    data,
+  );
+  return response.data;
+}
+
+/**
+ * Deletes a category
+ */
+export async function deleteCategory(
+  id: string,
+): Promise<ApiResponse<{ success: boolean }>> {
+  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(
+    `${BASE_PATH}/${id}`,
+  );
+  return response.data;
+}
+
+
+
+export const CategoryApiService = {
+  createCategory,
+  getCategories,
+  getCategoryTree,
+  searchCategories,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
+};
 
 // Re-export types for convenience
 export type {
@@ -131,3 +111,4 @@ export type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
 };
+

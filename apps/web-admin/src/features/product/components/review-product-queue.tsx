@@ -41,7 +41,12 @@ import {
   Info,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ProductApiService, ReviewProductRequestPayload } from '../api';
+import {
+  getProductReviewQueue,
+  getProducts,
+  reviewProduct,
+  ReviewProductRequestPayload,
+} from '../api';
 
 export interface CategoryRef {
   _id?: string;
@@ -227,9 +232,9 @@ export default function ReviewProductQueue() {
     try {
       let res;
       if (activeTab === 'pending') {
-        res = await ProductApiService.getProductReviewQueue(currentPage, 10);
+        res = await getProductReviewQueue(currentPage, 10);
       } else {
-        res = await ProductApiService.getProducts({
+        res = await getProducts({
           status: activeTab === 'published' ? 'published' : 'rejected',
           search: search || undefined,
           page: currentPage,
@@ -261,7 +266,7 @@ export default function ReviewProductQueue() {
   const handleApprove = async (id: string) => {
     setSubmittingAction(true);
     try {
-      await ProductApiService.reviewProduct(id, 'approve');
+      await reviewProduct(id, 'approve');
       toast({
         title: 'Product Approved',
         description: 'Product listing approved and published to customer marketplace.',
@@ -340,7 +345,7 @@ export default function ReviewProductQueue() {
         note: rejectionNote.trim(),
       };
 
-      await ProductApiService.reviewProduct(selectedProduct._id, payload);
+      await reviewProduct(selectedProduct._id, payload);
       toast({
         title: 'Product Rejected',
         description: 'Structured rejection note submitted and email sent to vendor.',

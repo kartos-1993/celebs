@@ -7,7 +7,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/error-utils';
 import { PRODUCT_SCHEMA_QUERY_KEYS } from '@/features/product/hooks/use-product-schema';
-import { CategoryApiService } from '../api';
+import {
+  getCategories,
+  getCategoryTree,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from '../api';
 import type { UseCategoriesReturn, UpdateCategoryRequest } from '../types';
 
 /**
@@ -40,7 +47,7 @@ export function useCategories(): UseCategoriesReturn {
     refetch: refetchCategories,
   } = useQuery({
     queryKey: CATEGORY_QUERY_KEYS.list(),
-    queryFn: () => CategoryApiService.getCategories(1, 100), // Get all categories
+    queryFn: () => getCategories(1, 100), // Get all categories
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -52,13 +59,13 @@ export function useCategories(): UseCategoriesReturn {
     refetch: refetchTree,
   } = useQuery({
     queryKey: CATEGORY_QUERY_KEYS.tree(),
-    queryFn: CategoryApiService.getCategoryTree,
+    queryFn: getCategoryTree,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Create category mutation
   const createMutation = useMutation({
-    mutationFn: CategoryApiService.createCategory,
+    mutationFn: createCategory,
     onSuccess: () => {
       invalidateAll();
       toast({
@@ -78,7 +85,7 @@ export function useCategories(): UseCategoriesReturn {
   // Update category mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateCategoryRequest }) =>
-      CategoryApiService.updateCategory(id, data),
+      updateCategory(id, data),
     onSuccess: () => {
       invalidateAll();
       toast({
@@ -96,7 +103,7 @@ export function useCategories(): UseCategoriesReturn {
   });
   // Delete category mutation
   const deleteMutation = useMutation({
-    mutationFn: CategoryApiService.deleteCategory,
+    mutationFn: deleteCategory,
     onSuccess: (_, categoryId) => {
       invalidateAll();
       const category = categoriesData?.data?.categories.find(
@@ -145,7 +152,7 @@ export function useCategories(): UseCategoriesReturn {
 export function useCategory(id: string) {
   return useQuery({
     queryKey: CATEGORY_QUERY_KEYS.detail(id),
-    queryFn: () => CategoryApiService.getCategoryById(id),
+    queryFn: () => getCategoryById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
