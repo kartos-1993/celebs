@@ -6,7 +6,7 @@ export type UiType =
   | 'number'
   | 'Switch'
   | 'select'
-  | 'multiSelect'
+  | 'multiselect'
   | 'SkuTableV2'
   | 'MainImage'
   | 'ColorInline'
@@ -82,7 +82,7 @@ function attributeToField(attr: IAttribute): FieldSpec {
     case 'select':
       return { ...base, uiType: 'select', dataSource: selectDataSource(attr) };
     case 'multiselect':
-      return { ...base, uiType: 'multiSelect', dataSource: selectDataSource(attr) };
+      return { ...base, uiType: 'multiselect', dataSource: selectDataSource(attr) };
     default:
       return { ...base, uiType: 'input' };
   }
@@ -140,8 +140,7 @@ export function composeSchema(params: {
   // If there's a Color variant, add per-color images field with same media rules
   const colorAttr = (params.category.attributes || []).find((a: any) => {
     const key = String(a?.name || '').toLowerCase();
-    const axis = String(a?.variantType || a?.variantAxis || '').toLowerCase();
-    return a?.isVariant && (axis === 'color' || key.includes('color'));
+    return a?.isVariant && key.includes('color');
   });
   if (colorAttr) {
     fields.push({
@@ -174,7 +173,7 @@ export function composeSchema(params: {
     dataSource: saleProps.map((p: any) => ({
       key: p.name,
       label: titleCase(p.name),
-      type: p.variantType ?? 'custom',
+      type: 'custom',
     })),
   });
 

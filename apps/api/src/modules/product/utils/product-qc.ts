@@ -140,16 +140,22 @@ export function calculateProductQCScore(product: Partial<IProduct>): IQCCheckRes
 
   // 7. Variants & Stock Check (5 pts max)
   const variants = product.colorVariants || [];
-  const totalStock = variants.reduce((acc, v) => {
+  const skus = product.skus || [];
+  const legacyStock = variants.reduce((acc, v) => {
     const vStock = v.stocks?.reduce((sAcc, s) => sAcc + (s.quantity || 0), 0) || 0;
     return acc + vStock;
   }, 0);
+  const matrixStock = skus.reduce((acc, s) => acc + (s.stock || 0), 0);
+  const totalStock = legacyStock + matrixStock;
+
   const variantScore = totalStock > 0 ? 5 : 0;
   const variantsCheck: IQCCheckItem = {
     passed: totalStock > 0,
     score: variantScore,
     maxScore: 5,
-    details: `${variants.length} color variant(s) with total inventory of ${totalStock} units`,
+    details: skus.length > 0
+      ? `${skus.length} SKU variant(s) with total inventory of ${totalStock} units`
+      : `${variants.length} variant(s) with total inventory of ${totalStock} units`,
   };
 
   const totalScore = Math.min(

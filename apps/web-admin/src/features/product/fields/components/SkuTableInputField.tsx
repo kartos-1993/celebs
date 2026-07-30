@@ -28,9 +28,16 @@ import {
   cleanSkuAttributeCode,
 } from '../../utils/generate-sku-helpers';
 
+interface VariantDataSource {
+  labels?: Record<string, Record<string, string>>;
+  variants?: Array<{ key?: string; name?: string; label?: string; value?: string }>;
+  fetch?: string;
+  params?: Record<string, unknown>;
+}
+
 export function SkuTableInputField({ field }: UiProps) {
-  const ds = field.dataSource;
-  const labelsMap: Record<string, Record<string, string>> = (ds?.labels as any) ?? {};
+  const ds = field.dataSource as VariantDataSource | undefined;
+  const labelsMap: Record<string, Record<string, string>> = ds?.labels ?? {};
   const labelOf = React.useCallback(
     (axisKey: string, value: string) =>
       labelsMap?.[axisKey]?.[String(value)] ?? String(value),
@@ -39,14 +46,23 @@ export function SkuTableInputField({ field }: UiProps) {
 
   const [variantMeta, setVariantMeta] = React.useState<
     Array<{ key: string; label: string }>
-  >(Array.isArray(ds) ? ds : Array.isArray(ds?.variants) ? ds.variants : []);
+  >(
+    Array.isArray(ds)
+      ? (ds as Array<{ key: string; label: string }>)
+      : Array.isArray(ds?.variants)
+      ? ds.variants.map((v) => ({
+          key: v.key ?? v.name ?? v.value ?? '',
+          label: v.label ?? v.name ?? v.key ?? String(v.value ?? ''),
+        }))
+      : [],
+  );
 
   React.useEffect(() => {
     (async () => {
       if (Array.isArray(ds?.variants)) {
-        const normalized = ds.variants.map((a: any) => ({
-          key: a.key ?? a.name ?? a.value,
-          label: a.label ?? a.name ?? a.key ?? String(a.value),
+        const normalized = ds.variants.map((a) => ({
+          key: a.key ?? a.name ?? a.value ?? '',
+          label: a.label ?? a.name ?? a.key ?? String(a.value ?? ''),
         }));
         setVariantMeta(normalized);
         return;
@@ -63,9 +79,9 @@ export function SkuTableInputField({ field }: UiProps) {
           data?.data ??
           data;
         const list = Array.isArray(raw) ? raw : [];
-        const normalized = list.map((a: any) => ({
-          key: a.key ?? a.name ?? a.value,
-          label: a.label ?? a.name ?? a.key ?? String(a.value),
+        const normalized = list.map((a: Record<string, unknown>) => ({
+          key: String(a.key ?? a.name ?? a.value ?? ''),
+          label: String(a.label ?? a.name ?? a.key ?? a.value ?? ''),
         }));
         setVariantMeta(normalized);
       } catch (e) {
@@ -81,17 +97,20 @@ export function SkuTableInputField({ field }: UiProps) {
 
   const watchedValues = useWatch({
     control: formControl,
-    name: variantMeta.map((a) => a.key) as any,
-  }) as any[] | undefined;
+    name: variantMeta.map((a) => a.key),
+  }) as unknown[] | undefined;
 
   const variantSelections = variantMeta.map((a, idx) => {
     const v = watchedValues?.[idx];
     if (Array.isArray(v)) {
-      const arr = (v as any[]).map((x) =>
-        typeof x === 'string'
-          ? x
-          : String((x as any)?.value ?? (x as any)?.label ?? x),
-      );
+      const arr = v.map((x) => {
+        if (typeof x === 'string') return x;
+        if (typeof x === 'object' && x !== null) {
+          const obj = x as Record<string, unknown>;
+          return String(obj.value ?? obj.label ?? x);
+        }
+        return String(x);
+      });
       return { key: a.key, label: a.label, values: arr };
     }
     if (typeof v === 'string' && v) {

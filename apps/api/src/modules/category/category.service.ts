@@ -679,9 +679,8 @@ export class CategoryService {
         existingAttr.values = values;
         existingAttr.isRequired = !!attr.isRequired;
         existingAttr.type = attr.type;
-        (existingAttr as any).group = (attr.group as any) ?? (existingAttr as any).group ?? 'basic';
+        existingAttr.group = (attr.group as IAttribute['group']) ?? existingAttr.group ?? 'basic';
         existingAttr.isVariant = !!attr.isVariant;
-        (existingAttr as any).variantType = attr.isVariant ? ((attr as any).variantType ?? (attr as any).variantAxis ?? null) : null;
         existingAttr.useStandardOptions = !!attr.useStandardOptions;
         existingAttr.optionSetId = optionSetId;
 
@@ -704,9 +703,8 @@ export class CategoryService {
               type: attr.type,
               values,
               isRequired: !!attr.isRequired,
-              group: (attr.group as any) ?? 'basic',
+              group: (attr.group as IAttribute['group']) ?? 'basic',
               isVariant: !!attr.isVariant,
-              variantType: attr.isVariant ? ((attr as any).variantType ?? (attr as any).variantAxis ?? null) : null,
               useStandardOptions: !!attr.useStandardOptions,
               optionSetId,
             },

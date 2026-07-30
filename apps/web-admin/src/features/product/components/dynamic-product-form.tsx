@@ -12,6 +12,7 @@ import { CategoryApiService } from '../../category/api';
 import type { FieldSpec } from '../fields/UiRegistry';
 import { uiTypeRegistry } from '../fields/UiRegistry';
 import { extractVariantsMeta } from '../fields/variant-utils';
+import { useProductSchema } from '../hooks/use-product-schema';
 import CollapsibleFormSection from './collapsible-form-section';
 
 interface DynamicProductFormProps {
@@ -90,7 +91,7 @@ const resolveFieldComponent = (field: FieldSpec) =>
       (field.uiType as keyof typeof uiTypeRegistry)
   ];
 
-const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
+export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   let merged = Array.isArray(next) ? [...next] : [];
 
   try {
@@ -101,59 +102,30 @@ const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
       return merged;
     }
 
-    const existingNames = new Set(merged.map((field) => field.name));
-    const haveDetails = merged.some((field) =>
-      normalizeGroup(field.group).includes('detail'),
-    );
-    const haveVariant = merged.some((field) =>
-      normalizeGroup(field.group).includes('variant'),
+    const existingNames = new Set(
+      merged.map((field) => String(field.name || '').toLowerCase()),
     );
 
     const extra: FieldSpec[] = [];
     let colorFieldKey: string | null = null;
 
     const toField = (attribute: any): FieldSpec | null => {
-      const key = String(attribute.name || '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '');
-
-      if (!key) {
-        return null;
-      }
+      const attrName = String(attribute.name || '').trim();
+      if (!attrName) return null;
 
       const isSelect =
         attribute.type === 'select' || attribute.type === 'multiselect';
-      const variantType = String(
-        attribute.variantType || attribute.variantAxis || '',
-      ).toLowerCase();
-      const isColorVariant =
-        attribute.isVariant &&
-        (variantType === 'color' ||
-          key === 'color' ||
-          String(attribute.name || '')
-            .toLowerCase()
-            .includes('color'));
-      const isSizeVariant =
-        attribute.isVariant &&
-        (variantType === 'size' ||
-          key === 'size' ||
-          String(attribute.name || '')
-            .toLowerCase()
-            .includes('size'));
 
-      const uiType = isColorVariant
-        ? 'VariantList'
-        : isSizeVariant
-          ? 'multiSelect'
-          : attribute.type === 'multiselect'
-            ? 'multiSelect'
-            : attribute.type === 'select'
-              ? 'select'
-              : attribute.type === 'number'
-                ? 'number'
-                : attribute.type === 'boolean'
-                  ? 'Switch'
-                  : 'input';
+      const uiType =
+        attribute.type === 'multiselect'
+          ? 'multiselect'
+          : attribute.type === 'select'
+            ? 'select'
+            : attribute.type === 'number'
+              ? 'number'
+              : attribute.type === 'boolean'
+                ? 'Switch'
+                : 'input';
 
       let dataSource: any;
       if (isSelect) {
@@ -175,9 +147,9 @@ const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
       }
 
       return {
-        name: key,
+        name: attrName,
         uiType: uiType as any,
-        label: String(attribute.name || key),
+        label: String(attribute.label || attribute.name || attrName),
         group: attribute.isVariant ? 'variant' : 'details',
         required: !!attribute.isRequired,
         dataSource,
@@ -188,18 +160,13 @@ const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     for (const attribute of attrs) {
       const field = toField(attribute);
       if (!field) continue;
-      if (existingNames.has(field.name)) continue;
-      if (field.group === 'details' && haveDetails) continue;
-      if (field.group === 'variant' && haveVariant) continue;
+      if (existingNames.has(field.name.toLowerCase())) continue;
 
       extra.push(field);
 
-      const variantType = String(
-        attribute.variantType || attribute.variantAxis || '',
-      ).toLowerCase();
       if (
         !colorFieldKey &&
-        (variantType === 'color' || field.name === 'color')
+        (field.name.toLowerCase() === 'color' || field.name.toLowerCase().includes('color'))
       ) {
         colorFieldKey = field.name;
       }
@@ -232,26 +199,13 @@ const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   return merged;
 };
 
-const normalizeSchema = (fields: FieldSpec[]) =>
+export const normalizeSchema = (fields: FieldSpec[]) =>
   fields.map((field) => {
-    const isVariantGroup = normalizeGroup(field.group).includes('variant');
-    const lowerLabel = field.label?.toLowerCase?.() ?? '';
-    const isColorName = field.name === 'color' || lowerLabel.includes('color');
-    const isSizeName = field.name === 'size' || lowerLabel.includes('size');
-    const ui = normalizeUiType(field.uiType);
-
-    if (isVariantGroup && isColorName && ui === 'multiselect') {
-      return { ...field, uiType: 'VariantList' as any };
-    }
-
-    if (isVariantGroup && isSizeName && ui === 'select') {
-      return { ...field, uiType: 'multiSelect' as any };
-    }
-
+    // Preserve exact authored uiTypes cleanly
     return field;
   });
 
-const ensureVariantSupportFields = (fields: FieldSpec[]) => {
+export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
   let merged = [...fields];
 
   try {
@@ -364,86 +318,51 @@ function DynamicProductForm({
 }: DynamicProductFormProps) {
   const form = useFormContext();
   const [fields, setFields] = React.useState<FieldSpec[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const {
+    data: schemaFields,
+    isLoading: loading,
+    error: queryError,
+  } = useProductSchema(catId, productId);
+
+  const error = queryError ? (queryError as Error).message || 'Failed to load form schema' : null;
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const appliedDefaultsRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    let cancelled = false;
+    if (!schemaFields) return;
+    setFields(schemaFields);
+    onSchemaLoaded?.(schemaFields);
 
-    const loadSchema = async () => {
-      if (!catId) {
-        setFields([]);
-        return;
-      }
+    const defaults = Object.fromEntries(
+      schemaFields
+        .filter((field) => typeof field.value !== 'undefined')
+        .map((field) => [field.name, field.value]),
+    );
 
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await ProductAPI.get('/product-render', {
-          params: { catId, locale: 'en_US', productId },
-        });
-
-        const serverFields: FieldSpec[] =
-          response.data?.data?.data ?? response.data?.data ?? [];
-
-        let merged = await addFallbackFields(catId, serverFields);
-        merged = normalizeSchema(merged);
-        merged = ensureVariantSupportFields(merged);
-
-        if (cancelled) return;
-
-        setFields(merged);
-        onSchemaLoaded?.(merged);
-
-        const defaults = Object.fromEntries(
-          merged
-            .filter((field) => typeof field.value !== 'undefined')
-            .map((field) => [field.name, field.value]),
-        );
-
-        if (
-          appliedDefaultsRef.current !== catId &&
-          Object.keys(defaults).length > 0
-        ) {
-          Object.entries(defaults).forEach(([key, value]) => {
-            const existingVal = form.getValues(key);
-            if (existingVal === undefined || existingVal === null || existingVal === '') {
-              form.setValue(key, value, {
-                shouldDirty: false,
-                shouldTouch: false,
-                shouldValidate: false,
-              });
-            }
-          });
-
-          Object.entries(defaults).forEach(([key, value]) => {
-            const sectionKey =
-              merged.find((field) => field.name === key)?.group ?? '';
-            onValuesChange?.({ [key]: value }, sectionKey);
+    if (
+      appliedDefaultsRef.current !== catId &&
+      Object.keys(defaults).length > 0
+    ) {
+      Object.entries(defaults).forEach(([key, value]) => {
+        const existingVal = form.getValues(key);
+        if (existingVal === undefined || existingVal === null || existingVal === '') {
+          form.setValue(key, value, {
+            shouldDirty: false,
+            shouldTouch: false,
+            shouldValidate: false,
           });
         }
+      });
 
-        appliedDefaultsRef.current = catId;
-      } catch (loadError: any) {
-        if (!cancelled) {
-          setError(loadError?.message || 'Failed to load form schema');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
+      Object.entries(defaults).forEach(([key, value]) => {
+        const sectionKey =
+          schemaFields.find((field) => field.name === key)?.group ?? '';
+        onValuesChange?.({ [key]: value }, sectionKey);
+      });
+    }
 
-    loadSchema();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [catId, productId]);
+    appliedDefaultsRef.current = catId;
+  }, [catId, schemaFields]);
 
   const groups = React.useMemo(() => {
     const grouped: Record<string, FieldSpec[]> = {};

@@ -32,7 +32,7 @@ export const stockSchema = z.object({
   quantity: z.number().int().min(0, 'Quantity cannot be negative'),
 });
 
-// Color variant schema
+// Color variant schema (Legacy Apparel Format)
 export const colorVariantSchema = z.object({
   name: z.string().trim().min(1, 'Color name is required'),
   colorCode: z.string().trim().min(1, 'Color code is required'),
@@ -40,12 +40,39 @@ export const colorVariantSchema = z.object({
   stocks: z.array(stockSchema).optional().default([]),
 });
 
+// Universal Dynamic SKU Matrix item schema
+export const skuItemSchema = z.object({
+  _id: z.string().optional(),
+  skuCode: z.string().trim().min(1, 'SKU code is required'),
+  selectedOptions: z.record(z.string(), z.string()),
+  price: z.number().positive('Price must be positive'),
+  discountedPrice: z.number().positive('Discounted price must be positive').optional().nullable(),
+  stock: z.number().int().min(0, 'Stock cannot be negative'),
+  image: z.string().url('Image must be a valid URL').optional().or(z.literal('')).nullable(),
+  isDefault: z.boolean().optional().default(false),
+});
+
+// Dynamic Variant Option schema
+export const variantOptionSchema = z.object({
+  name: z.string().trim().min(1, 'Option name is required'),
+  values: z.array(z.string()).min(1, 'At least one option value is required'),
+});
+
+// Dynamic Variant Meta item for UI field generators
+export const dynamicVariantMetaSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  values: z.array(z.string()),
+});
+
 export type ProductMeasurementType = z.infer<typeof productMeasurementSchema>;
 export type BodyMeasurementType = z.infer<typeof bodyMeasurementSchema>;
 export type ProductSizeType = z.infer<typeof sizeSchema>;
 export type ProductStockType = z.infer<typeof stockSchema>;
 export type ProductColorVariantType = z.infer<typeof colorVariantSchema>;
-
+export type SkuItemType = z.infer<typeof skuItemSchema>;
+export type VariantOptionType = z.infer<typeof variantOptionSchema>;
+export type DynamicVariantMetaType = z.infer<typeof dynamicVariantMetaSchema>;
 
 // Base product schema fields
 const baseProductSchemaFields = {
@@ -53,11 +80,13 @@ const baseProductSchemaFields = {
   brand: z.string().trim().min(1, 'Brand is required').max(100).optional().or(z.literal('')),
   description: z.string().trim().max(4000, 'Description must be less than 4000 characters').optional().or(z.literal('')).default(''),
   price: z.number().positive('Price must be positive'),
-  discountedPrice: z.number().positive('Discounted price must be positive').optional(),
+  discountedPrice: z.number().positive('Discounted price must be positive').optional().nullable(),
   categoryId: idSchema,
   subcategoryId: idSchema,
   sizes: z.array(sizeSchema).optional().default([]),
-  colorVariants: z.array(colorVariantSchema).min(1, 'At least one color variant is required'),
+  colorVariants: z.array(colorVariantSchema).optional().default([]),
+  skus: z.array(skuItemSchema).optional().default([]),
+  variantOptions: z.array(variantOptionSchema).optional().default([]),
   mainImages: z.array(z.string().url('Image must be a valid URL')).optional().default([]),
   dynamicData: z.record(z.unknown()).optional().default({}),
   tags: z.array(z.string()).optional().default([]),
@@ -110,8 +139,10 @@ export const getProductByIdSchema = z.object({
 // Schema for updating product stock
 export const updateProductStockSchema = z.object({
   productId: idSchema,
-  colorVariantName: z.string().trim().min(1, 'Color variant name is required'),
-  stocks: z.array(stockSchema),
+  colorVariantName: z.string().trim().optional(),
+  skuCode: z.string().trim().optional(),
+  stocks: z.array(stockSchema).optional(),
+  stock: z.number().int().min(0).optional(),
 });
 
 // Schema for product review action
@@ -159,5 +190,6 @@ export const productSchema = baseProductSchema.extend({
   updatedAt: z.union([z.string(), z.date()]).optional(),
 });
 
+export type CreateProductType = z.infer<typeof createProductSchema>;
+export type UpdateProductType = z.infer<typeof updateProductSchema>;
 export type ProductType = z.infer<typeof productSchema>;
-
