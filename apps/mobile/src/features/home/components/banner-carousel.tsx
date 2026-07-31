@@ -9,25 +9,11 @@ import {
   Dimensions
 } from 'react-native';
 import { Image } from 'expo-image';
-import Constants from 'expo-constants';
+import { apiClient } from '@/api/client';
+import { resolveImageUrl } from '@/constants/config';
 import { styles } from '../styles/home.styles';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// API URL helper to dynamically target local server IP in Expo
-const getApiUrl = () => {
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return `http://${localhost}:3333/api/v1`;
-};
-
-// Helper to resolve local IP for media hosted on the developer machine
-const resolveImageUrl = (url: string) => {
-  if (!url) return '';
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return url.replace(/localhost|127\.0\.0\.1/g, localhost);
-};
 
 interface Banner {
   _id: string;
@@ -72,12 +58,14 @@ export function BannerCarousel() {
   const autoPlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchBanners = async (): Promise<Banner[]> => {
-    const url = `${getApiUrl()}/banners`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch');
-    const resData = await response.json();
-    if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
-      return resData.data;
+    try {
+      const response = await apiClient.get('/banners', { skipAuth: true });
+      const resData = response.data;
+      if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
+        return resData.data;
+      }
+    } catch {
+      // Fall back to mock banners if server call fails
     }
     return MOCK_BANNERS;
   };
