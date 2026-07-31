@@ -41,9 +41,19 @@ export function getExpoHostIp(): string | null {
   return '192.168.1.70';
 }
 
+export function resolveImageUrl(url?: string | null): string {
+  if (!url) return '';
+  // Remote CDNs, Cloudflare R2, Cloudinary, Unsplash, or S3
+  if (url.startsWith('https://') || url.startsWith('http://img.') || url.startsWith('http://res.cloudinary.com')) {
+    return url;
+  }
+  const host = getExpoHostIp() || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
+  return url.replace(/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/g, host);
+}
+
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),
-  timeout: 10000,
+  timeout: 25000, // 25s timeout to handle staging cold starts gracefully
 };
 
 

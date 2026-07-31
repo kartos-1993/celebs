@@ -19,15 +19,7 @@ import { AppHeader } from '@/components/app-header';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { useCategories } from '@/features/categories/hooks/use-categories';
 import { Spacing, Colors } from '@/constants/theme';
-
-// Helper to resolve local IP for media hosted on developer machine
-const resolveImageUrl = (url?: string | null) => {
-  if (!url) return 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=600';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return url.replace(/localhost|127\.0\.0\.1/g, localhost);
-};
+import { resolveImageUrl } from '@/constants/config';
 
 export default function CategoryExploreScreen() {
   const scheme = useColorScheme();

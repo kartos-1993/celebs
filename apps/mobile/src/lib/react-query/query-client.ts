@@ -5,9 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Create an async persister using AsyncStorage (compatible with Expo Go)
 export const clientPersister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: 'REACT_QUERY_OFFLINE_CACHE',
-  buster: 'v2', // Increment to bust stale/empty cache
-  maxAge: 1000 * 60 * 60 * 4, // 4 hours max age for persisted data
+  key: 'REACT_QUERY_OFFLINE_CACHE_V2', // Busts previous stale cache
 });
 
 export const queryClient = new QueryClient({

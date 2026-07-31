@@ -16,7 +16,7 @@ export default function TabLayout() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister: clientPersister }}
+      persistOptions={{ persister: clientPersister, maxAge: 1000 * 60 * 60 * 4 }}
     >
       <ThemeProvider value={DefaultTheme}>
         <CartProvider>

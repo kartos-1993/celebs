@@ -8,14 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { useCategories } from '../hooks/use-categories';
 import { styles } from '../styles/categories.styles';
 import { Colors } from '@/constants/theme';
-
-// Helper to resolve local IP for media hosted on the developer machine
-const resolveImageUrl = (url: string) => {
-  if (!url) return '';
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return url.replace(/localhost|127\.0\.0\.1/g, localhost);
-};
+import { resolveImageUrl } from '@/constants/config';
 
 export function CategoryGrid() {
   const scheme = useColorScheme();

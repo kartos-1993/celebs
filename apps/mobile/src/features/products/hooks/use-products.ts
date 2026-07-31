@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { apiClient } from '@/api/client';
-import { getExpoHostIp } from '@/constants/config';
-import { Platform } from 'react-native';
+import { getExpoHostIp, resolveImageUrl } from '@/constants/config';
+export { resolveImageUrl };
 
 export interface ProductMeasurement {
   name: string;
@@ -42,16 +42,6 @@ export interface Product {
   status: string;
   featured?: boolean;
 }
-
-// Helper to resolve local IP for media hosted on the developer machine
-export const resolveImageUrl = (url: string) => {
-  if (!url) return '';
-  if (url.startsWith('https://') || url.startsWith('http://img.')) {
-    return url;
-  }
-  const host = getExpoHostIp() || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
-  return url.replace(/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/g, host);
-};
 
 export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
   const fetchProductsPage = async ({ pageParam = null }: { pageParam: string | null }) => {
