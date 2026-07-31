@@ -103,7 +103,7 @@ const AttributeSchema: Schema = new Schema(
 
     group: {
       type: String,
-      enum: ['basic', 'sale', 'package', 'details', 'termcondition', 'variant'],
+      enum: ['base', 'basic', 'sale', 'package', 'details', 'termcondition', 'variant'],
       default: 'basic',
       index: true,
     },

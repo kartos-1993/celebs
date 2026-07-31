@@ -1,19 +1,10 @@
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import slugify from 'slugify';
-import path from 'path';
-import dotenv from 'dotenv';
-
-dotenv.config({
-  path: process.env.DOTENV_CONFIG_PATH || path.resolve(__dirname, '../../../.env.development'),
-});
-
-import { CategoryModel } from '@/db/models/category.model';
-import { AttributeModel } from '@/db/models/attribute.model';
-import { OptionSetModel } from '@/db/models/option-set.model';
-import { CategoryFilterModel } from '@/db/models/category-filter.model';
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fashion-ecommerce';
-
+import { CategoryModel } from '../models/category.model';
+import { AttributeModel } from '../models/attribute.model';
+import { OptionSetModel } from '../models/option-set.model';
+import { CategoryFilterModel } from '../models/category-filter.model';
+import { connectDb, disconnectDb } from './config';
 import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 interface SeedAttr {
@@ -24,12 +15,10 @@ interface SeedAttr {
   isVariant?: boolean;
   variantType?: 'color' | 'size' | null;
   useStandardOptions?: boolean;
-  optionSetName?: string; 
+  optionSetName?: string;
   group?: AllowedGroup;
-  
-  // CategoryFilter specific
   filterUiType?: 'checkbox' | 'color_swatch' | 'size_box' | 'range_slider';
-  isStorefrontFilter?: boolean; // defaults to true unless explicitly false
+  isStorefrontFilter?: boolean;
 }
 
 interface SeedCategory {
@@ -40,7 +29,6 @@ interface SeedCategory {
   imageUrl?: string;
 }
 
-// Helpers
 async function getOptionSetIdByName(name: string): Promise<Types.ObjectId | null> {
   const set = await OptionSetModel.findOne({ name });
   return set ? (set._id as Types.ObjectId) : null;
@@ -75,11 +63,11 @@ async function ensureCategory(parent: any | null, name: string, sizeChartColumns
   const pathParts = parent ? [...(parent.path || []), slug] : [slug];
   const res = await CategoryModel.findOneAndUpdate(
     { name, parentCategory: parent?._id || null },
-    { 
-      name, 
-      slug, 
-      level, 
-      parentCategory: parent?._id || null, 
+    {
+      name,
+      slug,
+      level,
+      parentCategory: parent?._id || null,
       path: pathParts,
       imageUrl: imageUrl || null,
       ...(sizeChartColumns ? { sizeChartColumns } : {})
@@ -96,26 +84,26 @@ async function createAttributesAndFilters(categoryId: Types.ObjectId, attrs: See
     if (a.useStandardOptions && a.optionSetName) {
       optionSetId = await getOptionSetIdByName(a.optionSetName);
     }
-    
+
     const attrData = mkAttr({ ...a, optionSetId });
-    
-    // 1. Create Attribute
+
+    // 1. Create/Update Attribute
     const attrDoc = await AttributeModel.findOneAndUpdate(
       { categoryId, name: attrData.name },
       { categoryId, ...attrData } as any,
       { new: true, upsert: true, setDefaultsOnInsert: true },
     );
 
-    // 2. Create CategoryFilter if applicable
-    const isStorefrontFilter = a.isStorefrontFilter !== false; // defaults to true
+    // 2. Create/Update CategoryFilter
+    const isStorefrontFilter = a.isStorefrontFilter !== false;
     if (isStorefrontFilter) {
-      const defaultUiType = 
+      const defaultUiType =
         a.filterUiType ? a.filterUiType :
         attrData.variantType === 'color' ? 'color_swatch' :
         attrData.variantType === 'size' ? 'size_box' :
         attrData.type === 'number' ? 'range_slider' :
         'checkbox';
-        
+
       await CategoryFilterModel.findOneAndUpdate(
         { categoryId, attributeId: attrDoc._id },
         {
@@ -134,40 +122,6 @@ async function createAttributesAndFilters(categoryId: Types.ObjectId, attrs: See
 }
 
 async function seedTree(root: SeedCategory) {
-  // Ensure default option sets exist
-  const defaults = [
-    {
-      name: 'Basic Colors',
-      type: 'color',
-      values: [
-        'White', 'Ivory', 'Cream', 'Off-White', 'Pearl', 'Vanilla', 'Alabaster',
-        'Beige', 'Khaki', 'Camel', 'Taupe', 'Sand', 'Apricot', 'Oatmeal', 'Mocha', 'Coffee', 'Chocolate', 'Chestnut', 'Caramel', 'Cocoa',
-        'Light Grey', 'Dark Grey', 'Charcoal', 'Slate', 'Ash', 'Heather Grey', 'Silver',
-        'Black', 'Obsidian', 'Jet Black',
-        'Red', 'Burgundy', 'Maroon', 'Wine', 'Crimson', 'Cherry', 'Brick Red', 'Tomato Red', 'Ruby', 'Scarlet',
-        'Pink', 'Baby Pink', 'Hot Pink', 'Fuchsia', 'Magenta', 'Rose', 'Dusty Rose', 'Blush', 'Bubblegum', 'Coral', 'Peach', 'Salmon',
-        'Orange', 'Burnt Orange', 'Neon Orange', 'Tangerine', 'Rust Orange', 'Papaya',
-        'Yellow', 'Mustard', 'Lemon', 'Neon Yellow', 'Gold', 'Amber', 'Butter Yellow', 'Sunflower',
-        'Mint', 'Seafoam', 'Sage', 'Lime', 'Neon Green', 'Chartreuse', 'Pistachio',
-        'Army Green', 'Olive', 'Khaki Green', 'Emerald', 'Forest Green', 'Hunter Green', 'Kelly Green', 'Pine', 'Avocado',
-        'Baby Blue', 'Sky Blue', 'Ice Blue', 'Aqua', 'Cyan', 'Powder Blue',
-        'Navy Blue', 'Royal Blue', 'Cobalt', 'Indigo', 'Sapphire', 'Denim Blue', 'Midnight Blue',
-        'Turquoise', 'Teal', 'Peacock Blue',
-        'Purple', 'Lilac', 'Lavender', 'Violet', 'Plum', 'Eggplant', 'Mauve', 'Amethyst', 'Orchid',
-        'Rose Gold', 'Bronze', 'Copper',
-        'Multicolor', 'Rainbow', 'Tie-Dye', 'Leopard Print', 'Floral', 'Geometric', 'Clear/Transparent'
-      ]
-    },
-    { name: 'Extended Sizes', type: 'size', values: ['Alpha XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'BR M', 'Alpha (Curve) 2XL', '3XL', '4XL', '5XL'] },
-  ];
-  for (const set of defaults) {
-    await OptionSetModel.updateOne(
-      { name: set.name },
-      set as any,
-      { upsert: true, setDefaultsOnInsert: true },
-    );
-  }
-
   async function walk(node: SeedCategory, parent: any | null) {
     const cat = await ensureCategory(parent, node.name, node.sizeChartColumns, node.imageUrl);
     if (node.attributes?.length) {
@@ -179,18 +133,14 @@ async function seedTree(root: SeedCategory) {
       }
     }
   }
-
   await walk(root, null);
 }
 
-// ---------------------------------------------------------
-// Tree Definition from the document
-// ---------------------------------------------------------
 const colorAttr: SeedAttr = { name: 'Color', type: 'select', isVariant: true, variantType: 'color', useStandardOptions: true, optionSetName: 'Basic Colors' };
-const sizeAttr: SeedAttr = { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Extended Sizes' };
+const sizeAttr: SeedAttr = { name: 'Size', type: 'select', isVariant: true, variantType: 'size', useStandardOptions: true, optionSetName: 'Alpha Sizes (XXS-5XL)' };
 const priceRangeAttr: SeedAttr = { name: 'Price Range', type: 'number', isVariant: false, isStorefrontFilter: true, filterUiType: 'range_slider' };
 
-const NEW_MEN_TREE: SeedCategory = {
+const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
   name: 'Men',
   children: [
     // 1. Men Denim
@@ -208,7 +158,7 @@ const NEW_MEN_TREE: SeedCategory = {
             colorAttr, sizeAttr,
             { name: 'Length', type: 'select', values: ['Long', 'Midi', 'Crop', 'Knee Length'] },
             { name: 'Details', type: 'multiselect', values: ['Button', 'Pocket', 'Contrast Binding', 'Pearls', 'Drawstring', 'Embroidery', 'Ripped', 'Contrast Sequin', 'Split', 'Raw Hem', 'Side Stripe', 'Rib-Knit', 'Belted', 'Sheer', 'Washed', 'Fringe', '2 in 1', 'Patched', 'Button Front', 'Zipper', 'Raw Wash', 'Rhinestone', 'Studded', 'Tape', 'Beaded'] },
-            { name: 'Pattern Type', type: 'select', values: ['Tie Dye', 'Geometric'] },
+            { name: 'Pattern Type', type: 'select', values: ['Tie Dye', 'Geometric', 'Floral Pattern', 'Plain'] },
             { name: 'Sleeve Length', type: 'select', values: ['Long Sleeve', 'Wrist-Length Sleeve', 'Sleeveless', 'Half Sleeve', 'Short Sleeve', 'Three Quarter Length Sleeve'] },
             { name: 'Features', type: 'multiselect', values: ['Great quality', 'High Stretch', 'Anti Wrinkle', 'Comfortable'] },
             { name: 'Sleeve Type', type: 'select', values: ['Regular Sleeve', 'Drop Shoulder', 'Raglan Sleeve'] },
@@ -532,6 +482,31 @@ const NEW_MEN_TREE: SeedCategory = {
       imageUrl: 'https://img.ltwebstatic.com/v4/j/spmp/2026/04/15/69/1776212811c32ad4720c0cb6b8ae1144991380f978_thumbnail_192x.avif',
       children: [
         {
+          name: 'Men Kurta & Suruwal Sets',
+          sizeChartColumns: ['Chest', 'Kurta Length', 'Waist', 'Suruwal Length'],
+          attributes: [
+            { name: 'Style', type: 'select', values: ['Traditional Ethnic', 'Festive Designer', 'Casual Silk', 'Wedding Special'] },
+            { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Slim Fit', 'Loose Comfort'] },
+            colorAttr, sizeAttr,
+            { name: 'Material', type: 'select', values: ['Pure Cotton', 'Raw Silk', 'Dupion Silk', 'Linen Blend', 'Jacquard Silk', 'Khadi'] },
+            { name: 'Details', type: 'multiselect', values: ['Embroidery Collar', 'Mandarin Collar', 'Side Pocket', 'Button Placket', 'Handicraft Threadwork'] },
+            { name: 'Festivals', type: 'multiselect', values: ['Dashain', 'Tihar', 'Wedding / Vivaha', 'Bratabandha', 'Holi', 'Lhosar', 'Id / Ramadan'] },
+            priceRangeAttr
+          ]
+        },
+        {
+          name: 'Men Nehru Jackets & Waistcoats',
+          sizeChartColumns: ['Shoulder', 'Chest', 'Length'],
+          attributes: [
+            { name: 'Style', type: 'select', values: ['Ethnic Waistcoat', 'Formal Eastcoat', 'Wedding Special'] },
+            { name: 'Fit Type', type: 'select', values: ['Slim Fit', 'Regular Fit'] },
+            colorAttr, sizeAttr,
+            { name: 'Material', type: 'select', values: ['Raw Silk', 'Broade Silk', 'Velvet', 'Cotton Khadi', 'Jute Blend'] },
+            { name: 'Festivals', type: 'multiselect', values: ['Dashain', 'Tihar', 'Wedding / Vivaha', 'Party', 'Reception'] },
+            priceRangeAttr
+          ]
+        },
+        {
           name: 'Men Asian Wear',
           sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
           attributes: [
@@ -542,9 +517,9 @@ const NEW_MEN_TREE: SeedCategory = {
             { name: 'Sleeve Length', type: 'select', values: ['Three Quarter Length Sleeve', 'Half Sleeve', 'Long Sleeve', 'Sleeveless', 'Short Sleeve'] },
             { name: 'Features', type: 'multiselect', values: ['Lightweight', 'Softness'] },
             { name: 'Sleeve Type', type: 'select', values: ['Drop Shoulder', 'Batwing Sleeve', 'Kimono Sleeve', 'Regular Sleeve'] },
-            { name: 'Scenes', type: 'multiselect', values: ['Office', 'Holiday'] },
+            { name: 'Scenes', type: 'multiselect', values: ['Office', 'Holiday', 'Festive'] },
             { name: 'Fabric Elasticity', type: 'select', values: ['Slight Stretch', 'Non-Stretch'] },
-            { name: 'Composition', type: 'select', values: ['Polyester', 'Cotton', 'Elastane'] },
+            { name: 'Composition', type: 'select', values: ['Polyester', 'Cotton', 'Elastane', 'Silk Blend'] },
             priceRangeAttr
           ]
         }
@@ -633,28 +608,28 @@ const NEW_MEN_TREE: SeedCategory = {
   ]
 };
 
-async function run() {
-  console.log('Connecting to MongoDB...');
-  await mongoose.connect(MONGODB_URI);
-  try {
-    console.log('Clearing old categories to avoid slug collisions...');
+export async function seedCategoriesMen(isReset = false): Promise<void> {
+  console.log('\n👔 Seeding Men Category Tree & Attributes...');
+  await connectDb();
+
+  if (isReset) {
+    console.log('⚠️ [--reset active] Wiping Category, Attribute, and Filter collections...');
     await CategoryFilterModel.deleteMany({});
     await AttributeModel.deleteMany({});
-    await CategoryModel.deleteMany({}); 
-    console.log('Cleared existing categories, attributes, and filters.');
-    
-    console.log('Seeding new Men tree with all 8 parent categories...');
-    await seedTree(NEW_MEN_TREE);
-    console.log('Successfully seeded all categories, attributes, and filters.');
-  } catch (error) {
-    console.error('Seed failed:', error);
-  } finally {
-    await mongoose.disconnect();
-    console.log('Disconnected from MongoDB.');
+    await CategoryModel.deleteMany({});
   }
+
+  await seedTree(ALL_MEN_CATEGORIES_TREE);
+  console.log('✅ Men Categories & Attributes Seeded Successfully!');
 }
 
-run().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (require.main === module) {
+  const isReset = process.argv.includes('--reset');
+  seedCategoriesMen(isReset)
+    .then(() => disconnectDb())
+    .catch((err) => {
+      console.error('❌ Seeding Men categories failed:', err);
+      disconnectDb();
+      process.exit(1);
+    });
+}
