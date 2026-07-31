@@ -48,18 +48,27 @@ export default function ProductDetailScreen() {
   const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
+  const isMountedRef = useRef(true);
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Measure top header cart icon position for fly animation
   const measureTopCartIcon = useCallback(() => {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
+      if (!isMountedRef.current) return;
       topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
-        if (typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
+        if (isMountedRef.current && typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
           setCartIconCoords({
             x: x + width / 2,
             y: y + height / 2,
           });
         }
       });
-    });
+    }, 100);
   }, [setCartIconCoords]);
 
   // Pulse effect on cart icon when item added

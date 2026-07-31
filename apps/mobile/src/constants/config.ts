@@ -28,8 +28,22 @@ export function getDevBaseUrl(): string {
   return url;
 }
 
+export function getExpoHostIp(): string | null {
+  const debuggerHost = Constants.expoConfig?.hostUri;
+  if (debuggerHost) return debuggerHost.split(':')[0];
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl) {
+    const match = envUrl.match(/http:\/\/(.*?):/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return match[1];
+    }
+  }
+  return '192.168.1.70';
+}
+
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),
   timeout: 10000,
 };
+
 

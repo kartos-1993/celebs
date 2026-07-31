@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { apiClient } from '@/api/client';
+import { getExpoHostIp } from '@/constants/config';
+import { Platform } from 'react-native';
 
 export interface ProductMeasurement {
   name: string;
@@ -47,14 +49,13 @@ export const resolveImageUrl = (url: string) => {
   if (url.startsWith('https://') || url.startsWith('http://img.')) {
     return url;
   }
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return url.replace(/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/g, localhost);
+  const host = getExpoHostIp() || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
+  return url.replace(/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/g, host);
 };
 
 export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
   const fetchProductsPage = async ({ pageParam = null }: { pageParam: string | null }) => {
-    const params: Record<string, any> = { limit: initialLimit };
+    const params: Record<string, any> = { limit: initialLimit, status: 'published' };
     if (categorySlugOrId) params.category = categorySlugOrId;
     if (pageParam) params.cursor = pageParam;
 
@@ -65,6 +66,12 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
     return response.data;
   };
 
+  const queryKey = useMemo(() => {
+    return categorySlugOrId
+      ? ['products', { limit: initialLimit, category: categorySlugOrId }]
+      : ['products', { limit: initialLimit }];
+  }, [initialLimit, categorySlugOrId]);
+
   const {
     data,
     isLoading,
@@ -73,7 +80,7 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
     fetchNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['products', { limit: initialLimit, category: categorySlugOrId }],
+    queryKey,
     queryFn: fetchProductsPage,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => {
@@ -81,27 +88,31 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
         const rawProducts = Array.isArray(lastPage.data.products)
           ? lastPage.data.products
           : Array.isArray(lastPage.data) ? lastPage.data : [];
-        
+
         const serverCursor = lastPage.data.nextCursor || null;
         const serverHasMore = typeof lastPage.data.hasMore === 'boolean'
           ? lastPage.data.hasMore
           : (rawProducts.length >= initialLimit && Boolean(serverCursor));
-        
+
         return serverHasMore ? serverCursor : null;
       }
       return null;
     },
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 30, // 30 seconds
+    refetchOnMount: 'always',
   });
 
   const products = useMemo(() => {
     if (!data) return [];
     const allProducts = data.pages.flatMap((page) => {
-      if (page?.success && page?.data) {
-        return Array.isArray(page.data.products)
-          ? page.data.products
-          : Array.isArray(page.data) ? page.data : [];
+      if (!page) return [];
+      if (Array.isArray(page)) return page;
+      if (page.success && page.data) {
+        if (Array.isArray(page.data.products)) return page.data.products;
+        if (Array.isArray(page.data)) return page.data;
       }
+      if (page.data && Array.isArray(page.data.products)) return page.data.products;
+      if (Array.isArray(page.products)) return page.products;
       return [];
     });
     const seen = new Set<string>();
