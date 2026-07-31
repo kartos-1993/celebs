@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import Constants from 'expo-constants';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/api/client';
 
 export interface Category {
   _id: string;
@@ -10,23 +10,10 @@ export interface Category {
   level: number;
 }
 
-// API URL helper to dynamically target local server IP in Expo
-const getApiUrl = () => {
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return `http://${localhost}:3333/api/v1`;
-};
-
-import { useQuery } from '@tanstack/react-query';
-
 export function useCategories() {
   const fetchCategories = async (): Promise<Category[]> => {
-    const url = `${getApiUrl()}/category/tree-with-attributes`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const resData = await response.json();
+    const response = await apiClient.get('/category/tree-with-attributes', { skipAuth: true });
+    const resData = response.data;
     if (resData.success && Array.isArray(resData.data)) {
       // Find the 'Men' root category or fallback to the first root category
       const rootCategory = resData.data.find((c: any) => c.slug === 'men') || resData.data[0];
