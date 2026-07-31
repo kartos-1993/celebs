@@ -12,17 +12,22 @@ const productController = ProductModule.getInstance().getProductController();
 
 // Optional JWT authentication: populates req.user if token is present, but doesn't block unauthenticated storefront users
 const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction) => {
-  const hasAuthHeader = !!req.headers.authorization;
+  const authHeader = req.headers.authorization;
+  const hasAuthHeader = !!authHeader && authHeader.startsWith('Bearer ') && authHeader !== 'Bearer null' && authHeader !== 'Bearer undefined';
   const hasCookieToken = !!req.cookies?.accessToken;
   if (!hasAuthHeader && !hasCookieToken) {
     return next();
   }
-  passport.authenticate('jwt', { session: false }, (_err: any, user: any) => {
-    if (user) {
-      req.user = user;
-    }
+  try {
+    passport.authenticate('jwt', { session: false }, (_err: any, user: any) => {
+      if (user) {
+        req.user = user;
+      }
+      next();
+    })(req, res, next);
+  } catch {
     next();
-  })(req, res, next);
+  }
 };
 
 // Public / Storefront Product Routes (Optional Auth)

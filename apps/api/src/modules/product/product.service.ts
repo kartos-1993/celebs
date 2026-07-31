@@ -135,8 +135,10 @@ export class ProductService {
 
     if (filters.status) {
       query.status = filters.status;
-    } else {
+    } else if (filters.vendorId) {
       query.status = { $ne: 'archived' };
+    } else {
+      query.status = 'published';
     }
 
     if (filters.search) {
@@ -189,7 +191,7 @@ export class ProductService {
       query._id = { $lt: new Types.ObjectId(String(filters.cursor)) };
     }
 
-    const sortField = filters.sortBy || '_id';
+    const sortField = filters.cursor ? '_id' : (filters.sortBy || '_id');
     const sortDir = filters.sortOrder === 'asc' ? 1 : -1;
     const sortOptions: Record<string, 1 | -1> = { [sortField]: sortDir };
 

@@ -16,14 +16,11 @@ interface ProductGridProps {
   loadMoreTrigger?: number;
 }
 
-const FILTER_CHIPS = ['All', 'Top Selling', 'New In', 'Super Savings', 'Sets'];
-
 export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
   ({ onProductPress, loadMoreTrigger }, ref) => {
     const scheme = useColorScheme();
     const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-    const { products, loading, loadingMore, hasMore, loadMore } = useProducts(10);
-    const [selectedFilter, setSelectedFilter] = React.useState('All');
+    const { products, loading, loadingMore, hasMore, loadMore, refetch } = useProducts(10);
 
     React.useImperativeHandle(ref, () => ({
       loadMore,
@@ -34,20 +31,6 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
         loadMore();
       }
     }, [loadMoreTrigger, loading, loadingMore, hasMore, loadMore]);
-
-  const filteredProducts = React.useMemo(() => {
-    let result = products;
-    if (selectedFilter === 'Top Selling') {
-      const match = products.filter((p) => p.featured);
-      result = match.length > 0 ? match : products;
-    } else if (selectedFilter === 'Super Savings') {
-      const match = products.filter((p) => p.discountedPrice && p.discountedPrice < p.price);
-      result = match.length > 0 ? match : products;
-    } else if (selectedFilter === 'New In') {
-      result = [...products].reverse();
-    }
-    return result;
-  }, [products, selectedFilter]);
 
   return (
     <View style={styles.container}>
@@ -61,39 +44,6 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
         </View>
       </View>
 
-      {/* SHEIN Horizontal Filter Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterBar}
-      >
-        {FILTER_CHIPS.map((chip) => {
-          const isActive = selectedFilter === chip;
-          return (
-            <TouchableOpacity
-              key={chip}
-              activeOpacity={0.8}
-              onPress={() => setSelectedFilter(chip)}
-              style={[
-                styles.chipButton,
-                isActive
-                  ? styles.chipActive
-                  : { backgroundColor: scheme === 'dark' ? '#2c2c2e' : '#f2f2f7' },
-              ]}
-            >
-              <ThemedText
-                style={[
-                  styles.chipText,
-                  isActive ? styles.chipTextActive : { color: scheme === 'dark' ? '#d1d5db' : '#4b5563' },
-                ]}
-              >
-                {chip}
-              </ThemedText>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
       {/* 2-Column Dynamic Product Grid */}
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -102,14 +52,20 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
             Fetching latest styles...
           </ThemedText>
         </View>
-      ) : filteredProducts.length === 0 ? (
+      ) : products.length === 0 ? (
         <View style={styles.emptyContainer}>
           <ThemedText style={{ opacity: 0.6 }}>No products found</ThemedText>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => refetch()}
+          >
+            <ThemedText style={styles.retryText}>Retry</ThemedText>
+          </TouchableOpacity>
         </View>
       ) : (
         <>
           <View style={styles.gridWrapper}>
-            {filteredProducts.map((product) => (
+            {products.map((product) => (
               <ProductCard
                 key={product._id}
                 product={product}
@@ -189,6 +145,18 @@ const styles = StyleSheet.create({
   emptyContainer: {
     paddingVertical: 30,
     alignItems: 'center',
+  },
+  retryButton: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#208AEF',
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 13,
   },
   paginationFooter: {
     paddingVertical: Spacing.four,

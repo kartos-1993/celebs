@@ -93,16 +93,10 @@ export class ProductController {
         limit,
       });
 
-      let result;
-      if (req.user?.role === 'VENDOR') {
-        const vendorId = req.user.vendorProfile?.id;
-        if (!vendorId) {
-          throw new AppError('Vendor profile not found', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-        }
-        result = await this.productService.getProductsByVendor(vendorId, filters, page, limit);
-      } else {
-        result = await this.productService.getAllProducts(filters, page, limit);
+      if (req.query.vendorOnly === 'true' && req.user?.vendorProfile?.id) {
+        filters.vendorId = req.user.vendorProfile.id;
       }
+      const result = await this.productService.getAllProducts(filters, page, limit);
 
       return res.status(HTTPSTATUS.OK).json({
         success: true,
