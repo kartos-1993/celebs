@@ -9,10 +9,14 @@
     "start": "node dist/apps/api/src/main.js",
     "start:worker": "node dist/apps/api/src/worker-main.js",
     "test": "dotenv -e .env.test -- npx prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run",
-    "seed:products": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products.ts",
-    "seed:denim-jeans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-denim-jeans.ts",
-    "seed:denim-jackets": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-denim-jackets.ts",
-    "seed:categories": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-categories-men-filters.ts",
+    "seed": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
+    "seed:reset": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
+    "seed:option-sets": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-option-sets.ts",
+    "seed:categories-men": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-categories-men.ts",
+    "seed:categories-jewelry": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-categories-jewelry.ts",
+    "seed:products-denim-jackets": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-denim-jackets.ts",
+    "seed:products-denim-jeans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-denim-jeans.ts",
+    "seed:products-mock": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-mock-catalog.ts",
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {

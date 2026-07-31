@@ -174,7 +174,7 @@ export class ProductController {
         {
           action: parsed.action,
           reviewerId: req.user.userId,
-          reviewerName: req.user.email || 'Superadmin',
+          reviewerName: (req.user as any)?.email || 'Superadmin',
           note: parsed.note,
           rejectionCategory: parsed.rejectionCategory,
           rejectionSubcategories: parsed.rejectionSubcategories,
