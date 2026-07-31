@@ -1,32 +1,23 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
-  Modal,
   StatusBar,
-  useColorScheme,
   ActivityIndicator,
-  FlatList,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
+  Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeft,
-  ChevronRight,
   Heart,
   ShoppingCart,
   Share2,
-  X,
   Truck,
   RotateCcw,
   ShieldCheck,
-  MapPin,
   Star,
 } from 'lucide-react-native';
 
@@ -35,11 +26,10 @@ import { ThemedView } from '@/components/themed-view';
 import { useProduct, resolveImageUrl } from '@/features/products/hooks/use-products';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { ProductGallery } from '@/features/products/components/ProductGallery';
+import { ProductVariantSelector } from '@/features/products/components/ProductVariantSelector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const IMAGE_HEIGHT = SCREEN_WIDTH * 1.33; // 3:4 aspect ratio
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,20 +41,18 @@ export default function ProductDetailScreen() {
   const topCartBtnRef = useRef<View>(null);
   const topCartScale = useSharedValue(1);
 
-  const isMountedRef = useRef(true);
-  React.useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  // Component States
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
-  // Measure top header cart icon target position
-  const measureTopCartIcon = React.useCallback(() => {
+  // Measure top header cart icon position for fly animation
+  const measureTopCartIcon = useCallback(() => {
     requestAnimationFrame(() => {
-      if (!isMountedRef.current) return;
       topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
-        if (isMountedRef.current && typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
+        if (typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
           setCartIconCoords({
             x: x + width / 2,
             y: y + height / 2,
@@ -74,7 +62,7 @@ export default function ProductDetailScreen() {
     });
   }, [setCartIconCoords]);
 
-  // Pulse top cart icon when fly animation lands
+  // Pulse effect on cart icon when item added
   React.useEffect(() => {
     if (pulseTrigger > 0) {
       topCartScale.value = withSequence(
@@ -88,558 +76,246 @@ export default function ProductDetailScreen() {
     transform: [{ scale: topCartScale.value }],
   }));
 
-  // State
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalImageIndex, setModalImageIndex] = useState(0);
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  const mainFlatListRef = useRef<FlatList>(null);
-  const modalFlatListRef = useRef<FlatList>(null);
-
-  // Compute active images based on selected color variant
-  const activeColorVariant = product?.colorVariants?.[selectedColorIndex];
-
-  // Derive dynamic sizes from database product.sizes or active color variant stocks
-  const availableSizes = useMemo(() => {
-    if (!product) return [];
-    if (product.sizes && product.sizes.length > 0) {
-      return product.sizes.map((s) => s.name);
+  const handleAddToCart = async (overrideSize?: string) => {
+    if (!product) return;
+    const finalSize = overrideSize || selectedSize;
+    if (product.sizes && product.sizes.length > 0 && !finalSize) {
+      setIsSizeModalOpen(true);
+      return;
     }
-    if (activeColorVariant?.stocks && activeColorVariant.stocks.length > 0) {
-      return activeColorVariant.stocks.map((s) => s.size);
-    }
-    if (product.colorVariants && product.colorVariants.length > 0) {
-      const allStockSizes = new Set<string>();
-      product.colorVariants.forEach((v) => {
-        v.stocks?.forEach((s) => allStockSizes.add(s.size));
-      });
-      if (allStockSizes.size > 0) {
-        return Array.from(allStockSizes);
-      }
-    }
-    return [];
-  }, [product, activeColorVariant]);
 
-  // Compute live stock for selected size & color variant
-  const currentStockCount = useMemo(() => {
-    if (!activeColorVariant || !activeColorVariant.stocks || !selectedSize) return 10;
-    const item = activeColorVariant.stocks.find(
-      (s) => s.size.toLowerCase() === selectedSize.toLowerCase()
-    );
-    return item ? item.quantity : 10;
-  }, [activeColorVariant, selectedSize]);
-
-  // Execute Add to Cart for a confirmed size
-  const executeAddToCart = async (confirmedSize: string, startCoords?: { x: number; y: number }) => {
-    if (!product || !confirmedSize) return;
-
-    // Trigger fly-to-cart animation to top cart icon
-    const flyImage = galleryImages[0] || (product.mainImages?.[0] ? resolveImageUrl(product.mainImages[0]) : '');
+    // Trigger Fly-to-Cart animation
+    const flyImage =
+      product.colorVariants?.[selectedColorIndex]?.images?.[0] ||
+      product.mainImages?.[0] ||
+      '';
     if (flyImage) {
       startFlyAnimation({
-        imageUrl: flyImage,
-        startX: startCoords?.x ?? SCREEN_WIDTH / 2,
-        startY: startCoords?.y ?? SCREEN_HEIGHT - 90,
-        startWidth: 75,
-        startHeight: 95,
+        imageUrl: resolveImageUrl(flyImage),
+        startX: 180,
+        startY: 500,
+        startWidth: 100,
+        startHeight: 120,
       });
     }
 
+    setIsAdding(true);
     try {
       await addToCart({
         productId: product._id,
-        colorVariantName: activeColorVariant?.name || 'Default',
-        size: confirmedSize,
         quantity: 1,
+        size: finalSize || 'Standard',
+        colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
       });
-
-      // Allow the smooth fly animation (~550ms) to complete before navigating back
-      setTimeout(() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.push('/');
-        }
-      }, 600);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to add to cart';
-      setToastMsg(msg);
-      setTimeout(() => setToastMsg(null), 3500);
+    } catch {
+      // Error handled in store
+    } finally {
+      setIsAdding(false);
     }
   };
 
-  // Open Size & Confirmation Sheet whenever Add to Cart is pressed
-  const handleAddToCartPress = () => {
-    if (availableSizes.length === 0) {
-      executeAddToCart('FREE');
-    } else {
-      setIsSizeModalOpen(true);
-    }
-  };
-
-
-  // Format real measurements from database for the selected size
-  const currentMeasurementsText = useMemo(() => {
-    if (!product || !product.sizes || product.sizes.length === 0) return '';
-    const sizeData = product.sizes.find((s) => s.name === selectedSize);
-    if (!sizeData) return '';
-    const measurements = sizeData.productMeasurements?.length
-      ? sizeData.productMeasurements
-      : sizeData.bodyMeasurements;
-    if (!measurements || measurements.length === 0) return '';
-    return measurements.map((m) => `${m.name}: ${m.value}${m.unit ? ' ' + m.unit : ''}`).join(', ');
-  }, [product, selectedSize]);
-
-  const galleryImages = useMemo(() => {
-    if (!product) return [];
-    if (activeColorVariant && activeColorVariant.images && activeColorVariant.images.length > 0) {
-      return activeColorVariant.images.map(resolveImageUrl);
-    }
-    if (product.mainImages && product.mainImages.length > 0) {
-      return product.mainImages.map(resolveImageUrl);
-    }
-    return [];
-  }, [product, activeColorVariant]);
-
-  // Price calculations
-  const hasDiscount = Boolean(product?.discountedPrice && product.discountedPrice < product.price);
-  const currentPrice = hasDiscount ? product!.discountedPrice! : product?.price || 0;
-  const discountPercent = hasDiscount
-    ? Math.round(((product!.price - product!.discountedPrice!) / product!.price) * 100)
-    : 15;
-  const priceColor = hasDiscount ? '#FF5000' : '#000000';
-  const integerPart = Math.floor(currentPrice);
-  const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
-
-  // Color selection handler
-  const handleSelectColor = (index: number) => {
-    setSelectedColorIndex(index);
-    setActiveImageIndex(0);
-    mainFlatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
-
-  // Open Fullscreen Modal
-  const openImageModal = (index: number) => {
-    setModalImageIndex(index);
-    setIsModalOpen(true);
-  };
-
-  const handleMainScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slide = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (slide !== activeImageIndex && slide >= 0 && slide < galleryImages.length) {
-      setActiveImageIndex(slide);
-    }
-  };
-
-  const handleModalScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slide = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (slide !== modalImageIndex && slide >= 0 && slide < galleryImages.length) {
-      setModalImageIndex(slide);
+  const handleShare = async () => {
+    if (!product) return;
+    try {
+      await Share.share({
+        message: `Check out ${product.name} on Celebs!`,
+      });
+    } catch {
+      // Share cancelled
     }
   };
 
   if (loading) {
     return (
-      <View style={[styles.centerBox, { backgroundColor: '#ffffff' }]}>
-        <ActivityIndicator size="large" color="#000000" />
-        <ThemedText style={{ marginTop: 12, opacity: 0.6 }}>Loading Product...</ThemedText>
+      <View style={styles.centerBox}>
+        <ActivityIndicator size="large" color="#208AEF" />
+        <ThemedText style={styles.loadingText}>Loading product details...</ThemedText>
       </View>
     );
   }
 
   if (error || !product) {
     return (
-      <View style={[styles.centerBox, { backgroundColor: '#ffffff' }]}>
-        <ThemedText style={{ fontSize: 16, fontWeight: '700' }}>Product Not Found</ThemedText>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
-          <ThemedText style={{ color: '#ffffff', fontWeight: '700' }}>Go Back</ThemedText>
+      <View style={styles.centerBox}>
+        <ThemedText style={styles.errorText}>{error || 'Product not found.'}</ThemedText>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <ThemedText style={styles.backBtnText}>Go Back</ThemedText>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const selectedColorName = activeColorVariant?.name || 'Default';
+  const galleryImages =
+    product.colorVariants?.[selectedColorIndex]?.images &&
+    product.colorVariants[selectedColorIndex].images!.length > 0
+      ? product.colorVariants[selectedColorIndex].images!
+      : product.mainImages || [];
+
+  const originalPrice = product.price;
+  const currentPrice = product.discountedPrice || product.price;
+  const discountPercent =
+    originalPrice > currentPrice
+      ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+      : 0;
+
+  const availableSizeNames = product.sizes ? product.sizes.map((s) => s.name) : [];
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar barStyle="dark-content" translucent={false} />
+      <StatusBar barStyle="dark-content" />
 
-      {/* FLOATING TOP NAVIGATION BAR */}
-      <View
-        style={[
-          styles.topHeaderBar,
-          {
-            paddingTop: insets.top + 4,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderBottomColor: '#f2f2f7',
-          },
-        ]}
-      >
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.back()}>
-          <ChevronLeft size={22} color="#1c1c1e" strokeWidth={2.2} />
+      {/* Floating Header */}
+      <View style={[styles.headerOverlay, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity
+          style={styles.headerIconButton}
+          onPress={() => router.back()}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ChevronLeft size={22} color="#18181b" />
         </TouchableOpacity>
 
-        <ThemedText style={styles.headerTitleText} numberOfLines={1}>
-          {product.brand || 'BODI'}
-        </ThemedText>
-
-        <View style={styles.headerRightGroup}>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => setIsFavorite(!isFavorite)}>
-            <Heart
-              size={20}
-              color={isFavorite ? '#ff3b30' : '#1c1c1e'}
-              fill={isFavorite ? '#ff3b30' : 'transparent'}
-            />
+        <View style={styles.headerRightActions}>
+          <TouchableOpacity style={styles.headerIconButton} onPress={handleShare}>
+            <Share2 size={20} color="#18181b" />
           </TouchableOpacity>
 
-          <View ref={topCartBtnRef} collapsable={false} onLayout={measureTopCartIcon}>
-            <TouchableOpacity
-              style={styles.iconBtn}
-              activeOpacity={0.7}
-              onPress={() => router.push('/cart')}
-            >
-              <Animated.View style={animatedTopCartStyle}>
-                <ShoppingCart size={20} color="#1c1c1e" />
-              </Animated.View>
-              {itemCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-            <Share2 size={19} color="#1c1c1e" />
-          </TouchableOpacity>
+          <Animated.View style={animatedTopCartStyle}>
+            <View ref={topCartBtnRef} onLayout={measureTopCartIcon}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push('/cart')}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="View cart"
+              >
+                <ShoppingCart size={20} color="#18181b" />
+                {itemCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </View>
       </View>
 
-      {/* MAIN SCROLLABLE CONTENT */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* MAIN IMAGE CAROUSEL / SWIPER */}
-        <View style={styles.swiperContainer}>
-          <FlatList
-            ref={mainFlatListRef}
-            data={galleryImages}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleMainScroll}
-            scrollEventThrottle={16}
-            keyExtractor={(_, index) => `main-img-${index}`}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity activeOpacity={0.95} onPress={() => openImageModal(index)}>
-                <Image source={{ uri: item }} style={styles.swiperImage} contentFit="cover" transition={200} />
-              </TouchableOpacity>
-            )}
-          />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Product Image Gallery */}
+        <ProductGallery images={galleryImages} productName={product.name} />
 
-          {/* Bottom Right Image Counter Badge (e.g. 1 / 5) */}
-          {galleryImages.length > 0 && (
-            <View style={styles.imageCounterPill}>
-              <ThemedText style={styles.imageCounterText}>
-                {activeImageIndex + 1} / {galleryImages.length}
-              </ThemedText>
-            </View>
-          )}
-        </View>
-
-        {/* PRODUCT TITLE & PRICE INFO */}
-        <View style={[styles.infoSection, { backgroundColor: '#ffffff' }]}>
-          {/* Brand & Trends Tag */}
+        {/* Product Information Section */}
+        <View style={styles.detailsContainer}>
+          {/* Brand & Favorite */}
           <View style={styles.brandRow}>
-            <View style={styles.trendsBadge}>
-              <ThemedText style={styles.trendsText}>Trends</ThemedText>
-            </View>
-            <TouchableOpacity style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]}>
-              <ThemedText style={[styles.storeText, { color: '#6b21a8' }]}>
-                {product.brand || 'BODI'}
-              </ThemedText>
-              <ChevronRight size={10} color="#7c3aed" />
+            <ThemedText style={styles.brandText}>{product.brand || 'Celebs Exclusive'}</ThemedText>
+            <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
+              <Heart size={22} color={isFavorite ? '#ef4444' : '#9ca3af'} fill={isFavorite ? '#ef4444' : 'transparent'} />
             </TouchableOpacity>
           </View>
 
           {/* Product Name */}
-          <ThemedText style={[styles.productTitle, { color: '#1c1c1e' }]}>
-            {product.name}
-          </ThemedText>
+          <ThemedText style={styles.productTitle}>{product.name}</ThemedText>
 
-          {/* Price & Discount Tag */}
+          {/* Pricing Row */}
           <View style={styles.priceRow}>
-            <View style={styles.mainPriceGroup}>
-              <ThemedText style={[styles.currencySymbol, { color: priceColor }]}>Rs.</ThemedText>
-              <ThemedText style={[styles.integerPrice, { color: priceColor }]}>{integerPart}</ThemedText>
-              <ThemedText style={[styles.decimalPrice, { color: priceColor }]}>{decimalPart}</ThemedText>
-            </View>
-
-            {hasDiscount && (
-              <View style={styles.discountTagPill}>
-                <ThemedText style={styles.discountTagText}>-{discountPercent}%</ThemedText>
-              </View>
+            <ThemedText style={styles.currentPrice}>Rs. {currentPrice.toLocaleString()}</ThemedText>
+            {discountPercent > 0 && (
+              <>
+                <ThemedText style={styles.originalPrice}>Rs. {originalPrice.toLocaleString()}</ThemedText>
+                <View style={styles.discountBadge}>
+                  <ThemedText style={styles.discountText}>{discountPercent}% OFF</ThemedText>
+                </View>
+              </>
             )}
           </View>
 
-          {/* Bestseller Row */}
-          {product.featured && (
-            <View style={styles.bestsellerRow}>
-              <ThemedText style={styles.bestsellerText}>
-                #1 Bestseller <ThemedText style={styles.bestsellerSub}>in Men Collection</ThemedText>
-              </ThemedText>
-              <ChevronRight size={12} color="#d97706" />
+          {/* Rating */}
+          <View style={styles.ratingRow}>
+            <Star size={14} color="#eab308" fill="#eab308" />
+            <ThemedText style={styles.ratingText}>4.8 (124 reviews)</ThemedText>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Variant Selector */}
+          <ProductVariantSelector
+            colorVariants={product.colorVariants}
+            selectedColorIndex={selectedColorIndex}
+            onSelectColor={setSelectedColorIndex}
+            sizes={product.sizes}
+            selectedSize={selectedSize}
+            onSelectSize={setSelectedSize}
+          />
+
+          <View style={styles.divider} />
+
+          {/* Description */}
+          {product.description ? (
+            <View style={styles.descriptionSection}>
+              <ThemedText style={styles.sectionTitle}>Product Description</ThemedText>
+              <ThemedText style={styles.descriptionText}>{product.description}</ThemedText>
             </View>
-          )}
+          ) : null}
 
-          {/* Sales & New Arrival Badge */}
-          <View style={styles.salesRow}>
-            <View style={[styles.newArrivalBadge, { backgroundColor: '#ecfdf5' }]}>
-              <ThemedText style={[styles.newArrivalText, { color: '#047857' }]}>
-                NEW ARRIVAL
-              </ThemedText>
+          {/* Value Props */}
+          <View style={styles.valuePropsRow}>
+            <View style={styles.propBox}>
+              <Truck size={20} color="#208AEF" />
+              <ThemedText style={styles.propTitle}>Fast Delivery</ThemedText>
+              <ThemedText style={styles.propSub}>2-4 business days</ThemedText>
             </View>
-            <ThemedText style={[styles.soldText, { color: '#71717a' }]}>80+ sold</ThemedText>
-          </View>
-        </View>
-
-        {/* COLOR SELECTION ROW */}
-        {product.colorVariants && product.colorVariants.length > 0 && (
-          <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
-            <TouchableOpacity style={styles.sectionHeaderRow} activeOpacity={0.7}>
-              <ThemedText style={styles.sectionTitle}>
-                Color: <ThemedText style={styles.sectionTitleSub}>{selectedColorName}</ThemedText>
-              </ThemedText>
-              <ChevronRight size={16} color="#71717a" />
-            </TouchableOpacity>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorScroll}>
-              {product.colorVariants.map((variant, index) => {
-                const isSelected = selectedColorIndex === index;
-                const variantImg = variant.images?.[0] ? resolveImageUrl(variant.images[0]) : galleryImages[0];
-
-                return (
-                  <TouchableOpacity
-                    key={variant.name + index}
-                    activeOpacity={0.8}
-                    onPress={() => handleSelectColor(index)}
-                    style={[
-                      styles.colorBox,
-                      { borderColor: '#e4e4e7' },
-                      isSelected && {
-                        borderColor: '#000000',
-                        borderWidth: 2,
-                      },
-                    ]}
-                  >
-                    <Image source={{ uri: variantImg }} style={styles.colorThumbImage} contentFit="cover" />
-                    {variant.colorCode && (
-                      <View style={[styles.colorDotBadge, { backgroundColor: variant.colorCode }]} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* SIZE SELECTION ROW */}
-        {availableSizes.length > 0 && (
-          <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
-            <TouchableOpacity style={styles.sectionHeaderRow} activeOpacity={0.7}>
-              <ThemedText style={styles.sectionTitle}>
-                Size: <ThemedText style={styles.sectionTitleSub}>{selectedSize || 'Select a size'}</ThemedText>
-              </ThemedText>
-              <ChevronRight size={16} color="#71717a" />
-            </TouchableOpacity>
-
-            {/* Size Buttons */}
-            <View style={styles.sizeRow}>
-              {availableSizes.map((size) => {
-                const isSelected = selectedSize === size;
-                return (
-                  <TouchableOpacity
-                    key={size}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedSize(size)}
-                    style={[
-                      styles.sizePill,
-                      isSelected
-                        ? { backgroundColor: '#000000' }
-                        : { backgroundColor: '#f4f4f5' },
-                    ]}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.sizeText,
-                        isSelected
-                          ? { color: '#ffffff', fontWeight: '800' }
-                          : { color: '#1c1c1e' },
-                      ]}
-                    >
-                      {size}
-                    </ThemedText>
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={styles.propBox}>
+              <RotateCcw size={20} color="#208AEF" />
+              <ThemedText style={styles.propTitle}>Easy Returns</ThemedText>
+              <ThemedText style={styles.propSub}>7-day return policy</ThemedText>
             </View>
-
-            {/* Dynamic Measurements Bar */}
-            {Boolean(currentMeasurementsText) && (
-              <View style={[styles.measurementsBox, { backgroundColor: '#f8f8f8' }]}>
-                <ThemedText style={[styles.measurementsText, { color: '#4b5563' }]}>
-                  {currentMeasurementsText}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* SHIPPING & GUARANTEE INFO BLOCK */}
-        <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
-          {/* Destination Header */}
-          <TouchableOpacity style={styles.shippingHeaderRow} activeOpacity={0.8}>
-            <ThemedText style={styles.shippingTitleText}>
-              Shipping to <MapPin size={13} color="#000000" /> Algeria
-            </ThemedText>
-            <ChevronRight size={16} color="#71717a" />
-          </TouchableOpacity>
-
-          {/* Free Shipping Line */}
-          <View style={styles.shippingItemRow}>
-            <Truck size={17} color="#059669" style={{ marginTop: 2 }} />
-            <View style={{ flex: 1 }}>
-              <ThemedText style={styles.freeShippingText}>Free Shipping (Orders ≥ $99.00)</ThemedText>
-              <ThemedText style={[styles.estDeliveryText, { color: '#6b7280' }]}>
-                Est. Delivery: Aug 13 - Aug 23
-              </ThemedText>
+            <View style={styles.propBox}>
+              <ShieldCheck size={20} color="#208AEF" />
+              <ThemedText style={styles.propTitle}>100% Genuine</ThemedText>
+              <ThemedText style={styles.propSub}>Authentic products</ThemedText>
             </View>
-            <ChevronRight size={15} color="#9ca3af" />
           </View>
-
-          {/* Returns Accepted */}
-          <View style={styles.shippingItemRow}>
-            <RotateCcw size={16} color="#374151" style={{ marginTop: 1 }} />
-            <ThemedText style={[styles.shippingItemLabel, { flex: 1 }]}>Returns Accepted</ThemedText>
-            <ChevronRight size={15} color="#9ca3af" />
-          </View>
-
-          {/* Safe Payments */}
-          <View style={styles.shippingItemRow}>
-            <ShieldCheck size={16} color="#374151" style={{ marginTop: 1 }} />
-            <ThemedText style={[styles.shippingItemLabel, { flex: 1 }]}>
-              Safe Payments · Privacy Protection
-            </ThemedText>
-            <ChevronRight size={15} color="#9ca3af" />
-          </View>
-        </View>
-
-        {/* RATING & REVIEWS PREVIEW */}
-        <View style={[styles.sectionCard, { backgroundColor: '#ffffff' }]}>
-          <View style={styles.sectionHeaderRow}>
-            <ThemedText style={styles.sectionTitle}>
-              Customer Reviews <Star size={13} color="#f59e0b" fill="#f59e0b" /> 4.85 (250+)
-            </ThemedText>
-            <ChevronRight size={16} color="#71717a" />
-          </View>
-          <ThemedText style={{ fontSize: 11.5, opacity: 0.6, marginTop: 4 }}>
-            Fits true to size. Great denim quality & comfort.
-          </ThemedText>
         </View>
       </ScrollView>
 
-      {/* STICKY BOTTOM ACTION BAR */}
-      <View
-        style={[
-          styles.bottomActionBar,
-          {
-            paddingBottom: insets.bottom + 8,
-            backgroundColor: '#ffffff',
-            borderTopColor: '#e5e7eb',
-          },
-        ]}
-      >
+      {/* Bottom Sticky Action Bar */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
         <TouchableOpacity
-          style={[styles.addToCartBtn, { backgroundColor: '#000000' }]}
-          activeOpacity={0.8}
-          onPress={() => handleAddToCartPress()}
+          style={styles.addToCartBtn}
+          onPress={() => handleAddToCart()}
+          disabled={isAdding}
+          activeOpacity={0.85}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Add product to cart"
         >
-          <ThemedText style={[styles.addToCartText, { color: '#ffffff' }]}>
-            Add to Cart
-          </ThemedText>
+          {isAdding ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <>
+              <ShoppingCart size={20} color="#ffffff" />
+              <ThemedText style={styles.addToCartText}>Add to Cart</ThemedText>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
-      {/* TOAST FEEDBACK NOTIFICATION */}
-      {Boolean(toastMsg) && (
-        <View style={[styles.toastBanner, { top: insets.top + 60 }]}>
-          <ThemedText style={styles.toastText}>{toastMsg}</ThemedText>
-        </View>
-      )}
-
-      {/* SIZE REQUIRED MODAL */}
+      {/* Size Required Modal */}
       <SizeRequiredModal
         visible={isSizeModalOpen}
-        availableSizes={availableSizes}
-        productName={product?.name || ''}
-        initialSize={selectedSize}
-        imageUrl={galleryImages[0]}
         onClose={() => setIsSizeModalOpen(false)}
-        onSelectSizeAndConfirm={(size, startCoords) => {
-          setSelectedSize(size);
+        availableSizes={availableSizeNames}
+        productName={product.name}
+        initialSize={selectedSize}
+        onSelectSizeAndConfirm={(chosenSize) => {
+          setSelectedSize(chosenSize);
           setIsSizeModalOpen(false);
-          // 280ms delay allows Redmi / MIUI window manager to finish unmounting SizeRequiredModal before fly animation launches
-          setTimeout(() => {
-            executeAddToCart(size, startCoords);
-          }, 280);
+          handleAddToCart(chosenSize);
         }}
       />
-
-      {/* FULL-SCREEN HIGH-RES DARK MODAL VIEWER */}
-      <Modal visible={isModalOpen} animationType="fade" transparent={false} onRequestClose={() => setIsModalOpen(false)}>
-
-        <View style={styles.modalContainer}>
-          <StatusBar barStyle="light-content" backgroundColor="#000000" />
-
-          {/* Close Button Top Right */}
-          <TouchableOpacity
-            style={[styles.modalCloseBtn, { top: insets.top + 10 }]}
-            activeOpacity={0.8}
-            onPress={() => setIsModalOpen(false)}
-          >
-            <X size={22} color="#ffffff" />
-          </TouchableOpacity>
-
-          {/* High Res Swiper */}
-          <FlatList
-            ref={modalFlatListRef}
-            data={galleryImages}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={modalImageIndex}
-            getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
-            onScroll={handleModalScroll}
-            scrollEventThrottle={16}
-            keyExtractor={(_, index) => `modal-img-${index}`}
-            renderItem={({ item }) => (
-              <View style={styles.modalImageWrapper}>
-                <Image source={{ uri: item }} style={styles.modalFullImage} contentFit="contain" />
-              </View>
-            )}
-          />
-
-          {/* Bottom Counter */}
-          <View style={[styles.modalCounterPill, { bottom: insets.bottom + 20 }]}>
-            <ThemedText style={styles.modalCounterText}>
-              {modalImageIndex + 1} / {galleryImages.length}
-            </ThemedText>
-          </View>
-        </View>
-      </Modal>
     </ThemedView>
   );
 }
@@ -647,434 +323,199 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
-  retryBtn: {
-    marginTop: 16,
+  loadingText: {
+    marginTop: 12,
+    color: '#6b7280',
+  },
+  errorText: {
+    fontSize: 15,
+    color: '#dc2626',
+    marginBottom: 16,
+  },
+  backBtn: {
+    backgroundColor: '#208AEF',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#1c1c1e',
+    borderRadius: 8,
   },
-
-  /* Floating Header Bar */
-  topHeaderBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    zIndex: 20,
-  },
-  headerTitleText: {
-    fontSize: 15,
-    fontWeight: '800',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerRightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 18,
-    position: 'relative',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#ff3b30',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartBadgeText: {
+  backBtnText: {
     color: '#ffffff',
-    fontSize: 8.5,
-    fontWeight: '900',
-  },
-
-  /* Main Swiper */
-  scrollContent: {
-    paddingBottom: 60,
-  },
-  swiperContainer: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
-    position: 'relative',
-    backgroundColor: '#f4f4f5',
-  },
-  swiperImage: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
-  },
-  imageCounterPill: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  imageCounterText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-
-  /* Details Section */
-  infoSection: {
-    padding: 12,
-    marginBottom: 8,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  trendsBadge: {
-    backgroundColor: '#f3e8ff',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  trendsText: {
-    color: '#7e22ce',
-    fontSize: 9.5,
-    fontWeight: '800',
-    fontStyle: 'italic',
-  },
-  storeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  storeText: {
-    fontSize: 9.5,
-    fontWeight: '700',
-  },
-  productTitle: {
-    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 20,
-    marginBottom: 6,
   },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    marginBottom: 6,
-  },
-  mainPriceGroup: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  currencySymbol: {
-    fontSize: 12,
-    fontWeight: '800',
-    marginRight: 1,
-  },
-  integerPrice: {
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  decimalPrice: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  discountTagPill: {
-    backgroundColor: '#fff0ed',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  discountTagText: {
-    color: '#FF5000',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  bestsellerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    marginBottom: 6,
-  },
-  bestsellerText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#d97706',
-  },
-  bestsellerSub: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#b45309',
-  },
-  salesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  newArrivalBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 2,
-  },
-  newArrivalText: {
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  soldText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-
-  /* Section Cards */
-  sectionCard: {
-    padding: 12,
-    marginBottom: 8,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-  sectionTitleSub: {
-    fontSize: 13.5,
-    fontWeight: '400',
-  },
-
-  /* Colors */
-  colorScroll: {
-    gap: 8,
-    paddingVertical: 4,
-  },
-  colorBox: {
-    width: 50,
-    height: 62,
-    borderRadius: 4,
-    borderWidth: 1,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  colorThumbImage: {
-    width: '100%',
-    height: '100%',
-  },
-  colorDotBadge: {
+  headerOverlay: {
     position: 'absolute',
-    bottom: 3,
-    right: 3,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#ffffff',
-  },
-
-  /* Size Selector */
-  sizeRow: {
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  sizePill: {
-    width: 44,
-    height: 34,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sizeText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-  },
-  measurementsBox: {
-    padding: 10,
-    borderRadius: 4,
-  },
-  measurementsText: {
-    fontSize: 11,
-    lineHeight: 16,
-  },
-
-  /* Shipping Block */
-  shippingHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 10,
-    marginBottom: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    paddingHorizontal: 16,
   },
-  shippingTitleText: {
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-  shippingItemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    paddingVertical: 6,
-  },
-  freeShippingText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: '#059669',
-  },
-  estDeliveryText: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  shippingItemLabel: {
-    fontSize: 12.5,
-    fontWeight: '500',
-  },
-
-  /* Modal High Res Dark Viewer */
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCloseBtn: {
-    position: 'absolute',
-    right: 16,
+  headerIconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 30,
-  },
-  modalImageWrapper: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalFullImage: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.85,
+  headerRightActions: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  modalCounterPill: {
+  cartBadge: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 15,
+    top: -2,
+    right: -2,
+    backgroundColor: '#ef4444',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
-  modalCounterText: {
+  cartBadgeText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '800',
   },
-
-  /* Sticky Bottom Action Bar */
-  bottomActionBar: {
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  detailsContainer: {
+    padding: 16,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  brandText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#208AEF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  productTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#18181b',
+    marginBottom: 8,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  currentPrice: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#18181b',
+  },
+  originalPrice: {
+    fontSize: 16,
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
+  },
+  discountBadge: {
+    backgroundColor: '#fef2f2',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  discountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ef4444',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 16,
+  },
+  ratingText: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f3f4f6',
+    marginVertical: 16,
+  },
+  descriptionSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#18181b',
+    marginBottom: 8,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 22,
+  },
+  valuePropsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  propBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  propTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#18181b',
+    marginTop: 6,
+  },
+  propSub: {
+    fontSize: 10,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 10,
+    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    gap: 10,
-    zIndex: 25,
-  },
-  cartIconBtn: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  bottomCartBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: '#ff3b30',
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    paddingHorizontal: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bottomCartBadgeText: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: '800',
+    borderTopColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   addToCartBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 23,
+    backgroundColor: '#208AEF',
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 16,
+    borderRadius: 14,
+    gap: 8,
   },
   addToCartText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  buyNowBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#ff3b30',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buyNowText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  /* Toast Notification */
-  toastBanner: {
-    position: 'absolute',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
-    zIndex: 99,
-  },
-  toastText: {
-    color: '#ffffff',
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
+    color: '#ffffff',
   },
 });
-

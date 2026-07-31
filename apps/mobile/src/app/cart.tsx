@@ -5,20 +5,16 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
-  useColorScheme,
-  Platform,
 } from 'react-native';
-
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Trash2, ShoppingBag, Plus, Minus, ArrowRight, AlertTriangle, ShieldCheck } from 'lucide-react-native';
+import { ShoppingBag, AlertTriangle } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useCart } from '@/features/cart/context/cart-context';
-import { resolveImageUrl } from '@/features/products/hooks/use-products';
-import { CartItemHydrated } from '@celebs/shared-types';
+import { CartItemList } from '@/features/cart/components/CartItemList';
+import { CartSummaryFooter } from '@/features/cart/components/CartSummaryFooter';
 
 export default function CartScreen() {
   const router = useRouter();
@@ -54,16 +50,24 @@ export default function CartScreen() {
     }
   };
 
+  const handleRemove = async (itemId: string) => {
+    setUpdatingId(itemId);
+    try {
+      await removeItem(itemId);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleCheckout = () => {
-    // Navigate to checkout or trigger Auth if unauthenticated
     router.push('/');
   };
 
   if (loading && items.length === 0) {
     return (
-      <View style={[styles.centerBox, { backgroundColor: '#ffffff' }]}>
-        <ActivityIndicator size="large" color="#000000" />
-        <ThemedText style={{ marginTop: 12, opacity: 0.6 }}>Loading Cart...</ThemedText>
+      <View style={styles.centerBox}>
+        <ActivityIndicator size="large" color="#208AEF" />
+        <ThemedText style={styles.loadingText}>Loading Cart...</ThemedText>
       </View>
     );
   }
@@ -72,12 +76,7 @@ export default function CartScreen() {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.emptyContainer}>
-          <View
-            style={[
-              styles.emptyIconCircle,
-              { backgroundColor: '#f3f4f6' },
-            ]}
-          >
+          <View style={styles.emptyIconCircle}>
             <ShoppingBag size={48} color="#6b7280" />
           </View>
           <ThemedText style={styles.emptyTitle}>Your Cart is Empty</ThemedText>
@@ -88,6 +87,9 @@ export default function CartScreen() {
             style={styles.exploreBtn}
             activeOpacity={0.85}
             onPress={() => router.push('/')}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Explore products"
           >
             <ThemedText style={styles.exploreBtnText}>Explore Products</ThemedText>
           </TouchableOpacity>
@@ -96,200 +98,55 @@ export default function CartScreen() {
     );
   }
 
-  const shippingFee = subtotal >= 99 ? 0 : 150;
+  const shippingFee = subtotal >= 999 ? 0 : 150;
   const grandTotal = subtotal + shippingFee;
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header Bar */}
-      <View
-        style={[
-          styles.headerBar,
-          {
-            paddingTop: insets.top + 8,
-            backgroundColor: '#ffffff',
-            borderBottomColor: '#f3f4f6',
-          },
-        ]}
-      >
-        <ThemedText style={styles.headerTitle}>
-          Shopping Cart <ThemedText style={styles.headerCount}>({itemCount})</ThemedText>
-        </ThemedText>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => clearCart()}>
-          <ThemedText style={styles.clearCartText}>Clear All</ThemedText>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
+        ]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
       >
-        {/* Stock Issue Banner */}
+        {/* Title & Clear Cart Header */}
+        <View style={styles.headerRow}>
+          <ThemedText style={styles.screenTitle}>
+            Shopping Cart ({itemCount})
+          </ThemedText>
+          <TouchableOpacity onPress={() => clearCart()} activeOpacity={0.7}>
+            <ThemedText style={styles.clearCartText}>Clear All</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {/* Stock Warning Notice */}
         {hasStockIssues && (
-          <View style={[styles.warningBanner, { backgroundColor: '#fffbeb' }]}>
-            <AlertTriangle size={18} color="#d97706" />
-            <ThemedText style={[styles.warningText, { color: '#b45309' }]}>
-              Some items in your cart have limited or updated stock availability.
+          <View style={styles.stockNotice}>
+            <AlertTriangle size={18} color="#dc2626" />
+            <ThemedText style={styles.stockNoticeText}>
+              Some items in your cart have limited stock available.
             </ThemedText>
           </View>
         )}
 
-        {/* Cart Item Cards */}
-        {items.map((item: CartItemHydrated) => {
+        {/* Cart Item List */}
+        <CartItemList
+          items={items}
+          updatingId={updatingId}
+          onIncrement={handleIncrement}
+          onDecrement={handleDecrement}
+          onRemove={handleRemove}
+        />
 
-          const isBusy = updatingId === item.id;
-          const imageUrl = resolveImageUrl(item.image);
-
-          return (
-            <View
-              key={item.id}
-              style={[
-                styles.itemCard,
-                { backgroundColor: '#ffffff' },
-                !item.isAvailable && { opacity: 0.7 },
-              ]}
-            >
-              <Image source={{ uri: imageUrl }} style={styles.itemImage} contentFit="cover" />
-
-              <View style={styles.itemDetails}>
-                <View style={styles.itemTopRow}>
-                  <ThemedText style={styles.itemBrand}>{item.productBrand || 'CELEBS'}</ThemedText>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => removeItem(item.id)}
-                    style={styles.deleteBtn}
-                  >
-                    <Trash2 size={16} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
-
-                <ThemedText style={styles.itemTitle} numberOfLines={2}>
-                  {item.productName}
-                </ThemedText>
-
-                <ThemedText style={styles.itemMeta}>
-                  Color: {item.colorVariantName} · Size: {item.size}
-                </ThemedText>
-
-                {/* Stock Warning Badge */}
-                {Boolean(item.stockWarning) && (
-                  <View style={styles.stockBadge}>
-                    <ThemedText
-                      style={[
-                        styles.stockBadgeText,
-                        item.availableStock <= 0 ? { color: '#ef4444' } : { color: '#f59e0b' },
-                      ]}
-                    >
-                      {item.stockWarning}
-                    </ThemedText>
-                  </View>
-                )}
-
-                {/* Price and Stepper Row */}
-                <View style={styles.priceStepperRow}>
-                  <ThemedText style={styles.itemPrice}>
-                    Rs. {item.price.toLocaleString()}
-                  </ThemedText>
-
-                  <View
-                    style={[
-                      styles.stepperContainer,
-                      { backgroundColor: '#f3f4f6' },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      disabled={isBusy}
-                      onPress={() => handleDecrement(item.id, item.quantity)}
-                      style={styles.stepperBtn}
-                    >
-                      <Minus size={14} color="#1c1c1e" />
-                    </TouchableOpacity>
-
-                    {isBusy ? (
-                      <ActivityIndicator size="small" color="#000000" />
-                    ) : (
-                      <ThemedText style={styles.stepperQty}>{item.quantity}</ThemedText>
-                    )}
-
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      disabled={isBusy || item.quantity >= item.availableStock}
-                      onPress={() => handleIncrement(item.id, item.quantity, item.availableStock)}
-                      style={[
-                        styles.stepperBtn,
-                        item.quantity >= item.availableStock && { opacity: 0.3 },
-                      ]}
-                    >
-                      <Plus size={14} color="#1c1c1e" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </View>
-          );
-        })}
-
-        {/* Order Summary */}
-        <View style={[styles.summaryCard, { backgroundColor: '#ffffff' }]}>
-          <ThemedText style={styles.summaryTitle}>Order Summary</ThemedText>
-
-          <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Subtotal</ThemedText>
-            <ThemedText style={styles.summaryValue}>Rs. {subtotal.toLocaleString()}</ThemedText>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Estimated Shipping</ThemedText>
-            <ThemedText style={[styles.summaryValue, shippingFee === 0 && { color: '#10b981' }]}>
-              {shippingFee === 0 ? 'FREE' : `Rs. ${shippingFee}`}
-            </ThemedText>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryRow}>
-            <ThemedText style={styles.totalLabel}>Total</ThemedText>
-            <ThemedText style={styles.totalValue}>Rs. {grandTotal.toLocaleString()}</ThemedText>
-          </View>
-
-          <View style={styles.guaranteeRow}>
-            <ShieldCheck size={16} color="#10b981" />
-            <ThemedText style={styles.guaranteeText}>
-              Guaranteed Safe & Secure Checkout
-            </ThemedText>
-          </View>
-        </View>
+        {/* Summary Footer */}
+        <CartSummaryFooter
+          subtotal={subtotal}
+          shippingFee={shippingFee}
+          grandTotal={grandTotal}
+          onCheckout={handleCheckout}
+        />
       </ScrollView>
-
-      {/* Fixed Checkout Bottom Bar */}
-      <View
-        style={[
-          styles.checkoutBar,
-          {
-            bottom: Platform.OS === 'ios' ? 88 : 64,
-            backgroundColor: '#ffffff',
-            borderTopColor: '#e5e7eb',
-          },
-        ]}
-      >
-
-        <View>
-          <ThemedText style={styles.checkoutTotalLabel}>Total Amount</ThemedText>
-          <ThemedText style={styles.checkoutTotalValue}>
-            Rs. {grandTotal.toLocaleString()}
-          </ThemedText>
-        </View>
-
-        <TouchableOpacity
-          style={styles.checkoutBtn}
-          activeOpacity={0.85}
-          onPress={handleCheckout}
-        >
-          <ThemedText style={styles.checkoutBtnText}>Proceed to Checkout</ThemedText>
-          <ArrowRight size={18} color="#ffffff" />
-        </TouchableOpacity>
-      </View>
     </ThemedView>
   );
 }
@@ -298,260 +155,85 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
   },
-  headerBar: {
+  loadingText: {
+    marginTop: 12,
+    color: '#6b7280',
+  },
+  headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  headerTitle: {
-    fontSize: 18,
+  screenTitle: {
+    fontSize: 22,
     fontWeight: '800',
-  },
-  headerCount: {
-    fontSize: 14,
-    opacity: 0.6,
+    color: '#18181b',
   },
   clearCartText: {
     fontSize: 13,
-    color: '#ef4444',
     fontWeight: '600',
+    color: '#dc2626',
   },
-  scrollContent: {
-    padding: 16,
-    gap: 14,
+  stockNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    padding: 12,
+    borderRadius: 10,
+    gap: 8,
+    marginBottom: 12,
   },
-
-  /* Empty State */
+  stockNoticeText: {
+    fontSize: 13,
+    color: '#dc2626',
+    flex: 1,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: 24,
   },
   emptyIconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#f3f4f6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: '#18181b',
     marginBottom: 8,
   },
   emptyDescription: {
-    textAlign: 'center',
     fontSize: 14,
-    opacity: 0.6,
+    color: '#6b7280',
+    textAlign: 'center',
     marginBottom: 24,
-    lineHeight: 20,
   },
   exploreBtn: {
-    backgroundColor: '#ff3b30',
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-    borderRadius: 24,
+    backgroundColor: '#208AEF',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
   },
   exploreBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
     color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-
-  /* Warning Banner */
-  warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 12,
-  },
-  warningText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    flex: 1,
-  },
-
-  /* Item Card */
-  itemCard: {
-    flexDirection: 'row',
-    borderRadius: 16,
-    padding: 12,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  itemImage: {
-    width: 90,
-    height: 115,
-    borderRadius: 10,
-  },
-  itemDetails: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  itemTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  itemBrand: {
-    fontSize: 11,
-    fontWeight: '800',
-    opacity: 0.5,
-    textTransform: 'uppercase',
-  },
-  deleteBtn: {
-    padding: 4,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  itemMeta: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginTop: 2,
-  },
-  stockBadge: {
-    marginTop: 4,
-  },
-  stockBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  priceStepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  itemPrice: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  stepperContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    gap: 8,
-  },
-  stepperBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepperQty: {
-    fontSize: 13,
-    fontWeight: '800',
-    minWidth: 16,
-    textAlign: 'center',
-  },
-
-  /* Order Summary */
-  summaryCard: {
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
-    marginTop: 6,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: 13.5,
-    opacity: 0.7,
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(150,150,150,0.15)',
-    marginVertical: 4,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  totalValue: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: '#ff3b30',
-  },
-  guaranteeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    opacity: 0.8,
-  },
-  guaranteeText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: '#10b981',
-  },
-
-  /* Fixed Bottom Checkout Bar */
-  checkoutBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  checkoutTotalLabel: {
-    fontSize: 11,
-    opacity: 0.6,
-    fontWeight: '600',
-  },
-  checkoutTotalValue: {
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  checkoutBtn: {
-    backgroundColor: '#ff3b30',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderRadius: 30,
-    gap: 8,
-  },
-  checkoutBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
   },
 });

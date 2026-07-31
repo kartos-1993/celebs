@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import { apiClient } from '@/api/client';
 
 export interface ProductMeasurement {
   name: string;
@@ -40,13 +41,6 @@ export interface Product {
   featured?: boolean;
 }
 
-// API URL helper to dynamically target local server IP in Expo
-const getApiUrl = () => {
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localhost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  return `http://${localhost}:3333/api/v1`;
-};
-
 // Helper to resolve local IP for media hosted on the developer machine
 export const resolveImageUrl = (url: string) => {
   if (!url) return '';
@@ -60,13 +54,15 @@ export const resolveImageUrl = (url: string) => {
 
 export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
   const fetchProductsPage = async ({ pageParam = null }: { pageParam: string | null }) => {
-    const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
-    const categoryParam = categorySlugOrId ? `&category=${encodeURIComponent(categorySlugOrId)}` : '';
-    const url = `${getApiUrl()}/products?limit=${initialLimit}${categoryParam}${cursorParam}`;
-    console.log('Fetching products from:', url);
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Network response was not ok');
-    return await response.json();
+    const params: Record<string, any> = { limit: initialLimit };
+    if (categorySlugOrId) params.category = categorySlugOrId;
+    if (pageParam) params.cursor = pageParam;
+
+    const response = await apiClient.get('/products', {
+      params,
+      skipAuth: true,
+    });
+    return response.data;
   };
 
   const {
@@ -134,9 +130,8 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
 
 export function useProduct(id: string) {
   const fetchSingleProduct = async () => {
-    const response = await fetch(`${getApiUrl()}/products/${id}`);
-    if (!response.ok) throw new Error('Failed to load product');
-    const resData = await response.json();
+    const response = await apiClient.get(`/products/${id}`, { skipAuth: true });
+    const resData = response.data;
     if (resData.success && resData.data) {
       return resData.data as Product;
     } else {
