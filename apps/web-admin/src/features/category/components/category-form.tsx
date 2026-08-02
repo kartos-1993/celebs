@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
 import {
@@ -35,6 +35,23 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   const isSuperadmin = role === 'SUPERADMIN';
   const isEditing = !!initialData?._id;
 
+  const storefrontSaveHandlerRef = useRef<(() => Promise<void>) | null>(null);
+
+  const handleRegisterStorefrontSave = useCallback((fn: () => Promise<void>) => {
+    storefrontSaveHandlerRef.current = fn;
+  }, []);
+
+  const handleSaveWithStorefront = async (data: CategoryFormData) => {
+    onSave(data);
+    if (storefrontSaveHandlerRef.current) {
+      try {
+        await storefrontSaveHandlerRef.current();
+      } catch (err) {
+        console.error('Failed to save storefront config:', err);
+      }
+    }
+  };
+
   const {
     form,
     attributeFields,
@@ -47,7 +64,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     handleRemoveSizeColumn,
     handleImageUpload,
     handleSubmit,
-  } = useCategoryForm({ initialData, onSave });
+  } = useCategoryForm({ initialData, onSave: handleSaveWithStorefront });
 
   const isSubmitting = form.formState.isSubmitting || isLoading;
 
@@ -98,7 +115,10 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 
           {isSuperadmin && (
             <TabsContent value="storefront">
-              <CategoryStorefrontTab categoryId={initialData?._id} />
+              <CategoryStorefrontTab
+                categoryId={initialData?._id}
+                onRegisterSaveHandler={handleRegisterStorefrontSave}
+              />
             </TabsContent>
           )}
         </Tabs>
