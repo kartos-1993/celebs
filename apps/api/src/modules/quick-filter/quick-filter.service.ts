@@ -68,12 +68,46 @@ export class QuickFilterService {
     const categoryId = category._id;
 
     // 1. Fetch configured quick filters for this category
-    const rawQuickFilters = await QuickFilterModel.find({
+    let rawQuickFilters = await QuickFilterModel.find({
       categoryId,
       isActive: true,
     })
       .sort({ displayOrder: 1 })
       .lean();
+
+    // Fallback: If no explicit quick filter is saved for this category, auto-generate default
+    if (rawQuickFilters.length === 0) {
+      const childCategories = await CategoryModel.find({
+        parentCategory: categoryId,
+        isActive: { $ne: false },
+      })
+        .sort({ name: 1 })
+        .lean();
+
+      if (childCategories.length > 0) {
+        rawQuickFilters = [
+          {
+            _id: new mongoose.Types.ObjectId(),
+            categoryId,
+            type: 'subcategory' as QuickFilterType,
+            attributeId: null,
+            displayAs: 'avatar_scroll' as QuickFilterDisplayAs,
+            items: childCategories.map((child, idx) => ({
+              name: child.name.replace(new RegExp(`^${category.name}\\s+`, 'i'), ''),
+              image: child.imageUrl || null,
+              slug: child.slug,
+              filterValue: child.slug,
+              displayOrder: idx,
+            })),
+            autoPopulate: true,
+            displayOrder: 0,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as any,
+        ];
+      }
+    }
 
     const quickFilters = [];
 
