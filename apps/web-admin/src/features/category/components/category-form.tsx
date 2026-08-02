@@ -7,13 +7,14 @@ import {
   TabsList,
   TabsTrigger,
 } from '@celebs/shared-ui/components/tabs';
-import { SlidersHorizontal, FolderTree } from 'lucide-react';
+import { SlidersHorizontal, FolderTree, Store } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { Category } from '../types';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { useCategoryForm } from '../hooks/use-category-form';
 import { CategoryBasicInfoTab } from './category-basic-info-tab';
 import { CategoryAttributesTab } from './category-attributes-tab';
+import { CategoryStorefrontTab } from './category-storefront-tab';
 
 export interface CategoryFormProps {
   initialData?: Partial<Category> | null;
@@ -29,6 +30,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   onCancel,
 }) => {
   const { role } = useAuthContext();
+  const isSuperadmin = role === 'SUPERADMIN';
 
   const {
     form,
@@ -48,15 +50,21 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     <Form {...form}>
       <form onSubmit={handleSubmit} className="space-y-4 py-2 pb-4">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className={`grid w-full ${isSuperadmin ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FolderTree className="h-4 w-4" />
               Basic Info & Size Chart
             </TabsTrigger>
             <TabsTrigger value="attributes" className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" />
-              Attributes & Variations ({attributeFields.length})
+              Attributes ({attributeFields.length})
             </TabsTrigger>
+            {isSuperadmin && (
+              <TabsTrigger value="storefront" className="flex items-center gap-2">
+                <Store className="h-4 w-4 text-fashion-600" />
+                Storefront Display
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="basic">
@@ -82,6 +90,12 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               removeAttribute={removeAttribute}
             />
           </TabsContent>
+
+          {isSuperadmin && (
+            <TabsContent value="storefront">
+              <CategoryStorefrontTab categoryId={initialData?._id} />
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
