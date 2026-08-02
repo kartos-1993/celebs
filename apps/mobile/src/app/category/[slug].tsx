@@ -6,7 +6,6 @@ import {
   StyleSheet,
   StatusBar,
   useColorScheme,
-  SafeAreaView,
   TextInput,
   FlatList,
 } from 'react-native';
@@ -16,17 +15,17 @@ import {
   Search,
   ShoppingCart,
   SlidersHorizontal,
-  ArrowUpDown,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
-import { useProducts, Product } from '@/features/products/hooks/use-products';
+import { useProducts } from '@/features/products/hooks/use-products';
 import { ProductCard } from '@/features/products/components/product-card';
-import { CategorySubcategoryAvatars } from '@/features/categories/components/CategorySubcategoryAvatars';
-import { CategoryFilterDrawer } from '@/features/categories/components/CategoryFilterDrawer';
+import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
+import { QuickFilterRenderer } from '@/features/categories/components/QuickFilterRenderer';
+import { DynamicFilterDrawer } from '@/features/categories/components/DynamicFilterDrawer';
+import { QuickFilterItem } from '@/features/categories/types';
 
 export default function CategoryProductsScreen() {
   const { slug, title } = useLocalSearchParams<{ slug: string; title?: string }>();
@@ -34,8 +33,15 @@ export default function CategoryProductsScreen() {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
 
-  const categorySlug = (Array.isArray(slug) ? slug[0] : slug) || 'denim-jeans';
-  const categoryTitle = (Array.isArray(title) ? title[0] : title) || categorySlug.replace(/-/g, ' ').toUpperCase();
+  const categorySlug = (Array.isArray(slug) ? slug[0] : slug) || '';
+
+  // Fetch dynamic storefront config from API
+  const { storefrontConfig } = useStorefrontConfig(categorySlug);
+
+  const categoryTitle =
+    (Array.isArray(title) ? title[0] : title) ||
+    storefrontConfig?.category?.name ||
+    categorySlug.replace(/-/g, ' ').toUpperCase();
 
   // Search Query State
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,18 +49,23 @@ export default function CategoryProductsScreen() {
   // Fetch API products for category
   const { products, loading, loadingMore, hasMore, loadMore } = useProducts(20, categorySlug);
 
-  // Subcategory Selection State
-  const [selectedSubCat, setSelectedSubCat] = useState('All');
+  // Quick Filter Selection State
+  const [selectedQuickFilterValue, setSelectedQuickFilterValue] = useState<string | null>(null);
 
   // Filter States
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedFits, setSelectedFits] = useState<string[]>([]);
-  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(null);
 
   // Filter Drawer State
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  // Quick Filter Item Selection Handler
+  const handleSelectQuickFilterItem = useCallback((item: QuickFilterItem) => {
+    const val = item.filterValue || item.slug || item.name;
+    setSelectedQuickFilterValue((prev) => (prev === val ? null : val));
+  }, []);
 
   // Toggle Handlers
   const handleToggleColor = useCallback((colorName: string) => {
@@ -75,24 +86,18 @@ export default function CategoryProductsScreen() {
     );
   }, []);
 
-  const handleToggleStyle = useCallback((styleName: string) => {
-    setSelectedStyles((prev) =>
-      prev.includes(styleName) ? prev.filter((st) => st !== styleName) : [...prev, styleName]
-    );
-  }, []);
-
   const handleResetFilters = useCallback(() => {
     setSelectedColors([]);
     setSelectedSizes([]);
     setSelectedFits([]);
-    setSelectedStyles([]);
     setSelectedPriceRange(null);
-    setSelectedSubCat('All');
+    setSelectedQuickFilterValue(null);
   }, []);
 
   // Filter & Search Logic
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      // 1. Search filter
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
         const matchesName = p.name.toLowerCase().includes(query);
@@ -100,6 +105,16 @@ export default function CategoryProductsScreen() {
         if (!matchesName && !matchesBrand) return false;
       }
 
+      // 2. Quick Filter subcategory / tag matching
+      if (selectedQuickFilterValue) {
+        const valLower = selectedQuickFilterValue.toLowerCase();
+        const matchesSubcat = p.subcategory && String(p.subcategory).toLowerCase().includes(valLower);
+        const matchesName = p.name.toLowerCase().includes(valLower);
+        const matchesTags = Array.isArray(p.tags) && p.tags.some((t: string) => t.toLowerCase() === valLower);
+        if (!matchesSubcat && !matchesName && !matchesTags) return false;
+      }
+
+      // 3. Price filter
       if (selectedPriceRange) {
         const price = p.discountedPrice || p.price;
         if (price < selectedPriceRange.min || price > selectedPriceRange.max) {
@@ -109,14 +124,14 @@ export default function CategoryProductsScreen() {
 
       return true;
     });
-  }, [products, searchQuery, selectedPriceRange]);
+  }, [products, searchQuery, selectedQuickFilterValue, selectedPriceRange]);
 
   const activeFilterCount =
     selectedColors.length +
     selectedSizes.length +
     selectedFits.length +
-    selectedStyles.length +
-    (selectedPriceRange ? 1 : 0);
+    (selectedPriceRange ? 1 : 0) +
+    (selectedQuickFilterValue ? 1 : 0);
 
   return (
     <ThemedView style={styles.container}>
@@ -157,12 +172,15 @@ export default function CategoryProductsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Subcategory Circular Avatars Header */}
-      <CategorySubcategoryAvatars
-        slug={categorySlug}
-        selectedSubcategory={selectedSubCat}
-        onSelectSubcategory={setSelectedSubCat}
-      />
+      {/* Dynamic Storefront Quick Filters Header */}
+      {storefrontConfig?.quickFilters?.map((qf, idx) => (
+        <QuickFilterRenderer
+          key={qf._id || idx}
+          config={qf}
+          selectedItem={selectedQuickFilterValue}
+          onSelectItem={handleSelectQuickFilterItem}
+        />
+      ))}
 
       {/* Filter Control Action Bar */}
       <View style={styles.actionBar}>
@@ -214,18 +232,17 @@ export default function CategoryProductsScreen() {
         />
       )}
 
-      {/* Filter Drawer Modal Sheet */}
-      <CategoryFilterDrawer
+      {/* Dynamic Filter Drawer Modal Sheet */}
+      <DynamicFilterDrawer
         isOpen={isFilterDrawerOpen}
         onClose={() => setIsFilterDrawerOpen(false)}
+        drawerFilters={storefrontConfig?.drawerFilters}
         selectedColors={selectedColors}
         onToggleColor={handleToggleColor}
         selectedSizes={selectedSizes}
         onToggleSize={handleToggleSize}
         selectedFits={selectedFits}
         onToggleFit={handleToggleFit}
-        selectedStyles={selectedStyles}
-        onToggleStyle={handleToggleStyle}
         selectedPriceRange={selectedPriceRange}
         onSelectPriceRange={setSelectedPriceRange}
         onReset={handleResetFilters}

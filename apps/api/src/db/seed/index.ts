@@ -5,6 +5,7 @@ import { seedCategoriesJewelry } from './seed-categories-jewelry';
 import { seedProductsDenimJackets } from './seed-products-denim-jackets';
 import { seedProductsDenimJeans } from './seed-products-denim-jeans';
 import { seedProductsMockCatalog } from './seed-products-mock-catalog';
+import { seedQuickFilters } from './seed-quick-filters';
 
 export async function runMasterSeed(): Promise<void> {
   const isReset = process.argv.includes('--reset');
@@ -24,9 +25,18 @@ export async function runMasterSeed(): Promise<void> {
     await seedCategoriesJewelry();
 
     // Step 3: Products Catalog
+    if (isReset) {
+      console.log('\n⚠️ [--reset active] Wiping Product collection...');
+      const { ProductModel } = await import('../models/product.model');
+      await ProductModel.deleteMany({});
+    }
+
+    await seedProductsMockCatalog(false);
     await seedProductsDenimJackets();
     await seedProductsDenimJeans();
-    await seedProductsMockCatalog(isReset);
+
+    // Step 4: Category Quick Filters
+    await seedQuickFilters(isReset);
 
     console.log('\n================================================================');
     console.log('✨ MASTER SEED COMPLETED SUCCESSFULLY!');

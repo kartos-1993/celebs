@@ -303,6 +303,7 @@ ProductSchema.index({ category: 1, status: 1, _id: -1 });
 ProductSchema.index({ subcategory: 1, status: 1, _id: -1 });
 ProductSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text', tags: 'text' });
+ProductSchema.index({ tags: 1 });
 
 // Add pre-save hook to generate slug if not provided
 ProductSchema.pre<IProduct>('save', function (next) {

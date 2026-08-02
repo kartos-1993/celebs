@@ -163,26 +163,65 @@ export class ProductService {
       query.subcategory = new Types.ObjectId(String(filters.subcategoryId));
     }
 
+    if (filters.tag) {
+      query.tags = filters.tag;
+    }
+
     if (filters.category) {
-      const cat = await CategoryModel.findOne({
+      const categoryParam = filters.category.trim();
+
+      // Generic MongoDB category query matching slug, path, or name regex (no hardcoded category names or prefixes)
+      const categoryDoc = await CategoryModel.findOne({
         $or: [
-          { slug: filters.category },
-          { name: new RegExp(filters.category.replace(/-/g, ' '), 'i') },
+          { slug: categoryParam.toLowerCase() },
+          ...(Types.ObjectId.isValid(categoryParam) ? [{ _id: new Types.ObjectId(categoryParam) }] : []),
+          { path: categoryParam.toLowerCase() },
+          { name: new RegExp(`^${categoryParam.replace(/-/g, ' ')}$`, 'i') },
+          { slug: new RegExp(categoryParam.replace(/-/g, '.*'), 'i') },
+          { name: new RegExp(categoryParam.replace(/-/g, '|'), 'i') },
         ],
       })
-        .select('_id')
+        .select('_id slug name level parentCategory')
         .lean();
-      if (cat) {
-        query.$or = [{ category: cat._id }, { subcategory: cat._id }];
+
+      if (categoryDoc) {
+        // Generic recursive subcategory lookup for any parent category
+        const descendantCategories = await CategoryModel.find({
+          $or: [
+            { parentCategory: categoryDoc._id },
+            { path: categoryDoc.slug },
+          ],
+        })
+          .select('_id')
+          .lean();
+
+        const allMatchingCategoryIds = [
+          categoryDoc._id,
+          ...descendantCategories.map((c) => c._id),
+        ];
+
+        query.$or = [
+          { category: { $in: allMatchingCategoryIds } },
+          { subcategory: { $in: allMatchingCategoryIds } },
+        ];
       } else {
-        // Fallback: match category or tags or name by string
-        const reg = new RegExp(filters.category.replace(/-/g, ' '), 'i');
-        query.$or = [{ name: reg }, { tags: reg }];
+        // Generic keyword search fallback
+        const keywords = categoryParam.split('-').filter((w) => w.length > 2);
+        if (keywords.length > 0) {
+          const keywordRegexes = keywords.map((k) => new RegExp(k, 'i'));
+          query.$or = [
+            { name: { $in: keywordRegexes } },
+            { tags: { $in: keywordRegexes } },
+          ];
+        }
       }
     } else if (filters.categoryId && Types.ObjectId.isValid(filters.categoryId)) {
+      const catId = new Types.ObjectId(String(filters.categoryId));
+      const childCategories = await CategoryModel.find({ parentCategory: catId }).select('_id').lean();
+      const catIds = [catId, ...childCategories.map((c) => c._id)];
       query.$or = [
-        { category: new Types.ObjectId(String(filters.categoryId)) },
-        { subcategory: new Types.ObjectId(String(filters.categoryId)) },
+        { category: { $in: catIds } },
+        { subcategory: { $in: catIds } },
       ];
     }
 

@@ -62,7 +62,7 @@ async function ensureCategory(parent: any | null, name: string, sizeChartColumns
   const level = parent ? (parent.level || 1) + 1 : 1;
   const pathParts = parent ? [...(parent.path || []), slug] : [slug];
   const res = await CategoryModel.findOneAndUpdate(
-    { name, parentCategory: parent?._id || null },
+    { $or: [{ slug }, { name, parentCategory: parent?._id || null }] },
     {
       name,
       slug,
