@@ -17,7 +17,7 @@ export function useStorefrontConfig(categorySlug: string) {
     queryKey: ['storefront-config', categorySlug],
     queryFn: fetchStorefrontConfig,
     enabled: !!categorySlug,
-    staleTime: 1000 * 60 * 15, // 15 minutes cache
+    staleTime: __DEV__ ? 0 : 1000 * 60 * 5, // 0s in dev for instant updates, 5 mins in prod
   });
 
   return {
