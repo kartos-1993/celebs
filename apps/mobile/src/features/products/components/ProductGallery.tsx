@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -10,8 +10,8 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import { X } from 'lucide-react-native';
+import { resolveImageUrl } from '@/constants/config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = SCREEN_WIDTH * 1.33; // 3:4 aspect ratio
@@ -25,6 +25,13 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
   const [activeIndex, setActiveIndex] = useState(0);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Reset scroll position and active index when image list changes (e.g., color selection change)
+  useEffect(() => {
+    setActiveIndex(0);
+    scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+  }, [images]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slide = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
@@ -39,6 +46,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
     <View style={styles.container}>
       {/* Scrollable Main Images */}
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -58,7 +66,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
             accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length}`}
           >
             <Image
-              source={{ uri: img }}
+              source={{ uri: resolveImageUrl(img) }}
               style={styles.mainImage}
               contentFit="cover"
               transition={200}
@@ -68,14 +76,16 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
       </ScrollView>
 
       {/* Pagination Indicator Dots */}
-      <View style={styles.indicatorContainer}>
-        {galleryImages.map((_, idx) => (
-          <View
-            key={idx}
-            style={[styles.indicatorDot, activeIndex === idx && styles.indicatorDotActive]}
-          />
-        ))}
-      </View>
+      {galleryImages.length > 1 && (
+        <View style={styles.indicatorContainer}>
+          {galleryImages.map((_, idx) => (
+            <View
+              key={idx}
+              style={[styles.indicatorDot, activeIndex === idx && styles.indicatorDotActive]}
+            />
+          ))}
+        </View>
+      )}
 
       {/* Fullscreen Zoom Modal */}
       <Modal visible={isZoomModalOpen} transparent animationType="fade" onRequestClose={() => setIsZoomModalOpen(false)}>
@@ -92,7 +102,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
           <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
             {galleryImages.map((img, idx) => (
               <View key={`zoom-${idx}`} style={styles.zoomSlide}>
-                <Image source={{ uri: img }} style={styles.zoomImage} contentFit="contain" />
+                <Image source={{ uri: resolveImageUrl(img) }} style={styles.zoomImage} contentFit="contain" />
               </View>
             ))}
           </ScrollView>

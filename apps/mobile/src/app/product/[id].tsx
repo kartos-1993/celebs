@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -49,7 +49,7 @@ export default function ProductDetailScreen() {
   const [isAdding, setIsAdding] = useState(false);
 
   const isMountedRef = useRef(true);
-  React.useEffect(() => {
+  useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
@@ -72,7 +72,7 @@ export default function ProductDetailScreen() {
   }, [setCartIconCoords]);
 
   // Pulse effect on cart icon when item added
-  React.useEffect(() => {
+  useEffect(() => {
     if (pulseTrigger > 0) {
       topCartScale.value = withSequence(
         withSpring(1.4, { damping: 6, stiffness: 200 }),
@@ -156,7 +156,7 @@ export default function ProductDetailScreen() {
 
   const galleryImages =
     product.colorVariants?.[selectedColorIndex]?.images &&
-    product.colorVariants[selectedColorIndex].images!.length > 0
+      product.colorVariants[selectedColorIndex].images!.length > 0
       ? product.colorVariants[selectedColorIndex].images!
       : product.mainImages || [];
 
@@ -168,6 +168,19 @@ export default function ProductDetailScreen() {
       : 0;
 
   const availableSizeNames = product.sizes ? product.sizes.map((s) => s.name) : [];
+
+  const handleColorChange = (index: number) => {
+    setSelectedColorIndex(index);
+    const newVariant = product?.colorVariants?.[index];
+    if (selectedSize && newVariant?.stocks) {
+      const stockItem = newVariant.stocks.find(
+        (st) => st.size.toLowerCase() === selectedSize.toLowerCase()
+      );
+      if (!stockItem || stockItem.quantity <= 0) {
+        setSelectedSize('');
+      }
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -253,7 +266,7 @@ export default function ProductDetailScreen() {
           <ProductVariantSelector
             colorVariants={product.colorVariants}
             selectedColorIndex={selectedColorIndex}
-            onSelectColor={setSelectedColorIndex}
+            onSelectColor={handleColorChange}
             sizes={product.sizes}
             selectedSize={selectedSize}
             onSelectSize={setSelectedSize}

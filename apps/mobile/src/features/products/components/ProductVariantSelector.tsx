@@ -20,13 +20,25 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   selectedSize,
   onSelectSize,
 }) => {
+  const currentColorVariant = colorVariants?.[selectedColorIndex];
+  const stocks = currentColorVariant?.stocks;
+
+  // Helper to get stock quantity for a size under the current color variant
+  const getStockQtyForSize = (sizeName: string): number | null => {
+    if (!stocks || stocks.length === 0) return null;
+    const item = stocks.find((st) => st.size.toLowerCase() === sizeName.toLowerCase());
+    return item ? item.quantity : null;
+  };
+
+  const selectedSizeQty = selectedSize ? getStockQtyForSize(selectedSize) : null;
+
   return (
     <View style={styles.container}>
       {/* Color Variants */}
       {colorVariants && colorVariants.length > 0 && (
         <View style={styles.section}>
           <ThemedText style={styles.sectionLabel}>
-            Color: <ThemedText style={styles.valueText}>{colorVariants[selectedColorIndex]?.name || 'Standard'}</ThemedText>
+            Color: <ThemedText style={styles.valueText}>{currentColorVariant?.name || 'Standard'}</ThemedText>
           </ThemedText>
           <View style={styles.variantRow}>
             {colorVariants.map((c, idx) => {
@@ -60,29 +72,62 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
       {/* Size Variants */}
       {sizes && sizes.length > 0 && (
         <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>
-            Size: <ThemedText style={styles.valueText}>{selectedSize || 'Select Size'}</ThemedText>
-          </ThemedText>
+          <View style={styles.sizeHeaderRow}>
+            <ThemedText style={styles.sectionLabel}>
+              Size: <ThemedText style={styles.valueText}>{selectedSize || 'Select Size'}</ThemedText>
+            </ThemedText>
+            {!selectedSize && (
+              <ThemedText style={styles.sizeNoticeText}>Selection required</ThemedText>
+            )}
+          </View>
+
           <View style={styles.variantRow}>
             {sizes.map((s) => {
               const isSelected = selectedSize === s.name;
+              const qty = getStockQtyForSize(s.name);
+              const isOutOfStock = qty !== null && qty <= 0;
+
               return (
                 <TouchableOpacity
                   key={s.name}
-                  style={[styles.sizeBox, isSelected && styles.sizeBoxSelected]}
-                  onPress={() => onSelectSize(s.name)}
+                  style={[
+                    styles.sizeBox,
+                    isSelected && styles.sizeBoxSelected,
+                    isOutOfStock && styles.sizeBoxDisabled,
+                  ]}
+                  onPress={() => !isOutOfStock && onSelectSize(s.name)}
+                  disabled={isOutOfStock}
                   activeOpacity={0.8}
                   accessible={true}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select size ${s.name}`}
+                  accessibilityLabel={`Select size ${s.name}${isOutOfStock ? ' (Out of stock)' : ''}`}
                 >
-                  <ThemedText style={[styles.sizeText, isSelected && styles.sizeTextSelected]}>
+                  <ThemedText
+                    style={[
+                      styles.sizeText,
+                      isSelected && styles.sizeTextSelected,
+                      isOutOfStock && styles.sizeTextDisabled,
+                    ]}
+                  >
                     {s.name}
                   </ThemedText>
                 </TouchableOpacity>
               );
             })}
           </View>
+
+          {/* Stock Warning Banner */}
+          {selectedSizeQty !== null && (
+            <View style={styles.stockNoticeBox}>
+              {selectedSizeQty <= 0 ? (
+                <ThemedText style={styles.outOfStockText}>Currently Out of Stock for size {selectedSize}</ThemedText>
+              ) : selectedSizeQty <= 5 ? (
+                <ThemedText style={styles.lowStockText}>Only {selectedSizeQty} left in stock - order soon!</ThemedText>
+              ) : (
+                <ThemedText style={styles.inStockText}>In Stock ({selectedSizeQty} available)</ThemedText>
+              )}
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -96,20 +141,31 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 16,
   },
+  sizeHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   sectionLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#374151',
-    marginBottom: 8,
   },
   valueText: {
     fontWeight: '700',
     color: '#111827',
   },
+  sizeNoticeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ef4444',
+  },
   variantRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 8,
   },
   colorChip: {
     flexDirection: 'row',
@@ -144,7 +200,7 @@ const styles = StyleSheet.create({
   sizeBox: {
     minWidth: 44,
     height: 40,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
     backgroundColor: '#f3f4f6',
     justifyContent: 'center',
@@ -156,6 +212,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#18181b',
     borderColor: '#18181b',
   },
+  sizeBoxDisabled: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#e5e7eb',
+    opacity: 0.4,
+  },
   sizeText: {
     fontSize: 13,
     fontWeight: '600',
@@ -163,5 +224,27 @@ const styles = StyleSheet.create({
   },
   sizeTextSelected: {
     color: '#ffffff',
+  },
+  sizeTextDisabled: {
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
+  },
+  stockNoticeBox: {
+    marginTop: 10,
+  },
+  outOfStockText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ef4444',
+  },
+  lowStockText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#f59e0b',
+  },
+  inStockText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10b981',
   },
 });
