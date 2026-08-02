@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ interface DeleteCategoryDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  isLoading?: boolean;
   category?: {
     name: string;
     hasChildren?: boolean;
@@ -32,6 +33,7 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
   onOpenChange,
   onConfirm,
   onCancel,
+  isLoading = false,
   category,
 }) => {
   if (!category) return null;
@@ -87,12 +89,19 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel
           </Button>
           {!category.hasChildren && (
-            <Button variant="destructive" onClick={onConfirm}>
-              Delete Category
+            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="min-w-[130px]">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Category'
+              )}
             </Button>
           )}
         </DialogFooter>
