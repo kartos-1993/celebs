@@ -7,7 +7,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@celebs/shared-ui/components/tabs';
-import { SlidersHorizontal, FolderTree, Store } from 'lucide-react';
+import { SlidersHorizontal, FolderTree, Store, Loader2 } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { Category } from '../types';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
@@ -21,6 +21,7 @@ export interface CategoryFormProps {
   categories: Category[];
   onSave: (data: CategoryFormData) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
 export const CategoryForm: React.FC<CategoryFormProps> = ({
@@ -28,9 +29,11 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   categories,
   onSave,
   onCancel,
+  isLoading = false,
 }) => {
   const { role } = useAuthContext();
   const isSuperadmin = role === 'SUPERADMIN';
+  const isEditing = !!initialData?._id;
 
   const {
     form,
@@ -45,6 +48,8 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     handleImageUpload,
     handleSubmit,
   } = useCategoryForm({ initialData, onSave });
+
+  const isSubmitting = form.formState.isSubmitting || isLoading;
 
   return (
     <Form {...form}>
@@ -99,10 +104,21 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         </Tabs>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit">Save Category</Button>
+          <Button type="submit" disabled={isSubmitting} className="min-w-[130px]">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isEditing ? 'Saving...' : 'Creating...'}
+              </>
+            ) : isEditing ? (
+              'Save Category'
+            ) : (
+              'Create Category'
+            )}
+          </Button>
         </div>
       </form>
     </Form>

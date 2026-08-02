@@ -24,6 +24,7 @@ interface CategoryFormDialogProps {
   categories: Category[];
   onSave: (data: CategoryFormData) => Promise<void>;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
 export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
@@ -34,6 +35,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   categories,
   onSave,
   onCancel,
+  isLoading = false,
 }) => {
   const editingId = editingCategory?._id || '';
 
@@ -93,6 +95,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
             categories={categories}
             onSave={onSave}
             onCancel={onCancel}
+            isLoading={isLoading}
           />
         )}
       </DialogContent>

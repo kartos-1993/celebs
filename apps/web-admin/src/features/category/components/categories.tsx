@@ -151,6 +151,7 @@ export const Categories: React.FC = () => {
         categories={categories}
         onSave={handleSaveCategory}
         onCancel={actions.closeForm}
+        isLoading={uiState.isLoading}
       />
 
       <DeleteCategoryDialog
@@ -158,6 +159,7 @@ export const Categories: React.FC = () => {
         onOpenChange={actions.setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         onCancel={actions.closeDeleteDialog}
+        isLoading={uiState.isLoading}
         category={
           uiState.categoryToDelete
             ? {
