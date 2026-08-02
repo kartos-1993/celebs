@@ -17,9 +17,13 @@ import { uploadFiles } from '@/features/product/api';
 
 interface CategoryStorefrontTabProps {
   categoryId?: string;
+  onRegisterSaveHandler?: (handler: () => Promise<void>) => void;
 }
 
-export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({ categoryId }) => {
+export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
+  categoryId,
+  onRegisterSaveHandler,
+}) => {
   const { quickFilters, isLoading, saveQuickFilter, isSaving } = useQuickFilters(categoryId);
 
   const [type, setType] = useState<QuickFilterType>('subcategory');
@@ -46,6 +50,35 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({ ca
       setItems([]);
     }
   }, [quickFilters]);
+
+  const handleSave = async () => {
+    if (!categoryId) return;
+    try {
+      setStatusMessage(null);
+      const isManual = items.length > 0;
+      const payload: Partial<QuickFilter> = {
+        _id: currentFilterId,
+        categoryId,
+        type,
+        displayAs,
+        autoPopulate: isManual ? false : autoPopulate,
+        items,
+        isActive: true,
+      };
+
+      await saveQuickFilter(payload);
+      setStatusMessage('Storefront display settings saved successfully!');
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (err: any) {
+      setStatusMessage(`Failed to save: ${err?.message || String(err)}`);
+    }
+  };
+
+  useEffect(() => {
+    if (onRegisterSaveHandler) {
+      onRegisterSaveHandler(handleSave);
+    }
+  }, [onRegisterSaveHandler, categoryId, currentFilterId, type, displayAs, autoPopulate, items]);
 
   if (!categoryId) {
     return (
@@ -105,27 +138,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({ ca
     }
   };
 
-  const handleSave = async () => {
-    try {
-      setStatusMessage(null);
-      const isManual = items.length > 0;
-      const payload: Partial<QuickFilter> = {
-        _id: currentFilterId,
-        categoryId,
-        type,
-        displayAs,
-        autoPopulate: isManual ? false : autoPopulate,
-        items,
-        isActive: true,
-      };
-
-      await saveQuickFilter(payload);
-      setStatusMessage('Storefront display settings saved successfully!');
-      setTimeout(() => setStatusMessage(null), 3000);
-    } catch (err: any) {
-      setStatusMessage(`Failed to save: ${err?.message || String(err)}`);
-    }
-  };
+  // handleSave is defined above and registered with parent form hook
 
   return (
     <div className="space-y-6 pt-2">
