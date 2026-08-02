@@ -42,10 +42,16 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
 
   const freshCategoryData = categoryDetailRes?.data || editingCategory;
 
+  const parentCategory = parentCategoryId
+    ? categories.find((c) => c._id === parentCategoryId)
+    : null;
+
+  const activeCategoryName = freshCategoryData?.name || editingCategory?.name;
+
   const getDialogTitle = () => {
-    if (editingCategory) return 'Edit Category';
-    if (parentCategoryId) return 'Add Subcategory';
-    return 'Add Category';
+    if (editingCategory) return `Edit Category: ${activeCategoryName || ''}`;
+    if (parentCategory) return `Add Subcategory under "${parentCategory.name}"`;
+    return 'Add New Category';
   };
 
   return (
@@ -55,11 +61,18 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
         aria-describedby="dialog-description"
       >
         <DialogHeader>
-          <DialogTitle>{getDialogTitle()}</DialogTitle>
+          <DialogTitle className="text-lg font-bold text-gray-900">
+            {getDialogTitle()}
+          </DialogTitle>
+          {editingCategory && freshCategoryData?.path && freshCategoryData.path.length > 0 && (
+            <p className="text-xs text-fashion-600 font-medium pt-0.5">
+              Path: {freshCategoryData.path.join(' > ')}
+            </p>
+          )}
         </DialogHeader>
         <div id="dialog-description" className="sr-only">
           {editingCategory
-            ? 'Edit the details of the selected category.'
+            ? `Edit the details of category ${activeCategoryName || ''}.`
             : parentCategoryId
             ? 'Add a subcategory under the selected parent category.'
             : 'Add a new category to the list.'}
