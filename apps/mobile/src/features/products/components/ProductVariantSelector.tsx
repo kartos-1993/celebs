@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { ProductColorVariant, ProductSize } from '../hooks/use-products';
 import { ThemedText } from '@/components/themed-text';
+import { resolveImageUrl } from '@/constants/config';
 
 interface ProductVariantSelectorProps {
   colorVariants?: ProductColorVariant[];
@@ -11,6 +13,48 @@ interface ProductVariantSelectorProps {
   selectedSize: string;
   onSelectSize: (sizeName: string) => void;
 }
+
+interface ColorSwatchItemProps {
+  variant: ProductColorVariant;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, onSelect }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const rawImage = variant.images?.[0] || (variant as any).image;
+  const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
+
+  return (
+    <TouchableOpacity
+      style={[styles.colorChip, isSelected && styles.colorChipSelected]}
+      onPress={onSelect}
+      activeOpacity={0.8}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`Select color ${variant.name}`}
+    >
+      {imageUrl && !imageFailed ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.colorThumbnail}
+          contentFit="cover"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <View
+          style={[
+            styles.colorDot,
+            { backgroundColor: variant.colorCode || '#000000' },
+          ]}
+        />
+      )}
+      <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+        {variant.name}
+      </ThemedText>
+    </TouchableOpacity>
+  );
+};
 
 export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   colorVariants,
@@ -41,30 +85,14 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
             Color: <ThemedText style={styles.valueText}>{currentColorVariant?.name || 'Standard'}</ThemedText>
           </ThemedText>
           <View style={styles.variantRow}>
-            {colorVariants.map((c, idx) => {
-              const isSelected = selectedColorIndex === idx;
-              return (
-                <TouchableOpacity
-                  key={`${c.name}-${idx}`}
-                  style={[styles.colorChip, isSelected && styles.colorChipSelected]}
-                  onPress={() => onSelectColor(idx)}
-                  activeOpacity={0.8}
-                  accessible={true}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select color ${c.name}`}
-                >
-                  <View
-                    style={[
-                      styles.colorDot,
-                      { backgroundColor: c.colorCode || '#000000' },
-                    ]}
-                  />
-                  <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                    {c.name}
-                  </ThemedText>
-                </TouchableOpacity>
-              );
-            })}
+            {colorVariants.map((c, idx) => (
+              <ColorSwatchItem
+                key={`${c.name}-${idx}`}
+                variant={c}
+                isSelected={selectedColorIndex === idx}
+                onSelect={() => onSelectColor(idx)}
+              />
+            ))}
           </View>
         </View>
       )}
@@ -98,9 +126,6 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                   onPress={() => !isOutOfStock && onSelectSize(s.name)}
                   disabled={isOutOfStock}
                   activeOpacity={0.8}
-                  accessible={true}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select size ${s.name}${isOutOfStock ? ' (Out of stock)' : ''}`}
                 >
                   <ThemedText
                     style={[
@@ -116,15 +141,21 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
             })}
           </View>
 
-          {/* Stock Warning Banner */}
-          {selectedSizeQty !== null && (
+          {/* Stock Level Warning Indicator */}
+          {selectedSize && selectedSizeQty !== null && (
             <View style={styles.stockNoticeBox}>
               {selectedSizeQty <= 0 ? (
-                <ThemedText style={styles.outOfStockText}>Currently Out of Stock for size {selectedSize}</ThemedText>
-              ) : selectedSizeQty <= 5 ? (
-                <ThemedText style={styles.lowStockText}>Only {selectedSizeQty} left in stock - order soon!</ThemedText>
+                <ThemedText style={styles.outOfStockText}>
+                  ✕ Out of Stock ({selectedSize})
+                </ThemedText>
+              ) : selectedSizeQty <= 3 ? (
+                <ThemedText style={styles.lowStockText}>
+                  ⚠️ Only {selectedSizeQty} left in stock for size {selectedSize} - order soon!
+                </ThemedText>
               ) : (
-                <ThemedText style={styles.inStockText}>In Stock ({selectedSizeQty} available)</ThemedText>
+                <ThemedText style={styles.inStockText}>
+                  ✓ In Stock ({selectedSizeQty} available)
+                </ThemedText>
               )}
             </View>
           )}
@@ -141,20 +172,21 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 16,
   },
-  sizeHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   sectionLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#18181b',
+    marginBottom: 10,
   },
   valueText: {
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: '400',
+    color: '#4b5563',
+  },
+  sizeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   sizeNoticeText: {
     fontSize: 12,
@@ -165,37 +197,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 8,
   },
   colorChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     gap: 6,
   },
   colorChipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#208AEF',
+    backgroundColor: '#ffffff',
+    borderColor: '#18181b',
   },
   colorDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  colorThumbnail: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.15)',
   },
   chipText: {
-    fontSize: 13,
-    color: '#4b5563',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#374151',
   },
   chipTextSelected: {
-    color: '#208AEF',
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#18181b',
   },
   sizeBox: {
     minWidth: 44,
@@ -248,3 +287,5 @@ const styles = StyleSheet.create({
     color: '#10b981',
   },
 });
+
+export default ProductVariantSelector;

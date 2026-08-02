@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { ThemedText } from '@/components/themed-text';
 import { QuickFilterItem } from '../../types';
+import { resolveImageUrl } from '@/constants/config';
 
 interface ColorSwatchFilterProps {
   items: QuickFilterItem[];
@@ -19,7 +21,48 @@ const COLOR_HEX_MAP: Record<string, string> = {
   grey: '#6b7280',
   gray: '#6b7280',
   beige: '#d4b996',
-  multicolor: 'gradient',
+  multicolor: '#9333ea',
+};
+
+interface ColorSwatchChipProps {
+  item: QuickFilterItem;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+const ColorSwatchChip: React.FC<ColorSwatchChipProps> = ({ item, isSelected, onSelect }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const rawImage = item.image;
+  const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
+  const lowerName = item.name.toLowerCase();
+  const hexColor = COLOR_HEX_MAP[lowerName] || '#94a3b8';
+
+  return (
+    <TouchableOpacity
+      style={[styles.colorChip, isSelected && styles.colorChipSelected]}
+      activeOpacity={0.8}
+      onPress={onSelect}
+    >
+      {imageUrl && !imageFailed ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.colorThumbnail}
+          contentFit="cover"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <View
+          style={[
+            styles.colorDot,
+            { backgroundColor: hexColor },
+          ]}
+        />
+      )}
+      <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+        {item.name}
+      </ThemedText>
+    </TouchableOpacity>
+  );
 };
 
 export const ColorSwatchFilter: React.FC<ColorSwatchFilterProps> = ({
@@ -38,26 +81,14 @@ export const ColorSwatchFilter: React.FC<ColorSwatchFilterProps> = ({
       {items.map((item, idx) => {
         const itemKey = item.filterValue || item.name;
         const isSelected = selectedItem === itemKey;
-        const lowerName = item.name.toLowerCase();
-        const hexColor = COLOR_HEX_MAP[lowerName] || '#94a3b8';
 
         return (
-          <TouchableOpacity
+          <ColorSwatchChip
             key={`${item.name}-${idx}`}
-            style={[styles.colorChip, isSelected && styles.colorChipSelected]}
-            activeOpacity={0.8}
-            onPress={() => onSelectItem(item)}
-          >
-            <View
-              style={[
-                styles.colorDot,
-                { backgroundColor: hexColor === 'gradient' ? '#9333ea' : hexColor },
-              ]}
-            />
-            <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-              {item.name}
-            </ThemedText>
-          </TouchableOpacity>
+            item={item}
+            isSelected={isSelected}
+            onSelect={() => onSelectItem(item)}
+          />
         );
       })}
     </ScrollView>
@@ -89,6 +120,13 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.15)',
+  },
+  colorThumbnail: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.15)',
   },
