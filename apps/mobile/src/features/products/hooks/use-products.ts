@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { apiClient } from '@/api/client';
-import { getExpoHostIp, resolveImageUrl } from '@/constants/config';
+import { resolveImageUrl } from '@/constants/config';
 export { resolveImageUrl };
 
 export interface ProductMeasurement {
