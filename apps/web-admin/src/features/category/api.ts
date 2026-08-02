@@ -11,6 +11,7 @@ import {
   UpdateCategoryRequest,
   PaginatedCategoriesResponse,
   ApiResponse,
+  QuickFilter,
 } from './types';
 
 const BASE_PATH = '/category';
@@ -94,6 +95,26 @@ export async function deleteCategory(
 
 
 
+export async function getQuickFiltersForCategory(categoryId: string): Promise<ApiResponse<QuickFilter[]>> {
+  const response = await ProductAPI.get<ApiResponse<QuickFilter[]>>(`/quick-filter/category/${categoryId}`);
+  return response.data;
+}
+
+export async function createQuickFilter(data: Partial<QuickFilter>): Promise<ApiResponse<QuickFilter>> {
+  const response = await ProductAPI.post<ApiResponse<QuickFilter>>('/quick-filter', data);
+  return response.data;
+}
+
+export async function updateQuickFilter(id: string, data: Partial<QuickFilter>): Promise<ApiResponse<QuickFilter>> {
+  const response = await ProductAPI.put<ApiResponse<QuickFilter>>(`/quick-filter/${id}`, data);
+  return response.data;
+}
+
+export async function deleteQuickFilter(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(`/quick-filter/${id}`);
+  return response.data;
+}
+
 export const CategoryApiService = {
   createCategory,
   getCategories,
@@ -102,6 +123,10 @@ export const CategoryApiService = {
   getCategoryById,
   updateCategory,
   deleteCategory,
+  getQuickFiltersForCategory,
+  createQuickFilter,
+  updateQuickFilter,
+  deleteQuickFilter,
 };
 
 // Re-export types for convenience
