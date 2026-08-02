@@ -65,6 +65,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({ ca
   }
 
   const handleAddItem = () => {
+    setAutoPopulate(false);
     setItems((prev) => [
       ...prev,
       {
@@ -107,12 +108,13 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({ ca
   const handleSave = async () => {
     try {
       setStatusMessage(null);
+      const isManual = items.length > 0;
       const payload: Partial<QuickFilter> = {
         _id: currentFilterId,
         categoryId,
         type,
         displayAs,
-        autoPopulate,
+        autoPopulate: isManual ? false : autoPopulate,
         items,
         isActive: true,
       };
