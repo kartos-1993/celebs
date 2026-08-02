@@ -24,6 +24,11 @@ categoryRoute.use((req: Request, res: Response, next: NextFunction) => {
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 
+import { QuickFilterService } from '../quick-filter/quick-filter.service';
+import { QuickFilterController } from '../quick-filter/quick-filter.controller';
+
+const quickFilterController = new QuickFilterController(new QuickFilterService());
+
 // Public Category routes
 categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
 categoryRoute.get('/search', asyncHandler(categoryController.searchCategories));
@@ -31,6 +36,7 @@ categoryRoute.get(
   '/tree-with-attributes',
   asyncHandler(categoryController.getCategoryTreeWithAttributes),
 );
+categoryRoute.get('/:slug/storefront', asyncHandler(quickFilterController.getStorefrontConfig));
 categoryRoute.get('/:id/filters', asyncHandler(categoryController.getCategoryFilters));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 

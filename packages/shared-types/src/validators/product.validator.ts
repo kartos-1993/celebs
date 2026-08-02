@@ -162,6 +162,7 @@ export const productFilterSchema = z.object({
   categoryId: idSchema.optional(),
   subcategoryId: idSchema.optional(),
   category: z.string().optional(),
+  tag: z.string().optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   status: z.enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived']).optional(),

@@ -23,6 +23,7 @@ import { createClient } from 'redis';
 import sessionRoutes from './modules/session/session.routes';
 
 import categoryRoutes from './modules/category/category.routes';
+import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
 import productRoutes from './modules/product/product.routes';
 import mediaRoutes from './modules/media/media.routes';
@@ -135,6 +136,7 @@ app.use(
 app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
+app.use(`${config.BASE_PATH}/quick-filter`, quickFilterRoutes);
 app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
 app.use(`${config.BASE_PATH}/products`, productRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
