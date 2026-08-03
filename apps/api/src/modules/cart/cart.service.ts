@@ -1,6 +1,7 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
 import prisma from '@/db';
+import { Prisma } from '@/generated/prisma';
 import { ProductModel } from '@/db/models/product.model';
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -84,7 +85,7 @@ export class CartService {
 
     const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
-    let subtotal = 0;
+    let subtotalDecimal = new Prisma.Decimal(0);
     let itemCount = 0;
     let hasStockIssues = false;
 
@@ -124,7 +125,8 @@ export class CartService {
       }
 
       if (isAvailable) {
-        subtotal += price * item.quantity;
+        const priceDecimal = new Prisma.Decimal(price);
+        subtotalDecimal = subtotalDecimal.add(priceDecimal.mul(item.quantity));
         itemCount += item.quantity;
       }
 
@@ -156,7 +158,7 @@ export class CartService {
       userId: cartRecord.userId,
       sessionId: cartRecord.sessionId,
       items: hydratedItems,
-      subtotal,
+      subtotal: subtotalDecimal.toNumber(),
       itemCount,
       hasStockIssues,
       createdAt: cartRecord.createdAt.toISOString(),

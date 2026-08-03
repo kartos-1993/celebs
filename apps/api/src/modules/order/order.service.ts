@@ -127,7 +127,7 @@ export class OrderService {
     }
 
     // Resolve Product MongoDB Info and Calculate Totals
-    let subtotal = 0;
+    let subtotalDecimal = new Prisma.Decimal(0);
     const itemDetails: Array<{
       inventoryId: string;
       productId: string;
@@ -135,8 +135,8 @@ export class OrderService {
       colorVariantName: string;
       size: string;
       quantity: number;
-      unitPrice: number;
-      subtotal: number;
+      unitPrice: Prisma.Decimal;
+      subtotal: Prisma.Decimal;
       vendorId: string;
     }> = [];
 
@@ -157,9 +157,10 @@ export class OrderService {
         throw new AppError(`Product details not found for inventory item`, HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
       }
 
-      const unitPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.price;
-      const lineSubtotal = unitPrice * item.quantity;
-      subtotal += lineSubtotal;
+      const rawPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.price;
+      const unitPriceDecimal = new Prisma.Decimal(rawPrice);
+      const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
+      subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);
 
       const vendorId = product.vendorId ? String(product.vendorId) : '';
       if (!vendorId) {
@@ -173,19 +174,19 @@ export class OrderService {
         colorVariantName: inv.colorVariantName,
         size: inv.size,
         quantity: item.quantity,
-        unitPrice,
-        subtotal: lineSubtotal,
+        unitPrice: unitPriceDecimal,
+        subtotal: lineSubtotalDecimal,
         vendorId,
       });
     }
 
-    // Enforce COD Maximum Limit
-    const shippingFee = subtotal > 3000 ? 0 : 150; // Free shipping over Rs. 3000
-    const totalAmount = subtotal + shippingFee;
+    // Enforce COD Maximum Limit with Decimal Precision
+    const shippingFeeDecimal = subtotalDecimal.gt(3000) ? new Prisma.Decimal(0) : new Prisma.Decimal(150); // Free shipping over Rs. 3000
+    const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
 
-    if (paymentMethod === 'COD' && totalAmount > COD_MAX_LIMIT) {
+    if (paymentMethod === 'COD' && totalAmountDecimal.gt(COD_MAX_LIMIT)) {
       throw new AppError(
-        `Cash on Delivery (COD) is limited to maximum NPR ${COD_MAX_LIMIT}. Please select Stripe or local online payment for total NPR ${totalAmount}.`,
+        `Cash on Delivery (COD) is limited to maximum NPR ${COD_MAX_LIMIT}. Please select Stripe or local online payment for total NPR ${totalAmountDecimal.toFixed(2)}.`,
         HTTPSTATUS.BAD_REQUEST,
         ErrorCode.INVALID_REQUEST
       );
@@ -216,10 +217,10 @@ export class OrderService {
           orderNumber,
           userId,
           addressId,
-          subtotal: new Prisma.Decimal(subtotal),
-          shippingFee: new Prisma.Decimal(shippingFee),
+          subtotal: subtotalDecimal,
+          shippingFee: shippingFeeDecimal,
           discountAmount: new Prisma.Decimal(0),
-          totalAmount: new Prisma.Decimal(totalAmount),
+          totalAmount: totalAmountDecimal,
           status: orderStatus,
           paymentMethod,
           paymentStatus,
@@ -230,9 +231,9 @@ export class OrderService {
               productName: det.productName,
               colorVariantName: det.colorVariantName,
               size: det.size,
-              unitPrice: new Prisma.Decimal(det.unitPrice),
+              unitPrice: det.unitPrice,
               quantity: det.quantity,
-              subtotal: new Prisma.Decimal(det.subtotal),
+              subtotal: det.subtotal,
               itemStatus: isCOD ? 'PENDING' : 'PENDING',
             })),
           },
@@ -255,7 +256,7 @@ export class OrderService {
     let paymentResult = null;
     if (!isCOD) {
       const adapter = this.getPaymentGateway(paymentMethod);
-      paymentResult = await adapter.createPaymentIntent(order.id, totalAmount, 'NPR', {
+      paymentResult = await adapter.createPaymentIntent(order.id, totalAmountDecimal.toNumber(), 'NPR', {
         orderNumber: order.orderNumber,
         userId,
       });
@@ -264,7 +265,7 @@ export class OrderService {
         data: {
           orderId: order.id,
           userId,
-          amount: new Prisma.Decimal(totalAmount),
+          amount: totalAmountDecimal,
           currency: 'NPR',
           gateway: paymentMethod,
           transactionId: paymentResult.paymentId,
