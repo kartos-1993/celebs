@@ -84,7 +84,7 @@ export function AppHeader({
         <TouchableOpacity 
           style={styles.logoContainer} 
           activeOpacity={0.8}
-          onPress={() => router.push('/')}
+          onPress={() => router.push('/(tabs)' as any)}
         >
           <ThemedText style={[styles.logoText, { color: textColor }]}>CELEBS</ThemedText>
         </TouchableOpacity>

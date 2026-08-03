@@ -185,4 +185,26 @@ export class AuthController {
       return res.status(HTTPSTATUS.OK).json(response);
     }
   );
+
+  public googleSignIn = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const userAgent = req.headers['user-agent'];
+      const { email, name, picture, googleId } = req.body;
+      const { user, accessToken, refreshToken } = await this.authService.googleSignIn({
+        email,
+        name,
+        picture,
+        googleId,
+        userAgent,
+      });
+      setAuthenticationCookies({ res, accessToken, refreshToken });
+      const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> = {
+        success: true,
+        message: 'Google sign in successful',
+        data: { user, accessToken, refreshToken },
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    }
+  );
 }
+
