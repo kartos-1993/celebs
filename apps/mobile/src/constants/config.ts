@@ -14,17 +14,7 @@ export function getDevBaseUrl(): string {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-
-  // Extract host IP dynamically from Expo packager
-  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
-  if (__DEV__ && hostUri) {
-    const ip = hostUri.split(':')[0];
-    if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-      return `http://${ip}:3333/api/v1`;
-    }
-  }
-
-  return `http://localhost:3333/api/v1`;
+  return STAGING_API_URL;
 }
 
 export function resolveImageUrl(url?: string | null): string {
@@ -36,7 +26,7 @@ export function resolveImageUrl(url?: string | null): string {
   return url;
 }
 
-export const GOOGLE_CLIENT_ID = '998383824177-n0b1v1cr5iq1pr456ik5jhfafqj7m9p6.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID = '998383824177-mvfgjhqjqeq2dc1ecmunajarlgbjlo4m.apps.googleusercontent.com';
 
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),

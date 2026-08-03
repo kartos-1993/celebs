@@ -25,11 +25,14 @@ import { useCart } from '@/features/cart/context/cart-context';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { apiClient } from '@/api/client';
 
+import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
+
 export default function CheckoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { cart, subtotal, clearCart } = useCart();
-  const { user, isLoggedIn, loginWithGoogle } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+  const { signInWithGoogle, isAuthenticating } = useGoogleAuth();
 
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -115,22 +118,6 @@ export default function CheckoutScreen() {
     }
   };
 
-  // Google 1-Tap Login directly inside checkout flow
-  const handleGoogleQuickAuth = async () => {
-    setLoading(true);
-    try {
-      await loginWithGoogle({
-        email: 'alex.kathmandu@gmail.com',
-        name: 'Alex Shrestha',
-        googleId: 'google_109283749182374',
-      });
-    } catch (err: any) {
-      Alert.alert('Sign In Error', err?.message || 'Failed to sign in');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!isLoggedIn) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
@@ -149,20 +136,20 @@ export default function CheckoutScreen() {
             Your items are saved safely in your cart. Sign in with Google to enter your Kathmandu delivery address and complete order.
           </ThemedText>
 
-          {/* 1-Tap Google Sign-In Button */}
+          {/* Real Google Sign-In Button */}
           <TouchableOpacity
             style={styles.googleBtn}
-            onPress={handleGoogleQuickAuth}
-            disabled={loading}
+            onPress={signInWithGoogle}
+            disabled={loading || isAuthenticating}
           >
-            {loading ? (
+            {loading || isAuthenticating ? (
               <ActivityIndicator color="#000000" />
             ) : (
               <>
                 <View style={styles.googleGLogo}>
                   <ThemedText style={styles.googleGText}>G</ThemedText>
                 </View>
-                <ThemedText style={styles.googleBtnText}>1-Tap Sign In with Google</ThemedText>
+                <ThemedText style={styles.googleBtnText}>Sign In with Google</ThemedText>
               </>
             )}
           </TouchableOpacity>
