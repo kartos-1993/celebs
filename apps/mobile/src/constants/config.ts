@@ -13,6 +13,8 @@ export function resolveImageUrl(url?: string | null): string {
   return url;
 }
 
+export const GOOGLE_CLIENT_ID = '998383824177-n0b1v1cr5iq1pr456ik5jhfafqj7m9p6.apps.googleusercontent.com';
+
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),
   timeout: 25000,
