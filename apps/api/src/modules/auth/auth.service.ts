@@ -533,4 +533,77 @@ export class AuthService {
     });
     return !superadminExists;
   }
+
+  public async googleSignIn(data: { email: string; name: string; picture?: string; googleId?: string; userAgent?: string }) {
+    const { email, name, userAgent } = data;
+    logger.info(`Google Sign-In request for email: ${email}`);
+
+    if (!email) {
+      throw new BadRequestException('Email is required for Google Sign-In', ErrorCode.VALIDATION_ERROR);
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        vendorProfile: true,
+      },
+    });
+
+    if (!user) {
+      const randomPassword = await hashValue(Math.random().toString(36).slice(-10) + 'A1!');
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: name || email.split('@')[0],
+          password: randomPassword,
+          isEmailVerified: true,
+        },
+        include: {
+          vendorProfile: true,
+        },
+      });
+      logger.info({ userId: user.id, email: user.email }, 'New user auto-registered via Google Sign-In');
+    }
+
+    if (user.role === 'VENDOR') {
+      const profile = await prisma.vendorProfile.findUnique({
+        where: { userId: user.id },
+      });
+
+      if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
+        throw new ForbiddenException(
+          'Access denied: Seller account is suspended or rejected.',
+          ErrorCode.FORBIDDEN_ACCESS
+        );
+      }
+    }
+
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        userAgent: userAgent || 'Mobile Google Sign-In',
+      },
+    });
+
+    const accessTokenPayload: AccessTPayload = {
+      userId: user.id,
+      sessionId: session.id,
+    };
+
+    const refreshTokenPayload: RefreshTPayload = {
+      sessionId: session.id,
+    };
+
+    const accessToken = signJwtToken(accessTokenPayload);
+    const refreshToken = signJwtToken(refreshTokenPayload, refreshTokenSignOptions);
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      accessToken,
+      refreshToken,
+    };
+  }
 }
+

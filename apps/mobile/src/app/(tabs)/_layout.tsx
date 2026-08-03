@@ -2,10 +2,11 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useColorScheme, View, StyleSheet, Platform } from 'react-native';
 import { Home, TrendingUp, ShoppingCart, User, Search } from 'lucide-react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
+import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
-// Custom Category icon mimicking SHEIN's search-with-lines category icon
 function CategoryIcon({ color, size }: { color: any; size: number }) {
   return (
     <View style={styles.categoryIconContainer}>
@@ -18,9 +19,6 @@ function CategoryIcon({ color, size }: { color: any; size: number }) {
     </View>
   );
 }
-
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withSpring } from 'react-native-reanimated';
-import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
 function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
   const { pulseTrigger } = useFlyToCart();
@@ -48,7 +46,7 @@ function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
   );
 }
 
-export default function AppTabs() {
+export default function TabLayout() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
@@ -78,7 +76,6 @@ export default function AppTabs() {
         },
       }}
     >
-      {/* 1. Shop Tab (index) */}
       <Tabs.Screen
         name="index"
         options={{
@@ -88,8 +85,6 @@ export default function AppTabs() {
           ),
         }}
       />
-
-      {/* 2. Category Tab (explore) */}
       <Tabs.Screen
         name="explore"
         options={{
@@ -99,8 +94,6 @@ export default function AppTabs() {
           ),
         }}
       />
-
-      {/* 3. Trends Tab */}
       <Tabs.Screen
         name="trends"
         options={{
@@ -110,8 +103,6 @@ export default function AppTabs() {
           ),
         }}
       />
-
-      {/* 4. Cart Tab */}
       <Tabs.Screen
         name="cart"
         options={{
@@ -121,8 +112,6 @@ export default function AppTabs() {
           ),
         }}
       />
-
-      {/* 5. Me Tab */}
       <Tabs.Screen
         name="me"
         options={{
@@ -132,29 +121,8 @@ export default function AppTabs() {
           ),
         }}
       />
-
-      {/* 6. Category Products Detail Screen (Hidden from bottom tab bar) */}
-      <Tabs.Screen
-        name="category/[slug]"
-        options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-
-      {/* 7. Product Detail Screen (Hidden from bottom tab bar) */}
-      <Tabs.Screen
-        name="product/[id]"
-        options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
     </Tabs>
   );
-
 }
 
 const styles = StyleSheet.create({

@@ -86,7 +86,7 @@ export default function CartScreen() {
           <TouchableOpacity
             style={styles.exploreBtn}
             activeOpacity={0.85}
-            onPress={() => router.push('/')}
+            onPress={() => router.push('/(tabs)' as any)}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Explore products"
