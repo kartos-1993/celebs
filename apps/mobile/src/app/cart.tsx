@@ -60,7 +60,7 @@ export default function CartScreen() {
   };
 
   const handleCheckout = () => {
-    router.push('/');
+    router.push('/checkout');
   };
 
   if (loading && items.length === 0) {
