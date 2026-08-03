@@ -18,7 +18,8 @@ export const updateAddressSchema = addressSchema.partial();
 export const COD_MAX_LIMIT = 5000;
 
 export const checkoutSchema = z.object({
-  addressId: z.string().uuid('Valid shipping address ID is required'),
+  addressId: z.string().uuid('Valid shipping address ID is required').optional(),
+  shippingAddress: addressSchema.optional(),
   paymentMethod: z.enum(['COD', 'STRIPE', 'KHALTI', 'ESEWA']),
   idempotencyKey: z.string().min(8, 'Idempotency key is required'),
   notes: z.string().optional(),

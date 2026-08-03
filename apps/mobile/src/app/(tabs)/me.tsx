@@ -23,11 +23,13 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing, Colors } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
+import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
 
 export default function MeScreen() {
-  const { user, isLoggedIn, isLoading, loginWithGoogle, loginWithEmail, register, logout } = useAuth();
+  const { user, isLoggedIn, isLoading, loginWithEmail, register, logout } = useAuth();
+  const { signInWithGoogle, isAuthenticating } = useGoogleAuth();
 
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -35,23 +37,12 @@ export default function MeScreen() {
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Handle Google 1-Tap Sign In
-  const handleGoogleSignIn = async (demoAccount?: { email: string; name: string }) => {
-    setIsSubmitting(true);
+  // Handle Real Google Sign In
+  const handleRealGoogleSignIn = async () => {
     try {
-      const googleUser = demoAccount || {
-        email: 'alex.kathmandu@gmail.com',
-        name: 'Alex Shrestha',
-        picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
-        googleId: 'google_109283749182374',
-      };
-
-      await loginWithGoogle(googleUser);
-      Alert.alert('Welcome!', `Logged in successfully as ${googleUser.name}`);
+      await signInWithGoogle();
     } catch (err: any) {
-      Alert.alert('Sign In Failed', err?.message || 'Could not complete Google sign in');
-    } finally {
-      setIsSubmitting(false);
+      Alert.alert('Google Sign-In Error', err?.message || 'Failed to initialize Google Sign-In');
     }
   };
 
@@ -69,7 +60,6 @@ export default function MeScreen() {
         Alert.alert('Welcome Back!', 'You have logged in successfully');
       } else {
         await register(name, email, password);
-        // Auto-login after registration
         await loginWithEmail(email, password);
         Alert.alert('Account Created', 'Welcome to Celebs Fashion!');
       }
@@ -200,13 +190,13 @@ export default function MeScreen() {
           </ThemedText>
         </View>
 
-        {/* 1-TAP GOOGLE SIGN IN BUTTON */}
+        {/* REAL GOOGLE SIGN IN BUTTON */}
         <TouchableOpacity
           style={styles.googleBtn}
-          onPress={() => handleGoogleSignIn()}
-          disabled={isSubmitting}
+          onPress={handleRealGoogleSignIn}
+          disabled={isAuthenticating || isSubmitting}
         >
-          {isSubmitting ? (
+          {isAuthenticating ? (
             <ActivityIndicator color="#000000" />
           ) : (
             <>
@@ -297,22 +287,6 @@ export default function MeScreen() {
                 {authMode === 'login' ? 'Sign In' : 'Create Account'}
               </ThemedText>
             )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick Demo Accounts */}
-        <View style={styles.demoBox}>
-          <ThemedText style={styles.demoTitle}>QUICK DEMO ACCESSS</ThemedText>
-          <TouchableOpacity
-            style={styles.demoItemBtn}
-            onPress={() =>
-              handleGoogleSignIn({
-                email: 'customer.nepal@celebs.com',
-                name: 'Suman Adhikari (Kathmandu)',
-              })
-            }
-          >
-            <ThemedText style={styles.demoItemText}>⚡ 1-Tap Demo User (Kathmandu Customer)</ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -557,30 +531,5 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  demoBox: {
-    marginTop: Spacing.five,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: Spacing.three,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  demoTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748b',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  demoItemBtn: {
-    backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: 8,
-  },
-  demoItemText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2563eb',
   },
 });

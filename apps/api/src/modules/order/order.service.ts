@@ -90,7 +90,17 @@ export class OrderService {
   // --- CHECKOUT & ORDER CREATION ---
 
   async checkout(userId: string, input: CheckoutInput) {
-    const { addressId, paymentMethod, idempotencyKey } = input;
+    const { paymentMethod, idempotencyKey } = input;
+    let targetAddressId = input.addressId;
+
+    if (!targetAddressId && input.shippingAddress) {
+      const createdAddress = await this.createAddress(userId, input.shippingAddress);
+      targetAddressId = createdAddress.id;
+    }
+
+    if (!targetAddressId) {
+      throw new AppError('Shipping address or addressId is required', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    }
 
     // Check Idempotency Key
     const existingIdempotency = await prisma.idempotencyKey.findUnique({
@@ -103,7 +113,7 @@ export class OrderService {
 
     // Verify Address
     const address = await prisma.address.findFirst({
-      where: { id: addressId, userId },
+      where: { id: targetAddressId, userId },
     });
 
     if (!address) {
@@ -216,7 +226,7 @@ export class OrderService {
         data: {
           orderNumber,
           userId,
-          addressId,
+          addressId: targetAddressId,
           subtotal: subtotalDecimal,
           shippingFee: shippingFeeDecimal,
           discountAmount: new Prisma.Decimal(0),
