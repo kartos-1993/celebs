@@ -25,6 +25,8 @@ import { orderRoutes } from '@/features/orders/routes';
 import { accountRoutes } from '@/features/account/routes';
 import { financeRoutes } from '@/features/finance/routes';
 import { platformSettingsRoutes } from '@/features/platform-settings/routes';
+import { comboRoutes } from '@/features/marketing/combo.routes';
+import { campaignRoutes } from '@/features/marketing/campaign.routes';
 
 const NotFoundError = lazy(() => import('@/features/errors/NotFoundError'));
 
@@ -115,6 +117,8 @@ export const router = createBrowserRouter([
       accountRoutes,
       financeRoutes,
       platformSettingsRoutes,
+      comboRoutes,
+      campaignRoutes,
     ],
   },
   ...formattedAuthRoutes.map((route) => ({

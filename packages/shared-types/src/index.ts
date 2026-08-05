@@ -44,5 +44,6 @@ export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
 
 export * from './types/api';
 export * from './types/cart';
+export * from './types/marketing';
 
 

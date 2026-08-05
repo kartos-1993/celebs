@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-        '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
         '@celebs/shared-ui': path.resolve(__dirname, '../../packages/shared-ui/src'),
         '@celebs/shared-types': path.resolve(__dirname, '../../packages/shared-types/src'),
       },

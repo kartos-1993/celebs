@@ -155,5 +155,52 @@ export const createStaffMutationFn = async (data: any) =>
 export const deleteStaffMutationFn = async (id: string) =>
   await AuthAPI.delete(`/staff/${id}`);
 
+// Marketing Campaigns API
+export const getCampaignsQueryFn = async () => {
+  const response = await AuthAPI.get(`/campaigns`);
+  return response.data;
+};
+
+export const createCampaignMutationFn = async (data: any) => {
+  const response = await AuthAPI.post(`/campaigns`, data);
+  return response.data;
+};
+
+// Generic Combo Bundles API
+export const getCombosQueryFn = async () => {
+  const response = await AuthAPI.get(`/combos`);
+  return response.data;
+};
+
+export const createComboMutationFn = async (data: any) => {
+  const response = await AuthAPI.post(`/combos`, data);
+  return response.data;
+};
+
+// 3PL Courier Logistics & COD Settlement API
+export const dispatch3PLOrderMutationFn = async ({ orderId, provider }: { orderId: string; provider?: string }) => {
+  const response = await AuthAPI.post(`/logistics/dispatch/${orderId}`, { courierProvider: provider || 'NEPAL_CAN_MOVE' });
+  return response.data;
+};
+
+export const settleCodOrderMutationFn = async ({ orderId, reference }: { orderId: string; reference: string }) => {
+  const response = await AuthAPI.post(`/logistics/settle-cod/${orderId}`, { reference });
+  return response.data;
+};
+
+export const uploadMediaFilesMutationFn = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('files', file);
+  const response = await AuthAPI.post('/media/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  const items = response.data?.data || [];
+  if (!items.length || !items[0]?.url) {
+    throw new Error('Image upload failed');
+  }
+  return items[0].url;
+};
+
+
 
 

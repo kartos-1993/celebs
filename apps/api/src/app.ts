@@ -34,6 +34,9 @@ import staffRoutes from './modules/staff/staff.routes';
 import bannerRoutes from './modules/banner/banner.routes';
 import cartRoutes from './modules/cart/cart.routes';
 import orderRoutes from './modules/order/order.routes';
+import campaignRoutes from './modules/campaign/campaign.routes';
+import comboRoutes from './modules/combo/combo.routes';
+import logisticsRoutes from './modules/logistics/logistics.routes';
 import swaggerUi from 'swagger-ui-express';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 
@@ -147,6 +150,9 @@ app.use(`${config.BASE_PATH}/staff`, staffRoutes);
 app.use(`${config.BASE_PATH}/banners`, bannerRoutes);
 app.use(`${config.BASE_PATH}/cart`, cartRoutes);
 app.use(`${config.BASE_PATH}/orders`, orderRoutes);
+app.use(`${config.BASE_PATH}/campaigns`, campaignRoutes);
+app.use(`${config.BASE_PATH}/combos`, comboRoutes);
+app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {

@@ -18,6 +18,15 @@ export class CampaignService {
     });
   }
 
+  async getAllCampaigns() {
+    return prisma.campaign.findMany({
+      include: {
+        products: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async getCampaignBySlug(slug: string) {
     return prisma.campaign.findUnique({
       where: { slug },
