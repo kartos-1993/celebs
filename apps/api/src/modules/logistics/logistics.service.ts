@@ -1,5 +1,5 @@
 import prisma from '../../db/index.js';
-import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter.js';
+import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 import { OrderStatus, CodStatus, DispatchMode } from '../../generated/prisma/index.js';
 import { DispatchOrderType } from '@celebs/shared-types';
 

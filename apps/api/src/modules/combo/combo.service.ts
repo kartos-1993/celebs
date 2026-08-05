@@ -16,6 +16,19 @@ export class ComboService {
     });
   }
 
+  async getAllCombos(tag?: string) {
+    const where: any = {};
+    if (tag) where.tag = tag;
+
+    return prisma.comboBundle.findMany({
+      where,
+      include: {
+        items: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async getComboBySlug(slug: string) {
     return prisma.comboBundle.findUnique({
       where: { slug },
