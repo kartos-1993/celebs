@@ -186,6 +186,10 @@ model CartItem {
   inventory          ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
 
   quantity           Int              @default(1)
+  comboBundleId      String?          @map("combo_bundle_id")
+  comboBundle        ComboBundle?     @relation(fields: [comboBundleId], references: [id], onDelete: SetNull)
+  appliedDiscount    Decimal?         @map("applied_discount") @db.Decimal(10, 2)
+  discountSource     String?          @map("discount_source")
 
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
@@ -268,6 +272,18 @@ model Order {
 
   items          OrderItem[]
   payments       Payment[]
+  trackingEvents OrderTrackingEvent[]
+
+  courierProvider   String?
+  courierName       String?
+  trackingNumber    String?
+  trackingUrl       String?
+  dispatchMode      DispatchMode  @default(MANUAL)
+  codAmount         Decimal?      @db.Decimal(10, 2)
+  codStatus         CodStatus     @default(NOT_APPLICABLE)
+  codSettledAt      DateTime?
+  codReference      String?
+  estimatedDelivery DateTime?
 
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -275,6 +291,106 @@ model Order {
   @@index([userId])
   @@index([orderNumber])
   @@index([status])
+}
+
+enum DispatchMode {
+  MANUAL
+  AUTOMATED_3PL
+}
+
+enum CodStatus {
+  NOT_APPLICABLE
+  PENDING_COLLECTION
+  COLLECTED_BY_COURIER
+  COD_SETTLED
+}
+
+model OrderTrackingEvent {
+  id          String      @id @default(uuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status      OrderStatus
+  title       String
+  description String?
+  location    String?
+  source      String      @default("SYSTEM")
+  timestamp   DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+model ComboBundle {
+  id            String            @id @default(uuid())
+  title         String
+  slug          String            @unique
+  subtitle      String?
+  description   String?
+  bannerImage   String?
+  discountType  ComboDiscountType @default(PERCENTAGE)
+  discountValue Decimal           @db.Decimal(10, 2)
+  isFirstParty  Boolean           @default(true)
+  isActive      Boolean           @default(true)
+  tag           String?
+  items         ComboBundleItem[]
+  cartItems     CartItem[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([isActive, slug])
+}
+
+model ComboBundleItem {
+  id              String      @id @default(uuid())
+  bundleId        String
+  bundle          ComboBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId       String
+  defaultQuantity Int         @default(1)
+  isRequired      Boolean     @default(true)
+
+  @@unique([bundleId, productId])
+  @@index([productId])
+}
+
+enum ComboDiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model Campaign {
+  id           String            @id @default(uuid())
+  title        String
+  slug         String            @unique
+  campaignType CampaignType      @default(FESTIVAL)
+  tagline      String?
+  bannerImage  String?
+  themeColor   String            @default("#D92525")
+  startDate    DateTime
+  endDate      DateTime
+  isActive     Boolean           @default(true)
+  products     CampaignProduct[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([isActive, startDate, endDate])
+}
+
+model CampaignProduct {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  productId  String
+  createdAt  DateTime @default(now())
+
+  @@unique([campaignId, productId])
+  @@index([productId])
+}
+
+enum CampaignType {
+  FESTIVAL
+  SEASONAL
+  FLASH_SALE
+  HOLIDAY
+  NEW_YEAR
 }
 
 model OrderItem {
