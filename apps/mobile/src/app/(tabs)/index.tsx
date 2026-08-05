@@ -74,14 +74,14 @@ export default function HomeScreen() {
         {/* Banner Carousel */}
         <BannerCarousel key={`banner-${refreshKey}`} />
 
-        {/* Festival Campaign Banner with Live Countdown */}
-        <CampaignCountdownBanner key={`camp-${refreshKey}`} />
-
-        {/* Curated Travel & Festive Combo Showcase */}
-        <ComboBundleShowcase key={`combo-${refreshKey}`} onSelectCombo={handleSelectCombo} />
-
         {/* Content Section */}
         <ThemedView type="backgroundElement" style={styles.contentCard}>
+          {/* Festival Campaign Banner with Live Countdown */}
+          <CampaignCountdownBanner key={`camp-${refreshKey}`} />
+
+          {/* Curated Travel & Festive Combo Showcase */}
+          <ComboBundleShowcase key={`combo-${refreshKey}`} onSelectCombo={handleSelectCombo} />
+
           {/* Categories Grid */}
           <CategoryGrid key={`cat-${refreshKey}`} />
 
