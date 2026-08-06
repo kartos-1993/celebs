@@ -1,8 +1,8 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import AdminLayout from '@/layouts/AdminLayout';
-import AuthLayout from '@/layouts/AuthLayout';
-import AuthGuard from './AuthGuard';
+import AdminLayout from '@/layouts/admin-layout';
+import AuthLayout from '@/layouts/auth-layout';
+import AuthGuard from './auth-guard';
 import { PATHS } from './paths';
 
 // Feature Routes

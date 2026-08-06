@@ -1,5 +1,5 @@
 import { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { axiosClient } from './axiosClient';
+import { axiosClient } from './axios-client';
 import { CustomAxiosRequestConfig, ApiErrorResponse } from './types';
 
 let isRefreshing = false;
