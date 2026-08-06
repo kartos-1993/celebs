@@ -5,15 +5,30 @@ export const STAGING_HOST = 'https://celebs-api-staging.onrender.com';
 
 /**
  * Dynamically resolves the backend API base URL for Expo.
- * - If EXPO_PUBLIC_API_URL is explicitly set, uses it.
- * - In Development mode on physical device / Expo Go: Auto-extracts computer's LAN IP
- *   (e.g., http://192.168.1.X:3333/api/v1).
- * - Fallback: http://localhost:3333/api/v1
+ * - In Development mode (__DEV__): Auto-extracts computer's LAN IP from Expo hostUri
+ *   (e.g., http://192.168.1.X:3333/api/v1) or localhost if EXPO_PUBLIC_USE_LOCAL_API=true or EXPO_PUBLIC_API_URL is local.
+ * - Otherwise falls back to EXPO_PUBLIC_API_URL or STAGING_API_URL.
  */
 export function getDevBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  const useLocal = process.env.EXPO_PUBLIC_USE_LOCAL_API === 'true' || envUrl?.includes('localhost') || envUrl?.includes('127.0.0.1');
+
+  if (__DEV__ && useLocal) {
+    const debuggerHost = Constants.expoConfig?.hostUri;
+    const hostIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
+    return `http://${hostIp}:3333/api/v1`;
   }
+
+  if (envUrl) {
+    return envUrl;
+  }
+
+  if (__DEV__) {
+    const debuggerHost = Constants.expoConfig?.hostUri;
+    const hostIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
+    return `http://${hostIp}:3333/api/v1`;
+  }
+
   return STAGING_API_URL;
 }
 
