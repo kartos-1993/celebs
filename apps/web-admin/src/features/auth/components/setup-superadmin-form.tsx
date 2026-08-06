@@ -44,7 +44,6 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
   function onSubmit(values: FormValues) {
     mutate(values, {
       onSuccess: () => {
-        // Redirect to login page
         navigate('/login', { state: { successMessage: 'Superadmin setup completed successfully! You can now log in.' } });
       },
       onError: (error: any) => {

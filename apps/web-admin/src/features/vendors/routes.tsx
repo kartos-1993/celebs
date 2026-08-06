@@ -1,14 +1,14 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import { RoleGuard } from '@/components/role-guard';
+import { RoleGuard } from '@/routes/role-guard';
 
-const VendorList = lazy(() => import('./vendor-list'));
+const VendorListPage = lazy(() => import('./pages/vendor-list-page'));
 
 export const vendorRoutes: RouteObject = {
   path: 'vendors',
   element: (
     <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}>
-      <VendorList />
+      <VendorListPage />
     </RoleGuard>
   ),
   handle: { crumb: 'Vendors' },

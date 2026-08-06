@@ -20,7 +20,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 
 import { loginMutationFn, getUserSessionQueryFn } from '@/lib/api';
 
-type UserAuthFormProps = HTMLAttributes<HTMLDivElement>;
+type SignInFormProps = HTMLAttributes<HTMLDivElement>;
 
 const formSchema = z.object({
   email: z
@@ -32,7 +32,7 @@ const formSchema = z.object({
   }),
 });
 
-export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
+export function SignInForm({ className, ...props }: SignInFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = (location.state as any)?.successMessage;
@@ -64,24 +64,19 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setServerError(null);
-    console.log('login submitting');
     try {
       const response = await mutateAsync(values);
       if (response.data?.mfaRequired) {
         navigate(`/verify-mfa?email=${values.email}`);
         return;
       }
-      // Fetch the fresh session and set it directly into the existing query cache.
       const sessionData = await getUserSessionQueryFn();
-      console.log('UserAuthForm onSubmit sessionData fetched:', sessionData);
-      console.log('Query cache keys before setQueryData:', queryClient.getQueryCache().getAll().map(q => q.queryKey));
       queryClient.setQueryData(['authUser'], sessionData);
       const searchParams = new URLSearchParams(location.search);
       const returnUrlParam = searchParams.get('returnUrl');
       const targetUrl = returnUrlParam ? decodeURIComponent(returnUrlParam) : '/';
       navigate(targetUrl, { replace: true });
     } catch (error: any) {
-      console.log('login failure', error);
       if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
         error.errors.forEach((err: any) => {
           if (err.field) {
@@ -164,4 +159,3 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     </div>
   );
 }
-

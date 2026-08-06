@@ -1,10 +1,9 @@
-import { HTMLAttributes, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { cn } from '@/lib/utils';
 import {
   Form,
   FormControl,
@@ -21,7 +20,7 @@ import { vendorRegisterMutationFn } from '@/lib/api';
 
 type FormValues = z.infer<typeof vendorRegisterSchema>;
 
-export default function VendorRegister() {
+export function VendorRegisterPage() {
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
@@ -262,3 +261,5 @@ export default function VendorRegister() {
     </div>
   );
 }
+
+export default VendorRegisterPage;
