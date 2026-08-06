@@ -6,9 +6,9 @@ import { Label } from '@celebs/shared-ui/components/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@celebs/shared-ui/components/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye, Check } from 'lucide-react';
-import { PlatformSettingsApiService, Banner } from './api';
-import { CategoryApiService } from '../category/api';
-import { ProductApiService } from '../product/api';
+import { PlatformSettingsApiService, Banner } from '../api';
+import { CategoryApiService } from '../../category/api';
+import { ProductApiService } from '../../product/api';
 
 const Banners: React.FC = () => {
   const { toast } = useToast();
@@ -39,7 +39,7 @@ const Banners: React.FC = () => {
 
       // Initialize with exactly 3 banners
       const initializedBanners: Banner[] = [1, 2, 3].map((order): Banner => {
-        const found = fetchedBanners.find((b) => b.order === order);
+        const found = fetchedBanners.find((b: Banner) => b.order === order);
         return found || {
           imageUrl: '',
           linkType: 'NONE',
