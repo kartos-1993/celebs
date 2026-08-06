@@ -1,21 +1,21 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
-const SignIn = lazy(() => import('./sign-in'));
-const SetupSuperadmin = lazy(() => import('./setup-superadmin'));
-const VendorRegister = lazy(() => import('./vendor-register'));
+const SignInPage = lazy(() => import('./pages/sign-in-page'));
+const SetupSuperadminPage = lazy(() => import('./pages/setup-superadmin-page'));
+const VendorRegisterPage = lazy(() => import('./pages/vendor-register-page'));
 
 export const authRoutes: RouteObject[] = [
   {
     path: '/login',
-    element: <SignIn />,
+    element: <SignInPage />,
   },
   {
     path: '/setup-superadmin',
-    element: <SetupSuperadmin />,
+    element: <SetupSuperadminPage />,
   },
   {
     path: '/vendor/register',
-    element: <VendorRegister />,
+    element: <VendorRegisterPage />,
   },
 ];

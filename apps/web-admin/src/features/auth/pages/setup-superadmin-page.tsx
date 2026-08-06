@@ -1,6 +1,6 @@
-import { SetupSuperadminForm } from './components/setup-superadmin-form';
+import { SetupSuperadminForm } from '../components/setup-superadmin-form';
 
-export default function SetupSuperadmin() {
+export function SetupSuperadminPage() {
   return (
     <div className="container relative grid h-svh flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
@@ -41,3 +41,5 @@ export default function SetupSuperadmin() {
     </div>
   );
 }
+
+export default SetupSuperadminPage;
