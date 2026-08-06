@@ -617,6 +617,15 @@ importers:
 
   apps/web-admin:
     dependencies:
+      '@celebs/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
+      '@celebs/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@celebs/shared-utils':
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -16147,9 +16156,7 @@ snapshots:
       metro-runtime: 0.84.4
     transitivePeerDependencies:
       - '@babel/core'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.89': {}
 
