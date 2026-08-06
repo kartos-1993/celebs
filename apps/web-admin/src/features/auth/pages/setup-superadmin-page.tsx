@@ -1,4 +1,4 @@
-import { SetupSuperadminForm } from '../components/setup-superadmin-form';
+import { SetupSuperadminForm } from '@/features/auth/components/setup-superadmin-form';
 
 export function SetupSuperadminPage() {
   return (
