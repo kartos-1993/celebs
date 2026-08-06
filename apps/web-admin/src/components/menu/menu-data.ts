@@ -7,6 +7,8 @@ import {
   Store,
   UserCog,
   Shield,
+  Sparkles,
+  Flame,
   LucideIcon,
 } from "lucide-react";
 
@@ -149,9 +151,18 @@ export function getMenuList(role?: string): Group[] {
   });
 
   // 8. Platform Settings Group (SuperAdmin only)
-  if (isSuperAdmin) {
+  if (isSuperAdmin || isAdmin) {
     list.push({
       menus: [
+        {
+          href: "",
+          label: "Marketing & Campaigns",
+          icon: Sparkles,
+          submenus: [
+            { href: "/marketing/combos", label: "Combo Bundles" },
+            { href: "/marketing/campaigns", label: "Festival Campaigns" },
+          ],
+        },
         {
           href: "/platform-settings/banners",
           label: "Banner Settings",
