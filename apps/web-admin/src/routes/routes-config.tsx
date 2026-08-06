@@ -20,7 +20,7 @@ import { platformSettingsRoutes } from '@/features/platform-settings/routes';
 import { comboRoutes } from '@/features/marketing/combo.routes';
 import { campaignRoutes } from '@/features/marketing/campaign.routes';
 
-const NotFoundError = lazy(() => import('@/features/errors/NotFoundError'));
+const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
 
 export const routesConfig: RouteObject[] = [
   {
