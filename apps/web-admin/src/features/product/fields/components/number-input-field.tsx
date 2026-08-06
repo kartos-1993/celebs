@@ -1,10 +1,10 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
 import { Input } from '@celebs/shared-ui/components/input';
-import type { UiProps } from '../UiRegistry';
+import type { UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 
-export function TextInputField({ field, control }: UiProps) {
+export function NumberInputField({ field, control }: UiProps) {
   const { field: f, fieldState } = useController({
     name: field.name,
     control,
@@ -16,6 +16,7 @@ export function TextInputField({ field, control }: UiProps) {
         {field.label}
       </LabelWithRequired>
       <Input
+        type="number"
         {...f}
         placeholder={field.label}
         className={

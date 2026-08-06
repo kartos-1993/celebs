@@ -2,7 +2,7 @@ import React from 'react';
 import { useController } from 'react-hook-form';
 import { ProductAPI } from '@/lib/axios-client';
 import { SearchableSelect } from '@celebs/shared-ui/components/searchable-select';
-import type { FieldSpec, UiProps } from '../UiRegistry';
+import type { FieldSpec, UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 
 export function useOptions(field: FieldSpec) {

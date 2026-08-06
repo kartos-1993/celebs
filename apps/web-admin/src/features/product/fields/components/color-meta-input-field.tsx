@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@celebs/shared-ui/components/tooltip';
-import type { UiProps } from '../UiRegistry';
+import type { UiProps } from '../ui-registry';
 import {
   LabelWithRequired,
   imageValueKey,

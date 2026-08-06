@@ -1,18 +1,19 @@
 import React from 'react';
 import { useController, useFormContext } from 'react-hook-form';
 import { Multiselect } from '@celebs/shared-ui/components/multiselect';
-import type { UiProps } from '../UiRegistry';
+import type { UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
-import { useOptions } from './DropdownInputField';
+import { useOptions } from './dropdown-input-field';
 
-export function MultiSelectInputField({ field, control }: UiProps) {
+export function VariantListInputField({ field, control }: UiProps) {
+  const { setValue } = useFormContext();
   const { field: f, fieldState } = useController({
     name: field.name,
     control,
     rules: rulesFrom(field),
   });
   const opts = useOptions(field);
-  const value: string[] = Array.isArray(f.value) ? f.value : [];
+  const selected = Array.isArray(f.value) ? f.value : [];
   return (
     <div className="space-y-1">
       <LabelWithRequired required={field.required}>
@@ -20,9 +21,12 @@ export function MultiSelectInputField({ field, control }: UiProps) {
       </LabelWithRequired>
       <Multiselect
         options={opts}
-        value={value}
+        value={selected}
         onChange={(next) => {
-          f.onChange(next);
+          setValue(field.name, next, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
         }}
         placeholder={`Select ${field.label}`}
       />

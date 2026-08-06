@@ -2,7 +2,7 @@ import React from 'react';
 import { useFormContext, useController } from 'react-hook-form';
 import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
 import { Input } from '@celebs/shared-ui/components/input';
-import type { UiProps } from '../UiRegistry';
+import type { FieldSpec, UiProps } from '../ui-registry';
 import {
   LabelWithRequired,
   imageValueKey,

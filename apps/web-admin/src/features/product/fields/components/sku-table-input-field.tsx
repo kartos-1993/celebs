@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import type { UiProps } from '../UiRegistry';
+import type { UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError } from './shared';
 import {
   generateCollisionProofBaseSku,
