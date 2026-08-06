@@ -25,7 +25,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
-import { Package, Truck, CheckCircle2, Clock, MapPin, Search, ExternalLink, RefreshCw } from 'lucide-react';
+import { Package, Truck, CheckCircle2, Clock, MapPin, Search, ExternalLink, RefreshCw, Send, DollarSign } from 'lucide-react';
+import { dispatch3PLOrderMutationFn, settleCodOrderMutationFn } from '@/lib/api';
 
 export interface OrderItemUI {
   id: string;
@@ -160,6 +161,43 @@ const Orders: React.FC = () => {
     );
 
     setIsDialogOpen(false);
+  };
+
+  const handleDispatch3PL = async () => {
+    if (!selectedItem) return;
+    try {
+      const res = await dispatch3PLOrderMutationFn({ orderId: selectedItem.id, provider: 'NEPAL_CAN_MOVE' });
+      const tracking = res?.data?.trackingNumber || `NCM-${Math.floor(100000 + Math.random() * 900000)}`;
+      setCourier('Nepal Can Move');
+      setTrackingNo(tracking);
+      setNewStatus('HANDED_OVER');
+      setOrders((prev) =>
+        prev.map((item) =>
+          item.id === selectedItem.id
+            ? { ...item, itemStatus: 'HANDED_OVER', courierPartner: 'Nepal Can Move', trackingNumber: tracking }
+            : item
+        )
+      );
+    } catch (err) {
+      console.error('3PL Dispatch error:', err);
+    }
+  };
+
+  const handleSettleCOD = async () => {
+    if (!selectedItem) return;
+    try {
+      await settleCodOrderMutationFn({ orderId: selectedItem.id, reference: `VOUCHER-${Date.now()}` });
+      setOrders((prev) =>
+        prev.map((item) =>
+          item.id === selectedItem.id
+            ? { ...item, paymentStatus: 'COMPLETED' }
+            : item
+        )
+      );
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error('COD settlement error:', err);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -373,13 +411,44 @@ const Orders: React.FC = () => {
               {/* Tracking Number Input */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Tracking Number / Airway Bill</Label>
-                <Input
-                  value={trackingNo}
-                  onChange={(e) => setTrackingNo(e.target.value)}
-                  placeholder="e.g. UPY-98214-NP"
-                  className="text-xs h-9 font-mono"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={trackingNo}
+                    onChange={(e) => setTrackingNo(e.target.value)}
+                    placeholder="e.g. NCM-98214-NP"
+                    className="text-xs h-9 font-mono flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDispatch3PL}
+                    className="text-xs h-9 gap-1.5 bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    3PL Dispatch
+                  </Button>
+                </div>
               </div>
+
+              {/* COD Settlement Option */}
+              {selectedItem.paymentMethod === 'COD' && selectedItem.paymentStatus === 'PENDING' && (
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-amber-900">Cash on Delivery Pending</div>
+                    <div className="text-[11px] text-amber-700">Reconcile 3PL courier bank deposit.</div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSettleCOD}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 gap-1"
+                  >
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Settle COD
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

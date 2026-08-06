@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   ScrollView,
   View,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,10 +16,12 @@ import {
   MapPin,
   ChevronLeft,
   ShoppingBag,
+  ExternalLink,
 } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { apiClient } from '@/api/client';
 
 interface OrderItem {
   id: string;
@@ -169,12 +172,24 @@ export default function MyOrdersScreen() {
 
               {/* Courier tracking details if available */}
               {ord.trackingNumber && (
-                <View style={styles.courierRow}>
+                <TouchableOpacity
+                  style={styles.courierRow}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    const url =
+                      ord.courierPartner === 'Nepal Can Move'
+                        ? `https://nepalcanmove.com/track/${ord.trackingNumber}`
+                        : `https://upayacitycargo.com/track/${ord.trackingNumber}`;
+                    Linking.openURL(url).catch(() => console.log('Could not open tracking URL'));
+                  }}
+                >
                   <Truck size={14} color="#7c3aed" />
                   <ThemedText style={styles.courierText}>
-                    {ord.courierPartner}: <ThemedText style={styles.trackingNo}>{ord.trackingNumber}</ThemedText>
+                    {ord.courierPartner || 'Nepal Can Move'}:{' '}
+                    <ThemedText style={styles.trackingNo}>{ord.trackingNumber}</ThemedText>
                   </ThemedText>
-                </View>
+                  <ExternalLink size={12} color="#7c3aed" style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
               )}
             </View>
           );
