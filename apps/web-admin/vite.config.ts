@@ -13,8 +13,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@celebs/rbac': path.resolve(__dirname, '../../packages/rbac/src'),
         '@celebs/shared-ui': path.resolve(__dirname, '../../packages/shared-ui/src'),
         '@celebs/shared-types': path.resolve(__dirname, '../../packages/shared-types/src'),
+        '@celebs/shared-utils': path.resolve(__dirname, '../../packages/shared-utils/src'),
       },
     },
     build: {

@@ -11,6 +11,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@celebs/rbac": "workspace:*",
+    "@celebs/shared-types": "workspace:*",
+    "@celebs/shared-utils": "workspace:*",
     "@tanstack/react-table": "^8.21.3"
   }
 }
