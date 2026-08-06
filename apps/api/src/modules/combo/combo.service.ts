@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import prisma from '../../db/index';
 import { ComboDiscountType } from '../../generated/prisma/index';
 import { CreateComboType } from '@celebs/shared-types';
@@ -11,11 +12,15 @@ export class ComboService {
       )
     );
 
-    if (allProductIds.length === 0) {
+    const validProductIds = allProductIds.filter(
+      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+    );
+
+    if (validProductIds.length === 0) {
       return combos.map((c) => ({ ...c, itemDetails: [] }));
     }
 
-    const mongoProducts = await ProductModel.find({ _id: { $in: allProductIds } }).lean();
+    const mongoProducts = await ProductModel.find({ _id: { $in: validProductIds } }).lean();
     const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
 
     return combos.map((c) => ({
