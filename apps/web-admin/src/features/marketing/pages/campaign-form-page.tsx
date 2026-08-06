@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { ArrowLeft, Save, Flame, Calendar } from 'lucide-react';
-import { createCampaignMutationFn } from '@/lib/api';
+import { ArrowLeft, Save, Flame } from 'lucide-react';
+import { createCampaignMutationFn, updateCampaignMutationFn, getCampaignByIdQueryFn } from '@/lib/api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
 export function CampaignFormPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,14 +32,39 @@ export function CampaignFormPage() {
   const [bannerImage, setBannerImage] = useState('');
   const [productIds, setProductIds] = useState<string[]>([]);
 
+  const { data: campaignDetail } = useQuery({
+    queryKey: ['campaign-detail', id],
+    queryFn: () => getCampaignByIdQueryFn(id!),
+    enabled: Boolean(id),
+  });
+
+  useEffect(() => {
+    if (campaignDetail?.data) {
+      const c = campaignDetail.data;
+      setTitle(c.title || '');
+      setSlug(c.slug || '');
+      setTagline(c.tagline || '');
+      setCampaignType(c.campaignType || 'FESTIVAL');
+      setThemeColor(c.themeColor || '#D92525');
+      setStartDate(c.startDate ? new Date(c.startDate).toISOString().slice(0, 16) : '2026-09-15T00:00');
+      setEndDate(c.endDate ? new Date(c.endDate).toISOString().slice(0, 16) : '2026-10-05T23:59');
+      setBannerImage(c.bannerImage || '');
+      if (c.products && Array.isArray(c.products)) {
+        setProductIds(c.products.map((p: { productId: string }) => p.productId));
+      }
+    }
+  }, [campaignDetail]);
+
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    setSlug(
-      val
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '')
-    );
+    if (!id) {
+      setSlug(
+        val
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '')
+      );
+    }
   };
 
   const handleSaveCampaign = async () => {
@@ -46,7 +72,7 @@ export function CampaignFormPage() {
 
     setIsSubmitting(true);
     try {
-      await createCampaignMutationFn({
+      const payload = {
         title,
         slug,
         tagline,
@@ -56,11 +82,18 @@ export function CampaignFormPage() {
         endDate: new Date(endDate).toISOString(),
         bannerImage,
         productIds,
-      });
+      };
+
+      if (id) {
+        await updateCampaignMutationFn({ id, data: payload });
+      } else {
+        await createCampaignMutationFn(payload);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       navigate('/marketing/campaigns');
     } catch (err) {
-      console.error('Failed to create campaign:', err);
+      console.error('Failed to save campaign:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +113,7 @@ export function CampaignFormPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <Flame className="w-5 h-5 text-rose-600" />
-            Create Festival Campaign
+            {id ? 'Edit Festival Campaign' : 'Create Festival Campaign'}
           </h1>
           <p className="text-xs text-slate-500">
             Schedule festival sales (Dashain, Tihar, New Year) with hero banners and countdown timers.
@@ -204,7 +237,7 @@ export function CampaignFormPage() {
             className="bg-rose-600 hover:bg-rose-700 text-white text-xs h-9 px-6 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Saving Campaign...' : 'Publish Campaign'}
+            {isSubmitting ? 'Saving Campaign...' : id ? 'Update Campaign' : 'Publish Campaign'}
           </Button>
         </div>
       </div>

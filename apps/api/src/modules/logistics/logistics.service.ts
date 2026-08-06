@@ -1,6 +1,6 @@
-import prisma from '../../db/index.js';
+import prisma from '../../db/index';
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
-import { OrderStatus, CodStatus, DispatchMode } from '../../generated/prisma/index.js';
+import { OrderStatus, CodStatus, DispatchMode } from '../../generated/prisma/index';
 import { DispatchOrderType } from '@celebs/shared-types';
 
 export class LogisticsService {

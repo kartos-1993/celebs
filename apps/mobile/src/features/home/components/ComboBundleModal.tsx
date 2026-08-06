@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,7 +7,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { X, Sparkles, ShoppingBag, Check, Tag } from 'lucide-react-native';
+import { X, Sparkles, ShoppingBag, Tag } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ComboBundleData } from './ComboBundleShowcase';
 
@@ -18,7 +18,7 @@ interface ComboBundleModalProps {
   onAddToCart?: (combo: ComboBundleData, selectedVariants: Record<string, string>) => void;
 }
 
-interface DemoBundleItem {
+interface RenderableItem {
   id: string;
   name: string;
   originalPrice: number;
@@ -27,7 +27,7 @@ interface DemoBundleItem {
   colors: string[];
 }
 
-const SAMPLE_BUNDLE_ITEMS: DemoBundleItem[] = [
+const FALLBACK_ITEMS: RenderableItem[] = [
   {
     id: 'item_thermal_top',
     name: 'Heavy Fleece Thermal Top',
@@ -60,21 +60,63 @@ export function ComboBundleModal({
   onClose,
   onAddToCart,
 }: ComboBundleModalProps) {
-  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({
-    item_thermal_top: 'L',
-    item_puffer_jacket: 'L',
-    item_thermal_bottom: 'L',
-  });
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  const [selectedColors, setSelectedColors] = useState<Record<string, string>>({});
 
-  const [selectedColors, setSelectedColors] = useState<Record<string, string>>({
-    item_thermal_top: 'Black',
-    item_puffer_jacket: 'Black',
-    item_thermal_bottom: 'Black',
-  });
+  const displayItems: RenderableItem[] = React.useMemo(() => {
+    if (combo?.itemDetails && combo.itemDetails.length > 0) {
+      return combo.itemDetails.map((item, idx) => {
+        const prod = item.product;
+        const mainImg =
+          prod?.mainImages && prod.mainImages.length > 0
+            ? prod.mainImages[0]
+            : prod?.colorVariants && prod.colorVariants.length > 0 && prod.colorVariants[0]?.images?.length
+            ? prod.colorVariants[0].images[0]
+            : FALLBACK_ITEMS[idx % FALLBACK_ITEMS.length].image;
+
+        const sizes = prod?.colorVariants
+          ? Array.from(
+              new Set(
+                prod.colorVariants.flatMap(
+                  (cv) => cv.stocks?.map((s) => s.size).filter(Boolean) || []
+                )
+              )
+            )
+          : [];
+
+        const colors = prod?.colorVariants
+          ? prod.colorVariants.map((cv) => cv.name).filter(Boolean)
+          : [];
+
+        return {
+          id: item.id || `item_${idx}`,
+          name: prod?.name || `Product ${idx + 1}`,
+          originalPrice: prod?.price || 2499,
+          image: mainImg,
+          sizes: sizes.length > 0 ? sizes : ['S', 'M', 'L', 'XL'],
+          colors: colors.length > 0 ? colors : ['Default'],
+        };
+      });
+    }
+    return FALLBACK_ITEMS;
+  }, [combo]);
+
+  useEffect(() => {
+    if (displayItems.length > 0) {
+      const initialSizes: Record<string, string> = {};
+      const initialColors: Record<string, string> = {};
+      displayItems.forEach((item) => {
+        initialSizes[item.id] = item.sizes[0] || 'M';
+        initialColors[item.id] = item.colors[0] || 'Default';
+      });
+      setSelectedSizes(initialSizes);
+      setSelectedColors(initialColors);
+    }
+  }, [displayItems]);
 
   if (!combo) return null;
 
-  const totalOriginalPrice = SAMPLE_BUNDLE_ITEMS.reduce((sum, i) => sum + i.originalPrice, 0);
+  const totalOriginalPrice = displayItems.reduce((sum, i) => sum + i.originalPrice, 0);
 
   let finalBundlePrice = totalOriginalPrice;
   let savingsAmount = 0;
@@ -83,7 +125,7 @@ export function ComboBundleModal({
     savingsAmount = Math.round((totalOriginalPrice * combo.discountValue) / 100);
     finalBundlePrice = totalOriginalPrice - savingsAmount;
   } else {
-    savingsAmount = combo.discountValue;
+    savingsAmount = Number(combo.discountValue);
     finalBundlePrice = Math.max(0, totalOriginalPrice - savingsAmount);
   }
 
@@ -113,7 +155,9 @@ export function ComboBundleModal({
           <View style={styles.header}>
             <View style={styles.headerTitleBox}>
               <Sparkles size={18} color="#7c3aed" />
-              <ThemedText style={styles.headerTitle}>{combo.title}</ThemedText>
+              <ThemedText style={styles.headerTitle} numberOfLines={1}>
+                {combo.title}
+              </ThemedText>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <X size={20} color="#71717a" />
@@ -135,7 +179,7 @@ export function ComboBundleModal({
             </ThemedText>
 
             {/* Bundle Items List */}
-            {SAMPLE_BUNDLE_ITEMS.map((item) => (
+            {displayItems.map((item) => (
               <View key={item.id} style={styles.itemCard}>
                 <View style={styles.itemRow}>
                   <Image source={{ uri: item.image }} style={styles.itemImage} />
@@ -169,25 +213,27 @@ export function ComboBundleModal({
                 </View>
 
                 {/* Color Selector */}
-                <View style={styles.selectorGroup}>
-                  <ThemedText style={styles.selectorLabel}>Color:</ThemedText>
-                  <View style={styles.optionsRow}>
-                    {item.colors.map((c) => {
-                      const isSelected = selectedColors[item.id] === c;
-                      return (
-                        <TouchableOpacity
-                          key={c}
-                          style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => handleSelectColor(item.id, c)}
-                        >
-                          <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                            {c}
-                          </ThemedText>
-                        </TouchableOpacity>
-                      );
-                    })}
+                {item.colors.length > 1 && (
+                  <View style={styles.selectorGroup}>
+                    <ThemedText style={styles.selectorLabel}>Color:</ThemedText>
+                    <View style={styles.optionsRow}>
+                      {item.colors.map((c) => {
+                        const isSelected = selectedColors[item.id] === c;
+                        return (
+                          <TouchableOpacity
+                            key={c}
+                            style={[styles.chip, isSelected && styles.chipSelected]}
+                            onPress={() => handleSelectColor(item.id, c)}
+                          >
+                            <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                              {c}
+                            </ThemedText>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
-                </View>
+                )}
               </View>
             ))}
           </ScrollView>
@@ -318,6 +364,7 @@ const styles = StyleSheet.create({
   },
   optionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
   },
   chip: {

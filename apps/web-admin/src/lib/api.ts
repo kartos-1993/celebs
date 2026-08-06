@@ -157,23 +157,54 @@ export const deleteStaffMutationFn = async (id: string) =>
 
 // Marketing Campaigns API
 export const getCampaignsQueryFn = async () => {
-  const response = await AuthAPI.get(`/campaigns`);
+  const response = await AuthAPI.get(`/campaigns/all`);
   return response.data;
 };
 
-export const createCampaignMutationFn = async (data: any) => {
+export const getCampaignByIdQueryFn = async (id: string) => {
+  const response = await AuthAPI.get(`/campaigns/id/${id}`);
+  return response.data;
+};
+
+export const createCampaignMutationFn = async (data: unknown) => {
   const response = await AuthAPI.post(`/campaigns`, data);
+  return response.data;
+};
+
+export const updateCampaignMutationFn = async ({ id, data }: { id: string; data: unknown }) => {
+  const response = await AuthAPI.put(`/campaigns/${id}`, data);
   return response.data;
 };
 
 // Generic Combo Bundles API
 export const getCombosQueryFn = async () => {
-  const response = await AuthAPI.get(`/combos`);
+  const response = await AuthAPI.get(`/combos/all`);
   return response.data;
 };
 
-export const createComboMutationFn = async (data: any) => {
+export const getComboByIdQueryFn = async (id: string) => {
+  const response = await AuthAPI.get(`/combos/id/${id}`);
+  return response.data;
+};
+
+export const createComboMutationFn = async (data: unknown) => {
   const response = await AuthAPI.post(`/combos`, data);
+  return response.data;
+};
+
+export const updateComboMutationFn = async ({ id, data }: { id: string; data: unknown }) => {
+  const response = await AuthAPI.put(`/combos/${id}`, data);
+  return response.data;
+};
+
+export const deleteComboMutationFn = async (id: string) => {
+  const response = await AuthAPI.delete(`/combos/${id}`);
+  return response.data;
+};
+
+// Products Search API (for Combos & Campaigns product picker)
+export const getProductsCatalogQueryFn = async (search?: string) => {
+  const response = await AuthAPI.get(`/products`, { params: { search, limit: 50 } });
   return response.data;
 };
 

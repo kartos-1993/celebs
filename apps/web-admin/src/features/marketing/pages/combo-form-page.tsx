@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
@@ -11,14 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { ArrowLeft, Save, Sparkles, Plus, Trash2, Tag, Percent, DollarSign } from 'lucide-react';
-import { createComboMutationFn } from '@/lib/api';
+import { ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { createComboMutationFn, updateComboMutationFn, getComboByIdQueryFn } from '@/lib/api';
 import type { ComboDiscountType } from '@celebs/shared-types';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
 export function ComboFormPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,19 +27,43 @@ export function ComboFormPage() {
   const [slug, setSlug] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [tag, setTag] = useState('abroad-travel');
-  const [discountType, setDiscountType] = useState<'PERCENTAGE' | 'FIXED_AMOUNT'>('PERCENTAGE');
+  const [discountType, setDiscountType] = useState<ComboDiscountType>('PERCENTAGE');
   const [discountValue, setDiscountValue] = useState<number>(15);
   const [bannerImage, setBannerImage] = useState('');
   const [productIds, setProductIds] = useState<string[]>([]);
 
+  const { data: comboDetail } = useQuery({
+    queryKey: ['combo-detail', id],
+    queryFn: () => getComboByIdQueryFn(id!),
+    enabled: Boolean(id),
+  });
+
+  useEffect(() => {
+    if (comboDetail?.data) {
+      const c = comboDetail.data;
+      setTitle(c.title || '');
+      setSlug(c.slug || '');
+      setSubtitle(c.subtitle || '');
+      setTag(c.tag || 'abroad-travel');
+      setDiscountType(c.discountType || 'PERCENTAGE');
+      setDiscountValue(Number(c.discountValue) || 15);
+      setBannerImage(c.bannerImage || '');
+      if (c.items && Array.isArray(c.items)) {
+        setProductIds(c.items.map((i: { productId: string }) => i.productId));
+      }
+    }
+  }, [comboDetail]);
+
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    setSlug(
-      val
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '')
-    );
+    if (!id) {
+      setSlug(
+        val
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '')
+      );
+    }
   };
 
   const handleSaveCombo = async () => {
@@ -46,7 +71,7 @@ export function ComboFormPage() {
 
     setIsSubmitting(true);
     try {
-      await createComboMutationFn({
+      const payload = {
         title,
         slug,
         subtitle,
@@ -56,11 +81,18 @@ export function ComboFormPage() {
         bannerImage,
         productIds,
         isFirstParty: true,
-      });
+      };
+
+      if (id) {
+        await updateComboMutationFn({ id, data: payload });
+      } else {
+        await createComboMutationFn(payload);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['combos'] });
       navigate('/marketing/combos');
     } catch (err) {
-      console.error('Failed to create combo bundle:', err);
+      console.error('Failed to save combo bundle:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +112,7 @@ export function ComboFormPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-600" />
-            Create Generic Combo Bundle
+            {id ? 'Edit Combo Bundle' : 'Create Generic Combo Bundle'}
           </h1>
           <p className="text-xs text-slate-500">
             Configure multi-product kits, festive bundles, and travel packs with customer savings rules.
@@ -196,7 +228,7 @@ export function ComboFormPage() {
             className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-6 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Saving Bundle...' : 'Publish Combo Bundle'}
+            {isSubmitting ? 'Saving Bundle...' : id ? 'Update Combo Bundle' : 'Publish Combo Bundle'}
           </Button>
         </div>
       </div>
