@@ -1,4 +1,4 @@
-import { axiosClient } from './axios/axiosClient';
+import { axiosClient } from './axios/axios-client';
 import './axios/interceptors';
 
 export { axiosClient };
