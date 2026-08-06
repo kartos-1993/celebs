@@ -9,9 +9,19 @@ import { createCampaignSchema } from '@celebs/shared-types';
 const router = Router();
 const campaignService = new CampaignService();
 
-// Public/Admin routes
+// Public routes for storefront
 router.get(
-  '/',
+  '/active',
+  asyncHandler(async (req, res) => {
+    const campaigns = await campaignService.getActiveCampaigns();
+    res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
+  })
+);
+
+router.get(
+  '/all',
+  authenticateJWT,
+  requirePermissions(Permission.CATALOG_MANAGE),
   asyncHandler(async (req, res) => {
     const campaigns = await campaignService.getAllCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
@@ -19,10 +29,13 @@ router.get(
 );
 
 router.get(
-  '/active',
+  '/id/:id',
   asyncHandler(async (req, res) => {
-    const campaigns = await campaignService.getActiveCampaigns();
-    res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
+    const campaign = await campaignService.getCampaignById(req.params.id);
+    if (!campaign) {
+      return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Campaign not found' });
+    }
+    res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
   })
 );
 
@@ -46,6 +59,16 @@ router.post(
     const validatedPayload = createCampaignSchema.parse(req.body);
     const newCampaign = await campaignService.createCampaign(validatedPayload);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: newCampaign });
+  })
+);
+
+router.put(
+  '/:id',
+  authenticateJWT,
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(async (req, res) => {
+    const updated = await campaignService.updateCampaign(req.params.id, req.body);
+    res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
   })
 );
 

@@ -6,15 +6,29 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { Sparkles, Plane, Tag, ArrowRight, Check } from 'lucide-react-native';
+import { Sparkles, Plane, Tag, ArrowRight } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { apiClient } from '@/api/client';
 
+export interface HydratedProduct {
+  _id?: string;
+  name?: string;
+  price?: number;
+  mainImages?: string[];
+  colorVariants?: Array<{
+    name: string;
+    colorCode?: string;
+    images?: string[];
+    stocks?: Array<{ size: string; quantity: number }>;
+  }>;
+}
+
 export interface ComboItemData {
   id: string;
-  bundleId: string;
+  bundleId?: string;
   productId: string;
-  defaultQuantity: number;
+  defaultQuantity?: number;
+  product?: HydratedProduct;
 }
 
 export interface ComboBundleData {
@@ -29,6 +43,7 @@ export interface ComboBundleData {
   isFirstParty: boolean;
   tag?: string;
   items?: ComboItemData[];
+  itemDetails?: ComboItemData[];
   createdAt: string;
 }
 
@@ -43,7 +58,7 @@ const DEMO_COMBOS: ComboBundleData[] = [
     isFirstParty: true,
     tag: 'abroad-travel',
     bannerImage: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop',
-    items: [{ id: '1', bundleId: 'c1', productId: 'p1', defaultQuantity: 1 }],
+    items: [{ id: '1', productId: 'p1', defaultQuantity: 1 }],
     createdAt: '2026-08-01T00:00:00Z',
   },
   {
@@ -56,7 +71,7 @@ const DEMO_COMBOS: ComboBundleData[] = [
     isFirstParty: true,
     tag: 'abroad-travel',
     bannerImage: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop',
-    items: [{ id: '2', bundleId: 'c2', productId: 'p2', defaultQuantity: 1 }],
+    items: [{ id: '2', productId: 'p2', defaultQuantity: 1 }],
     createdAt: '2026-08-02T00:00:00Z',
   },
   {
@@ -69,7 +84,7 @@ const DEMO_COMBOS: ComboBundleData[] = [
     isFirstParty: true,
     tag: 'festive',
     bannerImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop',
-    items: [{ id: '3', bundleId: 'c3', productId: 'p3', defaultQuantity: 1 }],
+    items: [{ id: '3', productId: 'p3', defaultQuantity: 1 }],
     createdAt: '2026-08-03T00:00:00Z',
   },
 ];
@@ -109,7 +124,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
     <View style={styles.container}>
       {/* Section Title Header */}
       <View style={styles.headerRow}>
-        <View className="flex-row items-center gap-2">
+        <View style={styles.headerContent}>
           <View style={styles.iconCircle}>
             <Sparkles size={16} color="#7c3aed" />
           </View>
@@ -131,6 +146,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
         {combos.map((item) => {
           const isTravel = item.tag === 'abroad-travel';
           const isPercentage = item.discountType === 'PERCENTAGE';
+          const itemCount = item.itemDetails?.length || item.items?.length || 3;
 
           return (
             <TouchableOpacity
@@ -163,7 +179,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
                   <ThemedText style={styles.savingsPillText}>
                     {isPercentage
                       ? `SAVE ${item.discountValue}%`
-                      : `SAVE NPR ${item.discountValue.toLocaleString()}`}
+                      : `SAVE NPR ${Number(item.discountValue).toLocaleString()}`}
                   </ThemedText>
                 </View>
               </View>
@@ -182,7 +198,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
                 {/* Action Row */}
                 <View style={styles.actionRow}>
                   <ThemedText style={styles.itemsCount}>
-                    {item.items?.length || 3} items included
+                    {itemCount} item{itemCount !== 1 ? 's' : ''} included
                   </ThemedText>
                   <View style={styles.viewBtn}>
                     <ThemedText style={styles.viewBtnText}>View Bundle</ThemedText>
@@ -205,6 +221,10 @@ const styles = StyleSheet.create({
   headerRow: {
     paddingHorizontal: 16,
     marginBottom: 12,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   iconCircle: {
     width: 32,
@@ -251,7 +271,6 @@ const styles = StyleSheet.create({
   cardImage: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
   },
   tagBadge: {
     position: 'absolute',
