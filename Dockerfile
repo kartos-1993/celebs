@@ -4,7 +4,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
 COPY packages ./packages
 COPY apps/api ./apps/api
 COPY turbo.json tsconfig.base.json ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@10.12.4 && pnpm install --no-frozen-lockfile
 RUN npx prisma generate
 # Build shared packages and API
 RUN pnpm turbo run build --filter=api --filter=@celebs/shared-types --filter=@celebs/shared-utils --filter=@celebs/rbac
