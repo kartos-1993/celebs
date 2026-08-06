@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ProductAPI } from '@/lib/axios-client';
-import type { FieldSpec } from '../fields/UiRegistry';
+import type { FieldSpec } from '../fields/ui-registry';
 import {
   addFallbackFields,
   normalizeSchema,

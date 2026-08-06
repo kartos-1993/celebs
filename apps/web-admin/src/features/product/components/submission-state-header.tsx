@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import type { FieldSpec } from '../fields/UiRegistry';
+import type { FieldSpec } from '../fields/ui-registry';
 import {
   buildSidebarSections,
   flattenFormErrors,

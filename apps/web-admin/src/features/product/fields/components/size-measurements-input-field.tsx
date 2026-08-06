@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import type { UiProps } from '../UiRegistry';
+import type { UiProps } from '../ui-registry';
 
 export function SizeMeasurementsInputField({ field }: UiProps) {
   const columns: string[] = Array.isArray(field.dataSource) ? field.dataSource : [];

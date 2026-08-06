@@ -9,7 +9,7 @@ import { FileClock, Info, RotateCcw } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { CreateProductRequest, createProduct, updateProduct } from '../api';
 import { useProductForm } from '../hooks/use-product-form';
-import type { FieldSpec } from '../fields/UiRegistry';
+import type { FieldSpec } from '../fields/ui-registry';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import BasicInfoSection from './basic-info-section';
 import DynamicProductForm from './dynamic-product-form';
