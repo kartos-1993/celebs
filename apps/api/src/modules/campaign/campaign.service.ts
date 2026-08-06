@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import prisma from '../../db/index';
 import { CampaignType } from '../../generated/prisma/index';
 import { CreateCampaignType } from '@celebs/shared-types';
@@ -11,11 +12,15 @@ export class CampaignService {
       )
     );
 
-    if (allProductIds.length === 0) {
+    const validProductIds = allProductIds.filter(
+      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+    );
+
+    if (validProductIds.length === 0) {
       return campaigns.map((c) => ({ ...c, productDetails: [] }));
     }
 
-    const mongoProducts = await ProductModel.find({ _id: { $in: allProductIds } }).lean();
+    const mongoProducts = await ProductModel.find({ _id: { $in: validProductIds } }).lean();
     const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
 
     return campaigns.map((c) => ({
