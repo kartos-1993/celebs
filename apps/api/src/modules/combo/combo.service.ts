@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import prisma from '../../db/index';
-import { ComboDiscountType } from '../../generated/prisma/index';
+import { ComboDiscountType } from '@prisma/client';
 import { CreateComboType } from '@celebs/shared-types';
 import { ProductModel } from '../../db/models/product.model';
 
