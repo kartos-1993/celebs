@@ -1,6 +1,6 @@
 import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
 import { AddressInput, CheckoutInput, COD_MAX_LIMIT, UpdateAddressInput } from '@celebs/shared-types';
-import prisma from '@/db';
+import { orderRepository } from './order.repository';
 import { Prisma } from '@prisma/client';
 import { ProductModel } from '@/db/models/product.model';
 import { IPaymentGateway } from './adapters/payment-gateway.interface';
@@ -20,71 +20,51 @@ export class OrderService {
   // --- ADDRESS MANAGEMENT ---
 
   async getUserAddresses(userId: string) {
-    return prisma.address.findMany({
-      where: { userId },
-      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-    });
+    return orderRepository.findAddressesByUser(userId);
   }
 
   async createAddress(userId: string, input: AddressInput) {
     if (input.isDefault) {
-      await prisma.address.updateMany({
-        where: { userId },
-        data: { isDefault: false },
-      });
+      await orderRepository.unsetOtherDefaultAddresses(userId, '');
     }
 
-    return prisma.address.create({
-      data: {
-        userId,
-        fullName: input.fullName,
-        phone: input.phone,
-        altPhone: input.altPhone,
-        province: input.province,
-        district: input.district,
-        cityArea: input.cityArea,
-        streetAddress: input.streetAddress,
-        landmark: input.landmark,
-        label: input.label || 'Home',
-        isDefault: input.isDefault,
-      },
+    return orderRepository.createAddress({
+      userId,
+      fullName: input.fullName,
+      phone: input.phone,
+      altPhone: input.altPhone,
+      province: input.province,
+      district: input.district,
+      cityArea: input.cityArea,
+      streetAddress: input.streetAddress,
+      landmark: input.landmark,
+      label: input.label || 'Home',
+      isDefault: input.isDefault,
     });
   }
 
   async updateAddress(userId: string, addressId: string, input: UpdateAddressInput) {
-    const existing = await prisma.address.findFirst({
-      where: { id: addressId, userId },
-    });
+    const existing = await orderRepository.findAddressById(addressId, userId);
 
     if (!existing) {
       throw new AppError('Address not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
     if (input.isDefault) {
-      await prisma.address.updateMany({
-        where: { userId },
-        data: { isDefault: false },
-      });
+      await orderRepository.unsetOtherDefaultAddresses(userId, addressId);
     }
 
-    return prisma.address.update({
-      where: { id: addressId },
-      data: input,
-    });
+    return orderRepository.updateAddress(addressId, userId, input);
   }
 
   async deleteAddress(userId: string, addressId: string) {
-    const existing = await prisma.address.findFirst({
-      where: { id: addressId, userId },
-    });
+    const existing = await orderRepository.findAddressById(addressId, userId);
 
     if (!existing) {
       throw new AppError('Address not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    return prisma.address.delete({
-      where: { id: addressId },
-    });
+    return orderRepository.deleteAddress(addressId);
   }
 
   // --- CHECKOUT & ORDER CREATION ---
@@ -103,34 +83,21 @@ export class OrderService {
     }
 
     // Check Idempotency Key
-    const existingIdempotency = await prisma.idempotencyKey.findUnique({
-      where: { key: idempotencyKey },
-    });
+    const existingIdempotency = await orderRepository.findIdempotencyKey(idempotencyKey);
 
     if (existingIdempotency) {
       return JSON.parse(existingIdempotency.responseBody);
     }
 
     // Verify Address
-    const address = await prisma.address.findFirst({
-      where: { id: targetAddressId, userId },
-    });
+    const address = await orderRepository.findAddressById(targetAddressId, userId);
 
     if (!address) {
       throw new AppError('Selected shipping address not found', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
     // Fetch Cart
-    const cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: {
-        items: {
-          include: {
-            inventory: true,
-          },
-        },
-      },
-    });
+    const cart = await orderRepository.findCartWithItemsByUserId(userId);
 
     if (!cart || cart.items.length === 0) {
       throw new AppError('Your cart is empty', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
@@ -208,7 +175,7 @@ export class OrderService {
     const paymentStatus = isCOD ? 'PENDING' : 'PENDING';
 
     // Atomic Transaction: Reserve Stock + Create Order + Clear Cart
-    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const order = await orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
       // 1. Reserve inventory quantity
       for (const item of itemDetails) {
         await tx.productInventory.update({
@@ -271,17 +238,15 @@ export class OrderService {
         userId,
       });
 
-      await prisma.payment.create({
-        data: {
-          orderId: order.id,
-          userId,
-          amount: totalAmountDecimal,
-          currency: 'NPR',
-          gateway: paymentMethod,
-          transactionId: paymentResult.paymentId,
-          status: 'PENDING',
-          rawResponse: paymentResult.rawResponse || {},
-        },
+      await orderRepository.createPayment({
+        orderId: order.id,
+        userId,
+        amount: totalAmountDecimal,
+        currency: 'NPR',
+        gateway: paymentMethod,
+        transactionId: paymentResult.paymentId,
+        status: 'PENDING',
+        rawResponse: paymentResult.rawResponse || {},
       });
     }
 
@@ -291,13 +256,11 @@ export class OrderService {
     };
 
     // Record Idempotency Key
-    await prisma.idempotencyKey.create({
-      data: {
-        key: idempotencyKey,
-        userId,
-        statusCode: 201,
-        responseBody: JSON.stringify(responseBody),
-      },
+    await orderRepository.createIdempotencyKey({
+      key: idempotencyKey,
+      userId,
+      statusCode: 201,
+      responseBody: JSON.stringify(responseBody),
     });
 
     return responseBody;
@@ -306,33 +269,11 @@ export class OrderService {
   // --- CUSTOMER ORDER QUERIES ---
 
   async getMyOrders(userId: string, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where: { userId },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          items: true,
-          address: true,
-        },
-      }),
-      prisma.order.count({ where: { userId } }),
-    ]);
-
-    return { orders, total, page, limit };
+    return orderRepository.findOrdersByUser(userId, page, limit);
   }
 
   async getOrderById(userId: string, orderId: string) {
-    const order = await prisma.order.findFirst({
-      where: { id: orderId, userId },
-      include: {
-        items: true,
-        address: true,
-        payments: true,
-      },
-    });
+    const order = await orderRepository.findOrderById(orderId, userId);
 
     if (!order) {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
@@ -342,10 +283,7 @@ export class OrderService {
   }
 
   async cancelOrder(userId: string, orderId: string) {
-    const order = await prisma.order.findFirst({
-      where: { id: orderId, userId },
-      include: { items: true },
-    });
+    const order = await orderRepository.findOrderById(orderId, userId);
 
     if (!order) {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
@@ -355,7 +293,7 @@ export class OrderService {
       throw new AppError(`Cannot cancel order in status ${order.status}`, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
       // Release reserved stock back to available
       for (const item of order.items) {
         await tx.productInventory.update({
@@ -383,32 +321,12 @@ export class OrderService {
   // --- VENDOR FULFILLMENT ---
 
   async getVendorOrders(vendorId: string, status?: string, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-
     const whereCondition: any = { vendorId };
     if (status) {
       whereCondition.itemStatus = status;
     }
 
-    const [items, total] = await Promise.all([
-      prisma.orderItem.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          order: {
-            include: {
-              address: true,
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-        },
-      }),
-      prisma.orderItem.count({ where: whereCondition }),
-    ]);
-
-    return { items, total, page, limit };
+    return orderRepository.findVendorOrderItems(whereCondition, page, limit);
   }
 
   async updateOrderItemStatus(
@@ -418,16 +336,13 @@ export class OrderService {
     trackingNumber?: string,
     courierPartner?: string
   ) {
-    const item = await prisma.orderItem.findFirst({
-      where: { id: orderItemId, vendorId },
-      include: { order: { include: { items: true } } },
-    });
+    const item = await orderRepository.findVendorOrderItemById(orderItemId, vendorId);
 
     if (!item) {
       throw new AppError('Order item not found for vendor', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
       const updatedItem = await tx.orderItem.update({
         where: { id: orderItemId },
         data: {
@@ -483,24 +398,6 @@ export class OrderService {
   // --- ADMIN OVERVIEW ---
 
   async adminGetOrders(status?: string, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-    const whereCondition: any = status ? { status: status as any } : {};
-
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          items: true,
-          address: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
-      }),
-      prisma.order.count({ where: whereCondition }),
-    ]);
-
-    return { orders, total, page, limit };
+    return orderRepository.findAdminOrders(status, page, limit);
   }
 }
