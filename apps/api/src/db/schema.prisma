@@ -5,7 +5,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 
@@ -65,6 +64,9 @@ model VendorProfile {
   ownerPhotoUrl          String?
   payoutDetails          Json?
   status                 String   @default("PENDING") // PENDING, APPROVED, SUSPENDED, REJECTED
+  availableBalance       Decimal  @default(0.00) @db.Decimal(12, 2)
+  withholdingEscrow      Decimal  @default(0.00) @db.Decimal(12, 2)
+  currencyCode           String   @default("NPR")
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
@@ -442,5 +444,41 @@ model Payment {
   @@index([orderId])
   @@index([userId])
 }
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model OutboxEvent {
+  id          String       @id @default(dbgenerated("gen_random_uuid()"))
+  aggregate   String       // e.g., "PRODUCT"
+  eventType   String       // e.g., "PRODUCT_CATALOG_SYNC"
+  payload     Json         // Product payload JSON
+  status      OutboxStatus @default(PENDING)
+  retryCount  Int          @default(0)
+  lastError   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model StockReservationLedger {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  cartId      String   @map("cart_id")
+  userId      String?  @map("user_id")
+  sku         String
+  quantity    Int
+  expiresAt   DateTime @map("expires_at")
+  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, CONSUMED
+  createdAt   DateTime @default(now())
+
+  @@index([sku, status])
+  @@index([expiresAt])
+}
+
 
 
