@@ -23,10 +23,8 @@ COPY --from=builder /root/.cache/ /root/.cache/
 COPY --from=builder /app/packages/shared-utils/ ./node_modules/@celebs/shared-utils/
 COPY --from=builder /app/packages/shared-types/ ./node_modules/@celebs/shared-types/
 COPY --from=builder /app/packages/rbac/ ./node_modules/@celebs/rbac/
-# Copy Prisma schema (for migrations) and generated client (for queries & @/ path resolution)
+# Copy Prisma schema (for migrations)
 COPY --from=builder /app/apps/api/src/db ./src/db
-COPY --from=builder /app/apps/api/src/generated/prisma ./dist/src/generated/prisma
-COPY --from=builder /app/apps/api/src/generated/prisma ./node_modules/@/generated/prisma
 EXPOSE 3000
 COPY start.sh ./
 RUN chmod +x start.sh
