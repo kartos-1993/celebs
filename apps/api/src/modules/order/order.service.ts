@@ -208,7 +208,7 @@ export class OrderService {
     const paymentStatus = isCOD ? 'PENDING' : 'PENDING';
 
     // Atomic Transaction: Reserve Stock + Create Order + Clear Cart
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Reserve inventory quantity
       for (const item of itemDetails) {
         await tx.productInventory.update({
@@ -355,7 +355,7 @@ export class OrderService {
       throw new AppError(`Cannot cancel order in status ${order.status}`, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Release reserved stock back to available
       for (const item of order.items) {
         await tx.productInventory.update({
@@ -427,7 +427,7 @@ export class OrderService {
       throw new AppError('Order item not found for vendor', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updatedItem = await tx.orderItem.update({
         where: { id: orderItemId },
         data: {
