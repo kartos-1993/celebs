@@ -7,8 +7,10 @@ import {
   StrategyOptionsWithRequest,
 } from 'passport-jwt';
 import { config } from '@/config/app.config';
-import { userService } from '@/modules/user/user.module';
+import { UserService } from '@/modules/user/user.service';
 import prisma from '@/db';
+
+const userService = new UserService();
 
 interface JwtPayload {
   userId: string;
