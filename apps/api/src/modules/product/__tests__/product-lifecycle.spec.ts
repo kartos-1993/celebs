@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import mongoose from 'mongoose';
-import { ProductModule } from '@/modules/product/product.module';
+import { ProductService } from '@/modules/product/product.service';
 import { CategoryModel } from '@/db/models/category.model';
 import { ProductModel } from '@/db/models/product.model';
 import prisma from '@/db';
@@ -11,7 +11,7 @@ describe('Product Review & Moderation Lifecycle', () => {
   let mockSubcategory: any;
 
   beforeAll(async () => {
-    productService = ProductModule.getInstance().getProductService();
+    productService = new ProductService();
 
     mockCategory = await CategoryModel.findOne({ slug: 'electronics-lifecycle' });
     if (!mockCategory) {

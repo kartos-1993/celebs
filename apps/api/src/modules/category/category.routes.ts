@@ -1,10 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { CategoryModule } from './category.module';
+import { CategoryController } from './category.controller';
+import { CategoryService } from './category.service';
 import { asyncHandler, logger } from '@celebs/shared-utils';
 import { authenticateJWT } from '@/middlewares/auth.middleware';
 
 const categoryRoute = Router();
-const categoryController = CategoryModule.getInstance().getCategoryController();
+const categoryController = new CategoryController(new CategoryService());
 
 // Debug middleware to log all requests
 categoryRoute.use((req: Request, res: Response, next: NextFunction) => {

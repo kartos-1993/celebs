@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
-import { ProductModule } from '@/modules/product/product.module';
 import { ProductService } from '@/modules/product/product.service';
 import { CategoryModel, ICategory } from '@/db/models/category.model';
 import { ProductModel, IProduct } from '@/db/models/product.model';
@@ -12,7 +11,7 @@ describe('Product Cursor-Based Pagination & Storefront API', () => {
   let createdProductIds: string[] = [];
 
   beforeEach(async () => {
-    productService = ProductModule.getInstance().getProductService();
+    productService = new ProductService();
 
     mockCategory = await CategoryModel.create({
       name: 'Test Storefront Category',
