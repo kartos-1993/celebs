@@ -4,11 +4,12 @@ import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
-import { ProductModule } from './product.module';
+import { ProductController } from './product.controller';
+import { ProductService } from './product.service';
 import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
 const productRoutes = Router();
-const productController = ProductModule.getInstance().getProductController();
+const productController = new ProductController(new ProductService());
 
 // Optional JWT authentication: populates req.user if token is present, but doesn't block unauthenticated storefront users
 const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction) => {

@@ -1,6 +1,10 @@
 import { Router } from 'express';
-import { authController } from './auth.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
+
+const authService = new AuthService();
+const authController = new AuthController(authService);
 import { authRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
 const authRoutes = Router();
