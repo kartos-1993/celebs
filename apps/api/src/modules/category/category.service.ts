@@ -14,6 +14,8 @@ import type {
   UpdateCategoryType,
 } from '@celebs/shared-types';
 
+import { CategoryRepository, categoryRepository as defaultCategoryRepo } from './category.repository';
+
 export type CategoryAttribute = CategoryAttributeType & {
   _id?: string;
 };
@@ -54,6 +56,11 @@ interface PaginatedCategoriesResponse {
 export class CategoryService {
   private static readonly DEFAULT_PAGE = 1;
   private static readonly DEFAULT_LIMIT = 10;
+  private categoryRepository: CategoryRepository;
+
+  constructor(categoryRepository: CategoryRepository = defaultCategoryRepo) {
+    this.categoryRepository = categoryRepository;
+  }
 
   /**
    * Creates a new category with its associated attributes
@@ -84,10 +91,10 @@ export class CategoryService {
     page: number = CategoryService.DEFAULT_PAGE,
     limit: number = CategoryService.DEFAULT_LIMIT,
   ): Promise<PaginatedCategoriesResponse> {
-    const total = await CategoryModel.countDocuments();
+    const total = await this.categoryRepository.countDocuments();
     const pages = Math.ceil(total / limit);
 
-    const categories = await CategoryModel.aggregate([
+    const categories = await this.categoryRepository.aggregate([
       { $sort: { name: 1 } },
       { $skip: (page - 1) * limit },
       { $limit: limit },
@@ -111,10 +118,7 @@ export class CategoryService {
   async searchCategories(query: string, limit = 20) {
     if (!query || !query.trim()) return [];
     const regex = new RegExp(query.trim(), 'i');
-    const results = await CategoryModel.find({ name: regex })
-      .sort({ level: 1, name: 1 })
-      .limit(limit)
-      .lean();
+    const results = await this.categoryRepository.find({ name: regex }, limit);
     return results.map((c: any) => ({
       id: String(c._id),
       name: c.name,
@@ -131,7 +135,7 @@ export class CategoryService {
   async getCategoryById(id: string): Promise<ICategory | null> {
     this.validateObjectId(id);
 
-    const result = await CategoryModel.aggregate([
+    const result = await this.categoryRepository.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
       {
         $lookup: {
@@ -160,9 +164,7 @@ export class CategoryService {
    */
   async getCategoryFilters(categoryId: string): Promise<ICategoryFilter[]> {
     this.validateObjectId(categoryId);
-    return await CategoryFilterModel.find({ categoryId })
-      .populate('attributeId')
-      .sort({ displayOrder: 1 });
+    return await this.categoryRepository.findFiltersByCategoryId(categoryId);
   }
 
   /**
@@ -189,7 +191,7 @@ export class CategoryService {
         updateData.slug = newSlug;
 
         // Update own slug and paths
-        await CategoryModel.findByIdAndUpdate(categoryId, {
+        await this.categoryRepository.updateById(categoryId, {
           ...updateData,
           $inc: { version: 1 },
           path: existingCategory.path.map((slug) =>
@@ -201,7 +203,7 @@ export class CategoryService {
         await this.updateCategoryPathsRecursively(categoryId, oldSlug, newSlug);
       } else {
         // If name is not updated, just update other fields
-        await CategoryModel.findByIdAndUpdate(categoryId, {
+        await this.categoryRepository.updateById(categoryId, {
           ...updateData,
           $inc: { version: 1 },
         });
@@ -238,14 +240,14 @@ export class CategoryService {
     await this.deleteAttributesByCategoryId(categoryId);
 
     // Then delete the category
-    await CategoryModel.findByIdAndDelete(categoryId);
+    await this.categoryRepository.deleteById(categoryId);
     return { success: true };
   }
   /**
    * Recursively deletes a category, its child categories, and all their attributes
    */
   private async deleteChildCategories(category: any): Promise<void> {
-    const childCategories = await CategoryModel.find({
+    const childCategories = await this.categoryRepository.find({
       $or: [{ parentCategory: category._id }, { parent: category._id }],
     });
 
@@ -256,7 +258,7 @@ export class CategoryService {
     // Delete attributes first
     await this.deleteAttributesByCategoryId(category._id);
     // Then delete the category
-    await CategoryModel.findByIdAndDelete(category._id);
+    await this.categoryRepository.deleteById(category._id);
   }
 
   /**
@@ -275,7 +277,7 @@ export class CategoryService {
     }
 
     // Check for child subcategories
-    const childCategoriesCount = await CategoryModel.countDocuments({
+    const childCategoriesCount = await this.categoryRepository.countDocuments({
       parentCategory: categoryId,
     });
 
@@ -288,12 +290,7 @@ export class CategoryService {
     }
 
     // Check for active products using this category or subcategory
-    const productsCount = await ProductModel.countDocuments({
-      $or: [
-        { category: categoryId },
-        { subcategory: categoryId },
-      ],
-    });
+    const productsCount = await this.categoryRepository.countProductsByCategory(categoryId);
 
     if (productsCount > 0) {
       throw new AppError(
@@ -307,10 +304,10 @@ export class CategoryService {
     await this.deleteAttributesByCategoryId(categoryId);
 
     // Delete associated filters (clean up DB)
-    await CategoryFilterModel.deleteMany({ categoryId });
+    await this.categoryRepository.deleteFiltersByCategoryId(categoryId);
 
     // Delete the category itself
-    await CategoryModel.findByIdAndDelete(categoryId);
+    await this.categoryRepository.deleteById(categoryId);
   }
 
   // Attribute Management Methods
@@ -322,10 +319,9 @@ export class CategoryService {
     attributeId: string,
     updateData: Partial<IAttribute>,
   ): Promise<IAttribute> {
-    const updated = await AttributeModel.findByIdAndUpdate(
+    const updated = await this.categoryRepository.updateAttributeById(
       attributeId,
       updateData,
-      { new: true, runValidators: true },
     );
 
     if (!updated) {
@@ -343,7 +339,7 @@ export class CategoryService {
    * Deletes a specific attribute
    */
   async deleteAttribute(attributeId: string): Promise<{ success: boolean }> {
-    const deleted = await AttributeModel.findByIdAndDelete(attributeId);
+    const deleted = await this.categoryRepository.deleteAttributeById(attributeId);
 
     if (!deleted) {
       throw new AppError(
@@ -360,7 +356,7 @@ export class CategoryService {
    * Deletes all attributes for a specific category
    */
   async deleteAttributesByCategoryId(categoryId: string): Promise<void> {
-    await AttributeModel.deleteMany({ categoryId });
+    await this.categoryRepository.deleteAttributesByCategoryId(categoryId);
   }
 
   // Private Helper Methods
@@ -382,7 +378,7 @@ export class CategoryService {
     parent: string | null,
   ): Promise<void> {
     const parentId = parent && Types.ObjectId.isValid(parent) ? new Types.ObjectId(parent) : null;
-    const existingCategory = await CategoryModel.findOne({ name, parentCategory: parentId });
+    const existingCategory = await this.categoryRepository.findOne({ name, parentCategory: parentId });
 
     if (existingCategory) {
       throw new AppError(
@@ -399,7 +395,7 @@ export class CategoryService {
   private async createCategoryDocument(
     categoryData: CategoryInput,
   ): Promise<ICategory> {
-    return await CategoryModel.create({
+    return await this.categoryRepository.create({
       name: categoryData.name,
       parentCategory: categoryData.parent && Types.ObjectId.isValid(categoryData.parent) ? new Types.ObjectId(categoryData.parent) : null,
       slug: categoryData.slug,
@@ -426,7 +422,7 @@ export class CategoryService {
   ): Promise<void> {
     await Promise.all(
       attributes.map((attr) =>
-        AttributeModel.create({
+        this.categoryRepository.createAttribute({
           categoryId,
           name: attr.name,
           type: attr.type,
@@ -463,11 +459,8 @@ export class CategoryService {
   private async getCategoryWithAttributes(
     categoryId: string,
   ): Promise<ICategory> {
-    const attributes = await AttributeModel.find({ categoryId }).sort({
-      createdAt: 1,
-      name: 1,
-    });
-    const category = await CategoryModel.findById(categoryId);
+    const attributes = await this.categoryRepository.findAttributes({ categoryId });
+    const category = await this.categoryRepository.findById(categoryId);
 
     if (!category) {
       throw new AppError(
@@ -501,7 +494,7 @@ export class CategoryService {
       },
       { $sort: { name: 1 } }
     );
-    return await CategoryModel.aggregate(pipeline);
+    return await this.categoryRepository.aggregate(pipeline);
   }
 
   /**
@@ -552,7 +545,7 @@ export class CategoryService {
    * Retrieves existing category or throws error if not found
    */
   private async getExistingCategoryOrThrow(categoryId: string) {
-    const existingCategory = await CategoryModel.findById(categoryId);
+    const existingCategory = await this.categoryRepository.findById(categoryId);
     if (!existingCategory) {
       throw new AppError(
         'Category not found',
@@ -597,7 +590,7 @@ export class CategoryService {
     }
 
     if (updateData.parent) {
-      const parentCategory = await CategoryModel.findById(updateData.parent);
+      const parentCategory = await this.categoryRepository.findById(updateData.parent);
       if (!parentCategory) {
         throw new AppError(
           'Parent category not found',
@@ -630,7 +623,7 @@ export class CategoryService {
     const parentVal = updateData.parent !== undefined ? updateData.parent : existingCategory.parentCategory;
     const parentId = parentVal && Types.ObjectId.isValid(String(parentVal)) ? new Types.ObjectId(String(parentVal)) : null;
 
-    const duplicateCategory = await CategoryModel.findOne({
+    const duplicateCategory = await this.categoryRepository.findOne({
       name: updateData.name,
       parentCategory: parentId,
       _id: { $ne: categoryId },
@@ -662,12 +655,8 @@ export class CategoryService {
       const optionSetId = this.parseOptionSetId(attr.optionSetId);
 
       const existingAttr = attr._id && Types.ObjectId.isValid(String(attr._id))
-        ? await AttributeModel.findById(attr._id, null, session ? { session } : undefined)
-        : await AttributeModel.findOne(
-            { categoryId, name: attr.name },
-            null,
-            session ? { session } : undefined,
-          );
+        ? await this.categoryRepository.findAttributeById(attr._id)
+        : await this.categoryRepository.findAttributeOne({ categoryId, name: attr.name }, session);
 
       if (existingAttr) {
         // Update existing attribute
@@ -722,17 +711,14 @@ export class CategoryService {
     }
 
     // Delete orphaned attributes for this category that were removed from the form
-    await AttributeModel.deleteMany(
-      { categoryId, _id: { $nin: updatedAttrIds } },
-      session ? { session } : undefined,
-    );
+    await this.categoryRepository.deleteAttributesNotIn(categoryId, updatedAttrIds, session);
   }
 
   /**
    * Gets the total number of child categories
    */
   private async getChildCategoriesCount(categoryId: string): Promise<number> {
-    const childCount = await CategoryModel.countDocuments({
+    const childCount = await this.categoryRepository.countDocuments({
       parentCategory: categoryId,
     });
     return childCount;
@@ -749,9 +735,7 @@ export class CategoryService {
     session?: ClientSession,
   ): Promise<void> {
     // Get all descendants
-    const categories = session
-      ? await CategoryModel.find({ path: oldSlug }, { session })
-      : await CategoryModel.find({ path: oldSlug });
+    const categories = await this.categoryRepository.find({ path: oldSlug });
 
     if (categories.length === 0) {
       return;
@@ -773,11 +757,7 @@ export class CategoryService {
 
     // Execute bulk operations if there are any updates
     if (bulkOps.length > 0) {
-      if (session) {
-        await CategoryModel.bulkWrite(bulkOps, { session });
-      } else {
-        await CategoryModel.bulkWrite(bulkOps);
-      }
+      await this.categoryRepository.bulkWrite(bulkOps, session);
     }
   }
 }
