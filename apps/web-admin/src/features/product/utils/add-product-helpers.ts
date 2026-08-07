@@ -1,4 +1,4 @@
-import type { FieldSpec } from '../fields/UiRegistry';
+import type { FieldSpec } from '../fields/ui-registry';
 
 export type PageSectionKey =
   | 'basic'

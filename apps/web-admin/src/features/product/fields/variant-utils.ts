@@ -1,4 +1,4 @@
-import type { FieldSpec } from './UiRegistry';
+import type { FieldSpec } from './ui-registry';
 
 export type VariantKind = 'color' | 'size' | 'other';
 

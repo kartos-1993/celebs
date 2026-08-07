@@ -1,7 +1,7 @@
 import React from 'react';
 import { Label } from '@celebs/shared-ui/components/label';
 import { ProductApiService } from '../../api';
-import type { FieldSpec } from '../UiRegistry';
+import type { FieldSpec } from '../ui-registry';
 
 export type ImageValue = File | string;
 

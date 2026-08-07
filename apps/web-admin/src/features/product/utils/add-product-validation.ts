@@ -1,5 +1,5 @@
 import type { FieldErrors } from 'react-hook-form';
-import type { FieldSpec } from '../fields/UiRegistry';
+import type { FieldSpec } from '../fields/ui-registry';
 import type { ProductSidebarSection } from '../components/productform-sidebar';
 import {
   getLabelMap,

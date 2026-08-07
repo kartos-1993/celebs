@@ -136,8 +136,8 @@ export async function uploadFiles(files: Array<File | string | null | undefined>
   );
 
   const uploadedUrls = (response.data?.data ?? [])
-    .map((file) => file.url)
-    .filter(Boolean);
+    .map((file: { url?: string }) => file.url)
+    .filter((url): url is string => Boolean(url));
 
   return [...existingUrls, ...uploadedUrls];
 }

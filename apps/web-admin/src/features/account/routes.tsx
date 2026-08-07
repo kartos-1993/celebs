@@ -1,22 +1,22 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
-const Settings = lazy(() => import('./settings'));
-const AccountSettings = lazy(() => import('./account-settings'));
+const AccountSettingsPage = lazy(() => import('./pages/account-settings-page'));
+const SettingsPage = lazy(() => import('./pages/settings-page'));
 
 export const accountRoutes: RouteObject = {
   path: 'account',
-  handle: { crumb: 'My Account' },
+  handle: { crumb: 'Account' },
   children: [
     {
-      path: 'settings',
-      element: <Settings />,
-      handle: { crumb: 'Settings' },
+      path: 'profile',
+      element: <AccountSettingsPage />,
+      handle: { crumb: 'Profile Settings' },
     },
     {
-      path: 'account-setting',
-      element: <AccountSettings />,
-      handle: { crumb: 'Account Settings' },
+      path: 'security',
+      element: <SettingsPage />,
+      handle: { crumb: 'Security' },
     },
   ],
 };

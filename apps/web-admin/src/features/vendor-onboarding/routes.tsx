@@ -1,14 +1,14 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import { RoleGuard } from '@/components/role-guard';
+import { RoleGuard } from '@/routes/role-guard';
 
-const OnboardingWizard = lazy(() => import('./onboarding-wizard'));
+const OnboardingWizardPage = lazy(() => import('./pages/onboarding-wizard-page'));
 
 export const vendorOnboardingRoutes: RouteObject = {
   path: 'onboarding',
   element: (
     <RoleGuard allowedRoles={['VENDOR']}>
-      <OnboardingWizard />
+      <OnboardingWizardPage />
     </RoleGuard>
   ),
   handle: { crumb: 'Onboarding' },

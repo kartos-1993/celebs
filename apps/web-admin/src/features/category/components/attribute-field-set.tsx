@@ -84,7 +84,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
         : Array.isArray(rawData)
         ? (rawData as Array<{ id?: string; _id?: string; name: string }>)
         : [];
-      return sets.map((s) => ({
+      return sets.map((s: { id?: string; _id?: string; name: string }) => ({
         id: String(s.id || s._id || ''),
         name: s.name,
       }));
@@ -104,7 +104,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
       const rawData = res.data;
       const rawVals = rawData?.data?.values ?? rawData?.values ?? [];
       return rawVals
-        .map((v) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
+        .map((v: string | { label?: string; name?: string }) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
         .filter(Boolean);
     },
     enabled: !!(useStandardOptions && selectedOptionSetId),

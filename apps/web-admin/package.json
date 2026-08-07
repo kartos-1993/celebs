@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
     "build": "vite build",
     "build:staging": "vite build --mode staging",
     "preview": "vite preview",
@@ -11,6 +12,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@celebs/rbac": "workspace:*",
+    "@celebs/shared-types": "workspace:*",
+    "@celebs/shared-utils": "workspace:*",
     "@tanstack/react-table": "^8.21.3"
   }
 }

@@ -58,11 +58,13 @@ export class ProductController {
         throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
       }
 
-      // Vendor ownership check
-      if (req.user?.role === 'VENDOR') {
+      // Allow viewing published products publicly for everyone (storefront + mobile).
+      // For draft or unpublished products, restrict viewing to the owner vendor or admin.
+      const isPublished = product.status === 'published' || (product.status as string) === 'PUBLISHED';
+      if (!isPublished && req.user?.role === 'VENDOR') {
         const vendorId = req.user.vendorProfile?.id;
         if (String(product.vendorId) !== String(vendorId)) {
-          throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
+          throw new AppError('Forbidden: You do not own this unpublished product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
         }
       }
 
