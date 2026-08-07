@@ -28,7 +28,7 @@ import { verifyEmailTemplate } from '@/mailers/templates/template';
 
 import { hashValue, comparePassword } from '@/common/utils/bcrypt';
 
-import prisma from '@/db';
+import prisma, { Prisma } from '@/db';
 
 export class AuthService {
   public async register(registerData: registerType) {
@@ -173,7 +173,7 @@ export class AuthService {
     const hashedPassword = await hashValue(password);
 
     // Create user and vendor profile in a transaction
-    const newUser = await prisma.$transaction(async (tx) => {
+    const newUser = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await tx.user.create({
         data: {
           name,
@@ -421,7 +421,7 @@ export class AuthService {
       where: {
         id: sessionId,
       },
-    }).catch((err) => {
+    }).catch((err: Error) => {
       logger.error({ err, sessionId }, 'Failed to delete session on logout');
     });
   }
