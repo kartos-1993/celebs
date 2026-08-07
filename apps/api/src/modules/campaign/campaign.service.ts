@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
-import prisma from '../../db/index';
 import { CampaignType } from '@prisma/client';
 import { CreateCampaignType } from '@celebs/shared-types';
-import { ProductModel } from '../../db/models/product.model';
+import { campaignRepository, CampaignRepository } from './campaign.repository';
 
 export class CampaignService {
+  private campaignRepository: CampaignRepository;
+
+  constructor(repository: CampaignRepository = campaignRepository) {
+    this.campaignRepository = repository;
+  }
+
   private async attachProductDetails(campaigns: any[]) {
     const allProductIds = Array.from(
       new Set(
@@ -20,7 +25,7 @@ export class CampaignService {
       return campaigns.map((c) => ({ ...c, productDetails: [] }));
     }
 
-    const mongoProducts = await ProductModel.find({ _id: { $in: validProductIds } }).lean();
+    const mongoProducts = await this.campaignRepository.findMongoProductsByIds(validProductIds);
     const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
 
     return campaigns.map((c) => ({
@@ -33,53 +38,24 @@ export class CampaignService {
 
   async getActiveCampaigns() {
     const now = new Date();
-    const campaigns = await prisma.campaign.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-      },
-      include: {
-        products: true,
-      },
-      orderBy: { endDate: 'asc' },
-    });
-
+    const campaigns = await this.campaignRepository.findActiveCampaigns(now);
     return this.attachProductDetails(campaigns);
   }
 
   async getAllCampaigns() {
-    const campaigns = await prisma.campaign.findMany({
-      include: {
-        products: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
+    const campaigns = await this.campaignRepository.findAllCampaigns();
     return this.attachProductDetails(campaigns);
   }
 
   async getCampaignBySlug(slug: string) {
-    const campaign = await prisma.campaign.findUnique({
-      where: { slug },
-      include: {
-        products: true,
-      },
-    });
-
+    const campaign = await this.campaignRepository.findBySlug(slug);
     if (!campaign) return null;
     const [hydrated] = await this.attachProductDetails([campaign]);
     return hydrated;
   }
 
   async getCampaignById(id: string) {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id },
-      include: {
-        products: true,
-      },
-    });
-
+    const campaign = await this.campaignRepository.findById(id);
     if (!campaign) return null;
     const [hydrated] = await this.attachProductDetails([campaign]);
     return hydrated;
@@ -88,27 +64,22 @@ export class CampaignService {
   async createCampaign(payload: CreateCampaignType) {
     const typeEnum = (payload.campaignType as CampaignType) || CampaignType.FESTIVAL;
 
-    const campaign = await prisma.campaign.create({
-      data: {
-        title: payload.title,
-        slug: payload.slug,
-        campaignType: typeEnum,
-        tagline: payload.tagline,
-        bannerImage: payload.bannerImage,
-        themeColor: payload.themeColor ?? '#D92525',
-        startDate: new Date(payload.startDate),
-        endDate: new Date(payload.endDate),
-        products: payload.productIds
-          ? {
-              create: payload.productIds.map((productId) => ({
-                productId,
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        products: true,
-      },
+    const campaign = await this.campaignRepository.create({
+      title: payload.title,
+      slug: payload.slug,
+      campaignType: typeEnum,
+      tagline: payload.tagline,
+      bannerImage: payload.bannerImage,
+      themeColor: payload.themeColor ?? '#D92525',
+      startDate: new Date(payload.startDate),
+      endDate: new Date(payload.endDate),
+      products: payload.productIds
+        ? {
+            create: payload.productIds.map((productId) => ({
+              productId,
+            })),
+          }
+        : undefined,
     });
 
     const [hydrated] = await this.attachProductDetails([campaign]);
@@ -118,13 +89,9 @@ export class CampaignService {
   async updateCampaign(id: string, payload: Partial<CreateCampaignType>) {
     const typeEnum = payload.campaignType ? (payload.campaignType as CampaignType) : undefined;
 
-    if (payload.productIds) {
-      await prisma.campaignProduct.deleteMany({ where: { campaignId: id } });
-    }
-
-    const campaign = await prisma.campaign.update({
-      where: { id },
-      data: {
+    const campaign = await this.campaignRepository.update(
+      id,
+      {
         title: payload.title,
         slug: payload.slug,
         campaignType: typeEnum,
@@ -141,10 +108,8 @@ export class CampaignService {
             }
           : undefined,
       },
-      include: {
-        products: true,
-      },
-    });
+      payload.productIds
+    );
 
     const [hydrated] = await this.attachProductDetails([campaign]);
     return hydrated;

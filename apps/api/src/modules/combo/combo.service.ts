@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
-import prisma from '../../db/index';
 import { ComboDiscountType } from '@prisma/client';
 import { CreateComboType } from '@celebs/shared-types';
-import { ProductModel } from '../../db/models/product.model';
+import { comboRepository, ComboRepository } from './combo.repository';
 
 export class ComboService {
+  private comboRepository: ComboRepository;
+
+  constructor(repository: ComboRepository = comboRepository) {
+    this.comboRepository = repository;
+  }
+
   private async attachProductDetails(combos: any[]) {
     const allProductIds = Array.from(
       new Set(
@@ -20,7 +25,7 @@ export class ComboService {
       return combos.map((c) => ({ ...c, itemDetails: [] }));
     }
 
-    const mongoProducts = await ProductModel.find({ _id: { $in: validProductIds } }).lean();
+    const mongoProducts = await this.comboRepository.findMongoProductsByIds(validProductIds);
     const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
 
     return combos.map((c) => ({
@@ -33,52 +38,24 @@ export class ComboService {
   }
 
   async getActiveCombos(tag?: string) {
-    const where: any = { isActive: true };
-    if (tag) where.tag = tag;
-
-    const combos = await prisma.comboBundle.findMany({
-      where,
-      include: {
-        items: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
+    const combos = await this.comboRepository.findActiveCombos(tag);
     return this.attachProductDetails(combos);
   }
 
   async getAllCombos() {
-    const combos = await prisma.comboBundle.findMany({
-      include: {
-        items: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
+    const combos = await this.comboRepository.findAllCombos();
     return this.attachProductDetails(combos);
   }
 
   async getComboBySlug(slug: string) {
-    const combo = await prisma.comboBundle.findUnique({
-      where: { slug },
-      include: {
-        items: true,
-      },
-    });
-
+    const combo = await this.comboRepository.findBySlug(slug);
     if (!combo) return null;
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
   }
 
   async getComboById(id: string) {
-    const combo = await prisma.comboBundle.findUnique({
-      where: { id },
-      include: {
-        items: true,
-      },
-    });
-
+    const combo = await this.comboRepository.findById(id);
     if (!combo) return null;
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
@@ -90,25 +67,20 @@ export class ComboService {
         ? ComboDiscountType.FIXED_AMOUNT
         : ComboDiscountType.PERCENTAGE;
 
-    const combo = await prisma.comboBundle.create({
-      data: {
-        title: payload.title,
-        slug: payload.slug,
-        subtitle: payload.subtitle,
-        description: payload.description,
-        bannerImage: payload.bannerImage,
-        discountType: discountTypeEnum,
-        discountValue: payload.discountValue,
-        isFirstParty: payload.isFirstParty ?? true,
-        tag: payload.tag,
-        items: {
-          create: payload.productIds.map((productId) => ({
-            productId,
-          })),
-        },
-      },
-      include: {
-        items: true,
+    const combo = await this.comboRepository.create({
+      title: payload.title,
+      slug: payload.slug,
+      subtitle: payload.subtitle,
+      description: payload.description,
+      bannerImage: payload.bannerImage,
+      discountType: discountTypeEnum,
+      discountValue: payload.discountValue,
+      isFirstParty: payload.isFirstParty ?? true,
+      tag: payload.tag,
+      items: {
+        create: payload.productIds.map((productId) => ({
+          productId,
+        })),
       },
     });
 
@@ -117,19 +89,15 @@ export class ComboService {
   }
 
   async updateCombo(id: string, payload: Partial<CreateComboType>) {
-    if (payload.productIds) {
-      await prisma.comboBundleItem.deleteMany({ where: { bundleId: id } });
-    }
-
     const discountTypeEnum = payload.discountType
       ? payload.discountType === 'FIXED_AMOUNT'
         ? ComboDiscountType.FIXED_AMOUNT
         : ComboDiscountType.PERCENTAGE
       : undefined;
 
-    const combo = await prisma.comboBundle.update({
-      where: { id },
-      data: {
+    const combo = await this.comboRepository.update(
+      id,
+      {
         title: payload.title,
         slug: payload.slug,
         subtitle: payload.subtitle,
@@ -146,19 +114,15 @@ export class ComboService {
             }
           : undefined,
       },
-      include: {
-        items: true,
-      },
-    });
+      payload.productIds
+    );
 
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
   }
 
   async deleteCombo(id: string) {
-    return prisma.comboBundle.delete({
-      where: { id },
-    });
+    return this.comboRepository.delete(id);
   }
 }
 
