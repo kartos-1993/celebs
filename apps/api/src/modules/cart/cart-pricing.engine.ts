@@ -1,4 +1,4 @@
-import { Prisma } from '../../generated/prisma/index.js';
+import { Prisma } from '@prisma/client';
 
 export interface CartPricingInputItem {
   id: string;

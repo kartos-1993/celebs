@@ -1,7 +1,7 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
 import prisma from '@/db';
-import { Prisma } from '@/generated/prisma';
+import { Prisma } from '@prisma/client';
 import { ProductModel } from '@/db/models/product.model';
 import { InventoryService } from '../inventory/inventory.service';
 
