@@ -7,12 +7,13 @@ const standardRateLimitMessage = {
   errorCode: 'TOO_MANY_REQUESTS',
 };
 
-// Helper to allow rate limit testing when x-test-rate-limit header is present
+// Secure helper to allow rate limit bypass ONLY during verified local test runner executions
 const shouldSkipRateLimit = (req: any) => {
-  if (process.env.NODE_ENV === 'test' && !req.headers['x-test-rate-limit']) {
-    return true;
-  }
-  return false;
+  return (
+    process.env.NODE_ENV === 'test' &&
+    process.env.VITE_TEST_LOCAL_CONTEXT === 'true' &&
+    req.headers['x-local-test-runner'] === 'true'
+  );
 };
 
 /**
