@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.app.json && tsc-alias -p tsconfig.app.json",
+    "build": "tsc -p tsconfig.app.json && npx tsc-alias -p tsconfig.app.json",
     "dev": "dotenv -e .env.development -- nodemon --watch src --ext ts --exec node -r tsconfig-paths/register -r @swc-node/register src/main.ts",
     "dev:staging": "dotenv -e .env.staging -- nodemon --watch src --ext ts --exec node -r tsconfig-paths/register -r @swc-node/register src/main.ts",
     "dev:worker": "dotenv -e .env.development -- nodemon --watch src --ext ts --exec node -r tsconfig-paths/register -r @swc-node/register src/worker-main.ts",

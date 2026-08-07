@@ -11,8 +11,8 @@ if (fs.existsSync(envPath)) {
 
 import app from './app';
 import { config } from './config/app.config';
-import { connectMongoDB } from './db/mongodb';
-import prisma from './db';
+import { connectMongoDB } from './config/db.mongo';
+import prisma from './config/db.prisma';
 import { logger } from '@celebs/shared-utils';
 import { verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
