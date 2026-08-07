@@ -18,8 +18,7 @@ import pinoHttp from 'pino-http';
 
 
 import session from 'express-session';
-import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
+import { UpstashRedisStore } from './config/session-store';
 import sessionRoutes from './modules/session/session.routes';
 
 import categoryRoutes from './modules/category/category.routes';
@@ -102,21 +101,8 @@ if (!config.JWT.SECRET) {
 
 let sessionStore;
 
-if (config.REDIS.HOST && config.REDIS.PORT) {
-  const isTls = config.REDIS.HOST.includes('upstash.io') || config.NODE_ENV === 'production' || config.NODE_ENV === 'staging';
-  const protocol = isTls ? 'rediss' : 'redis';
-  const credentials = config.REDIS.PASSWORD ? `default:${config.REDIS.PASSWORD}@` : '';
-  const redisUrl = `${protocol}://${credentials}${config.REDIS.HOST}:${config.REDIS.PORT}`;
-
-  const redisClient = createClient({ url: redisUrl });
-  redisClient.connect()
-    .then(() => logger.info('Redis connected successfully for sessions'))
-    .catch((err: any) => logger.error({ err }, 'Redis connection failed'));
-
-  sessionStore = new RedisStore({
-    client: redisClient,
-    prefix: 'celebs_sess:',
-  });
+if (config.REDIS.HOST && config.REDIS.PASSWORD) {
+  sessionStore = new UpstashRedisStore('celebs_sess:', 86400);
 } else {
   logger.warn('No Redis configuration found. Using in-memory session store (not recommended for production/staging)');
 }
