@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import prisma from '../../src/db/index.js';
 import { logisticsService } from '../../src/modules/logistics/logistics.service.js';
-import { OrderStatus, PaymentMethod, CodStatus } from '../../src/generated/prisma/index.js';
+import { OrderStatus, PaymentMethod, CodStatus } from '@prisma/client';
 
 describe('Logistics & 3PL Settlement Integration Tests', () => {
   let testUserId: string;

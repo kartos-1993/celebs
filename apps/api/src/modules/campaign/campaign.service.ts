@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import prisma from '../../db/index';
-import { CampaignType } from '../../generated/prisma/index';
+import { CampaignType } from '@prisma/client';
 import { CreateCampaignType } from '@celebs/shared-types';
 import { ProductModel } from '../../db/models/product.model';
 

@@ -22,15 +22,7 @@ module.exports = (config, context) => {
     path: join(__dirname, '../../dist/apps/api'), // Note: fixed from 'auth' to 'api'
   };
 
-  config.externals = [
-    ...(config.externals || []),
-    ({ request }, callback) => {
-      if (request && (request.includes('generated/prisma') || request.includes('generated\\prisma'))) {
-        return callback(null, 'commonjs ./generated/prisma');
-      }
-      callback();
-    }
-  ];
+
 
   return config;
 };
