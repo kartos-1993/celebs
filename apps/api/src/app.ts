@@ -40,6 +40,7 @@ import swaggerUi from 'swagger-ui-express';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
