@@ -1,14 +1,14 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import { RoleGuard } from '@/components/role-guard';
+import { RoleGuard } from '@/routes/role-guard';
 
-const StaffList = lazy(() => import('./staff-list'));
+const StaffListPage = lazy(() => import('./pages/staff-list-page'));
 
 export const staffRoutes: RouteObject = {
   path: 'staff',
   element: (
-    <RoleGuard allowedRoles={['VENDOR', 'SUPERADMIN']}>
-      <StaffList />
+    <RoleGuard allowedRoles={['SUPERADMIN']}>
+      <StaffListPage />
     </RoleGuard>
   ),
   handle: { crumb: 'Staff' },

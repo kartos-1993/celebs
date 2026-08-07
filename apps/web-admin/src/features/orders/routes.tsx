@@ -1,9 +1,9 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
-const Orders = lazy(() => import('./orders'));
-const ReturnOrders = lazy(() => import('./return-orders'));
-const Reviews = lazy(() => import('./reviews'));
+const OrdersPage = lazy(() => import('./pages/orders-page'));
+const ReturnOrdersPage = lazy(() => import('./pages/return-orders-page'));
+const ReviewsPage = lazy(() => import('./pages/reviews-page'));
 
 export const orderRoutes: RouteObject = {
   path: 'orders',
@@ -11,17 +11,17 @@ export const orderRoutes: RouteObject = {
   children: [
     {
       path: '',
-      element: <Orders />,
+      element: <OrdersPage />,
       handle: { crumb: 'Orders' },
     },
     {
       path: 'return',
-      element: <ReturnOrders />,
+      element: <ReturnOrdersPage />,
       handle: { crumb: 'Return Orders' },
     },
     {
       path: 'reviews',
-      element: <Reviews />,
+      element: <ReviewsPage />,
       handle: { crumb: 'Reviews' },
     },
   ],

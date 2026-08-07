@@ -1,5 +1,5 @@
 import { CreateProductRequest, uploadFiles } from '../api';
-import type { FieldSpec } from '../fields/UiRegistry';
+import type { FieldSpec } from '../fields/ui-registry';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import {
   flattenObject,

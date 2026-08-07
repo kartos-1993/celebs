@@ -9,6 +9,7 @@ export interface ICategory extends Document {
   level: number;
   parentCategory: mongoose.Types.ObjectId | null;
   path: string[];
+  ancestors?: mongoose.Types.ObjectId[];
   attributes?: IAttribute[];
   sizeChartColumns?: string[];
   imageUrl?: string | null;
@@ -45,6 +46,7 @@ const CategorySchema: Schema = new Schema(
       index: true,
     },
     path: [{ type: String }],
+    ancestors: [{ type: Schema.Types.ObjectId, ref: 'Category', index: true }],
     sizeChartColumns: [{ type: String }],
     imageUrl: { type: String, default: null },
     isActive: {
