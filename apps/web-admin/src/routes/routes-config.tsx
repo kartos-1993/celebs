@@ -3,6 +3,7 @@ import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/layouts/admin-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import AuthGuard from './auth-guard';
+import GuestGuard from './guest-guard';
 import { PATHS } from './paths';
 
 // Feature Routes
@@ -47,7 +48,11 @@ export const routesConfig: RouteObject[] = [
     ],
   },
   {
-    element: <AuthLayout />,
+    element: (
+      <GuestGuard>
+        <AuthLayout />
+      </GuestGuard>
+    ),
     children: authRoutes,
   },
   {
