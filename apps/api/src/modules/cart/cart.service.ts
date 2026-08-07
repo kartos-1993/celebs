@@ -1,6 +1,6 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
-import prisma from '@/db';
+import { cartRepository } from './cart.repository';
 import { Prisma } from '@prisma/client';
 import { ProductModel } from '@/db/models/product.model';
 import { InventoryService } from '../inventory/inventory.service';
@@ -20,24 +20,16 @@ export class CartService {
     }
 
     if (userId) {
-      let cart = await prisma.cart.findUnique({
-        where: { userId },
-      });
+      let cart = await cartRepository.findUnique({ userId });
       if (!cart) {
-        cart = await prisma.cart.create({
-          data: { userId },
-        });
+        cart = await cartRepository.createCartForUser(userId);
       }
       return cart;
     }
 
-    let cart = await prisma.cart.findUnique({
-      where: { sessionId },
-    });
+    let cart = await cartRepository.findUnique({ sessionId });
     if (!cart) {
-      cart = await prisma.cart.create({
-        data: { sessionId },
-      });
+      cart = await cartRepository.createCartForSession(sessionId!);
     }
     return cart;
   }
@@ -48,17 +40,7 @@ export class CartService {
   static async getCart(userId?: string, sessionId?: string): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
-    const cartWithItems = await prisma.cart.findUnique({
-      where: { id: cartRecord.id },
-      include: {
-        items: {
-          include: {
-            inventory: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const cartWithItems = await cartRepository.findUniqueWithItems(cartRecord.id);
 
     if (!cartWithItems) {
       return {
@@ -197,14 +179,8 @@ export class CartService {
     logger.info({ cartId: cartRecord.id, userId: cartRecord.userId, sessionId: cartRecord.sessionId }, '[CartService.addToCart] Cart record resolved');
 
     // Check existing item in cart
-    const existingItem = await prisma.cartItem.findUnique({
-      where: {
-        cartId_inventoryId: {
-          cartId: cartRecord.id,
-          inventoryId: stockInfo.inventoryId,
-        },
-      },
-    });
+    const existingCart = await cartRepository.findUniqueWithItems(cartRecord.id);
+    const existingItem = existingCart?.items.find((i) => i.inventoryId === stockInfo.inventoryId);
 
     const targetQuantity = (existingItem?.quantity || 0) + quantity;
 
@@ -217,22 +193,8 @@ export class CartService {
       );
     }
 
-
     // Upsert CartItem
-    if (existingItem) {
-      await prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: { quantity: targetQuantity },
-      });
-    } else {
-      await prisma.cartItem.create({
-        data: {
-          cartId: cartRecord.id,
-          inventoryId: stockInfo.inventoryId,
-          quantity: targetQuantity,
-        },
-      });
-    }
+    await cartRepository.addItemToCart(cartRecord.id, stockInfo.inventoryId, targetQuantity);
 
     return this.getCart(userId, sessionId);
   }
@@ -248,21 +210,19 @@ export class CartService {
   ): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
-    const item = await prisma.cartItem.findFirst({
-      where: { id: itemId, cartId: cartRecord.id },
-      include: { inventory: true },
-    });
+    const item = await cartRepository.findUniqueWithItems(cartRecord.id);
+    const cartItem = item?.items.find((i) => i.id === itemId);
 
-    if (!item) {
+    if (!cartItem) {
       throw new AppError('Cart item not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
     if (newQuantity <= 0) {
-      await prisma.cartItem.delete({ where: { id: itemId } });
+      await cartRepository.deleteItem(itemId);
       return this.getCart(userId, sessionId);
     }
 
-    const availableStock = item.inventory.quantity - item.inventory.reservedQuantity;
+    const availableStock = cartItem.inventory.quantity - cartItem.inventory.reservedQuantity;
     if (availableStock < newQuantity) {
       throw new AppError(
         `Cannot update to ${newQuantity}. Only ${availableStock} in stock.`,
@@ -271,10 +231,7 @@ export class CartService {
       );
     }
 
-    await prisma.cartItem.update({
-      where: { id: itemId },
-      data: { quantity: newQuantity },
-    });
+    await cartRepository.updateItem(itemId, { quantity: newQuantity });
 
     return this.getCart(userId, sessionId);
   }
@@ -289,9 +246,7 @@ export class CartService {
   ): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
-    await prisma.cartItem.deleteMany({
-      where: { id: itemId, cartId: cartRecord.id },
-    });
+    await cartRepository.deleteManyItems({ id: itemId, cartId: cartRecord.id });
 
     return this.getCart(userId, sessionId);
   }
@@ -302,9 +257,7 @@ export class CartService {
   static async clearCart(userId?: string, sessionId?: string): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cartRecord.id },
-    });
+    await cartRepository.deleteManyItems({ cartId: cartRecord.id });
 
     return this.getCart(userId, sessionId);
   }
