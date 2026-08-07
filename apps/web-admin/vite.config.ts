@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => {
   return {
     root: __dirname,
     plugins: [react(), tailwindcss()],
+    optimizeDeps: {
+      include: ['lucide-react', 'react', 'react-dom'],
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
