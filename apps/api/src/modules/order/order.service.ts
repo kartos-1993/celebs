@@ -1,7 +1,7 @@
 import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
 import { AddressInput, CheckoutInput, COD_MAX_LIMIT, UpdateAddressInput } from '@celebs/shared-types';
 import prisma from '@/db';
-import { Prisma } from '@/generated/prisma';
+import { Prisma } from '@prisma/client';
 import { ProductModel } from '@/db/models/product.model';
 import { IPaymentGateway } from './adapters/payment-gateway.interface';
 import { MockPaymentAdapter } from './adapters/mock-payment.adapter';
