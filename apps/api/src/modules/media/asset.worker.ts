@@ -7,6 +7,10 @@ import { config } from '@/config/app.config';
 import { MediaModel } from '@/db/models/media.model';
 import { logger } from '@celebs/shared-utils';
 
+// Configure Sharp memory limits to prevent V8 heap OOM crashes during heavy multi-image operations
+sharp.cache({ memory: 256, items: 100, files: 0 });
+sharp.concurrency(1);
+
 interface AssetJobPayload {
   mediaId: string;
   key: string;
@@ -106,7 +110,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
   },
   {
     connection: redisConnection,
-    concurrency: 2,
+    concurrency: parseInt(process.env.WORKER_CONCURRENCY || '2', 10),
   }
 );
 
