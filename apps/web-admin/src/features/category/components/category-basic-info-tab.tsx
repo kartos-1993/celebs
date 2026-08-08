@@ -48,10 +48,22 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
   handleRemoveSizeColumn,
   handleImageUpload,
 }) => {
-  const availableParents = categories.filter(
-    (cat) =>
-      cat.id !== initialDataId && !cat.path?.includes(initialDataId || '')
-  );
+  const editingCategory = categories.find((c) => c.id === initialDataId);
+  const editingSlug = editingCategory?.slug;
+
+  const availableParents = categories.filter((cat) => {
+    if (cat.id === initialDataId) return false;
+    if (cat.level && cat.level >= 3) return false;
+    if (cat.parent === initialDataId || (cat as any).parentCategory === initialDataId) return false;
+    if (editingSlug) {
+      if (Array.isArray(cat.path)) {
+        if (cat.path.includes(editingSlug)) return false;
+      } else if (typeof cat.path === 'string') {
+        if (cat.path.split('/').includes(editingSlug)) return false;
+      }
+    }
+    return true;
+  });
 
   const imageUrl = form.watch('imageUrl');
   const sizeChartColumns = form.watch('sizeChartColumns') || [];
