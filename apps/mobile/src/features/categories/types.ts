@@ -10,7 +10,7 @@ export interface QuickFilterItem {
 }
 
 export interface QuickFilterConfig {
-  _id: string;
+  id: string;
   type: QuickFilterType;
   attributeId?: string | null;
   displayAs: QuickFilterDisplayAs;
@@ -19,7 +19,7 @@ export interface QuickFilterConfig {
 }
 
 export interface DrawerFilterConfig {
-  _id: string;
+  id: string;
   name: string;
   uiType: 'checkbox' | 'color_swatch' | 'size_box' | 'range_slider';
   attributeId?: string | null;
@@ -30,7 +30,7 @@ export interface DrawerFilterConfig {
 }
 
 export interface StorefrontCategoryInfo {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   level: number;

@@ -67,7 +67,7 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
           <View style={styles.gridWrapper}>
             {products.map((product) => (
               <ProductCard
-                key={product._id}
+                key={product.id}
                 product={product}
                 onPress={onProductPress}
               />

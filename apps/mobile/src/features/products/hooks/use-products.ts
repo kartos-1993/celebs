@@ -30,7 +30,7 @@ export interface ProductColorVariant {
 }
 
 export interface Product {
-  _id: string;
+  id: string;
   name: string;
   brand?: string;
   description?: string;
@@ -107,8 +107,8 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
     });
     const seen = new Set<string>();
     return allProducts.filter((product) => {
-      if (!product?._id || seen.has(product._id)) return false;
-      seen.add(product._id);
+      if (!product?.id || seen.has(product.id)) return false;
+      seen.add(product.id);
       return true;
     });
   }, [data]);
