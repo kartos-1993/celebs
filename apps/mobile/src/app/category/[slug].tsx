@@ -175,7 +175,7 @@ export default function CategoryProductsScreen() {
       {/* Dynamic Storefront Quick Filters Header */}
       {storefrontConfig?.quickFilters?.map((qf, idx) => (
         <QuickFilterRenderer
-          key={qf._id || idx}
+          key={qf.id || idx}
           config={qf}
           selectedItem={selectedQuickFilterValue}
           onSelectItem={handleSelectQuickFilterItem}
@@ -213,7 +213,7 @@ export default function CategoryProductsScreen() {
         <FlatList
           data={filteredProducts}
           numColumns={2}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => item.id}
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

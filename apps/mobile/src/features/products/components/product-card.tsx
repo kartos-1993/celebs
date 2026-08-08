@@ -89,7 +89,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
     } else {
       router.push({
         pathname: '/product/[id]',
-        params: { id: product._id },
+        params: { id: product.id },
       });
     }
   };

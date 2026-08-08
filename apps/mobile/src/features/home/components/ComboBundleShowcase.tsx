@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { apiClient } from '@/api/client';
 
 export interface HydratedProduct {
-  _id?: string;
+  id?: string;
   name?: string;
   price?: number;
   mainImages?: string[];

@@ -111,7 +111,7 @@ export default function ProductDetailScreen() {
     setIsAdding(true);
     try {
       await addToCart({
-        productId: product._id,
+        productId: product.id,
         quantity: 1,
         size: finalSize || 'Standard',
         colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',

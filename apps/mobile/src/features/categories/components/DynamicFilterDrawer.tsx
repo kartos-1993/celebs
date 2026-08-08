@@ -88,7 +88,7 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {hasApiFilters ? (
               drawerFilters.map((filter) => (
-                <View key={filter._id || filter.name} style={styles.section}>
+                <View key={filter.id || filter.name} style={styles.section}>
                   <ThemedText style={styles.sectionTitle}>{filter.name}</ThemedText>
                   <View style={styles.chipRow}>
                     {filter.values.map((val) => {

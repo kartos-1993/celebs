@@ -53,7 +53,7 @@ export function CategoryGrid() {
             <View key={colIdx} style={styles.categoryColumn}>
               {col.map((cat) => (
                 <TouchableOpacity
-                  key={cat._id}
+                  key={cat.id}
                   style={styles.categoryItem}
                   activeOpacity={0.7}
                   onPress={() => handleCategoryPress(cat)}
