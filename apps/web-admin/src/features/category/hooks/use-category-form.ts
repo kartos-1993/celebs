@@ -30,8 +30,7 @@ export interface UseCategoryFormReturn {
   handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
-function getAttributeId(attr: { _id?: string; id?: string }): string | undefined {
-  if (attr._id) return String(attr._id);
+function getAttributeId(attr: { id?: string }): string | undefined {
   if (attr.id) return String(attr.id);
   return undefined;
 }
@@ -50,7 +49,7 @@ export const useCategoryForm = ({
       name: initialData?.name || '',
       parent: initialData?.parent || null,
       attributes: (initialData?.attributes || []).map((attr) => ({
-        _id: getAttributeId(attr),
+        id: getAttributeId(attr),
         name: attr.name || '',
         label: attr.label || '',
         type: attr.type || 'text',
@@ -145,7 +144,7 @@ export const useCategoryForm = ({
           : null,
       attributes: values.attributes.map((attr) => ({
         ...attr,
-        _id: attr._id || undefined,
+        id: attr.id || undefined,
         values: attr.values ?? [],
         isVariant: attr.isVariant ?? false,
         useStandardOptions: attr.isVariant ? (attr.useStandardOptions ?? false) : false,

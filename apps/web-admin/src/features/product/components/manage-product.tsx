@@ -106,7 +106,7 @@ const ManageProduct = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(products.map((p) => p._id));
+      setSelectedProducts(products.map((p) => p.id));
     } else {
       setSelectedProducts([]);
     }
@@ -269,12 +269,12 @@ const ManageProduct = () => {
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow key={product._id}>
+                    <TableRow key={product.id}>
                       <TableCell>
                         <Checkbox
-                          checked={selectedProducts.includes(product._id)}
+                          checked={selectedProducts.includes(product.id)}
                           onCheckedChange={(checked) =>
-                            handleSelectProduct(product._id, !!checked)
+                            handleSelectProduct(product.id, !!checked)
                           }
                         />
                       </TableCell>
@@ -310,13 +310,13 @@ const ManageProduct = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {role === 'VENDOR' && (product.status === 'draft' || product.status === 'rejected') && (
-                            <Button size="sm" onClick={() => handleResubmit(product._id)}>
+                            <Button size="sm" onClick={() => handleResubmit(product.id)}>
                               Submit
                             </Button>
                           )}
                           
                           {role === 'VENDOR' && (product.status === 'published' || product.status === 'deactivated') && (
-                            <Button size="sm" variant="outline" onClick={() => handleToggleActivation(product._id)}>
+                            <Button size="sm" variant="outline" onClick={() => handleToggleActivation(product.id)}>
                               {product.status === 'published' ? 'Deactivate' : 'Activate'}
                             </Button>
                           )}
@@ -329,9 +329,9 @@ const ManageProduct = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link to={`/products/edit/${product._id}`}>Edit</Link>
+                                <Link to={`/products/edit/${product.id}`}>Edit</Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleArchive(product._id)}>
+                              <DropdownMenuItem onClick={() => handleArchive(product.id)}>
                                 Archive (Delete)
                               </DropdownMenuItem>
                             </DropdownMenuContent>

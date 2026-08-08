@@ -49,7 +49,7 @@ import {
 } from '../api';
 
 export interface CategoryRef {
-  _id?: string;
+  id?: string;
   name: string;
   slug?: string;
   path?: string;
@@ -97,7 +97,7 @@ export interface ReviewHistoryRecord {
 }
 
 export interface ProductQueueItem {
-  _id: string;
+  id: string;
   name: string;
   brand?: string;
   slug?: string;
@@ -345,7 +345,7 @@ export default function ReviewProductQueue() {
         note: rejectionNote.trim(),
       };
 
-      await reviewProduct(selectedProduct._id, payload);
+      await reviewProduct(selectedProduct.id, payload);
       toast({
         title: 'Product Rejected',
         description: 'Structured rejection note submitted and email sent to vendor.',
@@ -493,7 +493,7 @@ export default function ReviewProductQueue() {
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow key={product._id} className="hover:bg-muted/50">
+                    <TableRow key={product.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <img
@@ -567,7 +567,7 @@ export default function ReviewProductQueue() {
                                 variant="default"
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                                onClick={() => handleApprove(product._id)}
+                                onClick={() => handleApprove(product.id)}
                                 disabled={submittingAction}
                               >
                                 <Check className="h-4 w-4" /> Approve
@@ -1171,7 +1171,7 @@ export default function ReviewProductQueue() {
                     <Button
                       variant="default"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                      onClick={() => handleApprove(selectedProduct._id)}
+                      onClick={() => handleApprove(selectedProduct.id)}
                       disabled={submittingAction}
                     >
                       <Check className="w-4 h-4" /> Approve & Publish

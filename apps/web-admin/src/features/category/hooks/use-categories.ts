@@ -107,7 +107,7 @@ export function useCategories(): UseCategoriesReturn {
     onSuccess: (_, categoryId) => {
       invalidateAll();
       const category = categoriesData?.data?.categories.find(
-        (c) => c._id === categoryId,
+        (c) => c.id === categoryId,
       );
       const hasChildren = categoriesData?.data?.categories.some(
         (c) => c.parent === categoryId,

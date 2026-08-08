@@ -50,7 +50,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
 }) => {
   const availableParents = categories.filter(
     (cat) =>
-      cat._id !== initialDataId && !cat.path?.includes(initialDataId || '')
+      cat.id !== initialDataId && !cat.path?.includes(initialDataId || '')
   );
 
   const imageUrl = form.watch('imageUrl');
@@ -92,7 +92,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
                   No Parent (Root Category)
                 </SelectItem>
                 {availableParents.map((category) => (
-                  <SelectItem key={category._id} value={category._id}>
+                  <SelectItem key={category.id} value={category.id}>
                     {'  '.repeat(category.level - 1)}
                     {category.name} (Level {category.level})
                   </SelectItem>

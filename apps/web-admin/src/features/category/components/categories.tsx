@@ -59,7 +59,7 @@ export const Categories: React.FC = () => {
   const handleSaveCategory = async (formData: CategoryFormData) => {
     try {
       if (uiState.editingCategory) {
-        await updateCategory(uiState.editingCategory._id, formData);
+        await updateCategory(uiState.editingCategory.id, formData);
       } else {
         await createCategory({
           ...formData,
@@ -75,7 +75,7 @@ export const Categories: React.FC = () => {
     if (uiState.categoryToDelete) {
       try {
         const targetCategory = categories.find(
-          (c) => c._id === uiState.categoryToDelete,
+          (c) => c.id === uiState.categoryToDelete,
         );
         const hasChildren = categories.some(
           (c) => c.parent === uiState.categoryToDelete,
@@ -164,7 +164,7 @@ export const Categories: React.FC = () => {
           uiState.categoryToDelete
             ? {
                 name:
-                  categories.find((c) => c._id === uiState.categoryToDelete)
+                  categories.find((c) => c.id === uiState.categoryToDelete)
                     ?.name || '',
                 hasChildren: categories.some(
                   (c) => c.parent === uiState.categoryToDelete,
@@ -173,7 +173,7 @@ export const Categories: React.FC = () => {
                   (c) => c.parent === uiState.categoryToDelete,
                 ).length,
                 attributes:
-                  categories.find((c) => c._id === uiState.categoryToDelete)
+                  categories.find((c) => c.id === uiState.categoryToDelete)
                     ?.attributes || [],
               }
             : undefined

@@ -11,7 +11,7 @@ export type CategoryAttribute = CategoryAttributeType & {
 };
 
 export interface Category {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   level: number;
@@ -38,7 +38,7 @@ export interface QuickFilterItem {
 }
 
 export interface QuickFilter {
-  _id?: string;
+  id?: string;
   categoryId: string;
   type: QuickFilterType;
   attributeId?: string | null;

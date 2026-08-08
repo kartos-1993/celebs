@@ -266,7 +266,7 @@ const Banners: React.FC = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {(Array.isArray(categories) ? categories : []).map((c) => (
-                                  <SelectItem key={c._id} value={c._id}>
+                                  <SelectItem key={c.id} value={c.id}>
                                     {c.name}
                                   </SelectItem>
                                 ))}
@@ -282,7 +282,7 @@ const Banners: React.FC = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {(Array.isArray(products) ? products : []).map((p) => (
-                                  <SelectItem key={p._id} value={p._id}>
+                                  <SelectItem key={p.id} value={p.id}>
                                     {p.name}
                                   </SelectItem>
                                 ))}

@@ -37,7 +37,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
   useEffect(() => {
     if (quickFilters && quickFilters.length > 0) {
       const qf = quickFilters[0];
-      setCurrentFilterId(qf._id);
+      setCurrentFilterId(qf.id);
       setType(qf.type || 'subcategory');
       setDisplayAs(qf.displayAs || 'avatar_scroll');
       setAutoPopulate(qf.autoPopulate !== false);
@@ -57,7 +57,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
       setStatusMessage(null);
       const isManual = items.length > 0;
       const payload: Partial<QuickFilter> = {
-        _id: currentFilterId,
+        id: currentFilterId,
         categoryId,
         type,
         displayAs,
