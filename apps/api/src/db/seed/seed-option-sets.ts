@@ -6,30 +6,30 @@ export const DEFAULT_OPTION_SETS = [
     type: 'color' as const,
     values: [
       // Whites & Neutrals
-      'White', 'Ivory', 'Cream', 'Off-White', 'Pearl', 'Vanilla', 'Alabaster',
+      'White', 'Ivory', 'Cream', 'Off-White', 'Milk', 'Pearl', 'Vanilla', 'Alabaster', 'Nude', 'Champagne', 'Bone', 'Eggshell',
       // Browns & Earth Tones (Nepali Market Staples)
-      'Brown', 'Dark Brown', 'Light Brown', 'Camel Brown', 'Tan', 'Khaki', 'Mocha', 'Coffee', 'Chocolate', 'Chestnut', 'Caramel', 'Cocoa', 'Terracotta', 'Mahogany', 'Bronze', 'Copper', 'Rust', 'Beige', 'Sand', 'Apricot', 'Oatmeal', 'Taupe',
+      'Brown', 'Coffee Brown', 'Dark Coffee', 'Dark Brown', 'Light Brown', 'Camel', 'Camel Brown', 'Tan', 'Khaki', 'Mocha', 'Coffee', 'Chocolate', 'Chocolate Brown', 'Chestnut', 'Caramel', 'Caramel Brown', 'Cocoa', 'Terracotta', 'Mahogany', 'Espresso', 'Walnut', 'Cinnamon', 'Bronze', 'Copper', 'Rust', 'Rust Brown', 'Brick', 'Brick Red', 'Beige', 'Sand', 'Apricot', 'Oatmeal', 'Taupe',
       // Greys & Blacks
-      'Light Grey', 'Dark Grey', 'Charcoal', 'Slate', 'Ash', 'Heather Grey', 'Silver',
-      'Black', 'Obsidian', 'Jet Black',
+      'Light Grey', 'Dark Grey', 'Grey', 'Charcoal', 'Slate', 'Ash', 'Heather Grey', 'Silver',
+      'Black', 'Pitch Black', 'Obsidian', 'Jet Black',
       // Reds & Pinks
-      'Red', 'Burgundy', 'Maroon', 'Wine', 'Crimson', 'Cherry', 'Brick Red', 'Tomato Red', 'Ruby', 'Scarlet',
-      'Pink', 'Baby Pink', 'Hot Pink', 'Fuchsia', 'Magenta', 'Rose', 'Dusty Rose', 'Blush', 'Bubblegum', 'Coral', 'Peach', 'Salmon',
+      'Red', 'Dark Red', 'Burgundy', 'Maroon', 'Wine', 'Berry', 'Crimson', 'Cherry', 'Ruby', 'Scarlet',
+      'Pink', 'Light Pink', 'Baby Pink', 'Hot Pink', 'Dusty Pink', 'Fuchsia', 'Magenta', 'Rose', 'Dusty Rose', 'Blush', 'Bubblegum', 'Coral', 'Peach', 'Salmon',
       // Oranges & Yellows
       'Orange', 'Burnt Orange', 'Neon Orange', 'Tangerine', 'Rust Orange', 'Papaya',
-      'Yellow', 'Mustard', 'Lemon', 'Neon Yellow', 'Gold', 'Amber', 'Butter Yellow', 'Sunflower',
+      'Yellow', 'Lemon', 'Lemon Yellow', 'Mustard', 'Neon Yellow', 'Gold', 'Amber', 'Butter Yellow', 'Sunflower', 'Honey',
       // Greens
-      'Mint', 'Seafoam', 'Sage', 'Lime', 'Neon Green', 'Chartreuse', 'Pistachio',
-      'Army Green', 'Olive', 'Khaki Green', 'Emerald', 'Forest Green', 'Hunter Green', 'Kelly Green', 'Pine', 'Avocado',
+      'Green', 'Light Green', 'Dark Green', 'Mint', 'Mint Green', 'Seafoam', 'Sage', 'Sage Green', 'Lime', 'Neon Green', 'Chartreuse', 'Pistachio',
+      'Army Green', 'Olive', 'Olive Green', 'Khaki Green', 'Emerald', 'Forest Green', 'Hunter Green', 'Kelly Green', 'Pine', 'Avocado',
       // Blues & Teals
-      'Baby Blue', 'Sky Blue', 'Ice Blue', 'Aqua', 'Cyan', 'Powder Blue',
-      'Navy Blue', 'Royal Blue', 'Cobalt', 'Indigo', 'Sapphire', 'Denim Blue', 'Midnight Blue',
+      'Blue', 'Light Blue', 'Baby Blue', 'Sky Blue', 'Ice Blue', 'Aqua', 'Cyan', 'Powder Blue',
+      'Navy', 'Navy Blue', 'Royal Blue', 'Cobalt', 'Indigo', 'Sapphire', 'Denim Blue', 'Midnight Blue',
       'Turquoise', 'Teal', 'Peacock Blue',
       // Purples
-      'Purple', 'Lilac', 'Lavender', 'Violet', 'Plum', 'Eggplant', 'Mauve', 'Amethyst', 'Orchid',
-      // Metallic & Special Prints (Flower Patterns, Plaid, Tie-Dye)
+      'Purple', 'Light Purple', 'Lilac', 'Lavender', 'Violet', 'Plum', 'Eggplant', 'Mauve', 'Amethyst', 'Orchid', 'Grape',
+      // Metallic & Special Prints & Patterns
       'Rose Gold',
-      'Multicolor', 'Multicolor Flower Pattern', 'Floral Pattern', 'Abstract Print', 'Tie-Dye', 'Plaid/Checkered', 'Striped', 'Polka Dot', 'Geometric', 'Camouflage', 'Leopard Print', 'Clear/Transparent', 'Rainbow'
+      'Multicolor', 'Multicolor Floral', 'Multicolor Flower Pattern', 'Floral Print', 'Floral Pattern', 'Abstract Print', 'Tie-Dye', 'Plaid / Checkered', 'Plaid/Checkered', 'Striped', 'Polka Dot', 'Geometric', 'Geometric Print', 'Animal Print', 'Leopard Print', 'Camouflage', 'Clear/Transparent', 'Transparent', 'Rainbow', 'Iridescent'
     ],
   },
   {

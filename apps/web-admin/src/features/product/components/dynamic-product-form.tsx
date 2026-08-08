@@ -149,7 +149,9 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
 
 export const normalizeSchema = (fields: FieldSpec[]) =>
   fields.map((field) => {
-    // Preserve exact authored uiTypes cleanly
+    if (field.uiType === 'SizeMeasurementsTable') {
+      return { ...field, group: 'sale' };
+    }
     return field;
   });
 
