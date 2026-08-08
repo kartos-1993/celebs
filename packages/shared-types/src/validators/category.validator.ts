@@ -32,7 +32,7 @@ export const attributeGroupSchema = z.enum([
 ]);
 
 export const attributeSchema = z.object({
-  _id: z.string().optional(),
+  id: z.string().optional(),
   name: z.string().trim().min(1, 'Attribute name is required'),
   label: z.string().optional().nullable(),
   type: attributeTypeSchema,
