@@ -7,7 +7,7 @@ export class OptionSetController {
 
   list = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const type = (req.query.type as 'color' | 'size' | undefined) || undefined;
+      const type = (req.query.type as string | undefined) || undefined;
       const data = await this.svc.list(type);
       res.status(HTTPSTATUS.OK).json({ success: true, data });
     } catch (err) {
@@ -19,7 +19,41 @@ export class OptionSetController {
     try {
       const { id } = req.params;
       const data = await this.svc.getById(id);
-      if (!data) return res.status(404).json({ success: false, message: 'Option set not found' });
+      if (!data) return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Option set not found' });
+      res.status(HTTPSTATUS.OK).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  create = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { name, displayName, description, values } = req.body;
+      if (!name) {
+        return res.status(HTTPSTATUS.BAD_REQUEST).json({ success: false, message: 'Option set name is required' });
+      }
+      const data = await this.svc.create({ name, displayName, description, values });
+      res.status(HTTPSTATUS.CREATED).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  update = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { name, displayName, description, values } = req.body;
+      const data = await this.svc.update(id, { name, displayName, description, values });
+      res.status(HTTPSTATUS.OK).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  delete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const data = await this.svc.delete(id);
       res.status(HTTPSTATUS.OK).json({ success: true, data });
     } catch (err) {
       next(err);

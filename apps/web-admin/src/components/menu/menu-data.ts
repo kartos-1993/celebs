@@ -51,6 +51,7 @@ export function getMenuList(role?: string): Group[] {
   }
   if (isSuperAdmin) {
     productSubmenus.push({ href: "/categories", label: "Categories" });
+    productSubmenus.push({ href: "/option-sets", label: "Option Sets" });
   }
 
   list.push({

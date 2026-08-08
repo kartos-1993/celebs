@@ -39,6 +39,7 @@ export interface CategoryDocLike {
   version?: number;
   attributes: IAttribute[];
   sizeChartColumns?: string[];
+  bodyChartColumns?: string[];
 }
 
 function titleCase(s: string) {
@@ -199,14 +200,30 @@ export async function composeSchema(params: {
     })),
   });
 
-  if (params.category.sizeChartColumns && params.category.sizeChartColumns.length > 0) {
+  const charts: Array<{ key: string; label: string; columns: string[] }> = [];
+  if (Array.isArray(params.category.sizeChartColumns) && params.category.sizeChartColumns.length > 0) {
+    charts.push({
+      key: 'product',
+      label: 'Product Measurements (Garment Flat)',
+      columns: params.category.sizeChartColumns,
+    });
+  }
+  if (Array.isArray(params.category.bodyChartColumns) && params.category.bodyChartColumns.length > 0) {
+    charts.push({
+      key: 'body',
+      label: 'Body Measurements (Wearer Fit Guide)',
+      columns: params.category.bodyChartColumns,
+    });
+  }
+
+  if (charts.length > 0) {
     fields.push({
       name: 'sizes',
       uiType: 'SizeMeasurementsTable' as unknown as UiType,
       label: 'Size & Fit Measurements',
       group: 'sale',
       required: false,
-      dataSource: params.category.sizeChartColumns,
+      dataSource: { charts },
       visible: true,
     });
   }

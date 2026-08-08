@@ -59,9 +59,13 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     isUploadingImage,
     newColumnInput,
     setNewColumnInput,
+    newBodyColumnInput,
+    setNewBodyColumnInput,
     handleAddAttribute,
     handleAddSizeColumn,
     handleRemoveSizeColumn,
+    handleAddBodyColumn,
+    handleRemoveBodyColumn,
     handleImageUpload,
     handleSubmit,
   } = useCategoryForm({ initialData, onSave: handleSaveWithStorefront });
@@ -98,8 +102,12 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               isUploadingImage={isUploadingImage}
               newColumnInput={newColumnInput}
               setNewColumnInput={setNewColumnInput}
+              newBodyColumnInput={newBodyColumnInput}
+              setNewBodyColumnInput={setNewBodyColumnInput}
               handleAddSizeColumn={handleAddSizeColumn}
               handleRemoveSizeColumn={handleRemoveSizeColumn}
+              handleAddBodyColumn={handleAddBodyColumn}
+              handleRemoveBodyColumn={handleRemoveBodyColumn}
               handleImageUpload={handleImageUpload}
             />
           </TabsContent>

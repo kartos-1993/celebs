@@ -550,6 +550,7 @@ model Category {
 
   attributes       Json?       // Array of CategoryAttribute objects
   sizeChartColumns String[]
+  bodyChartColumns String[]    @default([])
   imageUrl         String?
   isActive         Boolean     @default(true)
 

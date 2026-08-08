@@ -7,6 +7,7 @@ export { axiosClient };
 export const apiClient = axiosClient;
 export const AuthAPI = axiosClient;
 export const ProductAPI = axiosClient;
+export const OptionSetAPI = axiosClient;
 export const APIRefresh = axiosClient;
 
 export default axiosClient;
