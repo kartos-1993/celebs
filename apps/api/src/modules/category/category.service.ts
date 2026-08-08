@@ -283,14 +283,6 @@ export class CategoryService {
         );
       }
 
-      if (parentCategory.level >= 3) {
-        throw new AppError(
-          'Cannot assign a Level 3 subcategory as a parent category',
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST,
-        );
-      }
-
       updateData.level = parentCategory.level + 1;
       const parentPathParts = Array.isArray(parentCategory.path)
         ? parentCategory.path
