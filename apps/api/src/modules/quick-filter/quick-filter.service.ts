@@ -57,14 +57,14 @@ export class QuickFilterService {
     const config = (qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}) as QuickFilterConfig;
     return {
       ...qf,
-      _id: qf.id,
+      id: qf.id,
       items: Array.isArray(config.items) ? config.items : [],
       type: config.type || 'subcategory',
       displayAs: config.displayAs || 'avatar_scroll',
       attributeId: config.attributeId || null,
       autoPopulate: config.autoPopulate !== false,
-      displayOrder: config.displayOrder || 0,
-      isActive: config.isActive !== false,
+      displayOrder: (qf as any).displayOrder ?? 0,
+      isActive: (qf as any).isActive !== false,
     };
   }
 
@@ -163,7 +163,7 @@ export class QuickFilterService {
       }
 
       quickFilters.push({
-        _id: formatted._id,
+        id: formatted.id,
         type: formatted.type,
         attributeId: formatted.attributeId,
         displayAs: formatted.displayAs,
@@ -174,7 +174,7 @@ export class QuickFilterService {
 
     return {
       category: {
-        _id: category.id,
+        id: category.id,
         name: category.name,
         slug: category.slug,
         level: category.level,

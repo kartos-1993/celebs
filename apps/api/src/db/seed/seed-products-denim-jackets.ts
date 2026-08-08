@@ -26,15 +26,15 @@ export async function seedProductsDenimJackets(): Promise<void> {
       name: 'Men Denim Jackets',
       slug: 'men-denim-jackets',
       level: parentCat ? 2 : 1,
-      parentCategory: parentCat ? parentCat._id : null,
+      parentCategory: parentCat ? (parentCat.id || parentCat._id) : null,
       path: parentCat ? [...parentCat.path, 'men-denim-jackets'] : ['men-denim-jackets'],
       isActive: true,
       sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length']
     });
   }
 
-  const parentCategoryId = denimJacketCat.parentCategory || denimJacketCat._id;
-  const subcategoryId = denimJacketCat._id;
+  const parentCategoryId = denimJacketCat.parentCategory || denimJacketCat.id || denimJacketCat._id;
+  const subcategoryId = denimJacketCat.id || denimJacketCat._id;
 
   // 2. Read json dataset
   const jsonPath = path.join(__dirname, 'data', 'denim_jackets.json');
