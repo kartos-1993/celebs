@@ -53,7 +53,6 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
 
   const availableParents = categories.filter((cat) => {
     if (cat.id === initialDataId) return false;
-    if (cat.level && cat.level >= 3) return false;
     if (cat.parent === initialDataId || (cat as any).parentCategory === initialDataId) return false;
     if (editingSlug) {
       if (Array.isArray(cat.path)) {
