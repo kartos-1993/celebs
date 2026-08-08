@@ -27,6 +27,12 @@ interface CategoryFormDialogProps {
   isLoading?: boolean;
 }
 
+function formatCategoryPath(path: unknown): string {
+  if (Array.isArray(path)) return path.join(' > ');
+  if (typeof path === 'string') return path.split('/').join(' > ');
+  return String(path || '');
+}
+
 export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   open,
   onOpenChange,
@@ -68,7 +74,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
           </DialogTitle>
           {editingCategory && freshCategoryData?.path && (
             <p className="text-xs text-fashion-600 font-medium pt-0.5">
-              Path: {Array.isArray(freshCategoryData.path) ? freshCategoryData.path.join(' > ') : typeof freshCategoryData.path === 'string' ? freshCategoryData.path.split('/').join(' > ') : String(freshCategoryData.path)}
+              Path: {formatCategoryPath(freshCategoryData.path)}
             </p>
           )}
         </DialogHeader>
