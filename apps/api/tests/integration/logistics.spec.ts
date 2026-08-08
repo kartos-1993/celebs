@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import prisma from '../../src/db/index.js';
 import { logisticsService } from '../../src/modules/logistics/logistics.service.js';
 import { OrderStatus, PaymentMethod, CodStatus } from '@prisma/client';
@@ -8,12 +8,12 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
   let testAddressId: string;
   let testOrderId: string;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Create test user
     const user = await prisma.user.create({
       data: {
         name: 'Test Logistics User',
-        email: `logistics_${Date.now()}@test.com`,
+        email: `logistics_${Date.now()}_${Math.random()}@test.com`,
         password: 'password123',
       },
     });
@@ -36,7 +36,7 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
     // Create test order
     const order = await prisma.order.create({
       data: {
-        orderNumber: `ORD-LOG-${Date.now()}`,
+        orderNumber: `ORD-LOG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         userId: testUserId,
         addressId: testAddressId,
         subtotal: 5000,

@@ -36,8 +36,8 @@ export type warehouseType = z.infer<typeof warehouseSchema>;
 export type vendorDocumentsType = z.infer<typeof vendorDocumentsSchema>;
 export type vendorBusinessInfoType = z.infer<typeof vendorBusinessInfoSchema>;
 
-export type CreateProductType = z.infer<typeof createProductSchema>;
-export type UpdateProductType = z.infer<typeof updateProductSchema>;
+export type CreateProductType = z.input<typeof createProductSchema>;
+export type UpdateProductType = z.input<typeof updateProductSchema>;
 export type ProductFilterType = z.input<typeof productFilterSchema>;
 export type ProductType = z.infer<typeof createProductSchema>;
 export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;

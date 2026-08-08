@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import type { IAttribute } from '@/db/models/attribute.model';
+import prisma from '@/config/db.prisma';
 
 // UI field types supported by the renderer
 export type UiType =
@@ -46,16 +47,31 @@ function titleCase(s: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function selectDataSource(attr: IAttribute) {
-  // Prefer standard option sets; client will call this path via ProductAPI base URL
+function selectDataSource(attr: any, optionSetsMap: Map<string, string[]>) {
+  const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
+
+  const searchName = attr.optionSetName ||
+    (attr.name === 'Color' || attr.variantType === 'color' ? 'Basic Colors' :
+     attr.name === 'Size' || attr.variantType === 'size' ? 'Alpha Sizes (XXS-5XL)' :
+     attr.name);
+
+  const matched = optionSetsMap.get(searchName.toLowerCase()) || optionSetsMap.get(String(attr.name).toLowerCase());
+  if (matched && matched.length > 0 && (vals.length === 0 || attr.useStandardOptions)) {
+    return matched.map((v) => ({ label: v, value: v }));
+  }
+
+  if (vals.length > 0) {
+    return vals.map((v) => ({ label: v, value: v }));
+  }
+
   if (attr.useStandardOptions && attr.optionSetId) {
     return { optionSetId: String(attr.optionSetId), fetch: `/option-sets/${String(attr.optionSetId)}` };
   }
-  const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
-  return vals.map((v) => ({ label: v, value: v }));
+
+  return [];
 }
 
-function attributeToField(attr: IAttribute): FieldSpec {
+function attributeToField(attr: IAttribute, optionSetsMap: Map<string, string[]>): FieldSpec {
   const group: FieldGroup = attr.isVariant ? 'variant' : (attr.group || 'details');
   const base = {
     name: attr.name,
@@ -75,15 +91,15 @@ function attributeToField(attr: IAttribute): FieldSpec {
     case 'boolean':
       return { ...base, uiType: 'Switch' };
     case 'select':
-      return { ...base, uiType: 'select', dataSource: selectDataSource(attr) };
+      return { ...base, uiType: 'select', dataSource: selectDataSource(attr, optionSetsMap) };
     case 'multiselect':
-      return { ...base, uiType: 'multiselect', dataSource: selectDataSource(attr) };
+      return { ...base, uiType: 'multiselect', dataSource: selectDataSource(attr, optionSetsMap) };
     default:
       return { ...base, uiType: 'input' };
   }
 }
 
-export function composeSchema(params: {
+export async function composeSchema(params: {
   category: CategoryDocLike;
   locale: string;
   policy: {
@@ -100,6 +116,17 @@ export function composeSchema(params: {
     };
   };
 }) {
+  const optionSets = await prisma.optionSet.findMany();
+  const optionSetsMap = new Map<string, string[]>();
+  for (const s of optionSets) {
+    if (Array.isArray(s.options)) {
+      optionSetsMap.set(s.name.toLowerCase(), s.options as string[]);
+      if (s.displayName) {
+        optionSetsMap.set(s.displayName.toLowerCase(), s.options as string[]);
+      }
+    }
+  }
+
   const fields: FieldSpec[] = [];
 
   // System fields (images only; product name is handled in Basic Info section on the web app)
@@ -126,7 +153,7 @@ export function composeSchema(params: {
 
   // Category-authored fields
   for (const attr of params.category.attributes || []) {
-    fields.push(attributeToField(attr));
+    fields.push(attributeToField(attr, optionSetsMap));
   }
 
   // Variations -> SKU matrix

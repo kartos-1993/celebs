@@ -96,7 +96,13 @@ const BasicInfoSection = ({
               <div className="rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
                 Current selection:{' '}
                 <span className="font-semibold">
-                  {(selectedCategory?.path || categoryPath || []).join(' > ')}
+                  {(() => {
+                    const p = selectedCategory?.path || categoryPath;
+                    if (!p) return '';
+                    if (Array.isArray(p)) return p.join(' > ');
+                    if (typeof p === 'string') return p.split('/').join(' > ');
+                    return String(p);
+                  })()}
                 </span>
               </div>
             ) : null}

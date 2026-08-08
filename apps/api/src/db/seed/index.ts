@@ -27,8 +27,8 @@ export async function runMasterSeed(): Promise<void> {
     // Step 3: Products Catalog
     if (isReset) {
       console.log('\n⚠️ [--reset active] Wiping Product collection...');
-      const { ProductModel } = await import('../models/product.model');
-      await ProductModel.deleteMany({});
+      const prisma = (await import('../../config/db.prisma')).default;
+      await prisma.product.deleteMany({});
     }
 
     await seedProductsMockCatalog(false);

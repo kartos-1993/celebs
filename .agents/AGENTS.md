@@ -24,3 +24,17 @@ Enforce all file creation logic to follow this structure precisely:
 - Media upload components must completely avoid Multer memory streams. Use Cloudflare R2 presigned PUT url generation pipelines directly to decouple edge binary ingestion tracks.
 - High-concurrency caching loops must rely on stateless HTTP REST operations backed by Upstash Redis.
 - Isolate testing vectors within localized '__tests__' files. Ensure cross-domain repository abstractions are thoroughly stubbed with fast mock profiles to avoid processing over live external cloud infrastructures.
+
+## 5. Strict Type Safety & No-Explicit-Any Mandate
+- Explicit `any` annotations are strictly forbidden across all production code, domain modules, and test suites (`__tests__`).
+- Domain models and payloads must use explicit TypeScript types (e.g. Prisma models, Zod schema inputs/outputs like `CreateProductType`, `ProductFilterType`).
+- Function return types, test helper objects, and mocked boundaries must be strongly typed.
+
+## 6. Incremental Step-by-Step Refactoring & Commit Mandate
+- Never dump massive, unreviewable multi-file changes across the entire monorepo all at once.
+- Execute refactoring in discrete, logical steps (e.g. Step 1: `packages/shared-types`, Step 2: `apps/api`, Step 3: `apps/web-admin`, Step 4: `apps/mobile`).
+- After completing each logical step:
+  1. Run localized typechecks and unit/integration tests to verify correctness.
+  2. Commit the changes for that step with a clear, human-friendly git commit message.
+  3. Provide a summary of completed changes for review before moving to the next step.
+

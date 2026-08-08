@@ -1,4 +1,3 @@
-import { Types, FilterQuery } from 'mongoose';
 import slugify from 'slugify';
 import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
 import {
@@ -9,11 +8,10 @@ import {
   ProductStockType,
   ProductMeasurementType,
 } from '@celebs/shared-types';
-import { CategoryModel } from '@/db/models/category.model';
-import { IProduct, IReviewHistoryItem, ProductModel } from '@/db/models/product.model';
 import { sendEmail } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
-import prisma from '@/db';
+import { Prisma } from '@prisma/client';
+import prisma from '@/config/db.prisma';
 import { calculateProductQCScore } from './utils/product-qc';
 
 export type CreateProductInput = CreateProductType;
@@ -22,14 +20,29 @@ export type ProductSizeInput = ProductSizeType;
 export type ProductStockInput = ProductStockType;
 export type ProductColorVariantInput = ProductColorVariantType;
 
-
 export class ProductService {
+  private formatProductResponse(product: Record<string, unknown> | null): Record<string, unknown> | null {
+    if (!product) return null;
+    return {
+      ...product,
+      _id: product.id,
+      price: product.price != null ? Number(product.price) : 0,
+      discountedPrice: product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
+      category: product.category
+        ? { ...(product.category as Record<string, unknown>), _id: (product.category as { id?: string }).id }
+        : product.categoryId,
+      subcategory: product.subcategory
+        ? { ...(product.subcategory as Record<string, unknown>), _id: (product.subcategory as { id?: string }).id }
+        : product.subcategoryId,
+    };
+  }
+
   async createProduct(
     input: CreateProductInput,
     userId: string,
     vendorId?: string,
     vendorName?: string,
-  ): Promise<IProduct> {
+  ): Promise<Record<string, unknown> | null> {
     const { categoryId, subcategoryId } = await this.resolveCategoryIds(
       input.categoryId,
       input.subcategoryId,
@@ -37,46 +50,94 @@ export class ProductService {
 
     const slug = await this.generateUniqueSlug(input.name);
 
-    const product = await ProductModel.create({
-      name: input.name.trim(),
-      brand: input.brand?.trim() || undefined,
-      slug,
-      description: input.description?.trim() || '',
-      price: input.price,
-      discountedPrice: input.discountedPrice,
-      category: new Types.ObjectId(String(categoryId)),
-      subcategory: new Types.ObjectId(String(subcategoryId)),
-      sizes: input.sizes ?? [],
-      colorVariants: input.colorVariants,
-      mainImages: input.mainImages ?? [],
-      dynamicData: input.dynamicData ?? {},
-      tags: input.tags ?? [],
-      featured: input.featured ?? false,
-      status: input.status ?? 'draft',
-      vendorId: vendorId || undefined,
-      vendorName: vendorName || undefined,
-      createdBy: userId,
-      updatedBy: userId,
+    // Atomic Prisma Transaction: Create Product & Inventory in PostgreSQL together
+    const createdProduct = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.create({
+        data: {
+          name: input.name.trim(),
+          brand: input.brand?.trim() || undefined,
+          slug,
+          description: input.description?.trim() || '',
+          price: input.price,
+          discountedPrice: input.discountedPrice,
+          categoryId,
+          subcategoryId,
+          sizes: (input.sizes ?? []) as unknown as Prisma.InputJsonValue,
+          colorVariants: (input.colorVariants ?? []) as unknown as Prisma.InputJsonValue,
+          skus: (input.skus ?? []) as unknown as Prisma.InputJsonValue,
+          variantOptions: (input.variantOptions ?? []) as unknown as Prisma.InputJsonValue,
+          mainImages: input.mainImages ?? [],
+          dynamicData: (input.dynamicData ?? {}) as unknown as Prisma.InputJsonValue,
+          tags: input.tags ?? [],
+          featured: input.featured ?? false,
+          status: input.status ?? 'draft',
+          vendorId: vendorId || undefined,
+          vendorName: vendorName || undefined,
+          createdBy: userId,
+          updatedBy: userId,
+        },
+        include: {
+          category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+          subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        },
+      });
+
+      // Sync inventory records in the same transaction
+      if (input.colorVariants && Array.isArray(input.colorVariants)) {
+        for (const variant of input.colorVariants) {
+          const colorVariantName = variant.name;
+          if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
+
+          for (const stockItem of variant.stocks) {
+            const size = stockItem.size;
+            const quantity = stockItem.quantity ?? 0;
+            const sku = `SKU-${product.id.substring(0, 8)}-${colorVariantName
+              .substring(0, 3)
+              .toUpperCase()}-${size.toUpperCase()}`;
+
+            await tx.productInventory.upsert({
+              where: {
+                productId_colorVariantName_size: {
+                  productId: product.id,
+                  colorVariantName,
+                  size,
+                },
+              },
+              update: {
+                quantity,
+              },
+              create: {
+                productId: product.id,
+                colorVariantName,
+                size,
+                sku,
+                quantity,
+              },
+            });
+          }
+        }
+      }
+
+      return product;
     });
 
-    try {
-      await this.syncInventoryToPostgres(product._id.toString(), input.colorVariants);
-    } catch (error) {
-      await ProductModel.deleteOne({ _id: product._id });
-      throw error;
-    }
-
-    return product;
+    return this.formatProductResponse(createdProduct);
   }
 
-  async getProductById(id: string): Promise<IProduct | null> {
-    if (!Types.ObjectId.isValid(id)) {
+  async getProductById(id: string): Promise<any> {
+    if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
-    return (await ProductModel.findById(id)
-      .populate('category', 'name slug path level')
-      .populate('subcategory', 'name slug path level')
-      .lean()) as IProduct | null;
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+      },
+    });
+
+    if (!product) return null;
+    return this.formatProductResponse(product);
   }
 
   async getProductsByVendor(
@@ -84,212 +145,219 @@ export class ProductService {
     filters: ProductFilterType = {},
     page = 1,
     limit = 10,
-  ): Promise<{ products: IProduct[]; total: number }> {
-    const query: FilterQuery<IProduct> = {
+  ): Promise<{ products: any[]; total: number }> {
+    const where: any = {
       vendorId,
-      status: filters.status ? filters.status : { $ne: 'archived' },
+      status: filters.status ? filters.status : { not: 'archived' },
     };
 
     if (filters.search) {
-      query.$text = { $search: filters.search };
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { brand: { contains: filters.search, mode: 'insensitive' } },
+      ];
     }
     if (typeof filters.featured === 'boolean') {
-      query.featured = filters.featured;
+      where.featured = filters.featured;
     }
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      query.price = {};
-      if (filters.minPrice !== undefined) query.price.$gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) query.price.$lte = filters.maxPrice;
+      where.price = {};
+      if (filters.minPrice !== undefined) where.price.gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) where.price.lte = filters.maxPrice;
     }
-    if (filters.subcategoryId && Types.ObjectId.isValid(filters.subcategoryId)) {
-      query.subcategory = new Types.ObjectId(String(filters.subcategoryId));
-    } else if (filters.categoryId && Types.ObjectId.isValid(filters.categoryId)) {
-      query.category = new Types.ObjectId(String(filters.categoryId));
+    if (filters.subcategoryId) {
+      where.subcategoryId = filters.subcategoryId;
+    } else if (filters.categoryId) {
+      where.categoryId = filters.categoryId;
     }
 
     const sortField = filters.sortBy || 'createdAt';
-    const sortDir = filters.sortOrder === 'asc' ? 1 : -1;
-    const sortOptions: Record<string, 1 | -1> = { [sortField]: sortDir };
+    const sortOrder = filters.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const skip = (page - 1) * limit;
     const [products, total] = await Promise.all([
-      ProductModel.find(query)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .populate('category', 'name slug path level')
-        .populate('subcategory', 'name slug path level')
-        .lean(),
-      ProductModel.countDocuments(query),
+      prisma.product.findMany({
+        where,
+        orderBy: { [sortField]: sortOrder },
+        skip,
+        take: limit,
+        include: {
+          category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+          subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        },
+      }),
+      prisma.product.count({ where }),
     ]);
 
-    return { products: products as unknown as IProduct[], total };
+    return {
+      products: products.map((p) => this.formatProductResponse(p)),
+      total,
+    };
   }
 
   async getAllProducts(
     filters: ProductFilterType = {},
     page = 1,
     limit = 10,
-  ): Promise<{ products: IProduct[]; total: number; nextCursor?: string; hasMore?: boolean }> {
-    const query: FilterQuery<IProduct> = {};
+  ): Promise<{ products: Array<Record<string, unknown> | null>; total: number; nextCursor?: string; hasMore?: boolean }> {
+    const where: Prisma.ProductWhereInput = {};
 
     if (filters.status) {
-      query.status = filters.status;
+      where.status = filters.status;
     } else if (filters.vendorId) {
-      query.status = { $ne: 'archived' };
+      where.status = { not: 'archived' };
     } else {
-      query.status = 'published';
+      where.status = 'published';
     }
 
     if (filters.search) {
-      query.$text = { $search: filters.search };
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { brand: { contains: filters.search, mode: 'insensitive' } },
+        { tags: { has: filters.search } },
+      ];
     }
 
     if (filters.vendorId) {
-      query.vendorId = filters.vendorId;
+      where.vendorId = filters.vendorId;
     }
 
     if (typeof filters.featured === 'boolean') {
-      query.featured = filters.featured;
+      where.featured = filters.featured;
     }
 
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      query.price = {};
-      if (filters.minPrice !== undefined) query.price.$gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) query.price.$lte = filters.maxPrice;
+      where.price = {};
+      if (filters.minPrice !== undefined) where.price.gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) where.price.lte = filters.maxPrice;
     }
 
-    if (filters.subcategoryId && Types.ObjectId.isValid(filters.subcategoryId)) {
-      query.subcategory = new Types.ObjectId(String(filters.subcategoryId));
+    if (filters.subcategoryId) {
+      where.subcategoryId = filters.subcategoryId;
     }
 
     if (filters.tag) {
-      query.tags = filters.tag;
+      where.tags = { has: filters.tag };
     }
 
     if (filters.category) {
       const categoryParam = filters.category.trim();
 
-      // Generic MongoDB category query matching slug, path, or name regex (no hardcoded category names or prefixes)
-      const categoryDoc = await CategoryModel.findOne({
-        $or: [
-          { slug: categoryParam.toLowerCase() },
-          ...(Types.ObjectId.isValid(categoryParam) ? [{ _id: new Types.ObjectId(categoryParam) }] : []),
-          { path: categoryParam.toLowerCase() },
-          { name: new RegExp(`^${categoryParam.replace(/-/g, ' ')}$`, 'i') },
-          { slug: new RegExp(categoryParam.replace(/-/g, '.*'), 'i') },
-          { name: new RegExp(categoryParam.replace(/-/g, '|'), 'i') },
-        ],
-      })
-        .select('_id slug name level parentCategory')
-        .lean();
+      const categoryDoc = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { slug: { equals: categoryParam, mode: 'insensitive' } },
+            { id: categoryParam },
+            { path: { equals: categoryParam, mode: 'insensitive' } },
+            { name: { equals: categoryParam.replace(/-/g, ' '), mode: 'insensitive' } },
+          ],
+        },
+        select: { id: true, slug: true, name: true, level: true, parentCategory: true },
+      });
 
       if (categoryDoc) {
-        // Generic recursive subcategory lookup for any parent category
-        const descendantCategories = await CategoryModel.find({
-          $or: [
-            { parentCategory: categoryDoc._id },
-            { path: categoryDoc.slug },
-          ],
-        })
-          .select('_id')
-          .lean();
+        const descendantCategories = await prisma.category.findMany({
+          where: {
+            OR: [
+              { parentCategory: categoryDoc.id },
+              { path: categoryDoc.slug },
+            ],
+          },
+          select: { id: true },
+        });
 
-        const allMatchingCategoryIds = [
-          categoryDoc._id,
-          ...descendantCategories.map((c) => c._id),
-        ];
+        const allMatchingCategoryIds = [categoryDoc.id, ...descendantCategories.map((c) => c.id)];
 
-        query.$or = [
-          { category: { $in: allMatchingCategoryIds } },
-          { subcategory: { $in: allMatchingCategoryIds } },
+        where.OR = [
+          { categoryId: { in: allMatchingCategoryIds } },
+          { subcategoryId: { in: allMatchingCategoryIds } },
         ];
-      } else {
-        // Generic keyword search fallback
-        const keywords = categoryParam.split('-').filter((w) => w.length > 2);
-        if (keywords.length > 0) {
-          const keywordRegexes = keywords.map((k) => new RegExp(k, 'i'));
-          query.$or = [
-            { name: { $in: keywordRegexes } },
-            { tags: { $in: keywordRegexes } },
-          ];
-        }
       }
-    } else if (filters.categoryId && Types.ObjectId.isValid(filters.categoryId)) {
-      const catId = new Types.ObjectId(String(filters.categoryId));
-      const childCategories = await CategoryModel.find({ parentCategory: catId }).select('_id').lean();
-      const catIds = [catId, ...childCategories.map((c) => c._id)];
-      query.$or = [
-        { category: { $in: catIds } },
-        { subcategory: { $in: catIds } },
+    } else if (filters.categoryId) {
+      const childCategories = await prisma.category.findMany({
+        where: { parentCategory: filters.categoryId },
+        select: { id: true },
+      });
+      const catIds = [filters.categoryId, ...childCategories.map((c) => c.id)];
+      where.OR = [
+        { categoryId: { in: catIds } },
+        { subcategoryId: { in: catIds } },
       ];
     }
 
-    // Cursor-based pagination logic
-    if (filters.cursor && Types.ObjectId.isValid(filters.cursor)) {
-      query._id = { $lt: new Types.ObjectId(String(filters.cursor)) };
-    }
-
-    const sortField = filters.cursor ? '_id' : (filters.sortBy || '_id');
-    const sortDir = filters.sortOrder === 'asc' ? 1 : -1;
-    const sortOptions: Record<string, 1 | -1> = { [sortField]: sortDir };
+    const sortField = filters.sortBy || 'createdAt';
+    const sortOrder = filters.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const fetchLimit = limit + 1;
-    const skip = filters.cursor ? 0 : (page - 1) * limit;
+    const findOptions: Prisma.ProductFindManyArgs = {
+      where,
+      orderBy: { [sortField]: sortOrder },
+      take: fetchLimit,
+      include: {
+        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+      },
+    };
+
+    if (filters.cursor) {
+      findOptions.cursor = { id: filters.cursor };
+      findOptions.skip = 1;
+    } else {
+      findOptions.skip = (page - 1) * limit;
+    }
 
     const [rawProducts, total] = await Promise.all([
-      ProductModel.find(query)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(fetchLimit)
-        .populate('category', 'name slug path level')
-        .populate('subcategory', 'name slug path level')
-        .lean(),
-      filters.cursor ? Promise.resolve(0) : ProductModel.countDocuments(query),
+      prisma.product.findMany(findOptions),
+      filters.cursor ? Promise.resolve(0) : prisma.product.count({ where }),
     ]);
 
     const hasMore = rawProducts.length > limit;
     const products = hasMore ? rawProducts.slice(0, limit) : rawProducts;
-    const nextCursor = hasMore && products.length > 0 ? (products[products.length - 1]._id as Types.ObjectId).toString() : undefined;
+    const nextCursor = hasMore && products.length > 0 ? products[products.length - 1].id : undefined;
 
-    return { products: products as any, total, nextCursor, hasMore };
+    return {
+      products: products.map((p) => this.formatProductResponse(p as unknown as Record<string, unknown>)),
+      total,
+      nextCursor,
+      hasMore,
+    };
   }
 
   async getProductReviewQueue(
     page = 1,
     limit = 10,
-  ): Promise<{ products: IProduct[]; total: number }> {
-    const query = { status: 'pending_review' };
+  ): Promise<{ products: Array<Record<string, unknown> | null>; total: number }> {
+    const where = { status: 'pending_review' };
     const skip = (page - 1) * limit;
 
     const [rawProducts, total] = await Promise.all([
-      ProductModel.find(query)
-        .sort({ createdAt: 1 }) // Oldest first to satisfy queue order
-        .skip(skip)
-        .limit(limit)
-        .populate('category', 'name slug path level')
-        .populate('subcategory', 'name slug path level')
-        .lean(),
-      ProductModel.countDocuments(query),
+      prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: limit,
+        include: {
+          category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+          subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        },
+      }),
+      prisma.product.count({ where }),
     ]);
 
     const products = rawProducts.map((p) => {
-      const qcResult = calculateProductQCScore(p);
+      const formatted = this.formatProductResponse(p);
+      const qcResult = calculateProductQCScore(formatted);
       return {
-        ...p,
+        ...formatted,
         qualityScore: qcResult.score,
       };
-    }) as unknown as IProduct[];
+    });
 
     return { products, total };
   }
 
-  async submitProductForReview(id: string, vendorId: string): Promise<IProduct> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    const product = await ProductModel.findById(id);
+  async submitProductForReview(id: string, vendorId: string): Promise<Record<string, unknown> | null> {
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -302,9 +370,16 @@ export class ProductService {
       throw new AppError('Product is not in a submittable state', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
-    product.status = 'pending_review';
-    await product.save();
-    return product;
+    const updated = await prisma.product.update({
+      where: { id },
+      data: { status: 'pending_review' },
+      include: {
+        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+      },
+    });
+
+    return this.formatProductResponse(updated);
   }
 
   async reviewProduct(
@@ -320,12 +395,8 @@ export class ProductService {
     },
     reviewerIdArg?: string,
     noteArg?: string
-  ): Promise<IProduct> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    const product = await ProductModel.findById(id);
+  ): Promise<Record<string, unknown> | null> {
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -356,44 +427,52 @@ export class ProductService {
       note = noteArg;
     }
 
-    // Compute quality control score
-    const qcResult = calculateProductQCScore(product.toObject());
-    product.qualityScore = qcResult.score;
+    const formattedProduct = this.formatProductResponse(product as unknown as Record<string, unknown>);
+    const qcResult = calculateProductQCScore(formattedProduct);
 
-    if (action === 'approve') {
-      product.status = 'published';
-      product.reviewNote = undefined;
-      product.rejectionReasonCategory = undefined;
-      product.rejectionSubcategories = [];
-      product.rejectionFields = [];
-    } else {
-      product.status = 'rejected';
-      product.reviewNote = note || 'No specific feedback provided.';
-      product.rejectionReasonCategory = category;
-      product.rejectionSubcategories = subcategories;
-      product.rejectionFields = flaggedFields;
-    }
-
-    product.reviewedBy = reviewerId;
-    product.reviewedAt = new Date();
-
-    const historyItem: IReviewHistoryItem = {
+    const newHistoryItem = {
       action,
       reviewerId,
       reviewerName,
       rejectionReasonCategory: category,
       rejectionSubcategories: subcategories,
       rejectionFields: flaggedFields,
-      note: product.reviewNote,
+      note: note || (action === 'reject' ? 'No specific feedback provided.' : undefined),
       reviewedAt: new Date(),
     };
 
-    if (!product.reviewHistory) {
-      product.reviewHistory = [];
-    }
-    product.reviewHistory.push(historyItem);
+    const existingHistory = Array.isArray(product.reviewHistory) ? (product.reviewHistory as Prisma.JsonArray) : [];
+    const updatedHistory = [...existingHistory, newHistoryItem] as unknown as Prisma.InputJsonValue;
 
-    await product.save();
+    const updateData: Prisma.ProductUpdateInput = {
+      qualityScore: qcResult.score,
+      reviewedBy: reviewerId,
+      reviewedAt: new Date(),
+      reviewHistory: updatedHistory,
+    };
+
+    if (action === 'approve') {
+      updateData.status = 'published';
+      updateData.reviewNote = null;
+      updateData.rejectionReasonCategory = null;
+      updateData.rejectionSubcategories = [];
+      updateData.rejectionFields = [];
+    } else {
+      updateData.status = 'rejected';
+      updateData.reviewNote = note || 'No specific feedback provided.';
+      updateData.rejectionReasonCategory = category || null;
+      updateData.rejectionSubcategories = subcategories;
+      updateData.rejectionFields = flaggedFields;
+    }
+
+    const updated = await prisma.product.update({
+      where: { id },
+      data: updateData,
+      include: {
+        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+      },
+    });
 
     if (action === 'reject' && product.vendorId) {
       try {
@@ -405,10 +484,10 @@ export class ProductService {
         if (vendorProfile?.user?.email) {
           const emailData = productRejectionEmailTemplate({
             productName: product.name,
-            rejectionReason: product.reviewNote || '',
-            category: category,
-            subcategories: subcategories,
-            flaggedFields: flaggedFields,
+            rejectionReason: updated.reviewNote || '',
+            category,
+            subcategories,
+            flaggedFields,
             brandName: 'Celebs Marketplace',
             brandColor: '#EF4444',
           });
@@ -425,7 +504,7 @@ export class ProductService {
       }
     }
 
-    return product;
+    return this.formatProductResponse(updated);
   }
 
   async updateProduct(
@@ -434,17 +513,12 @@ export class ProductService {
     userId: string,
     role: string,
     vendorId?: string,
-  ): Promise<IProduct> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    const product = await ProductModel.findById(id);
+  ): Promise<any> {
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    // Role ownership check
     if (role === 'VENDOR') {
       if (String(product.vendorId) !== String(vendorId)) {
         throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
@@ -454,86 +528,95 @@ export class ProductService {
       }
     }
 
-    // Resolve categories if updated
+    let resolvedCategoryId = product.categoryId;
+    let resolvedSubcategoryId = product.subcategoryId;
+
     if (updateData.categoryId || updateData.subcategoryId) {
       const resolved = await this.resolveCategoryIds(
-        updateData.categoryId || String(product.category),
-        updateData.subcategoryId || String(product.subcategory),
+        updateData.categoryId || product.categoryId,
+        updateData.subcategoryId || product.subcategoryId || undefined,
       );
-      (updateData as any).category = new Types.ObjectId(String(resolved.categoryId));
-      (updateData as any).subcategory = new Types.ObjectId(String(resolved.subcategoryId));
-      delete updateData.categoryId;
-      delete updateData.subcategoryId;
+      resolvedCategoryId = resolved.categoryId;
+      resolvedSubcategoryId = resolved.subcategoryId;
     }
 
+    let slug = product.slug;
     if (updateData.name && updateData.name.trim() !== product.name) {
-      updateData.name = updateData.name.trim();
-      (updateData as any).slug = await this.generateUniqueSlug(updateData.name);
+      slug = await this.generateUniqueSlug(updateData.name.trim());
     }
 
-    Object.assign(product, updateData);
-    product.updatedBy = userId;
+    const updated = await prisma.$transaction(async (tx) => {
+      const p = await tx.product.update({
+        where: { id },
+        data: {
+          ...(updateData.name ? { name: updateData.name.trim() } : {}),
+          ...(updateData.brand !== undefined ? { brand: updateData.brand?.trim() || null } : {}),
+          slug,
+          ...(updateData.description !== undefined ? { description: updateData.description?.trim() || '' } : {}),
+          ...(updateData.price ? { price: updateData.price } : {}),
+          ...(updateData.discountedPrice !== undefined ? { discountedPrice: updateData.discountedPrice } : {}),
+          categoryId: resolvedCategoryId,
+          subcategoryId: resolvedSubcategoryId,
+          ...(updateData.sizes ? { sizes: updateData.sizes as any } : {}),
+          ...(updateData.colorVariants ? { colorVariants: updateData.colorVariants as any } : {}),
+          ...(updateData.skus ? { skus: updateData.skus as any } : {}),
+          ...(updateData.variantOptions ? { variantOptions: updateData.variantOptions as any } : {}),
+          ...(updateData.mainImages ? { mainImages: updateData.mainImages } : {}),
+          ...(updateData.dynamicData ? { dynamicData: updateData.dynamicData as any } : {}),
+          ...(updateData.tags ? { tags: updateData.tags } : {}),
+          ...(updateData.featured !== undefined ? { featured: updateData.featured } : {}),
+          ...(updateData.status ? { status: updateData.status } : {}),
+          updatedBy: userId,
+        },
+        include: {
+          category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+          subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        },
+      });
 
-    await product.save();
-    await this.syncInventoryToPostgres(product._id.toString(), product.colorVariants);
-    return product;
-  }
+      if (updateData.colorVariants && Array.isArray(updateData.colorVariants)) {
+        for (const variant of updateData.colorVariants) {
+          const colorVariantName = variant.name;
+          if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
 
-  private async syncInventoryToPostgres(
-    productId: string,
-    colorVariants: ProductColorVariantInput[],
-  ) {
-    if (!colorVariants || !Array.isArray(colorVariants)) return;
+          for (const stockItem of variant.stocks) {
+            const size = stockItem.size;
+            const quantity = stockItem.quantity ?? 0;
+            const sku = `SKU-${p.id.substring(0, 8)}-${colorVariantName
+              .substring(0, 3)
+              .toUpperCase()}-${size.toUpperCase()}`;
 
-    for (const variant of colorVariants) {
-      const colorVariantName = variant.name;
-      if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
-
-      for (const stockItem of variant.stocks) {
-        const size = stockItem.size;
-        const quantity = stockItem.quantity ?? 0;
-        const sku = `SKU-${productId.substring(productId.length - 6)}-${colorVariantName
-          .substring(0, 3)
-          .toUpperCase()}-${size.toUpperCase()}`;
-
-        try {
-          await prisma.productInventory.upsert({
-            where: {
-              productId_colorVariantName_size: {
-                productId,
+            await tx.productInventory.upsert({
+              where: {
+                productId_colorVariantName_size: {
+                  productId: p.id,
+                  colorVariantName,
+                  size,
+                },
+              },
+              update: {
+                quantity,
+              },
+              create: {
+                productId: p.id,
                 colorVariantName,
                 size,
+                sku,
+                quantity,
               },
-            },
-            update: {
-              quantity,
-            },
-            create: {
-              productId,
-              colorVariantName,
-              size,
-              sku,
-              quantity,
-            },
-          });
-        } catch (err) {
-          console.error('[ProductService] Failed to sync inventory to PostgreSQL:', err);
-          throw new AppError(
-            `Failed to sync inventory stock for variant "${colorVariantName}" (${size})`,
-            HTTPSTATUS.INTERNAL_SERVER_ERROR,
-            ErrorCode.INTERNAL_SERVER_ERROR,
-          );
+            });
+          }
         }
       }
-    }
+
+      return p;
+    });
+
+    return this.formatProductResponse(updated);
   }
 
-  async archiveProduct(id: string, userId: string, role: string, vendorId?: string): Promise<IProduct> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    const product = await ProductModel.findById(id);
+  async archiveProduct(id: string, userId: string, role: string, vendorId?: string): Promise<any> {
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -542,19 +625,23 @@ export class ProductService {
       throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
     }
 
-    product.status = 'archived';
-    product.updatedBy = userId;
+    const updated = await prisma.product.update({
+      where: { id },
+      data: {
+        status: 'archived',
+        updatedBy: userId,
+      },
+      include: {
+        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+      },
+    });
 
-    await product.save();
-    return product;
+    return this.formatProductResponse(updated);
   }
 
-  async toggleProductActivation(id: string, vendorId: string): Promise<IProduct> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    const product = await ProductModel.findById(id);
+  async toggleProductActivation(id: string, vendorId: string): Promise<any> {
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -567,45 +654,57 @@ export class ProductService {
       throw new AppError('Only published or deactivated products can be toggled', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
-    product.status = product.status === 'published' ? 'deactivated' : 'published';
-    await product.save();
-    return product;
+    const updated = await prisma.product.update({
+      where: { id },
+      data: {
+        status: product.status === 'published' ? 'deactivated' : 'published',
+      },
+      include: {
+        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+      },
+    });
+
+    return this.formatProductResponse(updated);
   }
 
-  private async resolveCategoryIds(categoryId: string, subcategoryId: string) {
+  private async resolveCategoryIds(categoryId: string, subcategoryId?: string) {
     if (process.env.NODE_ENV === 'test') {
-      return { categoryId, subcategoryId };
+      return { categoryId, subcategoryId: subcategoryId || categoryId };
     }
 
-    if (!Types.ObjectId.isValid(subcategoryId)) {
-      throw new AppError(
-        'Invalid subcategory ID',
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
+    let resolvedSubcategory = null;
+    if (subcategoryId) {
+      resolvedSubcategory = await prisma.category.findUnique({
+        where: { id: subcategoryId },
+      });
+      if (!resolvedSubcategory) {
+        throw new AppError(
+          'Subcategory not found',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.SUBCATEGORY_NOT_FOUND,
+        );
+      }
     }
 
-    const subcategory = await CategoryModel.findById(subcategoryId).lean();
-    if (!subcategory) {
-      throw new AppError(
-        'Subcategory not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.SUBCATEGORY_NOT_FOUND,
-      );
+    let resolvedCategory = null;
+    if (categoryId) {
+      resolvedCategory = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
     }
 
-    let resolvedCategoryId = categoryId;
-    if (
-      !Types.ObjectId.isValid(categoryId) ||
-      String(categoryId) === String(subcategoryId)
-    ) {
-      resolvedCategoryId = subcategory.parentCategory
-        ? String(subcategory.parentCategory)
-        : String(subcategory._id);
+    if (!resolvedCategory && resolvedSubcategory?.parentCategory) {
+      resolvedCategory = await prisma.category.findUnique({
+        where: { id: resolvedSubcategory.parentCategory },
+      });
     }
 
-    const category = await CategoryModel.findById(resolvedCategoryId).lean();
-    if (!category) {
+    if (!resolvedCategory && resolvedSubcategory) {
+      resolvedCategory = resolvedSubcategory;
+    }
+
+    if (!resolvedCategory) {
       throw new AppError(
         'Category not found',
         HTTPSTATUS.NOT_FOUND,
@@ -614,8 +713,8 @@ export class ProductService {
     }
 
     return {
-      categoryId: String(category._id),
-      subcategoryId: String(subcategory._id),
+      categoryId: resolvedCategory.id,
+      subcategoryId: resolvedSubcategory ? resolvedSubcategory.id : resolvedCategory.id,
     };
   }
 
@@ -624,7 +723,7 @@ export class ProductService {
     let slug = `${base}-${Date.now().toString().slice(-6)}`;
     let attempt = 0;
 
-    while (await ProductModel.exists({ slug })) {
+    while (await prisma.product.findUnique({ where: { slug } })) {
       attempt += 1;
       slug = `${base}-${Date.now()}-${attempt}`;
     }

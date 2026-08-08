@@ -1,5 +1,4 @@
-import { OptionSetModel } from '../models/option-set.model';
-import { connectDb, disconnectDb } from './config';
+import prisma from '../../config/db.prisma';
 
 export const DEFAULT_OPTION_SETS = [
   {
@@ -66,15 +65,21 @@ export const DEFAULT_OPTION_SETS = [
 ];
 
 export async function seedOptionSets(): Promise<void> {
-  console.log('\n🎨 Seeding Option Sets...');
-  await connectDb();
+  console.log('\n🎨 Seeding Option Sets into PostgreSQL...');
 
   for (const set of DEFAULT_OPTION_SETS) {
-    await OptionSetModel.updateOne(
-      { name: set.name },
-      { $set: set },
-      { upsert: true, setDefaultsOnInsert: true }
-    );
+    await prisma.optionSet.upsert({
+      where: { name: set.name },
+      update: {
+        displayName: set.name,
+        options: set.values,
+      },
+      create: {
+        name: set.name,
+        displayName: set.name,
+        options: set.values,
+      },
+    });
     console.log(`  └─ Upserted option set: "${set.name}" (${set.values.length} values)`);
   }
   console.log('✅ Option Sets Seeded Successfully!');
@@ -82,10 +87,8 @@ export async function seedOptionSets(): Promise<void> {
 
 if (require.main === module) {
   seedOptionSets()
-    .then(() => disconnectDb())
     .catch((err) => {
       console.error('❌ Seeding option sets failed:', err);
-      disconnectDb();
       process.exit(1);
     });
 }

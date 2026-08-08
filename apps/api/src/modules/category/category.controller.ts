@@ -114,7 +114,7 @@ export class CategoryController {
           );
         }
         level = parentCategory.level + 1;
-        path = [...parentCategory.path.map((p) => p.toString()), slug];
+        path = [...(Array.isArray(parentCategory.path) ? parentCategory.path.map((p: string) => String(p)) : [String(parentCategory.path)]), slug];
       } else {
         path = [slug];
       }
