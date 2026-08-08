@@ -33,7 +33,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 }) => {
   const { role } = useAuthContext();
   const isSuperadmin = role === 'SUPERADMIN';
-  const isEditing = !!initialData?._id;
+  const isEditing = !!initialData?.id;
 
   const storefrontSaveHandlerRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -93,7 +93,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             <CategoryBasicInfoTab
               form={form}
               categories={categories}
-              initialDataId={initialData?._id}
+              initialDataId={initialData?.id}
               role={role}
               isUploadingImage={isUploadingImage}
               newColumnInput={newColumnInput}
@@ -116,7 +116,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           {isSuperadmin && (
             <TabsContent value="storefront">
               <CategoryStorefrontTab
-                categoryId={initialData?._id}
+                categoryId={initialData?.id}
                 onRegisterSaveHandler={handleRegisterStorefrontSave}
               />
             </TabsContent>

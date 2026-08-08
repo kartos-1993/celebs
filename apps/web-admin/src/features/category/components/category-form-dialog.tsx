@@ -37,7 +37,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   onCancel,
   isLoading = false,
 }) => {
-  const editingId = editingCategory?._id || '';
+  const editingId = editingCategory?.id || '';
 
   // Fetch fresh category detail directly from server database when editing
   const { data: categoryDetailRes, isLoading: isLoadingDetail } = useCategory(editingId);
@@ -45,7 +45,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   const freshCategoryData = categoryDetailRes?.data || editingCategory;
 
   const parentCategory = parentCategoryId
-    ? categories.find((c) => c._id === parentCategoryId)
+    ? categories.find((c) => c.id === parentCategoryId)
     : null;
 
   const activeCategoryName = freshCategoryData?.name || editingCategory?.name;
@@ -87,7 +87,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
           </div>
         ) : (
           <CategoryForm
-            key={freshCategoryData?._id || parentCategoryId || 'new-category'}
+            key={freshCategoryData?.id || parentCategoryId || 'new-category'}
             initialData={
               freshCategoryData ||
               (parentCategoryId ? { parent: parentCategoryId } : undefined)

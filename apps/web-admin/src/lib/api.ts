@@ -18,7 +18,7 @@ import {
 
 type forgotPasswordType = { email: string };
 type SessionType = {
-  _id: string;
+  id: string;
   userId: string;
   userAgent: string;
   createdAt: string;

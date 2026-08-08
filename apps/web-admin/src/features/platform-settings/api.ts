@@ -1,7 +1,7 @@
 import { ProductAPI } from '@/lib/axios-client';
 
 export interface Banner {
-  _id?: string;
+  id?: string;
   imageUrl: string;
   linkType: 'PRODUCT' | 'CATEGORY' | 'EXTERNAL' | 'NONE';
   linkValue?: string;

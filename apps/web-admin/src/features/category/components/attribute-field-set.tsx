@@ -77,15 +77,15 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
   const { data: optionSets = [], isLoading: loadingSets } = useQuery<OptionSetItem[]>({
     queryKey: ['option-sets'],
     queryFn: async () => {
-      const res = await ProductAPI.get<{ data?: Array<{ id?: string; _id?: string; name: string }> }>('/option-sets');
+      const res = await ProductAPI.get<{ data?: Array<{ id?: string; name: string }> }>('/option-sets');
       const rawData = res.data;
       const sets = Array.isArray(rawData?.data)
         ? rawData.data
         : Array.isArray(rawData)
-        ? (rawData as Array<{ id?: string; _id?: string; name: string }>)
+        ? (rawData as Array<{ id?: string; name: string }>)
         : [];
-      return sets.map((s: { id?: string; _id?: string; name: string }) => ({
-        id: String(s.id || s._id || ''),
+      return sets.map((s: { id?: string; name: string }) => ({
+        id: String(s.id || ''),
         name: s.name,
       }));
     },

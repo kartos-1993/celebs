@@ -28,8 +28,8 @@ export function useQuickFilters(categoryId?: string) {
 
   const saveMutation = useMutation({
     mutationFn: async (payload: Partial<QuickFilter>) => {
-      if (payload._id) {
-        const res = await updateQuickFilter(payload._id, payload);
+      if (payload.id) {
+        const res = await updateQuickFilter(payload.id, payload);
         return res.data;
       } else {
         const res = await createQuickFilter(payload);

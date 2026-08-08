@@ -40,7 +40,7 @@ export function ProductSelector({
       setSelectedItemsDetails((prev) => {
         const next = { ...prev };
         productsList.forEach((p) => {
-          if (p._id) next[p._id] = p;
+          if (p.id) next[p.id] = p;
         });
         return next;
       });
@@ -149,13 +149,13 @@ export function ProductSelector({
           </div>
         ) : (
           productsList.map((product) => {
-            const isSelected = selectedProductIds.includes(product._id);
+            const isSelected = selectedProductIds.includes(product.id);
             const imgUrl = getProductImage(product);
 
             return (
               <div
-                key={product._id}
-                onClick={() => toggleSelect(product._id)}
+                key={product.id}
+                onClick={() => toggleSelect(product.id)}
                 className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors hover:bg-slate-50 ${
                   isSelected ? 'bg-indigo-50/50' : ''
                 }`}

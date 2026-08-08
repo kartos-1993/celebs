@@ -8,7 +8,7 @@ function flattenTree(nodes: CategoryTreeNode[]): Category[] {
   const out: Category[] = [];
   const walk = (n: CategoryTreeNode) => {
     out.push({
-      id: n._id,
+      id: n.id,
       name: n.name,
       parentId: (n as any).parentCategory ?? n.parent ?? null,
       hasChildren: Array.isArray(n.children) && n.children.length > 0,

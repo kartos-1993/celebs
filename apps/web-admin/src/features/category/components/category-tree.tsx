@@ -186,14 +186,14 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
         cell: ({ row }) => {
           const category = row.original;
           const isActive = category.isActive !== false;
-          const isPending = updatingId === category._id;
+          const isPending = updatingId === category.id;
 
           return (
             <div className="flex items-center gap-3">
               <ToggleSwitch
                 checked={isActive}
                 disabled={isPending}
-                onChange={() => handleActiveToggle(category._id, isActive)}
+                onChange={() => handleActiveToggle(category.id, isActive)}
               />
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                 isActive 
@@ -266,7 +266,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                 size="sm"
                 variant="ghost"
                 className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-600 dark:text-gray-400 dark:hover:text-fashion-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                onClick={() => onAddSubcategory(category._id)}
+                onClick={() => onAddSubcategory(category.id)}
                 title="Add Subcategory"
               >
                 <Plus className="h-4 w-4" />
@@ -276,7 +276,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                 size="sm"
                 variant="ghost"
                 className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                onClick={() => onDelete(category._id)}
+                onClick={() => onDelete(category.id)}
                 title="Delete Category"
               >
                 <Trash2 className="h-4 w-4" />
