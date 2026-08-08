@@ -20,8 +20,8 @@ interface MenuProps {
 }
 
 export function Menu({ isSideBarOpen }: MenuProps) {
-  const { role } = useAuthContext();
-  const menuList = getMenuList(role);
+  const { role, user } = useAuthContext();
+  const menuList = getMenuList(role, (user as any)?.permissions);
   const location = useLocation();
   const pathname = location.pathname;
 
