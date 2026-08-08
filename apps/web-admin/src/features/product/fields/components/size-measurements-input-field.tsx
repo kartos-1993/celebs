@@ -11,26 +11,34 @@ import {
 } from '@celebs/shared-ui/components/table';
 import type { UiProps } from '../ui-registry';
 
-const TOP_BODY_COLUMNS = ['Height', 'Bust', 'Waist Size', 'Hip Size'];
-const BOTTOM_BODY_COLUMNS = ['Height', 'Waist Size', 'Hip Size'];
+interface MeasurementChartSpec {
+  key: string;
+  label: string;
+  columns: string[];
+}
 
 export function SizeMeasurementsInputField({ field }: UiProps) {
-  const prodColumns: string[] = Array.isArray(field.dataSource) ? field.dataSource : [];
+  const dataSource = field.dataSource || {};
+  const charts: MeasurementChartSpec[] = Array.isArray(dataSource.charts)
+    ? dataSource.charts
+    : Array.isArray(field.dataSource)
+    ? [
+        {
+          key: 'product',
+          label: 'Product Measurements (Garment Flat)',
+          columns: field.dataSource,
+        },
+      ]
+    : [];
 
-  // If no size chart columns are configured for this category, do not render at all
-  if (prodColumns.length === 0) {
+  // If no size chart columns or charts are configured for this category, do not render at all
+  if (charts.length === 0) {
     return null;
   }
 
-  const isBottomCategory = prodColumns.some((c) =>
-    ['Waist', 'Inseam', 'Thigh', 'Leg Opening', 'Rise'].includes(c),
-  );
-
-  const bodyColumns = isBottomCategory ? BOTTOM_BODY_COLUMNS : TOP_BODY_COLUMNS;
-
   const { register, setValue, getValues, watch, formState } = useFormContext();
   const [unit, setUnit] = React.useState<'CM' | 'IN'>('CM');
-  const [activeTab, setActiveTab] = React.useState<'product' | 'body'>('product');
+  const [activeTabKey, setActiveTabKey] = React.useState<string>(charts[0]?.key || 'product');
 
   const sizeFieldNames = ['Size', 'US Size', 'Waist Size'];
   const watchedSizes = useWatch({
@@ -47,20 +55,18 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
 
   React.useEffect(() => {
     const currentSizes = getValues('sizes') || [];
+    const prodChart = charts.find((c) => c.key === 'product') || charts[0];
+    const bodyChart = charts.find((c) => c.key === 'body');
+
+    const prodCols = prodChart?.columns || [];
+    const bodyCols = bodyChart?.columns || [];
+
     const newSizesState = selectedSizes.map((sizeName) => {
       const existing = currentSizes.find((s: any) => s.name === sizeName);
       if (existing) {
-        const syncProduct = (list: any[]) => {
+        const syncCols = (list: any[], targetCols: string[]) => {
           const listArr = Array.isArray(list) ? list : [];
-          return prodColumns.map((col) => {
-            const ext = listArr.find((m: any) => m.name === col);
-            return ext || { name: col, value: '', unit: unit.toLowerCase() };
-          });
-        };
-
-        const syncBody = (list: any[]) => {
-          const listArr = Array.isArray(list) ? list : [];
-          return bodyColumns.map((col) => {
+          return targetCols.map((col) => {
             const ext = listArr.find((m: any) => m.name === col);
             return ext || { name: col, value: '', unit: unit.toLowerCase() };
           });
@@ -68,19 +74,19 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
 
         return {
           ...existing,
-          productMeasurements: syncProduct(existing.productMeasurements),
-          bodyMeasurements: syncBody(existing.bodyMeasurements),
+          productMeasurements: syncCols(existing.productMeasurements, prodCols),
+          bodyMeasurements: syncCols(existing.bodyMeasurements, bodyCols),
         };
       }
 
       return {
         name: sizeName,
-        productMeasurements: prodColumns.map((c) => ({
+        productMeasurements: prodCols.map((c) => ({
           name: c,
           value: '',
           unit: unit.toLowerCase(),
         })),
-        bodyMeasurements: bodyColumns.map((c) => ({
+        bodyMeasurements: bodyCols.map((c) => ({
           name: c,
           value: '',
           unit: unit.toLowerCase(),
@@ -95,15 +101,15 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         const pNames = (s.productMeasurements || []).map((m: any) => m.name);
         const bNames = (s.bodyMeasurements || []).map((m: any) => m.name);
         return (
-          JSON.stringify(pNames) !== JSON.stringify(prodColumns) ||
-          JSON.stringify(bNames) !== JSON.stringify(bodyColumns)
+          JSON.stringify(pNames) !== JSON.stringify(prodCols) ||
+          JSON.stringify(bNames) !== JSON.stringify(bodyCols)
         );
       });
 
     if (isDifferent) {
       setValue('sizes', newSizesState, { shouldValidate: false });
     }
-  }, [selectedSizes, prodColumns, bodyColumns, setValue, getValues, unit]);
+  }, [selectedSizes, charts, setValue, getValues, unit]);
 
   const handleUnitToggle = (nextUnit: 'CM' | 'IN') => {
     if (nextUnit === unit) return;
@@ -130,22 +136,22 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
 
   if (selectedSizes.length === 0) {
     return (
-      <div className="mt-4 rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+      <div className="mt-4 rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground col-span-full">
         Select product sizes in the section above to enter size chart measurements.
       </div>
     );
   }
 
-  const renderTable = (listKey: 'productMeasurements' | 'bodyMeasurements') => {
-    const cols = listKey === 'productMeasurements' ? prodColumns : bodyColumns;
-    const isBody = listKey === 'bodyMeasurements';
+  const renderTableForChart = (chart: MeasurementChartSpec) => {
+    const listKey = chart.key === 'body' ? 'bodyMeasurements' : 'productMeasurements';
+    const isBody = chart.key === 'body';
 
     return (
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/40">
             <TableHead className="w-24 font-bold text-foreground">Size</TableHead>
-            {cols.map((c) => (
+            {chart.columns.map((c) => (
               <TableHead key={c} className="font-semibold text-foreground">
                 {c} <span className="text-xs text-muted-foreground font-normal">({unit.toLowerCase()})</span>
               </TableHead>
@@ -166,7 +172,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                     {...register(`sizes.${sizeIndex}.name` as const)}
                   />
                 </TableCell>
-                {cols.map((c) => {
+                {chart.columns.map((c) => {
                   const colIndex = sizeObj
                     ? (sizeObj[listKey] || []).findIndex((m: any) => m.name === c)
                     : -1;
@@ -214,32 +220,24 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
   return (
     <div className="mt-4 space-y-3 rounded-lg border p-4 bg-card text-card-foreground shadow-2xs col-span-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              activeTab === 'product'
-                ? 'bg-primary text-primary-foreground shadow-2xs'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-            onClick={() => setActiveTab('product')}
-          >
-            Product Measurements (Garment Flat)
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              activeTab === 'body'
-                ? 'bg-primary text-primary-foreground shadow-2xs'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-            onClick={() => setActiveTab('body')}
-          >
-            Body Measurements (Wearer Fit Guide)
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {charts.map((chart) => (
+            <button
+              key={chart.key}
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                activeTabKey === chart.key
+                  ? 'bg-primary text-primary-foreground shadow-2xs'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setActiveTabKey(chart.key)}
+            >
+              {chart.label}
+            </button>
+          ))}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-xs font-medium text-muted-foreground">Unit:</span>
           <div className="inline-flex rounded-md bg-muted p-0.5 border">
             <button
@@ -264,15 +262,19 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         </div>
       </div>
 
-      <div className={`rounded-md border overflow-x-auto ${activeTab === 'product' ? '' : 'hidden'}`}>
-        {renderTable('productMeasurements')}
-      </div>
-      <div className={`rounded-md border overflow-x-auto ${activeTab === 'body' ? '' : 'hidden'}`}>
-        {renderTable('bodyMeasurements')}
-      </div>
+      {charts.map((chart) => (
+        <div
+          key={chart.key}
+          className={`rounded-md border overflow-x-auto ${
+            activeTabKey === chart.key ? '' : 'hidden'
+          }`}
+        >
+          {renderTableForChart(chart)}
+        </div>
+      ))}
 
       <p className="text-[11px] text-muted-foreground italic pt-1">
-        *Measurements entered here will be saved and displayed to customers on the product detail page size guide.
+        *Measurements entered here will be saved and displayed to customers on the storefront product detail page size guide.
       </p>
     </div>
   );

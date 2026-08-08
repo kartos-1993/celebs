@@ -19,6 +19,7 @@ interface SeedAttr {
 interface SeedCategory {
   name: string;
   sizeChartColumns?: string[];
+  bodyChartColumns?: string[];
   attributes?: SeedAttr[];
   children?: SeedCategory[];
   imageUrl?: string;
@@ -46,7 +47,13 @@ function mkAttr(a: SeedAttr) {
   };
 }
 
-async function ensureCategory(parent: any | null, name: string, sizeChartColumns?: string[], imageUrl?: string) {
+async function ensureCategory(
+  parent: any | null,
+  name: string,
+  sizeChartColumns?: string[],
+  bodyChartColumns?: string[],
+  imageUrl?: string
+) {
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? (parent.level || 1) + 1 : 1;
   const parentCategory = parent ? String(parent.id) : null;
@@ -74,6 +81,7 @@ async function ensureCategory(parent: any | null, name: string, sizeChartColumns
         path,
         imageUrl: imageUrl || null,
         sizeChartColumns: sizeChartColumns || [],
+        bodyChartColumns: bodyChartColumns || [],
       }
     });
   }
@@ -87,6 +95,7 @@ async function ensureCategory(parent: any | null, name: string, sizeChartColumns
       path,
       imageUrl: imageUrl || null,
       sizeChartColumns: sizeChartColumns || [],
+      bodyChartColumns: bodyChartColumns || [],
       attributes: [],
       isActive: true,
     }
@@ -104,7 +113,7 @@ async function createAttributesAndFilters(categoryId: string, attrs: SeedAttr[])
 
 async function seedTree(root: SeedCategory) {
   async function walk(node: SeedCategory, parent: any | null) {
-    const cat = await ensureCategory(parent, node.name, node.sizeChartColumns, node.imageUrl);
+    const cat = await ensureCategory(parent, node.name, node.sizeChartColumns, node.bodyChartColumns, node.imageUrl);
     if (node.attributes?.length) {
       await createAttributesAndFilters(cat.id, node.attributes);
     }
@@ -133,6 +142,7 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
           name: 'Men Denim Jackets',
           imageUrl: 'https://img.ltwebstatic.com/images3_pi/2024/07/15/22/17210064545039901e6e3dfcbd0015edca0258d1f3_thumbnail_192x.avif',
           sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
+          bodyChartColumns: ['Height', 'Bust', 'Waist Size', 'Hip Size'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             { name: 'Type', type: 'select', values: ['Shacket', 'Windbreaker', 'Other', 'Vest', 'Teddy'] },
@@ -152,6 +162,7 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
           name: 'Men Denim Tops',
           imageUrl: 'https://img.ltwebstatic.com/images3_pi/2023/03/14/16787862981f223808599b08d085074c3c26d9f9e2_thumbnail_192x.avif',
           sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
+          bodyChartColumns: ['Height', 'Bust', 'Waist Size', 'Hip Size'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'] },
             { name: 'Type', type: 'select', values: ['Top', 'Other'] },
@@ -168,6 +179,7 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
         {
           name: 'Men Denim Shorts',
           sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
+          bodyChartColumns: ['Height', 'Waist Size', 'Hip Size'],
           attributes: [
             { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
             colorAttr, sizeAttr,

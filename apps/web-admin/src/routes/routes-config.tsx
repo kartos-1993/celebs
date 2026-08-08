@@ -20,6 +20,7 @@ import { financeRoutes } from '@/features/finance/routes';
 import { platformSettingsRoutes } from '@/features/platform-settings/routes';
 import { comboRoutes } from '@/features/marketing/combo.routes';
 import { campaignRoutes } from '@/features/marketing/campaign.routes';
+import { optionSetRoutes } from '@/features/option-sets/routes';
 
 const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
 
@@ -35,6 +36,7 @@ export const routesConfig: RouteObject[] = [
     children: [
       productRoutes,
       categoryRoutes,
+      optionSetRoutes,
       vendorRoutes,
       userRoutes,
       staffRoutes,

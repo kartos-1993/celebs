@@ -23,9 +23,13 @@ export interface UseCategoryFormReturn {
   isUploadingImage: boolean;
   newColumnInput: string;
   setNewColumnInput: (val: string) => void;
+  newBodyColumnInput: string;
+  setNewBodyColumnInput: (val: string) => void;
   handleAddAttribute: () => void;
   handleAddSizeColumn: () => void;
   handleRemoveSizeColumn: (colToRemove: string) => void;
+  handleAddBodyColumn: () => void;
+  handleRemoveBodyColumn: (colToRemove: string) => void;
   handleImageUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => Promise<void>;
 }
@@ -42,6 +46,7 @@ export const useCategoryForm = ({
   const { toast } = useToast();
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [newColumnInput, setNewColumnInput] = useState<string>('');
+  const [newBodyColumnInput, setNewBodyColumnInput] = useState<string>('');
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categoryFormSchema),
@@ -65,6 +70,7 @@ export const useCategoryForm = ({
         optionSetId: attr.optionSetId ? String(attr.optionSetId) : null,
       })),
       sizeChartColumns: initialData?.sizeChartColumns || [],
+      bodyChartColumns: initialData?.bodyChartColumns || [],
       imageUrl: initialData?.imageUrl || null,
       isActive: initialData?.isActive !== false,
     },
@@ -109,6 +115,25 @@ export const useCategoryForm = ({
     const current = form.getValues('sizeChartColumns') || [];
     form.setValue(
       'sizeChartColumns',
+      current.filter((c) => c !== colToRemove),
+      { shouldDirty: true }
+    );
+  };
+
+  const handleAddBodyColumn = () => {
+    const trimmed = newBodyColumnInput.trim();
+    if (!trimmed) return;
+    const current = form.getValues('bodyChartColumns') || [];
+    if (!current.includes(trimmed)) {
+      form.setValue('bodyChartColumns', [...current, trimmed], { shouldDirty: true });
+    }
+    setNewBodyColumnInput('');
+  };
+
+  const handleRemoveBodyColumn = (colToRemove: string) => {
+    const current = form.getValues('bodyChartColumns') || [];
+    form.setValue(
+      'bodyChartColumns',
       current.filter((c) => c !== colToRemove),
       { shouldDirty: true }
     );
@@ -167,9 +192,13 @@ export const useCategoryForm = ({
     isUploadingImage,
     newColumnInput,
     setNewColumnInput,
+    newBodyColumnInput,
+    setNewBodyColumnInput,
     handleAddAttribute,
     handleAddSizeColumn,
     handleRemoveSizeColumn,
+    handleAddBodyColumn,
+    handleRemoveBodyColumn,
     handleImageUpload,
     handleSubmit: form.handleSubmit(onSubmit),
   };

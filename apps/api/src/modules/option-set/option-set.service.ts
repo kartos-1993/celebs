@@ -28,6 +28,7 @@ export class OptionSetService {
       id: s.id,
       name: s.name,
       displayName: s.displayName,
+      description: s.description || null,
       values: Array.isArray(s.options) ? s.options : [],
     }));
   }
@@ -39,7 +40,63 @@ export class OptionSetService {
       id: set.id,
       name: set.name,
       displayName: set.displayName,
+      description: set.description || null,
       values: Array.isArray(set.options) ? set.options : [],
     };
+  }
+
+  async create(data: { name: string; displayName?: string; description?: string; values: string[] }) {
+    const name = String(data.name || '').trim();
+    const displayName = String(data.displayName || data.name || '').trim();
+    const values = Array.isArray(data.values) ? data.values.map((v) => String(v).trim()).filter(Boolean) : [];
+
+    const created = await prisma.optionSet.create({
+      data: {
+        name,
+        displayName,
+        description: data.description ? String(data.description).trim() : null,
+        options: values,
+      },
+    });
+
+    return {
+      id: created.id,
+      name: created.name,
+      displayName: created.displayName,
+      description: created.description || null,
+      values: Array.isArray(created.options) ? created.options : [],
+    };
+  }
+
+  async update(id: string, data: { name?: string; displayName?: string; description?: string; values?: string[] }) {
+    const updateData: Record<string, unknown> = {};
+    if (data.name !== undefined) updateData.name = String(data.name).trim();
+    if (data.displayName !== undefined) updateData.displayName = String(data.displayName).trim();
+    if (data.description !== undefined) updateData.description = data.description ? String(data.description).trim() : null;
+    if (data.values !== undefined) {
+      updateData.options = Array.isArray(data.values)
+        ? data.values.map((v) => String(v).trim()).filter(Boolean)
+        : [];
+    }
+
+    const updated = await prisma.optionSet.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      displayName: updated.displayName,
+      description: updated.description || null,
+      values: Array.isArray(updated.options) ? updated.options : [],
+    };
+  }
+
+  async delete(id: string) {
+    const deleted = await prisma.optionSet.delete({
+      where: { id },
+    });
+    return { id: deleted.id };
   }
 }

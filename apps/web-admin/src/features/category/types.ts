@@ -19,6 +19,7 @@ export interface Category {
   path: string[];
   attributes: CategoryAttribute[];
   sizeChartColumns?: string[];
+  bodyChartColumns?: string[];
   imageUrl?: string | null;
   isActive?: boolean;
   createdAt: string;

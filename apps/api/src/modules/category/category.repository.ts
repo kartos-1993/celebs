@@ -10,6 +10,7 @@ export interface FormattedCategory {
   parentCategory?: string | null;
   attributes: unknown[];
   sizeChartColumns: string[];
+  bodyChartColumns: string[];
   imageUrl?: string | null;
   isActive: boolean;
   createdAt: Date;
@@ -31,6 +32,7 @@ export class CategoryRepository {
       parent: category.parentCategory ? String(category.parentCategory) : null,
       attributes: Array.isArray(category.attributes) ? (category.attributes as unknown[]) : [],
       sizeChartColumns: Array.isArray(category.sizeChartColumns) ? (category.sizeChartColumns as string[]) : [],
+      bodyChartColumns: Array.isArray(category.bodyChartColumns) ? (category.bodyChartColumns as string[]) : [],
       imageUrl: category.imageUrl ? String(category.imageUrl) : null,
       isActive: category.isActive !== false,
       createdAt: category.createdAt instanceof Date ? category.createdAt : new Date(),
@@ -96,6 +98,7 @@ export class CategoryRepository {
         parentCategory: data.parent ? String(data.parent) : data.parentCategory ? String(data.parentCategory) : null,
         attributes: (data.attributes ?? []) as unknown as Prisma.InputJsonValue,
         sizeChartColumns: Array.isArray(data.sizeChartColumns) ? (data.sizeChartColumns as string[]) : [],
+        bodyChartColumns: Array.isArray(data.bodyChartColumns) ? (data.bodyChartColumns as string[]) : [],
         imageUrl: data.imageUrl ? String(data.imageUrl) : null,
         isActive: data.isActive !== false,
       },
@@ -120,6 +123,9 @@ export class CategoryRepository {
     }
     if (updateData.sizeChartColumns !== undefined) {
       data.sizeChartColumns = Array.isArray(updateData.sizeChartColumns) ? (updateData.sizeChartColumns as string[]) : [];
+    }
+    if (updateData.bodyChartColumns !== undefined) {
+      data.bodyChartColumns = Array.isArray(updateData.bodyChartColumns) ? (updateData.bodyChartColumns as string[]) : [];
     }
     if (updateData.imageUrl !== undefined) {
       data.imageUrl = updateData.imageUrl ? String(updateData.imageUrl) : null;
