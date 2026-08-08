@@ -59,10 +59,17 @@ export async function seedProductsDenimJackets(): Promise<void> {
       if (sc.length !== undefined) prodMeasurements.push({ name: 'Length', value: String(sc.length), unit: 'cm' });
       if (sc.sleeveLength !== undefined) prodMeasurements.push({ name: 'Sleeve Length', value: String(sc.sleeveLength), unit: 'cm' });
 
+      const bodyMeasurements = [
+        { name: 'Height', value: sc.size === 'XS' ? '160-165' : sc.size === 'S' ? '165-170' : sc.size === 'M' ? '170-175' : sc.size === 'L' ? '175-180' : '180-185', unit: 'cm' },
+        { name: 'Bust', value: sc.chest ? `${Math.round(sc.chest * 0.95)}-${Math.round(sc.chest * 1.05)}` : '88-92', unit: 'cm' },
+        { name: 'Waist Size', value: '74-82', unit: 'cm' },
+        { name: 'Hip Size', value: '88-96', unit: 'cm' },
+      ];
+
       return {
         name: sc.size,
         productMeasurements: prodMeasurements,
-        bodyMeasurements: prodMeasurements
+        bodyMeasurements: bodyMeasurements,
       };
     });
 

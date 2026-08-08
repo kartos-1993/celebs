@@ -59,10 +59,16 @@ export async function seedProductsDenimJeans(): Promise<void> {
       if (sc.inseam !== undefined) prodMeasurements.push({ name: 'Inseam', value: String(sc.inseam), unit: 'cm' });
       if (sc.thigh !== undefined) prodMeasurements.push({ name: 'Thigh', value: String(sc.thigh), unit: 'cm' });
 
+      const bodyMeasurements = [
+        { name: 'Height', value: sc.size === '28' ? '165-170' : sc.size === '30' ? '170-175' : sc.size === '32' ? '175-180' : '180-185', unit: 'cm' },
+        { name: 'Waist Size', value: sc.waist ? `${Math.round(sc.waist * 0.96)}-${Math.round(sc.waist * 1.04)}` : '72-76', unit: 'cm' },
+        { name: 'Hip Size', value: sc.hip ? `${Math.round(sc.hip * 0.96)}-${Math.round(sc.hip * 1.04)}` : '90-95', unit: 'cm' },
+      ];
+
       return {
         name: sc.size,
         productMeasurements: prodMeasurements,
-        bodyMeasurements: prodMeasurements
+        bodyMeasurements: bodyMeasurements,
       };
     });
 

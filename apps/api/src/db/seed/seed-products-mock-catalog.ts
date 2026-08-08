@@ -96,10 +96,16 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
         value: String(40 + sIdx * 3 + (i % 5)),
         unit: 'cm'
       });
+      const bodyCols = [
+        { name: 'Height', value: `${165 + sIdx * 5}-${170 + sIdx * 5}` },
+        { name: 'Bust', value: `${84 + sIdx * 4}-${88 + sIdx * 4}` },
+        { name: 'Waist Size', value: `${68 + sIdx * 4}-${72 + sIdx * 4}` },
+        { name: 'Hip Size', value: `${90 + sIdx * 4}-${94 + sIdx * 4}` },
+      ];
       return {
         name: size,
-        productMeasurements: columns.map(c => measurements(c)),
-        bodyMeasurements: columns.map(c => measurements(c))
+        productMeasurements: columns.map((c) => measurements(c)),
+        bodyMeasurements: bodyCols.map((b) => ({ name: b.name, value: b.value, unit: 'cm' })),
       };
     });
 
