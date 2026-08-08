@@ -42,7 +42,7 @@ export const colorVariantSchema = z.object({
 
 // Universal Dynamic SKU Matrix item schema
 export const skuItemSchema = z.object({
-  _id: z.string().optional(),
+  id: z.string().optional(),
   skuCode: z.string().trim().min(1, 'SKU code is required'),
   selectedOptions: z.record(z.string(), z.string()),
   price: z.number().positive('Price must be positive'),
@@ -180,10 +180,10 @@ export type ProductFilterType = z.output<typeof productFilterSchema>;
 
 // Full product record entity schema
 export const productSchema = baseProductSchema.extend({
-  _id: z.string(),
+  id: z.string(),
   slug: z.string(),
-  category: z.union([z.string(), z.object({ _id: z.string(), name: z.string(), slug: z.string() })]),
-  subcategory: z.union([z.string(), z.object({ _id: z.string(), name: z.string(), slug: z.string() })]),
+  category: z.union([z.string(), z.object({ id: z.string(), name: z.string(), slug: z.string() })]),
+  subcategory: z.union([z.string(), z.object({ id: z.string(), name: z.string(), slug: z.string() })]),
   reviewNote: z.string().optional(),
   reviewedBy: z.string().optional(),
   reviewedAt: z.union([z.string(), z.date()]).optional(),
