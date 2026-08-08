@@ -73,7 +73,7 @@ export function buildPublicObjectUrl(key: string): string {
 let devBucketReady: Promise<void> | null = null;
 
 export async function ensureDevPublicReadAccess(): Promise<void> {
-  if (!isDev) return;
+  if (!isDev || !config.S3.ENDPOINT || (!config.S3.ENDPOINT.includes('localhost') && !config.S3.ENDPOINT.includes('127.0.0.1'))) return;
 
   if (!devBucketReady) {
     devBucketReady = (async () => {
