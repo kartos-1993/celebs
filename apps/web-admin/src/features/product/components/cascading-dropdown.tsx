@@ -15,7 +15,8 @@ export interface Category {
   parentId: string | null;
   hasChildren: boolean;
   level: number;
-  path: string[];
+  path: string[] | string;
+  slug?: string;
 }
 
 export interface CategoryNode extends Category {
@@ -25,8 +26,15 @@ export interface CategoryNode extends Category {
 export interface RecentCategory {
   id: string;
   name: string;
-  path: string[];
+  path: string[] | string;
   usedAt: Date;
+}
+
+export function formatCategoryPath(path: string[] | string | undefined | null): string {
+  if (!path) return '';
+  if (Array.isArray(path)) return path.join(' > ');
+  if (typeof path === 'string') return path.split('/').join(' > ');
+  return String(path);
 }
 
 interface ColumnData {
@@ -78,13 +86,15 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   };
 
   // Helper: resolve a category to local tree by its path segments
-  const resolveLocalByPath = (segments: string[] | undefined | null): Category | undefined => {
-    if (!segments || segments.length === 0) return undefined;
+  const resolveLocalByPath = (rawPath: string[] | string | undefined | null): Category | undefined => {
+    if (!rawPath) return undefined;
+    const segments = Array.isArray(rawPath) ? rawPath : typeof rawPath === 'string' ? rawPath.split('/') : [];
+    if (segments.length === 0) return undefined;
     let parentId: string | null = null;
     let last: Category | undefined = undefined;
     for (const name of segments) {
       const candidates: Category[] = parentId ? getChildCategories(parentId) : getRootCategories();
-      const match: Category | undefined = candidates.find((c: Category) => c.name === name);
+      const match: Category | undefined = candidates.find((c: Category) => c.name === name || c.slug === name);
       if (!match) return undefined;
       last = match;
       parentId = match.id;
@@ -152,13 +162,13 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
           results = await onSearch(q);
         } else {
           const apiResults = await CategoryApiService.searchCategories(q);
-          results = apiResults.map((c: { id: string; name: string; parentId?: string | null; hasChildren?: boolean; level?: number; path?: string[] }) => ({
+          results = apiResults.map((c: { id: string; name: string; parentId?: string | null; hasChildren?: boolean; level?: number; path?: string[] | string }) => ({
             id: c.id,
             name: c.name,
             parentId: c.parentId ?? null,
             hasChildren: !!c.hasChildren,
-            level: c.level ?? (Array.isArray(c.path) ? c.path.length - 1 : 0),
-            path: Array.isArray(c.path) ? c.path : [c.name],
+            level: c.level ?? (Array.isArray(c.path) ? c.path.length - 1 : typeof c.path === 'string' ? c.path.split('/').length - 1 : 0),
+            path: Array.isArray(c.path) ? c.path : typeof c.path === 'string' ? c.path.split('/') : [c.name],
           }));
         }
         // Expand any matched parent categories into their leaf descendants using local tree
@@ -213,16 +223,21 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
       finalPath = chain;
     } else {
       // Fallback to resolving each segment by name from our local cache
-      if (!category.path || category.path.length === 0) {
+      const pathSegments = Array.isArray(category.path)
+        ? category.path
+        : typeof category.path === 'string'
+        ? category.path.split('/')
+        : [];
+      if (pathSegments.length === 0) {
         setTempSelectedPath([category]);
         return;
       }
       const resolvedPath: Category[] = [];
-      for (let i = 0; i < category.path.length; i++) {
-        const name = category.path[i];
+      for (let i = 0; i < pathSegments.length; i++) {
+        const name = pathSegments[i];
         const parentId = i === 0 ? null : resolvedPath[i - 1]?.id ?? null;
         const candidates = parentId === null ? getRootCategories() : getChildCategories(parentId!);
-        const match = candidates.find((c) => c.name === name);
+        const match = candidates.find((c) => c.name === name || c.slug === name);
         if (!match) {
           break;
         }
@@ -317,7 +332,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             onClick={() => setIsOpen(!isOpen)}
           >
             {selectedCategory ? (
-              <span className="truncate">{selectedCategory.path.join(' > ')}</span>
+              <span className="truncate">{formatCategoryPath(selectedCategory.path)}</span>
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>
             )}
@@ -361,7 +376,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                       className="w-full justify-start text-left h-8 px-2 text-xs font-normal"
                       onClick={() => handleGlobalResultSelect(category)}
                     >
-                      <span className="truncate">{category.path.join(' > ')}</span>
+                      <span className="truncate">{formatCategoryPath(category.path)}</span>
                     </Button>
                   ))}
                 </div>

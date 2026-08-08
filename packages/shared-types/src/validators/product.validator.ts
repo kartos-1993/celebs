@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-// Regex-based ObjectId validator for environment compatibility (Node/Browser/Mobile)
+// UUID validator for entity primary and foreign keys
 export const idSchema = z
   .string()
-  .regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId');
+  .uuid('Invalid UUID');
 
 // Product measurement schema
 export const productMeasurementSchema = z.object({
@@ -191,6 +191,7 @@ export const productSchema = baseProductSchema.extend({
   updatedAt: z.union([z.string(), z.date()]).optional(),
 });
 
-export type CreateProductType = z.infer<typeof createProductSchema>;
-export type UpdateProductType = z.infer<typeof updateProductSchema>;
+export type CreateProductType = z.input<typeof createProductSchema>;
+export type UpdateProductType = z.input<typeof updateProductSchema>;
 export type ProductType = z.infer<typeof productSchema>;
+

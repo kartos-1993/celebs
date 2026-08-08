@@ -88,10 +88,10 @@ export class AuthService {
         { err, email: newUser.email },
         'Failed to send verification email'
       );
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
         logger.warn(
           { verificationUrl, email: newUser.email },
-          '[DEV FALLBACK] Verification email failed to send. Click link in logs to verify manually.'
+          '[DEV/TEST FALLBACK] Verification email failed to send. Click link in logs to verify manually.'
         );
       } else {
         throw new InternalServerException('Failed to send verification email');

@@ -465,6 +465,9 @@ importers:
       '@celebs/shared-utils':
         specifier: workspace:*
         version: link:../../packages/shared-utils
+      '@upstash/redis':
+        specifier: ^1.38.2
+        version: 1.38.2
       bullmq:
         specifier: ^5.41.0
         version: 5.80.2(redis@4.7.0)
@@ -16154,7 +16157,9 @@ snapshots:
       metro-runtime: 0.84.4
     transitivePeerDependencies:
       - '@babel/core'
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.89': {}
 

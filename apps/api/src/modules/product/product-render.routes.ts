@@ -24,7 +24,7 @@ router.get('/product-render', async (req, res) => {
     const category = await categoryService.getCategoryById(catId);
     if (!category) return res.status(404).json({ error: 'Category not found' });
 
-    const { fields, renderTag } = composeSchema({
+    const { fields, renderTag } = await composeSchema({
       category: {
         _id: String(category._id),
         name: category.name,

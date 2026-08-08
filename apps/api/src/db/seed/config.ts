@@ -1,36 +1,28 @@
-import mongoose from 'mongoose';
 import path from 'path';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import prisma from '../../config/db.prisma';
+import { connectMongoDB } from '../../config/db.mongo';
 
-// Load environment variables from apps/api/.env.development by default
 const envPath = process.env.DOTENV_CONFIG_PATH || path.resolve(__dirname, '../../../.env.development');
 dotenv.config({ path: envPath });
 
-export function getMongoUri(): string {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    throw new Error(
-      `[Seed Error] MONGODB_URI environment variable is missing!\n` +
-      `Please ensure MONGODB_URI is properly configured in '${envPath}'.`
-    );
-  }
-  return uri;
-}
+export async function connectDb(): Promise<typeof prisma> {
+  console.log(`[Seed] Connecting to PostgreSQL database...`);
+  await prisma.$connect();
+  console.log(`[Seed] Connected to PostgreSQL database successfully.`);
 
-export async function connectDb(): Promise<typeof mongoose> {
-  const uri = getMongoUri();
-  if (mongoose.connection.readyState === 1) {
-    return mongoose;
-  }
-  console.log(`[Seed] Connecting to MongoDB Atlas cluster...`);
-  const conn = await mongoose.connect(uri);
-  console.log(`[Seed] Connected to MongoDB database: ${conn.connection.name}`);
-  return conn;
+  console.log(`[Seed] Connecting to MongoDB database...`);
+  await connectMongoDB();
+  console.log(`[Seed] Connected to MongoDB database successfully.`);
+
+  return prisma;
 }
 
 export async function disconnectDb(): Promise<void> {
+  await prisma.$disconnect();
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
-    console.log(`[Seed] Disconnected from MongoDB.`);
   }
+  console.log(`[Seed] Disconnected from PostgreSQL & MongoDB databases.`);
 }

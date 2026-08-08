@@ -66,9 +66,9 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
           <DialogTitle className="text-lg font-bold text-gray-900">
             {getDialogTitle()}
           </DialogTitle>
-          {editingCategory && freshCategoryData?.path && freshCategoryData.path.length > 0 && (
+          {editingCategory && freshCategoryData?.path && (
             <p className="text-xs text-fashion-600 font-medium pt-0.5">
-              Path: {freshCategoryData.path.join(' > ')}
+              Path: {Array.isArray(freshCategoryData.path) ? freshCategoryData.path.join(' > ') : typeof freshCategoryData.path === 'string' ? freshCategoryData.path.split('/').join(' > ') : String(freshCategoryData.path)}
             </p>
           )}
         </DialogHeader>

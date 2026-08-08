@@ -1,10 +1,5 @@
-import { Types } from 'mongoose';
 import slugify from 'slugify';
-import { CategoryModel } from '../models/category.model';
-import { AttributeModel } from '../models/attribute.model';
-import { OptionSetModel } from '../models/option-set.model';
-import { CategoryFilterModel } from '../models/category-filter.model';
-import { connectDb, disconnectDb } from './config';
+import prisma from '../../config/db.prisma';
 import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 interface SeedAttr {
@@ -29,12 +24,7 @@ interface SeedCategory {
   imageUrl?: string;
 }
 
-async function getOptionSetIdByName(name: string): Promise<Types.ObjectId | null> {
-  const set = await OptionSetModel.findOne({ name });
-  return set ? (set._id as Types.ObjectId) : null;
-}
-
-function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
+function mkAttr(a: SeedAttr) {
   const group: AllowedGroup = a.group
     ? a.group
     : a.isVariant
@@ -52,7 +42,6 @@ function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
     isVariant: !!a.isVariant,
     variantType: a.variantType ?? null,
     useStandardOptions: !!a.useStandardOptions,
-    optionSetId: a.optionSetId ?? null,
     group,
   };
 }
@@ -60,72 +49,64 @@ function mkAttr(a: SeedAttr & { optionSetId?: Types.ObjectId | null }) {
 async function ensureCategory(parent: any | null, name: string, sizeChartColumns?: string[], imageUrl?: string) {
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? (parent.level || 1) + 1 : 1;
-  const pathParts = parent ? [...(parent.path || []), slug] : [slug];
-  const res = await CategoryModel.findOneAndUpdate(
-    { $or: [{ slug }, { name, parentCategory: parent?._id || null }] },
-    {
+  const parentCategory = parent ? String(parent.id || parent._id) : null;
+  const parentPath = parent ? (Array.isArray(parent.path) ? parent.path : [parent.path]) : [];
+  const pathParts = [...parentPath, slug];
+  const path = pathParts.join('/');
+
+  const existing = await prisma.category.findFirst({
+    where: {
+      OR: [
+        { slug },
+        { name, parentCategory }
+      ]
+    }
+  });
+
+  if (existing) {
+    return await prisma.category.update({
+      where: { id: existing.id },
+      data: {
+        name,
+        slug,
+        level,
+        parentCategory,
+        path,
+        imageUrl: imageUrl || null,
+        sizeChartColumns: sizeChartColumns || [],
+      }
+    });
+  }
+
+  return await prisma.category.create({
+    data: {
       name,
       slug,
       level,
-      parentCategory: parent?._id || null,
-      path: pathParts,
+      parentCategory,
+      path,
       imageUrl: imageUrl || null,
-      ...(sizeChartColumns ? { sizeChartColumns } : {})
-    },
-    { new: true, upsert: true, setDefaultsOnInsert: true },
-  );
-  return res;
+      sizeChartColumns: sizeChartColumns || [],
+      attributes: [],
+      isActive: true,
+    }
+  });
 }
 
-async function createAttributesAndFilters(categoryId: Types.ObjectId, attrs: SeedAttr[]) {
-  let displayOrder = 0;
-  for (const a of attrs) {
-    let optionSetId: Types.ObjectId | null = null;
-    if (a.useStandardOptions && a.optionSetName) {
-      optionSetId = await getOptionSetIdByName(a.optionSetName);
-    }
+async function createAttributesAndFilters(categoryId: string, attrs: SeedAttr[]) {
+  const formattedAttributes = attrs.map((a) => mkAttr(a));
 
-    const attrData = mkAttr({ ...a, optionSetId });
-
-    // 1. Create/Update Attribute
-    const attrDoc = await AttributeModel.findOneAndUpdate(
-      { categoryId, name: attrData.name },
-      { categoryId, ...attrData } as any,
-      { new: true, upsert: true, setDefaultsOnInsert: true },
-    );
-
-    // 2. Create/Update CategoryFilter
-    const isStorefrontFilter = a.isStorefrontFilter !== false;
-    if (isStorefrontFilter) {
-      const defaultUiType =
-        a.filterUiType ? a.filterUiType :
-        attrData.variantType === 'color' ? 'color_swatch' :
-        attrData.variantType === 'size' ? 'size_box' :
-        attrData.type === 'number' ? 'range_slider' :
-        'checkbox';
-
-      await CategoryFilterModel.findOneAndUpdate(
-        { categoryId, attributeId: attrDoc._id },
-        {
-          categoryId,
-          attributeId: attrDoc._id,
-          displayName: attrData.name,
-          uiType: defaultUiType,
-          displayOrder: displayOrder++,
-          isMultiSelect: true,
-          isSearchable: (attrData.values && attrData.values.length > 10) || false,
-        },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
-      );
-    }
-  }
+  await prisma.category.update({
+    where: { id: categoryId },
+    data: { attributes: formattedAttributes },
+  });
 }
 
 async function seedTree(root: SeedCategory) {
   async function walk(node: SeedCategory, parent: any | null) {
     const cat = await ensureCategory(parent, node.name, node.sizeChartColumns, node.imageUrl);
     if (node.attributes?.length) {
-      await createAttributesAndFilters(cat._id as Types.ObjectId, node.attributes);
+      await createAttributesAndFilters(cat.id, node.attributes);
     }
     if (node.children?.length) {
       for (const child of node.children) {
@@ -610,13 +591,10 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
 
 export async function seedCategoriesMen(isReset = false): Promise<void> {
   console.log('\n👔 Seeding Men Category Tree & Attributes...');
-  await connectDb();
 
   if (isReset) {
-    console.log('⚠️ [--reset active] Wiping Category, Attribute, and Filter collections...');
-    await CategoryFilterModel.deleteMany({});
-    await AttributeModel.deleteMany({});
-    await CategoryModel.deleteMany({});
+    console.log('⚠️ [--reset active] Wiping Category collection in PostgreSQL...');
+    await prisma.category.deleteMany({});
   }
 
   await seedTree(ALL_MEN_CATEGORIES_TREE);
@@ -626,10 +604,8 @@ export async function seedCategoriesMen(isReset = false): Promise<void> {
 if (require.main === module) {
   const isReset = process.argv.includes('--reset');
   seedCategoriesMen(isReset)
-    .then(() => disconnectDb())
     .catch((err) => {
       console.error('❌ Seeding Men categories failed:', err);
-      disconnectDb();
       process.exit(1);
     });
 }

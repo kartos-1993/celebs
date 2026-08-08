@@ -1,8 +1,5 @@
-import { Types } from 'mongoose';
 import slugify from 'slugify';
-import { CategoryModel } from '../models/category.model';
-import { AttributeModel } from '../models/attribute.model';
-import { connectDb, disconnectDb } from './config';
+import prisma from '../../config/db.prisma';
 import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 interface SeedAttr {
@@ -119,61 +116,74 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
 
 async function seedCategoryRecursively(
   cat: SeedCategory,
-  parentId: Types.ObjectId | null = null,
+  parentId: string | null = null,
   level = 1,
   parentPath: string[] = [],
 ): Promise<void> {
   const slug = slugify(cat.name, { lower: true, strict: true });
-  const currentPath = [...parentPath, cat.name];
+  const currentPathArray = [...parentPath, slug];
+  const path = currentPathArray.join('/');
 
-  const doc = await CategoryModel.findOneAndUpdate(
-    { name: cat.name, parentCategory: parentId },
-    {
-      name: cat.name,
-      slug,
-      level,
-      parentCategory: parentId,
-      path: currentPath,
-      imageUrl: cat.imageUrl || null,
-      isActive: true,
-    },
-    { new: true, upsert: true, setDefaultsOnInsert: true },
-  );
+  const formattedAttributes = cat.attributes ? cat.attributes.map((a) => mkAttr(a)) : [];
+
+  const existing = await prisma.category.findFirst({
+    where: {
+      OR: [
+        { slug },
+        { name: cat.name, parentCategory: parentId }
+      ]
+    }
+  });
+
+  let doc;
+  if (existing) {
+    doc = await prisma.category.update({
+      where: { id: existing.id },
+      data: {
+        name: cat.name,
+        slug,
+        level,
+        parentCategory: parentId,
+        path,
+        imageUrl: cat.imageUrl || null,
+        attributes: formattedAttributes,
+        isActive: true,
+      }
+    });
+  } else {
+    doc = await prisma.category.create({
+      data: {
+        name: cat.name,
+        slug,
+        level,
+        parentCategory: parentId,
+        path,
+        imageUrl: cat.imageUrl || null,
+        attributes: formattedAttributes,
+        isActive: true,
+      }
+    });
+  }
 
   console.log(`  └─ Category: "${cat.name}" (Level ${level})`);
 
-  if (cat.attributes && cat.attributes.length > 0) {
-    for (const attrSeed of cat.attributes) {
-      const payload = mkAttr(attrSeed);
-
-      await AttributeModel.findOneAndUpdate(
-        { categoryId: doc._id, name: payload.name },
-        { categoryId: doc._id, ...payload },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
-      );
-    }
-  }
-
   if (cat.children && cat.children.length > 0) {
     for (const child of cat.children) {
-      await seedCategoryRecursively(child, doc._id as Types.ObjectId, level + 1, currentPath);
+      await seedCategoryRecursively(child, doc.id, level + 1, currentPathArray);
     }
   }
 }
 
 export async function seedCategoriesJewelry(): Promise<void> {
   console.log('\n💎 Seeding Jewelry & Accessories Categories & Attributes...');
-  await connectDb();
   await seedCategoryRecursively(JEWELRY_ACCESSORIES_TREE);
   console.log('✅ Jewelry & Accessories Categories Seeded Successfully!');
 }
 
 if (require.main === module) {
   seedCategoriesJewelry()
-    .then(() => disconnectDb())
     .catch((err) => {
       console.error('❌ Seeding jewelry categories failed:', err);
-      disconnectDb();
       process.exit(1);
     });
 }

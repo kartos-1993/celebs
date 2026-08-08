@@ -1,4 +1,4 @@
-import { BannerModel, IBanner } from '@/db/models/banner.model';
+import prisma from '@/config/db.prisma';
 
 interface BannerInput {
   imageUrl: string;
@@ -10,44 +10,50 @@ interface BannerInput {
 }
 
 export class BannerService {
-  /**
-   * Get all active banners sorted by order
-   */
-  async getActiveBanners(): Promise<IBanner[]> {
-    return BannerModel.find({ isActive: true }).sort({ order: 1 });
+  private formatBanner(banner: any) {
+    if (!banner) return null;
+    return {
+      ...banner,
+      _id: banner.id,
+    };
   }
 
-  /**
-   * Get all banners (for admin management)
-   */
-  async getAllBanners(): Promise<IBanner[]> {
-    return BannerModel.find().sort({ order: 1 });
+  async getActiveBanners(): Promise<any[]> {
+    const banners = await prisma.banner.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    return banners.map((b) => this.formatBanner(b));
   }
 
-  /**
-   * Bulk update/replace the banners list.
-   * Expects an array of banner inputs (exactly 3).
-   */
-  async updateBanners(bannersData: BannerInput[]): Promise<IBanner[]> {
-    // Validate that we have up to 3 banners
+  async getAllBanners(): Promise<any[]> {
+    const banners = await prisma.banner.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+    return banners.map((b) => this.formatBanner(b));
+  }
+
+  async updateBanners(bannersData: BannerInput[]): Promise<any[]> {
     if (!Array.isArray(bannersData) || bannersData.length > 3) {
       throw new Error('Banner list can have at most 3 banners');
     }
 
-    // We can clear and recreate to avoid complex matching
-    await BannerModel.deleteMany({});
-
-    const createdBanners = await BannerModel.create(
-      bannersData.map((b, index) => ({
-        imageUrl: b.imageUrl,
-        linkType: b.linkType || 'NONE',
-        linkValue: b.linkValue || '',
-        title: b.title || '',
-        order: b.order !== undefined ? b.order : index + 1,
-        isActive: b.isActive !== undefined ? b.isActive : true,
-      }))
-    );
-
-    return createdBanners;
+    return prisma.$transaction(async (tx) => {
+      await tx.banner.deleteMany({});
+      const created = [];
+      for (const b of bannersData) {
+        const item = await tx.banner.create({
+          data: {
+            imageUrl: b.imageUrl,
+            targetUrl: b.linkValue || null,
+            title: b.title || '',
+            position: 'home_hero',
+            isActive: b.isActive !== undefined ? b.isActive : true,
+          },
+        });
+        created.push(this.formatBanner(item));
+      }
+      return created;
+    });
   }
 }

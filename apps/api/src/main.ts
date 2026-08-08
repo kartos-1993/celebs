@@ -11,7 +11,6 @@ if (fs.existsSync(envPath)) {
 
 import app from './app';
 import { config } from './config/app.config';
-import { connectMongoDB } from './config/db.mongo';
 import prisma from './config/db.prisma';
 import { logger } from '@celebs/shared-utils';
 import { verifyRedisConnection } from './common/services/queue.service';
@@ -21,8 +20,6 @@ const port = config.PORT;
 
 const startServer = async () => {
   try {
-    await connectMongoDB();
-    
     // Connect and verify Postgres connection
     await prisma.$connect();
     logger.info('Postgres Database Connected successfully');

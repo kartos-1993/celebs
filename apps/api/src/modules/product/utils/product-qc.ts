@@ -24,7 +24,26 @@ export interface IQCCheckResult {
 /**
  * Calculates a standard Quality Control score (0-100) and diagnostic checklist for a product listing.
  */
-export function calculateProductQCScore(product: Partial<IProduct>): IQCCheckResult {
+export function calculateProductQCScore(productInput?: Partial<IProduct> | Record<string, unknown> | null): IQCCheckResult {
+  if (!productInput) {
+    const emptyCheck: IQCCheckItem = { passed: false, score: 0, maxScore: 0, details: 'Product data missing' };
+    return {
+      score: 0,
+      grade: 'CRITICAL',
+      checks: {
+        imagesCheck: { ...emptyCheck, maxScore: 25 },
+        titleCheck: { ...emptyCheck, maxScore: 15 },
+        descriptionCheck: { ...emptyCheck, maxScore: 15 },
+        sizingCheck: { ...emptyCheck, maxScore: 15 },
+        attributesCheck: { ...emptyCheck, maxScore: 15 },
+        pricingCheck: { ...emptyCheck, maxScore: 10 },
+        variantsCheck: { ...emptyCheck, maxScore: 5 },
+      },
+    };
+  }
+
+  const product = productInput as Partial<IProduct>;
+
   // 1. Main Images Check (25 pts max)
   const imageCount = product.mainImages?.length || 0;
   const hasVariantImages = Boolean(
