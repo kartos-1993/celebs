@@ -2,15 +2,17 @@ import {
   Users,
   ListOrdered,
   ShoppingBag,
-  UserPen,
+  FolderTree,
   IndianRupee,
   Store,
   UserCog,
+  UserPen,
   Shield,
   Sparkles,
   Flame,
   LucideIcon,
 } from "lucide-react";
+import { Permission, can, type Role } from "@celebs/rbac";
 
 type Submenu = {
   href: string;
@@ -30,59 +32,81 @@ type Group = {
   menus: Menu[];
 };
 
-export function getMenuList(role?: string): Group[] {
+export function getMenuList(role?: string, userPermissions?: string[]): Group[] {
   const list: Group[] = [];
+  const currentRole = (role?.toUpperCase() || 'STAFF') as Role;
 
-  const isSuperAdmin = role === 'SUPERADMIN';
-  const isAdmin = role === 'ADMIN';
-  const isVendor = role === 'VENDOR';
-  const isStaff = role === 'STAFF';
+  const hasPerm = (perm: Permission): boolean => {
+    if (Array.isArray(userPermissions) && userPermissions.length > 0) {
+      return userPermissions.includes(perm);
+    }
+    return can(currentRole, perm);
+  };
 
-  // 1. Products Group (All roles)
-  const productSubmenus: Submenu[] = [
-    { href: "/products/manage", label: "Manage Product" },
-    { href: "/products/new", label: "Add Product" },
-    { href: "/products/mediacenter", label: "Media Center" },
-  ];
-
-  // Only Admin/SuperAdmin can review products, only SuperAdmin can manage categories
-  if (isAdmin || isSuperAdmin) {
+  // 1. Products Operations Group
+  const productSubmenus: Submenu[] = [];
+  if (hasPerm(Permission.PRODUCT_VIEW) || hasPerm(Permission.PRODUCT_CREATE)) {
+    productSubmenus.push({ href: "/products/manage", label: "Manage Product" });
+    productSubmenus.push({ href: "/products/new", label: "Add Product" });
+    productSubmenus.push({ href: "/products/mediacenter", label: "Media Center" });
+  }
+  if (hasPerm(Permission.PRODUCT_REVIEW)) {
     productSubmenus.push({ href: "/products/review-product-queue", label: "Review Queue" });
   }
-  if (isSuperAdmin) {
-    productSubmenus.push({ href: "/categories", label: "Categories" });
-    productSubmenus.push({ href: "/option-sets", label: "Option Sets" });
+
+  if (productSubmenus.length > 0) {
+    list.push({
+      menus: [
+        {
+          href: "",
+          label: "Products",
+          icon: ShoppingBag,
+          submenus: productSubmenus,
+        },
+      ],
+    });
   }
 
-  list.push({
-    menus: [
-      {
-        href: "",
-        label: "Products",
-        icon: ShoppingBag,
-        submenus: productSubmenus,
-      },
-    ],
-  });
+  // 2. Catalog & Taxonomy Architecture Group
+  const catalogSubmenus: Submenu[] = [];
+  if (hasPerm(Permission.CATALOG_MANAGE)) {
+    catalogSubmenus.push({ href: "/categories", label: "Categories" });
+    catalogSubmenus.push({ href: "/option-sets", label: "Option Sets" });
+  }
 
-  // 2. Orders & Reviews Group (All roles)
-  list.push({
-    menus: [
-      {
-        href: "",
-        label: "Orders & Reviews",
-        icon: ListOrdered,
-        submenus: [
-          { href: "/orders", label: "Orders" },
-          { href: "/orders/return", label: "Return Orders" },
-          { href: "/orders/reviews", label: "Reviews" },
-        ],
-      },
-    ],
-  });
+  if (catalogSubmenus.length > 0) {
+    list.push({
+      menus: [
+        {
+          href: "",
+          label: "Catalog Setup",
+          icon: FolderTree,
+          submenus: catalogSubmenus,
+        },
+      ],
+    });
+  }
 
-  // 3. Vendor Management (Admin & SuperAdmin only)
-  if (isAdmin || isSuperAdmin) {
+  // 3. Orders & Reviews Group
+  if (hasPerm(Permission.ORDER_VIEW)) {
+    list.push({
+      menus: [
+        {
+          href: "",
+          label: "Orders & Reviews",
+          icon: ListOrdered,
+          submenus: [
+            { href: "/orders", label: "Orders" },
+            { href: "/orders/return", label: "Return Orders" },
+            { href: "/orders/reviews", label: "Reviews" },
+          ],
+        },
+      ],
+    });
+  }
+
+  // 4. Vendor Management (Admin & SuperAdmin)
+  if (hasPerm(Permission.VENDOR_MANAGE) || hasPerm(Permission.VENDOR_VIEW)) {
     list.push({
       menus: [
         {
@@ -94,8 +118,8 @@ export function getMenuList(role?: string): Group[] {
     });
   }
 
-  // 4. User Management (SuperAdmin only)
-  if (isSuperAdmin) {
+  // 5. User Management (SuperAdmin only)
+  if (hasPerm(Permission.USER_MANAGE) || hasPerm(Permission.USER_VIEW)) {
     list.push({
       menus: [
         {
@@ -107,21 +131,21 @@ export function getMenuList(role?: string): Group[] {
     });
   }
 
-  // 5. Staff Management (Vendor & SuperAdmin only)
-  if (isVendor || isSuperAdmin) {
+  // 6. Staff & Team Management (Vendor Owners & SuperAdmin)
+  if (hasPerm(Permission.STAFF_MANAGE)) {
     list.push({
       menus: [
         {
           href: "/staff",
-          label: "Staff Management",
+          label: "Staff & Team",
           icon: Users,
         },
       ],
     });
   }
 
-  // 6. Finance Group (Vendor, Admin & SuperAdmin only)
-  if (isVendor || isAdmin || isSuperAdmin) {
+  // 7. Finance Group
+  if (hasPerm(Permission.FINANCE_VIEW)) {
     list.push({
       menus: [
         {
@@ -136,42 +160,16 @@ export function getMenuList(role?: string): Group[] {
     });
   }
 
-  // 7. My Account Group (All roles)
+  // 8. My Account Group (All roles)
   list.push({
     menus: [
       {
-        href: "",
+        href: "/account/profile",
         label: "My Account",
         icon: UserPen,
-        submenus: [
-          { href: "/account/settings", label: "Settings" },
-          { href: "/account/account-setting", label: "Account Settings" },
-        ],
       },
     ],
   });
-
-  // 8. Platform Settings Group (SuperAdmin only)
-  if (isSuperAdmin || isAdmin) {
-    list.push({
-      menus: [
-        {
-          href: "",
-          label: "Marketing & Campaigns",
-          icon: Sparkles,
-          submenus: [
-            { href: "/marketing/combos", label: "Combo Bundles" },
-            { href: "/marketing/campaigns", label: "Festival Campaigns" },
-          ],
-        },
-        {
-          href: "/platform-settings/banners",
-          label: "Banner Settings",
-          icon: Shield,
-        },
-      ],
-    });
-  }
 
   return list;
 }

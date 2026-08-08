@@ -61,12 +61,11 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
   const availableParents = categories.filter((cat) => {
     if (cat.id === initialDataId) return false;
     if (cat.parent === initialDataId || (cat as any).parentCategory === initialDataId) return false;
-    if (editingSlug) {
-      if (Array.isArray(cat.path)) {
-        if (cat.path.includes(editingSlug)) return false;
-      } else if (typeof cat.path === 'string') {
-        if (cat.path.split('/').includes(editingSlug)) return false;
-      }
+    if (editingSlug && cat.path) {
+      const pathParts = Array.isArray(cat.path)
+        ? (cat.path as string[])
+        : String(cat.path).split('/');
+      if (pathParts.includes(editingSlug)) return false;
     }
     return true;
   });
