@@ -10,7 +10,7 @@ import type {
 import { CategoryRepository, categoryRepository as defaultCategoryRepo } from './category.repository';
 
 export type CategoryAttribute = CategoryAttributeType & {
-  _id?: string;
+  id?: string;
 };
 
 export type CategoryInput = CreateCategoryType & {
@@ -30,7 +30,6 @@ interface CategoryDeleteResult {
 }
 
 interface CategoryTreeNode {
-  _id: string;
   id: string;
   name: string;
   slug: string;
@@ -64,12 +63,12 @@ export class CategoryService {
 
     if (this.hasAttributes(categoryData)) {
       await this.updateCategoryAttributes(
-        categoryDoc._id || categoryDoc.id,
+        categoryDoc.id,
         categoryData.attributes!,
       );
     }
 
-    return await this.categoryRepository.findById(categoryDoc._id || categoryDoc.id);
+    return await this.categoryRepository.findById(categoryDoc.id);
   }
 
   async getAllCategories(
@@ -87,7 +86,7 @@ export class CategoryService {
     if (!query || !query.trim()) return [];
     const results = await this.categoryRepository.find({ name: query.trim() }, limit);
     return results.map((c: any) => ({
-      id: String(c._id || c.id),
+      id: String(c.id),
       name: c.name,
       parentId: c.parentCategory ? String(c.parentCategory) : null,
       hasChildren: false,
@@ -204,14 +203,14 @@ export class CategoryService {
     const categoryMap: Record<string, CategoryTreeNode> = {};
 
     categories.forEach((cat) => {
-      const idStr = String(cat._id || cat.id);
-      categoryMap[idStr] = { ...cat, _id: idStr, id: idStr, children: [] };
+      const idStr = String(cat.id);
+      categoryMap[idStr] = { ...cat, id: idStr, children: [] };
     });
 
     const rootCategories: CategoryTreeNode[] = [];
 
     categories.forEach((cat) => {
-      const idStr = String(cat._id || cat.id);
+      const idStr = String(cat.id);
       const categoryNode = categoryMap[idStr];
       const parentId = cat.parentCategory || cat.parent;
 
@@ -307,7 +306,7 @@ export class CategoryService {
       parentCategory: parentVal ? String(parentVal) : null,
     });
 
-    if (duplicateCategory && String(duplicateCategory._id || duplicateCategory.id) !== categoryId) {
+    if (duplicateCategory && String(duplicateCategory.id) !== categoryId) {
       throw new AppError(
         'Category with this name already exists under the same parent',
         HTTPSTATUS.CONFLICT,
@@ -383,11 +382,11 @@ export class CategoryService {
         ? child.path.map((slug: string) => (slug === oldSlug ? newSlug : slug))
         : child.path;
 
-      await this.categoryRepository.updateById(child._id || child.id, {
+      await this.categoryRepository.updateById(child.id, {
         path: childPath,
       });
 
-      await this.updateCategoryPathsRecursively(child._id || child.id, oldSlug, newSlug);
+      await this.updateCategoryPathsRecursively(child.id, oldSlug, newSlug);
     }
   }
 }

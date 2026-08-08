@@ -160,7 +160,7 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
 
     const queue = await productService.getProductReviewQueue(1, 10);
     expect(queue.total).toBeGreaterThanOrEqual(1);
-    expect(queue.products.some((p) => p && String(p._id || p.id) === String(product?.id))).toBe(true);
+    expect(queue.products.some((p) => p && String(p.id) === String(product?.id))).toBe(true);
   });
 
   it('should approve a product and publish it', async () => {

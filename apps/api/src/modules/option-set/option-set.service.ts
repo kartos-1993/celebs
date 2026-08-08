@@ -26,7 +26,6 @@ export class OptionSetService {
     const sets = await prisma.optionSet.findMany({ orderBy: { name: 'asc' } });
     return sets.map((s) => ({
       id: s.id,
-      _id: s.id,
       name: s.name,
       displayName: s.displayName,
       values: Array.isArray(s.options) ? s.options : [],
@@ -38,7 +37,6 @@ export class OptionSetService {
     if (!set) return null;
     return {
       id: set.id,
-      _id: set.id,
       name: set.name,
       displayName: set.displayName,
       values: Array.isArray(set.options) ? set.options : [],

@@ -34,7 +34,7 @@ export interface FieldSpec {
 }
 
 export interface CategoryDocLike {
-  _id: string;
+  id: string;
   name: string;
   version?: number;
   attributes: IAttribute[];
@@ -222,7 +222,7 @@ export async function composeSchema(params: {
     params.policy.media.maxWidth ?? 0,
     params.policy.media.maxHeight ?? 0,
   ].join(':');
-  const renderTag = Buffer.from(`${String(params.category._id)}:${fieldsHash}:${policyFingerprint}`).toString('base64');
+  const renderTag = Buffer.from(`${String(params.category.id)}:${fieldsHash}:${policyFingerprint}`).toString('base64');
 
   return { fields, renderTag };
 }

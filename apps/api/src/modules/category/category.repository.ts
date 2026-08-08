@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 
 export interface FormattedCategory {
   id: string;
-  _id: string;
   name: string;
   slug: string;
   path?: string | null;
@@ -24,7 +23,6 @@ export class CategoryRepository {
     return {
       ...(category as Record<string, unknown>),
       id: String(category.id),
-      _id: String(category.id),
       name: String(category.name || ''),
       slug: String(category.slug || ''),
       path: category.path ? String(category.path) : null,
@@ -62,7 +60,7 @@ export class CategoryRepository {
     const where: Prisma.CategoryWhereInput = {};
     if (query.slug) where.slug = String(query.slug);
     if (query.name) where.name = { equals: String(query.name), mode: 'insensitive' };
-    if (query.id || query._id) where.id = String(query.id || query._id);
+    if (query.id) where.id = String(query.id);
 
     const category = await prisma.category.findFirst({ where });
     return this.formatCategory(category as unknown as Record<string, unknown>);

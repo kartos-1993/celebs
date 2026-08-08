@@ -25,14 +25,14 @@ export class ProductService {
     if (!product) return null;
     return {
       ...product,
-      _id: product.id,
+      id: product.id,
       price: product.price != null ? Number(product.price) : 0,
       discountedPrice: product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
       category: product.category
-        ? { ...(product.category as Record<string, unknown>), _id: (product.category as { id?: string }).id }
+        ? { ...(product.category as Record<string, unknown>), id: (product.category as { id?: string }).id }
         : product.categoryId,
       subcategory: product.subcategory
-        ? { ...(product.subcategory as Record<string, unknown>), _id: (product.subcategory as { id?: string }).id }
+        ? { ...(product.subcategory as Record<string, unknown>), id: (product.subcategory as { id?: string }).id }
         : product.subcategoryId,
     };
   }

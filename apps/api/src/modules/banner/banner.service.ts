@@ -14,7 +14,7 @@ export class BannerService {
     if (!banner) return null;
     return {
       ...banner,
-      _id: banner.id,
+      id: banner.id,
     };
   }
 

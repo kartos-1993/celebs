@@ -26,7 +26,7 @@ router.get('/product-render', async (req, res) => {
 
     const { fields, renderTag } = await composeSchema({
       category: {
-        _id: String(category._id),
+        id: String(category.id),
         name: category.name,
         version: category.version ?? category.__v ?? 1,
         attributes: category.attributes || [],
