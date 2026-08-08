@@ -6,7 +6,6 @@ import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler, logger } from '@celebs/shared-utils';
 import { putImage } from './storage.service';
-import { MediaModel } from '@/db/models/media.model';
 import { assetQueue } from '@/common/services/queue.service';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
@@ -63,36 +62,6 @@ router.post(
         mimeType: file.mimetype,
         folder: 'celebs/products',
       });
-
-      let mediaDoc: any;
-      // Best-effort media catalog write (does not fail the upload response)
-      try {
-        mediaDoc = await MediaModel.create({
-          fileName: stored.key.split('/').pop() || stored.key,
-          originalname: stored.originalname,
-          mimeType: stored.contentType,
-          size: stored.bytes,
-          url: stored.url,
-          filePath: stored.key,
-          key: stored.key,
-          createdBy: userId,
-        });
-      } catch (err: any) {
-        logger.error({ err: err?.message || String(err) }, 'Failed to write media record to DB');
-      }
-
-      if (mediaDoc) {
-        try {
-          await assetQueue.add('process-image', {
-            mediaId: mediaDoc._id.toString(),
-            key: stored.key,
-            originalname: stored.originalname,
-            mimeType: file.mimetype,
-          });
-        } catch (err: any) {
-          logger.error({ err: err?.message || String(err) }, 'Failed to queue asset processing job');
-        }
-      }
 
       payload.push({
         url: stored.url,
