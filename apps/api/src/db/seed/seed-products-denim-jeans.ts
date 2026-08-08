@@ -26,15 +26,15 @@ export async function seedProductsDenimJeans(): Promise<void> {
       name: 'Men Jeans',
       slug: 'men-jeans',
       level: parentCat ? 2 : 1,
-      parentCategory: parentCat ? (parentCat.id || parentCat._id) : null,
+      parentCategory: parentCat ? parentCat.id : null,
       path: parentCat ? [...parentCat.path, 'men-jeans'] : ['men-jeans'],
       isActive: true,
       sizeChartColumns: ['Waist', 'Hip', 'Inseam', 'Thigh']
     });
   }
 
-  const parentCategoryId = denimCategory.parentCategory || denimCategory.id || denimCategory._id;
-  const subcategoryId = denimCategory.id || denimCategory._id;
+  const parentCategoryId = denimCategory.parentCategory || denimCategory.id;
+  const subcategoryId = denimCategory.id;
 
   // 2. Read denim_jeans.json data
   const jsonPath = path.join(__dirname, 'data', 'denim_jeans.json');

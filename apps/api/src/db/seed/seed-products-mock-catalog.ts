@@ -73,7 +73,7 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
 
   for (let i = 0; i < numProducts; i++) {
     const subCat = subCategories[i % subCategories.length];
-    const parentCat = parentCategories.find(c => String(c.id || c._id) === String(subCat.parentCategory)) || parentCategories[0];
+    const parentCat = parentCategories.find(c => String(c.id) === String(subCat.parentCategory)) || parentCategories[0];
 
     const brand = MOCK_BRANDS[i % MOCK_BRANDS.length];
     const baseName = MOCK_NAMES[i % MOCK_NAMES.length];
@@ -124,8 +124,8 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
       description: `Premium mock listing for ${productName}. Ideal for full stack catalog testing.`,
       price,
       discountedPrice,
-      category: parentCat._id,
-      subcategory: subCat._id,
+      category: parentCat.id,
+      subcategory: subCat.id,
       sizes: sizesPayload,
       colorVariants,
       mainImages,
