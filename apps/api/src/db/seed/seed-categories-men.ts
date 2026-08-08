@@ -49,7 +49,7 @@ function mkAttr(a: SeedAttr) {
 async function ensureCategory(parent: any | null, name: string, sizeChartColumns?: string[], imageUrl?: string) {
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? (parent.level || 1) + 1 : 1;
-  const parentCategory = parent ? String(parent.id || parent._id) : null;
+  const parentCategory = parent ? String(parent.id) : null;
   const parentPath = parent ? (Array.isArray(parent.path) ? parent.path : [parent.path]) : [];
   const pathParts = [...parentPath, slug];
   const path = pathParts.join('/');

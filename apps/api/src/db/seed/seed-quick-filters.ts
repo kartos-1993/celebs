@@ -16,10 +16,11 @@ export async function seedQuickFilters(isReset = false): Promise<void> {
   let existingCount = 0;
 
   for (const category of categories) {
-    const existingFilter = await QuickFilterModel.findOne({ categoryId: category._id });
+    const catId = category.id || category._id;
+    const existingFilter = await QuickFilterModel.findOne({ categoryId: catId });
     if (!existingFilter) {
       await QuickFilterModel.create({
-        categoryId: category._id,
+        categoryId: catId,
         type: 'subcategory',
         displayAs: 'avatar_scroll',
         autoPopulate: true,
