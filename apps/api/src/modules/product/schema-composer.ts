@@ -204,7 +204,7 @@ export async function composeSchema(params: {
       name: 'sizes',
       uiType: 'SizeMeasurementsTable' as unknown as UiType,
       label: 'Size & Fit Measurements',
-      group: 'details',
+      group: 'sale',
       required: false,
       dataSource: params.category.sizeChartColumns,
       visible: true,
