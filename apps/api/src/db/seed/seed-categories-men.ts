@@ -25,7 +25,7 @@ interface SeedCategory {
   imageUrl?: string;
 }
 
-function mkAttr(a: SeedAttr) {
+function mkAttr(a: SeedAttr, optionSetMap: Map<string, string>) {
   const group: AllowedGroup = a.group
     ? a.group
     : a.isVariant
@@ -35,6 +35,12 @@ function mkAttr(a: SeedAttr) {
     a.isVariant && (a.variantType === 'color' || a.variantType === 'size')
       ? 'multiselect'
       : a.type;
+
+  let optionSetId: string | null = null;
+  if (a.useStandardOptions && a.optionSetName && optionSetMap.has(a.optionSetName)) {
+    optionSetId = optionSetMap.get(a.optionSetName)!;
+  }
+
   return {
     name: a.name,
     type: coercedType,
@@ -43,6 +49,8 @@ function mkAttr(a: SeedAttr) {
     isVariant: !!a.isVariant,
     variantType: a.variantType ?? null,
     useStandardOptions: !!a.useStandardOptions,
+    optionSetId,
+    optionSetName: a.optionSetName ?? null,
     group,
   };
 }
@@ -102,8 +110,8 @@ async function ensureCategory(
   });
 }
 
-async function createAttributesAndFilters(categoryId: string, attrs: SeedAttr[]) {
-  const formattedAttributes = attrs.map((a) => mkAttr(a));
+async function createAttributesAndFilters(categoryId: string, attrs: SeedAttr[], optionSetMap: Map<string, string>) {
+  const formattedAttributes = attrs.map((a) => mkAttr(a, optionSetMap));
 
   await prisma.category.update({
     where: { id: categoryId },
@@ -112,10 +120,16 @@ async function createAttributesAndFilters(categoryId: string, attrs: SeedAttr[])
 }
 
 async function seedTree(root: SeedCategory) {
+  const optionSets = await prisma.optionSet.findMany();
+  const optionSetMap = new Map<string, string>();
+  for (const set of optionSets) {
+    optionSetMap.set(set.name, set.id);
+  }
+
   async function walk(node: SeedCategory, parent: any | null) {
     const cat = await ensureCategory(parent, node.name, node.sizeChartColumns, node.bodyChartColumns, node.imageUrl);
     if (node.attributes?.length) {
-      await createAttributesAndFilters(cat.id, node.attributes);
+      await createAttributesAndFilters(cat.id, node.attributes, optionSetMap);
     }
     if (node.children?.length) {
       for (const child of node.children) {

@@ -1,9 +1,8 @@
-import React, { ChangeEvent, KeyboardEvent } from 'react';
+import React, { ChangeEvent } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import {
   Select,
   SelectContent,
@@ -18,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { X, Plus, Upload, Loader, Shirt, UserCheck } from 'lucide-react';
+import { X, Upload, Loader } from 'lucide-react';
 import { Category } from '../types';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
@@ -28,14 +27,6 @@ export interface CategoryBasicInfoTabProps {
   initialDataId?: string;
   role?: string;
   isUploadingImage: boolean;
-  newColumnInput: string;
-  setNewColumnInput: (val: string) => void;
-  newBodyColumnInput?: string;
-  setNewBodyColumnInput?: (val: string) => void;
-  handleAddSizeColumn: () => void;
-  handleRemoveSizeColumn: (colToRemove: string) => void;
-  handleAddBodyColumn?: () => void;
-  handleRemoveBodyColumn?: (colToRemove: string) => void;
   handleImageUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }
 
@@ -45,14 +36,6 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
   initialDataId,
   role,
   isUploadingImage,
-  newColumnInput,
-  setNewColumnInput,
-  newBodyColumnInput = '',
-  setNewBodyColumnInput,
-  handleAddSizeColumn,
-  handleRemoveSizeColumn,
-  handleAddBodyColumn,
-  handleRemoveBodyColumn,
   handleImageUpload,
 }) => {
   const editingCategory = categories.find((c) => c.id === initialDataId);
@@ -71,8 +54,6 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
   });
 
   const imageUrl = form.watch('imageUrl');
-  const sizeChartColumns = form.watch('sizeChartColumns') || [];
-  const bodyChartColumns = form.watch('bodyChartColumns') || [];
 
   return (
     <div className="space-y-5 pt-2">
@@ -121,124 +102,6 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
           </FormItem>
         )}
       />
-
-      {/* Product Measurement Columns (Garment Flat) */}
-      <div className="space-y-2.5 border-t pt-4">
-        <div className="flex items-center gap-2">
-          <Shirt className="h-4 w-4 text-indigo-600" />
-          <FormLabel className="text-sm font-semibold">
-            Product Size Chart Columns (Garment Flat Dimensions)
-          </FormLabel>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Define physical flat garment measurement headers (e.g., Shoulder, Bust, Length, Sleeve Length).
-        </p>
-
-        <div className="flex items-center gap-2">
-          <Input
-            value={newColumnInput}
-            onChange={(e) => setNewColumnInput(e.target.value)}
-            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddSizeColumn();
-              }
-            }}
-            placeholder="Add product column (e.g., Bicep Length)"
-            className="h-9 text-xs"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddSizeColumn}
-            className="h-9 shrink-0 gap-1 text-xs"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {sizeChartColumns.map((col) => (
-            <Badge
-              key={col}
-              variant="secondary"
-              className="flex items-center gap-1 text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-            >
-              {col}
-              <button
-                type="button"
-                onClick={() => handleRemoveSizeColumn(col)}
-                className="hover:text-rose-600 transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-          {sizeChartColumns.length === 0 && (
-            <span className="text-xs text-muted-foreground italic">No product columns defined.</span>
-          )}
-        </div>
-      </div>
-
-      {/* Body Measurement Columns (Wearer Fit Guide) */}
-      <div className="space-y-2.5 border-t pt-4">
-        <div className="flex items-center gap-2">
-          <UserCheck className="h-4 w-4 text-purple-600" />
-          <FormLabel className="text-sm font-semibold">
-            Body Size Chart Columns (Wearer Recommended Dimensions)
-          </FormLabel>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Define recommended human body measurement headers (e.g., Height, Bust, Waist Size, Hip Size).
-        </p>
-
-        <div className="flex items-center gap-2">
-          <Input
-            value={newBodyColumnInput}
-            onChange={(e) => setNewBodyColumnInput?.(e.target.value)}
-            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddBodyColumn?.();
-              }
-            }}
-            placeholder="Add body column (e.g., Thigh Size)"
-            className="h-9 text-xs"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddBodyColumn}
-            className="h-9 shrink-0 gap-1 text-xs"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {bodyChartColumns.map((col) => (
-            <Badge
-              key={col}
-              variant="secondary"
-              className="flex items-center gap-1 text-xs px-2.5 py-1 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
-            >
-              {col}
-              <button
-                type="button"
-                onClick={() => handleRemoveBodyColumn?.(col)}
-                className="hover:text-rose-600 transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-          {bodyChartColumns.length === 0 && (
-            <span className="text-xs text-muted-foreground italic">No body columns defined.</span>
-          )}
-        </div>
-      </div>
 
       {role === 'SUPERADMIN' && (
         <div className="space-y-2 border-t pt-4">

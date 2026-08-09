@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, ChevronDown, ChevronUp, Layers, Sliders } from 'lucide-react';
 import { ProductAPI } from '@/lib/axios-client';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
@@ -36,6 +36,7 @@ export interface AttributeFieldSetProps {
   index: number;
   form: UseFormReturn<CategoryFormData>;
   onRemove: () => void;
+  isOpenDefault?: boolean;
 }
 
 interface OptionSetItem {
@@ -47,31 +48,42 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
   index,
   form,
   onRemove,
+  isOpenDefault = false,
 }) => {
+  const [isOpen, setIsOpen] = useState<boolean>(isOpenDefault);
+  const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
+  const [newOptionInput, setNewOptionInput] = useState<string>('');
+
+  const attributeName = useWatch({
+    control: form.control,
+    name: `attributes.${index}.name`,
+  }) || `Attribute #${index + 1}`;
+
   const attributeType = useWatch({
     control: form.control,
     name: `attributes.${index}.type`,
-  });
+  }) || 'text';
+
   const isVariant = useWatch({
     control: form.control,
     name: `attributes.${index}.isVariant`,
   });
+
   const useStandardOptions = useWatch({
     control: form.control,
     name: `attributes.${index}.useStandardOptions`,
   });
+
   const selectedOptionSetId = useWatch({
     control: form.control,
     name: `attributes.${index}.optionSetId`,
   });
+
   const attributeValues: string[] =
     useWatch({
       control: form.control,
       name: `attributes.${index}.values`,
     }) || [];
-
-  const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
-  const [newOptionInput, setNewOptionInput] = useState<string>('');
 
   // Fetch available option sets via TanStack Query
   const { data: optionSets = [], isLoading: loadingSets } = useQuery<OptionSetItem[]>({
@@ -89,25 +101,35 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
         name: s.name,
       }));
     },
-    enabled: !!(useStandardOptions && isVariant),
+    enabled: !!(useStandardOptions || isVariant),
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load preview of standard option set values when selectedOptionSetId changes via TanStack Query
+  // Automatically resolve OptionSet ID by matching attribute name (e.g. Color -> Basic Colors, Size -> Alpha Sizes)
+  const effectiveOptionSetId =
+    selectedOptionSetId ||
+    optionSets.find((s) => {
+      const sName = s.name.toLowerCase();
+      const aName = (attributeName || '').toLowerCase();
+      return sName === aName || (aName === 'color' && sName.includes('color')) || (aName === 'size' && sName.includes('size'));
+    })?.id;
+
+  // Load preview of standard option set values when effectiveOptionSetId changes via TanStack Query
   const { data: optionSetValues = [] } = useQuery<string[]>({
-    queryKey: ['option-set-values', selectedOptionSetId],
+    queryKey: ['option-set-values', effectiveOptionSetId],
     queryFn: async () => {
+      if (!effectiveOptionSetId) return [];
       const res = await ProductAPI.get<{
         data?: { values?: Array<string | { label?: string; name?: string }> };
         values?: Array<string | { label?: string; name?: string }>;
-      }>(`/option-sets/${selectedOptionSetId}`);
+      }>(`/option-sets/${effectiveOptionSetId}`);
       const rawData = res.data;
       const rawVals = rawData?.data?.values ?? rawData?.values ?? [];
       return rawVals
         .map((v: string | { label?: string; name?: string }) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
         .filter(Boolean);
     },
-    enabled: !!(useStandardOptions && selectedOptionSetId),
+    enabled: !!(useStandardOptions && effectiveOptionSetId),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -131,324 +153,329 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
     );
   };
 
+  const matchedSetName = optionSets.find((s) => s.id === effectiveOptionSetId)?.name;
+
   return (
-    <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          Attribute #{index + 1}
+    <div className="border rounded-lg bg-card text-card-foreground shadow-2xs overflow-hidden transition-all">
+      {/* Accordion Compact Header Row */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 cursor-pointer select-none transition-colors border-b last:border-b-0"
+      >
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-mono text-muted-foreground w-6">#{index + 1}</span>
+          <span className="font-bold text-sm text-foreground">{attributeName}</span>
+
+          <Badge variant="outline" className="text-[11px] font-normal uppercase tracking-wider">
+            {attributeType}
+          </Badge>
+
           {isVariant && (
-            <Badge
-              variant="outline"
-              className="text-xs bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800"
-            >
+            <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
               Variant Option
             </Badge>
           )}
-        </h4>
-        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xs">
-            <DialogHeader>
-              <DialogTitle>Delete Attribute</DialogTitle>
-            </DialogHeader>
-            <div className="py-2 text-sm text-gray-500">
-              Are you sure you want to delete attribute #{index + 1}?
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => {
-                  onRemove();
-                  setDeleteOpen(false);
-                }}
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.name`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Attribute Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Fit Type, Material, Color" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.label`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Display Label (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Select Fit Type" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.type`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Input Type</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="text">Text Input</SelectItem>
-                  <SelectItem value="select">Single Select</SelectItem>
-                  <SelectItem value="multiselect">Multi-Select</SelectItem>
-                  <SelectItem value="number">Number</SelectItem>
-                  <SelectItem value="boolean">Boolean (Switch)</SelectItem>
-                  <SelectItem value="richText">Rich Text</SelectItem>
-                  <SelectItem value="image">Image</SelectItem>
-                  <SelectItem value="video">Video</SelectItem>
-                  <SelectItem value="customEditor">Custom Editor</SelectItem>
-                  <SelectItem value="packageWeight">Package Weight</SelectItem>
-                  <SelectItem value="packageVolume">Package Volume</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.group`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Group</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || 'basic'}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select group" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="basic">Basic Info</SelectItem>
-                  <SelectItem value="details">Product Details</SelectItem>
-                  <SelectItem value="variant">Variant</SelectItem>
-                  <SelectItem value="sale">Price & Stock</SelectItem>
-                  <SelectItem value="package">Package & Shipping</SelectItem>
-                  <SelectItem value="termcondition">Terms & Conditions</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.placeholder`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Placeholder</FormLabel>
-              <FormControl>
-                <Input placeholder="Field placeholder text" {...field} value={field.value ?? ''} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.info.help`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Help Text</FormLabel>
-              <FormControl>
-                <Input placeholder="Tooltip help text for admin" {...field} value={field.value ?? ''} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <div className="flex items-center gap-6 border-t border-b py-2 my-2">
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.isVariant`}
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val);
-                    if (val) {
-                      form.setValue(`attributes.${index}.group`, 'variant');
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormLabel className="cursor-pointer">Use as Product Variation (SKU Axis)</FormLabel>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={`attributes.${index}.isRequired`}
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2">
-              <FormControl>
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-              <FormLabel className="cursor-pointer">Required Field</FormLabel>
-            </FormItem>
-          )}
-        />
-      </div>
-
-      {isVariant && (
-        <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-md border border-purple-100 dark:border-purple-900/50 space-y-3">
-          <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
-            ✨ Product Variant Option: Sellers will choose values for this attribute (e.g., Strap Material, Dial Color, Ring Size, Storage Capacity) to generate product SKUs.
-          </p>
-
-          <FormField
-            control={form.control}
-            name={`attributes.${index}.useStandardOptions`}
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={(val) => {
-                      field.onChange(val);
-                      if (!val) {
-                        form.setValue(`attributes.${index}.optionSetId`, null);
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormLabel className="cursor-pointer text-xs">Link to Standard Option Set (e.g. Ring Sizes, Basic Colors)</FormLabel>
-              </FormItem>
-            )}
-          />
 
           {useStandardOptions && (
+            <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200">
+              <Layers className="w-3 h-3 mr-1" />
+              {matchedSetName || 'Linked Option Set'}
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 text-rose-500 hover:text-rose-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteOpen(true);
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 text-muted-foreground">
+            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Accordion Expandable Content */}
+      {isOpen && (
+        <div className="p-4 space-y-4 bg-card border-t">
+          <div className="grid grid-cols-2 gap-3">
             <FormField
               control={form.control}
-              name={`attributes.${index}.optionSetId`}
+              name={`attributes.${index}.name`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Linked Option Set</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <FormLabel className="text-xs">Attribute Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Fit Type, Material, Color" {...field} className="text-sm" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.label`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Display Label (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Select Fit Type" {...field} value={field.value ?? ''} className="text-sm" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.type`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Input Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={loadingSets ? 'Loading option sets...' : 'Select standard option set'}
-                        />
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {optionSets.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="text">Text Input</SelectItem>
+                      <SelectItem value="select">Single Select</SelectItem>
+                      <SelectItem value="multiselect">Multi-Select</SelectItem>
+                      <SelectItem value="number">Number</SelectItem>
+                      <SelectItem value="boolean">Boolean (Switch)</SelectItem>
+                      <SelectItem value="richText">Rich Text</SelectItem>
+                      <SelectItem value="image">Image</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
-        </div>
-      )}
 
-      {(attributeType === 'select' || attributeType === 'multiselect' || isVariant) && (
-        <div className="space-y-2 pt-2 border-t">
-          <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Attribute Option Values
-          </Label>
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.group`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Form Group</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || 'basic'}>
+                    <FormControl>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Select group" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic Info</SelectItem>
+                      <SelectItem value="details">Product Details</SelectItem>
+                      <SelectItem value="variant">Variant</SelectItem>
+                      <SelectItem value="sale">Price & Stock</SelectItem>
+                      <SelectItem value="package">Package & Shipping</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-          {useStandardOptions && selectedOptionSetId ? (
-            <div className="space-y-1">
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                Values linked to Option Set ({optionSetValues.length} options):
-              </p>
-              <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto p-2 bg-white dark:bg-gray-950 rounded border text-xs">
-                {optionSetValues.map((v, i) => (
-                  <Badge key={i} variant="outline" className="text-[11px] font-normal">
-                    {v}
-                  </Badge>
-                ))}
-                {optionSetValues.length === 0 && (
-                  <span className="text-gray-400 italic">No values in selected option set.</span>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter option value (e.g. Oversized, Red)"
-                  value={newOptionInput}
-                  onChange={(e) => setNewOptionInput(e.target.value)}
-                  onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddManualValue();
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" size="sm" onClick={handleAddManualValue}>
-                  <Plus className="h-4 w-4 mr-1" /> Add Option
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {attributeValues.map((val) => (
-                  <Badge key={val} variant="secondary" className="flex items-center gap-1 py-1 px-2.5">
-                    <span>{val}</span>
-                    <X
-                      className="h-3 w-3 cursor-pointer text-gray-500 hover:text-red-500"
-                      onClick={() => handleRemoveManualValue(val)}
+          <div className="flex items-center gap-6 border-t border-b py-2 my-2">
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.isVariant`}
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(val) => {
+                        field.onChange(val);
+                        if (val) {
+                          form.setValue(`attributes.${index}.group`, 'variant');
+                        }
+                      }}
                     />
-                  </Badge>
-                ))}
-                {attributeValues.length === 0 && (
-                  <span className="text-xs text-gray-400 italic">No option values added yet.</span>
+                  </FormControl>
+                  <FormLabel className="cursor-pointer text-xs font-semibold">Use as Product Variation (SKU Axis)</FormLabel>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`attributes.${index}.isRequired`}
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer text-xs">Required Field</FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {isVariant && (
+            <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-md border border-purple-100 dark:border-purple-900/50 space-y-3">
+              <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
+                ✨ Product Variant Option: Sellers will choose values for this attribute to generate product SKUs.
+              </p>
+
+              <FormField
+                control={form.control}
+                name={`attributes.${index}.useStandardOptions`}
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(val) => {
+                          field.onChange(val);
+                          if (!val) {
+                            form.setValue(`attributes.${index}.optionSetId`, null);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="cursor-pointer text-xs">Link to Standard Option Set (e.g. Basic Colors, Ring Sizes)</FormLabel>
+                  </FormItem>
                 )}
-              </div>
+              />
+
+              {useStandardOptions && (
+                <FormField
+                  control={form.control}
+                  name={`attributes.${index}.optionSetId`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Linked Option Set</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || effectiveOptionSetId || undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="text-xs">
+                            <SelectValue
+                              placeholder={loadingSets ? 'Loading option sets...' : 'Select standard option set'}
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {optionSets.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+          )}
+
+          {(attributeType === 'select' || attributeType === 'multiselect' || isVariant) && (
+            <div className="space-y-2 pt-2 border-t">
+              <Label className="text-xs font-semibold text-foreground">
+                Attribute Option Values
+              </Label>
+
+              {useStandardOptions && effectiveOptionSetId ? (
+                <div className="space-y-1">
+                  <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    Values linked to Option Set ({optionSetValues.length} options):
+                  </p>
+                  <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto p-2 bg-muted/20 rounded border text-xs">
+                    {optionSetValues.map((v, i) => (
+                      <Badge key={i} variant="outline" className="text-[11px] font-normal">
+                        {v}
+                      </Badge>
+                    ))}
+                    {optionSetValues.length === 0 && (
+                      <span className="text-muted-foreground italic">No values in selected option set.</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter option value (e.g. Oversized, Red)"
+                      value={newOptionInput}
+                      onChange={(e) => setNewOptionInput(e.target.value)}
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddManualValue();
+                        }
+                      }}
+                      className="text-xs h-8"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddManualValue} className="h-8 text-xs">
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Option
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {attributeValues.map((val) => (
+                      <Badge key={val} variant="secondary" className="flex items-center gap-1 py-0.5 px-2 text-xs">
+                        <span>{val}</span>
+                        <X
+                          className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-rose-500"
+                          onClick={() => handleRemoveManualValue(val)}
+                        />
+                      </Badge>
+                    ))}
+                    {attributeValues.length === 0 && (
+                      <span className="text-xs text-muted-foreground italic">No option values added yet.</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Delete Attribute</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-muted-foreground">
+            Are you sure you want to delete attribute <strong>{attributeName}</strong>?
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                onRemove();
+                setDeleteOpen(false);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
