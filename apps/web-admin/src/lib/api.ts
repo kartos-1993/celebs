@@ -144,8 +144,8 @@ export const deleteUserMutationFn = async (id: string) =>
   await AuthAPI.delete(`/admin/users/${id}`);
 
 // Staff Management (Vendors)
-export const getStaffQueryFn = async () => {
-  const response = await AuthAPI.get(`/staff`);
+export const getStaffQueryFn = async (vendorId?: string) => {
+  const response = await AuthAPI.get(`/staff`, { params: vendorId ? { vendorId } : undefined });
   return response.data;
 };
 

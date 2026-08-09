@@ -9,7 +9,7 @@
     "dev:worker": "dotenv -e .env.development -- nodemon --watch src --ext ts --exec node -r tsconfig-paths/register -r @swc-node/register src/worker-main.ts",
     "start": "node dist/apps/api/src/main.js",
     "start:worker": "node dist/apps/api/src/worker-main.js",
-    "test": "dotenv -e .env.test -- npx prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run",
+    "test": "dotenv -e .env.test -- sh -c \"prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run\"",
     "seed": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
     "seed:reset": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
     "seed:staging": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",

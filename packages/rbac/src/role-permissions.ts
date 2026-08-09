@@ -11,6 +11,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.CATALOG_VIEW,
     Permission.ORDER_VIEW,
     Permission.ORDER_MANAGE,
+    Permission.STAFF_VIEW,
   ],
   VENDOR: [
     Permission.PRODUCT_VIEW,
@@ -21,6 +22,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.ORDER_VIEW,
     Permission.ORDER_MANAGE,
     Permission.FINANCE_VIEW,
+    Permission.STAFF_VIEW,
     Permission.STAFF_MANAGE,
   ],
   ADMIN: [

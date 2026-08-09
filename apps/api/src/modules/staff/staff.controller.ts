@@ -19,10 +19,11 @@ export class StaffController {
   }
 
   public createStaff = asyncHandler(
-    async (req: Request, res: Response): Promise<any> => {
+    async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);
       const body = createStaffSchema.parse(req.body);
-      const staff = await this.staffService.createStaff(userId, body);
+      const vendorId = typeof req.body.vendorId === 'string' ? req.body.vendorId : undefined;
+      const staff = await this.staffService.createStaff(userId, { ...body, vendorId });
       const response: IApiResponse<typeof staff> = {
         success: true,
         message: 'Staff account created successfully',
@@ -33,9 +34,10 @@ export class StaffController {
   );
 
   public getStaff = asyncHandler(
-    async (req: Request, res: Response): Promise<any> => {
+    async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);
-      const staffList = await this.staffService.getStaff(userId);
+      const vendorId = typeof req.query.vendorId === 'string' ? req.query.vendorId : undefined;
+      const staffList = await this.staffService.getStaff(userId, vendorId);
       const response: IApiResponse<typeof staffList> = {
         success: true,
         message: 'Staff list retrieved successfully',
@@ -46,7 +48,7 @@ export class StaffController {
   );
 
   public deleteStaff = asyncHandler(
-    async (req: Request, res: Response): Promise<any> => {
+    async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);
       const { id } = req.params;
       const deleted = await this.staffService.deleteStaff(id, userId);

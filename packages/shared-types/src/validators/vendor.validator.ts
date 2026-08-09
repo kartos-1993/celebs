@@ -37,6 +37,8 @@ export const createStaffSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
   password: z.string().trim().min(8, 'Password must be at least 8 characters long'),
   confirmPassword: z.string().trim().min(8, 'Password confirmation must be at least 8 characters long'),
+  permissions: z.array(z.string()).optional(),
+  vendorId: z.string().optional(),
 }).refine((val) => val.password === val.confirmPassword, {
   message: 'Password does not match',
   path: ['confirmPassword'],
