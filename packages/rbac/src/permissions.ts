@@ -26,6 +26,7 @@ export enum Permission {
   VENDOR_MANAGE         = 'vendor:manage',
 
   // ── Staff ─────────────────────────────
+  STAFF_VIEW            = 'staff:view',
   STAFF_MANAGE          = 'staff:manage',
 
   // ── Users (platform-wide) ────────────

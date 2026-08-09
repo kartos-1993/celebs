@@ -131,8 +131,8 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 6. Staff & Team Management (Vendor Owners & SuperAdmin)
-  if (hasPerm(Permission.STAFF_MANAGE)) {
+  // 6. Staff & Team Management (Vendor Owners, Vendor Staff & SuperAdmin)
+  if (hasPerm(Permission.STAFF_MANAGE) || hasPerm(Permission.STAFF_VIEW)) {
     list.push({
       menus: [
         {

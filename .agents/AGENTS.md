@@ -38,3 +38,8 @@ Enforce all file creation logic to follow this structure precisely:
   2. Commit the changes for that step with a clear, human-friendly git commit message.
   3. Provide a summary of completed changes for review before moving to the next step.
 
+## 7. Mandatory Test Isolation, Local Database & Test Fixture Mandates
+- **Local Isolated Database Only**: Integration/unit tests MUST run strictly against local PostgreSQL (`postgresql://postgres:celebs@localhost:5432/celebs_test`). Testing against remote cloud databases (e.g. Supabase cloud) is strictly prohibited.
+- **Single Subshell Env Wrapping**: Package `package.json` test scripts must wrap all chained commands inside a single subshell environment scope (`dotenv -e .env.test -- sh -c "..."` or explicit per-command `dotenv -e`) so `vitest` and `prisma db push` always run against the exact same database.
+- **Password Hashing for Auth Fixtures**: NEVER insert plain-text passwords into test database records directly. When seeding `User` records for integration tests that perform `/auth/login`, ALWAYS hash the password using `await hashValue(...)`.
+- **No External Container/Cloud Dependencies for Tests**: Tests must execute cleanly against local native servers and rely on stubs/mocks for S3 presigned URLs without requiring external cloud connectivity.

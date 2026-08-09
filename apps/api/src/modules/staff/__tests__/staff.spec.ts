@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '@/app';
 import prisma from '@/db';
+import { hashValue } from '@/common/utils/bcrypt';
 
 // Mock the mailer to avoid making external HTTP calls
 vi.mock('../../../mailers/mailer', () => ({
@@ -36,7 +37,7 @@ describe('Staff Management API Integration Tests', () => {
   let staffId: string;
 
   beforeEach(async () => {
-    const getCookie = (res: any): string => {
+    const getCookie = (res: { headers: Record<string, string | string[] | undefined> }): string => {
       const rawCookies = res.headers['set-cookie'];
       return Array.isArray(rawCookies) ? rawCookies.join('; ') : rawCookies || '';
     };
@@ -142,5 +143,60 @@ describe('Staff Management API Integration Tests', () => {
       .set('Cookie', vendor2Cookie);
 
     expect(deleteRes.status).toBe(403);
+  });
+
+  it('should allow STAFF sub-user and SUPERADMIN to retrieve staff list', async () => {
+    // 1. Create a staff member under VENDOR 1
+    const createStaffRes = await request(app)
+      .post('/api/v1/staff')
+      .set('Cookie', vendor1Cookie)
+      .send({
+        name: 'Staff Sub-User One',
+        email: 'subuser1@example.com',
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+      });
+    expect(createStaffRes.status).toBe(201);
+
+    // Login as the STAFF sub-user
+    const staffLoginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'subuser1@example.com', password: 'Password123!' });
+    const rawStaffCookies = staffLoginRes.headers['set-cookie'];
+    const staffCookie = Array.isArray(rawStaffCookies) ? rawStaffCookies.join('; ') : rawStaffCookies || '';
+
+    // STAFF sub-user lists staff (should resolve vendor profile via user.vendorId)
+    const staffListRes = await request(app)
+      .get('/api/v1/staff')
+      .set('Cookie', staffCookie);
+    expect(staffListRes.status).toBe(200);
+    expect(staffListRes.body.data.length).toBe(1);
+
+    // 2. Superadmin user listing staff
+    const hashedPassword = await hashValue('Password123!');
+    const adminUser = await prisma.user.create({
+      data: {
+        name: 'Super Admin User',
+        email: 'superadmin.stafftest@example.com',
+        password: hashedPassword,
+        role: 'SUPERADMIN',
+        isEmailVerified: true,
+      },
+    });
+    const adminLoginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'superadmin.stafftest@example.com', password: 'Password123!' });
+    const rawAdminCookies = adminLoginRes.headers['set-cookie'];
+    const adminCookie = Array.isArray(rawAdminCookies) ? rawAdminCookies.join('; ') : rawAdminCookies || '';
+
+    const adminListRes = await request(app)
+      .get('/api/v1/staff')
+      .set('Cookie', adminCookie);
+
+    expect(adminListRes.status).toBe(200);
+    expect(adminListRes.body.data.length).toBeGreaterThanOrEqual(1);
+
+    // Clean up admin user
+    await prisma.user.delete({ where: { id: adminUser.id } });
   });
 });

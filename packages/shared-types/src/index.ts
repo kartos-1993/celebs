@@ -2,7 +2,7 @@ import { z } from 'zod';
 export { z };
 import { loginSchema, registerSchema, verificationEmailSchema, resetPasswordSchema, vendorRegisterSchema, setupSuperadminSchema } from './validators/auth.validator';
 import { verifyMfaSchema, verifyMfaForLoginSchema } from './validators/mfa.validator';
-import { vendorProfileSchema, warehouseSchema, vendorDocumentsSchema, vendorBusinessInfoSchema } from './validators/vendor.validator';
+import { vendorProfileSchema, warehouseSchema, vendorDocumentsSchema, vendorBusinessInfoSchema, createStaffSchema } from './validators/vendor.validator';
 import {
   createProductSchema,
   updateProductSchema,
@@ -41,6 +41,7 @@ export type UpdateProductType = z.input<typeof updateProductSchema>;
 export type ProductFilterType = z.input<typeof productFilterSchema>;
 export type ProductType = z.infer<typeof createProductSchema>;
 export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
+export type CreateStaffType = z.infer<typeof createStaffSchema>;
 
 export * from './types/api';
 export * from './types/cart';
