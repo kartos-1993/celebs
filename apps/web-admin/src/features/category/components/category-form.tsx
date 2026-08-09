@@ -79,11 +79,11 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           <TabsList className={`grid w-full ${isSuperadmin ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FolderTree className="h-4 w-4" />
-              Basic Info & Size Chart
+              Basic Info
             </TabsTrigger>
             <TabsTrigger value="attributes" className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" />
-              Attributes ({attributeFields.length})
+              Attributes & Size Guide ({attributeFields.length})
             </TabsTrigger>
             {isSuperadmin && (
               <TabsTrigger value="storefront" className="flex items-center gap-2">
@@ -100,14 +100,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               initialDataId={initialData?.id}
               role={role}
               isUploadingImage={isUploadingImage}
-              newColumnInput={newColumnInput}
-              setNewColumnInput={setNewColumnInput}
-              newBodyColumnInput={newBodyColumnInput}
-              setNewBodyColumnInput={setNewBodyColumnInput}
-              handleAddSizeColumn={handleAddSizeColumn}
-              handleRemoveSizeColumn={handleRemoveSizeColumn}
-              handleAddBodyColumn={handleAddBodyColumn}
-              handleRemoveBodyColumn={handleRemoveBodyColumn}
               handleImageUpload={handleImageUpload}
             />
           </TabsContent>
@@ -118,6 +110,14 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               attributeFields={attributeFields}
               handleAddAttribute={handleAddAttribute}
               removeAttribute={removeAttribute}
+              newColumnInput={newColumnInput}
+              setNewColumnInput={setNewColumnInput}
+              newBodyColumnInput={newBodyColumnInput}
+              setNewBodyColumnInput={setNewBodyColumnInput}
+              handleAddSizeColumn={handleAddSizeColumn}
+              handleRemoveSizeColumn={handleRemoveSizeColumn}
+              handleAddBodyColumn={handleAddBodyColumn}
+              handleRemoveBodyColumn={handleRemoveBodyColumn}
             />
           </TabsContent>
 
