@@ -52,8 +52,6 @@ projects:
                 sync: false
               - key: DIRECT_URL
                 sync: false
-              - key: MONGODB_URI
-                sync: false
               - key: S3_ENDPOINT
                 value: https://cba1249fa7c3e183b8e2081761beb0b4.r2.cloudflarestorage.com
               - key: S3_BUCKET_NAME
