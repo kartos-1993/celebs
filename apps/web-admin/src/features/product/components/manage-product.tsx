@@ -171,9 +171,9 @@ const ManageProduct = () => {
           <p className="text-gray-500 mt-1">Manage your product inventory and track performance</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/products/new">
-            <Button className="bg-orange-500 hover:bg-orange-600">+ New Product</Button>
-          </Link>
+          <Button asChild className="bg-orange-500 hover:bg-orange-600">
+            <Link to="/products/new">+ New Product</Link>
+          </Button>
         </div>
       </div>
 

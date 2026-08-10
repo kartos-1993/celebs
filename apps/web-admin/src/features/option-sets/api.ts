@@ -1,4 +1,4 @@
-import { OptionSetAPI } from '@/lib/axios-client';
+import { OptionSetAPI } from '@/lib/axios';
 import type { OptionSet, CreateOptionSetInput, UpdateOptionSetInput } from './types';
 
 export async function fetchOptionSets(): Promise<OptionSet[]> {

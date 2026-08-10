@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -101,13 +101,10 @@ export function ComboFormPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/marketing/combos')}
-          className="h-8 w-8 p-0"
-        >
-          <ArrowLeft className="w-4 h-4" />
+        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
+          <Link to="/marketing/combos" aria-label="Back to combos">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
         </Button>
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">

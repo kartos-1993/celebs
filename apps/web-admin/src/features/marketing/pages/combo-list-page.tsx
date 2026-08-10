@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getCombosQueryFn } from '@/lib/api';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -25,7 +25,6 @@ import {
 import type { ComboBundleType } from '@celebs/shared-types';
 
 export function ComboListPage() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: response, isLoading } = useQuery({
@@ -67,12 +66,11 @@ export function ComboListPage() {
             instant savings badges.
           </p>
         </div>
-        <Button
-          onClick={() => navigate('/marketing/combos/new')}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create New Combo
+        <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+          <Link to="/marketing/combos/new">
+            <Plus className="w-4 h-4" />
+            Create New Combo
+          </Link>
         </Button>
       </div>
 
@@ -214,13 +212,8 @@ export function ComboListPage() {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7 gap-1"
-                      onClick={() => navigate(`/marketing/combos/${combo.id}`)}
-                    >
-                      Edit
+                    <Button asChild variant="outline" size="sm" className="text-xs h-7 gap-1">
+                      <Link to={`/marketing/combos/${combo.id}`}>Edit</Link>
                     </Button>
                   </TableCell>
                 </TableRow>

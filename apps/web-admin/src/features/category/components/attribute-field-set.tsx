@@ -29,7 +29,7 @@ import {
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
 import { X, Plus, ChevronDown, ChevronUp, Layers, Sliders } from 'lucide-react';
-import { ProductAPI } from '@/lib/axios-client';
+import { ProductAPI } from '@/lib/axios';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface AttributeFieldSetProps {

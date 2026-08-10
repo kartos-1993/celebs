@@ -1,4 +1,4 @@
-import { ProductAPI } from '@/lib/axios-client';
+import { ProductAPI } from '@/lib/axios';
 import type {
   CreateProductType,
   UpdateProductType,
