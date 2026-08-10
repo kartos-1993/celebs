@@ -20,19 +20,19 @@ export function SheetMenu() {
         </Button>
       </SheetTrigger>
       <SheetContent
-        className="sm:w-72 px-3 h-full flex flex-col"
+        className="w-56 px-3 h-full flex flex-col"
         aria-describedby="sheet-menu-description"
         side="left"
       >
         <SheetHeader>
           <Button className="flex justify-center items-center pb-2 pt-1" variant="link" asChild>
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <PanelsTopLeft className="w-6 h-6 mr-1" />
-              <SheetTitle className="font-bold text-lg">Brand</SheetTitle>
+              <SheetTitle className="font-bold text-lg">Celebs Seller Center</SheetTitle>
             </Link>
           </Button>
         </SheetHeader>
-        <Menu isSideBarOpen />
+        <Menu isSideBarOpen={true} />
       </SheetContent>
     </Sheet>
   );
