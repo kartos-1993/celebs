@@ -1,4 +1,4 @@
-import { ProductAPI } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios';
 import type {
   CreateProductType,
   UpdateProductType,
@@ -45,21 +45,21 @@ const BASE_PATH = '/products';
 export async function createProduct(
   data: CreateProductRequest,
 ): Promise<ApiResponse<ProductRecord>> {
-  const response = await ProductAPI.post<ApiResponse<ProductRecord>>(BASE_PATH, data);
+  const response = await axiosClient.post<ApiResponse<ProductRecord>>(BASE_PATH, data);
   return response.data;
 }
 
 export async function getProducts(
   filters?: ProductFilterRequest,
 ): Promise<ApiResponse<PaginatedProductsResponse>> {
-  const response = await ProductAPI.get<ApiResponse<PaginatedProductsResponse>>(BASE_PATH, {
+  const response = await axiosClient.get<ApiResponse<PaginatedProductsResponse>>(BASE_PATH, {
     params: filters,
   });
   return response.data;
 }
 
 export async function getProductById(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await ProductAPI.get<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`);
+  const response = await axiosClient.get<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`);
   return response.data;
 }
 
@@ -67,7 +67,7 @@ export async function getProductReviewQueue(
   page = 1,
   limit = 10,
 ): Promise<ApiResponse<PaginatedProductsResponse>> {
-  const response = await ProductAPI.get<ApiResponse<PaginatedProductsResponse>>(
+  const response = await axiosClient.get<ApiResponse<PaginatedProductsResponse>>(
     `${BASE_PATH}/review-product-queue`,
     { params: { page, limit } },
   );
@@ -75,7 +75,7 @@ export async function getProductReviewQueue(
 }
 
 export async function submitProductForReview(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await ProductAPI.post<ApiResponse<ProductRecord>>(
+  const response = await axiosClient.post<ApiResponse<ProductRecord>>(
     `${BASE_PATH}/${id}/submit-for-review`,
   );
   return response.data;
@@ -87,7 +87,7 @@ export async function reviewProduct(
   note?: string,
 ): Promise<ApiResponse<ProductRecord>> {
   const body = typeof payload === 'object' ? payload : { action: payload, note };
-  const response = await ProductAPI.post<ApiResponse<ProductRecord>>(
+  const response = await axiosClient.post<ApiResponse<ProductRecord>>(
     `${BASE_PATH}/${id}/review`,
     body,
   );
@@ -95,12 +95,12 @@ export async function reviewProduct(
 }
 
 export async function archiveProduct(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await ProductAPI.post<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}/archive`);
+  const response = await axiosClient.post<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}/archive`);
   return response.data;
 }
 
 export async function toggleProductActivation(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await ProductAPI.post<ApiResponse<ProductRecord>>(
+  const response = await axiosClient.post<ApiResponse<ProductRecord>>(
     `${BASE_PATH}/${id}/toggle-activation`,
   );
   return response.data;
@@ -110,7 +110,7 @@ export async function updateProduct(
   id: string,
   data: UpdateProductRequest,
 ): Promise<ApiResponse<ProductRecord>> {
-  const response = await ProductAPI.put<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`, data);
+  const response = await axiosClient.put<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`, data);
   return response.data;
 }
 
@@ -129,7 +129,7 @@ export async function uploadFiles(
   const formData = new FormData();
   pendingFiles.forEach((file) => formData.append('files', file));
 
-  const response = await ProductAPI.post<ApiResponse<UploadedFileResponse[]>>(
+  const response = await axiosClient.post<ApiResponse<UploadedFileResponse[]>>(
     '/media/upload',
     formData,
     {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
-import { ProductAPI } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios';
 import { SearchableSelect } from '@celebs/shared-ui/components/searchable-select';
 import type { FieldSpec, UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
@@ -18,7 +18,7 @@ export function useOptions(field: FieldSpec) {
     let isMounted = true;
     (async () => {
       try {
-        const res = await ProductAPI.get(fetchUrl);
+        const res = await axiosClient.get(fetchUrl);
         const data = res.data;
         const values =
           data?.data?.values ??
