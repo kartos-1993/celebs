@@ -83,7 +83,8 @@ const BasicInfoSection = ({
                   setSelectedCategory(category);
                   onCategoryChange(category.id);
                   onSubcategoryChange(category.id);
-                  onCategoryPathChange?.(category.path);
+                  const pathArr = Array.isArray(category.path) ? category.path : category.path ? [category.path] : [];
+                  onCategoryPathChange?.(pathArr);
                 }}
                 placeholder="Select the product category"
               />
