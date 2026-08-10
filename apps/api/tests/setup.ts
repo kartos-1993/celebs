@@ -1,24 +1,21 @@
-// Import prisma so it gets configured with the test DB
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
+import { afterAll, beforeEach } from 'vitest';
 
 afterAll(async () => {
-  // Close Prisma connection
   await prisma.$disconnect();
 });
 
 beforeEach(async () => {
-  // Clean all PostgreSQL tables
-  const tablenames = await prisma.$queryRaw<
-    Array<{ tablename: string }>
-  >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations';`;
+  try {
+    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
+      SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations';
+    `;
 
-  if (tablenames.length > 0) {
-    for (const { tablename } of tablenames) {
-      try {
-        await prisma.$executeRawUnsafe(`DELETE FROM "${tablename}";`);
-      } catch (error) {
-        // Ignored
-      }
+    if (tablenames.length > 0) {
+      const names = tablenames.map((t) => `"${t.tablename}"`).join(', ');
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${names} CASCADE;`);
     }
+  } catch {
+    // Fallback if test DB connection is not available in isolated unit runs
   }
 });
