@@ -6,9 +6,9 @@ export class QuickFilterController {
   constructor(private readonly quickFilterService: QuickFilterService) {}
 
   getStorefrontConfig = async (req: Request, res: Response) => {
-    const slug = req.params.slug;
+    const slug = req.params.slug || '';
     const data = await this.quickFilterService.getStorefrontConfigBySlug(slug);
-    return res.status(HTTPSTATUS.OK).json({
+    res.status(HTTPSTATUS.OK).json({
       success: true,
       message: 'Storefront config retrieved successfully',
       data,
@@ -16,9 +16,9 @@ export class QuickFilterController {
   };
 
   getQuickFiltersForCategory = async (req: Request, res: Response) => {
-    const categoryId = req.params.categoryId;
+    const categoryId = req.params.categoryId || '';
     const data = await this.quickFilterService.getQuickFiltersForCategory(categoryId);
-    return res.status(HTTPSTATUS.OK).json({
+    res.status(HTTPSTATUS.OK).json({
       success: true,
       data,
     });
@@ -26,7 +26,7 @@ export class QuickFilterController {
 
   createQuickFilter = async (req: Request, res: Response) => {
     const data = await this.quickFilterService.createQuickFilter(req.body);
-    return res.status(HTTPSTATUS.CREATED).json({
+    res.status(HTTPSTATUS.CREATED).json({
       success: true,
       message: 'Quick filter created successfully',
       data,
@@ -34,9 +34,9 @@ export class QuickFilterController {
   };
 
   updateQuickFilter = async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = req.params.id || '';
     const data = await this.quickFilterService.updateQuickFilter(id, req.body);
-    return res.status(HTTPSTATUS.OK).json({
+    res.status(HTTPSTATUS.OK).json({
       success: true,
       message: 'Quick filter updated successfully',
       data,
@@ -44,9 +44,9 @@ export class QuickFilterController {
   };
 
   deleteQuickFilter = async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = req.params.id || '';
     await this.quickFilterService.deleteQuickFilter(id);
-    return res.status(HTTPSTATUS.OK).json({
+    res.status(HTTPSTATUS.OK).json({
       success: true,
       message: 'Quick filter deleted successfully',
     });

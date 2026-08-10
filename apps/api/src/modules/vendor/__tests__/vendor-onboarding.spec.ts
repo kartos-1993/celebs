@@ -26,16 +26,12 @@ describe('Vendor Onboarding API Integration Tests', () => {
     // Register and login to get active session/cookies
     await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
     const codeRecord = await prisma.verificationCode.findFirst({});
-    await request(app)
-      .post('/api/v1/auth/verify-email')
-      .send({ code: codeRecord!.code });
+    await request(app).post('/api/v1/auth/verify-email').send({ code: codeRecord!.code });
 
-    const loginRes = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: vendorPayload.email,
-        password: vendorPayload.password,
-      });
+    const loginRes = await request(app).post('/api/v1/auth/login').send({
+      email: vendorPayload.email,
+      password: vendorPayload.password,
+    });
     const rawCookies = loginRes.headers['set-cookie'];
     authCookie = Array.isArray(rawCookies) ? rawCookies.join('; ') : rawCookies || '';
   });
@@ -51,14 +47,11 @@ describe('Vendor Onboarding API Integration Tests', () => {
   });
 
   it('should update profile info and advance onboardingStep', async () => {
-    const res = await request(app)
-      .put('/api/v1/vendor/profile')
-      .set('Cookie', authCookie)
-      .send({
-        shopDescription: 'New Description',
-        phoneNumber: '9849999999',
-        storeLogo: 'http://cloudinary.com/logo.png',
-      });
+    const res = await request(app).put('/api/v1/vendor/profile').set('Cookie', authCookie).send({
+      shopDescription: 'New Description',
+      phoneNumber: '9849999999',
+      storeLogo: 'http://cloudinary.com/logo.png',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -80,19 +73,16 @@ describe('Vendor Onboarding API Integration Tests', () => {
       data: { onboardingStep: 2 },
     });
 
-    const res = await request(app)
-      .put('/api/v1/vendor/warehouse')
-      .set('Cookie', authCookie)
-      .send({
-        label: 'Primary Warehouse',
-        contactName: 'Ram Shrestha',
-        contactPhone: '9840001112',
-        addressLine1: 'Maitighar',
-        city: 'Kathmandu',
-        district: 'Kathmandu',
-        province: 'Bagmati',
-        postalCode: '44600',
-      });
+    const res = await request(app).put('/api/v1/vendor/warehouse').set('Cookie', authCookie).send({
+      label: 'Primary Warehouse',
+      contactName: 'Ram Shrestha',
+      contactPhone: '9840001112',
+      addressLine1: 'Maitighar',
+      city: 'Kathmandu',
+      district: 'Kathmandu',
+      province: 'Bagmati',
+      postalCode: '44600',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -113,16 +103,13 @@ describe('Vendor Onboarding API Integration Tests', () => {
       data: { onboardingStep: 3 },
     });
 
-    const res = await request(app)
-      .put('/api/v1/vendor/documents')
-      .set('Cookie', authCookie)
-      .send({
-        panDocumentUrl: 'http://cloudinary.com/pan.png',
-        citizenshipDocumentUrl: 'http://cloudinary.com/citizen.png',
-        vatDocumentUrl: 'http://cloudinary.com/vat.png',
-        businessRegDocumentUrl: 'http://cloudinary.com/bizreg.png',
-        ownerPhotoUrl: 'http://cloudinary.com/photo.png',
-      });
+    const res = await request(app).put('/api/v1/vendor/documents').set('Cookie', authCookie).send({
+      panDocumentUrl: 'http://cloudinary.com/pan.png',
+      citizenshipDocumentUrl: 'http://cloudinary.com/citizen.png',
+      vatDocumentUrl: 'http://cloudinary.com/vat.png',
+      businessRegDocumentUrl: 'http://cloudinary.com/bizreg.png',
+      ownerPhotoUrl: 'http://cloudinary.com/photo.png',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);

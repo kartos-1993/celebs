@@ -36,4 +36,3 @@ export interface VerifyEmailResponse {
   accessToken: string;
   refreshToken: string;
 }
-

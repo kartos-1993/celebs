@@ -8,7 +8,7 @@ function flattenTree(nodes: CategoryTreeNode[]): Category[] {
   const out: Category[] = [];
   const walk = (n: CategoryTreeNode) => {
     out.push({
-      id: n._id,
+      id: n.id,
       name: n.name,
       parentId: (n as any).parentCategory ?? n.parent ?? null,
       hasChildren: Array.isArray(n.children) && n.children.length > 0,
@@ -55,8 +55,7 @@ export const useCategories = () => {
   };
 
   const searchCategories = (query: string, parentId?: string): Category[] => {
-    if (!query.trim())
-      return parentId ? getChildCategories(parentId) : getRootCategories();
+    if (!query.trim()) return parentId ? getChildCategories(parentId) : getRootCategories();
 
     const searchTerm = query.toLowerCase();
     return allCategories.filter((cat) => {
@@ -86,8 +85,8 @@ export const useCategories = () => {
     searchCategories,
     recentCategories,
     addToRecent,
-  // New helpers for robust path resolution
-  findCategoryById: (id: string) => allCategories.find((c) => c.id === id),
-  getAllCategories: () => allCategories,
+    // New helpers for robust path resolution
+    findCategoryById: (id: string) => allCategories.find((c) => c.id === id),
+    getAllCategories: () => allCategories,
   };
 };

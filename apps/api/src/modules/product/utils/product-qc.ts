@@ -1,5 +1,3 @@
-import { IProduct } from '../../../db/models/product.model';
-
 export interface IQCCheckItem {
   passed: boolean;
   score: number;
@@ -21,16 +19,39 @@ export interface IQCCheckResult {
   };
 }
 
-/**
- * Calculates a standard Quality Control score (0-100) and diagnostic checklist for a product listing.
- */
-export function calculateProductQCScore(product: Partial<IProduct>): IQCCheckResult {
+export function calculateProductQCScore(
+  productInput?: Record<string, unknown> | null,
+): IQCCheckResult {
+  if (!productInput) {
+    const emptyCheck: IQCCheckItem = {
+      passed: false,
+      score: 0,
+      maxScore: 0,
+      details: 'Product data missing',
+    };
+    return {
+      score: 0,
+      grade: 'CRITICAL',
+      checks: {
+        imagesCheck: { ...emptyCheck, maxScore: 25 },
+        titleCheck: { ...emptyCheck, maxScore: 15 },
+        descriptionCheck: { ...emptyCheck, maxScore: 15 },
+        sizingCheck: { ...emptyCheck, maxScore: 15 },
+        attributesCheck: { ...emptyCheck, maxScore: 15 },
+        pricingCheck: { ...emptyCheck, maxScore: 10 },
+        variantsCheck: { ...emptyCheck, maxScore: 5 },
+      },
+    };
+  }
+
+  const product = productInput as any;
+
   // 1. Main Images Check (25 pts max)
-  const imageCount = product.mainImages?.length || 0;
+  const imageCount = (product.mainImages || product.images)?.length || 0;
   const hasVariantImages = Boolean(
-    product.colorVariants?.some((variant) => variant.images && variant.images.length > 0)
+    product.colorVariants?.some((variant: any) => variant.images && variant.images.length > 0),
   );
-  
+
   let imageScore = 0;
   if (imageCount >= 3) {
     imageScore = 20;
@@ -48,104 +69,105 @@ export function calculateProductQCScore(product: Partial<IProduct>): IQCCheckRes
   };
 
   // 2. Title Check (15 pts max)
-  const titleLen = product.name?.trim().length || 0;
+  const name = String(product.name || product.title || '').trim();
+  const nameLen = name.length;
   let titleScore = 0;
-  if (titleLen >= 15 && titleLen <= 150) {
+  if (nameLen >= 15 && nameLen <= 100) {
     titleScore = 15;
-  } else if (titleLen > 0) {
-    titleScore = 7;
+  } else if (nameLen > 0) {
+    titleScore = 8;
   }
   const titleCheck: IQCCheckItem = {
-    passed: titleLen >= 15,
+    passed: titleScore === 15,
     score: titleScore,
     maxScore: 15,
-    details: titleLen >= 15 ? `Descriptive title (${titleLen} chars)` : `Title is brief (${titleLen} chars)`,
+    details:
+      nameLen >= 15
+        ? `Title length (${nameLen} chars) is optimal.`
+        : `Title is too short (${nameLen} chars). Minimum 15 recommended for SEO.`,
   };
 
   // 3. Description Check (15 pts max)
-  const descLen = product.description?.trim().length || 0;
+  const description = String(product.description || '').trim();
+  const descLen = description.length;
   let descScore = 0;
-  if (descLen >= 80) {
+  if (descLen >= 100) {
     descScore = 15;
-  } else if (descLen >= 20) {
+  } else if (descLen >= 30) {
     descScore = 8;
-  } else if (descLen > 0) {
-    descScore = 4;
   }
   const descriptionCheck: IQCCheckItem = {
-    passed: descLen >= 80,
+    passed: descScore === 15,
     score: descScore,
     maxScore: 15,
-    details: descLen >= 80 ? `Comprehensive description (${descLen} chars)` : `Short description (${descLen} chars)`,
+    details:
+      descLen >= 100
+        ? `Description contains ${descLen} chars.`
+        : `Description is brief (${descLen} chars). At least 100 chars recommended.`,
   };
 
-  // 4. Sizing & Measurement Check (15 pts max)
+  // 4. Sizing & Size Chart Check (15 pts max)
   const sizes = product.sizes || [];
-  const hasMeasurements = sizes.some(
-    (s) => (s.productMeasurements && s.productMeasurements.length > 0) || (s.bodyMeasurements && s.bodyMeasurements.length > 0)
-  );
-  let sizingScore = 0;
-  if (sizes.length > 0 && hasMeasurements) {
-    sizingScore = 15;
-  } else if (sizes.length > 0) {
-    sizingScore = 8;
-  } else {
-    sizingScore = 10; // Default baseline for products without sizing requirements
-  }
+  const hasSizeData =
+    sizes.length > 0 &&
+    sizes.some(
+      (s: any) =>
+        (s.productMeasurements && s.productMeasurements.length > 0) ||
+        (s.bodyMeasurements && s.bodyMeasurements.length > 0),
+    );
+  const sizingScore = hasSizeData ? 15 : sizes.length > 0 ? 8 : 0;
   const sizingCheck: IQCCheckItem = {
-    passed: sizingScore >= 10,
+    passed: hasSizeData,
     score: sizingScore,
     maxScore: 15,
-    details: sizes.length > 0
-      ? `${sizes.length} size(s) listed (${hasMeasurements ? 'with detailed measurements' : 'missing size chart values'})`
-      : 'No sizes configured',
+    details: hasSizeData
+      ? `Size chart configured with measurements for ${sizes.length} size(s).`
+      : sizes.length > 0
+        ? `Sizes defined (${sizes.length}), but detailed measurement values are missing.`
+        : 'No size chart or size options specified.',
   };
 
-  // 5. Dynamic Attributes Check (15 pts max)
-  const dynamicKeys = product.dynamicData ? Object.keys(product.dynamicData).filter((k) => {
-    const val = product.dynamicData?.[k];
-    return val !== undefined && val !== null && val !== '';
-  }) : [];
+  // 5. Attributes / Specs Check (15 pts max)
+  const dynamicVals = product.dynamicData?.values || {};
+  const attrCount = Object.keys(dynamicVals).length;
   let attrScore = 0;
-  if (dynamicKeys.length >= 3) {
+  if (attrCount >= 4) {
     attrScore = 15;
-  } else if (dynamicKeys.length >= 1) {
+  } else if (attrCount >= 1) {
     attrScore = 8;
   }
   const attributesCheck: IQCCheckItem = {
-    passed: dynamicKeys.length >= 2,
+    passed: attrCount >= 4,
     score: attrScore,
     maxScore: 15,
-    details: `${dynamicKeys.length} category specification field(s) filled`,
+    details: `${attrCount} custom attribute(s) populated. Minimum 4 recommended for filtering.`,
   };
 
-  // 6. Pricing & Discount Check (10 pts max)
-  const price = product.price || 0;
-  const discountedPrice = product.discountedPrice;
-  let priceScore = 0;
+  // 6. Pricing Check (10 pts max)
+  const price = Number(product.price) || 0;
+  const discountedPrice = product.discountedPrice ? Number(product.discountedPrice) : undefined;
+  let pricingScore = 0;
   if (price > 0) {
-    priceScore = 5;
-    if (discountedPrice !== undefined && discountedPrice > 0 && discountedPrice < price) {
-      priceScore += 5;
-    } else if (discountedPrice === undefined) {
-      priceScore += 5;
-    }
+    pricingScore = 10;
   }
   const pricingCheck: IQCCheckItem = {
-    passed: price > 0 && (discountedPrice === undefined || discountedPrice < price),
-    score: priceScore,
+    passed: price > 0,
+    score: pricingScore,
     maxScore: 10,
-    details: price > 0 ? `Price set to Rs. ${price}${discountedPrice ? ` (Discounted: Rs. ${discountedPrice})` : ''}` : 'Price missing or invalid',
+    details:
+      price > 0
+        ? `Price set to Rs. ${price}${discountedPrice ? ` (Discounted: Rs. ${discountedPrice})` : ''}`
+        : 'Price missing or invalid',
   };
 
   // 7. Variants & Stock Check (5 pts max)
   const variants = product.colorVariants || [];
   const skus = product.skus || [];
-  const legacyStock = variants.reduce((acc, v) => {
-    const vStock = v.stocks?.reduce((sAcc, s) => sAcc + (s.quantity || 0), 0) || 0;
+  const legacyStock = variants.reduce((acc: number, v: any) => {
+    const vStock = v.stocks?.reduce((sAcc: number, s: any) => sAcc + (s.quantity || 0), 0) || 0;
     return acc + vStock;
   }, 0);
-  const matrixStock = skus.reduce((acc, s) => acc + (s.stock || 0), 0);
+  const matrixStock = skus.reduce((acc: number, s: any) => acc + (s.stock || 0), 0);
   const totalStock = legacyStock + matrixStock;
 
   const variantScore = totalStock > 0 ? 5 : 0;
@@ -153,15 +175,20 @@ export function calculateProductQCScore(product: Partial<IProduct>): IQCCheckRes
     passed: totalStock > 0,
     score: variantScore,
     maxScore: 5,
-    details: skus.length > 0
-      ? `${skus.length} SKU variant(s) with total inventory of ${totalStock} units`
-      : `${variants.length} variant(s) with total inventory of ${totalStock} units`,
+    details:
+      totalStock > 0
+        ? `Total inventory stock available across variants: ${totalStock} unit(s).`
+        : 'Zero stock available for this product.',
   };
 
-  const totalScore = Math.min(
-    100,
-    imageScore + titleScore + descScore + sizingScore + attrScore + priceScore + variantScore
-  );
+  const totalScore =
+    imagesCheck.score +
+    titleCheck.score +
+    descriptionCheck.score +
+    sizingCheck.score +
+    attributesCheck.score +
+    pricingCheck.score +
+    variantsCheck.score;
 
   let grade: 'EXCELLENT' | 'GOOD' | 'NEEDS_IMPROVEMENT' | 'CRITICAL' = 'CRITICAL';
   if (totalScore >= 85) {

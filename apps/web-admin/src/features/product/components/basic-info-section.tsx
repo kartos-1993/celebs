@@ -10,10 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import {
-  CascadingDropdown,
-  Category as DropdownCategory,
-} from './cascading-dropdown';
+import { CascadingDropdown, Category as DropdownCategory } from './cascading-dropdown';
 
 interface BasicInfoSectionProps {
   control: Control<any>;
@@ -21,10 +18,7 @@ interface BasicInfoSectionProps {
   selectedSubcategoryId: string;
   onCategoryChange: (categoryId: string) => void;
   onSubcategoryChange: (subcategoryId: string) => void;
-  onFieldChange: (
-    name: 'name' | 'brand' | 'description',
-    value: string,
-  ) => void;
+  onFieldChange: (name: 'name' | 'brand' | 'description', value: string) => void;
   onCategoryPathChange?: (path: string[]) => void;
   categoryPath?: string[];
   hideName?: boolean;
@@ -43,8 +37,7 @@ const BasicInfoSection = ({
   hideName,
   hideBrand,
 }: BasicInfoSectionProps) => {
-  const [selectedCategory, setSelectedCategory] =
-    useState<DropdownCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
 
   useEffect(() => {
     if (categoryPath?.length && selectedSubcategoryId) {
@@ -83,20 +76,31 @@ const BasicInfoSection = ({
                   setSelectedCategory(category);
                   onCategoryChange(category.id);
                   onSubcategoryChange(category.id);
-                  onCategoryPathChange?.(category.path);
+                  const pathArr = Array.isArray(category.path)
+                    ? category.path
+                    : category.path
+                      ? [category.path]
+                      : [];
+                  onCategoryPathChange?.(pathArr);
                 }}
                 placeholder="Select the product category"
               />
             </FormControl>
             <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
-              Pick the most specific category. The rest of the product form is
-              generated from this selection.
+              Pick the most specific category. The rest of the product form is generated from this
+              selection.
             </FormDescription>
             {hasCategory ? (
               <div className="rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
                 Current selection:{' '}
                 <span className="font-semibold">
-                  {(selectedCategory?.path || categoryPath || []).join(' > ')}
+                  {(() => {
+                    const p = selectedCategory?.path || categoryPath;
+                    if (!p) return '';
+                    if (Array.isArray(p)) return p.join(' > ');
+                    if (typeof p === 'string') return p.split('/').join(' > ');
+                    return String(p);
+                  })()}
                 </span>
               </div>
             ) : null}
@@ -133,8 +137,7 @@ const BasicInfoSection = ({
                     />
                   </FormControl>
                   <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
-                    Include the key identifier, style, or collection name buyers
-                    would search for.
+                    Include the key identifier, style, or collection name buyers would search for.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -168,8 +171,7 @@ const BasicInfoSection = ({
                     />
                   </FormControl>
                   <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
-                    Leave blank only if this product should be listed as
-                    unbranded.
+                    Leave blank only if this product should be listed as unbranded.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -184,7 +186,8 @@ const BasicInfoSection = ({
               <FormItem>
                 <div className="flex items-center justify-between gap-3">
                   <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Product Description <span className="font-normal text-xs text-gray-500">(Optional)</span>
+                    Product Description{' '}
+                    <span className="font-normal text-xs text-gray-500">(Optional)</span>
                   </FormLabel>
                   <span className="text-xs text-gray-400 dark:text-gray-500">
                     {String(field.value || '').length}/4000
@@ -202,9 +205,8 @@ const BasicInfoSection = ({
                   />
                 </FormControl>
                 <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
-                  This description is used for the published product page and
-                  should be specific enough for customers to understand the
-                  item.
+                  This description is used for the published product page and should be specific
+                  enough for customers to understand the item.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -217,4 +219,3 @@ const BasicInfoSection = ({
 };
 
 export default memo(BasicInfoSection);
-

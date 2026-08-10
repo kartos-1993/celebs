@@ -71,7 +71,11 @@ export const useCartStore = create<CartState>((set, get) => ({
     const session = get().sessionId || (await get().initSession());
     set({ loading: true, error: null });
     try {
-      const updatedCart = await CartApiService.updateCartItem(itemId, { quantity: newQuantity }, session);
+      const updatedCart = await CartApiService.updateCartItem(
+        itemId,
+        { quantity: newQuantity },
+        session,
+      );
       set({ cart: updatedCart, loading: false });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update item quantity';

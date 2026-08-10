@@ -36,8 +36,10 @@ export class LogisticsService {
       estimatedDelivery = shipment.estimatedDelivery;
     }
 
-    const codStatus = order.paymentMethod === 'COD' ? CodStatus.PENDING_COLLECTION : CodStatus.NOT_APPLICABLE;
-    const dispatchMode = payload.provider === 'MANUAL' ? DispatchMode.MANUAL : DispatchMode.AUTOMATED_3PL;
+    const codStatus =
+      order.paymentMethod === 'COD' ? CodStatus.PENDING_COLLECTION : CodStatus.NOT_APPLICABLE;
+    const dispatchMode =
+      payload.provider === 'MANUAL' ? DispatchMode.MANUAL : DispatchMode.AUTOMATED_3PL;
 
     // Update order with 3PL details and log OrderTrackingEvent
     const updatedOrder = await prisma.order.update({
@@ -56,7 +58,8 @@ export class LogisticsService {
           create: {
             status: OrderStatus.HANDED_OVER,
             title: `Handed over to ${courierName}`,
-            description: payload.notes || `Dispatched via ${courierName}. Waybill: ${trackingNumber}`,
+            description:
+              payload.notes || `Dispatched via ${courierName}. Waybill: ${trackingNumber}`,
             location: 'Kathmandu Fulfillment Center',
             source: 'ADMIN',
           },
@@ -81,7 +84,13 @@ export class LogisticsService {
     });
   }
 
-  async addTrackingEvent(orderId: string, status: OrderStatus, title: string, description?: string, location?: string) {
+  async addTrackingEvent(
+    orderId: string,
+    status: OrderStatus,
+    title: string,
+    description?: string,
+    location?: string,
+  ) {
     return prisma.orderTrackingEvent.create({
       data: {
         orderId,

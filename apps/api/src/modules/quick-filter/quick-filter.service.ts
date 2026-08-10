@@ -1,14 +1,12 @@
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
-import { QuickFilterModel, IQuickFilter, QuickFilterType, QuickFilterDisplayAs } from '@/db/models/quick-filter.model';
-import { CategoryModel } from '@/db/models/category.model';
-import { CategoryFilterModel } from '@/db/models/category-filter.model';
-import mongoose, { Types } from 'mongoose';
+import prisma from '@/config/db.prisma';
+import { Prisma } from '@prisma/client';
 
 export interface CreateQuickFilterInput {
   categoryId: string;
-  type: QuickFilterType;
+  type: string;
   attributeId?: string | null;
-  displayAs: QuickFilterDisplayAs;
+  displayAs: string;
   items?: {
     name: string;
     image?: string | null;
@@ -22,9 +20,9 @@ export interface CreateQuickFilterInput {
 }
 
 export interface UpdateQuickFilterInput {
-  type?: QuickFilterType;
+  type?: string;
   attributeId?: string | null;
-  displayAs?: QuickFilterDisplayAs;
+  displayAs?: string;
   items?: {
     name: string;
     image?: string | null;
@@ -37,74 +35,100 @@ export interface UpdateQuickFilterInput {
   isActive?: boolean;
 }
 
-export class QuickFilterService {
-  /**
-   * Get storefront configuration (quick filters + drawer filters) for a category slug or ID
-   */
-  async getStorefrontConfigBySlug(slugOrId: string) {
-    let category = null;
+interface QuickFilterConfig {
+  type?: string;
+  attributeId?: string | null;
+  displayAs?: string;
+  items?: Array<{
+    name: string;
+    image?: string | null;
+    slug?: string | null;
+    filterValue?: string | null;
+    displayOrder?: number;
+  }>;
+  autoPopulate?: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+}
 
+export class QuickFilterService {
+  private formatFilter(qf: { id: string; filterConfig?: Prisma.JsonValue } | null) {
+    if (!qf) return null;
+    const config = (
+      qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}
+    ) as QuickFilterConfig;
+    return {
+      ...qf,
+      id: qf.id,
+      items: Array.isArray(config.items) ? config.items : [],
+      type: config.type || 'subcategory',
+      displayAs: config.displayAs || 'avatar_scroll',
+      attributeId: config.attributeId || null,
+      autoPopulate: config.autoPopulate !== false,
+      displayOrder: (qf as any).displayOrder ?? 0,
+      isActive: (qf as any).isActive !== false,
+    };
+  }
+
+  async getStorefrontConfigBySlug(slugOrId: string) {
     const slugLower = slugOrId.toLowerCase();
 
-    if (Types.ObjectId.isValid(slugOrId)) {
-      category = await CategoryModel.findById(slugOrId).lean();
-    }
-    if (!category) {
-      category = await CategoryModel.findOne({
-        $or: [
-          { slug: slugLower },
-          { path: slugLower },
-          { name: new RegExp(`^${slugLower.replace(/-/g, ' ')}$`, 'i') },
-          { slug: new RegExp(slugLower.replace(/-/g, '.*'), 'i') },
-          { name: new RegExp(slugLower.replace(/-/g, '|'), 'i') },
+    const category = await prisma.category.findFirst({
+      where: {
+        OR: [
+          { id: slugOrId },
+          { slug: { equals: slugLower, mode: 'insensitive' } },
+          { path: { equals: slugLower, mode: 'insensitive' } },
+          { name: { equals: slugLower.replace(/-/g, ' '), mode: 'insensitive' } },
         ],
-      }).lean();
-    }
+      },
+    });
 
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
-    const categoryId = category._id;
+    const categoryId = category.id;
 
-    // 1. Fetch configured quick filters for this category
-    let rawQuickFilters = await QuickFilterModel.find({
-      categoryId,
-      isActive: true,
-    })
-      .sort({ displayOrder: 1 })
-      .lean();
+    let rawQuickFilters = await prisma.quickFilter.findMany({
+      where: { categoryId },
+      orderBy: { createdAt: 'asc' },
+    });
 
-    // Fallback: If no explicit quick filter is saved for this category, auto-generate default
     if (rawQuickFilters.length === 0) {
-      const childCategories = await CategoryModel.find({
-        parentCategory: categoryId,
-        isActive: { $ne: false },
-      })
-        .sort({ name: 1 })
-        .lean();
+      const childCategories = await prisma.category.findMany({
+        where: {
+          parentCategory: categoryId,
+          isActive: true,
+        },
+        orderBy: { name: 'asc' },
+      });
 
       if (childCategories.length > 0) {
         rawQuickFilters = [
           {
-            _id: new mongoose.Types.ObjectId(),
+            id: `temp-${Date.now()}`,
+            title: 'Subcategories',
+            slug: `subcats-${categoryId}`,
             categoryId,
-            type: 'subcategory' as QuickFilterType,
-            attributeId: null,
-            displayAs: 'avatar_scroll' as QuickFilterDisplayAs,
-            items: childCategories.map((child, idx) => ({
-              name: child.name.replace(new RegExp(`^${category.name}\\s+`, 'i'), ''),
-              image: child.imageUrl || null,
-              slug: child.slug,
-              filterValue: child.slug,
-              displayOrder: idx,
-            })),
-            autoPopulate: true,
-            displayOrder: 0,
-            isActive: true,
+            filterConfig: {
+              type: 'subcategory',
+              attributeId: null,
+              displayAs: 'avatar_scroll',
+              items: childCategories.map((child, idx) => ({
+                name: child.name.replace(new RegExp(`^${category.name}\\s+`, 'i'), ''),
+                image: child.imageUrl || null,
+                slug: child.slug,
+                filterValue: child.slug,
+                displayOrder: idx,
+              })),
+              autoPopulate: true,
+              displayOrder: 0,
+              isActive: true,
+            },
             createdAt: new Date(),
             updatedAt: new Date(),
-          } as any,
+          },
         ];
       }
     }
@@ -112,16 +136,18 @@ export class QuickFilterService {
     const quickFilters = [];
 
     for (const qf of rawQuickFilters) {
-      let finalItems = [...(qf.items || [])];
+      const formatted = this.formatFilter(qf);
+      if (!formatted) continue;
+      let finalItems = [...(formatted.items || [])];
 
-      // If subcategory type and autoPopulate is enabled, auto-fill from child categories
-      if (qf.type === 'subcategory' && qf.autoPopulate) {
-        const childCategories = await CategoryModel.find({
-          parentCategory: categoryId,
-          isActive: { $ne: false },
-        })
-          .sort({ name: 1 })
-          .lean();
+      if (formatted.type === 'subcategory' && formatted.autoPopulate) {
+        const childCategories = await prisma.category.findMany({
+          where: {
+            parentCategory: categoryId,
+            isActive: true,
+          },
+          orderBy: { name: 'asc' },
+        });
 
         if (childCategories.length > 0) {
           const autoItems = childCategories.map((child, idx) => ({
@@ -132,7 +158,6 @@ export class QuickFilterService {
             displayOrder: idx,
           }));
 
-          // Merge or replace: if no manual items, use autoItems
           if (finalItems.length === 0) {
             finalItems = autoItems;
           }
@@ -140,119 +165,110 @@ export class QuickFilterService {
       }
 
       quickFilters.push({
-        _id: String(qf._id),
-        type: qf.type,
-        attributeId: qf.attributeId ? String(qf.attributeId) : null,
-        displayAs: qf.displayAs,
-        displayOrder: qf.displayOrder,
+        id: formatted.id,
+        type: formatted.type,
+        attributeId: formatted.attributeId,
+        displayAs: formatted.displayAs,
+        displayOrder: formatted.displayOrder,
         items: finalItems,
       });
     }
 
-    // 2. Fetch drawer filters configured in CategoryFilterModel
-    const rawDrawerFilters = await CategoryFilterModel.find({ categoryId })
-      .populate('attributeId')
-      .sort({ displayOrder: 1 })
-      .lean();
-
-    const drawerFilters = rawDrawerFilters.map((df: any) => {
-      const attr = df.attributeId || {};
-      return {
-        _id: String(df._id),
-        name: df.displayName || attr.name || 'Filter',
-        uiType: df.uiType || 'checkbox',
-        attributeId: attr._id ? String(attr._id) : null,
-        attributeName: attr.name || null,
-        values: Array.isArray(attr.values) ? attr.values : [],
-        isMultiSelect: df.isMultiSelect !== false,
-        displayOrder: df.displayOrder || 0,
-      };
-    });
-
     return {
       category: {
-        _id: String(category._id),
+        id: category.id,
         name: category.name,
         slug: category.slug,
         level: category.level,
         imageUrl: category.imageUrl || null,
       },
       quickFilters,
-      drawerFilters,
+      drawerFilters: [],
     };
   }
 
-  /**
-   * Get all quick filters for a category (Admin)
-   */
   async getQuickFiltersForCategory(categoryId: string) {
-    if (!Types.ObjectId.isValid(categoryId)) {
-      throw new AppError('Invalid category ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-    return await QuickFilterModel.find({ categoryId }).sort({ displayOrder: 1 });
+    const list = await prisma.quickFilter.findMany({
+      where: { categoryId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return list.map((item) => this.formatFilter(item));
   }
 
-  /**
-   * Create a quick filter configuration (Admin)
-   */
-  async createQuickFilter(input: CreateQuickFilterInput): Promise<IQuickFilter> {
-    if (!Types.ObjectId.isValid(input.categoryId)) {
-      throw new AppError('Invalid category ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    const category = await CategoryModel.findById(input.categoryId);
+  async createQuickFilter(input: CreateQuickFilterInput) {
+    const category = await prisma.category.findUnique({
+      where: { id: input.categoryId },
+    });
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
-    return await QuickFilterModel.create({
-      categoryId: new mongoose.Types.ObjectId(input.categoryId),
-      type: input.type,
-      attributeId: input.attributeId && Types.ObjectId.isValid(input.attributeId)
-        ? new mongoose.Types.ObjectId(input.attributeId)
-        : null,
-      displayAs: input.displayAs,
-      items: input.items || [],
-      autoPopulate: input.autoPopulate !== false,
-      displayOrder: input.displayOrder || 0,
-      isActive: input.isActive !== false,
+    const slug = `${input.type}-${input.categoryId}-${Date.now()}`;
+
+    const created = await prisma.quickFilter.create({
+      data: {
+        title: input.type,
+        slug,
+        categoryId: input.categoryId,
+        filterConfig: {
+          type: input.type,
+          attributeId: input.attributeId || null,
+          displayAs: input.displayAs,
+          items: input.items || [],
+          autoPopulate: input.autoPopulate !== false,
+          displayOrder: input.displayOrder || 0,
+          isActive: input.isActive !== false,
+        },
+      },
     });
+
+    return this.formatFilter(created);
   }
 
-  /**
-   * Update a quick filter configuration (Admin)
-   */
-  async updateQuickFilter(id: string, input: UpdateQuickFilterInput): Promise<IQuickFilter> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid quick filter ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+  async updateQuickFilter(id: string, input: UpdateQuickFilterInput) {
+    const filter = await prisma.quickFilter.findUnique({ where: { id } });
+    if (!filter) {
+      throw new AppError(
+        'Quick filter not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
-    const updated = await QuickFilterModel.findByIdAndUpdate(
-      id,
-      { $set: input },
-      { new: true, runValidators: true },
-    );
+    const currentConfig = (
+      filter.filterConfig && typeof filter.filterConfig === 'object' ? filter.filterConfig : {}
+    ) as QuickFilterConfig;
 
-    if (!updated) {
-      throw new AppError('Quick filter not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
-    }
+    const updated = await prisma.quickFilter.update({
+      where: { id },
+      data: {
+        filterConfig: {
+          ...currentConfig,
+          ...(input.type ? { type: input.type } : {}),
+          ...(input.attributeId !== undefined ? { attributeId: input.attributeId } : {}),
+          ...(input.displayAs ? { displayAs: input.displayAs } : {}),
+          ...(input.items ? { items: input.items } : {}),
+          ...(input.autoPopulate !== undefined ? { autoPopulate: input.autoPopulate } : {}),
+          ...(input.displayOrder !== undefined ? { displayOrder: input.displayOrder } : {}),
+          ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+        },
+      },
+    });
 
-    return updated;
+    return this.formatFilter(updated);
   }
 
-  /**
-   * Delete a quick filter configuration (Admin)
-   */
   async deleteQuickFilter(id: string): Promise<{ success: boolean }> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new AppError('Invalid quick filter ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    const filter = await prisma.quickFilter.findUnique({ where: { id } });
+    if (!filter) {
+      throw new AppError(
+        'Quick filter not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
-    const deleted = await QuickFilterModel.findByIdAndDelete(id);
-    if (!deleted) {
-      throw new AppError('Quick filter not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
-    }
-
+    await prisma.quickFilter.delete({ where: { id } });
     return { success: true };
   }
 }

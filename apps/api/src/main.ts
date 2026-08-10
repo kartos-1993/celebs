@@ -3,7 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const envName = process.env.NODE_ENV ?? 'development';
-const envPath = path.resolve(process.cwd(), `apps/api/.env.${envName}`);
+const localEnvPath = path.resolve(process.cwd(), `.env.${envName}`);
+const monorepoEnvPath = path.resolve(process.cwd(), `apps/api/.env.${envName}`);
+const envPath = fs.existsSync(localEnvPath) ? localEnvPath : monorepoEnvPath;
 
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
@@ -11,7 +13,6 @@ if (fs.existsSync(envPath)) {
 
 import app from './app';
 import { config } from './config/app.config';
-import { connectMongoDB } from './config/db.mongo';
 import prisma from './config/db.prisma';
 import { logger } from '@celebs/shared-utils';
 import { verifyRedisConnection } from './common/services/queue.service';
@@ -21,8 +22,6 @@ const port = config.PORT;
 
 const startServer = async () => {
   try {
-    await connectMongoDB();
-    
     // Connect and verify Postgres connection
     await prisma.$connect();
     logger.info('Postgres Database Connected successfully');

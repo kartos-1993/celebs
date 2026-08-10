@@ -1,3 +1,18 @@
+// ─── Shared Zod validators — single source of truth from @celebs/shared-types ──
+// Form components should import these directly rather than defining local copies.
+export {
+  createProductSchema,
+  updateProductSchema,
+  productFilterSchema,
+  productReviewActionSchema,
+} from '@celebs/shared-types';
+export type {
+  CreateProductType,
+  UpdateProductType,
+  ProductFilterType,
+  ProductReviewActionType,
+} from '@celebs/shared-types';
+
 import type { FieldErrors } from 'react-hook-form';
 import type { FieldSpec } from '../fields/ui-registry';
 import type { ProductSidebarSection } from '../components/productform-sidebar';
@@ -45,10 +60,7 @@ export const flattenFormErrors = (
       return [];
     }
 
-    const ownMessage =
-      typeof entry.message === 'string'
-        ? [{ path, message: entry.message }]
-        : [];
+    const ownMessage = typeof entry.message === 'string' ? [{ path, message: entry.message }] : [];
 
     const childEntries = flattenFormErrors(
       Object.fromEntries(
@@ -85,16 +97,12 @@ export const collectPricingErrors = ({
 
   const validateRow = (label: string, prefix: string) => {
     const price = toPositiveNumber(getNestedValue(values, `${prefix}.price`));
-    const specialPriceRaw = normalizeText(
-      getNestedValue(values, `${prefix}.specialPrice`),
-    );
+    const specialPriceRaw = normalizeText(getNestedValue(values, `${prefix}.specialPrice`));
     const specialPrice = specialPriceRaw
       ? toPositiveNumber(getNestedValue(values, `${prefix}.specialPrice`))
       : undefined;
     const stock = normalizeText(getNestedValue(values, `${prefix}.stock`));
-    const freeItems = normalizeText(
-      getNestedValue(values, `${prefix}.freeItems`),
-    );
+    const freeItems = normalizeText(getNestedValue(values, `${prefix}.freeItems`));
 
     if (price === undefined) {
       pushError(`${label}: add a valid price.`);
@@ -104,18 +112,11 @@ export const collectPricingErrors = ({
       pushError(`${label}: special price must be greater than 0.`);
     }
 
-    if (
-      specialPrice !== undefined &&
-      price !== undefined &&
-      specialPrice >= price
-    ) {
+    if (specialPrice !== undefined && price !== undefined && specialPrice >= price) {
       pushError(`${label}: special price must be lower than price.`);
     }
 
-    if (
-      stock &&
-      toNonNegativeInteger(getNestedValue(values, `${prefix}.stock`)) === undefined
-    ) {
+    if (stock && toNonNegativeInteger(getNestedValue(values, `${prefix}.stock`)) === undefined) {
       pushError(`${label}: stock cannot be negative.`);
     }
 
@@ -153,10 +154,8 @@ export const collectPricingErrors = ({
   } else {
     activeVariants[0].values.forEach((firstValue) => {
       activeVariants[1].values.forEach((secondValue) => {
-        const firstLabel =
-          activeVariants[0].labels.get(firstValue) || firstValue;
-        const secondLabel =
-          activeVariants[1].labels.get(secondValue) || secondValue;
+        const firstLabel = activeVariants[0].labels.get(firstValue) || firstValue;
+        const secondLabel = activeVariants[1].labels.get(secondValue) || secondValue;
 
         validateRow(
           `${activeVariants[0].label}: ${firstLabel}, ${activeVariants[1].label}: ${secondLabel}`,
@@ -203,21 +202,11 @@ export const buildSidebarSections = ({
   );
 
   const groupedFields = {
-    base: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'base',
-    ),
-    details: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'details',
-    ),
-    variant: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'variant',
-    ),
-    package: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'package',
-    ),
-    terms: schemaFields.filter(
-      (field) => mapSchemaGroup(field.group) === 'termcondition',
-    ),
+    base: schemaFields.filter((field) => mapSchemaGroup(field.group) === 'base'),
+    details: schemaFields.filter((field) => mapSchemaGroup(field.group) === 'details'),
+    variant: schemaFields.filter((field) => mapSchemaGroup(field.group) === 'variant'),
+    package: schemaFields.filter((field) => mapSchemaGroup(field.group) === 'package'),
+    terms: schemaFields.filter((field) => mapSchemaGroup(field.group) === 'termcondition'),
   };
 
   const basicErrors = uniqueMessages([
@@ -225,8 +214,7 @@ export const buildSidebarSections = ({
     ...(!schemaHasName && normalizeText(values.name).length < 2
       ? ['Product name must be at least 2 characters.']
       : []),
-    ...(!normalizeText(values.categoryId) ||
-      !normalizeText(values.subcategoryId)
+    ...(!normalizeText(values.categoryId) || !normalizeText(values.subcategoryId)
       ? ['Select a product category before publishing.']
       : []),
   ]);
@@ -294,8 +282,7 @@ export const buildSidebarSections = ({
         key: 'pricing',
         label: 'Price, Stock & Variants',
         anchorId:
-          pricingErrors.length > 0 &&
-            groupedFields.variant.some((field) => field.required)
+          pricingErrors.length > 0 && groupedFields.variant.some((field) => field.required)
             ? 'product-section-variant'
             : 'product-section-sale',
         status: pricingErrors.length === 0,
@@ -310,11 +297,7 @@ export const buildSidebarSections = ({
       },
     );
 
-    if (
-      groupedFields.terms.some(
-        (field) => field.required || field.visible !== false,
-      )
-    ) {
+    if (groupedFields.terms.some((field) => field.required || field.visible !== false)) {
       sections.push({
         key: 'terms',
         label: 'Terms & Conditions',

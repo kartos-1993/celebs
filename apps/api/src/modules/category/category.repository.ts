@@ -1,101 +1,184 @@
-import { CategoryModel, ICategory } from '@/db/models/category.model';
-import { AttributeModel, IAttribute } from '@/db/models/attribute.model';
-import { CategoryFilterModel, ICategoryFilter } from '@/db/models/category-filter.model';
-import { ProductModel } from '@/db/models/product.model';
-import mongoose, { ClientSession, Types } from 'mongoose';
+import prisma from '@/config/db.prisma';
+import { Prisma } from '@prisma/client';
+
+export interface FormattedCategory {
+  id: string;
+  name: string;
+  slug: string;
+  path?: string | null;
+  level: number;
+  parentCategory?: string | null;
+  attributes: unknown[];
+  sizeChartColumns: string[];
+  bodyChartColumns: string[];
+  imageUrl?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  [key: string]: unknown;
+}
 
 export class CategoryRepository {
-  async countDocuments(query: Record<string, any> = {}): Promise<number> {
-    return CategoryModel.countDocuments(query);
+  private formatCategory(category: Record<string, unknown> | null): FormattedCategory | null {
+    if (!category) return null;
+    return {
+      ...(category as Record<string, unknown>),
+      id: String(category.id),
+      name: String(category.name || ''),
+      slug: String(category.slug || ''),
+      path: category.path ? String(category.path) : null,
+      level: Number(category.level || 0),
+      parentCategory: category.parentCategory ? String(category.parentCategory) : null,
+      parent: category.parentCategory ? String(category.parentCategory) : null,
+      attributes: Array.isArray(category.attributes) ? (category.attributes as unknown[]) : [],
+      sizeChartColumns: Array.isArray(category.sizeChartColumns)
+        ? (category.sizeChartColumns as string[])
+        : [],
+      bodyChartColumns: Array.isArray(category.bodyChartColumns)
+        ? (category.bodyChartColumns as string[])
+        : [],
+      imageUrl: category.imageUrl ? String(category.imageUrl) : null,
+      isActive: category.isActive !== false,
+      createdAt: category.createdAt instanceof Date ? category.createdAt : new Date(),
+      updatedAt: category.updatedAt instanceof Date ? category.updatedAt : new Date(),
+    };
   }
 
-  async findById(id: string): Promise<ICategory | null> {
-    if (!Types.ObjectId.isValid(id)) return null;
-    return CategoryModel.findById(id);
-  }
-
-  async findOne(query: Record<string, any>): Promise<ICategory | null> {
-    return CategoryModel.findOne(query);
-  }
-
-  async find(query: Record<string, any>, limit?: number): Promise<ICategory[]> {
-    const q = CategoryModel.find(query).sort({ level: 1, name: 1 });
-    if (limit) q.limit(limit);
-    return q.lean<ICategory[]>();
-  }
-
-  async aggregate(pipeline: any[]): Promise<any[]> {
-    return CategoryModel.aggregate(pipeline);
-  }
-
-  async create(data: Partial<ICategory>): Promise<ICategory> {
-    return CategoryModel.create(data);
-  }
-
-  async updateById(id: string, updateData: Record<string, any>): Promise<ICategory | null> {
-    return CategoryModel.findByIdAndUpdate(id, updateData, { new: true });
-  }
-
-  async deleteById(id: string): Promise<ICategory | null> {
-    return CategoryModel.findByIdAndDelete(id);
-  }
-
-  async bulkWrite(ops: any[], session?: ClientSession): Promise<any> {
-    return CategoryModel.bulkWrite(ops, session ? { session } : undefined);
-  }
-
-  // Attribute Operations
-  async findAttributes(query: Record<string, any>, session?: ClientSession): Promise<IAttribute[]> {
-    return AttributeModel.find(query, null, session ? { session } : undefined);
-  }
-
-  async findAttributeById(id: string): Promise<IAttribute | null> {
-    if (!Types.ObjectId.isValid(id)) return null;
-    return AttributeModel.findById(id);
-  }
-
-  async findAttributeOne(query: Record<string, any>, session?: ClientSession): Promise<IAttribute | null> {
-    return AttributeModel.findOne(query, null, session ? { session } : undefined);
-  }
-
-  async createAttribute(data: Record<string, any> | Record<string, any>[], session?: ClientSession): Promise<any> {
-    if (Array.isArray(data)) {
-      return AttributeModel.create(data, session ? { session } : undefined);
+  async countDocuments(query: Record<string, unknown> = {}): Promise<number> {
+    const where: Prisma.CategoryWhereInput = {};
+    if (query.parentCategory !== undefined) {
+      where.parentCategory = query.parentCategory as string | null;
     }
-    return AttributeModel.create(data);
+    if (query.isActive !== undefined) {
+      where.isActive = Boolean(query.isActive);
+    }
+    return prisma.category.count({ where });
   }
 
-  async updateAttributeById(id: string, updateData: Record<string, any>): Promise<IAttribute | null> {
-    return AttributeModel.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+  async findById(id: string): Promise<FormattedCategory | null> {
+    if (!id || typeof id !== 'string') return null;
+    const category = await prisma.category.findUnique({
+      where: { id },
+    });
+    return this.formatCategory(category as unknown as Record<string, unknown>);
   }
 
-  async deleteAttributeById(id: string): Promise<IAttribute | null> {
-    return AttributeModel.findByIdAndDelete(id);
+  async findOne(query: Record<string, unknown>): Promise<FormattedCategory | null> {
+    const where: Prisma.CategoryWhereInput = {};
+    if (query.slug) where.slug = String(query.slug);
+    if (query.name) where.name = { equals: String(query.name), mode: 'insensitive' };
+    if (query.id) where.id = String(query.id);
+
+    const category = await prisma.category.findFirst({ where });
+    return this.formatCategory(category as unknown as Record<string, unknown>);
   }
 
-  async deleteAttributesByCategoryId(categoryId: string, session?: ClientSession): Promise<any> {
-    return AttributeModel.deleteMany({ categoryId }, session ? { session } : undefined);
+  async find(query: Record<string, unknown> = {}, limit?: number): Promise<FormattedCategory[]> {
+    const where: Prisma.CategoryWhereInput = {};
+    if (query.parentCategory !== undefined)
+      where.parentCategory = query.parentCategory as string | null;
+    if (query.isActive !== undefined) where.isActive = Boolean(query.isActive);
+    if (query.name && typeof query.name === 'string') {
+      where.name = { contains: query.name, mode: 'insensitive' };
+    }
+
+    const categories = await prisma.category.findMany({
+      where,
+      orderBy: [{ level: 'asc' }, { name: 'asc' }],
+      take: limit,
+    });
+
+    return categories
+      .map((c) => this.formatCategory(c as unknown as Record<string, unknown>))
+      .filter((c): c is FormattedCategory => c !== null);
   }
 
-  async deleteAttributesNotIn(categoryId: string, keepIds: Types.ObjectId[], session?: ClientSession): Promise<any> {
-    return AttributeModel.deleteMany({ categoryId, _id: { $nin: keepIds } }, session ? { session } : undefined);
+  async create(data: Record<string, unknown>): Promise<FormattedCategory | null> {
+    const category = await prisma.category.create({
+      data: {
+        name: String(data.name || ''),
+        slug: String(data.slug || ''),
+        path: Array.isArray(data.path) ? data.path.join('/') : String(data.path || ''),
+        level: Number(data.level || 0),
+        parentCategory: data.parent
+          ? String(data.parent)
+          : data.parentCategory
+            ? String(data.parentCategory)
+            : null,
+        attributes: (data.attributes ?? []) as unknown as Prisma.InputJsonValue,
+        sizeChartColumns: Array.isArray(data.sizeChartColumns)
+          ? (data.sizeChartColumns as string[])
+          : [],
+        bodyChartColumns: Array.isArray(data.bodyChartColumns)
+          ? (data.bodyChartColumns as string[])
+          : [],
+        imageUrl: data.imageUrl ? String(data.imageUrl) : null,
+        isActive: data.isActive !== false,
+      },
+    });
+
+    return this.formatCategory(category as unknown as Record<string, unknown>);
   }
 
-  // Filter Operations
-  async findFiltersByCategoryId(categoryId: string): Promise<ICategoryFilter[]> {
-    return CategoryFilterModel.find({ categoryId })
-      .populate('attributeId')
-      .sort({ displayOrder: 1 });
+  async updateById(
+    id: string,
+    updateData: Record<string, unknown>,
+  ): Promise<FormattedCategory | null> {
+    const data: Prisma.CategoryUncheckedUpdateInput = {};
+    if (updateData.name !== undefined) data.name = String(updateData.name);
+    if (updateData.slug !== undefined) data.slug = String(updateData.slug);
+    if (updateData.path !== undefined) {
+      data.path = Array.isArray(updateData.path)
+        ? updateData.path.join('/')
+        : String(updateData.path);
+    }
+    if (updateData.level !== undefined) data.level = Number(updateData.level);
+    if (updateData.parent !== undefined || updateData.parentCategory !== undefined) {
+      data.parentCategory = updateData.parent
+        ? String(updateData.parent)
+        : updateData.parentCategory
+          ? String(updateData.parentCategory)
+          : null;
+    }
+    if (updateData.attributes !== undefined) {
+      data.attributes = (updateData.attributes ?? []) as unknown as Prisma.InputJsonValue;
+    }
+    if (updateData.sizeChartColumns !== undefined) {
+      data.sizeChartColumns = Array.isArray(updateData.sizeChartColumns)
+        ? (updateData.sizeChartColumns as string[])
+        : [];
+    }
+    if (updateData.bodyChartColumns !== undefined) {
+      data.bodyChartColumns = Array.isArray(updateData.bodyChartColumns)
+        ? (updateData.bodyChartColumns as string[])
+        : [];
+    }
+    if (updateData.imageUrl !== undefined) {
+      data.imageUrl = updateData.imageUrl ? String(updateData.imageUrl) : null;
+    }
+    if (updateData.isActive !== undefined) data.isActive = Boolean(updateData.isActive);
+
+    const category = await prisma.category.update({
+      where: { id },
+      data,
+    });
+
+    return this.formatCategory(category as unknown as Record<string, unknown>);
   }
 
-  async deleteFiltersByCategoryId(categoryId: string): Promise<any> {
-    return CategoryFilterModel.deleteMany({ categoryId });
+  async deleteById(id: string): Promise<FormattedCategory | null> {
+    const category = await prisma.category.delete({
+      where: { id },
+    });
+
+    return this.formatCategory(category as unknown as Record<string, unknown>);
   }
 
-  // Product Count Check for safety
   async countProductsByCategory(categoryId: string): Promise<number> {
-    return ProductModel.countDocuments({
-      $or: [{ category: categoryId }, { subcategory: categoryId }],
+    return prisma.product.count({
+      where: {
+        OR: [{ categoryId }, { subcategoryId: categoryId }],
+      },
     });
   }
 }

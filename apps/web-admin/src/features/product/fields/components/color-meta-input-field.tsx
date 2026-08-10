@@ -43,24 +43,14 @@ export function ColorMetaItem({
   accept?: string[];
   limits?: { maxImages?: number; maxSize?: number };
 }) {
-  const {
-    control,
-    setValue,
-    watch,
-    register,
-    trigger,
-    setError,
-    clearErrors,
-  } = useFormContext();
+  const { control, setValue, watch, register, trigger, setError, clearErrors } = useFormContext();
   const { field: hot } = useController({ name: `${namePrefix}.hot`, control });
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
   const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
   const swatchUrl = useObjectUrl(swatch);
   const [isUploading, setIsUploading] = React.useState(false);
   const [imageUrls, setImageUrls] = React.useState<string[]>([]);
-  const imagesHash = (images || [])
-    .map((f) => imageValueKey(f))
-    .join(',');
+  const imagesHash = (images || []).map((f) => imageValueKey(f)).join(',');
 
   React.useEffect(() => {
     const urls = (images || []).map((img) =>
@@ -80,10 +70,7 @@ export function ColorMetaItem({
     register(`${namePrefix}.swatch` as any, {
       validate: (v: any) => {
         if (!v) return true;
-        const ms =
-          typeof safeLimits?.maxSize === 'number'
-            ? safeLimits.maxSize
-            : undefined;
+        const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
         if (typeof ms === 'number' && v instanceof File && v.size > ms)
           return `Swatch must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
@@ -92,19 +79,10 @@ export function ColorMetaItem({
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
         const arr: ImageValue[] = Array.isArray(v) ? v : [];
-        if (
-          typeof safeLimits?.maxImages === 'number' &&
-          arr.length > safeLimits.maxImages
-        )
+        if (typeof safeLimits?.maxImages === 'number' && arr.length > safeLimits.maxImages)
           return `Max ${safeLimits.maxImages} images`;
-        const ms =
-          typeof safeLimits?.maxSize === 'number'
-            ? safeLimits.maxSize
-            : undefined;
-        if (
-          typeof ms === 'number' &&
-          arr.some((f) => f instanceof File && f.size > ms)
-        ) {
+        const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
+        if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms)) {
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         }
         return true;
@@ -236,10 +214,7 @@ export function ColorMetaItem({
       <div className="flex items-center justify-between gap-3">
         <div className="font-medium capitalize">{color}</div>
         <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={!!hot.value}
-            onCheckedChange={(v) => hot.onChange(!!v)}
-          />
+          <Checkbox checked={!!hot.value} onCheckedChange={(v) => hot.onChange(!!v)} />
           <span>Hot</span>
         </label>
       </div>
@@ -261,11 +236,7 @@ export function ColorMetaItem({
               }}
             />
             {swatchUrl ? (
-              <img
-                src={swatchUrl}
-                alt={`${color}-swatch`}
-                className="h-full w-full object-cover"
-              />
+              <img src={swatchUrl} alt={`${color}-swatch`} className="h-full w-full object-cover" />
             ) : (
               <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
                 +
@@ -298,14 +269,9 @@ export function ColorMetaItem({
                             onClick={() => {
                               const input = document.createElement('input');
                               input.type = 'file';
-                              input.accept = Array.isArray(accept)
-                                ? accept.join(',')
-                                : '';
+                              input.accept = Array.isArray(accept) ? accept.join(',') : '';
                               input.onchange = (e: any) => {
-                                void onReplaceImage(
-                                  idx,
-                                  e.target.files?.[0] ?? null,
-                                );
+                                void onReplaceImage(idx, e.target.files?.[0] ?? null);
                               };
                               input.click();
                             }}
@@ -325,11 +291,7 @@ export function ColorMetaItem({
                     <TooltipContent side="bottom" className="p-2">
                       <div className="w-64">
                         {url ? (
-                          <img
-                            src={url}
-                            alt={`preview-${idx}`}
-                            className="w-full h-auto rounded"
-                          />
+                          <img src={url} alt={`preview-${idx}`} className="w-full h-auto rounded" />
                         ) : null}
                         <div className="mt-2 flex justify-end gap-2">
                           <button
@@ -338,14 +300,9 @@ export function ColorMetaItem({
                             onClick={() => {
                               const input = document.createElement('input');
                               input.type = 'file';
-                              input.accept = Array.isArray(accept)
-                                ? accept.join(',')
-                                : '';
+                              input.accept = Array.isArray(accept) ? accept.join(',') : '';
                               input.onchange = (e: any) => {
-                                void onReplaceImage(
-                                  idx,
-                                  e.target.files?.[0] ?? null,
-                                );
+                                void onReplaceImage(idx, e.target.files?.[0] ?? null);
                               };
                               input.click();
                             }}
@@ -393,33 +350,21 @@ export function ColorMetaInputField({ field }: UiProps) {
   const { watch, setValue, setError, clearErrors, trigger } = useFormContext();
   const colorField: string =
     field.dataSource?.colorField ??
-    field.dataSource?.variants?.find((v: any) =>
-      /color/i.test(v?.label ?? v?.key),
-    )?.key ??
+    field.dataSource?.variants?.find((v: any) => /color/i.test(v?.label ?? v?.key))?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> = (field.dataSource
-    ?.labels as any) ?? {};
-  const labelOf = (value: string) =>
-    labelsMap?.[colorField]?.[String(value)] ?? String(value);
+  const labelsMap: Record<string, Record<string, string>> = (field.dataSource?.labels as any) ?? {};
+  const labelOf = (value: string) => labelsMap?.[colorField]?.[String(value)] ?? String(value);
 
   const accept: string[] | undefined = Array.isArray(field.rule?.accept)
     ? field.rule?.accept
     : undefined;
   const limits = {
-    maxImages:
-      typeof field.rule?.maxItems === 'number'
-        ? field.rule?.maxItems
-        : undefined,
-    maxSize:
-      typeof field.rule?.maxSize === 'number' ? field.rule?.maxSize : undefined,
+    maxImages: typeof field.rule?.maxItems === 'number' ? field.rule?.maxItems : undefined,
+    maxSize: typeof field.rule?.maxSize === 'number' ? field.rule?.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
 
   const selected = watch(colorField);
-  const colors: string[] = Array.isArray(selected)
-    ? selected
-    : selected
-      ? [selected]
-      : [];
+  const colors: string[] = Array.isArray(selected) ? selected : selected ? [selected] : [];
 
   const uploadColorImages = async (colorValue: string, list: FileList | null) => {
     if (!list) return;
@@ -464,9 +409,7 @@ export function ColorMetaInputField({ field }: UiProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <LabelWithRequired required={field.required}>
-          {field.label}
-        </LabelWithRequired>
+        <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
         {limits.maxImages != null || limits.maxSize != null ? (
           <div className="text-xs text-muted-foreground">
             {limits.maxImages != null ? `Max ${limits.maxImages} images` : ''}
@@ -478,9 +421,7 @@ export function ColorMetaInputField({ field }: UiProps) {
         ) : null}
       </div>
       {colors.length === 0 ? (
-        <div className="text-sm text-muted-foreground">
-          Select one or more colors first.
-        </div>
+        <div className="text-sm text-muted-foreground">Select one or more colors first.</div>
       ) : (
         <div className="space-y-2">
           {colors.map((c) => (
@@ -496,9 +437,7 @@ export function ColorMetaInputField({ field }: UiProps) {
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.multiple = true;
-                    input.accept = Array.isArray(accept)
-                      ? accept.join(',')
-                      : '';
+                    input.accept = Array.isArray(accept) ? accept.join(',') : '';
                     input.onchange = (e: any) => {
                       void uploadColorImages(c, e.target.files);
                     };
@@ -514,9 +453,7 @@ export function ColorMetaInputField({ field }: UiProps) {
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.multiple = true;
-                    input.accept = Array.isArray(accept)
-                      ? accept.join(',')
-                      : '';
+                    input.accept = Array.isArray(accept) ? accept.join(',') : '';
                     input.onchange = (e: any) => {
                       void uploadColorImages(c, e.target.files);
                     };

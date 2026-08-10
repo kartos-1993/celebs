@@ -1,4 +1,8 @@
-import { IPaymentGateway, PaymentIntentResult, PaymentVerificationResult } from './payment-gateway.interface';
+import {
+  IPaymentGateway,
+  PaymentIntentResult,
+  PaymentVerificationResult,
+} from './payment-gateway.interface';
 
 export class StripePaymentAdapter implements IPaymentGateway {
   private secretKey: string;
@@ -11,7 +15,7 @@ export class StripePaymentAdapter implements IPaymentGateway {
     orderId: string,
     amount: number,
     currency = 'usd',
-    metadata: Record<string, any> = {}
+    metadata: Record<string, any> = {},
   ): Promise<PaymentIntentResult> {
     if (!this.secretKey) {
       // Fallback to simulation if Stripe key is not configured in env
@@ -35,10 +39,13 @@ export class StripePaymentAdapter implements IPaymentGateway {
           amount: Math.round(amount * 100).toString(), // convert to cents
           currency: currency.toLowerCase(),
           'metadata[orderId]': orderId,
-          ...Object.entries(metadata).reduce((acc, [k, v]) => {
-            acc[`metadata[${k}]`] = String(v);
-            return acc;
-          }, {} as Record<string, string>),
+          ...Object.entries(metadata).reduce(
+            (acc, [k, v]) => {
+              acc[`metadata[${k}]`] = String(v);
+              return acc;
+            },
+            {} as Record<string, string>,
+          ),
         }).toString(),
       });
 
@@ -57,10 +64,7 @@ export class StripePaymentAdapter implements IPaymentGateway {
     }
   }
 
-  async verifyPayment(
-    paymentId: string,
-    _payload: any = {}
-  ): Promise<PaymentVerificationResult> {
+  async verifyPayment(paymentId: string, _payload: any = {}): Promise<PaymentVerificationResult> {
     if (!this.secretKey) {
       return {
         success: true,
@@ -82,7 +86,11 @@ export class StripePaymentAdapter implements IPaymentGateway {
       return {
         success: isSucceeded,
         transactionId: data.id,
-        status: isSucceeded ? 'COMPLETED' : data.status === 'requires_payment_method' ? 'FAILED' : 'PENDING',
+        status: isSucceeded
+          ? 'COMPLETED'
+          : data.status === 'requires_payment_method'
+            ? 'FAILED'
+            : 'PENDING',
         rawResponse: data,
       };
     } catch (error: any) {

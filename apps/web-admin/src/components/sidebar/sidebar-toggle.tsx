@@ -1,8 +1,7 @@
-import React, { Dispatch, SetStateAction } from "react";
-import { Button } from "@celebs/shared-ui/components/button";
-import { ChevronLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { set } from "date-fns";
+import { Dispatch, SetStateAction } from 'react';
+import { Button } from '@celebs/shared-ui/components/button';
+import { ChevronLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type SibarToggleProps = {
   isOpen: boolean;
@@ -11,17 +10,17 @@ type SibarToggleProps = {
 
 const SidebarToggle = ({ isOpen, setIsOpen }: SibarToggleProps) => {
   return (
-    <div className="invisible lg:visible absolute top-[56px] -right-[12px] z-20">
+    <div className="hidden lg:flex absolute top-[56px] -right-[12px] z-30">
       <Button
         onClick={() => setIsOpen && setIsOpen(!isOpen)}
-        className="rounded-md w-6 h-6"
+        className="rounded-full w-6 h-6 shadow-md"
         variant="outline"
         size="icon"
       >
         <ChevronLeft
           className={cn(
-            "h-4 w-4 transition-transform ease-in-out duration-700",
-            isOpen === false ? "rotate-180" : "rotate-0"
+            'h-3 w-3 transition-transform ease-in-out duration-300',
+            isOpen === false ? 'rotate-180' : 'rotate-0',
           )}
         />
       </Button>
@@ -30,4 +29,3 @@ const SidebarToggle = ({ isOpen, setIsOpen }: SibarToggleProps) => {
 };
 
 export default SidebarToggle;
-

@@ -26,7 +26,9 @@ export function ProductSelector({
 }: ProductSelectorPropsType) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 350);
-  const [selectedItemsDetails, setSelectedItemsDetails] = useState<Record<string, CatalogProductType>>({});
+  const [selectedItemsDetails, setSelectedItemsDetails] = useState<
+    Record<string, CatalogProductType>
+  >({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', 'selector', debouncedSearchTerm],
@@ -40,7 +42,7 @@ export function ProductSelector({
       setSelectedItemsDetails((prev) => {
         const next = { ...prev };
         productsList.forEach((p) => {
-          if (p._id) next[p._id] = p;
+          if (p.id) next[p.id] = p;
         });
         return next;
       });
@@ -149,22 +151,19 @@ export function ProductSelector({
           </div>
         ) : (
           productsList.map((product) => {
-            const isSelected = selectedProductIds.includes(product._id);
+            const isSelected = selectedProductIds.includes(product.id);
             const imgUrl = getProductImage(product);
 
             return (
               <div
-                key={product._id}
-                onClick={() => toggleSelect(product._id)}
+                key={product.id}
+                onClick={() => toggleSelect(product.id)}
                 className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors hover:bg-slate-50 ${
                   isSelected ? 'bg-indigo-50/50' : ''
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Checkbox
-                    checked={isSelected}
-                    className="shrink-0 pointer-events-none"
-                  />
+                  <Checkbox checked={isSelected} className="shrink-0 pointer-events-none" />
                   {imgUrl ? (
                     <img
                       src={imgUrl}
@@ -181,7 +180,9 @@ export function ProductSelector({
                       {product.name}
                     </div>
                     <div className="text-[11px] text-slate-500 font-mono">
-                      {product.price > 0 ? `NPR ${product.price.toLocaleString()}` : 'Price not set'}
+                      {product.price > 0
+                        ? `NPR ${product.price.toLocaleString()}`
+                        : 'Price not set'}
                     </div>
                   </div>
                 </div>

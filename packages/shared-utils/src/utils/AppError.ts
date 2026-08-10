@@ -7,7 +7,7 @@ export class AppError extends Error {
   constructor(
     message: string,
     statuscode = HTTPSTATUS.INTERNAL_SERVER_ERROR,
-    errorCode?: ErrorCode
+    errorCode?: ErrorCode,
   ) {
     super(message);
     this.statusCode = statuscode;

@@ -1,11 +1,21 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ScrollView, StatusBar, useColorScheme, RefreshControl, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import {
+  ScrollView,
+  StatusBar,
+  useColorScheme,
+  RefreshControl,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CampaignCountdownBanner } from '@/features/home/components/CampaignCountdownBanner';
-import { ComboBundleShowcase, ComboBundleData } from '@/features/home/components/ComboBundleShowcase';
+import {
+  ComboBundleShowcase,
+  ComboBundleData,
+} from '@/features/home/components/ComboBundleShowcase';
 import { ComboBundleModal } from '@/features/home/components/ComboBundleModal';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { ProductGrid, ProductGridRef } from '@/features/products/components/product-grid';
@@ -51,10 +61,12 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar 
-        barStyle={scrollY > 50 ? (scheme === 'dark' ? 'light-content' : 'dark-content') : 'light-content'} 
-        translucent={true} 
-        backgroundColor="transparent" 
+      <StatusBar
+        barStyle={
+          scrollY > 50 ? (scheme === 'dark' ? 'light-content' : 'dark-content') : 'light-content'
+        }
+        translucent={true}
+        backgroundColor="transparent"
       />
 
       <ScrollView
@@ -102,4 +114,3 @@ export default function HomeScreen() {
     </ThemedView>
   );
 }
-

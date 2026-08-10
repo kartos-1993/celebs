@@ -32,7 +32,7 @@ export const attributeGroupSchema = z.enum([
 ]);
 
 export const attributeSchema = z.object({
-  _id: z.string().optional(),
+  id: z.string().optional(),
   name: z.string().trim().min(1, 'Attribute name is required'),
   label: z.string().optional().nullable(),
   type: attributeTypeSchema,
@@ -57,6 +57,7 @@ export const baseCategorySchemaFields = {
   parent: z.string().optional().nullable(),
   attributes: z.array(attributeSchema).optional().default([]),
   sizeChartColumns: z.array(z.string()).optional().default([]),
+  bodyChartColumns: z.array(z.string()).optional().default([]),
   imageUrl: z.string().url().or(z.string().length(0)).optional().nullable(),
   isActive: z.boolean().optional().default(true),
 };

@@ -29,7 +29,12 @@ import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { ProductGallery } from '@/features/products/components/ProductGallery';
 import { ProductVariantSelector } from '@/features/products/components/ProductVariantSelector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,7 +66,13 @@ export default function ProductDetailScreen() {
     setTimeout(() => {
       if (!isMountedRef.current) return;
       topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
-        if (isMountedRef.current && typeof x === 'number' && typeof y === 'number' && x > 0 && y > 0) {
+        if (
+          isMountedRef.current &&
+          typeof x === 'number' &&
+          typeof y === 'number' &&
+          x > 0 &&
+          y > 0
+        ) {
           setCartIconCoords({
             x: x + width / 2,
             y: y + height / 2,
@@ -76,7 +87,7 @@ export default function ProductDetailScreen() {
     if (pulseTrigger > 0) {
       topCartScale.value = withSequence(
         withSpring(1.4, { damping: 6, stiffness: 200 }),
-        withSpring(1.0, { damping: 10, stiffness: 180 })
+        withSpring(1.0, { damping: 10, stiffness: 180 }),
       );
     }
   }, [pulseTrigger, topCartScale]);
@@ -95,9 +106,7 @@ export default function ProductDetailScreen() {
 
     // Trigger Fly-to-Cart animation
     const flyImage =
-      product.colorVariants?.[selectedColorIndex]?.images?.[0] ||
-      product.mainImages?.[0] ||
-      '';
+      product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
     if (flyImage) {
       startFlyAnimation({
         imageUrl: resolveImageUrl(flyImage),
@@ -111,7 +120,7 @@ export default function ProductDetailScreen() {
     setIsAdding(true);
     try {
       await addToCart({
-        productId: product._id,
+        productId: product.id,
         quantity: 1,
         size: finalSize || 'Standard',
         colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
@@ -156,7 +165,7 @@ export default function ProductDetailScreen() {
 
   const galleryImages =
     product.colorVariants?.[selectedColorIndex]?.images &&
-      product.colorVariants[selectedColorIndex].images!.length > 0
+    product.colorVariants[selectedColorIndex].images!.length > 0
       ? product.colorVariants[selectedColorIndex].images!
       : product.mainImages || [];
 
@@ -174,7 +183,7 @@ export default function ProductDetailScreen() {
     const newVariant = product?.colorVariants?.[index];
     if (selectedSize && newVariant?.stocks) {
       const stockItem = newVariant.stocks.find(
-        (st) => st.size.toLowerCase() === selectedSize.toLowerCase()
+        (st) => st.size.toLowerCase() === selectedSize.toLowerCase(),
       );
       if (!stockItem || stockItem.quantity <= 0) {
         setSelectedSize('');
@@ -234,7 +243,11 @@ export default function ProductDetailScreen() {
           <View style={styles.brandRow}>
             <ThemedText style={styles.brandText}>{product.brand || 'Celebs Exclusive'}</ThemedText>
             <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
-              <Heart size={22} color={isFavorite ? '#ef4444' : '#9ca3af'} fill={isFavorite ? '#ef4444' : 'transparent'} />
+              <Heart
+                size={22}
+                color={isFavorite ? '#ef4444' : '#9ca3af'}
+                fill={isFavorite ? '#ef4444' : 'transparent'}
+              />
             </TouchableOpacity>
           </View>
 
@@ -246,7 +259,9 @@ export default function ProductDetailScreen() {
             <ThemedText style={styles.currentPrice}>Rs. {currentPrice.toLocaleString()}</ThemedText>
             {discountPercent > 0 && (
               <>
-                <ThemedText style={styles.originalPrice}>Rs. {originalPrice.toLocaleString()}</ThemedText>
+                <ThemedText style={styles.originalPrice}>
+                  Rs. {originalPrice.toLocaleString()}
+                </ThemedText>
                 <View style={styles.discountBadge}>
                   <ThemedText style={styles.discountText}>{discountPercent}% OFF</ThemedText>
                 </View>

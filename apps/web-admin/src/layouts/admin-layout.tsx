@@ -29,7 +29,7 @@ export const AdminLayout = () => {
         <div>
           <SideBar />
         </div>
-        <div>
+        <div className="bg-zinc-50 dark:bg-zinc-950 min-h-screen">
           <Navbar />
           <Main>
             <Suspense fallback={<PageLoader />}>

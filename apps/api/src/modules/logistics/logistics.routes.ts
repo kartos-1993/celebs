@@ -22,7 +22,7 @@ router.post(
     });
     const result = await logisticsService.dispatchOrder(validated);
     res.status(HTTPSTATUS.OK).json({ success: true, data: result });
-  })
+  }),
 );
 
 // Settle COD payments (Admin / SuperAdmin)
@@ -36,9 +36,12 @@ router.post(
       orderId,
       settlementReference: req.body.reference || req.body.settlementReference,
     });
-    const result = await logisticsService.markCodSettled(validated.orderId, validated.settlementReference);
+    const result = await logisticsService.markCodSettled(
+      validated.orderId,
+      validated.settlementReference,
+    );
     res.status(HTTPSTATUS.OK).json({ success: true, data: result });
-  })
+  }),
 );
 
 export default router;

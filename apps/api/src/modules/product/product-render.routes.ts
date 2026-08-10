@@ -19,17 +19,23 @@ router.get('/product-render', async (req, res) => {
   try {
     const catId = String(req.query.catId || '');
     const locale = String(req.query.locale || 'en_US');
-    if (!catId) return res.status(400).json({ error: 'catId is required' });
+    if (!catId) {
+      res.status(400).json({ error: 'catId is required' });
+      return;
+    }
 
     const category = await categoryService.getCategoryById(catId);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!category) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
+    }
 
-    const { fields, renderTag } = composeSchema({
+    const { fields, renderTag } = await composeSchema({
       category: {
-        _id: String(category._id),
+        id: String(category.id),
         name: category.name,
-        version: category.version ?? category.__v ?? 1,
-        attributes: category.attributes || [],
+        version: category.version ?? 1,
+        attributes: (category.attributes as any) || [],
         sizeChartColumns: category.sizeChartColumns || [],
       },
       locale,
@@ -46,7 +52,8 @@ router.get('/product-render', async (req, res) => {
 
     res.setHeader('ETag', renderTag);
     if (req.headers['if-none-match'] === renderTag) {
-      return res.status(304).end();
+      res.status(304).end();
+      return;
     }
     res.json(payload);
   } catch (err: any) {

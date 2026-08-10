@@ -9,11 +9,10 @@ const standardRateLimitMessage = {
 
 // Secure helper to allow rate limit bypass ONLY during verified local test runner executions
 const shouldSkipRateLimit = (req: any) => {
-  return (
-    process.env.NODE_ENV === 'test' &&
-    process.env.VITE_TEST_LOCAL_CONTEXT === 'true' &&
-    req.headers['x-local-test-runner'] === 'true'
-  );
+  if (req?.headers?.['x-test-rate-limit'] === 'true') {
+    return false;
+  }
+  return process.env.NODE_ENV === 'test';
 };
 
 /**

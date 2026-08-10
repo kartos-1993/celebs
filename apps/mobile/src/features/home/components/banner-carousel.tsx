@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  Dimensions
+  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { apiClient } from '@/api/client';
@@ -16,7 +16,7 @@ import { styles } from '../styles/home.styles';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Banner {
-  _id: string;
+  id: string;
   imageUrl: string;
   linkType: 'PRODUCT' | 'CATEGORY' | 'EXTERNAL' | 'NONE';
   linkValue?: string;
@@ -26,27 +26,30 @@ interface Banner {
 
 const MOCK_BANNERS: Banner[] = [
   {
-    _id: 'mock1',
-    imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
+    id: 'mock1',
+    imageUrl:
+      'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
     linkType: 'EXTERNAL',
     linkValue: 'https://shein.com',
     title: 'Summer Collection',
-    order: 1
+    order: 1,
   },
   {
-    _id: 'mock2',
-    imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
+    id: 'mock2',
+    imageUrl:
+      'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
     linkType: 'NONE',
     title: 'New Trends',
-    order: 2
+    order: 2,
   },
   {
-    _id: 'mock3',
-    imageUrl: 'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
+    id: 'mock3',
+    imageUrl:
+      'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
     linkType: 'NONE',
     title: 'Street Style',
-    order: 3
-  }
+    order: 3,
+  },
 ];
 
 import { useQuery } from '@tanstack/react-query';
@@ -120,7 +123,7 @@ export function BannerCarousel() {
     } else {
       Alert.alert(
         'Deep Link Triggered',
-        `Navigating to ${banner.linkType} ID: ${banner.linkValue}`
+        `Navigating to ${banner.linkType} ID: ${banner.linkValue}`,
       );
     }
   };
@@ -150,7 +153,7 @@ export function BannerCarousel() {
             showsHorizontalScrollIndicator={false}
             onScroll={onScroll}
             scrollEventThrottle={16}
-            keyExtractor={(item) => item._id}
+            keyExtractor={(item) => item.id}
             onScrollBeginDrag={stopAutoPlay}
             onScrollEndDrag={startAutoPlay}
             renderItem={({ item }) => (
@@ -173,10 +176,7 @@ export function BannerCarousel() {
             {banners.map((_, index) => (
               <View
                 key={index}
-                style={[
-                  styles.dot,
-                  activeIndex === index ? styles.activeDot : null,
-                ]}
+                style={[styles.dot, activeIndex === index ? styles.activeDot : null]}
               />
             ))}
           </View>

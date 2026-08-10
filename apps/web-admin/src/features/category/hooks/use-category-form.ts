@@ -23,15 +23,18 @@ export interface UseCategoryFormReturn {
   isUploadingImage: boolean;
   newColumnInput: string;
   setNewColumnInput: (val: string) => void;
+  newBodyColumnInput: string;
+  setNewBodyColumnInput: (val: string) => void;
   handleAddAttribute: () => void;
   handleAddSizeColumn: () => void;
   handleRemoveSizeColumn: (colToRemove: string) => void;
+  handleAddBodyColumn: () => void;
+  handleRemoveBodyColumn: (colToRemove: string) => void;
   handleImageUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
-function getAttributeId(attr: { _id?: string; id?: string }): string | undefined {
-  if (attr._id) return String(attr._id);
+function getAttributeId(attr: { id?: string }): string | undefined {
   if (attr.id) return String(attr.id);
   return undefined;
 }
@@ -43,19 +46,26 @@ export const useCategoryForm = ({
   const { toast } = useToast();
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [newColumnInput, setNewColumnInput] = useState<string>('');
+  const [newBodyColumnInput, setNewBodyColumnInput] = useState<string>('');
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: initialData?.name || '',
-      parent: initialData?.parent || null,
+      parent: initialData?.parent ?? (initialData as any)?.parentCategory ?? null,
       attributes: (initialData?.attributes || []).map((attr) => ({
-        _id: getAttributeId(attr),
+        id: getAttributeId(attr),
         name: attr.name || '',
         label: attr.label || '',
         type: attr.type || 'text',
         values: (attr.values || [])
-          .map((v) => (typeof v === 'string' ? v : (v as { value?: string; name?: string }).value ?? (v as { value?: string; name?: string }).name ?? ''))
+          .map((v) =>
+            typeof v === 'string'
+              ? v
+              : ((v as { value?: string; name?: string }).value ??
+                (v as { value?: string; name?: string }).name ??
+                ''),
+          )
           .filter(Boolean),
         isRequired: !!attr.isRequired,
         group: attr.group || (attr.isVariant ? 'variant' : 'details'),
@@ -66,6 +76,7 @@ export const useCategoryForm = ({
         optionSetId: attr.optionSetId ? String(attr.optionSetId) : null,
       })),
       sizeChartColumns: initialData?.sizeChartColumns || [],
+      bodyChartColumns: initialData?.bodyChartColumns || [],
       imageUrl: initialData?.imageUrl || null,
       isActive: initialData?.isActive !== false,
     },
@@ -111,7 +122,26 @@ export const useCategoryForm = ({
     form.setValue(
       'sizeChartColumns',
       current.filter((c) => c !== colToRemove),
-      { shouldDirty: true }
+      { shouldDirty: true },
+    );
+  };
+
+  const handleAddBodyColumn = () => {
+    const trimmed = newBodyColumnInput.trim();
+    if (!trimmed) return;
+    const current = form.getValues('bodyChartColumns') || [];
+    if (!current.includes(trimmed)) {
+      form.setValue('bodyChartColumns', [...current, trimmed], { shouldDirty: true });
+    }
+    setNewBodyColumnInput('');
+  };
+
+  const handleRemoveBodyColumn = (colToRemove: string) => {
+    const current = form.getValues('bodyChartColumns') || [];
+    form.setValue(
+      'bodyChartColumns',
+      current.filter((c) => c !== colToRemove),
+      { shouldDirty: true },
     );
   };
 
@@ -139,13 +169,10 @@ export const useCategoryForm = ({
   const onSubmit = (values: CategoryFormData) => {
     const normalizedData: CategoryFormData = {
       ...values,
-      parent:
-        values.parent && values.parent !== 'ROOT_CATEGORY'
-          ? values.parent
-          : null,
+      parent: values.parent && values.parent !== 'ROOT_CATEGORY' ? values.parent : null,
       attributes: values.attributes.map((attr) => ({
         ...attr,
-        _id: attr._id || undefined,
+        id: attr.id || undefined,
         values: attr.values ?? [],
         isVariant: attr.isVariant ?? false,
         useStandardOptions: attr.isVariant ? (attr.useStandardOptions ?? false) : false,
@@ -153,7 +180,7 @@ export const useCategoryForm = ({
           attr.isVariant && attr.useStandardOptions && attr.optionSetId
             ? attr.optionSetId.trim() || null
             : null,
-        group: attr.isVariant ? 'variant' : (attr.group || 'details'),
+        group: attr.isVariant ? 'variant' : attr.group || 'details',
       })),
     };
 
@@ -168,9 +195,13 @@ export const useCategoryForm = ({
     isUploadingImage,
     newColumnInput,
     setNewColumnInput,
+    newBodyColumnInput,
+    setNewBodyColumnInput,
     handleAddAttribute,
     handleAddSizeColumn,
     handleRemoveSizeColumn,
+    handleAddBodyColumn,
+    handleRemoveBodyColumn,
     handleImageUpload,
     handleSubmit: form.handleSubmit(onSubmit),
   };

@@ -1,52 +1,59 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import mongoose from 'mongoose';
 import { ProductService } from '@/modules/product/product.service';
-import { CategoryModel, ICategory } from '@/db/models/category.model';
-import { ProductModel, IProduct } from '@/db/models/product.model';
+import prisma from '@/config/db.prisma';
 import { productFilterSchema } from '@celebs/shared-types';
 
-describe('Product Cursor-Based Pagination & Storefront API', () => {
+describe('Product Cursor-Based Pagination & Storefront API (PostgreSQL)', () => {
   let productService: ProductService;
-  let mockCategory: ICategory;
+  let mockCategory: any;
   let createdProductIds: string[] = [];
 
   beforeEach(async () => {
     productService = new ProductService();
 
-    mockCategory = await CategoryModel.create({
-      name: 'Test Storefront Category',
-      slug: 'test-storefront-category',
-      level: 1,
-      path: ['test-storefront-category'],
+    mockCategory = await prisma.category.create({
+      data: {
+        name: 'Test Storefront Category',
+        slug: `test-storefront-category-${Date.now()}`,
+        level: 1,
+        path: 'test-storefront-category',
+      },
     });
 
-    // Seed 15 published products to test limit=10 cursor pagination
     for (let i = 1; i <= 15; i++) {
-      const prod = await ProductModel.create({
-        name: `Test Storefront Product ${i}`,
-        slug: `test-storefront-product-${i}-${Date.now()}`,
-        description: `Description for product ${i}`,
-        price: 100 + i * 10,
-        category: mockCategory._id,
-        subcategory: mockCategory._id,
-        status: 'published',
-        mainImages: ['https://example.com/image.jpg'],
-        createdBy: 'system-test',
-        updatedBy: 'system-test',
+      const prod = await prisma.product.create({
+        data: {
+          name: `Test Storefront Product ${i}`,
+          slug: `test-storefront-product-${i}-${Date.now()}`,
+          description: `Description for product ${i}`,
+          price: 100 + i * 10,
+          categoryId: mockCategory.id,
+          subcategoryId: mockCategory.id,
+          status: 'published',
+          mainImages: ['https://example.com/image.jpg'],
+          createdBy: 'system-test',
+          updatedBy: 'system-test',
+        },
       });
-      createdProductIds.push((prod as IProduct)._id.toString());
+      createdProductIds.push(prod.id);
     }
   });
 
   afterEach(async () => {
-    await ProductModel.deleteMany({ _id: { $in: createdProductIds } });
-    await CategoryModel.deleteOne({ _id: mockCategory._id });
+    if (createdProductIds.length > 0) {
+      await prisma.product.deleteMany({ where: { id: { in: createdProductIds } } });
+      createdProductIds = [];
+    }
+    if (mockCategory?.id) {
+      await prisma.category.delete({ where: { id: mockCategory.id } }).catch(() => {});
+    }
   });
 
-  it('should validate cursor parameter in productFilterSchema', () => {
-    const query = { limit: '10', cursor: '6a5b3999b324b8072436e1b1' };
+  it('should validate UUID cursor parameter in productFilterSchema', () => {
+    const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+    const query = { limit: '10', cursor: validUuid };
     const validated = productFilterSchema.parse(query);
-    expect(validated.cursor).toBe('6a5b3999b324b8072436e1b1');
+    expect(validated.cursor).toBe(validUuid);
     expect(validated.limit).toBe(10);
   });
 

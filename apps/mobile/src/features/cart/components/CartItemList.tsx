@@ -54,9 +54,7 @@ export const CartItemList: React.FC<CartItemListProps> = ({
               </View>
 
               <View style={styles.priceRow}>
-                <ThemedText style={styles.priceText}>
-                  Rs. {item.price.toLocaleString()}
-                </ThemedText>
+                <ThemedText style={styles.priceText}>Rs. {item.price.toLocaleString()}</ThemedText>
 
                 {/* Quantity Controls */}
                 <View style={styles.quantityContainer}>

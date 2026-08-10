@@ -45,14 +45,12 @@ projects:
               - key: REDIS_PASSWORD
                 sync: false
               - key: REDIS_PORT
-                value: "6379"
+                value: '6379'
               - key: REDIS_HOST
                 value: promoted-mastodon-182323.upstash.io
               - key: DATABASE_URL
                 sync: false
               - key: DIRECT_URL
-                sync: false
-              - key: MONGODB_URI
                 sync: false
               - key: S3_ENDPOINT
                 value: https://cba1249fa7c3e183b8e2081761beb0b4.r2.cloudflarestorage.com

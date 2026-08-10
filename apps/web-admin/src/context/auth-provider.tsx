@@ -1,15 +1,51 @@
-import { createContext, useContext, useCallback } from "react";
-import useAuth from "@/hooks/use-auth";
-import { UserData } from "@/types";
-import { useIdleTimer } from "@/hooks/use-idle-timer";
-import { apiClient } from "@/lib/axios-client";
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import { UAParser } from 'ua-parser-js';
+import { format, formatDistanceToNowStrict, isPast } from 'date-fns';
+import { Smartphone, Laptop, LucideIcon } from 'lucide-react';
+import useAuth from '@/hooks/use-auth';
+import { UserData } from '@/types';
+import { useIdleTimer } from '@/hooks/use-idle-timer';
+import { axiosClient } from '@/lib/axios/axios-client';
+import { setAuthCallbacks, broadcastLogout } from '@/lib/axios/interceptors';
 
-// Define the context shape
+// ─── Session Parsing Utility ──────────────────────────────────────────────────
+export interface SessionInfo {
+  deviceType: string;
+  browser: string;
+  os: string;
+  timeAgo: string;
+  icon: LucideIcon;
+}
+
+export const parseSession = (userAgent: string, createdAt: string): SessionInfo => {
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+
+  const deviceType = result.device.type || 'Desktop';
+  const browser = `${result.browser.name}` || 'Web';
+  const os = `${result.os.name} ${result.os.version}`;
+  const icon = deviceType === 'mobile' ? Smartphone : Laptop;
+
+  const formattedAt = isPast(new Date(createdAt))
+    ? `${formatDistanceToNowStrict(new Date(createdAt))} ago`
+    : format(new Date(createdAt), 'd MMM, yyyy');
+
+  return {
+    deviceType,
+    browser,
+    os,
+    timeAgo: formattedAt,
+    icon,
+  };
+};
+
+// ─── Context Shape ────────────────────────────────────────────────────────────
 type AuthContextType = {
   user?: UserData;
-  error: any;
+  error: Error | null;
   isLoading: boolean;
   isFetching: boolean;
+  isAuthenticated: boolean;
   refetch: () => void;
   role?: string;
   isVendor: boolean;
@@ -23,6 +59,7 @@ const defaultAuthContext: AuthContextType = {
   error: null,
   isLoading: true,
   isFetching: false,
+  isAuthenticated: false,
   refetch: () => {},
   role: undefined,
   isVendor: false,
@@ -33,11 +70,11 @@ const defaultAuthContext: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+// ─── Provider ─────────────────────────────────────────────────────────────────
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { data, error, isLoading, isFetching, refetch } = useAuth();
-  const user = data?.data?.user;
+  const user = data?.data?.user as UserData | undefined;
+  const isAuthenticated = Boolean(user);
   const role = user?.role;
 
   const isVendor = role === 'VENDOR';
@@ -45,31 +82,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const isSuperAdmin = role === 'SUPERADMIN';
   const isStaff = role === 'STAFF';
 
+  // ── Wire Axios interceptor callbacks into React auth state ────────────────
+  useEffect(() => {
+    setAuthCallbacks({
+      onTokenRefreshed: () => {
+        refetch();
+      },
+      onSessionExpired: () => {
+        // Interceptor redirects to /login on session expiry
+      },
+    });
+  }, [refetch]);
+
+  // ── Idle logout ───────────────────────────────────────────────────────────
   const handleIdle = useCallback(async () => {
     if (user) {
-      console.warn("User idle for 15 minutes. Logging out for security.");
+      console.warn('User idle for 15 minutes. Logging out for security.');
       try {
-        await apiClient.post("/auth/logout");
+        broadcastLogout();
+        await axiosClient.post('/auth/logout');
       } catch (e) {
-        console.error("Logout on idle failed:", e);
+        console.error('Logout on idle failed:', e);
       } finally {
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
         }
       }
     }
   }, [user]);
 
-  // Trigger idle timer (15 minutes)
+  // 15-minute idle timer
   useIdleTimer(handleIdle, 15 * 60 * 1000);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        error,
+        error: error as Error | null,
         isLoading,
         isFetching,
+        isAuthenticated,
         refetch,
         role,
         isVendor,
@@ -85,5 +137,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
-  return context || defaultAuthContext;
+  return context ?? defaultAuthContext;
 };

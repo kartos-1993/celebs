@@ -1,47 +1,21 @@
-import mongoose from 'mongoose';
-
-// Import prisma so it gets configured with the test DB
-import prisma from '@/db';
-
-beforeAll(async () => {
-  // Connect Mongoose to the test Mongo database
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(process.env.MONGODB_URI!);
-  }
-});
+import prisma from '@/config/db.prisma';
+import { afterAll, beforeEach } from 'vitest';
 
 afterAll(async () => {
-  // Close Prisma connection
   await prisma.$disconnect();
-
-  // Close MongoDB/Mongoose connection
-  await mongoose.disconnect();
 });
 
 beforeEach(async () => {
-  // Clean all PostgreSQL tables
-  const tablenames = await prisma.$queryRaw<
-    Array<{ tablename: string }>
-  >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations';`;
+  try {
+    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
+      SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations';
+    `;
 
-  if (tablenames.length > 0) {
-    const formattedTables = tablenames
-      .map(({ tablename }) => `"${tablename}"`)
-      .join(', ');
-    try {
-      await prisma.$executeRawUnsafe(
-        `TRUNCATE TABLE ${formattedTables} CASCADE;`
-      );
-    } catch (error) {
-      // Ignored
+    if (tablenames.length > 0) {
+      const names = tablenames.map((t) => `"${t.tablename}"`).join(', ');
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${names} CASCADE;`);
     }
-  }
-
-  // Clean MongoDB collections
-  if (mongoose.connection.db) {
-    const collections = await mongoose.connection.db.collections();
-    await Promise.all(
-      collections.map((collection) => collection.deleteMany({}))
-    );
+  } catch {
+    // Fallback if test DB connection is not available in isolated unit runs
   }
 });

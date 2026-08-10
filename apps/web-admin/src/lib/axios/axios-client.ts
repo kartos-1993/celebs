@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setupInterceptors } from './interceptors';
 
 const FALLBACK_API_URL = 'http://localhost:3333/api/v1/';
 
@@ -17,3 +18,6 @@ export const axiosClient = axios.create({
     Accept: 'application/json',
   },
 });
+
+// Attach interceptors immediately to the created instance
+setupInterceptors(axiosClient);

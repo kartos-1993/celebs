@@ -7,7 +7,7 @@ const StaffListPage = lazy(() => import('./pages/staff-list-page'));
 export const staffRoutes: RouteObject = {
   path: 'staff',
   element: (
-    <RoleGuard allowedRoles={['SUPERADMIN']}>
+    <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN']}>
       <StaffListPage />
     </RoleGuard>
   ),

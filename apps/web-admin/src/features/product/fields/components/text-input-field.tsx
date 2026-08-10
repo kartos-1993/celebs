@@ -12,15 +12,11 @@ export function TextInputField({ field, control }: UiProps) {
   });
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>
-        {field.label}
-      </LabelWithRequired>
+      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <Input
         {...f}
         placeholder={field.label}
-        className={
-          fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
-        }
+        className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
       />
       <FieldError message={fieldState.error?.message} />
     </div>

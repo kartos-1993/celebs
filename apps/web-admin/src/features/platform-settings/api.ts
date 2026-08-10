@@ -1,7 +1,7 @@
-import { ProductAPI } from '@/lib/axios-client';
+import { axiosClient } from '@/lib/axios/axios-client';
 
 export interface Banner {
-  _id?: string;
+  id?: string;
   imageUrl: string;
   linkType: 'PRODUCT' | 'CATEGORY' | 'EXTERNAL' | 'NONE';
   linkValue?: string;
@@ -15,7 +15,7 @@ export class PlatformSettingsApiService {
    * Fetch all banners for admin (including inactive ones)
    */
   static async getBanners(): Promise<Banner[]> {
-    const response = await ProductAPI.get('/banners/all');
+    const response = await axiosClient.get('/banners/all');
     return response.data?.data || [];
   }
 
@@ -23,7 +23,7 @@ export class PlatformSettingsApiService {
    * Bulk update banners
    */
   static async updateBanners(banners: Banner[]): Promise<Banner[]> {
-    const response = await ProductAPI.put('/banners', { banners });
+    const response = await axiosClient.put('/banners', { banners });
     return response.data?.data || [];
   }
 
@@ -34,7 +34,7 @@ export class PlatformSettingsApiService {
     const formData = new FormData();
     formData.append('files', file);
 
-    const response = await ProductAPI.post('/media/upload', formData, {
+    const response = await axiosClient.post('/media/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

@@ -21,11 +21,7 @@ export class PostgresInventoryRepository {
     });
   }
 
-  public async createOutboxEvent(data: {
-    aggregate: string;
-    eventType: string;
-    payload: any;
-  }) {
+  public async createOutboxEvent(data: { aggregate: string; eventType: string; payload: any }) {
     return await prisma.outboxEvent.create({
       data: {
         aggregate: data.aggregate,

@@ -2,14 +2,24 @@ import { z } from 'zod';
 
 export const vendorProfileSchema = z.object({
   shopDescription: z.string().trim().max(1000).optional(),
-  phoneNumber: z.string().trim().regex(/^9\d{9}$/, 'Phone number must be a valid 10-digit Nepalese mobile number starting with 9').optional(),
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(
+      /^9\d{9}$/,
+      'Phone number must be a valid 10-digit Nepalese mobile number starting with 9',
+    )
+    .optional(),
   storeLogo: z.string().url('Invalid logo URL').optional().or(z.literal('')),
 });
 
 export const warehouseSchema = z.object({
   label: z.string().trim().min(2, 'Label must be at least 2 characters').max(255),
   contactName: z.string().trim().min(3, 'Contact name must be at least 3 characters').max(255),
-  contactPhone: z.string().trim().regex(/^9\d{9}$/, 'Contact phone must be a valid 10-digit mobile number starting with 9'),
+  contactPhone: z
+    .string()
+    .trim()
+    .regex(/^9\d{9}$/, 'Contact phone must be a valid 10-digit mobile number starting with 9'),
   addressLine1: z.string().trim().min(3, 'Address line 1 is required').max(255),
   addressLine2: z.string().trim().max(255).optional(),
   city: z.string().trim().min(2, 'City is required').max(100),
@@ -20,24 +30,42 @@ export const warehouseSchema = z.object({
 
 export const vendorDocumentsSchema = z.object({
   panDocumentUrl: z.string().url('Invalid PAN document URL').optional().or(z.literal('')),
-  citizenshipDocumentUrl: z.string().url('Invalid citizenship document URL').optional().or(z.literal('')),
+  citizenshipDocumentUrl: z
+    .string()
+    .url('Invalid citizenship document URL')
+    .optional()
+    .or(z.literal('')),
   vatDocumentUrl: z.string().url('Invalid VAT document URL').optional().or(z.literal('')),
-  businessRegDocumentUrl: z.string().url('Invalid business registration URL').optional().or(z.literal('')),
+  businessRegDocumentUrl: z
+    .string()
+    .url('Invalid business registration URL')
+    .optional()
+    .or(z.literal('')),
   ownerPhotoUrl: z.string().url('Invalid owner photo URL').optional().or(z.literal('')),
 });
 
 export const vendorBusinessInfoSchema = z.object({
   businessName: z.string().trim().min(3, 'Business name must be at least 3 characters').max(255),
   businessRegNumber: z.string().trim().min(3, 'Business registration number is required').max(100),
-  businessPhoneNumber: z.string().trim().regex(/^9\d{9}$/, 'Business phone must be a valid 10-digit mobile number starting with 9'),
+  businessPhoneNumber: z
+    .string()
+    .trim()
+    .regex(/^9\d{9}$/, 'Business phone must be a valid 10-digit mobile number starting with 9'),
 });
 
-export const createStaffSchema = z.object({
-  name: z.string().trim().min(3, 'Name must be at least 3 characters long').max(255),
-  email: z.string().trim().email('Invalid email address'),
-  password: z.string().trim().min(8, 'Password must be at least 8 characters long'),
-  confirmPassword: z.string().trim().min(8, 'Password confirmation must be at least 8 characters long'),
-}).refine((val) => val.password === val.confirmPassword, {
-  message: 'Password does not match',
-  path: ['confirmPassword'],
-});
+export const createStaffSchema = z
+  .object({
+    name: z.string().trim().min(3, 'Name must be at least 3 characters long').max(255),
+    email: z.string().trim().email('Invalid email address'),
+    password: z.string().trim().min(8, 'Password must be at least 8 characters long'),
+    confirmPassword: z
+      .string()
+      .trim()
+      .min(8, 'Password confirmation must be at least 8 characters long'),
+    permissions: z.array(z.string()).optional(),
+    vendorId: z.string().optional(),
+  })
+  .refine((val) => val.password === val.confirmPassword, {
+    message: 'Password does not match',
+    path: ['confirmPassword'],
+  });

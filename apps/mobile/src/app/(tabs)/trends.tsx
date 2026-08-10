@@ -8,7 +8,9 @@ export default function TrendsScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle" style={styles.title}>Trends</ThemedText>
+        <ThemedText type="subtitle" style={styles.title}>
+          Trends
+        </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.description}>
           Discover the latest fashion trends and inspiration curated for you.
         </ThemedText>

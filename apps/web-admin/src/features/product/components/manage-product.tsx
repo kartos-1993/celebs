@@ -29,16 +29,15 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
-import {
-  ShoppingBag,
-  Plus,
-  Search,
-  AlertTriangle,
-  Info,
-  X,
-} from 'lucide-react';
+import { ShoppingBag, Plus, Search, AlertTriangle, Info, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getProducts, toggleProductActivation, archiveProduct, submitProductForReview, ProductApiService } from '../api';
+import {
+  getProducts,
+  toggleProductActivation,
+  archiveProduct,
+  submitProductForReview,
+  ProductApiService,
+} from '../api';
 import { useAuthContext } from '@/context/auth-provider';
 
 const productStatusTabs = [
@@ -106,7 +105,7 @@ const ManageProduct = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(products.map((p) => p._id));
+      setSelectedProducts(products.map((p) => p.id));
     } else {
       setSelectedProducts([]);
     }
@@ -168,19 +167,13 @@ const ManageProduct = () => {
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-fashion-700">
-            Manage Products
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Manage your product inventory and track performance
-          </p>
+          <h1 className="text-3xl font-bold text-fashion-700">Manage Products</h1>
+          <p className="text-gray-500 mt-1">Manage your product inventory and track performance</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/products/new">
-            <Button className="bg-orange-500 hover:bg-orange-600">
-              + New Product
-            </Button>
-          </Link>
+          <Button asChild className="bg-orange-500 hover:bg-orange-600">
+            <Link to="/products/new">+ New Product</Link>
+          </Button>
         </div>
       </div>
 
@@ -190,8 +183,8 @@ const ManageProduct = () => {
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700 flex items-center justify-between">
             <div>
-              <span className="font-medium">Welcome to Product Management.</span>{' '}
-              Sellers can view status and submit drafts for review. Admins can approve items.
+              <span className="font-medium">Welcome to Product Management.</span> Sellers can view
+              status and submit drafts for review. Admins can approve items.
             </div>
             <Button
               variant="ghost"
@@ -218,7 +211,10 @@ const ManageProduct = () => {
             {productStatusTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => { setFilterStatus(tab.id); setPage(1); }}
+                onClick={() => {
+                  setFilterStatus(tab.id);
+                  setPage(1);
+                }}
                 className={`pb-3 px-1 border-b-2 transition-colors ${
                   filterStatus === tab.id
                     ? 'border-orange-500 text-orange-600 font-medium'
@@ -269,13 +265,11 @@ const ManageProduct = () => {
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow key={product._id}>
+                    <TableRow key={product.id}>
                       <TableCell>
                         <Checkbox
-                          checked={selectedProducts.includes(product._id)}
-                          onCheckedChange={(checked) =>
-                            handleSelectProduct(product._id, !!checked)
-                          }
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
                         />
                       </TableCell>
                       <TableCell>
@@ -295,10 +289,10 @@ const ManageProduct = () => {
                             product.status === 'published'
                               ? 'default'
                               : product.status === 'pending_review'
-                              ? 'secondary'
-                              : product.status === 'rejected'
-                              ? 'destructive'
-                              : 'outline'
+                                ? 'secondary'
+                                : product.status === 'rejected'
+                                  ? 'destructive'
+                                  : 'outline'
                           }
                         >
                           {product.status}
@@ -309,17 +303,24 @@ const ManageProduct = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {role === 'VENDOR' && (product.status === 'draft' || product.status === 'rejected') && (
-                            <Button size="sm" onClick={() => handleResubmit(product._id)}>
-                              Submit
-                            </Button>
-                          )}
-                          
-                          {role === 'VENDOR' && (product.status === 'published' || product.status === 'deactivated') && (
-                            <Button size="sm" variant="outline" onClick={() => handleToggleActivation(product._id)}>
-                              {product.status === 'published' ? 'Deactivate' : 'Activate'}
-                            </Button>
-                          )}
+                          {role === 'VENDOR' &&
+                            (product.status === 'draft' || product.status === 'rejected') && (
+                              <Button size="sm" onClick={() => handleResubmit(product.id)}>
+                                Submit
+                              </Button>
+                            )}
+
+                          {role === 'VENDOR' &&
+                            (product.status === 'published' ||
+                              product.status === 'deactivated') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleToggleActivation(product.id)}
+                              >
+                                {product.status === 'published' ? 'Deactivate' : 'Activate'}
+                              </Button>
+                            )}
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -329,9 +330,9 @@ const ManageProduct = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link to={`/products/edit/${product._id}`}>Edit</Link>
+                                <Link to={`/products/edit/${product.id}`}>Edit</Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleArchive(product._id)}>
+                              <DropdownMenuItem onClick={() => handleArchive(product.id)}>
                                 Archive (Delete)
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -353,7 +354,11 @@ const ManageProduct = () => {
               <span className="text-sm text-gray-500">
                 Page {page} of {Math.ceil(total / 10)}
               </span>
-              <Button disabled={page * 10 >= total} onClick={() => setPage(page + 1)} variant="outline">
+              <Button
+                disabled={page * 10 >= total}
+                onClick={() => setPage(page + 1)}
+                variant="outline"
+              >
                 Next
               </Button>
             </div>

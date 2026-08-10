@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import { Button } from '@celebs/shared-ui/components/button';
-import {
-  ChevronDown,
-  ChevronUp,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -57,15 +52,9 @@ const CollapsibleFormSection = ({
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl text-gray-900 dark:text-gray-100">
                     {title}
-                    {isRequired && (
-                      <span className="text-red-500 text-sm">*</span>
-                    )}
-                    {isValid && (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    )}
-                    {!isValid && isRequired && (
-                      <AlertCircle className="h-5 w-5 text-red-500" />
-                    )}
+                    {isRequired && <span className="text-red-500 text-sm">*</span>}
+                    {isValid && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                    {!isValid && isRequired && <AlertCircle className="h-5 w-5 text-red-500" />}
                   </CardTitle>
                   {description && (
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
@@ -78,11 +67,7 @@ const CollapsibleFormSection = ({
                 type="button"
                 className="rounded-full text-gray-500 dark:text-gray-300"
               >
-                {isOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
+                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </div>
           </CardHeader>
@@ -98,4 +83,3 @@ const CollapsibleFormSection = ({
 };
 
 export default CollapsibleFormSection;
-

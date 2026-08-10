@@ -51,12 +51,7 @@ const ColorSwatchChip: React.FC<ColorSwatchChipProps> = ({ item, isSelected, onS
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <View
-          style={[
-            styles.colorDot,
-            { backgroundColor: hexColor },
-          ]}
-        />
+        <View style={[styles.colorDot, { backgroundColor: hexColor }]} />
       )}
       <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
         {item.name}

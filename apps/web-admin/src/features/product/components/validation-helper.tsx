@@ -17,12 +17,7 @@ const ValidationHelper = ({
   isValid = false,
   showSuccess = true,
 }: ValidationHelperProps) => {
-  if (
-    errors.length === 0 &&
-    warnings.length === 0 &&
-    suggestions.length === 0 &&
-    !showSuccess
-  ) {
+  if (errors.length === 0 && warnings.length === 0 && suggestions.length === 0 && !showSuccess) {
     return null;
   }
 
@@ -48,27 +43,17 @@ const ValidationHelper = ({
 
       {/* Warnings */}
       {warnings.map((warning, index) => (
-        <Alert
-          key={`warning-${index}`}
-          className="border-yellow-200 bg-yellow-50"
-        >
+        <Alert key={`warning-${index}`} className="border-yellow-200 bg-yellow-50">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-700">
-            {warning}
-          </AlertDescription>
+          <AlertDescription className="text-yellow-700">{warning}</AlertDescription>
         </Alert>
       ))}
 
       {/* Suggestions */}
       {suggestions.map((suggestion, index) => (
-        <Alert
-          key={`suggestion-${index}`}
-          className="border-blue-200 bg-blue-50"
-        >
+        <Alert key={`suggestion-${index}`} className="border-blue-200 bg-blue-50">
           <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
-            {suggestion}
-          </AlertDescription>
+          <AlertDescription className="text-blue-700">{suggestion}</AlertDescription>
         </Alert>
       ))}
     </div>
@@ -76,4 +61,3 @@ const ValidationHelper = ({
 };
 
 export default ValidationHelper;
-

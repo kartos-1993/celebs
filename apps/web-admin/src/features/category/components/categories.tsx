@@ -59,7 +59,7 @@ export const Categories: React.FC = () => {
   const handleSaveCategory = async (formData: CategoryFormData) => {
     try {
       if (uiState.editingCategory) {
-        await updateCategory(uiState.editingCategory._id, formData);
+        await updateCategory(uiState.editingCategory.id, formData);
       } else {
         await createCategory({
           ...formData,
@@ -74,12 +74,8 @@ export const Categories: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (uiState.categoryToDelete) {
       try {
-        const targetCategory = categories.find(
-          (c) => c._id === uiState.categoryToDelete,
-        );
-        const hasChildren = categories.some(
-          (c) => c.parent === uiState.categoryToDelete,
-        );
+        const targetCategory = categories.find((c) => c.id === uiState.categoryToDelete);
+        const hasChildren = categories.some((c) => c.parent === uiState.categoryToDelete);
 
         toast({
           title: 'Deleting Category',
@@ -106,14 +102,10 @@ export const Categories: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-fashion-700">Categories</h1>
-          <p className="text-gray-500 mt-1">
-            Manage product categories and attributes
-          </p>
+          <p className="text-gray-500 mt-1">Manage product categories and attributes</p>
         </div>
 
-        <Button
-          onClick={actions.openAddCategoryForm}
-        >
+        <Button onClick={actions.openAddCategoryForm}>
           <FolderPlus className="mr-2 h-4 w-4" />
           Add Category
         </Button>
@@ -163,18 +155,11 @@ export const Categories: React.FC = () => {
         category={
           uiState.categoryToDelete
             ? {
-                name:
-                  categories.find((c) => c._id === uiState.categoryToDelete)
-                    ?.name || '',
-                hasChildren: categories.some(
-                  (c) => c.parent === uiState.categoryToDelete,
-                ),
-                childCount: categories.filter(
-                  (c) => c.parent === uiState.categoryToDelete,
-                ).length,
+                name: categories.find((c) => c.id === uiState.categoryToDelete)?.name || '',
+                hasChildren: categories.some((c) => c.parent === uiState.categoryToDelete),
+                childCount: categories.filter((c) => c.parent === uiState.categoryToDelete).length,
                 attributes:
-                  categories.find((c) => c._id === uiState.categoryToDelete)
-                    ?.attributes || [],
+                  categories.find((c) => c.id === uiState.categoryToDelete)?.attributes || [],
               }
             : undefined
         }
@@ -184,4 +169,3 @@ export const Categories: React.FC = () => {
 };
 
 export default Categories;
-

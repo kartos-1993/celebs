@@ -1,8 +1,12 @@
 import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
-import { AddressInput, CheckoutInput, COD_MAX_LIMIT, UpdateAddressInput } from '@celebs/shared-types';
+import {
+  AddressInput,
+  CheckoutInput,
+  COD_MAX_LIMIT,
+  UpdateAddressInput,
+} from '@celebs/shared-types';
+import prisma, { Prisma } from '@/config/db.prisma';
 import { orderRepository } from './order.repository';
-import { Prisma } from '@prisma/client';
-import { ProductModel } from '@/db/models/product.model';
 import { IPaymentGateway } from './adapters/payment-gateway.interface';
 import { MockPaymentAdapter } from './adapters/mock-payment.adapter';
 import { StripePaymentAdapter } from './adapters/stripe-payment.adapter';
@@ -79,7 +83,11 @@ export class OrderService {
     }
 
     if (!targetAddressId) {
-      throw new AppError('Shipping address or addressId is required', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Shipping address or addressId is required',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     // Check Idempotency Key
@@ -93,7 +101,11 @@ export class OrderService {
     const address = await orderRepository.findAddressById(targetAddressId, userId);
 
     if (!address) {
-      throw new AppError('Selected shipping address not found', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Selected shipping address not found',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     // Fetch Cart
@@ -103,7 +115,7 @@ export class OrderService {
       throw new AppError('Your cart is empty', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
-    // Resolve Product MongoDB Info and Calculate Totals
+    // Resolve Product Info and Calculate Totals
     let subtotalDecimal = new Prisma.Decimal(0);
     const itemDetails: Array<{
       inventoryId: string;
@@ -125,23 +137,34 @@ export class OrderService {
         throw new AppError(
           `Insufficient stock for item (${inv.colorVariantName} - ${inv.size}). Available: ${availableQty}, Requested: ${item.quantity}`,
           HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST
+          ErrorCode.INVALID_REQUEST,
         );
       }
 
-      const product = await ProductModel.findById(inv.productId).lean();
+      const product = await prisma.product.findUnique({ where: { id: inv.productId } });
       if (!product) {
-        throw new AppError(`Product details not found for inventory item`, HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+        throw new AppError(
+          `Product details not found for inventory item`,
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.RESOURCE_NOT_FOUND,
+        );
       }
 
-      const rawPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.price;
+      const rawPrice =
+        product.discountedPrice && Number(product.discountedPrice) > 0
+          ? Number(product.discountedPrice)
+          : Number(product.price);
       const unitPriceDecimal = new Prisma.Decimal(rawPrice);
       const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
       subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);
 
       const vendorId = product.vendorId ? String(product.vendorId) : '';
       if (!vendorId) {
-        throw new AppError(`Vendor not assigned for product: ${product.name}`, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+        throw new AppError(
+          `Vendor not assigned for product: ${product.name}`,
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
       }
 
       itemDetails.push({
@@ -158,14 +181,16 @@ export class OrderService {
     }
 
     // Enforce COD Maximum Limit with Decimal Precision
-    const shippingFeeDecimal = subtotalDecimal.gt(3000) ? new Prisma.Decimal(0) : new Prisma.Decimal(150); // Free shipping over Rs. 3000
+    const shippingFeeDecimal = subtotalDecimal.gt(3000)
+      ? new Prisma.Decimal(0)
+      : new Prisma.Decimal(150); // Free shipping over Rs. 3000
     const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
 
     if (paymentMethod === 'COD' && totalAmountDecimal.gt(COD_MAX_LIMIT)) {
       throw new AppError(
         `Cash on Delivery (COD) is limited to maximum NPR ${COD_MAX_LIMIT}. Please select Stripe or local online payment for total NPR ${totalAmountDecimal.toFixed(2)}.`,
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST
+        ErrorCode.INVALID_REQUEST,
       );
     }
 
@@ -233,10 +258,15 @@ export class OrderService {
     let paymentResult = null;
     if (!isCOD) {
       const adapter = this.getPaymentGateway(paymentMethod);
-      paymentResult = await adapter.createPaymentIntent(order.id, totalAmountDecimal.toNumber(), 'NPR', {
-        orderNumber: order.orderNumber,
-        userId,
-      });
+      paymentResult = await adapter.createPaymentIntent(
+        order.id,
+        totalAmountDecimal.toNumber(),
+        'NPR',
+        {
+          orderNumber: order.orderNumber,
+          userId,
+        },
+      );
 
       await orderRepository.createPayment({
         orderId: order.id,
@@ -290,7 +320,11 @@ export class OrderService {
     }
 
     if (['SHIPPED', 'DELIVERED', 'CANCELLED'].includes(order.status)) {
-      throw new AppError(`Cannot cancel order in status ${order.status}`, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        `Cannot cancel order in status ${order.status}`,
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     return orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
@@ -334,12 +368,16 @@ export class OrderService {
     orderItemId: string,
     itemStatus: 'PENDING' | 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED',
     trackingNumber?: string,
-    courierPartner?: string
+    courierPartner?: string,
   ) {
     const item = await orderRepository.findVendorOrderItemById(orderItemId, vendorId);
 
     if (!item) {
-      throw new AppError('Order item not found for vendor', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      throw new AppError(
+        'Order item not found for vendor',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
     return orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
@@ -368,8 +406,12 @@ export class OrderService {
         where: { orderId: item.orderId },
       });
 
-      const allPacked = allItems.every((i) => ['PACKED', 'HANDED_OVER', 'DELIVERED'].includes(i.itemStatus));
-      const allHandedOver = allItems.every((i) => ['HANDED_OVER', 'DELIVERED'].includes(i.itemStatus));
+      const allPacked = allItems.every((i) =>
+        ['PACKED', 'HANDED_OVER', 'DELIVERED'].includes(i.itemStatus),
+      );
+      const allHandedOver = allItems.every((i) =>
+        ['HANDED_OVER', 'DELIVERED'].includes(i.itemStatus),
+      );
       const allDelivered = allItems.every((i) => i.itemStatus === 'DELIVERED');
 
       let newOrderStatus = item.order.status;

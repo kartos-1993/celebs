@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  View,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { StyleSheet, View, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { X, Sparkles, ShoppingBag, Tag } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ComboBundleData } from './ComboBundleShowcase';
@@ -32,7 +25,8 @@ const FALLBACK_ITEMS: RenderableItem[] = [
     id: 'item_thermal_top',
     name: 'Heavy Fleece Thermal Top',
     originalPrice: 2499,
-    image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&auto=format&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&auto=format&fit=crop',
     sizes: ['M', 'L', 'XL'],
     colors: ['Black', 'Grey'],
   },
@@ -48,18 +42,14 @@ const FALLBACK_ITEMS: RenderableItem[] = [
     id: 'item_thermal_bottom',
     name: 'Insulated Base Layer Pant',
     originalPrice: 1999,
-    image: 'https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&auto=format&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&auto=format&fit=crop',
     sizes: ['M', 'L', 'XL'],
     colors: ['Black'],
   },
 ];
 
-export function ComboBundleModal({
-  visible,
-  combo,
-  onClose,
-  onAddToCart,
-}: ComboBundleModalProps) {
+export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: ComboBundleModalProps) {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [selectedColors, setSelectedColors] = useState<Record<string, string>>({});
 
@@ -70,17 +60,19 @@ export function ComboBundleModal({
         const mainImg =
           prod?.mainImages && prod.mainImages.length > 0
             ? prod.mainImages[0]
-            : prod?.colorVariants && prod.colorVariants.length > 0 && prod.colorVariants[0]?.images?.length
-            ? prod.colorVariants[0].images[0]
-            : FALLBACK_ITEMS[idx % FALLBACK_ITEMS.length].image;
+            : prod?.colorVariants &&
+                prod.colorVariants.length > 0 &&
+                prod.colorVariants[0]?.images?.length
+              ? prod.colorVariants[0].images[0]
+              : FALLBACK_ITEMS[idx % FALLBACK_ITEMS.length].image;
 
         const sizes = prod?.colorVariants
           ? Array.from(
               new Set(
                 prod.colorVariants.flatMap(
-                  (cv) => cv.stocks?.map((s) => s.size).filter(Boolean) || []
-                )
-              )
+                  (cv) => cv.stocks?.map((s) => s.size).filter(Boolean) || [],
+                ),
+              ),
             )
           : [];
 
@@ -143,12 +135,7 @@ export function ComboBundleModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           {/* Modal Header */}
@@ -203,7 +190,9 @@ export function ComboBundleModal({
                           style={[styles.chip, isSelected && styles.chipSelected]}
                           onPress={() => handleSelectSize(item.id, s)}
                         >
-                          <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                          <ThemedText
+                            style={[styles.chipText, isSelected && styles.chipTextSelected]}
+                          >
                             {s}
                           </ThemedText>
                         </TouchableOpacity>
@@ -225,7 +214,9 @@ export function ComboBundleModal({
                             style={[styles.chip, isSelected && styles.chipSelected]}
                             onPress={() => handleSelectColor(item.id, c)}
                           >
-                            <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                            <ThemedText
+                              style={[styles.chipText, isSelected && styles.chipTextSelected]}
+                            >
                               {c}
                             </ThemedText>
                           </TouchableOpacity>
@@ -249,7 +240,11 @@ export function ComboBundleModal({
               </ThemedText>
             </View>
 
-            <TouchableOpacity style={styles.addCartBtn} onPress={handleAddToCart} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={styles.addCartBtn}
+              onPress={handleAddToCart}
+              activeOpacity={0.85}
+            >
               <ShoppingBag size={16} color="#ffffff" />
               <ThemedText style={styles.addCartBtnText}>Add Combo to Cart</ThemedText>
             </TouchableOpacity>

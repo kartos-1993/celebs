@@ -42,9 +42,7 @@ describe('Superadmin Setup API Integration Tests', () => {
   });
 
   it('should successfully create the first SUPERADMIN user with correct secret', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/setup-superadmin')
-      .send(setupPayload);
+    const res = await request(app).post('/api/v1/auth/setup-superadmin').send(setupPayload);
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -62,9 +60,7 @@ describe('Superadmin Setup API Integration Tests', () => {
 
   it('should reject subsequent setup attempts once a SUPERADMIN exists', async () => {
     // First creation
-    await request(app)
-      .post('/api/v1/auth/setup-superadmin')
-      .send(setupPayload);
+    await request(app).post('/api/v1/auth/setup-superadmin').send(setupPayload);
 
     // Second creation attempt
     const res = await request(app)

@@ -1,7 +1,7 @@
 export const verifyEmailTemplate = (
   url: string,
   brandName: string = 'celebs.com.np',
-  brandColor: string = '#2563EB'
+  brandColor: string = '#2563EB',
 ) => ({
   subject: `Confirm your ${brandName} account`,
   text: `Please verify your email address by clicking the following link: ${url}`,

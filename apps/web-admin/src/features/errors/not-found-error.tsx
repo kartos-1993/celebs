@@ -1,8 +1,7 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@celebs/shared-ui/components/button";
+import { Link } from 'react-router-dom';
+import { Button } from '@celebs/shared-ui/components/button';
 
 export default function NotFoundError() {
-  const navigate = useNavigate();
   return (
     <div className="h-svh">
       <div className="m-auto flex h-full w-full flex-col items-center justify-center gap-2">
@@ -13,13 +12,15 @@ export default function NotFoundError() {
           does not exist or might have been removed.
         </p>
         <div className="mt-6 flex gap-4">
-          <Button variant="outline" onClick={() => navigate(-1)}>
+          {/* Go Back uses browser history — cannot be a <Link>, button with onClick is correct here */}
+          <Button variant="outline" onClick={() => window.history.back()}>
             Go Back
           </Button>
-          <Button onClick={() => navigate("/")}>Back to Home</Button>
+          <Button asChild>
+            <Link to="/">Back to Home</Link>
+          </Button>
         </div>
       </div>
     </div>
   );
 }
-

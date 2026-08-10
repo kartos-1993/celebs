@@ -41,15 +41,18 @@ export const FlyToCartProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPulseTrigger((prev) => prev + 1);
   }, []);
 
-  const startFlyAnimation = useCallback((item: Omit<FlyToCartItem, 'id'>) => {
-    const id = `${Date.now()}-${Math.random()}`;
-    setActiveAnimation({
-      id,
-      ...item,
-      targetX: item.targetX ?? cartIconCoords.x,
-      targetY: item.targetY ?? cartIconCoords.y,
-    });
-  }, [cartIconCoords]);
+  const startFlyAnimation = useCallback(
+    (item: Omit<FlyToCartItem, 'id'>) => {
+      const id = `${Date.now()}-${Math.random()}`;
+      setActiveAnimation({
+        id,
+        ...item,
+        targetX: item.targetX ?? cartIconCoords.x,
+        targetY: item.targetY ?? cartIconCoords.y,
+      });
+    },
+    [cartIconCoords],
+  );
 
   const onAnimationComplete = useCallback(() => {
     setActiveAnimation(null);

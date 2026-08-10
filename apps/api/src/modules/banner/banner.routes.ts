@@ -17,7 +17,7 @@ bannerRouter.get(
   '/all',
   authenticateJWT,
   requirePermissions(Permission.PLATFORM_MANAGE),
-  asyncHandler(controller.getAllBanners)
+  asyncHandler(controller.getAllBanners),
 );
 
 // PUT /api/v1/banners (Superadmin only)
@@ -25,7 +25,7 @@ bannerRouter.put(
   '/',
   authenticateJWT,
   requirePermissions(Permission.PLATFORM_MANAGE),
-  asyncHandler(controller.updateBanners)
+  asyncHandler(controller.updateBanners),
 );
 
 export default bannerRouter;

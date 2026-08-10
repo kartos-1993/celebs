@@ -5,7 +5,7 @@ import { ApiResponse, ApiError } from './types';
  * Safely unwrap an Axios response wrapping an ApiResponse<T> payload.
  */
 export async function handleApiResponse<T>(
-  requestPromise: Promise<AxiosResponse<ApiResponse<T>>>
+  requestPromise: Promise<AxiosResponse<ApiResponse<T>>>,
 ): Promise<T> {
   try {
     const response = await requestPromise;

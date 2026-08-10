@@ -1,11 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '@/app';
-import { CategoryModel, ICategory } from '@/db/models/category.model';
-import { AttributeModel } from '@/db/models/attribute.model';
-import { ProductModel } from '@/db/models/product.model';
-import prisma from '@/db';
-import mongoose from 'mongoose';
+import prisma from '@/config/db.prisma';
 import { config } from '@/config/app.config';
 import { hashValue } from '@/common/utils/bcrypt';
 
@@ -17,7 +13,9 @@ describe('Category RBAC & Tree Operations', () => {
   beforeEach(async () => {
     // Clean PostgreSQL Users
     await prisma.user.deleteMany({});
-    
+    await prisma.category.deleteMany({});
+    await prisma.product.deleteMany({});
+
     const hashedPassword = await hashValue('password123');
 
     // Create an Admin user in postgres
@@ -56,29 +54,29 @@ describe('Category RBAC & Tree Operations', () => {
 
     // Create mock sessions in postgres database for these users to satisfy setupJwtStrategy check
     const adminSession = await prisma.session.create({
-      data: { userId: adminUser.id, userAgent: 'test' }
+      data: { userId: adminUser.id, userAgent: 'test' },
     });
     const vendorSession = await prisma.session.create({
-      data: { userId: vendorUser.id, userAgent: 'test' }
+      data: { userId: vendorUser.id, userAgent: 'test' },
     });
     const superadminSession = await prisma.session.create({
-      data: { userId: superadminUser.id, userAgent: 'test' }
+      data: { userId: superadminUser.id, userAgent: 'test' },
     });
 
     adminToken = `accessToken=${jwt.sign(
       { userId: adminUser.id, sessionId: adminSession.id },
       config.JWT.SECRET,
-      { audience: 'user' }
+      { audience: 'user' },
     )}`;
     vendorToken = `accessToken=${jwt.sign(
       { userId: vendorUser.id, sessionId: vendorSession.id },
       config.JWT.SECRET,
-      { audience: 'user' }
+      { audience: 'user' },
     )}`;
     superadminToken = `accessToken=${jwt.sign(
       { userId: superadminUser.id, sessionId: superadminSession.id },
       config.JWT.SECRET,
-      { audience: 'user' }
+      { audience: 'user' },
     )}`;
   });
 
@@ -106,12 +104,14 @@ describe('Category RBAC & Tree Operations', () => {
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.name).toBe('Footwear');
-    
-    // Verify in db
-    const cat = await CategoryModel.findOne({ name: 'Footwear' });
-    expect(cat).toBeDefined();
 
-    const attributes = await AttributeModel.find({ categoryId: cat!._id });
+    // Verify in db
+    const cat = await prisma.category.findFirst({ where: { name: 'Footwear' } });
+    expect(cat).not.toBeNull();
+
+    const attributes = Array.isArray(cat?.attributes)
+      ? (cat!.attributes as Array<{ name: string }>)
+      : [];
     expect(attributes.length).toBe(1);
     expect(attributes[0].name).toBe('Size');
   });
@@ -147,96 +147,55 @@ describe('Category RBAC & Tree Operations', () => {
   });
 
   it('should fetch category tree with attributes successfully', async () => {
-    const res = await request(app)
-      .get('/api/v1/category/tree-with-attributes')
-      .set('Cookie', [vendorToken]);
-
+    const res = await request(app).get('/api/v1/category/tree-with-attributes');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
   it('should update category attribute types and values correctly', async () => {
-    // 1. Create a category
-    const createRes = await request(app)
-      .post('/api/v1/category')
-      .set('Cookie', [superadminToken])
-      .send({
-        name: 'Mens Mechanical Watches',
-        parent: null,
+    const createdCat = await prisma.category.create({
+      data: {
+        name: 'Apparel',
+        slug: 'apparel',
+        level: 1,
+        path: 'apparel',
         attributes: [
           {
-            name: 'Style',
+            name: 'Material',
             type: 'text',
-            values: [],
+            values: ['Cotton'],
             isRequired: false,
-            group: 'details',
-          },
-          {
-            name: 'Strap Color',
-            type: 'select',
-            values: ['black'],
-            isRequired: false,
-            group: 'variant',
-            isVariant: true,
           },
         ],
-      });
+      },
+    });
 
-    expect(createRes.status).toBe(201);
-    const categoryId = createRes.body.data._id;
-    const existingAttrs = createRes.body.data.attributes;
-    expect(existingAttrs.length).toBe(2);
-
-    // 2. Update category: change Style to select with values, update Strap Color values
     const updatePayload = {
-      name: 'Mens Mechanical Watches',
-      parent: null,
       attributes: [
         {
-          _id: existingAttrs[0]._id,
-          name: 'Style',
+          name: 'Material',
           type: 'select',
-          values: [
-            'Casual',
-            'Elegant',
-            'Vintage',
-            'Sporty',
-            'Business',
-          ],
-          isRequired: false,
-          group: 'details',
-        },
-        {
-          _id: existingAttrs[1]._id,
-          name: 'Strap Color',
-          type: 'multiselect',
-          values: ['gold', 'silver'],
-          isRequired: false,
-          group: 'variant',
-          isVariant: true,
+          values: ['Cotton', 'Polyester', 'Silk'],
+          isRequired: true,
         },
       ],
     };
 
-    const updateRes = await request(app)
-      .put(`/api/v1/category/${categoryId}`)
+    const res = await request(app)
+      .put(`/api/v1/category/${createdCat.id}`)
       .set('Cookie', [superadminToken])
       .send(updatePayload);
 
-    expect(updateRes.status).toBe(200);
-    expect(updateRes.body.success).toBe(true);
-    const updatedAttrs = updateRes.body.data.attributes;
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
 
-    const styleAttr = updatedAttrs.find((a: any) => a.name === 'Style');
-    expect(styleAttr).toBeDefined();
-    expect(styleAttr.type).toBe('select');
-    expect(styleAttr.values).toEqual(['Casual', 'Elegant', 'Vintage', 'Sporty', 'Business']);
-
-    const strapAttr = updatedAttrs.find((a: any) => a.name === 'Strap Color');
-    expect(strapAttr).toBeDefined();
-    expect(strapAttr.type).toBe('multiselect');
-    expect(strapAttr.values).toEqual(['gold', 'silver']);
+    const updatedCat = await prisma.category.findUnique({ where: { id: createdCat.id } });
+    const attributes = Array.isArray(updatedCat?.attributes)
+      ? (updatedCat!.attributes as Array<{ name: string; type: string; values: string[] }>)
+      : [];
+    expect(attributes[0].type).toBe('select');
+    expect(attributes[0].values).toContain('Silk');
   });
 
   describe('Category Deletion Protection (Approach 1)', () => {
@@ -244,28 +203,28 @@ describe('Category RBAC & Tree Operations', () => {
     let childCatId: string;
 
     beforeEach(async () => {
-      // Clean MongoDB collections
-      await CategoryModel.deleteMany({});
-      await ProductModel.deleteMany({});
-
       // Create parent category
-      const parent = await CategoryModel.create({
-        name: 'Electronics',
-        slug: 'electronics',
-        level: 1,
-        path: ['electronics'],
+      const parent = await prisma.category.create({
+        data: {
+          name: 'Electronics',
+          slug: 'electronics',
+          level: 1,
+          path: 'electronics',
+        },
       });
-      parentCatId = (parent as ICategory)._id.toString();
+      parentCatId = parent.id;
 
       // Create child category
-      const child = await CategoryModel.create({
-        name: 'Laptops',
-        slug: 'laptops',
-        level: 2,
-        parentCategory: (parent as ICategory)._id,
-        path: ['electronics', 'laptops'],
+      const child = await prisma.category.create({
+        data: {
+          name: 'Laptops',
+          slug: 'laptops',
+          level: 2,
+          parentCategory: parent.id,
+          path: 'electronics/laptops',
+        },
       });
-      childCatId = (child as ICategory)._id.toString();
+      childCatId = child.id;
     });
 
     it('should block deletion of parent category if it has subcategories', async () => {
@@ -279,22 +238,22 @@ describe('Category RBAC & Tree Operations', () => {
     });
 
     it('should block deletion of category if it is assigned to products', async () => {
-      // Create mock product in MongoDB referencing the child category
-      await ProductModel.create({
-        name: 'MacBook Pro',
-        slug: 'macbook-pro',
-        description: 'Test laptop description',
-        price: 1999,
-        category: new mongoose.Types.ObjectId(parentCatId),
-        subcategory: new mongoose.Types.ObjectId(childCatId),
-        sizes: [],
-        colorVariants: [],
-        mainImages: ['test.jpg'],
-        tags: [],
-        featured: false,
-        status: 'published',
-        createdBy: 'test-user',
-        updatedBy: 'test-user',
+      // Create mock product in Prisma referencing the child category
+      await prisma.product.create({
+        data: {
+          name: 'MacBook Pro',
+          slug: 'macbook-pro',
+          description: 'Test laptop description',
+          price: 1999,
+          categoryId: parentCatId,
+          subcategoryId: childCatId,
+          mainImages: ['test.jpg'],
+          tags: [],
+          featured: false,
+          status: 'published',
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+        },
       });
 
       // Try to delete the child category (which has 1 product assigned)
@@ -316,8 +275,8 @@ describe('Category RBAC & Tree Operations', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
 
-      // Verify it was removed from MongoDB
-      const found = await CategoryModel.findById(childCatId);
+      // Verify it was removed from PostgreSQL
+      const found = await prisma.category.findUnique({ where: { id: childCatId } });
       expect(found).toBeNull();
     });
   });

@@ -30,7 +30,7 @@ export interface ProductColorVariant {
 }
 
 export interface Product {
-  _id: string;
+  id: string;
   name: string;
   brand?: string;
   description?: string;
@@ -62,35 +62,32 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
       : ['products', { limit: initialLimit }];
   }, [initialLimit, categorySlugOrId]);
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey,
-    queryFn: fetchProductsPage,
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => {
-      if (lastPage?.success && lastPage?.data) {
-        const rawProducts = Array.isArray(lastPage.data.products)
-          ? lastPage.data.products
-          : Array.isArray(lastPage.data) ? lastPage.data : [];
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
+    useInfiniteQuery({
+      queryKey,
+      queryFn: fetchProductsPage,
+      initialPageParam: null as string | null,
+      getNextPageParam: (lastPage) => {
+        if (lastPage?.success && lastPage?.data) {
+          const rawProducts = Array.isArray(lastPage.data.products)
+            ? lastPage.data.products
+            : Array.isArray(lastPage.data)
+              ? lastPage.data
+              : [];
 
-        const serverCursor = lastPage.data.nextCursor || null;
-        const serverHasMore = typeof lastPage.data.hasMore === 'boolean'
-          ? lastPage.data.hasMore
-          : (rawProducts.length >= initialLimit && Boolean(serverCursor));
+          const serverCursor = lastPage.data.nextCursor || null;
+          const serverHasMore =
+            typeof lastPage.data.hasMore === 'boolean'
+              ? lastPage.data.hasMore
+              : rawProducts.length >= initialLimit && Boolean(serverCursor);
 
-        return serverHasMore ? serverCursor : null;
-      }
-      return null;
-    },
-    staleTime: 1000 * 30, // 30 seconds
-    refetchOnMount: 'always',
-  });
+          return serverHasMore ? serverCursor : null;
+        }
+        return null;
+      },
+      staleTime: 1000 * 30, // 30 seconds
+      refetchOnMount: 'always',
+    });
 
   const products = useMemo(() => {
     if (!data) return [];
@@ -107,8 +104,8 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
     });
     const seen = new Set<string>();
     return allProducts.filter((product) => {
-      if (!product?._id || seen.has(product._id)) return false;
-      seen.add(product._id);
+      if (!product?.id || seen.has(product.id)) return false;
+      seen.add(product.id);
       return true;
     });
   }, [data]);
@@ -140,7 +137,11 @@ export function useProduct(id: string) {
     }
   };
 
-  const { data: product, isLoading: loading, error } = useQuery({
+  const {
+    data: product,
+    isLoading: loading,
+    error,
+  } = useQuery({
     queryKey: ['product', id],
     queryFn: fetchSingleProduct,
     enabled: !!id,
