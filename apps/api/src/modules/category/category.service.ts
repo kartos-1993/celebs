@@ -7,7 +7,10 @@ import type {
   UpdateCategoryType,
 } from '@celebs/shared-types';
 
-import { CategoryRepository, categoryRepository as defaultCategoryRepo } from './category.repository';
+import {
+  CategoryRepository,
+  categoryRepository as defaultCategoryRepo,
+} from './category.repository';
 
 export type CategoryAttribute = CategoryAttributeType & {
   id?: string;
@@ -62,10 +65,7 @@ export class CategoryService {
     const categoryDoc = await this.createCategoryDocument(categoryData);
 
     if (this.hasAttributes(categoryData)) {
-      await this.updateCategoryAttributes(
-        categoryDoc.id,
-        categoryData.attributes!,
-      );
+      await this.updateCategoryAttributes(categoryDoc.id, categoryData.attributes!);
     }
 
     return await this.categoryRepository.findById(categoryDoc.id);
@@ -111,10 +111,7 @@ export class CategoryService {
     return Array.isArray(category?.attributes) ? category.attributes : [];
   }
 
-  async updateCategory(
-    categoryId: string,
-    updateData: CategoryUpdateInput,
-  ): Promise<any> {
+  async updateCategory(categoryId: string, updateData: CategoryUpdateInput): Promise<any> {
     this.validateObjectId(categoryId);
 
     const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
@@ -158,11 +155,7 @@ export class CategoryService {
 
     const category = await this.getCategoryById(categoryId);
     if (!category) {
-      throw new AppError(
-        'Category not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.CATEGORY_NOT_FOUND,
-      );
+      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
     const childCategoriesCount = await this.categoryRepository.countDocuments({
@@ -212,10 +205,13 @@ export class CategoryService {
     categories.forEach((cat) => {
       const idStr = String(cat.id);
       const categoryNode = categoryMap[idStr];
-      const parentId = cat.parentCategory || cat.parent;
+      if (!categoryNode) return;
 
-      if (parentId && categoryMap[String(parentId)]) {
-        categoryMap[String(parentId)].children.push(categoryNode);
+      const parentId = cat.parentCategory || cat.parent;
+      const parentNode = parentId ? categoryMap[String(parentId)] : undefined;
+
+      if (parentNode) {
+        parentNode.children.push(categoryNode);
       } else {
         rootCategories.push(categoryNode);
       }
@@ -226,22 +222,14 @@ export class CategoryService {
 
   private validateObjectId(id: string): void {
     if (!id || typeof id !== 'string' || !id.trim()) {
-      throw new AppError(
-        'Invalid category ID',
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
+      throw new AppError('Invalid category ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
   }
 
   private async getExistingCategoryOrThrow(categoryId: string) {
     const existingCategory = await this.categoryRepository.findById(categoryId);
     if (!existingCategory) {
-      throw new AppError(
-        'Category not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.CATEGORY_NOT_FOUND,
-      );
+      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
     return existingCategory;
   }
@@ -287,8 +275,8 @@ export class CategoryService {
       const parentPathParts = Array.isArray(parentCategory.path)
         ? parentCategory.path
         : typeof parentCategory.path === 'string' && parentCategory.path.length > 0
-        ? parentCategory.path.split('/')
-        : [];
+          ? parentCategory.path.split('/')
+          : [];
       updateData.path = [...parentPathParts, existingCategory.slug];
     } else {
       updateData.level = 1;
@@ -301,7 +289,8 @@ export class CategoryService {
     categoryId: string,
     existingCategory: any,
   ): Promise<void> {
-    const parentVal = updateData.parent !== undefined ? updateData.parent : existingCategory.parentCategory;
+    const parentVal =
+      updateData.parent !== undefined ? updateData.parent : existingCategory.parentCategory;
 
     const duplicateCategory = await this.categoryRepository.findOne({
       name: updateData.name,
@@ -339,10 +328,7 @@ export class CategoryService {
     });
   }
 
-  private async validateCategoryUniqueness(
-    name: string,
-    parent: string | null,
-  ): Promise<void> {
+  private async validateCategoryUniqueness(name: string, parent: string | null): Promise<void> {
     const existingCategory = await this.categoryRepository.findOne({
       name,
       parentCategory: parent ? String(parent) : null,
@@ -357,9 +343,7 @@ export class CategoryService {
     }
   }
 
-  private async createCategoryDocument(
-    categoryData: CategoryInput,
-  ): Promise<any> {
+  private async createCategoryDocument(categoryData: CategoryInput): Promise<any> {
     return await this.categoryRepository.create({
       name: categoryData.name,
       slug: categoryData.slug,
