@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { ComboDiscountType } from '@prisma/client';
 import { CreateComboType } from '@celebs/shared-types';
 import { comboRepository, ComboRepository } from './combo.repository';
@@ -16,7 +15,7 @@ export class ComboService {
     );
 
     const validProductIds = allProductIds.filter(
-      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id),
+      (id) => typeof id === 'string' && id.trim().length > 0,
     );
 
     if (validProductIds.length === 0) {

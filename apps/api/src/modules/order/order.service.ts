@@ -115,7 +115,7 @@ export class OrderService {
       throw new AppError('Your cart is empty', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
 
-    // Resolve Product MongoDB Info and Calculate Totals
+    // Resolve Product Info and Calculate Totals
     let subtotalDecimal = new Prisma.Decimal(0);
     const itemDetails: Array<{
       inventoryId: string;
