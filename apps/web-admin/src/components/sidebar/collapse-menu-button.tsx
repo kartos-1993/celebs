@@ -1,28 +1,14 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ChevronDown, LucideIcon } from 'lucide-react';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@celebs/shared-ui/components/button';
-import { DropdownMenuArrow } from '@radix-ui/react-dropdown-menu';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from '@celebs/shared-ui/components/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-} from '@celebs/shared-ui/components/dropdown-menu';
 
 import { Link, useLocation } from 'react-router-dom';
 
@@ -49,111 +35,119 @@ export function CollapseMenuButton({
 }: CollapseMenuButtonProps) {
   const location = useLocation();
   const pathname = location.pathname;
+  const isCollapsed = isOpen === false;
   const isSubmenuActive = submenus.some((submenu) =>
     submenu.active === undefined ? submenu.href === pathname : submenu.active,
   );
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(isSubmenuActive);
+  const [isExpanded, setIsExpanded] = useState<boolean>(isSubmenuActive);
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
+
+  const openFlyout = useCallback(() => setFlyoutOpen(true), []);
+  const closeFlyout = useCallback(() => setFlyoutOpen(false), []);
 
   // ── Expanded sidebar: collapsible tree ──────────────────────────────────
-  return isOpen ? (
-    <Collapsible open={isCollapsed} onOpenChange={setIsCollapsed} className="w-full">
-      <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full" asChild>
-        <Button
-          variant={isSubmenuActive ? 'secondary' : 'ghost'}
-          className="w-full justify-start h-10 px-3"
-        >
-          <div className="w-full items-center flex justify-between">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center shrink-0">
-                <Icon size={18} />
-              </span>
-              <p
-                className={cn(
-                  'max-w-[150px] truncate text-sm font-medium py-0.5',
-                  isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
-                )}
-              >
-                {label}
-              </p>
-            </div>
-            <div
-              className={cn(
-                'flex items-center justify-center shrink-0 ml-2',
-                isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
-              )}
-            >
-              <ChevronDown size={16} className="transition-transform duration-200" />
-            </div>
-          </div>
-        </Button>
-      </CollapsibleTrigger>
-
-      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-        {submenus.map(({ href, label, active }, index) => (
+  if (!isCollapsed) {
+    return (
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
+        <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full" asChild>
           <Button
-            key={index}
-            variant={(active === undefined && pathname === href) || active ? 'secondary' : 'ghost'}
-            className="w-full justify-start h-8 mb-1 pl-9 pr-3"
-            asChild
+            variant={isSubmenuActive ? 'secondary' : 'ghost'}
+            className="w-full justify-start h-10 px-3"
           >
-            <Link to={href} className="flex items-center w-full">
-              <p
-                className={cn(
-                  'max-w-[170px] truncate text-sm font-light py-0.5',
-                  isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
-                )}
-              >
-                {label}
-              </p>
-            </Link>
-          </Button>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
-  ) : (
-    // ── Collapsed sidebar: dropdown flyout with submenu items ─────────────
-    <DropdownMenu>
-      <TooltipProvider disableHoverableContent>
-        <Tooltip delayDuration={100}>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant={isSubmenuActive ? 'secondary' : 'ghost'}
-                className="w-full justify-center h-10 mb-1 px-0"
-              >
-                <span className="flex items-center justify-center">
+            <div className="w-full items-center flex justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center shrink-0">
                   <Icon size={18} />
                 </span>
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          {/* Only show simple tooltip when no submenus visible */}
-          <TooltipContent side="right" align="start" alignOffset={2}>
-            {label}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+                <p className="max-w-[150px] truncate text-sm font-medium py-0.5">
+                  {label}
+                </p>
+              </div>
+              <div className="flex items-center justify-center shrink-0 ml-2">
+                <ChevronDown size={16} className="transition-transform duration-200" />
+              </div>
+            </div>
+          </Button>
+        </CollapsibleTrigger>
 
-      <DropdownMenuContent side="right" sideOffset={20} align="start" className="min-w-[180px]">
-        <DropdownMenuLabel className="max-w-[190px] truncate text-sm font-medium py-1">
-          {label}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {submenus.map(({ href, label, active }, index) => (
-          <DropdownMenuItem key={index} asChild>
-            <Link
-              to={href}
-              className={cn(
-                'cursor-pointer w-full',
-                (active === undefined && pathname === href) || active ? 'bg-secondary' : '',
-              )}
+        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+          {submenus.map(({ href, label, active }, index) => (
+            <Button
+              key={index}
+              variant={(active === undefined && pathname === href) || active ? 'secondary' : 'ghost'}
+              className="w-full justify-start h-8 mb-1 pl-9 pr-3"
+              asChild
             >
-              <p className="max-w-[180px] truncate text-sm font-light py-0.5">{label}</p>
-            </Link>
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuArrow className="fill-border" />
-      </DropdownMenuContent>
-    </DropdownMenu>
+              <Link to={href} className="flex items-center w-full">
+                <p className="max-w-[170px] truncate text-sm font-light py-0.5">
+                  {label}
+                </p>
+              </Link>
+            </Button>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
+  // ── Collapsed sidebar: pure hover flyout (no click toggle) ───────────────
+  // Use PopoverPrimitive.Anchor so Radix knows where to position content
+  // but the trigger has NO click handler — hover-only via wrapper div.
+  return (
+    <PopoverPrimitive.Root open={flyoutOpen}>
+      <PopoverPrimitive.Anchor asChild>
+        {/* Hover zone: full-width row */}
+        <div
+          className="w-full"
+          onMouseEnter={openFlyout}
+          onMouseLeave={closeFlyout}
+        >
+          <Button
+            variant={isSubmenuActive ? 'secondary' : 'ghost'}
+            className="w-full justify-center h-10 mb-1 px-0 pointer-events-none"
+            tabIndex={-1}
+          >
+            <span className="flex items-center justify-center">
+              <Icon size={18} />
+            </span>
+          </Button>
+        </div>
+      </PopoverPrimitive.Anchor>
+
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Content
+          side="right"
+          sideOffset={8}
+          align="start"
+          onMouseEnter={openFlyout}
+          onMouseLeave={closeFlyout}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-50 w-48 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2 p-0"
+        >
+          {/* Section label */}
+          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b">
+            {label}
+          </div>
+          {/* Submenu links */}
+          <div className="py-1">
+            {submenus.map(({ href, label, active }, index) => (
+              <Link
+                key={index}
+                to={href}
+                onClick={closeFlyout}
+                className={cn(
+                  'flex items-center px-3 py-2 text-sm font-light transition-colors hover:bg-accent hover:text-accent-foreground',
+                  (active === undefined && pathname === href) || active
+                    ? 'bg-secondary text-secondary-foreground'
+                    : 'text-foreground',
+                )}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </PopoverPrimitive.Content>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
   );
 }
