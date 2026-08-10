@@ -21,6 +21,10 @@ export type ProductStockInput = ProductStockType;
 export type ProductColorVariantInput = ProductColorVariantType;
 
 export class ProductService {
+  async getProducts(filters: ProductFilterType) {
+    return this.getAllProducts(filters);
+  }
+
   private formatProductResponse(
     product: Record<string, unknown> | null,
   ): Record<string, unknown> | null {

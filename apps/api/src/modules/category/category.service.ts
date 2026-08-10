@@ -100,6 +100,19 @@ export class CategoryService {
     return await this.categoryRepository.findById(id);
   }
 
+  async getCategoryBySlug(slug: string): Promise<any | null> {
+    return await this.categoryRepository.findOne({ slug });
+  }
+
+  async getCategoryTree(): Promise<CategoryTreeNode[]> {
+    return this.getCategoryTreeWithAttributes();
+  }
+
+  async getStorefrontSchema(slug: string): Promise<any | null> {
+    const cat = await this.getCategoryBySlug(slug);
+    return cat ? { fields: cat.attributes || [] } : null;
+  }
+
   async getCategoryTreeWithAttributes(activeOnly = false): Promise<CategoryTreeNode[]> {
     const categories = await this.fetchCategoriesWithAttributes(activeOnly);
     return this.buildCategoryTree(categories);
@@ -308,7 +321,7 @@ export class CategoryService {
     updateData.slug = slugify(updateData.name!, { lower: true, strict: true });
   }
 
-  private async updateCategoryAttributes(
+  public async updateCategoryAttributes(
     categoryId: string,
     attributes: CategoryAttribute[],
   ): Promise<void> {

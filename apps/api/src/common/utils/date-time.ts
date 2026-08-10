@@ -25,11 +25,11 @@ export const calculateExpirationDate = (expiresIn: string = '15m'): Date => {
   // Check the unit and apply accordingly
   switch (unit) {
     case 'm': // minutes
-      return add(expirationDate, { minutes: parseInt(value) });
+      return add(expirationDate, { minutes: parseInt(value || '0', 10) });
     case 'h': // hours
-      return add(expirationDate, { hours: parseInt(value) });
+      return add(expirationDate, { hours: parseInt(value || '0', 10) });
     case 'd': // days
-      return add(expirationDate, { days: parseInt(value) });
+      return add(expirationDate, { days: parseInt(value || '0', 10) });
     default:
       throw new Error('Invalid unit. Use "m", "h", or "d".');
   }

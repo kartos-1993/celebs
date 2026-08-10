@@ -1,4 +1,5 @@
-import prisma from '@/config/db.prisma';
+import { bannerRepository } from './banner.repository';
+import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
 
 interface BannerInput {
   imageUrl: string;
@@ -19,41 +20,33 @@ export class BannerService {
   }
 
   async getActiveBanners(): Promise<any[]> {
-    const banners = await prisma.banner.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    const banners = await bannerRepository.findActiveBanners();
     return banners.map((b) => this.formatBanner(b));
   }
 
   async getAllBanners(): Promise<any[]> {
-    const banners = await prisma.banner.findMany({
-      orderBy: { createdAt: 'asc' },
-    });
+    const banners = await bannerRepository.findAllBanners();
     return banners.map((b) => this.formatBanner(b));
   }
 
   async updateBanners(bannersData: BannerInput[]): Promise<any[]> {
     if (!Array.isArray(bannersData) || bannersData.length > 3) {
-      throw new Error('Banner list can have at most 3 banners');
+      throw new AppError(
+        'Banner list can have at most 3 banners',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR
+      );
     }
 
-    return prisma.$transaction(async (tx) => {
-      await tx.banner.deleteMany({});
-      const created = [];
-      for (const b of bannersData) {
-        const item = await tx.banner.create({
-          data: {
-            imageUrl: b.imageUrl,
-            targetUrl: b.linkValue || null,
-            title: b.title || '',
-            position: 'home_hero',
-            isActive: b.isActive !== undefined ? b.isActive : true,
-          },
-        });
-        created.push(this.formatBanner(item));
-      }
-      return created;
-    });
+    const payload = bannersData.map((b) => ({
+      imageUrl: b.imageUrl,
+      targetUrl: b.linkValue || null,
+      title: b.title || '',
+      position: 'home_hero',
+      isActive: b.isActive !== undefined ? b.isActive : true,
+    }));
+
+    const created = await bannerRepository.replaceBanners(payload);
+    return created.map((item) => this.formatBanner(item));
   }
 }

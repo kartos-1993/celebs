@@ -3,14 +3,10 @@ import { CategoryService } from './category.service';
 import { HTTPSTATUS, AppError, ErrorCode, logger } from '@celebs/shared-utils';
 import { createCategorySchema as categoryInputSchema, updateCategorySchema } from '@celebs/shared-types';
 import slugify from 'slugify';
-import mongoose from 'mongoose';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
-  /**
-   * Get all categories with populated attributes
-   */
   getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string) : 1;
@@ -18,7 +14,7 @@ export class CategoryController {
 
       const result = await this.categoryService.getAllCategories(page, limit);
 
-      return res.status(HTTPSTATUS.OK).json({
+      res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Categories retrieved successfully',
         data: result,
@@ -28,103 +24,21 @@ export class CategoryController {
     }
   };
 
-  /**
-   * Search categories globally by name (case-insensitive)
-   */
-  searchCategories = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const q = (req.query.q as string) || '';
-      const limit = req.query.limit ? parseInt(String(req.query.limit)) : 20;
-      const results = await this.categoryService.searchCategories(q, limit);
-      return res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Search results',
-        data: results,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Get category by ID with populated attributes
-   */
-  getCategoryById = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const category = await this.categoryService.getCategoryById(id);
-
-      if (!category) {
-        throw new AppError(
-          'Category not found',
-          HTTPSTATUS.NOT_FOUND,
-          ErrorCode.CATEGORY_NOT_FOUND,
-        );
-      }
-
-      return res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category retrieved successfully',
-        data: category,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Create new category with attributes
-   */
   createCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Log the incoming request details for debugging
-      logger.debug(
-        {
-          body: req.body,
-          user: req.user,
-        },
-        'Create category request received',
-      );
-
+      logger.debug({ body: req.body, user: req.user }, 'Create category request received');
       const validatedData = categoryInputSchema.parse(req.body);
-      const { name, parent, attributes, imageUrl } = validatedData;
 
-      // Generate slug
-      const slug = slugify(name, { lower: true, strict: true });
-      let level = 1;
-      let path: string[] = [];
-
-      if (parent) {
-        const parentCategory = await this.categoryService.getCategoryById(parent.toString());
-        if (!parentCategory) {
-          throw new AppError(
-            'Parent category not found',
-            HTTPSTATUS.NOT_FOUND,
-            ErrorCode.CATEGORY_NOT_FOUND,
-          );
-        }
-        level = parentCategory.level + 1;
-        path = [
-          ...(Array.isArray(parentCategory.path)
-            ? parentCategory.path.map((p: string) => String(p))
-            : [String(parentCategory.path)]),
-          slug,
-        ];
-      } else {
-        path = [slug];
-      }
-
-      const categoryInput = {
-        ...validatedData,
-        parent: parent?.toString() || null,
-        slug,
-        level,
-        path,
+      const categoryData: any = {
+        name: validatedData.name,
+        slug: slugify(validatedData.name, { lower: true, strict: true }),
+        parent: validatedData.parent || null,
+        attributes: validatedData.attributes || [],
       };
 
-      const category = await this.categoryService.createCategory(categoryInput);
+      const category = await this.categoryService.createCategory(categoryData);
 
-      return res.status(HTTPSTATUS.CREATED).json({
+      res.status(HTTPSTATUS.CREATED).json({
         success: true,
         message: 'Category created successfully',
         data: category,
@@ -134,68 +48,61 @@ export class CategoryController {
     }
   };
 
-  /**
-   * Delete category by ID
-   * This method will also handle cascading deletes if necessary
-   */
-  deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
-      await this.categoryService.deleteCategoryWithCascade(id);
-      return res.status(HTTPSTATUS.OK).json({
+      const id = req.params.id || '';
+      const category = await this.categoryService.getCategoryById(id);
+
+      if (!category) {
+        throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      }
+
+      res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: 'Category deleted successfully',
+        message: 'Category retrieved successfully',
+        data: category,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  /**
-   * Update category by ID
-   */
-  updateCategory = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryBySlug = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
-      const validatedData = categoryUpdateSchema.parse(req.body);
+      const slug = req.params.slug || '';
+      const category = await this.categoryService.getCategoryBySlug(slug);
 
-      // Prepare update data
-      const updateData: any = { ...validatedData };
-
-      // If name is present, generate new slug
-      if (updateData.name) {
-        updateData.slug = slugify(updateData.name, {
-          lower: true,
-          strict: true,
-        });
+      if (!category) {
+        throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
       }
 
-      // If parent is present, convert to string or null
-      if (updateData.parent !== undefined) {
-        updateData.parent = updateData.parent ? updateData.parent.toString() : null;
-      }
-
-      const updatedCategory = await this.categoryService.updateCategory(id, updateData);
-
-      return res.status(HTTPSTATUS.OK).json({
+      res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: 'Category updated successfully',
-        data: updatedCategory,
+        message: 'Category retrieved successfully',
+        data: category,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  /**
-   * Get category tree with attributes
-   * This method retrieves the entire category tree with their attributes
-   */
-  getCategoryTreeWithAttributes = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryTree = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const activeOnly = req.query.activeOnly === 'true';
-      const tree = await this.categoryService.getCategoryTreeWithAttributes(activeOnly);
-      return res.status(HTTPSTATUS.OK).json({
+      const tree = await this.categoryService.getCategoryTree();
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category tree retrieved successfully',
+        data: tree,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getCategoryTreeWithAttributes = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tree = await this.categoryService.getCategoryTreeWithAttributes();
+      res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Category tree with attributes retrieved successfully',
         data: tree,
@@ -205,16 +112,97 @@ export class CategoryController {
     }
   };
 
-  /**
-   * Get filters for a specific category
-   */
+  deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = req.params.id || '';
+      await this.categoryService.deleteCategoryWithCascade(id);
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = req.params.id || '';
+      const validatedData = updateCategorySchema.parse(req.body);
+
+      const updateData: any = { ...validatedData };
+
+      if (updateData.name) {
+        updateData.slug = slugify(updateData.name, {
+          lower: true,
+          strict: true,
+        });
+      }
+
+      if (updateData.parent !== undefined) {
+        updateData.parent = updateData.parent ? updateData.parent.toString() : null;
+      }
+
+      const updatedCategory = await this.categoryService.updateCategory(id, updateData);
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category updated successfully',
+        data: updatedCategory,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getStorefrontSchema = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const slug = req.params.slug || '';
+      const schema = await this.categoryService.getStorefrontSchema(slug);
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        data: schema,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateCategoryAttributes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = req.params.id || '';
+      const attributes = req.body.attributes;
+      const updated = await this.categoryService.updateCategoryAttributes(id, attributes);
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Category attributes updated successfully',
+        data: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  searchCategories = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const q = String(req.query.q || '');
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const results = await this.categoryService.searchCategories(q, limit);
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        data: results,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getCategoryFilters = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id || '';
       const filters = await this.categoryService.getCategoryFilters(id);
-      return res.status(HTTPSTATUS.OK).json({
+      res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: 'Category filters retrieved successfully',
         data: filters,
       });
     } catch (error) {

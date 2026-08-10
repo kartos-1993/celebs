@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": false,
+    "noImplicitReturns": true,
     "paths": {
       "@celebs/rbac": ["packages/rbac/src/index.ts"],
       "@celebs/shared-utils": ["packages/shared-utils/src/index.ts"],
