@@ -31,7 +31,9 @@ export function Navbar() {
         <BreadcrumbPage key={match.pathname}>{handle.crumb}</BreadcrumbPage>
       ) : (
         <React.Fragment key={match.pathname}>
-          <BreadcrumbLink href={match.pathname}>{handle.crumb}</BreadcrumbLink>
+          <BreadcrumbLink asChild>
+            <Link to={match.pathname}>{handle.crumb}</Link>
+          </BreadcrumbLink>
           <BreadcrumbSeparator />
         </React.Fragment>
       );
