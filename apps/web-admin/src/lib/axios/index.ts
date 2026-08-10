@@ -7,7 +7,7 @@ import { axiosClient } from './axios-client';
 import './interceptors';
 
 export { axiosClient };
-export { setAuthCallbacks } from './interceptors';
+export { setAuthCallbacks, broadcastLogout } from './interceptors';
 
 // Backwards-compatibility aliases so callers don't need updating
 export const apiClient = axiosClient;

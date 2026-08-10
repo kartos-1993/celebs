@@ -21,8 +21,6 @@ const processQueue = (error: Error | null = null) => {
 };
 
 // ─── Auth state callbacks ─────────────────────────────────────────────────────
-// These are set by the AuthProvider to allow the interceptor to update React
-// state without creating a circular dependency.
 let _onTokenRefreshed: (() => void) | null = null;
 let _onSessionExpired: (() => void) | null = null;
 
@@ -32,6 +30,62 @@ export const setAuthCallbacks = (callbacks: {
 }) => {
   _onTokenRefreshed = callbacks.onTokenRefreshed ?? null;
   _onSessionExpired = callbacks.onSessionExpired ?? null;
+};
+
+// ─── Cross-Tab BroadcastChannel Synchronization ──────────────────────────────
+type AuthMessage =
+  | { type: 'REFRESH_START' }
+  | { type: 'REFRESH_SUCCESS' }
+  | { type: 'REFRESH_FAILURE' }
+  | { type: 'LOGOUT' };
+
+const CHANNEL_NAME = 'celebs_admin_auth_channel';
+
+const authChannel =
+  typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined'
+    ? new BroadcastChannel(CHANNEL_NAME)
+    : null;
+
+if (authChannel) {
+  authChannel.onmessage = (event: MessageEvent<AuthMessage>) => {
+    const { type } = event.data || {};
+    switch (type) {
+      case 'REFRESH_START':
+        // Another tab started refreshing. Set local flag so this tab queues 401s
+        isRefreshing = true;
+        break;
+
+      case 'REFRESH_SUCCESS':
+        // Another tab finished refresh successfully. Drain our queue & sync state
+        isRefreshing = false;
+        _onTokenRefreshed?.();
+        processQueue(null);
+        break;
+
+      case 'REFRESH_FAILURE':
+        // Another tab failed to refresh. Reject queued requests & logout
+        isRefreshing = false;
+        processQueue(new Error('Session expired in another tab'));
+        _onSessionExpired?.();
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
+        break;
+
+      case 'LOGOUT':
+        isRefreshing = false;
+        _onSessionExpired?.();
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
+        break;
+    }
+  };
+}
+
+/** Broadcast a logout event to all open admin tabs */
+export const broadcastLogout = () => {
+  authChannel?.postMessage({ type: 'LOGOUT' });
 };
 
 // ─── URL bypass list ──────────────────────────────────────────────────────────
@@ -46,16 +100,13 @@ const AUTH_BYPASS_URLS = [
 
 // ─── Register interceptors ───────────────────────────────────────────────────
 export const setupInterceptors = () => {
-  // Request interceptor — reserved for future header injection (tenant, trace-id, etc.)
   axiosClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => config,
     (error) => Promise.reject(error),
   );
 
-  // Response interceptor — handles 401 with Mutex Lock queue
   axiosClient.interceptors.response.use(
     (response) => {
-      // Treat HTTP 200 responses whose body signals failure as errors
       if (response.data && typeof response.data === 'object' && response.data.success === false) {
         const errorData = response.data as Record<string, unknown>;
         const apiError: ApiErrorResponse = {
@@ -85,10 +136,7 @@ export const setupInterceptors = () => {
         !originalRequest._retry &&
         !originalRequest.skipAuthRefresh
       ) {
-        // Do NOT attempt refresh for auth-specific endpoints
-        const isBypassUrl = AUTH_BYPASS_URLS.some((url) =>
-          originalRequest.url?.includes(url),
-        );
+        const isBypassUrl = AUTH_BYPASS_URLS.some((url) => originalRequest.url?.includes(url));
 
         if (isBypassUrl) {
           return Promise.reject({
@@ -111,21 +159,26 @@ export const setupInterceptors = () => {
         originalRequest._retry = true;
         isRefreshing = true;
 
+        // Broadcast to other open tabs that THIS tab is initiating refresh
+        authChannel?.postMessage({ type: 'REFRESH_START' });
+
         try {
           await axiosClient.post('/auth/refresh', null, { skipAuthRefresh: true } as CustomAxiosRequestConfig);
 
-          // Notify React that the access token was refreshed (updates auth state)
-          _onTokenRefreshed?.();
+          // Broadcast to other open tabs that refresh succeeded
+          authChannel?.postMessage({ type: 'REFRESH_SUCCESS' });
 
-          // Drain queued requests
+          _onTokenRefreshed?.();
           processQueue(null);
 
           return axiosClient(originalRequest);
         } catch (refreshError) {
           const err = refreshError instanceof Error ? refreshError : new Error('Refresh failed');
-          processQueue(err);
 
-          // Notify React that the session is dead (clears auth state)
+          // Broadcast to other open tabs that refresh failed
+          authChannel?.postMessage({ type: 'REFRESH_FAILURE' });
+
+          processQueue(err);
           _onSessionExpired?.();
 
           if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
@@ -149,5 +202,4 @@ export const setupInterceptors = () => {
   );
 };
 
-// Register interceptors immediately on module load
 setupInterceptors();

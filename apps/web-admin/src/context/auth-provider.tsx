@@ -2,7 +2,7 @@ import React, { createContext, useContext, useCallback, useEffect } from 'react'
 import useAuth from '@/hooks/use-auth';
 import { UserData } from '@/types';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
-import { axiosClient, setAuthCallbacks } from '@/lib/axios';
+import { axiosClient, setAuthCallbacks, broadcastLogout } from '@/lib/axios';
 
 // ─── Context Shape ────────────────────────────────────────────────────────────
 type AuthContextType = {
@@ -66,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       console.warn('User idle for 15 minutes. Logging out for security.');
       try {
+        broadcastLogout();
         await axiosClient.post('/auth/logout');
       } catch (e) {
         console.error('Logout on idle failed:', e);
