@@ -1,23 +1,21 @@
 import { getEnv } from '@celebs/shared-utils';
-// Removed JWT_SECRET logging as it will be properly handled inside the config
+import { env as validatedEnv } from './env.validation';
+
 export const appConfig = () => {
-  const env = getEnv('NODE_ENV');
+  const env = validatedEnv.NODE_ENV;
   const isProduction = env === 'production';
   const isStaging = env === 'staging';
 
-  const appOriginEnv = getEnv('APP_ORIGIN'); // "http://localhost:3333,http://localhost:5173"
-  const appOrigins = appOriginEnv
-    .split(',') // [ "http://localhost:3333", "http://localhost:5173" ]
-    .map((o) => o.trim().replace(/\/$/, ''));
+  const appOrigins = validatedEnv.APP_ORIGIN;
   return {
     NODE_ENV: env,
     APP_ORIGIN: appOrigins,
-    PORT: getEnv('PORT'),
-    BASE_PATH: getEnv('BASE_PATH'),
+    PORT: validatedEnv.PORT,
+    BASE_PATH: validatedEnv.BASE_PATH,
     JWT: {
-      SECRET: getEnv('JWT_SECRET'),
+      SECRET: validatedEnv.JWT_SECRET,
       EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m'),
-      REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET'),
+      REFRESH_SECRET: validatedEnv.JWT_REFRESH_SECRET || validatedEnv.JWT_SECRET,
       REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '30d'),
     },
     MAILER_SENDER: getEnv('SMTP_FROM'),
