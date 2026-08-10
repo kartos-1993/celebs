@@ -18,12 +18,7 @@ const UPLOAD_POLICY = {
   maxHeight: 2000,
 };
 
-const ALLOWED_MIME = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-]);
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 
 // Memory storage for S3/MinIO PutObject uploads (and legacy Cloudinary stream)
 const memoryUpload = multer({

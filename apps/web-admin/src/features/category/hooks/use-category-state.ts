@@ -121,15 +121,12 @@ export function useCategoryState(): UseCategoryStateReturn {
     }));
   }, []);
 
-  const setExpandedCategories = useCallback(
-    (expanded: Record<string, boolean>) => {
-      setUiState((prev) => ({
-        ...prev,
-        expandedCategories: expanded,
-      }));
-    },
-    [],
-  );
+  const setExpandedCategories = useCallback((expanded: Record<string, boolean>) => {
+    setUiState((prev) => ({
+      ...prev,
+      expandedCategories: expanded,
+    }));
+  }, []);
 
   return {
     uiState,

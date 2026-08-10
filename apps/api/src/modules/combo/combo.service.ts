@@ -12,13 +12,11 @@ export class ComboService {
 
   private async attachProductDetails(combos: any[]) {
     const allProductIds = Array.from(
-      new Set(
-        combos.flatMap((c) => (c.items ? c.items.map((i: any) => i.productId) : []))
-      )
+      new Set(combos.flatMap((c) => (c.items ? c.items.map((i: any) => i.productId) : []))),
     );
 
     const validProductIds = allProductIds.filter(
-      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id),
     );
 
     if (validProductIds.length === 0) {
@@ -114,7 +112,7 @@ export class ComboService {
             }
           : undefined,
       },
-      payload.productIds
+      payload.productIds,
     );
 
     const [hydrated] = await this.attachProductDetails([combo]);

@@ -69,10 +69,7 @@ export default function CategoryExploreScreen() {
                 <TouchableOpacity
                   key={cat.id}
                   activeOpacity={0.8}
-                  style={[
-                    styles.categoryCard,
-                    { backgroundColor: '#ffffff' },
-                  ]}
+                  style={[styles.categoryCard, { backgroundColor: '#ffffff' }]}
                   onPress={() => handleCategoryClick(catSlug, catTitle)}
                 >
                   <Image

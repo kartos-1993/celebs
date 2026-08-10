@@ -23,7 +23,7 @@ async function getS3ObjectBuffer(key: string): Promise<Buffer> {
     new GetObjectCommand({
       Bucket: config.S3.BUCKET_NAME,
       Key: key,
-    })
+    }),
   );
 
   if (!response.Body) {
@@ -65,7 +65,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
           Key: key,
           Body: optimizedMainBuffer,
           ContentType: 'image/webp',
-        })
+        }),
       );
 
       // Upload thumbnail to suffix key
@@ -76,7 +76,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
           Key: thumbKey,
           Body: thumbnailBuffer,
           ContentType: 'image/webp',
-        })
+        }),
       );
 
       const mainUrl = buildPublicObjectUrl(key);
@@ -91,7 +91,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
 
       logger.info(
         { jobId: job.id, mediaId, mainUrl, thumbUrl },
-        'Asset processing completed successfully'
+        'Asset processing completed successfully',
       );
 
       return {
@@ -103,7 +103,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
     } catch (error: any) {
       logger.error(
         { jobId: job.id, mediaId, error: error?.message || String(error) },
-        'Failed to process asset job'
+        'Failed to process asset job',
       );
       throw error;
     }
@@ -111,7 +111,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
   {
     connection: redisConnection,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY || '2', 10),
-  }
+  },
 );
 
 assetWorker.on('completed', (job) => {

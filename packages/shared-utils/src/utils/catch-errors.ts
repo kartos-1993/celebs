@@ -4,11 +4,7 @@ import { AppError } from './AppError';
 
 export class NotFoundException extends AppError {
   constructor(message = 'Resource not found', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.NOT_FOUND,
-      errorCode || ErrorCode.RESOURCE_NOT_FOUND
-    );
+    super(message, HTTPSTATUS.NOT_FOUND, errorCode || ErrorCode.RESOURCE_NOT_FOUND);
   }
 }
 
@@ -20,31 +16,19 @@ export class BadRequestException extends AppError {
 
 export class UnauthorizedException extends AppError {
   constructor(message = 'Unauthorized Access', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.UNAUTHORIZED,
-      errorCode || ErrorCode.ACCESS_UNAUTHORIZED
-    );
+    super(message, HTTPSTATUS.UNAUTHORIZED, errorCode || ErrorCode.ACCESS_UNAUTHORIZED);
   }
 }
 
 export class ForbiddenException extends AppError {
   constructor(message = 'Forbidden Access', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.FORBIDDEN,
-      errorCode || ErrorCode.FORBIDDEN_ACCESS
-    );
+    super(message, HTTPSTATUS.FORBIDDEN, errorCode || ErrorCode.FORBIDDEN_ACCESS);
   }
 }
 
 export class InternalServerException extends AppError {
   constructor(message = 'Internal Server Error', errorCode?: ErrorCode) {
-    super(
-      message,
-      HTTPSTATUS.INTERNAL_SERVER_ERROR,
-      errorCode || ErrorCode.INTERNAL_SERVER_ERROR
-    );
+    super(message, HTTPSTATUS.INTERNAL_SERVER_ERROR, errorCode || ErrorCode.INTERNAL_SERVER_ERROR);
   }
 }
 

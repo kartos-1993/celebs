@@ -63,10 +63,10 @@ const CategorySchema: Schema = new Schema(
 );
 
 CategorySchema.virtual('parent')
-  .get(function(this: any) {
+  .get(function (this: any) {
     return this.parentCategory;
   })
-  .set(function(this: any, val: any) {
+  .set(function (this: any, val: any) {
     this.parentCategory = val;
   });
 
@@ -74,8 +74,4 @@ CategorySchema.virtual('parent')
 CategorySchema.index({ path: 1 });
 CategorySchema.index({ name: 1, parentCategory: 1 }, { unique: true });
 
-
-export const CategoryModel = mongoose.model<ICategory>(
-  'Category',
-  CategorySchema,
-);
+export const CategoryModel = mongoose.model<ICategory>('Category', CategorySchema);

@@ -14,7 +14,7 @@ const OptionSetSchema: Schema = new Schema(
     type: { type: String, enum: ['color', 'size'], required: true, index: true },
     values: [{ type: String, required: true }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const OptionSetModel = mongoose.model<IOptionSet>('OptionSet', OptionSetSchema);

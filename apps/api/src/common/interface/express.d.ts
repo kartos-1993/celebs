@@ -15,7 +15,7 @@ declare namespace Express {
     user?: User;
     sessionId?: string;
   }
-  
+
   // Make sure Multer namespace is correctly declared
   namespace Multer {
     interface File {
@@ -31,4 +31,3 @@ declare namespace Express {
     }
   }
 }
-

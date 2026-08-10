@@ -1,5 +1,5 @@
-import {AuthAPI} from "./axios-client";
-import { SessionResponse } from "../types";
+import { AuthAPI } from './axios-client';
+import { SessionResponse } from '../types';
 
 import {
   loginType,
@@ -13,7 +13,7 @@ import {
   vendorProfileType,
   warehouseType,
   vendorDocumentsType,
-  vendorBusinessInfoType
+  vendorBusinessInfoType,
 } from '@celebs/shared-types';
 
 type forgotPasswordType = { email: string };
@@ -37,11 +37,7 @@ type mfaType = {
   qrImageUrl: string;
 };
 
-
-
-
-export const loginMutationFn = async (data: loginType) =>
-  await AuthAPI.post(`/auth/login`, data);
+export const loginMutationFn = async (data: loginType) => await AuthAPI.post(`/auth/login`, data);
 
 export const setupSuperadminMutationFn = async (data: setupSuperadminType) =>
   await AuthAPI.post(`/auth/setup-superadmin`, data);
@@ -88,8 +84,7 @@ export const sessionsQueryFn = async () => {
   return response.data;
 };
 
-export const sessionDelMutationFn = async (id: string) =>
-  await AuthAPI.delete(`/session/${id}`);
+export const sessionDelMutationFn = async (id: string) => await AuthAPI.delete(`/session/${id}`);
 
 // Vendor Onboarding Mutations & Queries
 export const getOnboardingStatusQueryFn = async () => {
@@ -137,8 +132,7 @@ export const getUsersQueryFn = async () => {
   return response.data;
 };
 
-export const createUserMutationFn = async (data: any) =>
-  await AuthAPI.post(`/admin/users`, data);
+export const createUserMutationFn = async (data: any) => await AuthAPI.post(`/admin/users`, data);
 
 export const deleteUserMutationFn = async (id: string) =>
   await AuthAPI.delete(`/admin/users/${id}`);
@@ -149,11 +143,9 @@ export const getStaffQueryFn = async (vendorId?: string) => {
   return response.data;
 };
 
-export const createStaffMutationFn = async (data: any) =>
-  await AuthAPI.post(`/staff`, data);
+export const createStaffMutationFn = async (data: any) => await AuthAPI.post(`/staff`, data);
 
-export const deleteStaffMutationFn = async (id: string) =>
-  await AuthAPI.delete(`/staff/${id}`);
+export const deleteStaffMutationFn = async (id: string) => await AuthAPI.delete(`/staff/${id}`);
 
 // Marketing Campaigns API
 export const getCampaignsQueryFn = async () => {
@@ -209,12 +201,26 @@ export const getProductsCatalogQueryFn = async (search?: string) => {
 };
 
 // 3PL Courier Logistics & COD Settlement API
-export const dispatch3PLOrderMutationFn = async ({ orderId, provider }: { orderId: string; provider?: string }) => {
-  const response = await AuthAPI.post(`/logistics/dispatch/${orderId}`, { courierProvider: provider || 'NEPAL_CAN_MOVE' });
+export const dispatch3PLOrderMutationFn = async ({
+  orderId,
+  provider,
+}: {
+  orderId: string;
+  provider?: string;
+}) => {
+  const response = await AuthAPI.post(`/logistics/dispatch/${orderId}`, {
+    courierProvider: provider || 'NEPAL_CAN_MOVE',
+  });
   return response.data;
 };
 
-export const settleCodOrderMutationFn = async ({ orderId, reference }: { orderId: string; reference: string }) => {
+export const settleCodOrderMutationFn = async ({
+  orderId,
+  reference,
+}: {
+  orderId: string;
+  reference: string;
+}) => {
   const response = await AuthAPI.post(`/logistics/settle-cod/${orderId}`, { reference });
   return response.data;
 };
@@ -231,7 +237,3 @@ export const uploadMediaFilesMutationFn = async (file: File): Promise<string> =>
   }
   return items[0].url;
 };
-
-
-
-

@@ -1,8 +1,8 @@
-import { createContext, useContext, useCallback } from "react";
-import useAuth from "@/hooks/use-auth";
-import { UserData } from "@/types";
-import { useIdleTimer } from "@/hooks/use-idle-timer";
-import { apiClient } from "@/lib/axios-client";
+import { createContext, useContext, useCallback } from 'react';
+import useAuth from '@/hooks/use-auth';
+import { UserData } from '@/types';
+import { useIdleTimer } from '@/hooks/use-idle-timer';
+import { apiClient } from '@/lib/axios-client';
 
 // Define the context shape
 type AuthContextType = {
@@ -33,9 +33,7 @@ const defaultAuthContext: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { data, error, isLoading, isFetching, refetch } = useAuth();
   const user = data?.data?.user;
   const role = user?.role;
@@ -47,14 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleIdle = useCallback(async () => {
     if (user) {
-      console.warn("User idle for 15 minutes. Logging out for security.");
+      console.warn('User idle for 15 minutes. Logging out for security.');
       try {
-        await apiClient.post("/auth/logout");
+        await apiClient.post('/auth/logout');
       } catch (e) {
-        console.error("Logout on idle failed:", e);
+        console.error('Logout on idle failed:', e);
       } finally {
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
         }
       }
     }

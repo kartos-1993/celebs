@@ -1,4 +1,14 @@
-import { ErrorCode, BadRequestException, ForbiddenException, HttpException, InternalServerException, NotFoundException, UnauthorizedException, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import {
+  ErrorCode,
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  InternalServerException,
+  NotFoundException,
+  UnauthorizedException,
+  HTTPSTATUS,
+  logger,
+} from '@celebs/shared-utils';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import {
   loginType,
@@ -40,7 +50,7 @@ export class AuthService {
     if (existingUser) {
       throw new BadRequestException(
         'User already exists with this email',
-        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS
+        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS,
       );
     }
 
@@ -56,10 +66,7 @@ export class AuthService {
     });
 
     // Log user registration
-    logger.info(
-      { email: newUser.email, id: newUser.id },
-      'New user registered'
-    );
+    logger.info({ email: newUser.email, id: newUser.id }, 'New user registered');
 
     const verification = await prisma.verificationCode.create({
       data: {
@@ -71,10 +78,7 @@ export class AuthService {
     });
 
     const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
-    logger.info(
-      { email: newUser.email, verificationUrl },
-      'Attempting to send verification email'
-    );
+    logger.info({ email: newUser.email, verificationUrl }, 'Attempting to send verification email');
     try {
       await sendEmail({
         to: newUser.email,
@@ -84,14 +88,11 @@ export class AuthService {
       });
       logger.info({ email: newUser.email }, 'Verification email sent');
     } catch (err) {
-      logger.error(
-        { err, email: newUser.email },
-        'Failed to send verification email'
-      );
+      logger.error({ err, email: newUser.email }, 'Failed to send verification email');
       if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
         logger.warn(
           { verificationUrl, email: newUser.email },
-          '[DEV/TEST FALLBACK] Verification email failed to send. Click link in logs to verify manually.'
+          '[DEV/TEST FALLBACK] Verification email failed to send. Click link in logs to verify manually.',
         );
       } else {
         throw new InternalServerException('Failed to send verification email');
@@ -125,7 +126,7 @@ export class AuthService {
     if (existingUser) {
       throw new BadRequestException(
         'User already exists with this email',
-        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS
+        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS,
       );
     }
 
@@ -133,10 +134,7 @@ export class AuthService {
       where: { shopName },
     });
     if (existingShop) {
-      throw new BadRequestException(
-        'Shop name is already taken',
-        ErrorCode.INVALID_REQUEST
-      );
+      throw new BadRequestException('Shop name is already taken', ErrorCode.INVALID_REQUEST);
     }
 
     const existingPhone = await prisma.vendorProfile.findUnique({
@@ -145,7 +143,7 @@ export class AuthService {
     if (existingPhone) {
       throw new BadRequestException(
         'Phone number is already registered',
-        ErrorCode.INVALID_REQUEST
+        ErrorCode.INVALID_REQUEST,
       );
     }
 
@@ -153,10 +151,7 @@ export class AuthService {
       where: { panNumber },
     });
     if (existingPan) {
-      throw new BadRequestException(
-        'PAN number is already registered',
-        ErrorCode.INVALID_REQUEST
-      );
+      throw new BadRequestException('PAN number is already registered', ErrorCode.INVALID_REQUEST);
     }
 
     const existingCitizenship = await prisma.vendorProfile.findUnique({
@@ -165,7 +160,7 @@ export class AuthService {
     if (existingCitizenship) {
       throw new BadRequestException(
         'Citizenship number is already registered',
-        ErrorCode.INVALID_REQUEST
+        ErrorCode.INVALID_REQUEST,
       );
     }
 
@@ -204,7 +199,7 @@ export class AuthService {
     // Log vendor registration
     logger.info(
       { email: newUser.email, id: newUser.id, shopName },
-      'New vendor registered, profile pending approval'
+      'New vendor registered, profile pending approval',
     );
 
     const verification = await prisma.verificationCode.create({
@@ -218,7 +213,7 @@ export class AuthService {
     const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
     logger.info(
       { email: newUser.email, verificationUrl },
-      'Attempting to send verification email to vendor'
+      'Attempting to send verification email to vendor',
     );
     try {
       await sendEmail({
@@ -229,14 +224,11 @@ export class AuthService {
       });
       logger.info({ email: newUser.email }, 'Verification email sent to vendor');
     } catch (err) {
-      logger.error(
-        { err, email: newUser.email },
-        'Failed to send verification email to vendor'
-      );
+      logger.error({ err, email: newUser.email }, 'Failed to send verification email to vendor');
       if (process.env.NODE_ENV === 'development') {
         logger.warn(
           { verificationUrl, email: newUser.email },
-          '[DEV FALLBACK] Vendor verification email failed to send. Click link in logs to verify manually.'
+          '[DEV FALLBACK] Vendor verification email failed to send. Click link in logs to verify manually.',
         );
       } else {
         throw new InternalServerException('Failed to send verification email');
@@ -263,7 +255,7 @@ export class AuthService {
       logger.warn(`Login failed: User with email ${email} not found`);
       throw new UnauthorizedException(
         'Invalid email or password',
-        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
     // Verify password
@@ -272,7 +264,7 @@ export class AuthService {
       logger.warn(`Login failed: Invalid password for user ${email}`);
       throw new UnauthorizedException(
         'Invalid email or password',
-        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
 
@@ -286,7 +278,7 @@ export class AuthService {
       if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
         throw new ForbiddenException(
           'Access denied: Seller account is suspended or rejected.',
-          ErrorCode.FORBIDDEN_ACCESS
+          ErrorCode.FORBIDDEN_ACCESS,
         );
       }
     }
@@ -300,10 +292,7 @@ export class AuthService {
       },
     });
 
-    logger.info(
-      { userId: user.id, sessionId: session.id },
-      'Session created successfully'
-    );
+    logger.info({ userId: user.id, sessionId: session.id }, 'Session created successfully');
 
     // Generate tokens
     const accessTokenPayload: AccessTPayload = {
@@ -316,15 +305,9 @@ export class AuthService {
     };
 
     const accessToken = signJwtToken(accessTokenPayload);
-    const refreshToken = signJwtToken(
-      refreshTokenPayload,
-      refreshTokenSignOptions
-    );
+    const refreshToken = signJwtToken(refreshTokenPayload, refreshTokenSignOptions);
 
-    logger.info(
-      { userId: user.id, sessionId: session.id },
-      'Authentication tokens generated'
-    );
+    logger.info({ userId: user.id, sessionId: session.id }, 'Authentication tokens generated');
 
     const { password: _, ...userWithoutPassword } = user;
     return {
@@ -349,7 +332,7 @@ export class AuthService {
     if (!validCode) {
       throw new NotFoundException(
         'Verification code not found or expired',
-        ErrorCode.VERIFICATION_ERROR
+        ErrorCode.VERIFICATION_ERROR,
       );
     }
 
@@ -359,10 +342,7 @@ export class AuthService {
     });
 
     if (!updatedUser) {
-      throw new BadRequestException(
-        'Unable to verify email',
-        ErrorCode.VERIFICATION_ERROR
-      );
+      throw new BadRequestException('Unable to verify email', ErrorCode.VERIFICATION_ERROR);
     }
 
     await prisma.verificationCode.delete({
@@ -370,10 +350,7 @@ export class AuthService {
     });
 
     // Create a session for the auto-login
-    logger.info(
-      { userId: updatedUser.id },
-      'Creating session after email verification'
-    );
+    logger.info({ userId: updatedUser.id }, 'Creating session after email verification');
     const userAgent = 'Email Verification Auto-Login';
     const session = await prisma.session.create({
       data: {
@@ -384,7 +361,7 @@ export class AuthService {
 
     logger.info(
       { userId: updatedUser.id, sessionId: session.id },
-      'Session created successfully after email verification'
+      'Session created successfully after email verification',
     );
 
     // Generate tokens for auto-login
@@ -398,14 +375,11 @@ export class AuthService {
     };
 
     const accessToken = signJwtToken(accessTokenPayload);
-    const refreshToken = signJwtToken(
-      refreshTokenPayload,
-      refreshTokenSignOptions
-    );
+    const refreshToken = signJwtToken(refreshTokenPayload, refreshTokenSignOptions);
 
     logger.info(
       { userId: updatedUser.id, sessionId: session.id },
-      'Authentication tokens generated after email verification'
+      'Authentication tokens generated after email verification',
     );
 
     const { password: _, ...userWithoutPassword } = updatedUser;
@@ -417,13 +391,15 @@ export class AuthService {
   }
 
   public async logout(sessionId: string) {
-    await prisma.session.delete({
-      where: {
-        id: sessionId,
-      },
-    }).catch((err: Error) => {
-      logger.error({ err, sessionId }, 'Failed to delete session on logout');
-    });
+    await prisma.session
+      .delete({
+        where: {
+          id: sessionId,
+        },
+      })
+      .catch((err: Error) => {
+        logger.error({ err, sessionId }, 'Failed to delete session on logout');
+      });
   }
 
   public async setupSuperadmin(setupData: setupSuperadminType) {
@@ -464,17 +440,14 @@ export class AuthService {
 
   public async refreshToken(token: string) {
     if (!token) {
-      throw new UnauthorizedException(
-        'Refresh token missing',
-        ErrorCode.AUTH_TOKEN_NOT_FOUND
-      );
+      throw new UnauthorizedException('Refresh token missing', ErrorCode.AUTH_TOKEN_NOT_FOUND);
     }
 
     const { payload, error } = verifyJwtToken<RefreshTPayload>(token);
     if (error || !payload?.sessionId) {
       throw new UnauthorizedException(
         'Invalid or expired refresh token',
-        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
 
@@ -487,7 +460,7 @@ export class AuthService {
     if (!session || !session.user) {
       throw new UnauthorizedException(
         'Session expired or invalid',
-        ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
 
@@ -497,7 +470,7 @@ export class AuthService {
       if (status === 'REJECTED' || status === 'SUSPENDED') {
         throw new ForbiddenException(
           'Access denied: Seller account is suspended or rejected.',
-          ErrorCode.FORBIDDEN_ACCESS
+          ErrorCode.FORBIDDEN_ACCESS,
         );
       }
     }
@@ -513,10 +486,7 @@ export class AuthService {
     };
 
     const newAccessToken = signJwtToken(accessTokenPayload);
-    const newRefreshToken = signJwtToken(
-      refreshTokenPayload,
-      refreshTokenSignOptions
-    );
+    const newRefreshToken = signJwtToken(refreshTokenPayload, refreshTokenSignOptions);
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -534,12 +504,21 @@ export class AuthService {
     return !superadminExists;
   }
 
-  public async googleSignIn(data: { email: string; name: string; picture?: string; googleId?: string; userAgent?: string }) {
+  public async googleSignIn(data: {
+    email: string;
+    name: string;
+    picture?: string;
+    googleId?: string;
+    userAgent?: string;
+  }) {
     const { email, name, userAgent } = data;
     logger.info(`Google Sign-In request for email: ${email}`);
 
     if (!email) {
-      throw new BadRequestException('Email is required for Google Sign-In', ErrorCode.VALIDATION_ERROR);
+      throw new BadRequestException(
+        'Email is required for Google Sign-In',
+        ErrorCode.VALIDATION_ERROR,
+      );
     }
 
     let user = await prisma.user.findUnique({
@@ -562,7 +541,10 @@ export class AuthService {
           vendorProfile: true,
         },
       });
-      logger.info({ userId: user.id, email: user.email }, 'New user auto-registered via Google Sign-In');
+      logger.info(
+        { userId: user.id, email: user.email },
+        'New user auto-registered via Google Sign-In',
+      );
     }
 
     if (user.role === 'VENDOR') {
@@ -573,7 +555,7 @@ export class AuthService {
       if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
         throw new ForbiddenException(
           'Access denied: Seller account is suspended or rejected.',
-          ErrorCode.FORBIDDEN_ACCESS
+          ErrorCode.FORBIDDEN_ACCESS,
         );
       }
     }
@@ -606,4 +588,3 @@ export class AuthService {
     };
   }
 }
-

@@ -19,7 +19,7 @@ import { verifyS3Connection } from './common/utils/s3.client';
 const startWorker = async () => {
   try {
     logger.info('Starting Background Worker Service...');
-    
+
     await connectMongoDB();
     await prisma.$connect();
     logger.info('Database connections established successfully for Worker');

@@ -39,9 +39,7 @@ export const toNonNegativeInteger = (value: unknown): number | undefined => {
   if (!raw) return undefined;
 
   const numeric = Number(raw);
-  return Number.isFinite(numeric) && numeric >= 0
-    ? Math.trunc(numeric)
-    : undefined;
+  return Number.isFinite(numeric) && numeric >= 0 ? Math.trunc(numeric) : undefined;
 };
 
 export const serializeDynamicValue = (value: unknown): unknown => {
@@ -95,21 +93,13 @@ export const serializeDraftValue = (value: unknown): unknown => {
 export const isHexColor = (value: string): boolean =>
   /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 
-export const flattenObject = (
-  obj: unknown,
-  prefix = '',
-): Record<string, unknown> => {
+export const flattenObject = (obj: unknown, prefix = ''): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   if (!obj || typeof obj !== 'object') return result;
 
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     const newKey = prefix ? `${prefix}.${key}` : key;
-    if (
-      value &&
-      typeof value === 'object' &&
-      !Array.isArray(value) &&
-      !(value instanceof File)
-    ) {
+    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof File)) {
       Object.assign(result, flattenObject(value, newKey));
     } else {
       result[newKey] = value;
@@ -120,9 +110,7 @@ export const flattenObject = (
 
 export const getNestedValue = (obj: unknown, path: string): unknown => {
   return path.split('.').reduce<unknown>((acc, part) => {
-    return acc && typeof acc === 'object'
-      ? (acc as Record<string, unknown>)[part]
-      : undefined;
+    return acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[part] : undefined;
   }, obj);
 };
 
@@ -148,10 +136,7 @@ export const getFirstPrice = (
   return undefined;
 };
 
-export const getLabelMap = (
-  fields: FieldSpec[],
-  fieldName?: string,
-): Map<string, string> => {
+export const getLabelMap = (fields: FieldSpec[], fieldName?: string): Map<string, string> => {
   if (!fieldName) {
     return new Map<string, string>();
   }
@@ -177,11 +162,7 @@ export const normalizeGroup = (value?: string): string =>
 export const mapSchemaGroup = (value?: string): string => {
   const normalized = normalizeGroup(value);
 
-  if (
-    ['base', 'productimages', 'images', 'mainimage', 'media'].includes(
-      normalized,
-    )
-  ) {
+  if (['base', 'productimages', 'images', 'mainimage', 'media'].includes(normalized)) {
     return 'base';
   }
   if (
@@ -202,30 +183,14 @@ export const mapSchemaGroup = (value?: string): string => {
     return 'details';
   }
   if (
-    [
-      'variant',
-      'variants',
-      'variant1',
-      'variant2',
-      'sku',
-      'color',
-      'size',
-    ].includes(normalized)
+    ['variant', 'variants', 'variant1', 'variant2', 'sku', 'color', 'size'].includes(normalized)
   ) {
     return 'variant';
   }
-  if (
-    ['sale', 'pricestock', 'priceandstock', 'pricing', 'stock'].includes(
-      normalized,
-    )
-  ) {
+  if (['sale', 'pricestock', 'priceandstock', 'pricing', 'stock'].includes(normalized)) {
     return 'sale';
   }
-  if (
-    ['package', 'shippingandwarranty', 'shipping', 'warranty'].includes(
-      normalized,
-    )
-  ) {
+  if (['package', 'shippingandwarranty', 'shipping', 'warranty'].includes(normalized)) {
     return 'package';
   }
   if (['termcondition', 'termsandconditions', 'terms'].includes(normalized)) {
@@ -283,15 +248,8 @@ export const resolveSchemaFieldForPath = (
   return undefined;
 };
 
-export const resolvePageSectionKey = (
-  path: string,
-  schemaFields: FieldSpec[],
-): PageSectionKey => {
-  if (
-    ['name', 'brand', 'description', 'categoryId', 'subcategoryId'].includes(
-      path,
-    )
-  ) {
+export const resolvePageSectionKey = (path: string, schemaFields: FieldSpec[]): PageSectionKey => {
+  if (['name', 'brand', 'description', 'categoryId', 'subcategoryId'].includes(path)) {
     return 'basic';
   }
 

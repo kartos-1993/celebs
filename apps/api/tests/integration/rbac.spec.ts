@@ -39,9 +39,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
 
   describe('Vendor Registration & Statuses', () => {
     it('should register a vendor with PENDING status', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/vendor/register')
-        .send(vendorPayload);
+      const res = await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -61,20 +59,16 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
     it('should allow login for PENDING vendors', async () => {
       // Register
       await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
-      
+
       // Verify email
       const codeRecord = await prisma.verificationCode.findFirst({});
-      await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ code: codeRecord!.code });
+      await request(app).post('/api/v1/auth/verify-email').send({ code: codeRecord!.code });
 
       // Login
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          email: vendorPayload.email,
-          password: vendorPayload.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        email: vendorPayload.email,
+        password: vendorPayload.password,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -86,9 +80,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       // Register and verify email
       await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
       const codeRecord = await prisma.verificationCode.findFirst({});
-      await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ code: codeRecord!.code });
+      await request(app).post('/api/v1/auth/verify-email').send({ code: codeRecord!.code });
 
       // Suspend vendor
       const user = await prisma.user.findFirst({
@@ -100,12 +92,10 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       });
 
       // Login
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          email: vendorPayload.email,
-          password: vendorPayload.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        email: vendorPayload.email,
+        password: vendorPayload.password,
+      });
 
       expect(res.status).toBe(403);
       expect(res.body.success).toBe(false);
@@ -131,9 +121,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       });
 
       // Attempt authorized request
-      const res = await request(app)
-        .post('/api/v1/auth/logout')
-        .set('Cookie', authCookie);
+      const res = await request(app).post('/api/v1/auth/logout').set('Cookie', authCookie);
 
       expect(res.status).toBe(401); // Unauthorized/Forbidden access
     });
@@ -200,10 +188,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       });
 
       // Admin attempts to create a category (expecting 403 Forbidden)
-      const res = await request(app)
-        .post('/api/v1/category')
-        .set('Cookie', authCookie)
-        .send({});
+      const res = await request(app).post('/api/v1/category').set('Cookie', authCookie).send({});
 
       expect(res.status).toBe(403);
     });

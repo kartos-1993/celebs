@@ -1,9 +1,7 @@
 import { z } from 'zod';
 
 // UUID validator for entity primary and foreign keys
-export const idSchema = z
-  .string()
-  .uuid('Invalid UUID');
+export const idSchema = z.string().uuid('Invalid UUID');
 
 // Product measurement schema
 export const productMeasurementSchema = z.object({
@@ -78,7 +76,13 @@ export type DynamicVariantMetaType = z.infer<typeof dynamicVariantMetaSchema>;
 const baseProductSchemaFields = {
   name: z.string().trim().min(2, 'Product name must be at least 2 characters').max(200),
   brand: z.string().trim().min(1, 'Brand is required').max(100).optional().or(z.literal('')),
-  description: z.string().trim().max(4000, 'Description must be less than 4000 characters').optional().or(z.literal('')).default(''),
+  description: z
+    .string()
+    .trim()
+    .max(4000, 'Description must be less than 4000 characters')
+    .optional()
+    .or(z.literal(''))
+    .default(''),
   price: z.number().positive('Price must be positive'),
   discountedPrice: z.number().positive('Discounted price must be positive').optional().nullable(),
   categoryId: idSchema,
@@ -91,7 +95,9 @@ const baseProductSchemaFields = {
   dynamicData: z.record(z.unknown()).optional().default({}),
   tags: z.array(z.string()).optional().default([]),
   featured: z.boolean().optional().default(false),
-  status: z.enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived']).default('draft'),
+  status: z
+    .enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived'])
+    .default('draft'),
   vendorId: z.string().optional(),
   vendorName: z.string().optional(),
 };
@@ -112,24 +118,27 @@ export const createProductSchema = baseProductSchema.refine(
   {
     message: 'Discounted price must be less than the regular price',
     path: ['discountedPrice'],
-  }
+  },
 );
 
 // Schema for updating an existing product
-export const updateProductSchema = z.object({
-  ...baseProductSchemaFields,
-}).partial().refine(
-  (data) => {
-    if (data.discountedPrice && data.price && data.discountedPrice >= data.price) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'Discounted price must be less than the regular price',
-    path: ['discountedPrice'],
-  }
-);
+export const updateProductSchema = z
+  .object({
+    ...baseProductSchemaFields,
+  })
+  .partial()
+  .refine(
+    (data) => {
+      if (data.discountedPrice && data.price && data.discountedPrice >= data.price) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Discounted price must be less than the regular price',
+      path: ['discountedPrice'],
+    },
+  );
 
 // Schema for getting a single product by ID
 export const getProductByIdSchema = z.object({
@@ -165,7 +174,9 @@ export const productFilterSchema = z.object({
   tag: z.string().optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
-  status: z.enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived']).optional(),
+  status: z
+    .enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived'])
+    .optional(),
   featured: z.boolean().optional(),
   vendorId: z.string().optional(),
   cursor: z.string().optional(),
@@ -183,7 +194,10 @@ export const productSchema = baseProductSchema.extend({
   id: z.string(),
   slug: z.string(),
   category: z.union([z.string(), z.object({ id: z.string(), name: z.string(), slug: z.string() })]),
-  subcategory: z.union([z.string(), z.object({ id: z.string(), name: z.string(), slug: z.string() })]),
+  subcategory: z.union([
+    z.string(),
+    z.object({ id: z.string(), name: z.string(), slug: z.string() }),
+  ]),
   reviewNote: z.string().optional(),
   reviewedBy: z.string().optional(),
   reviewedAt: z.union([z.string(), z.date()]).optional(),
@@ -194,4 +208,3 @@ export const productSchema = baseProductSchema.extend({
 export type CreateProductType = z.input<typeof createProductSchema>;
 export type UpdateProductType = z.input<typeof updateProductSchema>;
 export type ProductType = z.infer<typeof productSchema>;
-

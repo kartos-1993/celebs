@@ -54,7 +54,9 @@ interface QuickFilterConfig {
 export class QuickFilterService {
   private formatFilter(qf: { id: string; filterConfig?: Prisma.JsonValue } | null) {
     if (!qf) return null;
-    const config = (qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}) as QuickFilterConfig;
+    const config = (
+      qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}
+    ) as QuickFilterConfig;
     return {
       ...qf,
       id: qf.id,
@@ -226,10 +228,16 @@ export class QuickFilterService {
   async updateQuickFilter(id: string, input: UpdateQuickFilterInput) {
     const filter = await prisma.quickFilter.findUnique({ where: { id } });
     if (!filter) {
-      throw new AppError('Quick filter not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      throw new AppError(
+        'Quick filter not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
-    const currentConfig = (filter.filterConfig && typeof filter.filterConfig === 'object' ? filter.filterConfig : {}) as QuickFilterConfig;
+    const currentConfig = (
+      filter.filterConfig && typeof filter.filterConfig === 'object' ? filter.filterConfig : {}
+    ) as QuickFilterConfig;
 
     const updated = await prisma.quickFilter.update({
       where: { id },
@@ -253,7 +261,11 @@ export class QuickFilterService {
   async deleteQuickFilter(id: string): Promise<{ success: boolean }> {
     const filter = await prisma.quickFilter.findUnique({ where: { id } });
     if (!filter) {
-      throw new AppError('Quick filter not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      throw new AppError(
+        'Quick filter not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
     await prisma.quickFilter.delete({ where: { id } });

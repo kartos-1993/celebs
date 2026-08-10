@@ -34,29 +34,19 @@ export async function buildProductPayload({
 }): Promise<CreateProductRequest> {
   const flatValues = flattenObject(values);
   const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
-  const sizeFieldName = variantMeta.find(
-    (variant) => variant.kind === 'size',
-  )?.key;
+  const sizeFieldName = variantMeta.find((variant) => variant.kind === 'size')?.key;
   const colorLabelMap = getLabelMap(fields, colorFieldName);
   const sizeLabelMap = getLabelMap(fields, sizeFieldName);
 
   const mainImages = await uploadFiles(
-    Array.isArray(values.mainImage)
-      ? (values.mainImage as Array<File | string>)
-      : [],
+    Array.isArray(values.mainImage) ? (values.mainImage as Array<File | string>) : [],
   );
 
-  const selectedColors = colorFieldName
-    ? toStringArray(values[colorFieldName])
-    : [];
-  const selectedSizes = sizeFieldName
-    ? toStringArray(values[sizeFieldName])
-    : [];
+  const selectedColors = colorFieldName ? toStringArray(values[colorFieldName]) : [];
+  const selectedSizes = sizeFieldName ? toStringArray(values[sizeFieldName]) : [];
 
-  const uploadedColorAssets: Record<
-    string,
-    { hot: boolean; images: string[]; swatch?: string }
-  > = {};
+  const uploadedColorAssets: Record<string, { hot: boolean; images: string[]; swatch?: string }> =
+    {};
 
   for (const colorValue of selectedColors) {
     const prefix = `variants.colorMeta.${colorValue}`;
@@ -87,8 +77,7 @@ export async function buildProductPayload({
   }
 
   const defaultStock = toNonNegativeInteger(flatValues['sku.default.stock']) ?? 0;
-  const effectiveColors =
-    selectedColors.length > 0 ? selectedColors : ['default'];
+  const effectiveColors = selectedColors.length > 0 ? selectedColors : ['default'];
 
   const sizes = selectedSizes.map((sizeValue) => {
     const sizeName = sizeLabelMap.get(sizeValue) || sizeValue;
@@ -116,17 +105,11 @@ export async function buildProductPayload({
 
   const colorVariants = effectiveColors.map((colorValue) => {
     const label =
-      colorValue === 'default'
-        ? 'Default'
-        : colorLabelMap.get(colorValue) || colorValue;
+      colorValue === 'default' ? 'Default' : colorLabelMap.get(colorValue) || colorValue;
 
     let stocks: Array<{ size: string; quantity: number }> = [];
 
-    if (
-      selectedColors.length > 0 &&
-      sizeFieldName &&
-      selectedSizes.length > 0
-    ) {
+    if (selectedColors.length > 0 && sizeFieldName && selectedSizes.length > 0) {
       stocks = selectedSizes.map((sizeValue) => ({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
@@ -150,9 +133,8 @@ export async function buildProductPayload({
       stocks = selectedSizes.map((sizeValue) => ({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
-          toNonNegativeInteger(
-            flatValues[`sku.variants.${sizeFieldName}.${sizeValue}.stock`],
-          ) ?? defaultStock,
+          toNonNegativeInteger(flatValues[`sku.variants.${sizeFieldName}.${sizeValue}.stock`]) ??
+          defaultStock,
       }));
     } else {
       stocks = [{ size: 'default', quantity: defaultStock }];
@@ -191,14 +173,9 @@ export async function buildProductPayload({
         Object.entries(values)
           .filter(
             ([key]) =>
-              ![
-                'name',
-                'brand',
-                'description',
-                'categoryId',
-                'subcategoryId',
-                'status',
-              ].includes(key),
+              !['name', 'brand', 'description', 'categoryId', 'subcategoryId', 'status'].includes(
+                key,
+              ),
           )
           .map(([key, value]) => [key, value]),
       ),

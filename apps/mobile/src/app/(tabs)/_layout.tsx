@@ -2,7 +2,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useColorScheme, View, StyleSheet, Platform } from 'react-native';
 import { Home, TrendingUp, ShoppingCart, User, Search } from 'lucide-react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
@@ -28,7 +33,7 @@ function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
     if (pulseTrigger > 0) {
       scale.value = withSequence(
         withSpring(1.35, { damping: 6, stiffness: 200 }),
-        withSpring(1.0, { damping: 10, stiffness: 180 })
+        withSpring(1.0, { damping: 10, stiffness: 180 }),
       );
     }
   }, [pulseTrigger, scale]);
@@ -89,9 +94,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Category',
-          tabBarIcon: ({ color }) => (
-            <CategoryIcon color={color} size={20} />
-          ),
+          tabBarIcon: ({ color }) => <CategoryIcon color={color} size={20} />,
         }}
       />
       <Tabs.Screen
@@ -107,9 +110,7 @@ export default function TabLayout() {
         name="cart"
         options={{
           title: 'Cart',
-          tabBarIcon: ({ color, focused }) => (
-            <CartTabIcon color={color} focused={focused} />
-          ),
+          tabBarIcon: ({ color, focused }) => <CartTabIcon color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen

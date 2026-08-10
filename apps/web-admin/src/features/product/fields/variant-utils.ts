@@ -25,7 +25,19 @@ export function normalizeUi(
   const ui = String(uiType || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '');
-  const map: Record<string, 'input' | 'number' | 'Switch' | 'select' | 'multiselect' | 'VariantList' | 'MainImage' | 'SkuTableV2' | 'ColorMeta' | 'ColorInline'> = {
+  const map: Record<
+    string,
+    | 'input'
+    | 'number'
+    | 'Switch'
+    | 'select'
+    | 'multiselect'
+    | 'VariantList'
+    | 'MainImage'
+    | 'SkuTableV2'
+    | 'ColorMeta'
+    | 'ColorInline'
+  > = {
     input: 'input',
     number: 'number',
     switch: 'Switch',

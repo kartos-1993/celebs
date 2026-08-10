@@ -34,7 +34,6 @@ export function AppHeader({
   const { itemCount } = useCart();
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
 
-
   const handleSubTabPress = (tab: string) => {
     setActiveSubTab(tab);
     if (onSubTabChange) {
@@ -47,10 +46,10 @@ export function AppHeader({
 
   // Determine styles and colors based on transparency and scroll progress
   const isSolid = !transparent || scrollProgress > 0.5;
-  const headerBgColor = transparent 
+  const headerBgColor = transparent
     ? `rgba(${scheme === 'dark' ? '0, 0, 0' : '255, 255, 255'}, ${scrollProgress})`
     : colors.background;
-  
+
   const textColor = isSolid ? colors.text : '#ffffff';
   const secondaryTextColor = isSolid ? colors.textSecondary : 'rgba(255, 255, 255, 0.65)';
   const borderBottomColor = isSolid ? 'rgba(0, 0, 0, 0.05)' : 'transparent';
@@ -81,8 +80,8 @@ export function AppHeader({
         </View>
 
         {/* Logo */}
-        <TouchableOpacity 
-          style={styles.logoContainer} 
+        <TouchableOpacity
+          style={styles.logoContainer}
           activeOpacity={0.8}
           onPress={() => router.push('/(tabs)' as any)}
         >
@@ -91,8 +90,8 @@ export function AppHeader({
 
         {/* Right Actions */}
         <View style={styles.iconGroup}>
-          <TouchableOpacity 
-            style={styles.iconButton} 
+          <TouchableOpacity
+            style={styles.iconButton}
             activeOpacity={0.7}
             onPress={() => router.push('/explore')}
           >
@@ -101,21 +100,22 @@ export function AppHeader({
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Heart size={22} color={textColor} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton} 
+          <TouchableOpacity
+            style={styles.iconButton}
             activeOpacity={0.7}
             onPress={() => router.push('/cart')}
           >
             <ShoppingCart size={22} color={textColor} strokeWidth={2} />
             {itemCount > 0 && (
               <View style={styles.cartBadge}>
-                <ThemedText style={styles.cartBadgeText}>{itemCount > 99 ? '99+' : itemCount}</ThemedText>
+                <ThemedText style={styles.cartBadgeText}>
+                  {itemCount > 99 ? '99+' : itemCount}
+                </ThemedText>
               </View>
             )}
           </TouchableOpacity>
         </View>
       </View>
-
 
       {/* Sub Header (Horizontal Scrolling Category Tabs) */}
       {showSubHeader && (
@@ -130,10 +130,7 @@ export function AppHeader({
               return (
                 <TouchableOpacity
                   key={tab}
-                  style={[
-                    styles.subTabButton,
-                    isActive && { borderBottomColor: textColor },
-                  ]}
+                  style={[styles.subTabButton, isActive && { borderBottomColor: textColor }]}
                   activeOpacity={0.7}
                   onPress={() => handleSubTabPress(tab)}
                 >
@@ -234,4 +231,3 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 });
-

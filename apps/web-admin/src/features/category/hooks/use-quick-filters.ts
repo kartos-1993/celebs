@@ -10,13 +10,7 @@ import { QuickFilter } from '../types';
 export function useQuickFilters(categoryId?: string) {
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['quick-filters', categoryId],
     queryFn: async () => {
       if (!categoryId) return [];

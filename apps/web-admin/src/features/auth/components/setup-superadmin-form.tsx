@@ -44,10 +44,13 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
   function onSubmit(values: FormValues) {
     mutate(values, {
       onSuccess: () => {
-        navigate('/login', { state: { successMessage: 'Superadmin setup completed successfully! You can now log in.' } });
+        navigate('/login', {
+          state: { successMessage: 'Superadmin setup completed successfully! You can now log in.' },
+        });
       },
       onError: (error: any) => {
-        const errorMsg = error?.response?.data?.message || error?.message || 'Failed to complete setup';
+        const errorMsg =
+          error?.response?.data?.message || error?.message || 'Failed to complete setup';
         form.setError('setupSecret', {
           type: 'server',
           message: errorMsg,

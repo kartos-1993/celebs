@@ -1,8 +1,21 @@
 import { z } from 'zod';
 export { z };
-import { loginSchema, registerSchema, verificationEmailSchema, resetPasswordSchema, vendorRegisterSchema, setupSuperadminSchema } from './validators/auth.validator';
+import {
+  loginSchema,
+  registerSchema,
+  verificationEmailSchema,
+  resetPasswordSchema,
+  vendorRegisterSchema,
+  setupSuperadminSchema,
+} from './validators/auth.validator';
 import { verifyMfaSchema, verifyMfaForLoginSchema } from './validators/mfa.validator';
-import { vendorProfileSchema, warehouseSchema, vendorDocumentsSchema, vendorBusinessInfoSchema, createStaffSchema } from './validators/vendor.validator';
+import {
+  vendorProfileSchema,
+  warehouseSchema,
+  vendorDocumentsSchema,
+  vendorBusinessInfoSchema,
+  createStaffSchema,
+} from './validators/vendor.validator';
 import {
   createProductSchema,
   updateProductSchema,
@@ -46,5 +59,3 @@ export type CreateStaffType = z.infer<typeof createStaffSchema>;
 export * from './types/api';
 export * from './types/cart';
 export * from './types/marketing';
-
-

@@ -16,7 +16,7 @@ router.get(
     const tag = req.query.tag as string | undefined;
     const combos = await comboService.getActiveCombos(tag);
     res.status(HTTPSTATUS.OK).json({ success: true, data: combos });
-  })
+  }),
 );
 
 router.get(
@@ -26,7 +26,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const combos = await comboService.getAllCombos();
     res.status(HTTPSTATUS.OK).json({ success: true, data: combos });
-  })
+  }),
 );
 
 router.get(
@@ -37,7 +37,7 @@ router.get(
       return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Combo not found' });
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: combo });
-  })
+  }),
 );
 
 router.get(
@@ -48,7 +48,7 @@ router.get(
       return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Combo not found' });
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: combo });
-  })
+  }),
 );
 
 // Protected Admin routes
@@ -60,7 +60,7 @@ router.post(
     const validatedPayload = createComboSchema.parse(req.body);
     const newCombo = await comboService.createCombo(validatedPayload);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: newCombo });
-  })
+  }),
 );
 
 router.put(
@@ -70,7 +70,7 @@ router.put(
   asyncHandler(async (req, res) => {
     const updated = await comboService.updateCombo(req.params.id, req.body);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
-  })
+  }),
 );
 
 router.delete(
@@ -80,7 +80,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await comboService.deleteCombo(req.params.id);
     res.status(HTTPSTATUS.OK).json({ success: true, message: 'Combo deleted' });
-  })
+  }),
 );
 
 export default router;

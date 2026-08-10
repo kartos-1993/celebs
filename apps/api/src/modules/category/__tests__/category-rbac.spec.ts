@@ -15,7 +15,7 @@ describe('Category RBAC & Tree Operations', () => {
     await prisma.user.deleteMany({});
     await prisma.category.deleteMany({});
     await prisma.product.deleteMany({});
-    
+
     const hashedPassword = await hashValue('password123');
 
     // Create an Admin user in postgres
@@ -54,29 +54,29 @@ describe('Category RBAC & Tree Operations', () => {
 
     // Create mock sessions in postgres database for these users to satisfy setupJwtStrategy check
     const adminSession = await prisma.session.create({
-      data: { userId: adminUser.id, userAgent: 'test' }
+      data: { userId: adminUser.id, userAgent: 'test' },
     });
     const vendorSession = await prisma.session.create({
-      data: { userId: vendorUser.id, userAgent: 'test' }
+      data: { userId: vendorUser.id, userAgent: 'test' },
     });
     const superadminSession = await prisma.session.create({
-      data: { userId: superadminUser.id, userAgent: 'test' }
+      data: { userId: superadminUser.id, userAgent: 'test' },
     });
 
     adminToken = `accessToken=${jwt.sign(
       { userId: adminUser.id, sessionId: adminSession.id },
       config.JWT.SECRET,
-      { audience: 'user' }
+      { audience: 'user' },
     )}`;
     vendorToken = `accessToken=${jwt.sign(
       { userId: vendorUser.id, sessionId: vendorSession.id },
       config.JWT.SECRET,
-      { audience: 'user' }
+      { audience: 'user' },
     )}`;
     superadminToken = `accessToken=${jwt.sign(
       { userId: superadminUser.id, sessionId: superadminSession.id },
       config.JWT.SECRET,
-      { audience: 'user' }
+      { audience: 'user' },
     )}`;
   });
 
@@ -104,12 +104,14 @@ describe('Category RBAC & Tree Operations', () => {
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.name).toBe('Footwear');
-    
+
     // Verify in db
     const cat = await prisma.category.findFirst({ where: { name: 'Footwear' } });
     expect(cat).not.toBeNull();
 
-    const attributes = Array.isArray(cat?.attributes) ? (cat!.attributes as Array<{ name: string }>) : [];
+    const attributes = Array.isArray(cat?.attributes)
+      ? (cat!.attributes as Array<{ name: string }>)
+      : [];
     expect(attributes.length).toBe(1);
     expect(attributes[0].name).toBe('Size');
   });
@@ -189,7 +191,9 @@ describe('Category RBAC & Tree Operations', () => {
     expect(res.body.success).toBe(true);
 
     const updatedCat = await prisma.category.findUnique({ where: { id: createdCat.id } });
-    const attributes = Array.isArray(updatedCat?.attributes) ? (updatedCat!.attributes as Array<{ name: string; type: string; values: string[] }>) : [];
+    const attributes = Array.isArray(updatedCat?.attributes)
+      ? (updatedCat!.attributes as Array<{ name: string; type: string; values: string[] }>)
+      : [];
     expect(attributes[0].type).toBe('select');
     expect(attributes[0].values).toContain('Silk');
   });

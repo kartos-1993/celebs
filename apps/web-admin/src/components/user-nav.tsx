@@ -1,13 +1,13 @@
-import { LayoutGrid, LogOut, User } from "lucide-react";
+import { LayoutGrid, LogOut, User } from 'lucide-react';
 
-import { Button } from "@celebs/shared-ui/components/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
+import { Button } from '@celebs/shared-ui/components/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
-} from "@celebs/shared-ui/components/tooltip";
+} from '@celebs/shared-ui/components/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +16,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@celebs/shared-ui/components/dropdown-menu";
-import { Link, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { logoutMutationFn } from "@/lib/api";
-import { useAuthContext } from "@/context/auth-provider";
+} from '@celebs/shared-ui/components/dropdown-menu';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { logoutMutationFn } from '@/lib/api';
+import { useAuthContext } from '@/context/auth-provider';
 
 export function UserNav() {
   const navigate = useNavigate();
@@ -44,7 +44,12 @@ export function UserNav() {
   });
 
   const initials = user?.name
-    ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
     : 'JD';
 
   return (
@@ -53,10 +58,7 @@ export function UserNav() {
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="relative h-8 w-8 rounded-full"
-              >
+              <Button variant="outline" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="#" alt="Avatar" />
                   <AvatarFallback className="bg-transparent">{initials}</AvatarFallback>
@@ -108,4 +110,3 @@ export function UserNav() {
     </DropdownMenu>
   );
 }
-

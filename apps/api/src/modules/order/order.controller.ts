@@ -1,7 +1,12 @@
 import { Request, Response } from 'express';
 import { HTTPSTATUS } from '@celebs/shared-utils';
 import { OrderService } from './order.service';
-import { addressSchema, checkoutSchema, updateAddressSchema, updateOrderItemStatusSchema } from '@celebs/shared-types';
+import {
+  addressSchema,
+  checkoutSchema,
+  updateAddressSchema,
+  updateOrderItemStatusSchema,
+} from '@celebs/shared-types';
 
 export class OrderController {
   private orderService: OrderService;
@@ -68,7 +73,9 @@ export class OrderController {
     const userId = (req as any).user.id;
     const { orderId } = req.params;
     const cancelled = await this.orderService.cancelOrder(userId, orderId);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: cancelled, message: 'Order cancelled successfully' });
+    res
+      .status(HTTPSTATUS.OK)
+      .json({ success: true, data: cancelled, message: 'Order cancelled successfully' });
   };
 
   // --- VENDOR FULFILLMENT HANDLERS ---
@@ -93,10 +100,12 @@ export class OrderController {
       orderItemId,
       validated.itemStatus,
       validated.trackingNumber,
-      validated.courierPartner
+      validated.courierPartner,
     );
 
-    res.status(HTTPSTATUS.OK).json({ success: true, data: updated, message: 'Order item status updated' });
+    res
+      .status(HTTPSTATUS.OK)
+      .json({ success: true, data: updated, message: 'Order item status updated' });
   };
 
   // --- ADMIN HANDLERS ---

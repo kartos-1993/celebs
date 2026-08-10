@@ -54,15 +54,17 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
   const [newOptionInput, setNewOptionInput] = useState<string>('');
 
-  const attributeName = useWatch({
-    control: form.control,
-    name: `attributes.${index}.name`,
-  }) || `Attribute #${index + 1}`;
+  const attributeName =
+    useWatch({
+      control: form.control,
+      name: `attributes.${index}.name`,
+    }) || `Attribute #${index + 1}`;
 
-  const attributeType = useWatch({
-    control: form.control,
-    name: `attributes.${index}.type`,
-  }) || 'text';
+  const attributeType =
+    useWatch({
+      control: form.control,
+      name: `attributes.${index}.type`,
+    }) || 'text';
 
   const isVariant = useWatch({
     control: form.control,
@@ -89,13 +91,15 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
   const { data: optionSets = [], isLoading: loadingSets } = useQuery<OptionSetItem[]>({
     queryKey: ['option-sets'],
     queryFn: async () => {
-      const res = await ProductAPI.get<{ data?: Array<{ id?: string; name: string }> }>('/option-sets');
+      const res = await ProductAPI.get<{ data?: Array<{ id?: string; name: string }> }>(
+        '/option-sets',
+      );
       const rawData = res.data;
       const sets = Array.isArray(rawData?.data)
         ? rawData.data
         : Array.isArray(rawData)
-        ? (rawData as Array<{ id?: string; name: string }>)
-        : [];
+          ? (rawData as Array<{ id?: string; name: string }>)
+          : [];
       return sets.map((s: { id?: string; name: string }) => ({
         id: String(s.id || ''),
         name: s.name,
@@ -111,7 +115,11 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
     optionSets.find((s) => {
       const sName = s.name.toLowerCase();
       const aName = (attributeName || '').toLowerCase();
-      return sName === aName || (aName === 'color' && sName.includes('color')) || (aName === 'size' && sName.includes('size'));
+      return (
+        sName === aName ||
+        (aName === 'color' && sName.includes('color')) ||
+        (aName === 'size' && sName.includes('size'))
+      );
     })?.id;
 
   // Load preview of standard option set values when effectiveOptionSetId changes via TanStack Query
@@ -126,7 +134,9 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
       const rawData = res.data;
       const rawVals = rawData?.data?.values ?? rawData?.values ?? [];
       return rawVals
-        .map((v: string | { label?: string; name?: string }) => (typeof v === 'string' ? v : v?.label ?? v?.name ?? ''))
+        .map((v: string | { label?: string; name?: string }) =>
+          typeof v === 'string' ? v : (v?.label ?? v?.name ?? ''),
+        )
         .filter(Boolean);
     },
     enabled: !!(useStandardOptions && effectiveOptionSetId),
@@ -149,7 +159,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
     form.setValue(
       `attributes.${index}.values`,
       attributeValues.filter((v) => v !== valToRemove),
-      { shouldDirty: true, shouldValidate: true }
+      { shouldDirty: true, shouldValidate: true },
     );
   };
 
@@ -171,13 +181,19 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
           </Badge>
 
           {isVariant && (
-            <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+            >
               Variant Option
             </Badge>
           )}
 
           {useStandardOptions && (
-            <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200">
+            <Badge
+              variant="outline"
+              className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200"
+            >
               <Layers className="w-3 h-3 mr-1" />
               {matchedSetName || 'Linked Option Set'}
             </Badge>
@@ -215,7 +231,11 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                 <FormItem>
                   <FormLabel className="text-xs">Attribute Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Fit Type, Material, Color" {...field} className="text-sm" />
+                    <Input
+                      placeholder="e.g. Fit Type, Material, Color"
+                      {...field}
+                      className="text-sm"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -229,7 +249,12 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                 <FormItem>
                   <FormLabel className="text-xs">Display Label (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Select Fit Type" {...field} value={field.value ?? ''} className="text-sm" />
+                    <Input
+                      placeholder="e.g. Select Fit Type"
+                      {...field}
+                      value={field.value ?? ''}
+                      className="text-sm"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -307,7 +332,9 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                       }}
                     />
                   </FormControl>
-                  <FormLabel className="cursor-pointer text-xs font-semibold">Use as Product Variation (SKU Axis)</FormLabel>
+                  <FormLabel className="cursor-pointer text-xs font-semibold">
+                    Use as Product Variation (SKU Axis)
+                  </FormLabel>
                 </FormItem>
               )}
             />
@@ -329,7 +356,8 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
           {isVariant && (
             <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-md border border-purple-100 dark:border-purple-900/50 space-y-3">
               <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
-                ✨ Product Variant Option: Sellers will choose values for this attribute to generate product SKUs.
+                ✨ Product Variant Option: Sellers will choose values for this attribute to generate
+                product SKUs.
               </p>
 
               <FormField
@@ -348,7 +376,9 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                         }}
                       />
                     </FormControl>
-                    <FormLabel className="cursor-pointer text-xs">Link to Standard Option Set (e.g. Basic Colors, Ring Sizes)</FormLabel>
+                    <FormLabel className="cursor-pointer text-xs">
+                      Link to Standard Option Set (e.g. Basic Colors, Ring Sizes)
+                    </FormLabel>
                   </FormItem>
                 )}
               />
@@ -367,7 +397,11 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                         <FormControl>
                           <SelectTrigger className="text-xs">
                             <SelectValue
-                              placeholder={loadingSets ? 'Loading option sets...' : 'Select standard option set'}
+                              placeholder={
+                                loadingSets
+                                  ? 'Loading option sets...'
+                                  : 'Select standard option set'
+                              }
                             />
                           </SelectTrigger>
                         </FormControl>
@@ -405,7 +439,9 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                       </Badge>
                     ))}
                     {optionSetValues.length === 0 && (
-                      <span className="text-muted-foreground italic">No values in selected option set.</span>
+                      <span className="text-muted-foreground italic">
+                        No values in selected option set.
+                      </span>
                     )}
                   </div>
                 </div>
@@ -424,14 +460,24 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                       }}
                       className="text-xs h-8"
                     />
-                    <Button type="button" variant="outline" size="sm" onClick={handleAddManualValue} className="h-8 text-xs">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddManualValue}
+                      className="h-8 text-xs"
+                    >
                       <Plus className="h-3.5 w-3.5 mr-1" /> Add Option
                     </Button>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {attributeValues.map((val) => (
-                      <Badge key={val} variant="secondary" className="flex items-center gap-1 py-0.5 px-2 text-xs">
+                      <Badge
+                        key={val}
+                        variant="secondary"
+                        className="flex items-center gap-1 py-0.5 px-2 text-xs"
+                      >
                         <span>{val}</span>
                         <X
                           className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-rose-500"
@@ -440,7 +486,9 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                       </Badge>
                     ))}
                     {attributeValues.length === 0 && (
-                      <span className="text-xs text-muted-foreground italic">No option values added yet.</span>
+                      <span className="text-xs text-muted-foreground italic">
+                        No option values added yet.
+                      </span>
                     )}
                   </div>
                 </div>

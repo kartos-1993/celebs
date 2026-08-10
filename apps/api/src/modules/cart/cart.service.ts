@@ -5,7 +5,6 @@ import { Prisma } from '@prisma/client';
 import { ProductModel } from '@/db/models/product.model';
 import { InventoryService } from '../inventory/inventory.service';
 
-
 export class CartService {
   /**
    * Helper to resolve or create a Cart record in PostgreSQL
@@ -15,7 +14,7 @@ export class CartService {
       throw new AppError(
         'Either userId or sessionId is required to access cart',
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
@@ -58,7 +57,7 @@ export class CartService {
 
     // Collect product IDs for batch lookup in MongoDB
     const productIds = Array.from(
-      new Set(cartWithItems.items.map((item) => item.inventory.productId))
+      new Set(cartWithItems.items.map((item) => item.inventory.productId)),
     );
 
     const products = await ProductModel.find({
@@ -99,7 +98,7 @@ export class CartService {
       let variantImage = product?.mainImages?.[0] || '';
       if (product && product.colorVariants) {
         const variant = product.colorVariants.find(
-          (v) => v.name.toLowerCase() === item.inventory.colorVariantName.toLowerCase()
+          (v) => v.name.toLowerCase() === item.inventory.colorVariantName.toLowerCase(),
         );
         if (variant && variant.images && variant.images.length > 0) {
           variantImage = variant.images[0];
@@ -154,10 +153,13 @@ export class CartService {
   static async addToCart(
     userId: string | undefined,
     sessionId: string | undefined,
-    input: AddToCartInput
+    input: AddToCartInput,
   ): Promise<CartResponse> {
     const { productId, colorVariantName, size, quantity } = input;
-    logger.info({ userId, sessionId, productId, colorVariantName, size, quantity }, '[CartService.addToCart] Starting item addition');
+    logger.info(
+      { userId, sessionId, productId, colorVariantName, size, quantity },
+      '[CartService.addToCart] Starting item addition',
+    );
 
     // 1. Validate Product Existence
     const product = await ProductModel.findById(productId).exec();
@@ -170,13 +172,16 @@ export class CartService {
     const stockInfo = await InventoryService.findOrCreateInventory(
       productId,
       colorVariantName,
-      size
+      size,
     );
     logger.info({ stockInfo }, '[CartService.addToCart] Inventory stock lookup complete');
 
     // 3. Get Cart
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
-    logger.info({ cartId: cartRecord.id, userId: cartRecord.userId, sessionId: cartRecord.sessionId }, '[CartService.addToCart] Cart record resolved');
+    logger.info(
+      { cartId: cartRecord.id, userId: cartRecord.userId, sessionId: cartRecord.sessionId },
+      '[CartService.addToCart] Cart record resolved',
+    );
 
     // Check existing item in cart
     const existingCart = await cartRepository.findUniqueWithItems(cartRecord.id);
@@ -185,11 +190,14 @@ export class CartService {
     const targetQuantity = (existingItem?.quantity || 0) + quantity;
 
     if (stockInfo.availableQuantity < targetQuantity) {
-      logger.warn({ availableStock: stockInfo.availableQuantity, targetQuantity }, '[CartService.addToCart] Stock insufficient');
+      logger.warn(
+        { availableStock: stockInfo.availableQuantity, targetQuantity },
+        '[CartService.addToCart] Stock insufficient',
+      );
       throw new AppError(
         `Requested quantity (${targetQuantity}) exceeds available stock (${stockInfo.availableQuantity})`,
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
@@ -206,7 +214,7 @@ export class CartService {
     userId: string | undefined,
     sessionId: string | undefined,
     itemId: string,
-    newQuantity: number
+    newQuantity: number,
   ): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
@@ -227,7 +235,7 @@ export class CartService {
       throw new AppError(
         `Cannot update to ${newQuantity}. Only ${availableStock} in stock.`,
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
@@ -242,7 +250,7 @@ export class CartService {
   static async removeCartItem(
     userId: string | undefined,
     sessionId: string | undefined,
-    itemId: string
+    itemId: string,
   ): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 

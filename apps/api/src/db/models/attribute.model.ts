@@ -137,7 +137,4 @@ const AttributeSchema: Schema = new Schema(
 // Optimize queries with compound index
 AttributeSchema.index({ categoryId: 1, name: 1 });
 
-export const AttributeModel = mongoose.model<IAttribute>(
-  'Attribute',
-  AttributeSchema,
-);
+export const AttributeModel = mongoose.model<IAttribute>('Attribute', AttributeSchema);

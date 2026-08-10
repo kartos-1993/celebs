@@ -34,9 +34,7 @@ describe('Rate Limiting System', () => {
     it('should return 429 Too Many Requests when upload limit (30) is exceeded', async () => {
       let lastRes: any;
       for (let i = 0; i < 31; i++) {
-        lastRes = await request(app)
-          .post('/api/v1/media/upload')
-          .set('x-test-rate-limit', 'true');
+        lastRes = await request(app).post('/api/v1/media/upload').set('x-test-rate-limit', 'true');
       }
 
       expect(lastRes.status).toBe(429);
@@ -47,9 +45,7 @@ describe('Rate Limiting System', () => {
 
   describe('Product Search Rate Limiter (/api/v1/products)', () => {
     it('should process unauthenticated search queries normally under limit', async () => {
-      const res = await request(app)
-        .get('/api/v1/products')
-        .set('x-test-rate-limit', 'true');
+      const res = await request(app).get('/api/v1/products').set('x-test-rate-limit', 'true');
 
       expect(res.status).not.toBe(429);
     });

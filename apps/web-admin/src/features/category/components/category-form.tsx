@@ -1,12 +1,7 @@
 import React, { useRef, useCallback } from 'react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@celebs/shared-ui/components/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 import { SlidersHorizontal, FolderTree, Store, Loader2 } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { Category } from '../types';

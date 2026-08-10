@@ -25,23 +25,16 @@ export const setupInterceptors = () => {
       // Future tenant/token header injection if needed
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => Promise.reject(error),
   );
 
   axiosClient.interceptors.response.use(
     (response) => {
-      if (
-        response.data &&
-        typeof response.data === 'object' &&
-        response.data.success === false
-      ) {
+      if (response.data && typeof response.data === 'object' && response.data.success === false) {
         const errorData = response.data as Record<string, unknown>;
         const apiError: ApiErrorResponse = {
           status: response.status,
-          message:
-            typeof errorData.message === 'string'
-              ? errorData.message
-              : 'Operation failed',
+          message: typeof errorData.message === 'string' ? errorData.message : 'Operation failed',
           errorCode: typeof errorData.errorCode === 'string' ? errorData.errorCode : undefined,
           ...errorData,
         };
@@ -58,7 +51,12 @@ export const setupInterceptors = () => {
 
       const { status, data } = error.response;
 
-      if (status === 401 && originalRequest && !originalRequest._retry && !originalRequest.skipAuthRefresh) {
+      if (
+        status === 401 &&
+        originalRequest &&
+        !originalRequest._retry &&
+        !originalRequest.skipAuthRefresh
+      ) {
         const bypassUrls = [
           '/auth/login',
           '/auth/register',
@@ -68,18 +66,13 @@ export const setupInterceptors = () => {
           '/auth/refresh',
         ];
 
-        const isBypassUrl = bypassUrls.some((url) =>
-          originalRequest.url?.includes(url)
-        );
+        const isBypassUrl = bypassUrls.some((url) => originalRequest.url?.includes(url));
 
         if (isBypassUrl) {
           const errorData = data as Record<string, unknown>;
           return Promise.reject({
             status,
-            message:
-              typeof errorData?.message === 'string'
-                ? errorData.message
-                : error.message,
+            message: typeof errorData?.message === 'string' ? errorData.message : error.message,
             ...(typeof errorData === 'object' ? errorData : {}),
           } as ApiErrorResponse);
         }
@@ -113,13 +106,10 @@ export const setupInterceptors = () => {
       const errorData = data as Record<string, unknown>;
       return Promise.reject({
         status,
-        message:
-          typeof errorData?.message === 'string'
-            ? errorData.message
-            : error.message,
+        message: typeof errorData?.message === 'string' ? errorData.message : error.message,
         ...(typeof errorData === 'object' ? errorData : {}),
       } as ApiErrorResponse);
-    }
+    },
   );
 };
 

@@ -26,7 +26,7 @@ describe('OrderStateMachine Unit Tests', () => {
 
   it('should throw AppError when validateTransition is called on illegal path', () => {
     expect(() => validateTransition(OrderStatus.DELIVERED, OrderStatus.CANCELLED)).toThrow(
-      "Invalid order status transition from 'DELIVERED' to 'CANCELLED'."
+      "Invalid order status transition from 'DELIVERED' to 'CANCELLED'.",
     );
   });
 });

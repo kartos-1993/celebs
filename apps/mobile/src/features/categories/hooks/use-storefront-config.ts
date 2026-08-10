@@ -5,7 +5,9 @@ import { StorefrontConfigData } from '../types';
 export function useStorefrontConfig(categorySlug: string) {
   const fetchStorefrontConfig = async (): Promise<StorefrontConfigData | null> => {
     if (!categorySlug) return null;
-    const response = await apiClient.get(`/category/${categorySlug}/storefront`, { skipAuth: true });
+    const response = await apiClient.get(`/category/${categorySlug}/storefront`, {
+      skipAuth: true,
+    });
     const resData = response.data;
     if (resData.success && resData.data) {
       return resData.data as StorefrontConfigData;

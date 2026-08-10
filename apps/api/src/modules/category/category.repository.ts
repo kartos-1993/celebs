@@ -31,8 +31,12 @@ export class CategoryRepository {
       parentCategory: category.parentCategory ? String(category.parentCategory) : null,
       parent: category.parentCategory ? String(category.parentCategory) : null,
       attributes: Array.isArray(category.attributes) ? (category.attributes as unknown[]) : [],
-      sizeChartColumns: Array.isArray(category.sizeChartColumns) ? (category.sizeChartColumns as string[]) : [],
-      bodyChartColumns: Array.isArray(category.bodyChartColumns) ? (category.bodyChartColumns as string[]) : [],
+      sizeChartColumns: Array.isArray(category.sizeChartColumns)
+        ? (category.sizeChartColumns as string[])
+        : [],
+      bodyChartColumns: Array.isArray(category.bodyChartColumns)
+        ? (category.bodyChartColumns as string[])
+        : [],
       imageUrl: category.imageUrl ? String(category.imageUrl) : null,
       isActive: category.isActive !== false,
       createdAt: category.createdAt instanceof Date ? category.createdAt : new Date(),
@@ -71,7 +75,8 @@ export class CategoryRepository {
 
   async find(query: Record<string, unknown> = {}, limit?: number): Promise<FormattedCategory[]> {
     const where: Prisma.CategoryWhereInput = {};
-    if (query.parentCategory !== undefined) where.parentCategory = query.parentCategory as string | null;
+    if (query.parentCategory !== undefined)
+      where.parentCategory = query.parentCategory as string | null;
     if (query.isActive !== undefined) where.isActive = Boolean(query.isActive);
     if (query.name && typeof query.name === 'string') {
       where.name = { contains: query.name, mode: 'insensitive' };
@@ -95,10 +100,18 @@ export class CategoryRepository {
         slug: String(data.slug || ''),
         path: Array.isArray(data.path) ? data.path.join('/') : String(data.path || ''),
         level: Number(data.level || 0),
-        parentCategory: data.parent ? String(data.parent) : data.parentCategory ? String(data.parentCategory) : null,
+        parentCategory: data.parent
+          ? String(data.parent)
+          : data.parentCategory
+            ? String(data.parentCategory)
+            : null,
         attributes: (data.attributes ?? []) as unknown as Prisma.InputJsonValue,
-        sizeChartColumns: Array.isArray(data.sizeChartColumns) ? (data.sizeChartColumns as string[]) : [],
-        bodyChartColumns: Array.isArray(data.bodyChartColumns) ? (data.bodyChartColumns as string[]) : [],
+        sizeChartColumns: Array.isArray(data.sizeChartColumns)
+          ? (data.sizeChartColumns as string[])
+          : [],
+        bodyChartColumns: Array.isArray(data.bodyChartColumns)
+          ? (data.bodyChartColumns as string[])
+          : [],
         imageUrl: data.imageUrl ? String(data.imageUrl) : null,
         isActive: data.isActive !== false,
       },
@@ -107,25 +120,38 @@ export class CategoryRepository {
     return this.formatCategory(category as unknown as Record<string, unknown>);
   }
 
-  async updateById(id: string, updateData: Record<string, unknown>): Promise<FormattedCategory | null> {
+  async updateById(
+    id: string,
+    updateData: Record<string, unknown>,
+  ): Promise<FormattedCategory | null> {
     const data: Prisma.CategoryUncheckedUpdateInput = {};
     if (updateData.name !== undefined) data.name = String(updateData.name);
     if (updateData.slug !== undefined) data.slug = String(updateData.slug);
     if (updateData.path !== undefined) {
-      data.path = Array.isArray(updateData.path) ? updateData.path.join('/') : String(updateData.path);
+      data.path = Array.isArray(updateData.path)
+        ? updateData.path.join('/')
+        : String(updateData.path);
     }
     if (updateData.level !== undefined) data.level = Number(updateData.level);
     if (updateData.parent !== undefined || updateData.parentCategory !== undefined) {
-      data.parentCategory = updateData.parent ? String(updateData.parent) : updateData.parentCategory ? String(updateData.parentCategory) : null;
+      data.parentCategory = updateData.parent
+        ? String(updateData.parent)
+        : updateData.parentCategory
+          ? String(updateData.parentCategory)
+          : null;
     }
     if (updateData.attributes !== undefined) {
       data.attributes = (updateData.attributes ?? []) as unknown as Prisma.InputJsonValue;
     }
     if (updateData.sizeChartColumns !== undefined) {
-      data.sizeChartColumns = Array.isArray(updateData.sizeChartColumns) ? (updateData.sizeChartColumns as string[]) : [];
+      data.sizeChartColumns = Array.isArray(updateData.sizeChartColumns)
+        ? (updateData.sizeChartColumns as string[])
+        : [];
     }
     if (updateData.bodyChartColumns !== undefined) {
-      data.bodyChartColumns = Array.isArray(updateData.bodyChartColumns) ? (updateData.bodyChartColumns as string[]) : [];
+      data.bodyChartColumns = Array.isArray(updateData.bodyChartColumns)
+        ? (updateData.bodyChartColumns as string[])
+        : [];
     }
     if (updateData.imageUrl !== undefined) {
       data.imageUrl = updateData.imageUrl ? String(updateData.imageUrl) : null;

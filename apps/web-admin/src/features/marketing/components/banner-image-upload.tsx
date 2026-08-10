@@ -70,7 +70,11 @@ export function BannerImageUpload({
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
             >
-              {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              {isUploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
               Change Image
             </Button>
             <Button
@@ -90,13 +94,17 @@ export function BannerImageUpload({
         <div
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 bg-slate-50/50 hover:bg-slate-50 ${
-            isUploading ? 'opacity-50 pointer-events-none' : 'border-slate-300 hover:border-indigo-400'
+            isUploading
+              ? 'opacity-50 pointer-events-none'
+              : 'border-slate-300 hover:border-indigo-400'
           }`}
         >
           {isUploading ? (
             <div className="flex flex-col items-center gap-2 text-indigo-600">
               <Loader2 className="w-8 h-8 animate-spin" />
-              <span className="text-xs font-medium">Uploading banner image to cloud storage...</span>
+              <span className="text-xs font-medium">
+                Uploading banner image to cloud storage...
+              </span>
             </div>
           ) : (
             <>
@@ -104,7 +112,9 @@ export function BannerImageUpload({
                 <ImagePlus className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs font-semibold text-slate-800">Click to upload banner image</span>
+                <span className="text-xs font-semibold text-slate-800">
+                  Click to upload banner image
+                </span>
                 <span className="text-[11px] text-slate-500 block mt-0.5">
                   PNG, JPG, WebP up to 5MB
                 </span>

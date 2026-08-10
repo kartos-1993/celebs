@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  ScrollView,
-  View,
-  TouchableOpacity,
-  Linking,
-} from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -31,7 +25,14 @@ interface OrderItem {
   variant: string;
   totalAmount: number;
   paymentMethod: string;
-  status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'PACKED' | 'HANDED_OVER' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+  status:
+    | 'PENDING_PAYMENT'
+    | 'CONFIRMED'
+    | 'PACKED'
+    | 'HANDED_OVER'
+    | 'OUT_FOR_DELIVERY'
+    | 'DELIVERED'
+    | 'CANCELLED';
   courierPartner?: string;
   trackingNumber?: string;
 }
@@ -157,12 +158,19 @@ export default function MyOrdersScreen() {
                           <View style={[styles.stepDot, isPassed && styles.stepDotPassed]}>
                             {isPassed && <CheckCircle2 size={12} color="#ffffff" />}
                           </View>
-                          <ThemedText style={[styles.stepLabel, isPassed && styles.stepLabelPassed]}>
+                          <ThemedText
+                            style={[styles.stepLabel, isPassed && styles.stepLabelPassed]}
+                          >
                             {stage.label}
                           </ThemedText>
                         </View>
                         {idx < STAGES.length - 1 && (
-                          <View style={[styles.stepLine, idx < currentStageIdx && styles.stepLinePassed]} />
+                          <View
+                            style={[
+                              styles.stepLine,
+                              idx < currentStageIdx && styles.stepLinePassed,
+                            ]}
+                          />
                         )}
                       </React.Fragment>
                     );

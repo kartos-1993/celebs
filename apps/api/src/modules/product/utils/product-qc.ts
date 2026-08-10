@@ -24,9 +24,16 @@ export interface IQCCheckResult {
 /**
  * Calculates a standard Quality Control score (0-100) and diagnostic checklist for a product listing.
  */
-export function calculateProductQCScore(productInput?: Partial<IProduct> | Record<string, unknown> | null): IQCCheckResult {
+export function calculateProductQCScore(
+  productInput?: Partial<IProduct> | Record<string, unknown> | null,
+): IQCCheckResult {
   if (!productInput) {
-    const emptyCheck: IQCCheckItem = { passed: false, score: 0, maxScore: 0, details: 'Product data missing' };
+    const emptyCheck: IQCCheckItem = {
+      passed: false,
+      score: 0,
+      maxScore: 0,
+      details: 'Product data missing',
+    };
     return {
       score: 0,
       grade: 'CRITICAL',
@@ -47,9 +54,9 @@ export function calculateProductQCScore(productInput?: Partial<IProduct> | Recor
   // 1. Main Images Check (25 pts max)
   const imageCount = product.mainImages?.length || 0;
   const hasVariantImages = Boolean(
-    product.colorVariants?.some((variant) => variant.images && variant.images.length > 0)
+    product.colorVariants?.some((variant) => variant.images && variant.images.length > 0),
   );
-  
+
   let imageScore = 0;
   if (imageCount >= 3) {
     imageScore = 20;
@@ -78,7 +85,10 @@ export function calculateProductQCScore(productInput?: Partial<IProduct> | Recor
     passed: titleLen >= 15,
     score: titleScore,
     maxScore: 15,
-    details: titleLen >= 15 ? `Descriptive title (${titleLen} chars)` : `Title is brief (${titleLen} chars)`,
+    details:
+      titleLen >= 15
+        ? `Descriptive title (${titleLen} chars)`
+        : `Title is brief (${titleLen} chars)`,
   };
 
   // 3. Description Check (15 pts max)
@@ -95,13 +105,18 @@ export function calculateProductQCScore(productInput?: Partial<IProduct> | Recor
     passed: descLen >= 80,
     score: descScore,
     maxScore: 15,
-    details: descLen >= 80 ? `Comprehensive description (${descLen} chars)` : `Short description (${descLen} chars)`,
+    details:
+      descLen >= 80
+        ? `Comprehensive description (${descLen} chars)`
+        : `Short description (${descLen} chars)`,
   };
 
   // 4. Sizing & Measurement Check (15 pts max)
   const sizes = product.sizes || [];
   const hasMeasurements = sizes.some(
-    (s) => (s.productMeasurements && s.productMeasurements.length > 0) || (s.bodyMeasurements && s.bodyMeasurements.length > 0)
+    (s) =>
+      (s.productMeasurements && s.productMeasurements.length > 0) ||
+      (s.bodyMeasurements && s.bodyMeasurements.length > 0),
   );
   let sizingScore = 0;
   if (sizes.length > 0 && hasMeasurements) {
@@ -115,16 +130,19 @@ export function calculateProductQCScore(productInput?: Partial<IProduct> | Recor
     passed: sizingScore >= 10,
     score: sizingScore,
     maxScore: 15,
-    details: sizes.length > 0
-      ? `${sizes.length} size(s) listed (${hasMeasurements ? 'with detailed measurements' : 'missing size chart values'})`
-      : 'No sizes configured',
+    details:
+      sizes.length > 0
+        ? `${sizes.length} size(s) listed (${hasMeasurements ? 'with detailed measurements' : 'missing size chart values'})`
+        : 'No sizes configured',
   };
 
   // 5. Dynamic Attributes Check (15 pts max)
-  const dynamicKeys = product.dynamicData ? Object.keys(product.dynamicData).filter((k) => {
-    const val = product.dynamicData?.[k];
-    return val !== undefined && val !== null && val !== '';
-  }) : [];
+  const dynamicKeys = product.dynamicData
+    ? Object.keys(product.dynamicData).filter((k) => {
+        const val = product.dynamicData?.[k];
+        return val !== undefined && val !== null && val !== '';
+      })
+    : [];
   let attrScore = 0;
   if (dynamicKeys.length >= 3) {
     attrScore = 15;
@@ -154,7 +172,10 @@ export function calculateProductQCScore(productInput?: Partial<IProduct> | Recor
     passed: price > 0 && (discountedPrice === undefined || discountedPrice < price),
     score: priceScore,
     maxScore: 10,
-    details: price > 0 ? `Price set to Rs. ${price}${discountedPrice ? ` (Discounted: Rs. ${discountedPrice})` : ''}` : 'Price missing or invalid',
+    details:
+      price > 0
+        ? `Price set to Rs. ${price}${discountedPrice ? ` (Discounted: Rs. ${discountedPrice})` : ''}`
+        : 'Price missing or invalid',
   };
 
   // 7. Variants & Stock Check (5 pts max)
@@ -172,14 +193,15 @@ export function calculateProductQCScore(productInput?: Partial<IProduct> | Recor
     passed: totalStock > 0,
     score: variantScore,
     maxScore: 5,
-    details: skus.length > 0
-      ? `${skus.length} SKU variant(s) with total inventory of ${totalStock} units`
-      : `${variants.length} variant(s) with total inventory of ${totalStock} units`,
+    details:
+      skus.length > 0
+        ? `${skus.length} SKU variant(s) with total inventory of ${totalStock} units`
+        : `${variants.length} variant(s) with total inventory of ${totalStock} units`,
   };
 
   const totalScore = Math.min(
     100,
-    imageScore + titleScore + descScore + sizingScore + attrScore + priceScore + variantScore
+    imageScore + titleScore + descScore + sizingScore + attrScore + priceScore + variantScore,
   );
 
   let grade: 'EXCELLENT' | 'GOOD' | 'NEEDS_IMPROVEMENT' | 'CRITICAL' = 'CRITICAL';

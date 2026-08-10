@@ -85,9 +85,7 @@ const ProductFormSidebar = ({
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-          Checklist
-        </p>
+        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Checklist</p>
         <div className="mt-2 space-y-0.5">
           {sections.map((section) => (
             <button
@@ -125,7 +123,9 @@ const ProductFormSidebar = ({
           <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">Tips</p>
           <div className="mt-1.5 space-y-1 text-[11px] text-gray-500 dark:text-gray-400">
             {tips.map((tip) => (
-              <p key={tip} className="leading-snug">{tip}</p>
+              <p key={tip} className="leading-snug">
+                {tip}
+              </p>
             ))}
           </div>
         </div>

@@ -21,11 +21,7 @@ interface SeedCategory {
 }
 
 function mkAttr(a: SeedAttr) {
-  const group: AllowedGroup = a.group
-    ? a.group
-    : a.isVariant
-    ? 'variant'
-    : 'details';
+  const group: AllowedGroup = a.group ? a.group : a.isVariant ? 'variant' : 'details';
   return {
     name: a.name,
     label: a.label || a.name,
@@ -53,7 +49,13 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Movement Type',
               type: 'select',
-              values: ['Automatic Self-Winding', 'Manual Hand-Wind', 'Skeleton Mechanical', 'Tourbillon', 'Quartz'],
+              values: [
+                'Automatic Self-Winding',
+                'Manual Hand-Wind',
+                'Skeleton Mechanical',
+                'Tourbillon',
+                'Quartz',
+              ],
               isRequired: true,
               group: 'details',
             },
@@ -67,7 +69,13 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Strap Material',
               type: 'multiselect',
-              values: ['316L Steel Bracelet', 'Genuine Leather', 'NATO Nylon Strap', 'Rubber Strap', 'Mesh Bracelet'],
+              values: [
+                '316L Steel Bracelet',
+                'Genuine Leather',
+                'NATO Nylon Strap',
+                'Rubber Strap',
+                'Mesh Bracelet',
+              ],
               isRequired: true,
               isVariant: true,
               group: 'variant',
@@ -75,7 +83,14 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Dial Color',
               type: 'multiselect',
-              values: ['Midnight Blue', 'Obsidian Black', 'Sunburst Silver', 'Emerald Green', 'Champagne Gold', 'Brown'],
+              values: [
+                'Midnight Blue',
+                'Obsidian Black',
+                'Sunburst Silver',
+                'Emerald Green',
+                'Champagne Gold',
+                'Brown',
+              ],
               isRequired: true,
               isVariant: true,
               group: 'variant',
@@ -95,14 +110,32 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Base Metal',
               type: 'select',
-              values: ['925 Sterling Silver', '14K Gold', '18K Yellow Gold', 'Tungsten Carbide', 'Titanium', '316L Stainless Steel', 'Brass'],
+              values: [
+                '925 Sterling Silver',
+                '14K Gold',
+                '18K Yellow Gold',
+                'Tungsten Carbide',
+                'Titanium',
+                '316L Stainless Steel',
+                'Brass',
+              ],
               isRequired: true,
               group: 'details',
             },
             {
               name: 'Ring Size (US)',
               type: 'multiselect',
-              values: ['US 6', 'US 7', 'US 8', 'US 9', 'US 10', 'US 11', 'US 12', 'US 13', 'Free Size'],
+              values: [
+                'US 6',
+                'US 7',
+                'US 8',
+                'US 9',
+                'US 10',
+                'US 11',
+                'US 12',
+                'US 13',
+                'Free Size',
+              ],
               isRequired: true,
               isVariant: true,
               group: 'variant',
@@ -128,11 +161,8 @@ async function seedCategoryRecursively(
 
   const existing = await prisma.category.findFirst({
     where: {
-      OR: [
-        { slug },
-        { name: cat.name, parentCategory: parentId }
-      ]
-    }
+      OR: [{ slug }, { name: cat.name, parentCategory: parentId }],
+    },
   });
 
   let doc;
@@ -148,7 +178,7 @@ async function seedCategoryRecursively(
         imageUrl: cat.imageUrl || null,
         attributes: formattedAttributes,
         isActive: true,
-      }
+      },
     });
   } else {
     doc = await prisma.category.create({
@@ -161,7 +191,7 @@ async function seedCategoryRecursively(
         imageUrl: cat.imageUrl || null,
         attributes: formattedAttributes,
         isActive: true,
-      }
+      },
     });
   }
 
@@ -181,9 +211,8 @@ export async function seedCategoriesJewelry(): Promise<void> {
 }
 
 if (require.main === module) {
-  seedCategoriesJewelry()
-    .catch((err) => {
-      console.error('❌ Seeding jewelry categories failed:', err);
-      process.exit(1);
-    });
+  seedCategoriesJewelry().catch((err) => {
+    console.error('❌ Seeding jewelry categories failed:', err);
+    process.exit(1);
+  });
 }

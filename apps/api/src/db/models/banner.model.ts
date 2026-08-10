@@ -45,7 +45,7 @@ const BannerSchema: Schema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Index on order

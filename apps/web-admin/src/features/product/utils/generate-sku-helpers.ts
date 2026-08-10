@@ -6,13 +6,13 @@
 export function generateCollisionProofBaseSku(brand?: string): string {
   const rawBrand = String(brand ?? '').trim();
   const brandPrefix = rawBrand
-    ? rawBrand.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()
+    ? rawBrand
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(0, 3)
+        .toUpperCase()
     : 'CEL';
 
-  const dateStr = new Date()
-    .toISOString()
-    .slice(2, 10)
-    .replace(/-/g, '');
+  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
 
   const randomHash = Math.random().toString(36).substring(2, 7).toUpperCase();
 

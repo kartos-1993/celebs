@@ -25,9 +25,13 @@ export class CartApiService {
     }
     console.log('[Mobile CartApiService] addToCart payload:', input, 'sessionId:', sessionId);
     try {
-      const response = await apiClient.post<{ message: string; data: CartResponse }>('/cart/items', input, {
-        headers,
-      });
+      const response = await apiClient.post<{ message: string; data: CartResponse }>(
+        '/cart/items',
+        input,
+        {
+          headers,
+        },
+      );
       console.log('[Mobile CartApiService] addToCart success response:', response.data);
       return response.data.data;
     } catch (error: unknown) {
@@ -36,11 +40,10 @@ export class CartApiService {
     }
   }
 
-
   static async updateCartItem(
     itemId: string,
     input: UpdateCartItemInput,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<CartResponse> {
     const headers: Record<string, string> = {};
     if (sessionId) {
@@ -49,7 +52,7 @@ export class CartApiService {
     const response = await apiClient.patch<{ message: string; data: CartResponse }>(
       `/cart/items/${itemId}`,
       input,
-      { headers }
+      { headers },
     );
     return response.data.data;
   }
@@ -61,7 +64,7 @@ export class CartApiService {
     }
     const response = await apiClient.delete<{ message: string; data: CartResponse }>(
       `/cart/items/${itemId}`,
-      { headers }
+      { headers },
     );
     return response.data.data;
   }
@@ -78,7 +81,10 @@ export class CartApiService {
   }
 
   static async syncCart(input: SyncCartInput): Promise<CartResponse> {
-    const response = await apiClient.post<{ message: string; data: CartResponse }>('/cart/sync', input);
+    const response = await apiClient.post<{ message: string; data: CartResponse }>(
+      '/cart/sync',
+      input,
+    );
     return response.data.data;
   }
 }

@@ -1,10 +1,7 @@
 import { memo, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldSpec } from '../fields/ui-registry';
-import {
-  buildSidebarSections,
-  flattenFormErrors,
-} from '../utils/add-product-validation';
+import { buildSidebarSections, flattenFormErrors } from '../utils/add-product-validation';
 
 interface SubmissionStateHeaderProps {
   schemaFields: FieldSpec[];
@@ -17,7 +14,10 @@ const SubmissionStateHeaderComponent = ({
   schemaHasName,
   variantMeta,
 }: SubmissionStateHeaderProps) => {
-  const { control, formState: { errors } } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
   const formValues = useWatch({ control }) as Record<string, unknown>;
   const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
 
@@ -36,9 +36,7 @@ const SubmissionStateHeaderComponent = ({
   const completionPercentage = useMemo(() => {
     if (sidebarSections.length === 0) return 0;
     return Math.round(
-      (sidebarSections.filter((section) => section.status).length /
-        sidebarSections.length) *
-      100,
+      (sidebarSections.filter((section) => section.status).length / sidebarSections.length) * 100,
     );
   }, [sidebarSections]);
 
@@ -51,8 +49,8 @@ const SubmissionStateHeaderComponent = ({
         {completionPercentage === 100 ? 'Ready to submit' : 'In progress'}
       </p>
       <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-        {sidebarSections.filter((section) => section.status).length} of{' '}
-        {sidebarSections.length} sections done
+        {sidebarSections.filter((section) => section.status).length} of {sidebarSections.length}{' '}
+        sections done
       </p>
     </div>
   );

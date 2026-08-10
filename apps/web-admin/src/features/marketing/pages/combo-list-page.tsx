@@ -12,7 +12,16 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import { Plus, Search, Tag, Sparkles, Plane, Percent, DollarSign, ExternalLink } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Tag,
+  Sparkles,
+  Plane,
+  Percent,
+  DollarSign,
+  ExternalLink,
+} from 'lucide-react';
 import type { ComboBundleType } from '@celebs/shared-types';
 
 export function ComboListPage() {
@@ -41,7 +50,7 @@ export function ComboListPage() {
   const filteredCombos = combos.filter(
     (c) =>
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.tag?.toLowerCase().includes(searchQuery.toLowerCase())
+      c.tag?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -54,7 +63,8 @@ export function ComboListPage() {
             Generic Combo Bundles
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Create high-AOV travel packs, festive bundles, and multi-product collections with instant savings badges.
+            Create high-AOV travel packs, festive bundles, and multi-product collections with
+            instant savings badges.
           </p>
         </div>
         <Button
@@ -167,7 +177,9 @@ export function ComboListPage() {
 
                   <TableCell>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                      {combo.tag === 'abroad-travel' && <Plane className="w-3 h-3 text-indigo-600" />}
+                      {combo.tag === 'abroad-travel' && (
+                        <Plane className="w-3 h-3 text-indigo-600" />
+                      )}
                       {combo.tag === 'festive' && <Sparkles className="w-3 h-3 text-amber-500" />}
                       {combo.tag || 'general'}
                     </span>

@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAdminVendorsQueryFn, approveVendorMutationFn, rejectVendorMutationFn, suspendVendorMutationFn } from '@/lib/api';
+import {
+  getAdminVendorsQueryFn,
+  approveVendorMutationFn,
+  rejectVendorMutationFn,
+  suspendVendorMutationFn,
+} from '@/lib/api';
 import { Button } from '@celebs/shared-ui/components/button';
 
 export default function VendorList() {
@@ -73,10 +78,10 @@ export default function VendorList() {
                         vendor.status === 'APPROVED'
                           ? 'bg-green-100 text-green-800'
                           : vendor.status === 'PENDING'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : vendor.status === 'DOCUMENTS_SUBMITTED'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-red-100 text-red-800'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : vendor.status === 'DOCUMENTS_SUBMITTED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
                       }`}
                     >
                       {vendor.status}

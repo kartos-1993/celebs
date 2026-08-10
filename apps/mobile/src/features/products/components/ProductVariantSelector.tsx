@@ -42,12 +42,7 @@ const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, 
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <View
-          style={[
-            styles.colorDot,
-            { backgroundColor: variant.colorCode || '#000000' },
-          ]}
-        />
+        <View style={[styles.colorDot, { backgroundColor: variant.colorCode || '#000000' }]} />
       )}
       <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
         {variant.name}
@@ -82,7 +77,10 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
       {colorVariants && colorVariants.length > 0 && (
         <View style={styles.section}>
           <ThemedText style={styles.sectionLabel}>
-            Color: <ThemedText style={styles.valueText}>{currentColorVariant?.name || 'Standard'}</ThemedText>
+            Color:{' '}
+            <ThemedText style={styles.valueText}>
+              {currentColorVariant?.name || 'Standard'}
+            </ThemedText>
           </ThemedText>
           <View style={styles.variantRow}>
             {colorVariants.map((c, idx) => (
@@ -102,7 +100,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
         <View style={styles.section}>
           <View style={styles.sizeHeaderRow}>
             <ThemedText style={styles.sectionLabel}>
-              Size: <ThemedText style={styles.valueText}>{selectedSize || 'Select Size'}</ThemedText>
+              Size:{' '}
+              <ThemedText style={styles.valueText}>{selectedSize || 'Select Size'}</ThemedText>
             </ThemedText>
             {!selectedSize && (
               <ThemedText style={styles.sizeNoticeText}>Selection required</ThemedText>

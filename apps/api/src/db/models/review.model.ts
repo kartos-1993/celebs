@@ -18,49 +18,51 @@ export interface IReview extends Document {
 // Schema for Review
 const ReviewSchema: Schema = new Schema(
   {
-    product: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Product', 
-      required: true 
+    product: {
+      type: Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true,
     },
-    user: { 
+    user: {
       type: String,
-      required: true 
+      required: true,
     },
-    userName: { 
+    userName: {
       type: String,
-      required: true 
+      required: true,
     },
-    rating: { 
-      type: Number, 
+    rating: {
+      type: Number,
       required: true,
       min: 1,
-      max: 5 
+      max: 5,
     },
-    title: { 
-      type: String, 
-      required: true 
+    title: {
+      type: String,
+      required: true,
     },
-    comment: { 
-      type: String, 
-      required: true 
+    comment: {
+      type: String,
+      required: true,
     },
-    images: [{ 
-      type: String 
-    }],
-    verified: { 
-      type: Boolean, 
-      default: false 
+    images: [
+      {
+        type: String,
+      },
+    ],
+    verified: {
+      type: Boolean,
+      default: false,
     },
-    status: { 
-      type: String, 
+    status: {
+      type: String,
       enum: ['pending', 'approved', 'rejected'],
-      default: 'pending'
-    }
+      default: 'pending',
+    },
   },
-  { 
-    timestamps: true 
-  }
+  {
+    timestamps: true,
+  },
 );
 
 // Index for efficient queries

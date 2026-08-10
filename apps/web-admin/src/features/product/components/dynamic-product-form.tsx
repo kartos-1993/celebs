@@ -19,10 +19,7 @@ import CollapsibleFormSection from './collapsible-form-section';
 interface DynamicProductFormProps {
   catId: string;
   productId?: string;
-  onValuesChange?: (
-    values: Record<string, unknown>,
-    sectionKey: string,
-  ) => void;
+  onValuesChange?: (values: Record<string, unknown>, sectionKey: string) => void;
   onSchemaLoaded?: (fields: FieldSpec[]) => void;
 }
 
@@ -41,9 +38,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
       return merged;
     }
 
-    const existingNames = new Set(
-      merged.map((field) => String(field.name || '').toLowerCase()),
-    );
+    const existingNames = new Set(merged.map((field) => String(field.name || '').toLowerCase()));
 
     const extra: FieldSpec[] = [];
     let colorFieldKey: string | null = null;
@@ -52,8 +47,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
       const attrName = String(attribute.name || '').trim();
       if (!attrName) return null;
 
-      const isSelect =
-        attribute.type === 'select' || attribute.type === 'multiselect';
+      const isSelect = attribute.type === 'select' || attribute.type === 'multiselect';
 
       const uiType =
         attribute.type === 'multiselect'
@@ -165,9 +159,7 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
       label: variant.label,
     }));
 
-    const skuIndex = merged.findIndex(
-      (field) => String(field.uiType) === 'SkuTableV2',
-    );
+    const skuIndex = merged.findIndex((field) => String(field.uiType) === 'SkuTableV2');
 
     if (skuIndex >= 0) {
       const existing = merged[skuIndex];
@@ -194,12 +186,9 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
     const colorVariantField = merged.find(
       (field) =>
         field.group === 'variant' &&
-        (field.name === 'color' ||
-          field.label?.toLowerCase?.().includes('color')),
+        (field.name === 'color' || field.label?.toLowerCase?.().includes('color')),
     );
-    const hasColorImages = merged.some(
-      (field) => field.name === 'variants.colorMeta',
-    );
+    const hasColorImages = merged.some((field) => field.name === 'variants.colorMeta');
 
     if (colorVariantField && !hasColorImages) {
       merged.push({
@@ -289,10 +278,7 @@ function DynamicProductForm({
         .map((field) => [field.name, field.value]),
     );
 
-    if (
-      appliedDefaultsRef.current !== catId &&
-      Object.keys(defaults).length > 0
-    ) {
+    if (appliedDefaultsRef.current !== catId && Object.keys(defaults).length > 0) {
       Object.entries(defaults).forEach(([key, value]) => {
         const existingVal = form.getValues(key);
         if (existingVal === undefined || existingVal === null || existingVal === '') {
@@ -305,8 +291,7 @@ function DynamicProductForm({
       });
 
       Object.entries(defaults).forEach(([key, value]) => {
-        const sectionKey =
-          schemaFields.find((field) => field.name === key)?.group ?? '';
+        const sectionKey = schemaFields.find((field) => field.name === key)?.group ?? '';
         onValuesChange?.({ [key]: value }, sectionKey);
       });
     }
@@ -340,11 +325,7 @@ function DynamicProductForm({
 
   const getValueAtPath = React.useCallback((obj: unknown, path: string) => {
     return path.split('.').reduce<unknown>((current, part) => {
-      if (
-        current &&
-        typeof current === 'object' &&
-        part in (current as Record<string, unknown>)
-      ) {
+      if (current && typeof current === 'object' && part in (current as Record<string, unknown>)) {
         return (current as Record<string, unknown>)[part];
       }
       return undefined;
@@ -379,10 +360,7 @@ function DynamicProductForm({
         return;
       }
 
-      onValuesChange?.(
-        { [changedName]: getValueAtPath(values, changedName) },
-        sectionKey,
-      );
+      onValuesChange?.({ [changedName]: getValueAtPath(values, changedName) }, sectionKey);
     });
 
     return () => subscription.unsubscribe();
@@ -532,4 +510,3 @@ function DetailsSection({
 }
 
 export default React.memo(DynamicProductForm);
-

@@ -77,19 +77,14 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Parent Category (Optional)</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value || 'ROOT_CATEGORY'}
-            >
+            <Select onValueChange={field.onChange} value={field.value || 'ROOT_CATEGORY'}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent category (leave empty for root category)" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="ROOT_CATEGORY">
-                  No Parent (Root Category)
-                </SelectItem>
+                <SelectItem value="ROOT_CATEGORY">No Parent (Root Category)</SelectItem>
                 {availableParents.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {'  '.repeat(category.level - 1)}
@@ -111,11 +106,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
           <div className="flex items-center space-x-4">
             {imageUrl ? (
               <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
-                <img
-                  src={imageUrl}
-                  alt="Category image"
-                  className="w-full h-full object-cover"
-                />
+                <img src={imageUrl} alt="Category image" className="w-full h-full object-cover" />
                 <Button
                   type="button"
                   onClick={() => form.setValue('imageUrl', null, { shouldDirty: true })}

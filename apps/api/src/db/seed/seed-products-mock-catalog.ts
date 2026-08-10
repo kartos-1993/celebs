@@ -3,31 +3,43 @@ import { ProductModel } from '../models/product.model';
 import { connectDb, disconnectDb } from './config';
 
 const MOCK_COLORS = [
-  { name: 'Blue', code: '#0000FF', images: [
-    'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
-    'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png'
-  ]},
-  { name: 'White', code: '#FFFFFF', images: [
-    'https://res.cloudinary.com/celebsnp/image/upload/v1783941207/celebs/products/l89jse9a50cqg3q5lazg.png',
-    'https://res.cloudinary.com/celebsnp/image/upload/v1783941252/celebs/products/ajghejjs1oupup1o9ulz.png'
-  ]},
-  { name: 'Black', code: '#000000', images: [
-    'https://res.cloudinary.com/celebsnp/image/upload/v1783941142/celebs/products/bln3u0xtadrgtioonfsn.png',
-    'https://res.cloudinary.com/celebsnp/image/upload/v1783941153/celebs/products/dy4aw7qrlnj3uzglqbk5.png'
-  ]}
+  {
+    name: 'Blue',
+    code: '#0000FF',
+    images: [
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png',
+    ],
+  },
+  {
+    name: 'White',
+    code: '#FFFFFF',
+    images: [
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941207/celebs/products/l89jse9a50cqg3q5lazg.png',
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941252/celebs/products/ajghejjs1oupup1o9ulz.png',
+    ],
+  },
+  {
+    name: 'Black',
+    code: '#000000',
+    images: [
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941142/celebs/products/bln3u0xtadrgtioonfsn.png',
+      'https://res.cloudinary.com/celebsnp/image/upload/v1783941153/celebs/products/dy4aw7qrlnj3uzglqbk5.png',
+    ],
+  },
 ];
 
 const MOCK_NAMES = [
-  "Solid Ribbed Long Sleeve Polo Shirt, Old Money Style",
-  "Casual Knit Buttoned Cardigan, Chic Autumn Collection",
-  "Relaxed Fit Heavyweight Cotton Tee, Streetwear Essential",
-  "Tailored Smart Casual Suit Jacket, Formal Elegant Style",
-  "Slim Fit Premium Stretch Denim Pants, Everyday Classic",
-  "Oversized Drop Shoulder Hoodie, Cozy Leisurewear",
-  "Classic Double-Breasted Wool Trench Coat, Winter Tailored"
+  'Solid Ribbed Long Sleeve Polo Shirt, Old Money Style',
+  'Casual Knit Buttoned Cardigan, Chic Autumn Collection',
+  'Relaxed Fit Heavyweight Cotton Tee, Streetwear Essential',
+  'Tailored Smart Casual Suit Jacket, Formal Elegant Style',
+  'Slim Fit Premium Stretch Denim Pants, Everyday Classic',
+  'Oversized Drop Shoulder Hoodie, Cozy Leisurewear',
+  'Classic Double-Breasted Wool Trench Coat, Winter Tailored',
 ];
 
-const MOCK_BRANDS = ["Manfinity", "Celebs Co.", "Hypemode", "UrbanStyle", "OldMoney"];
+const MOCK_BRANDS = ['Manfinity', 'Celebs Co.', 'Hypemode', 'UrbanStyle', 'OldMoney'];
 
 const FASHION_PRODUCT_IMAGES = [
   'https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?q=80&w=800',
@@ -37,7 +49,7 @@ const FASHION_PRODUCT_IMAGES = [
   'https://images.unsplash.com/photo-1626497764746-6dc36546b388?q=80&w=800',
   'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800',
   'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=800',
-  'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800'
+  'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800',
 ];
 
 const slugify = (text: string) =>
@@ -54,16 +66,16 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
   await connectDb();
 
   const allCategories = await CategoryModel.find();
-  const parentCategories = allCategories.filter(c => c.level === 1);
-  const subCategories = allCategories.filter(c => c.level === 2);
+  const parentCategories = allCategories.filter((c) => c.level === 1);
+  const subCategories = allCategories.filter((c) => c.level === 2);
 
   if (subCategories.length === 0) {
-    console.warn("  └─ No subcategories found. Seed categories first.");
+    console.warn('  └─ No subcategories found. Seed categories first.');
     return;
   }
 
   if (isReset) {
-    console.log("  └─ [--reset active] Wiping Product collection...");
+    console.log('  └─ [--reset active] Wiping Product collection...');
     await ProductModel.deleteMany({});
   }
 
@@ -73,14 +85,16 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
 
   for (let i = 0; i < numProducts; i++) {
     const subCat = subCategories[i % subCategories.length];
-    const parentCat = parentCategories.find(c => String(c.id) === String(subCat.parentCategory)) || parentCategories[0];
+    const parentCat =
+      parentCategories.find((c) => String(c.id) === String(subCat.parentCategory)) ||
+      parentCategories[0];
 
     const brand = MOCK_BRANDS[i % MOCK_BRANDS.length];
     const baseName = MOCK_NAMES[i % MOCK_NAMES.length];
     const productName = `${brand} Men's ${baseName} - Vol ${i + 1}`;
     const productSlug = `${slugify(productName)}-mock-${i}`;
 
-    const price = 800 + (i * 25) % 2000;
+    const price = 800 + ((i * 25) % 2000);
     const discountedPrice = price > 1000 ? Math.round(price * 0.9) : undefined;
 
     const img1 = FASHION_PRODUCT_IMAGES[i % FASHION_PRODUCT_IMAGES.length];
@@ -94,7 +108,7 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
       const measurements = (colName: string) => ({
         name: colName,
         value: String(40 + sIdx * 3 + (i % 5)),
-        unit: 'cm'
+        unit: 'cm',
       });
       const bodyCols = [
         { name: 'Height', value: `${165 + sIdx * 5}-${170 + sIdx * 5}` },
@@ -116,10 +130,10 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
         name: color.name,
         colorCode: color.code,
         images: [variantImg],
-        stocks: selectedSizes.map(size => ({
+        stocks: selectedSizes.map((size) => ({
           size,
-          quantity: 10 + (i % 5)
-        }))
+          quantity: 10 + (i % 5),
+        })),
       };
     });
 
@@ -138,21 +152,21 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
       dynamicData: {
         values: {
           mainImage: mainImages,
-          Color: activeColors.map(c => c.name),
+          Color: activeColors.map((c) => c.name),
           Size: selectedSizes,
-        }
+        },
       },
       tags: ['New', 'Trending', brand.toLowerCase()],
       featured: i % 5 === 0,
       status: 'published' as const,
       createdBy: 'system-seed',
-      updatedBy: 'system-seed'
+      updatedBy: 'system-seed',
     };
 
     const result = await ProductModel.updateOne(
       { slug: productDoc.slug },
       { $set: productDoc },
-      { upsert: true }
+      { upsert: true },
     );
 
     if (result.upsertedCount > 0) {
@@ -162,7 +176,9 @@ export async function seedProductsMockCatalog(isReset = false): Promise<void> {
     }
   }
 
-  console.log(`✅ Seeded Mock Catalog Products: ${insertedCount} inserted, ${updatedCount} updated.`);
+  console.log(
+    `✅ Seeded Mock Catalog Products: ${insertedCount} inserted, ${updatedCount} updated.`,
+  );
 }
 
 if (require.main === module) {

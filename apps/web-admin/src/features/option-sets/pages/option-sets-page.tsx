@@ -147,7 +147,9 @@ export default function OptionSetsPage() {
 
   const filteredSets = optionSets.filter((set) => {
     const query = searchQuery.toLowerCase();
-    const nameMatch = set.name.toLowerCase().includes(query) || (set.displayName || '').toLowerCase().includes(query);
+    const nameMatch =
+      set.name.toLowerCase().includes(query) ||
+      (set.displayName || '').toLowerCase().includes(query);
     const valueMatch = (set.values || []).some((v) => v.toLowerCase().includes(query));
     return nameMatch || valueMatch;
   });
@@ -188,7 +190,9 @@ export default function OptionSetsPage() {
       ) : filteredSets.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground space-y-2">
           <p className="text-base font-semibold">No option sets found</p>
-          <p className="text-xs">Try adjusting your search or click "Create Option Set" to add one.</p>
+          <p className="text-xs">
+            Try adjusting your search or click "Create Option Set" to add one.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,17 +203,31 @@ export default function OptionSetsPage() {
             >
               <div className="flex items-start justify-between gap-2 border-b pb-3">
                 <div>
-                  <h3 className="font-bold text-base text-foreground">{set.displayName || set.name}</h3>
+                  <h3 className="font-bold text-base text-foreground">
+                    {set.displayName || set.name}
+                  </h3>
                   <span className="text-xs text-muted-foreground font-mono">Key: {set.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(set)} className="h-8 w-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleOpenEdit(set)}
+                    className="h-8 w-8"
+                  >
                     <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                   </Button>
 
                   {/* Protect default core option sets from accidental deletion */}
-                  {!['Basic Colors', 'Alpha Sizes (XXS-5XL)', 'Numeric Sizes (26-46)'].includes(set.name) && (
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(set)} className="h-8 w-8 text-rose-500 hover:text-rose-600">
+                  {!['Basic Colors', 'Alpha Sizes (XXS-5XL)', 'Numeric Sizes (26-46)'].includes(
+                    set.name,
+                  ) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteTarget(set)}
+                      className="h-8 w-8 text-rose-500 hover:text-rose-600"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -277,7 +295,12 @@ export default function OptionSetsPage() {
                   }}
                   className="text-sm"
                 />
-                <Button type="button" variant="secondary" onClick={handleAddValue} className="shrink-0 gap-1 text-xs">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddValue}
+                  className="shrink-0 gap-1 text-xs"
+                >
                   <Plus className="h-3.5 w-3.5" /> Add
                 </Button>
               </div>
@@ -285,7 +308,11 @@ export default function OptionSetsPage() {
                 {valuesInput.map((val) => (
                   <Badge key={val} variant="secondary" className="text-xs gap-1 py-1">
                     {val}
-                    <button type="button" onClick={() => handleRemoveValue(val)} className="hover:text-rose-500">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveValue(val)}
+                      className="hover:text-rose-500"
+                    >
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -301,7 +328,13 @@ export default function OptionSetsPage() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingSet ? 'Save Changes' : 'Create Option Set'}
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : editingSet ? (
+                'Save Changes'
+              ) : (
+                'Create Option Set'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -314,7 +347,9 @@ export default function OptionSetsPage() {
             <DialogTitle>Delete Option Set</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete <strong className="text-foreground">{deleteTarget?.name}</strong>? This action cannot be undone.
+            Are you sure you want to delete{' '}
+            <strong className="text-foreground">{deleteTarget?.name}</strong>? This action cannot be
+            undone.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>

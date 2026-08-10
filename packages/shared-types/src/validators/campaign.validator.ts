@@ -3,7 +3,9 @@ import { z } from 'zod';
 export const createCampaignSchema = z.object({
   title: z.string().min(2, 'Campaign title is required'),
   slug: z.string().min(2, 'Slug is required'),
-  campaignType: z.enum(['FESTIVAL', 'SEASONAL', 'FLASH_SALE', 'HOLIDAY', 'NEW_YEAR']).default('FESTIVAL'),
+  campaignType: z
+    .enum(['FESTIVAL', 'SEASONAL', 'FLASH_SALE', 'HOLIDAY', 'NEW_YEAR'])
+    .default('FESTIVAL'),
   tagline: z.string().optional(),
   bannerImage: z.string().optional(),
   themeColor: z.string().default('#D92525'),

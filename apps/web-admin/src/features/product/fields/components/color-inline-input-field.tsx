@@ -23,15 +23,7 @@ export function ColorInlineRow({
   accept?: string[];
   limits: { maxImages?: number; maxSize?: number };
 }) {
-  const {
-    watch,
-    setValue,
-    trigger,
-    register,
-    formState,
-    setError,
-    clearErrors,
-  } = useFormContext();
+  const { watch, setValue, trigger, register, formState, setError, clearErrors } = useFormContext();
   const safeLimits = limits ?? {};
   const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
   const swatchUrl = React.useMemo(() => {
@@ -42,14 +34,10 @@ export function ColorInlineRow({
   const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
   const [isUploading, setIsUploading] = React.useState(false);
   const [urls, setUrls] = React.useState<string[]>([]);
-  const imagesHash = (images || [])
-    .map((f) => imageValueKey(f))
-    .join(',');
+  const imagesHash = (images || []).map((f) => imageValueKey(f)).join(',');
 
   React.useEffect(() => {
-    const next = (images || []).map((f) =>
-      typeof f === 'string' ? f : URL.createObjectURL(f),
-    );
+    const next = (images || []).map((f) => (typeof f === 'string' ? f : URL.createObjectURL(f)));
     setUrls(next);
     return () => {
       next.forEach((u) => {
@@ -62,10 +50,7 @@ export function ColorInlineRow({
     register(`${namePrefix}.swatch` as any, {
       validate: (v: any) => {
         if (!v) return true;
-        const ms =
-          typeof safeLimits?.maxSize === 'number'
-            ? safeLimits.maxSize
-            : undefined;
+        const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
         if (typeof ms === 'number' && v instanceof File && v.size > ms)
           return `Swatch must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
@@ -74,19 +59,10 @@ export function ColorInlineRow({
     register(`${namePrefix}.images` as any, {
       validate: (v: any) => {
         const arr: ImageValue[] = Array.isArray(v) ? v : [];
-        if (
-          typeof safeLimits?.maxImages === 'number' &&
-          arr.length > safeLimits.maxImages
-        )
+        if (typeof safeLimits?.maxImages === 'number' && arr.length > safeLimits.maxImages)
           return `Max ${safeLimits.maxImages} images`;
-        const ms =
-          typeof safeLimits?.maxSize === 'number'
-            ? safeLimits.maxSize
-            : undefined;
-        if (
-          typeof ms === 'number' &&
-          arr.some((f) => f instanceof File && f.size > ms)
-        )
+        const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
+        if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms))
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
       },
@@ -229,11 +205,7 @@ export function ColorInlineRow({
             }}
           />
           {swatchUrl ? (
-            <img
-              src={swatchUrl}
-              alt={`${color}-swatch`}
-              className="h-full w-full object-cover"
-            />
+            <img src={swatchUrl} alt={`${color}-swatch`} className="h-full w-full object-cover" />
           ) : (
             <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
               +
@@ -249,9 +221,7 @@ export function ColorInlineRow({
 
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">
-            Color Product Images
-          </div>
+          <div className="text-xs text-muted-foreground">Color Product Images</div>
           <div className="flex items-center gap-2 text-sm">
             <button
               type="button"
@@ -270,11 +240,7 @@ export function ColorInlineRow({
               <Upload className="h-3 w-3" /> Upload
             </button>
             <span className="text-muted-foreground">|</span>
-            <button
-              type="button"
-              className="text-blue-600 underline"
-              onClick={() => {}}
-            >
+            <button type="button" className="text-blue-600 underline" onClick={() => {}}>
               Media Center
             </button>
           </div>
@@ -282,13 +248,8 @@ export function ColorInlineRow({
         <div className="min-h-[56px] w-full rounded border border-dashed p-2">
           <div className="flex flex-wrap items-start gap-2">
             {urls.map((src, idx) => (
-              <div
-                key={idx}
-                className="group relative h-12 w-12 overflow-hidden rounded border"
-              >
-                {src ? (
-                  <img src={src} className="h-full w-full object-cover" />
-                ) : null}
+              <div key={idx} className="group relative h-12 w-12 overflow-hidden rounded border">
+                {src ? <img src={src} className="h-full w-full object-cover" /> : null}
                 <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/40 group-hover:flex">
                   <button
                     type="button"
@@ -296,9 +257,7 @@ export function ColorInlineRow({
                     onClick={() => {
                       const input = document.createElement('input');
                       input.type = 'file';
-                      input.accept = Array.isArray(accept)
-                        ? accept.join(',')
-                        : '';
+                      input.accept = Array.isArray(accept) ? accept.join(',') : '';
                       input.onchange = (e: any) => {
                         void replaceAt(idx, e.target.files?.[0] ?? null);
                       };
@@ -340,10 +299,7 @@ export function ColorInlineRow({
           </div>
           {(formState.errors as any)?.[`${namePrefix}.images`] ? (
             <div className="text-xs text-red-500 mt-1">
-              {
-                (formState.errors as any)[`${namePrefix}.images`]
-                  ?.message as string
-              }
+              {(formState.errors as any)[`${namePrefix}.images`]?.message as string}
             </div>
           ) : null}
         </div>
@@ -356,37 +312,23 @@ export function ColorInlineInputField({ field }: UiProps) {
   const { watch } = useFormContext();
   const colorField: string =
     field.dataSource?.colorField ??
-    field.dataSource?.variants?.find((v: any) =>
-      /color/i.test(v?.label ?? v?.key),
-    )?.key ??
+    field.dataSource?.variants?.find((v: any) => /color/i.test(v?.label ?? v?.key))?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> = (field.dataSource
-    ?.labels as any) ?? {};
-  const labelOf = (value: string) =>
-    labelsMap?.[colorField]?.[String(value)] ?? String(value);
+  const labelsMap: Record<string, Record<string, string>> = (field.dataSource?.labels as any) ?? {};
+  const labelOf = (value: string) => labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = Array.isArray(field.rule?.accept)
     ? field.rule.accept
     : undefined;
   const limits = {
-    maxImages:
-      typeof field.rule?.maxItems === 'number'
-        ? field.rule.maxItems
-        : undefined,
-    maxSize:
-      typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
+    maxImages: typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : undefined,
+    maxSize: typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
   const selected = watch(colorField);
-  const colors: string[] = Array.isArray(selected)
-    ? selected
-    : selected
-      ? [selected]
-      : [];
+  const colors: string[] = Array.isArray(selected) ? selected : selected ? [selected] : [];
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">
-        <LabelWithRequired required={field.required}>
-          {field.label}
-        </LabelWithRequired>
+        <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
         {limits.maxImages != null ? (
           <span className="text-xs text-muted-foreground">
             Max {limits.maxImages} images for each variant
@@ -394,9 +336,7 @@ export function ColorInlineInputField({ field }: UiProps) {
         ) : null}
       </div>
       {colors.length === 0 ? (
-        <div className="text-sm text-muted-foreground">
-          Select one or more colors first.
-        </div>
+        <div className="text-sm text-muted-foreground">Select one or more colors first.</div>
       ) : (
         <div className="space-y-2">
           {colors.map((c) => (

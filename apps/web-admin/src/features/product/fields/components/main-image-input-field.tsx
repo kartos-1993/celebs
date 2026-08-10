@@ -18,22 +18,12 @@ import {
 } from './shared';
 
 export function MainImageInputField({ field }: UiProps) {
-  const {
-    setValue,
-    watch,
-    register,
-    trigger,
-    formState,
-    setError,
-    clearErrors,
-  } = useFormContext();
+  const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
   const files: ImageValue[] = watch(field.name) ?? [];
   const [previews, setPreviews] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
   const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
-  const filesHash = (files || [])
-    .map((file) => imageValueKey(file))
-    .join('|');
+  const filesHash = (files || []).map((file) => imageValueKey(file)).join('|');
 
   const getDims = React.useCallback((file: File) => {
     return new Promise<{ w: number; h: number }>((resolve, reject) => {
@@ -72,12 +62,8 @@ export function MainImageInputField({ field }: UiProps) {
     register(field.name as any, {
       validate: (v: any) => {
         const arr: ImageValue[] = Array.isArray(v) ? v : [];
-        if (field.required && arr.length === 0)
-          return `${field.label} is required`;
-        if (
-          typeof field.rule?.maxItems === 'number' &&
-          arr.length > field.rule.maxItems
-        )
+        if (field.required && arr.length === 0) return `${field.label} is required`;
+        if (typeof field.rule?.maxItems === 'number' && arr.length > field.rule.maxItems)
           return `Max ${field.rule.maxItems} images`;
         if (
           Array.isArray(field.rule?.accept) &&
@@ -92,9 +78,7 @@ export function MainImageInputField({ field }: UiProps) {
         return true;
       },
     });
-    const urls = (files || []).map((f) =>
-      typeof f === 'string' ? f : URL.createObjectURL(f),
-    );
+    const urls = (files || []).map((f) => (typeof f === 'string' ? f : URL.createObjectURL(f)));
     setPreviews((prev) => {
       prev.forEach((u) => {
         if (u.startsWith('blob:')) URL.revokeObjectURL(u);
@@ -112,8 +96,7 @@ export function MainImageInputField({ field }: UiProps) {
     const rule = field.rule || {};
     if (typeof rule?.maxSize === 'number' && f.size > rule.maxSize)
       return `Each image must be <= ${Math.round(rule.maxSize / 1024 / 1024)}MB`;
-    if (Array.isArray(rule?.accept) && !rule.accept.includes(f.type))
-      return 'Invalid file type';
+    if (Array.isArray(rule?.accept) && !rule.accept.includes(f.type)) return 'Invalid file type';
     if (
       typeof rule?.minWidth === 'number' ||
       typeof rule?.minHeight === 'number' ||
@@ -131,8 +114,7 @@ export function MainImageInputField({ field }: UiProps) {
           return `Width must be <= ${rule.maxWidth}px`;
         if (typeof rule.maxHeight === 'number' && h > rule.maxHeight)
           return `Height must be <= ${rule.maxHeight}px`;
-        if (!aspectOk(w, h))
-          return `Image aspect ratio should be ${rule.aspectRatio}`;
+        if (!aspectOk(w, h)) return `Image aspect ratio should be ${rule.aspectRatio}`;
       } catch {
         return 'Could not read image dimensions';
       }
@@ -220,9 +202,7 @@ export function MainImageInputField({ field }: UiProps) {
 
   return (
     <div className="space-y-2">
-      <LabelWithRequired required={field.required}>
-        {field.label}
-      </LabelWithRequired>
+      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <div className="rounded border p-3">
         <div className="flex flex-wrap items-start gap-2">
           {previews.map((src, idx) => (
@@ -230,11 +210,7 @@ export function MainImageInputField({ field }: UiProps) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <div className="relative group h-20 w-20 rounded border overflow-hidden">
-                    <img
-                      src={src}
-                      alt={`image-${idx}`}
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={src} alt={`image-${idx}`} className="h-full w-full object-cover" />
                     <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/40 group-hover:flex">
                       <button
                         type="button"
@@ -259,24 +235,16 @@ export function MainImageInputField({ field }: UiProps) {
                       }}
                       type="file"
                       accept={
-                        Array.isArray(field.rule?.accept)
-                          ? field.rule.accept.join(',')
-                          : undefined
+                        Array.isArray(field.rule?.accept) ? field.rule.accept.join(',') : undefined
                       }
                       className="hidden"
-                      onChange={(e) =>
-                        onReplaceFile(idx, e.target.files?.[0] ?? null)
-                      }
+                      onChange={(e) => onReplaceFile(idx, e.target.files?.[0] ?? null)}
                     />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="p-2">
                   <div className="w-64">
-                    <img
-                      src={src}
-                      alt={`preview-${idx}`}
-                      className="w-full h-auto rounded"
-                    />
+                    <img src={src} alt={`preview-${idx}`} className="w-full h-auto rounded" />
                     <div className="mt-2 flex justify-end gap-2">
                       <button
                         type="button"
@@ -307,11 +275,7 @@ export function MainImageInputField({ field }: UiProps) {
               ref={addInputRef}
               type="file"
               className="hidden"
-              accept={
-                Array.isArray(field.rule?.accept)
-                  ? field.rule.accept.join(',')
-                  : undefined
-              }
+              accept={Array.isArray(field.rule?.accept) ? field.rule.accept.join(',') : undefined}
               multiple
               disabled={isUploading}
               onChange={(e) => {
@@ -337,20 +301,13 @@ export function MainImageInputField({ field }: UiProps) {
         field.rule?.maxWidth ||
         field.rule?.maxHeight ? (
           <div className="mt-2 text-xs text-muted-foreground">
-            {field.rule?.maxItems != null ? (
-              <>Max {field.rule.maxItems} images</>
-            ) : null}
+            {field.rule?.maxItems != null ? <>Max {field.rule.maxItems} images</> : null}
             {Array.isArray(field.rule?.accept) ? (
               <>
                 {' '}
-                {field.rule?.maxItems != null ? ' • ' : ''}Accepted:{' '}
-                {field.rule.accept.join(', ')}
+                {field.rule?.maxItems != null ? ' • ' : ''}Accepted: {field.rule.accept.join(', ')}
                 {field.rule?.maxSize != null ? (
-                  <>
-                    {' '}
-                    • Max size ~{' '}
-                    {Math.round((field.rule?.maxSize || 0) / 1024 / 1024)}MB
-                  </>
+                  <> • Max size ~ {Math.round((field.rule?.maxSize || 0) / 1024 / 1024)}MB</>
                 ) : null}
               </>
             ) : field.rule?.maxSize != null ? (
@@ -366,15 +323,13 @@ export function MainImageInputField({ field }: UiProps) {
             {field.rule?.minWidth || field.rule?.minHeight ? (
               <>
                 {' '}
-                • Minimum dimensions: {field.rule?.minWidth ?? 0}×
-                {field.rule?.minHeight ?? 0}px
+                • Minimum dimensions: {field.rule?.minWidth ?? 0}×{field.rule?.minHeight ?? 0}px
               </>
             ) : null}
             {field.rule?.maxWidth || field.rule?.maxHeight ? (
               <>
                 {' '}
-                • Maximum dimensions: {field.rule?.maxWidth ?? 0}×
-                {field.rule?.maxHeight ?? 0}px
+                • Maximum dimensions: {field.rule?.maxWidth ?? 0}×{field.rule?.maxHeight ?? 0}px
               </>
             ) : null}
           </div>

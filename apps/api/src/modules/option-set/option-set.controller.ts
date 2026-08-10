@@ -19,7 +19,10 @@ export class OptionSetController {
     try {
       const { id } = req.params;
       const data = await this.svc.getById(id);
-      if (!data) return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Option set not found' });
+      if (!data)
+        return res
+          .status(HTTPSTATUS.NOT_FOUND)
+          .json({ success: false, message: 'Option set not found' });
       res.status(HTTPSTATUS.OK).json({ success: true, data });
     } catch (err) {
       next(err);
@@ -30,7 +33,9 @@ export class OptionSetController {
     try {
       const { name, displayName, description, values } = req.body;
       if (!name) {
-        return res.status(HTTPSTATUS.BAD_REQUEST).json({ success: false, message: 'Option set name is required' });
+        return res
+          .status(HTTPSTATUS.BAD_REQUEST)
+          .json({ success: false, message: 'Option set name is required' });
       }
       const data = await this.svc.create({ name, displayName, description, values });
       res.status(HTTPSTATUS.CREATED).json({ success: true, data });

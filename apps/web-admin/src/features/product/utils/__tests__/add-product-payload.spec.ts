@@ -50,7 +50,7 @@ describe('buildProductPayload', () => {
         fields: [],
         status: 'draft',
         values,
-      })
+      }),
     ).rejects.toThrow('Add a valid price before publishing the product.');
   });
 
@@ -70,7 +70,7 @@ describe('buildProductPayload', () => {
         fields: [],
         status: 'draft',
         values,
-      })
+      }),
     ).rejects.toThrow('Discounted price must be less than the regular price.');
   });
 });

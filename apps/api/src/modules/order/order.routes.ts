@@ -19,7 +19,11 @@ orderRoutes.post('/my-orders/:orderId/cancel', authenticateJWT, controller.cance
 
 // --- VENDOR FULFILLMENT ROUTES ---
 orderRoutes.get('/vendor/orders', authenticateJWT, controller.getVendorOrders);
-orderRoutes.patch('/vendor/orders/items/:orderItemId/status', authenticateJWT, controller.updateOrderItemStatus);
+orderRoutes.patch(
+  '/vendor/orders/items/:orderItemId/status',
+  authenticateJWT,
+  controller.updateOrderItemStatus,
+);
 
 // --- ADMIN OVERVIEW ---
 orderRoutes.get('/admin/orders', authenticateJWT, controller.adminGetOrders);

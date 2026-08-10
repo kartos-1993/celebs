@@ -30,10 +30,7 @@ const numberInputVariants = cva(
   },
 );
 
-export type NumberInputProps = Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  'size'
-> &
+export type NumberInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> &
   VariantProps<typeof numberInputVariants> & {
     prefix?: React.ReactNode;
     suffix?: React.ReactNode;
@@ -41,19 +38,7 @@ export type NumberInputProps = Omit<
 
 export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
   (
-    {
-      className,
-      size,
-      variant,
-      invalid,
-      prefix,
-      suffix,
-      step,
-      min,
-      max,
-      onChange,
-      ...props
-    },
+    { className, size, variant, invalid, prefix, suffix, step, min, max, onChange, ...props },
     ref,
   ) => {
     const innerRef = React.useRef<HTMLInputElement | null>(null);
@@ -84,7 +69,9 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     };
 
     return (
-      <div className={cn('number-input', numberInputVariants({ size, variant, invalid }), className)}>
+      <div
+        className={cn('number-input', numberInputVariants({ size, variant, invalid }), className)}
+      >
         {prefix ? (
           <div className="pl-3 pr-1 text-muted-foreground select-none">{prefix}</div>
         ) : null}
@@ -102,9 +89,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           )}
           {...props}
         />
-        {suffix ? (
-          <div className="px-2 text-muted-foreground select-none">{suffix}</div>
-        ) : null}
+        {suffix ? <div className="px-2 text-muted-foreground select-none">{suffix}</div> : null}
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <button
             type="button"

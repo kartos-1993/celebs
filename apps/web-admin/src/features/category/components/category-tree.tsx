@@ -21,15 +21,15 @@ import {
   TableCell,
 } from '@celebs/shared-ui/components/table';
 import { Button } from '@celebs/shared-ui/components/button';
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Edit, 
-  Trash2, 
-  FolderPlus, 
+import {
+  ChevronRight,
+  ChevronDown,
+  Edit,
+  Trash2,
+  FolderPlus,
   Folder,
   FolderOpen,
-  Plus
+  Plus,
 } from 'lucide-react';
 import { CategoryTreeNode } from '../types';
 import { ProductAPI } from '../../../lib/axios-client';
@@ -43,13 +43,13 @@ interface CategoryTreeProps {
 }
 
 // Custom Premium Toggle Switch Component
-const ToggleSwitch = ({ 
-  checked, 
-  onChange, 
-  disabled 
-}: { 
-  checked: boolean; 
-  onChange: (val: boolean) => void; 
+const ToggleSwitch = ({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (val: boolean) => void;
   disabled?: boolean;
 }) => (
   <button
@@ -99,7 +99,10 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
           const category = row.original;
 
           return (
-            <div className="relative flex items-center h-10 select-none" style={{ paddingLeft: `${depth * 28}px` }}>
+            <div
+              className="relative flex items-center h-10 select-none"
+              style={{ paddingLeft: `${depth * 28}px` }}
+            >
               {/* Hierarchical Connecting Lines */}
               {depth > 0 && (
                 <>
@@ -195,11 +198,13 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                 disabled={isPending}
                 onChange={() => handleActiveToggle(category.id, isActive)}
               />
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                isActive 
-                  ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' 
-                  : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-              }`}>
+              <span
+                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  isActive
+                    ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                }`}
+              >
                 {isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
@@ -227,15 +232,16 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                   title={attr.name}
                 >
                   {attr.label || attr.name}
-                  {attr.isRequired && (
-                    <span className="text-red-500 ml-0.5 font-bold">*</span>
-                  )}
+                  {attr.isRequired && <span className="text-red-500 ml-0.5 font-bold">*</span>}
                 </span>
               ))}
               {hiddenCount > 0 && (
-                <span 
+                <span
                   className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 cursor-default"
-                  title={attrs.slice(3).map(a => a.label || a.name).join(', ')}
+                  title={attrs
+                    .slice(3)
+                    .map((a) => a.label || a.name)
+                    .join(', ')}
                 >
                   +{hiddenCount} more
                 </span>
@@ -286,7 +292,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
         },
       },
     ],
-    [onEdit, onDelete, onAddSubcategory, updatingId]
+    [onEdit, onDelete, onAddSubcategory, updatingId],
   );
 
   const table = useReactTable({
@@ -306,15 +312,18 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
       <Table>
         <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-gray-200 dark:border-gray-800">
+            <TableRow
+              key={headerGroup.id}
+              className="hover:bg-transparent border-b border-gray-200 dark:border-gray-800"
+            >
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-gray-700 dark:text-gray-300 font-semibold text-xs py-3">
+                <TableHead
+                  key={header.id}
+                  className="text-gray-700 dark:text-gray-300 font-semibold text-xs py-3"
+                >
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
             </TableRow>
@@ -337,7 +346,10 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-32 text-center text-gray-500 dark:text-gray-400 text-sm">
+              <TableCell
+                colSpan={columns.length}
+                className="h-32 text-center text-gray-500 dark:text-gray-400 text-sm"
+              >
                 No categories found.
               </TableCell>
             </TableRow>

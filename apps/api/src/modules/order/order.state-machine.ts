@@ -23,7 +23,7 @@ export const validateTransition = (currentStatus: OrderStatus, newStatus: OrderS
     throw new AppError(
       `Invalid order status transition from '${currentStatus}' to '${newStatus}'.`,
       HTTPSTATUS.BAD_REQUEST,
-      ErrorCode.VALIDATION_ERROR
+      ErrorCode.VALIDATION_ERROR,
     );
   }
 };
