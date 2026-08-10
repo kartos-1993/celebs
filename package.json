@@ -150,24 +150,38 @@
     "zod": "^3.24.3"
   },
   "scripts": {
+    "//_DEVELOPMENT": "=== Local Development ===",
     "dev": "turbo run dev --ui=stream",
+    "dev:api": "pnpm --filter api dev",
     "dev:web": "pnpm --filter web-admin dev",
     "dev:mobile:staging": "pnpm --filter mobile dev:staging",
     "dev:worker": "pnpm --filter api dev:worker",
+
+    "//_BUILD_AND_SERVE": "=== Build & Serve ===",
     "build": "turbo run build",
     "build:services": "pnpm --filter api build",
     "build:web": "pnpm --filter web-admin build",
     "build:web:staging": "pnpm --filter web-admin build:staging",
     "serve": "pnpm --filter api start",
     "serve:web": "pnpm --filter web-admin preview",
+
+    "//_DATABASE_AND_PRISMA": "=== Database & Prisma ORM ===",
+    "db:push": "pnpm --filter api db:push",
+    "db:push:staging": "pnpm --filter api db:push:staging",
+    "migrate:dev": "pnpm --filter api migrate:dev",
+    "migrate:deploy": "dotenv -e apps/api/.env.staging -- npx prisma migrate deploy --schema=apps/api/src/db/schema.prisma --config=prisma.config.ts",
+    "prisma:generate": "pnpm --filter api prisma:generate",
+    "prisma:studio": "pnpm --filter api prisma:studio",
+
+    "//_SEEDING": "=== Database Seeding ===",
+    "seed": "pnpm --filter api seed",
+    "seed:reset": "pnpm --filter api seed:reset",
+
+    "//_QUALITY": "=== Code Quality & Testing ===",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "format": "prettier --write .",
-    "migrate:dev": "dotenv -e apps/api/.env.development -- npx prisma migrate dev --schema=apps/api/src/db/schema.prisma --name auto",
-    "migrate:deploy": "dotenv -e apps/api/.env.staging -- npx prisma migrate deploy --schema=apps/api/src/db/schema.prisma",
-    "prisma:generate": "dotenv -e apps/api/.env.development -- npx prisma generate --schema=apps/api/src/db/schema.prisma",
-    "prisma:studio": "dotenv -e apps/api/.env.development -- npx prisma studio --schema=apps/api/src/db/schema.prisma"
+    "format": "prettier --write ."
   },
   "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184",
   "workspaces": [
