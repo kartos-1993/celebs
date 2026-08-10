@@ -29,7 +29,7 @@ import {
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
 import { X, Plus, ChevronDown, ChevronUp, Layers, Sliders } from 'lucide-react';
-import { ProductAPI } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface AttributeFieldSetProps {
@@ -91,7 +91,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
   const { data: optionSets = [], isLoading: loadingSets } = useQuery<OptionSetItem[]>({
     queryKey: ['option-sets'],
     queryFn: async () => {
-      const res = await ProductAPI.get<{ data?: Array<{ id?: string; name: string }> }>(
+      const res = await axiosClient.get<{ data?: Array<{ id?: string; name: string }> }>(
         '/option-sets',
       );
       const rawData = res.data;
@@ -127,7 +127,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
     queryKey: ['option-set-values', effectiveOptionSetId],
     queryFn: async () => {
       if (!effectiveOptionSetId) return [];
-      const res = await ProductAPI.get<{
+      const res = await axiosClient.get<{
         data?: { values?: Array<string | { label?: string; name?: string }> };
         values?: Array<string | { label?: string; name?: string }>;
       }>(`/option-sets/${effectiveOptionSetId}`);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useController, useFormContext, useWatch } from 'react-hook-form';
-import { ProductAPI } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Sparkles } from 'lucide-react';
@@ -66,7 +66,7 @@ export function SkuTableInputField({ field }: UiProps) {
       }
       if (!ds || !ds.fetch) return;
       try {
-        const res = await ProductAPI.get(ds.fetch, { params: ds.params });
+        const res = await axiosClient.get(ds.fetch, { params: ds.params });
         const data = res.data;
         const raw =
           data?.data?.variants ??
