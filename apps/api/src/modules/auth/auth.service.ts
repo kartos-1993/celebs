@@ -548,7 +548,10 @@ export class AuthService {
     }
 
     if (!user) {
-      throw new InternalServerException('Failed to create or resolve user record', ErrorCode.INTERNAL_SERVER_ERROR);
+      throw new InternalServerException(
+        'Failed to create or resolve user record',
+        ErrorCode.INTERNAL_SERVER_ERROR,
+      );
     }
 
     if (user.role === 'VENDOR') {

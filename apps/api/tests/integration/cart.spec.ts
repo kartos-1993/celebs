@@ -55,7 +55,7 @@ describe('Cart Integration Test Suite', () => {
       undefined,
       sessionId,
       cartItemId,
-      4
+      4,
     );
 
     expect(cartResult2.items[0]?.quantity).toBe(4);
@@ -85,7 +85,7 @@ describe('Cart Integration Test Suite', () => {
         colorVariantName: 'Red',
         size: 'M',
         quantity: 1,
-      })
+      }),
     ).rejects.toThrow(AppError);
   });
 });

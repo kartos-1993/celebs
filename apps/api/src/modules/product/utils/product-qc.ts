@@ -20,7 +20,7 @@ export interface IQCCheckResult {
 }
 
 export function calculateProductQCScore(
-  productInput?: Record<string, unknown> | null
+  productInput?: Record<string, unknown> | null,
 ): IQCCheckResult {
   if (!productInput) {
     const emptyCheck: IQCCheckItem = {
@@ -49,7 +49,7 @@ export function calculateProductQCScore(
   // 1. Main Images Check (25 pts max)
   const imageCount = (product.mainImages || product.images)?.length || 0;
   const hasVariantImages = Boolean(
-    product.colorVariants?.some((variant: any) => variant.images && variant.images.length > 0)
+    product.colorVariants?.some((variant: any) => variant.images && variant.images.length > 0),
   );
 
   let imageScore = 0;
@@ -113,7 +113,7 @@ export function calculateProductQCScore(
     sizes.some(
       (s: any) =>
         (s.productMeasurements && s.productMeasurements.length > 0) ||
-        (s.bodyMeasurements && s.bodyMeasurements.length > 0)
+        (s.bodyMeasurements && s.bodyMeasurements.length > 0),
     );
   const sizingScore = hasSizeData ? 15 : sizes.length > 0 ? 8 : 0;
   const sizingCheck: IQCCheckItem = {

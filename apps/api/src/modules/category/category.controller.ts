@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { HTTPSTATUS, AppError, ErrorCode, logger } from '@celebs/shared-utils';
-import { createCategorySchema as categoryInputSchema, updateCategorySchema } from '@celebs/shared-types';
+import {
+  createCategorySchema as categoryInputSchema,
+  updateCategorySchema,
+} from '@celebs/shared-types';
 import slugify from 'slugify';
 
 export class CategoryController {
@@ -54,7 +57,11 @@ export class CategoryController {
       const category = await this.categoryService.getCategoryById(id);
 
       if (!category) {
-        throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+        throw new AppError(
+          'Category not found',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.RESOURCE_NOT_FOUND,
+        );
       }
 
       res.status(HTTPSTATUS.OK).json({
@@ -73,7 +80,11 @@ export class CategoryController {
       const category = await this.categoryService.getCategoryBySlug(slug);
 
       if (!category) {
-        throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+        throw new AppError(
+          'Category not found',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.RESOURCE_NOT_FOUND,
+        );
       }
 
       res.status(HTTPSTATUS.OK).json({

@@ -15,7 +15,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const campaigns = await campaignService.getActiveCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
-  })
+  }),
 );
 
 router.get(
@@ -25,7 +25,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const campaigns = await campaignService.getAllCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
-  })
+  }),
 );
 
 router.get(
@@ -34,13 +34,11 @@ router.get(
     const id = req.params.id || '';
     const campaign = await campaignService.getCampaignById(id);
     if (!campaign) {
-      res
-        .status(HTTPSTATUS.NOT_FOUND)
-        .json({ success: false, message: 'Campaign not found' });
+      res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Campaign not found' });
       return;
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
-  })
+  }),
 );
 
 router.get(
@@ -49,13 +47,11 @@ router.get(
     const slug = req.params.slug || '';
     const campaign = await campaignService.getCampaignBySlug(slug);
     if (!campaign) {
-      res
-        .status(HTTPSTATUS.NOT_FOUND)
-        .json({ success: false, message: 'Campaign not found' });
+      res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Campaign not found' });
       return;
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
-  })
+  }),
 );
 
 // Protected Admin routes
@@ -67,7 +63,7 @@ router.post(
     const validatedPayload = createCampaignSchema.parse(req.body);
     const newCampaign = await campaignService.createCampaign(validatedPayload);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: newCampaign });
-  })
+  }),
 );
 
 router.put(
@@ -78,7 +74,7 @@ router.put(
     const id = req.params.id || '';
     const updated = await campaignService.updateCampaign(id, req.body);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
-  })
+  }),
 );
 
 export default router;

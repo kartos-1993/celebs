@@ -10,7 +10,7 @@ export class CampaignService {
     const campaigns = await this.campaignRepository.findActiveCampaigns(now);
 
     const allProductIds = Array.from(
-      new Set(campaigns.flatMap((c) => (c.products || []).map((p) => p.productId)))
+      new Set(campaigns.flatMap((c) => (c.products || []).map((p) => p.productId))),
     );
 
     if (allProductIds.length === 0) {
@@ -89,6 +89,10 @@ export class CampaignService {
       };
     }
 
-    return this.campaignRepository.update(id, dataToUpdate, products ? products.map((p: any) => p.productId) : undefined);
+    return this.campaignRepository.update(
+      id,
+      dataToUpdate,
+      products ? products.map((p: any) => p.productId) : undefined,
+    );
   }
 }

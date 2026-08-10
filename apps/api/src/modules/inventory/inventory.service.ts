@@ -23,8 +23,14 @@ export class InventoryService {
   /**
    * Atomic PostgreSQL stock decrement to prevent race conditions during concurrent orders.
    */
-  static async decrementStock(inventoryId: string, quantity: number): Promise<{ id: string; quantity: number }> {
-    logger.info({ inventoryId, quantity }, '[InventoryService.decrementStock] Attempting stock decrement');
+  static async decrementStock(
+    inventoryId: string,
+    quantity: number,
+  ): Promise<{ id: string; quantity: number }> {
+    logger.info(
+      { inventoryId, quantity },
+      '[InventoryService.decrementStock] Attempting stock decrement',
+    );
 
     const updatedRows: Array<{ id: string; quantity: number }> = await prisma.$queryRaw`
       UPDATE "ProductInventory"
@@ -46,7 +52,7 @@ export class InventoryService {
   static async findOrCreateInventory(
     productId: string,
     colorVariantName: string,
-    size: string
+    size: string,
   ): Promise<StockCheckResult> {
     logger.info({ productId, colorVariantName, size }, '[InventoryService] Looking up inventory');
     const existing = await prisma.productInventory.findUnique({
@@ -63,7 +69,7 @@ export class InventoryService {
       const available = existing.quantity - existing.reservedQuantity;
       logger.info(
         { inventoryId: existing.id, available },
-        '[InventoryService] Found existing inventory in Postgres'
+        '[InventoryService] Found existing inventory in Postgres',
       );
       return {
         inventoryId: existing.id,
@@ -81,9 +87,12 @@ export class InventoryService {
     try {
       const product = await prisma.product.findUnique({ where: { id: productId } });
       if (product && Array.isArray(product.colorVariants)) {
-        const variants = product.colorVariants as Array<{ name: string; stocks?: Array<{ size: string; quantity: number }> }>;
+        const variants = product.colorVariants as Array<{
+          name: string;
+          stocks?: Array<{ size: string; quantity: number }>;
+        }>;
         const variant = variants.find(
-          (v) => v.name.toLowerCase() === colorVariantName.toLowerCase()
+          (v) => v.name.toLowerCase() === colorVariantName.toLowerCase(),
         );
         if (variant && variant.stocks) {
           const stockItem = variant.stocks.find((s) => s.size.toLowerCase() === size.toLowerCase());

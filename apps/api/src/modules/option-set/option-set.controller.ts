@@ -20,9 +20,7 @@ export class OptionSetController {
       const id = req.params.id || '';
       const data = await this.svc.getById(id);
       if (!data) {
-        res
-          .status(HTTPSTATUS.NOT_FOUND)
-          .json({ success: false, message: 'Option set not found' });
+        res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Option set not found' });
         return;
       }
       res.status(HTTPSTATUS.OK).json({ success: true, data });

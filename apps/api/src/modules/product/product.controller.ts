@@ -17,7 +17,7 @@ export class ProductController {
         throw new AppError(
           'Authentication is required to create products',
           HTTPSTATUS.UNAUTHORIZED,
-          ErrorCode.AUTH_TOKEN_MISSING
+          ErrorCode.AUTH_TOKEN_MISSING,
         );
       }
 
@@ -27,7 +27,7 @@ export class ProductController {
         payload,
         req.user.userId,
         req.user.vendorProfile?.id,
-        req.user.vendorProfile?.shopName
+        req.user.vendorProfile?.shopName,
       );
 
       res.status(HTTPSTATUS.CREATED).json({
@@ -56,7 +56,7 @@ export class ProductController {
           throw new AppError(
             'Forbidden: You do not own this unpublished product',
             HTTPSTATUS.FORBIDDEN,
-            ErrorCode.FORBIDDEN_RESOURCE
+            ErrorCode.FORBIDDEN_RESOURCE,
           );
         }
       }
@@ -103,7 +103,7 @@ export class ProductController {
         throw new AppError(
           'Vendor profile not found',
           HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST
+          ErrorCode.INVALID_REQUEST,
         );
       }
 
@@ -126,7 +126,7 @@ export class ProductController {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
-          ErrorCode.AUTH_TOKEN_MISSING
+          ErrorCode.AUTH_TOKEN_MISSING,
         );
       }
 
@@ -158,7 +158,7 @@ export class ProductController {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
-          ErrorCode.AUTH_TOKEN_MISSING
+          ErrorCode.AUTH_TOKEN_MISSING,
         );
       }
 
@@ -169,7 +169,7 @@ export class ProductController {
         payload,
         req.user.userId,
         req.user.role || '',
-        req.user.vendorProfile?.id
+        req.user.vendorProfile?.id,
       );
 
       res.status(HTTPSTATUS.OK).json({
@@ -188,7 +188,7 @@ export class ProductController {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
-          ErrorCode.AUTH_TOKEN_MISSING
+          ErrorCode.AUTH_TOKEN_MISSING,
         );
       }
 
@@ -197,7 +197,7 @@ export class ProductController {
         id,
         req.user.userId,
         req.user.role || '',
-        req.user.vendorProfile?.id
+        req.user.vendorProfile?.id,
       );
 
       res.status(HTTPSTATUS.OK).json({
@@ -217,7 +217,7 @@ export class ProductController {
         throw new AppError(
           'Vendor profile not found',
           HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST
+          ErrorCode.INVALID_REQUEST,
         );
       }
 
