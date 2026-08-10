@@ -96,7 +96,7 @@ export class OrderController {
       orderItemId,
       validated.itemStatus,
       validated.trackingNumber,
-      validated.courierPartner
+      validated.courierPartner,
     );
     res
       .status(HTTPSTATUS.OK)

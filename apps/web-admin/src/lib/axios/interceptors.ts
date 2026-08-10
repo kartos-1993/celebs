@@ -1,5 +1,4 @@
-import { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { axiosClient } from './axios-client';
+import { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { CustomAxiosRequestConfig, ApiErrorResponse } from './types';
 
 // ─── Mutex Lock State ────────────────────────────────────────────────────────
@@ -51,19 +50,16 @@ if (authChannel) {
     const { type } = event.data || {};
     switch (type) {
       case 'REFRESH_START':
-        // Another tab started refreshing. Set local flag so this tab queues 401s
         isRefreshing = true;
         break;
 
       case 'REFRESH_SUCCESS':
-        // Another tab finished refresh successfully. Drain our queue & sync state
         isRefreshing = false;
         _onTokenRefreshed?.();
         processQueue(null);
         break;
 
       case 'REFRESH_FAILURE':
-        // Another tab failed to refresh. Reject queued requests & logout
         isRefreshing = false;
         processQueue(new Error('Session expired in another tab'));
         _onSessionExpired?.();
@@ -99,13 +95,13 @@ const AUTH_BYPASS_URLS = [
 ];
 
 // ─── Register interceptors ───────────────────────────────────────────────────
-export const setupInterceptors = () => {
-  axiosClient.interceptors.request.use(
+export const setupInterceptors = (client: AxiosInstance) => {
+  client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => config,
     (error) => Promise.reject(error),
   );
 
-  axiosClient.interceptors.response.use(
+  client.interceptors.response.use(
     (response) => {
       if (response.data && typeof response.data === 'object' && response.data.success === false) {
         const errorData = response.data as Record<string, unknown>;
@@ -141,8 +137,7 @@ export const setupInterceptors = () => {
         if (isBypassUrl) {
           return Promise.reject({
             status,
-            message:
-              typeof errorData?.message === 'string' ? errorData.message : error.message,
+            message: typeof errorData?.message === 'string' ? errorData.message : error.message,
             ...(typeof errorData === 'object' ? errorData : {}),
           } as ApiErrorResponse);
         }
@@ -152,7 +147,7 @@ export const setupInterceptors = () => {
           return new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           })
-            .then(() => axiosClient(originalRequest))
+            .then(() => client(originalRequest))
             .catch((err) => Promise.reject(err));
         }
 
@@ -163,7 +158,9 @@ export const setupInterceptors = () => {
         authChannel?.postMessage({ type: 'REFRESH_START' });
 
         try {
-          await axiosClient.post('/auth/refresh', null, { skipAuthRefresh: true } as CustomAxiosRequestConfig);
+          await client.post('/auth/refresh', null, {
+            skipAuthRefresh: true,
+          } as CustomAxiosRequestConfig);
 
           // Broadcast to other open tabs that refresh succeeded
           authChannel?.postMessage({ type: 'REFRESH_SUCCESS' });
@@ -171,7 +168,7 @@ export const setupInterceptors = () => {
           _onTokenRefreshed?.();
           processQueue(null);
 
-          return axiosClient(originalRequest);
+          return client(originalRequest);
         } catch (refreshError) {
           const err = refreshError instanceof Error ? refreshError : new Error('Refresh failed');
 
@@ -185,7 +182,9 @@ export const setupInterceptors = () => {
             window.location.href = '/login';
           }
 
-          return Promise.reject({ message: 'Session expired. Please log in again.' } as ApiErrorResponse);
+          return Promise.reject({
+            message: 'Session expired. Please log in again.',
+          } as ApiErrorResponse);
         } finally {
           isRefreshing = false;
         }
@@ -194,12 +193,9 @@ export const setupInterceptors = () => {
       // ── Generic error normalisation ───────────────────────────────────────
       return Promise.reject({
         status,
-        message:
-          typeof errorData?.message === 'string' ? errorData.message : error.message,
+        message: typeof errorData?.message === 'string' ? errorData.message : error.message,
         ...(typeof errorData === 'object' ? errorData : {}),
       } as ApiErrorResponse);
     },
   );
 };
-
-setupInterceptors();

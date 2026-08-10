@@ -54,7 +54,10 @@ export function CampaignListPage() {
             themes.
           </p>
         </div>
-        <Button asChild className="bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2">
+        <Button
+          asChild
+          className="bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2"
+        >
           <Link to="/marketing/campaigns/new">
             <Plus className="w-4 h-4" />
             Create Campaign

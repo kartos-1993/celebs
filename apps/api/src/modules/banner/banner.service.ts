@@ -34,7 +34,7 @@ export class BannerService {
       throw new AppError(
         'Banner list can have at most 3 banners',
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
