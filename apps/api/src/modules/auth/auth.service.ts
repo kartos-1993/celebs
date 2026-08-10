@@ -533,7 +533,7 @@ export class AuthService {
       user = await prisma.user.create({
         data: {
           email,
-          name: name || email.split('@')[0],
+          name: name || email.split('@')[0] || 'User',
           password: randomPassword,
           isEmailVerified: true,
         },
@@ -545,6 +545,10 @@ export class AuthService {
         { userId: user.id, email: user.email },
         'New user auto-registered via Google Sign-In',
       );
+    }
+
+    if (!user) {
+      throw new InternalServerException('Failed to create or resolve user record', ErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     if (user.role === 'VENDOR') {
