@@ -65,13 +65,13 @@ export function Menu({ isSideBarOpen }: MenuProps) {
                             className="w-full justify-start h-10 mb-1"
                             asChild
                           >
-                            <Link to={href}>
-                              <span className={cn(isSideBarOpen === false ? '' : 'mr-4')}>
+                            <Link to={href} className="flex items-center gap-3 w-full">
+                              <span className="flex items-center justify-center">
                                 <Icon size={18} />
                               </span>
                               <p
                                 className={cn(
-                                  'max-w-[200px] truncate',
+                                  'max-w-[200px] truncate text-sm font-medium py-0.5',
                                   isSideBarOpen === false
                                     ? '-translate-x-96 opacity-0'
                                     : 'translate-x-0 opacity-100',

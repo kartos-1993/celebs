@@ -56,19 +56,19 @@ export function CollapseMenuButton({
 
   return isOpen ? (
     <Collapsible open={isCollapsed} onOpenChange={setIsCollapsed} className="w-full">
-      <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1" asChild>
+      <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full" asChild>
         <Button
           variant={isSubmenuActive ? 'secondary' : 'ghost'}
-          className="w-full justify-start h-10"
+          className="w-full justify-start h-10 px-3"
         >
           <div className="w-full items-center flex justify-between">
-            <div className="flex items-center">
-              <span className="mr-4">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center shrink-0">
                 <Icon size={18} />
               </span>
               <p
                 className={cn(
-                  'max-w-[150px] truncate',
+                  'max-w-[150px] truncate text-sm font-medium py-0.5',
                   isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
                 )}
               >
@@ -77,11 +77,11 @@ export function CollapseMenuButton({
             </div>
             <div
               className={cn(
-                'whitespace-nowrap',
+                'flex items-center justify-center shrink-0 ml-2',
                 isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
               )}
             >
-              <ChevronDown size={18} className="transition-transform duration-200" />
+              <ChevronDown size={16} className="transition-transform duration-200" />
             </div>
           </div>
         </Button>
@@ -91,14 +91,16 @@ export function CollapseMenuButton({
           <Button
             key={index}
             variant={(active === undefined && pathname === href) || active ? 'secondary' : 'ghost'}
-            className="w-full justify-start h-10 mb-1"
+            className="w-full justify-start h-9 mb-1 px-3"
             asChild
           >
-            <Link to={href}>
-              <span className="mr-4 ml-2">{/* <Dot size={18} /> */}</span>
+            <Link to={href} className="flex items-center gap-2 w-full">
+              <span className="flex items-center justify-center ml-1 shrink-0 text-muted-foreground">
+                <Dot size={18} />
+              </span>
               <p
                 className={cn(
-                  'max-w-[170px] truncate font-thin',
+                  'max-w-[170px] truncate text-[13px] font-normal py-0.5',
                   isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
                 )}
               >
@@ -117,16 +119,16 @@ export function CollapseMenuButton({
             <DropdownMenuTrigger asChild>
               <Button
                 variant={isSubmenuActive ? 'secondary' : 'ghost'}
-                className="w-full justify-start h-10 mb-1"
+                className="w-full justify-start h-10 mb-1 px-3"
               >
                 <div className="w-full items-center flex justify-between">
-                  <div className="flex items-center">
-                    <span className={cn(isOpen === false ? '' : 'mr-4')}>
+                  <div className="flex items-center gap-3">
+                    <span className={cn('flex items-center justify-center shrink-0', isOpen === false ? '' : 'mr-4')}>
                       <Icon size={18} />
                     </span>
                     <p
                       className={cn(
-                        'max-w-[200px] truncate',
+                        'max-w-[200px] truncate text-sm font-medium py-0.5',
                         isOpen === false ? 'opacity-0' : 'opacity-100',
                       )}
                     >
@@ -143,7 +145,7 @@ export function CollapseMenuButton({
         </Tooltip>
       </TooltipProvider>
       <DropdownMenuContent side="right" sideOffset={25} align="start">
-        <DropdownMenuLabel className="max-w-[190px] truncate">{label}</DropdownMenuLabel>
+        <DropdownMenuLabel className="max-w-[190px] truncate text-sm font-medium py-0.5">{label}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {submenus.map(({ href, label, active }, index) => (
           <DropdownMenuItem key={index} asChild>
@@ -153,7 +155,7 @@ export function CollapseMenuButton({
                 ((active === undefined && pathname === href) || active) && 'bg-secondary'
               }`}
             >
-              <p className="max-w-[180px] truncate">{label}</p>
+              <p className="max-w-[180px] truncate text-[13px] font-normal py-0.5">{label}</p>
             </Link>
           </DropdownMenuItem>
         ))}
