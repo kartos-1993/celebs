@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '@/context/auth-provider';
-import PageLoader from '@/components/page-loader';
+import { FullscreenLoader } from '@/components/page-loader';
 import { PATHS } from './paths';
 
 interface GuestGuardProps {
@@ -12,7 +12,7 @@ export const GuestGuard: React.FC<GuestGuardProps> = ({ children }) => {
   const { user, isLoading } = useAuthContext();
 
   if (isLoading) {
-    return <PageLoader />;
+    return <FullscreenLoader />;
   }
 
   if (user) {

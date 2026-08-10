@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/context/auth-provider';
-import PageLoader from '@/components/page-loader';
+import { FullscreenLoader } from '@/components/page-loader';
 import { PATHS } from './paths';
 
 interface AuthGuardProps {
@@ -13,7 +13,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const location = useLocation();
 
   if (isLoading) {
-    return <PageLoader />;
+    return <FullscreenLoader />;
   }
 
   if (!user) {
