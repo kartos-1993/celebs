@@ -2,6 +2,9 @@
   "extends": "./packages/tsconfig/tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": false,
     "paths": {
       "@celebs/rbac": ["packages/rbac/src/index.ts"],
       "@celebs/shared-utils": ["packages/shared-utils/src/index.ts"],

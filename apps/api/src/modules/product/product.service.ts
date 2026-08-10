@@ -21,18 +21,27 @@ export type ProductStockInput = ProductStockType;
 export type ProductColorVariantInput = ProductColorVariantType;
 
 export class ProductService {
-  private formatProductResponse(product: Record<string, unknown> | null): Record<string, unknown> | null {
+  private formatProductResponse(
+    product: Record<string, unknown> | null,
+  ): Record<string, unknown> | null {
     if (!product) return null;
     return {
       ...product,
       id: product.id,
       price: product.price != null ? Number(product.price) : 0,
-      discountedPrice: product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
+      discountedPrice:
+        product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
       category: product.category
-        ? { ...(product.category as Record<string, unknown>), id: (product.category as { id?: string }).id }
+        ? {
+            ...(product.category as Record<string, unknown>),
+            id: (product.category as { id?: string }).id,
+          }
         : product.categoryId,
       subcategory: product.subcategory
-        ? { ...(product.subcategory as Record<string, unknown>), id: (product.subcategory as { id?: string }).id }
+        ? {
+            ...(product.subcategory as Record<string, unknown>),
+            id: (product.subcategory as { id?: string }).id,
+          }
         : product.subcategoryId,
     };
   }
@@ -199,7 +208,12 @@ export class ProductService {
     filters: ProductFilterType = {},
     page = 1,
     limit = 10,
-  ): Promise<{ products: Array<Record<string, unknown> | null>; total: number; nextCursor?: string; hasMore?: boolean }> {
+  ): Promise<{
+    products: Array<Record<string, unknown> | null>;
+    total: number;
+    nextCursor?: string;
+    hasMore?: boolean;
+  }> {
     const where: Prisma.ProductWhereInput = {};
 
     if (filters.status) {
@@ -258,10 +272,7 @@ export class ProductService {
       if (categoryDoc) {
         const descendantCategories = await prisma.category.findMany({
           where: {
-            OR: [
-              { parentCategory: categoryDoc.id },
-              { path: categoryDoc.slug },
-            ],
+            OR: [{ parentCategory: categoryDoc.id }, { path: categoryDoc.slug }],
           },
           select: { id: true },
         });
@@ -279,10 +290,7 @@ export class ProductService {
         select: { id: true },
       });
       const catIds = [filters.categoryId, ...childCategories.map((c) => c.id)];
-      where.OR = [
-        { categoryId: { in: catIds } },
-        { subcategoryId: { in: catIds } },
-      ];
+      where.OR = [{ categoryId: { in: catIds } }, { subcategoryId: { in: catIds } }];
     }
 
     const sortField = filters.sortBy || 'createdAt';
@@ -313,10 +321,13 @@ export class ProductService {
 
     const hasMore = rawProducts.length > limit;
     const products = hasMore ? rawProducts.slice(0, limit) : rawProducts;
-    const nextCursor = hasMore && products.length > 0 ? products[products.length - 1].id : undefined;
+    const lastItem = products[products.length - 1];
+    const nextCursor = hasMore && lastItem ? lastItem.id : undefined;
 
     return {
-      products: products.map((p) => this.formatProductResponse(p as unknown as Record<string, unknown>)),
+      products: products.map((p) =>
+        this.formatProductResponse(p as unknown as Record<string, unknown>),
+      ),
       total,
       nextCursor,
       hasMore,
@@ -356,18 +367,29 @@ export class ProductService {
     return { products, total };
   }
 
-  async submitProductForReview(id: string, vendorId: string): Promise<Record<string, unknown> | null> {
+  async submitProductForReview(
+    id: string,
+    vendorId: string,
+  ): Promise<Record<string, unknown> | null> {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
     if (String(product.vendorId) !== String(vendorId)) {
-      throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
+      throw new AppError(
+        'Forbidden: You do not own this product',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.FORBIDDEN_RESOURCE,
+      );
     }
 
     if (product.status !== 'draft' && product.status !== 'rejected') {
-      throw new AppError('Product is not in a submittable state', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Product is not in a submittable state',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     const updated = await prisma.product.update({
@@ -384,17 +406,20 @@ export class ProductService {
 
   async reviewProduct(
     id: string,
-    actionOrPayload: 'approve' | 'reject' | {
-      action: 'approve' | 'reject';
-      reviewerId?: string;
-      reviewerName?: string;
-      note?: string;
-      rejectionCategory?: string;
-      rejectionSubcategories?: string[];
-      rejectionFields?: string[];
-    },
+    actionOrPayload:
+      | 'approve'
+      | 'reject'
+      | {
+          action: 'approve' | 'reject';
+          reviewerId?: string;
+          reviewerName?: string;
+          note?: string;
+          rejectionCategory?: string;
+          rejectionSubcategories?: string[];
+          rejectionFields?: string[];
+        },
     reviewerIdArg?: string,
-    noteArg?: string
+    noteArg?: string,
   ): Promise<Record<string, unknown> | null> {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
@@ -402,7 +427,11 @@ export class ProductService {
     }
 
     if (product.status !== 'pending_review') {
-      throw new AppError('Product is not pending review', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Product is not pending review',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     let action: 'approve' | 'reject';
@@ -427,7 +456,9 @@ export class ProductService {
       note = noteArg;
     }
 
-    const formattedProduct = this.formatProductResponse(product as unknown as Record<string, unknown>);
+    const formattedProduct = this.formatProductResponse(
+      product as unknown as Record<string, unknown>,
+    );
     const qcResult = calculateProductQCScore(formattedProduct);
 
     const newHistoryItem = {
@@ -441,7 +472,9 @@ export class ProductService {
       reviewedAt: new Date(),
     };
 
-    const existingHistory = Array.isArray(product.reviewHistory) ? (product.reviewHistory as Prisma.JsonArray) : [];
+    const existingHistory = Array.isArray(product.reviewHistory)
+      ? (product.reviewHistory as Prisma.JsonArray)
+      : [];
     const updatedHistory = [...existingHistory, newHistoryItem] as unknown as Prisma.InputJsonValue;
 
     const updateData: Prisma.ProductUpdateInput = {
@@ -521,10 +554,18 @@ export class ProductService {
 
     if (role === 'VENDOR') {
       if (String(product.vendorId) !== String(vendorId)) {
-        throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
+        throw new AppError(
+          'Forbidden: You do not own this product',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.FORBIDDEN_RESOURCE,
+        );
       }
       if (product.status !== 'draft' && product.status !== 'rejected') {
-        throw new AppError('Cannot update product unless it is draft or rejected', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+        throw new AppError(
+          'Cannot update product unless it is draft or rejected',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
       }
     }
 
@@ -552,15 +593,21 @@ export class ProductService {
           ...(updateData.name ? { name: updateData.name.trim() } : {}),
           ...(updateData.brand !== undefined ? { brand: updateData.brand?.trim() || null } : {}),
           slug,
-          ...(updateData.description !== undefined ? { description: updateData.description?.trim() || '' } : {}),
+          ...(updateData.description !== undefined
+            ? { description: updateData.description?.trim() || '' }
+            : {}),
           ...(updateData.price ? { price: updateData.price } : {}),
-          ...(updateData.discountedPrice !== undefined ? { discountedPrice: updateData.discountedPrice } : {}),
+          ...(updateData.discountedPrice !== undefined
+            ? { discountedPrice: updateData.discountedPrice }
+            : {}),
           categoryId: resolvedCategoryId,
           subcategoryId: resolvedSubcategoryId,
           ...(updateData.sizes ? { sizes: updateData.sizes as any } : {}),
           ...(updateData.colorVariants ? { colorVariants: updateData.colorVariants as any } : {}),
           ...(updateData.skus ? { skus: updateData.skus as any } : {}),
-          ...(updateData.variantOptions ? { variantOptions: updateData.variantOptions as any } : {}),
+          ...(updateData.variantOptions
+            ? { variantOptions: updateData.variantOptions as any }
+            : {}),
           ...(updateData.mainImages ? { mainImages: updateData.mainImages } : {}),
           ...(updateData.dynamicData ? { dynamicData: updateData.dynamicData as any } : {}),
           ...(updateData.tags ? { tags: updateData.tags } : {}),
@@ -622,7 +669,11 @@ export class ProductService {
     }
 
     if (role === 'VENDOR' && String(product.vendorId) !== String(vendorId)) {
-      throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
+      throw new AppError(
+        'Forbidden: You do not own this product',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.FORBIDDEN_RESOURCE,
+      );
     }
 
     const updated = await prisma.product.update({
@@ -647,11 +698,19 @@ export class ProductService {
     }
 
     if (String(product.vendorId) !== String(vendorId)) {
-      throw new AppError('Forbidden: You do not own this product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
+      throw new AppError(
+        'Forbidden: You do not own this product',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.FORBIDDEN_RESOURCE,
+      );
     }
 
     if (product.status !== 'published' && product.status !== 'deactivated') {
-      throw new AppError('Only published or deactivated products can be toggled', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      throw new AppError(
+        'Only published or deactivated products can be toggled',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
     }
 
     const updated = await prisma.product.update({
@@ -705,11 +764,7 @@ export class ProductService {
     }
 
     if (!resolvedCategory) {
-      throw new AppError(
-        'Category not found',
-        HTTPSTATUS.NOT_FOUND,
-        ErrorCode.CATEGORY_NOT_FOUND,
-      );
+      throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
     return {
