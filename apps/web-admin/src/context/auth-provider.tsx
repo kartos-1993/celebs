@@ -1,9 +1,43 @@
 import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import { UAParser } from 'ua-parser-js';
+import { format, formatDistanceToNowStrict, isPast } from 'date-fns';
+import { Smartphone, Laptop, LucideIcon } from 'lucide-react';
 import useAuth from '@/hooks/use-auth';
 import { UserData } from '@/types';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
 import { axiosClient } from '@/lib/axios/axios-client';
 import { setAuthCallbacks, broadcastLogout } from '@/lib/axios/interceptors';
+
+// ─── Session Parsing Utility ──────────────────────────────────────────────────
+export interface SessionInfo {
+  deviceType: string;
+  browser: string;
+  os: string;
+  timeAgo: string;
+  icon: LucideIcon;
+}
+
+export const parseSession = (userAgent: string, createdAt: string): SessionInfo => {
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+
+  const deviceType = result.device.type || 'Desktop';
+  const browser = `${result.browser.name}` || 'Web';
+  const os = `${result.os.name} ${result.os.version}`;
+  const icon = deviceType === 'mobile' ? Smartphone : Laptop;
+
+  const formattedAt = isPast(new Date(createdAt))
+    ? `${formatDistanceToNowStrict(new Date(createdAt))} ago`
+    : format(new Date(createdAt), 'd MMM, yyyy');
+
+  return {
+    deviceType,
+    browser,
+    os,
+    timeAgo: formattedAt,
+    icon,
+  };
+};
 
 // ─── Context Shape ────────────────────────────────────────────────────────────
 type AuthContextType = {
@@ -11,6 +45,7 @@ type AuthContextType = {
   error: Error | null;
   isLoading: boolean;
   isFetching: boolean;
+  isAuthenticated: boolean;
   refetch: () => void;
   role?: string;
   isVendor: boolean;
@@ -24,6 +59,7 @@ const defaultAuthContext: AuthContextType = {
   error: null,
   isLoading: true,
   isFetching: false,
+  isAuthenticated: false,
   refetch: () => {},
   role: undefined,
   isVendor: false,
@@ -38,6 +74,7 @@ const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { data, error, isLoading, isFetching, refetch } = useAuth();
   const user = data?.data?.user as UserData | undefined;
+  const isAuthenticated = Boolean(user);
   const role = user?.role;
 
   const isVendor = role === 'VENDOR';
@@ -46,18 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isStaff = role === 'STAFF';
 
   // ── Wire Axios interceptor callbacks into React auth state ────────────────
-  // This ensures the interceptor can notify the UI on token refresh or expiry
-  // without creating a circular dependency.
   useEffect(() => {
     setAuthCallbacks({
       onTokenRefreshed: () => {
-        // Refetch the current user so React state stays in sync after a
-        // successful silent token refresh.
         refetch();
       },
       onSessionExpired: () => {
-        // Nothing extra needed here — the interceptor redirects to /login.
-        // If a logout API call is desired, add it here.
+        // Interceptor redirects to /login on session expiry
       },
     });
   }, [refetch]);
@@ -89,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error: error as Error | null,
         isLoading,
         isFetching,
+        isAuthenticated,
         refetch,
         role,
         isVendor,
