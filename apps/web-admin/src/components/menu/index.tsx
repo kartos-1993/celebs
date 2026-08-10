@@ -1,19 +1,30 @@
-import { Ellipsis, LogOut } from 'lucide-react';
+import { LogOut, Sun, Moon, User, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getMenuList } from './menu-data';
 import { Button } from '@celebs/shared-ui/components/button';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 import { CollapseMenuButton } from '@/components/sidebar/collapse-menu-button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
 } from '@celebs/shared-ui/components/tooltip';
-import { Link, useMatches, useLocation, useNavigate } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@celebs/shared-ui/components/dropdown-menu';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { logoutMutationFn } from '@/lib/api';
 import { useAuthContext } from '@/context/auth-provider';
+import { useTheme } from '@/context/theme-context';
 
 interface MenuProps {
   isSideBarOpen: boolean | undefined;
@@ -21,6 +32,7 @@ interface MenuProps {
 
 export function Menu({ isSideBarOpen }: MenuProps) {
   const { role, user } = useAuthContext();
+  const { theme, setTheme } = useTheme();
   const menuList = getMenuList(role, (user as any)?.permissions);
   const location = useLocation();
   const pathname = location.pathname;
@@ -44,6 +56,17 @@ export function Menu({ isSideBarOpen }: MenuProps) {
     },
   });
 
+  const isCollapsed = isSideBarOpen === false;
+
+  const initials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'ME';
+
   return (
     <ScrollArea className="[&>div>div[style]]:!block">
       <nav className="mt-8 h-full w-full">
@@ -62,27 +85,31 @@ export function Menu({ isSideBarOpen }: MenuProps) {
                                 ? 'secondary'
                                 : 'ghost'
                             }
-                            className="w-full justify-start h-10 mb-1"
+                            className={cn(
+                              'w-full h-10 mb-1 px-3',
+                              isCollapsed ? 'justify-center' : 'justify-start',
+                            )}
                             asChild
                           >
-                            <Link to={href} className="flex items-center gap-3 w-full">
-                              <span className="flex items-center justify-center">
+                            <Link
+                              to={href}
+                              className={cn(
+                                'flex items-center w-full',
+                                isCollapsed ? 'justify-center' : 'gap-3',
+                              )}
+                            >
+                              <span className="flex items-center justify-center shrink-0">
                                 <Icon size={18} />
                               </span>
-                              <p
-                                className={cn(
-                                  'max-w-[200px] truncate text-sm font-medium py-0.5',
-                                  isSideBarOpen === false
-                                    ? '-translate-x-96 opacity-0'
-                                    : 'translate-x-0 opacity-100',
-                                )}
-                              >
-                                {label}
-                              </p>
+                              {!isCollapsed && (
+                                <p className="max-w-[200px] truncate text-sm font-medium py-0.5">
+                                  {label}
+                                </p>
+                              )}
                             </Link>
                           </Button>
                         </TooltipTrigger>
-                        {isSideBarOpen === false && (
+                        {isCollapsed && (
                           <TooltipContent side="right">{label}</TooltipContent>
                         )}
                       </Tooltip>
@@ -102,31 +129,110 @@ export function Menu({ isSideBarOpen }: MenuProps) {
               )}
             </li>
           ))}
-          <li className="w-full grow flex items-end">
-            <TooltipProvider disableHoverableContent>
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => logout()}
-                    variant="outline"
-                    className="w-full justify-center h-10 mt-5"
-                  >
-                    <span className={cn(isSideBarOpen === false ? '' : 'mr-4')}>
-                      <LogOut size={18} />
-                    </span>
-                    <p
-                      className={cn(
-                        'whitespace-nowrap',
-                        isSideBarOpen === false ? 'opacity-0 hidden' : 'opacity-100',
+
+          {/* ── Bottom: profile / menu ──────────────────────────────────── */}
+          <li className="w-full grow flex items-end pb-1">
+            <DropdownMenu>
+              <TooltipProvider disableHoverableContent>
+                <Tooltip delayDuration={100}>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          'w-full h-10 mt-5',
+                          isCollapsed ? 'justify-center px-0' : 'justify-start px-3 gap-3',
+                        )}
+                      >
+                        <Avatar className="h-7 w-7 shrink-0">
+                          <AvatarImage src="#" alt="Avatar" />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        {!isCollapsed && (
+                          <div className="flex flex-col items-start leading-none">
+                            <p className="text-sm font-medium truncate max-w-[120px]">
+                              {user?.name || 'My Account'}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                              {user?.role || ''}
+                            </p>
+                          </div>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  {isCollapsed && (
+                    <TooltipContent side="right">My Account</TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+
+              <DropdownMenuContent
+                side={isCollapsed ? 'right' : 'top'}
+                align={isCollapsed ? 'start' : 'end'}
+                sideOffset={8}
+                className="w-56"
+              >
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
+                      {user?.role && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
+                          {user.role}
+                        </span>
                       )}
-                    >
-                      Sign out
-                    </p>
-                  </Button>
-                </TooltipTrigger>
-                {isSideBarOpen === false && <TooltipContent side="right">Sign out</TooltipContent>}
-              </Tooltip>
-            </TooltipProvider>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{user?.email || ''}</p>
+                  </div>
+                </DropdownMenuLabel>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link to="/account/profile" className="flex items-center cursor-pointer">
+                      <User className="w-4 h-4 mr-3 text-muted-foreground" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="flex items-center cursor-pointer">
+                      <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator />
+
+                {/* Theme toggle */}
+                <DropdownMenuItem
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="cursor-pointer"
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="w-4 h-4 mr-3 text-muted-foreground" />
+                  ) : (
+                    <Moon className="w-4 h-4 mr-3 text-muted-foreground" />
+                  )}
+                  {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                {/* Logout */}
+                <DropdownMenuItem
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                  onClick={() => logout()}
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </li>
         </ul>
       </nav>
