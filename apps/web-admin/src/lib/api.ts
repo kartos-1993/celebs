@@ -1,4 +1,4 @@
-import { AuthAPI } from './axios-client';
+import { AuthAPI } from '@/lib/axios';
 import { SessionResponse } from '../types';
 
 import {

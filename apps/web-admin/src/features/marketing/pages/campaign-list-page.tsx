@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getCampaignsQueryFn } from '@/lib/api';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -16,7 +16,6 @@ import { Plus, Search, Calendar, Sparkles, Flame, Clock } from 'lucide-react';
 import type { CampaignItemType } from '@celebs/shared-types';
 
 export function CampaignListPage() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: response, isLoading } = useQuery({
@@ -55,12 +54,11 @@ export function CampaignListPage() {
             themes.
           </p>
         </div>
-        <Button
-          onClick={() => navigate('/marketing/campaigns/new')}
-          className="bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create Campaign
+        <Button asChild className="bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2">
+          <Link to="/marketing/campaigns/new">
+            <Plus className="w-4 h-4" />
+            Create Campaign
+          </Link>
         </Button>
       </div>
 
@@ -146,13 +144,8 @@ export function CampaignListPage() {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7 gap-1"
-                      onClick={() => navigate(`/marketing/campaigns/${camp.id}`)}
-                    >
-                      Edit
+                    <Button asChild variant="outline" size="sm" className="text-xs h-7 gap-1">
+                      <Link to={`/marketing/campaigns/${camp.id}`}>Edit</Link>
                     </Button>
                   </TableCell>
                 </TableRow>

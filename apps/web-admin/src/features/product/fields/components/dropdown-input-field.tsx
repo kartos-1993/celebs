@@ -1,6 +1,6 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
-import { ProductAPI } from '@/lib/axios-client';
+import { ProductAPI } from '@/lib/axios';
 import { SearchableSelect } from '@celebs/shared-ui/components/searchable-select';
 import type { FieldSpec, UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
