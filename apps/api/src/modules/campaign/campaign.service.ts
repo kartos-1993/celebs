@@ -1,32 +1,24 @@
-import mongoose from 'mongoose';
-import { CampaignType } from '@prisma/client';
-import { CreateCampaignType } from '@celebs/shared-types';
-import { campaignRepository, CampaignRepository } from './campaign.repository';
+import { CampaignRepository } from './campaign.repository';
+import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
+import { createCampaignSchema } from '@celebs/shared-types';
 
 export class CampaignService {
-  private campaignRepository: CampaignRepository;
+  constructor(private campaignRepository: CampaignRepository = new CampaignRepository()) {}
 
-  constructor(repository: CampaignRepository = campaignRepository) {
-    this.campaignRepository = repository;
-  }
+  async getActiveCampaigns() {
+    const now = new Date();
+    const campaigns = await this.campaignRepository.findActiveCampaigns(now);
 
-  private async attachProductDetails(campaigns: any[]) {
     const allProductIds = Array.from(
-      new Set(
-        campaigns.flatMap((c) => (c.products ? c.products.map((p: any) => p.productId) : [])),
-      ),
+      new Set(campaigns.flatMap((c) => (c.products || []).map((p) => p.productId)))
     );
 
-    const validProductIds = allProductIds.filter(
-      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id),
-    );
-
-    if (validProductIds.length === 0) {
+    if (allProductIds.length === 0) {
       return campaigns.map((c) => ({ ...c, productDetails: [] }));
     }
 
-    const mongoProducts = await this.campaignRepository.findMongoProductsByIds(validProductIds);
-    const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
+    const products = await this.campaignRepository.findProductsByIds(allProductIds);
+    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
 
     return campaigns.map((c) => ({
       ...c,
@@ -36,84 +28,67 @@ export class CampaignService {
     }));
   }
 
-  async getActiveCampaigns() {
-    const now = new Date();
-    const campaigns = await this.campaignRepository.findActiveCampaigns(now);
-    return this.attachProductDetails(campaigns);
-  }
-
   async getAllCampaigns() {
-    const campaigns = await this.campaignRepository.findAllCampaigns();
-    return this.attachProductDetails(campaigns);
+    return this.campaignRepository.findAllCampaigns();
   }
 
   async getCampaignBySlug(slug: string) {
     const campaign = await this.campaignRepository.findBySlug(slug);
     if (!campaign) return null;
-    const [hydrated] = await this.attachProductDetails([campaign]);
-    return hydrated;
+
+    const productIds = (campaign.products || []).map((p) => p.productId);
+    const products = await this.campaignRepository.findProductsByIds(productIds);
+    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
+
+    return {
+      ...campaign,
+      productDetails: (campaign.products || [])
+        .map((p: any) => productMap.get(p.productId))
+        .filter(Boolean),
+    };
   }
 
   async getCampaignById(id: string) {
-    const campaign = await this.campaignRepository.findById(id);
-    if (!campaign) return null;
-    const [hydrated] = await this.attachProductDetails([campaign]);
-    return hydrated;
+    return this.campaignRepository.findById(id);
   }
 
-  async createCampaign(payload: CreateCampaignType) {
-    const typeEnum = (payload.campaignType as CampaignType) || CampaignType.FESTIVAL;
+  async createCampaign(input: any) {
+    const validated = createCampaignSchema.parse(input);
+    const { productIds, ...campaignData } = validated;
 
-    const campaign = await this.campaignRepository.create({
-      title: payload.title,
-      slug: payload.slug,
-      campaignType: typeEnum,
-      tagline: payload.tagline,
-      bannerImage: payload.bannerImage,
-      themeColor: payload.themeColor ?? '#D92525',
-      startDate: new Date(payload.startDate),
-      endDate: new Date(payload.endDate),
-      products: payload.productIds
+    return this.campaignRepository.create({
+      ...campaignData,
+      startDate: new Date(campaignData.startDate),
+      endDate: new Date(campaignData.endDate),
+      products: productIds
         ? {
-            create: payload.productIds.map((productId) => ({
-              productId,
+            create: productIds.map((pId: string) => ({
+              productId: pId,
+              discountType: 'PERCENTAGE',
+              discountValue: 10,
             })),
           }
         : undefined,
     });
-
-    const [hydrated] = await this.attachProductDetails([campaign]);
-    return hydrated;
   }
 
-  async updateCampaign(id: string, payload: Partial<CreateCampaignType>) {
-    const typeEnum = payload.campaignType ? (payload.campaignType as CampaignType) : undefined;
+  async updateCampaign(id: string, input: any) {
+    const { products, ...campaignData } = input;
 
-    const campaign = await this.campaignRepository.update(
-      id,
-      {
-        title: payload.title,
-        slug: payload.slug,
-        campaignType: typeEnum,
-        tagline: payload.tagline,
-        bannerImage: payload.bannerImage,
-        themeColor: payload.themeColor,
-        startDate: payload.startDate ? new Date(payload.startDate) : undefined,
-        endDate: payload.endDate ? new Date(payload.endDate) : undefined,
-        products: payload.productIds
-          ? {
-              create: payload.productIds.map((productId) => ({
-                productId,
-              })),
-            }
-          : undefined,
-      },
-      payload.productIds,
-    );
+    const dataToUpdate: any = { ...campaignData };
+    if (campaignData.startDate) dataToUpdate.startDate = new Date(campaignData.startDate);
+    if (campaignData.endDate) dataToUpdate.endDate = new Date(campaignData.endDate);
 
-    const [hydrated] = await this.attachProductDetails([campaign]);
-    return hydrated;
+    if (products && Array.isArray(products)) {
+      dataToUpdate.products = {
+        create: products.map((p: any) => ({
+          productId: p.productId,
+          discountType: p.discountType,
+          discountValue: p.discountValue,
+        })),
+      };
+    }
+
+    return this.campaignRepository.update(id, dataToUpdate, products ? products.map((p: any) => p.productId) : undefined);
   }
 }
-
-export const campaignService = new CampaignService();

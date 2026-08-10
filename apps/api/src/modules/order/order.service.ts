@@ -5,9 +5,8 @@ import {
   COD_MAX_LIMIT,
   UpdateAddressInput,
 } from '@celebs/shared-types';
+import prisma, { Prisma } from '@/config/db.prisma';
 import { orderRepository } from './order.repository';
-import { Prisma } from '@prisma/client';
-import { ProductModel } from '@/db/models/product.model';
 import { IPaymentGateway } from './adapters/payment-gateway.interface';
 import { MockPaymentAdapter } from './adapters/mock-payment.adapter';
 import { StripePaymentAdapter } from './adapters/stripe-payment.adapter';
@@ -142,7 +141,7 @@ export class OrderService {
         );
       }
 
-      const product = await ProductModel.findById(inv.productId).lean();
+      const product = await prisma.product.findUnique({ where: { id: inv.productId } });
       if (!product) {
         throw new AppError(
           `Product details not found for inventory item`,
@@ -152,9 +151,9 @@ export class OrderService {
       }
 
       const rawPrice =
-        product.discountedPrice && product.discountedPrice > 0
-          ? product.discountedPrice
-          : product.price;
+        product.discountedPrice && Number(product.discountedPrice) > 0
+          ? Number(product.discountedPrice)
+          : Number(product.price);
       const unitPriceDecimal = new Prisma.Decimal(rawPrice);
       const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
       subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);

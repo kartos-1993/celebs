@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import type { IAttribute } from '@/db/models/attribute.model';
 import prisma from '@/config/db.prisma';
 
 // UI field types supported by the renderer
@@ -12,9 +11,38 @@ export type UiType =
   | 'SkuTableV2'
   | 'MainImage'
   | 'ColorInline'
-  | 'ColorMeta';
+  | 'ColorMeta'
+  | 'SizeMeasurementsTable';
 
 import type { AttributeGroup as FieldGroup } from '@celebs/shared-types';
+
+export interface IAttribute {
+  name: string;
+  type: string;
+  values?: string[];
+  isRequired?: boolean;
+  group?: FieldGroup;
+  isVariant?: boolean;
+  variantType?: string;
+  optionSetName?: string;
+  useStandardOptions?: boolean;
+  optionSetId?: string | number;
+  label?: string;
+  placeholder?: string;
+  info?: {
+    help?: string;
+    top?: string;
+  };
+}
+
+export interface CategoryDocLike {
+  id: string;
+  name: string;
+  version?: number;
+  attributes: IAttribute[];
+  sizeChartColumns?: string[];
+  bodyChartColumns?: string[];
+}
 
 export interface FieldSpec {
   name: string;
@@ -31,15 +59,6 @@ export interface FieldSpec {
     help?: string;
     top?: string;
   };
-}
-
-export interface CategoryDocLike {
-  id: string;
-  name: string;
-  version?: number;
-  attributes: IAttribute[];
-  sizeChartColumns?: string[];
-  bodyChartColumns?: string[];
 }
 
 function titleCase(s: string) {
