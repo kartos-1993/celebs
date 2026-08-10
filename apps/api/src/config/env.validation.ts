@@ -6,7 +6,12 @@ export const envSchema = z.object({
   BASE_PATH: z.string().default('/api/v1'),
   DATABASE_URL: z.string().min(1, { message: 'DATABASE_URL is required' }),
   JWT_SECRET: z.string().min(32, { message: 'JWT_SECRET must be at least 32 characters long' }),
-  JWT_REFRESH_SECRET: z.string().min(32).optional().or(z.literal('')),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.length >= 32, {
+      message: 'JWT_REFRESH_SECRET must be at least 32 characters long if provided',
+    }),
   APP_ORIGIN: z
     .string()
     .default('http://localhost:5173,http://localhost:3333')
