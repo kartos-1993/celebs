@@ -1,6 +1,6 @@
 import React from 'react';
-import { UserNav } from '@/components/user-nav';
-import { ModeToggle } from '@/components/mode-toggle';
+import { Bell } from 'lucide-react';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -13,7 +13,6 @@ import { SheetMenu } from './sheet-menu';
 import { useSideBarContext } from '@/context/sidebar-provider';
 import { cn } from '@/lib/utils';
 
-// Refine the type of match.handle
 interface RouteHandle {
   crumb?: string;
 }
@@ -42,20 +41,29 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        `pl-6 sticky top-0 z-10 bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary transition-[margin-left] ease-in-out duration-300`,
+        'px-4 lg:px-6 z-10 transition-[margin-left] ease-in-out duration-300',
         isSideBarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
       )}
     >
-      <div className=" lg:mr-8 flex h-14 items-center">
-        <div className="flex items-center space-x-4 lg:space-x-0">
+      <div className="flex h-12 items-center gap-4">
+        {/* Mobile hamburger */}
+        <div className="flex items-center gap-3 lg:hidden">
           <SheetMenu />
+        </div>
+
+        {/* Breadcrumbs */}
+        <div className="flex items-center gap-3 flex-1">
           <Breadcrumb>
             <BreadcrumbList>{breadcrumbs}</BreadcrumbList>
           </Breadcrumb>
         </div>
-        <div className="flex flex-1 items-center justify-end">
-          <ModeToggle />
-          <UserNav />
+
+        {/* Notification bell */}
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
+            <Bell size={18} />
+            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
+          </Button>
         </div>
       </div>
     </header>
