@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { idSchema } from './category.validator';
+
+const idSchema = z.string().min(1, 'Invalid ID');
 
 // Base review schema
 const baseReviewSchema = {
@@ -16,9 +17,11 @@ export const createReviewSchema = z.object({
 });
 
 // Schema for updating an existing review
-export const updateReviewSchema = z.object({
-  ...baseReviewSchema,
-}).partial();
+export const updateReviewSchema = z
+  .object({
+    ...baseReviewSchema,
+  })
+  .partial();
 
 // Schema for admin updating a review's status
 export const updateReviewStatusSchema = z.object({
