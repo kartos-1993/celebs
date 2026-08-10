@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.env*
+coverage
+.nx
+.turbo
+.tmp
+.sixth
+tmp
+*.log
