@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Dot, LucideIcon } from 'lucide-react';
+import { ChevronDown, LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -91,16 +91,13 @@ export function CollapseMenuButton({
           <Button
             key={index}
             variant={(active === undefined && pathname === href) || active ? 'secondary' : 'ghost'}
-            className="w-full justify-start h-9 mb-1 px-3"
+            className="w-full justify-start h-8 mb-1 pl-9 pr-3"
             asChild
           >
-            <Link to={href} className="flex items-center gap-2 w-full">
-              <span className="flex items-center justify-center ml-1 shrink-0 text-muted-foreground">
-                <Dot size={18} />
-              </span>
+            <Link to={href} className="flex items-center w-full">
               <p
                 className={cn(
-                  'max-w-[170px] truncate text-[13px] font-normal py-0.5',
+                  'max-w-[170px] truncate text-xs font-normal py-0.5',
                   isOpen ? 'translate-x-0 opacity-100' : '-translate-x-96 opacity-0',
                 )}
               >
@@ -155,7 +152,7 @@ export function CollapseMenuButton({
                 ((active === undefined && pathname === href) || active) && 'bg-secondary'
               }`}
             >
-              <p className="max-w-[180px] truncate text-[13px] font-normal py-0.5">{label}</p>
+              <p className="max-w-[180px] truncate text-xs font-normal py-0.5">{label}</p>
             </Link>
           </DropdownMenuItem>
         ))}
