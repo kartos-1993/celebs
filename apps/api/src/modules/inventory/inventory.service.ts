@@ -1,6 +1,13 @@
-import prisma from '../../db';
+import prisma from '../../config/db.prisma';
 import { ProductModel } from '../../db/models/product.model';
-import { logger } from '@celebs/shared-utils';
+import { logger, AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
+
+export class OutOfStockError extends AppError {
+  constructor(message = 'Item is out of stock') {
+    super(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.VALIDATION_ERROR);
+    this.name = 'OutOfStockError';
+  }
+}
 
 export interface StockCheckResult {
   inventoryId: string;
@@ -15,7 +22,30 @@ export interface StockCheckResult {
 
 export class InventoryService {
   /**
-   * Find or auto-sync inventory from MongoDB Product document into PostgreSQL ProductInventory
+   * Atomically decrement stock in a single SQL update query.
+   * Throws OutOfStockError if 0 rows are updated. DO NOT use read-then-write.
+   */
+  static async decrementStock(inventoryId: string, quantity: number) {
+    if (quantity <= 0) {
+      throw new AppError('Quantity must be greater than 0', HTTPSTATUS.BAD_REQUEST);
+    }
+
+    const updatedRows = await prisma.$queryRaw<Array<{ id: string; quantity: number }>>`
+      UPDATE "ProductInventory"
+      SET "quantity" = "quantity" - ${quantity}
+      WHERE "id" = ${inventoryId} AND "quantity" >= ${quantity}
+      RETURNING "id", "quantity"
+    `;
+
+    if (!updatedRows || updatedRows.length === 0) {
+      throw new OutOfStockError(`Insufficient stock available for inventory item ${inventoryId}`);
+    }
+
+    return updatedRows[0];
+  }
+
+  /**
+   * Find or auto-sync inventory from Product record into PostgreSQL ProductInventory
    */
   static async findOrCreateInventory(
     productId: string,
@@ -48,8 +78,6 @@ export class InventoryService {
       };
     }
 
-
-    // Lookup stock from MongoDB product document to initialize PostgreSQL inventory
     let initialQty = 10; // Default fallback if product stock is unspecified
     try {
       const product = await ProductModel.findById(productId).exec();
