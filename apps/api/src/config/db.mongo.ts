@@ -1,3 +1,4 @@
+// TODO: Deprecate - Migrating fully to Postgres
 import mongoose from 'mongoose';
 import { logger } from '@celebs/shared-utils';
 import { config } from '@/config/app.config';
