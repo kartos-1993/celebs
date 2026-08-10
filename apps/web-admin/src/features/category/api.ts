@@ -3,7 +3,7 @@
  * Centralized API calls with proper type safety
  */
 
-import { axiosClient } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
 import {
   Category,
   CategoryTreeNode,

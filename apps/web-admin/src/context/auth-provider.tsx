@@ -2,7 +2,8 @@ import React, { createContext, useContext, useCallback, useEffect } from 'react'
 import useAuth from '@/hooks/use-auth';
 import { UserData } from '@/types';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
-import { axiosClient, setAuthCallbacks, broadcastLogout } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
+import { setAuthCallbacks, broadcastLogout } from '@/lib/axios/interceptors';
 
 // ─── Context Shape ────────────────────────────────────────────────────────────
 type AuthContextType = {

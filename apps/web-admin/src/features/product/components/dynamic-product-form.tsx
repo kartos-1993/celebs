@@ -6,7 +6,7 @@ import {
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
 import { Button } from '@celebs/shared-ui/components/button';
-import { axiosClient } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
 import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { getCategoryById } from '../../category/api';
 import type { CategoryAttribute } from '../../category/types';
