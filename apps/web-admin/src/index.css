@@ -5,6 +5,7 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-inter: Inter, var(--font-sans);
   --font-manrope: Manrope, var(--font-sans);
 
@@ -218,6 +219,7 @@
   body {
     min-height: 100svh;
     width: 100%;
+    font-family: var(--font-sans);
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
