@@ -1,6 +1,6 @@
 import React from 'react';
 import { useController, useFormContext, useWatch } from 'react-hook-form';
-import { axiosClient } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Sparkles } from 'lucide-react';

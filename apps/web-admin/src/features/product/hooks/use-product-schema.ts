@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { axiosClient } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
 import type { FieldSpec } from '../fields/ui-registry';
 import {
   addFallbackFields,

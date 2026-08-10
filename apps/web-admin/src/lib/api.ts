@@ -1,4 +1,4 @@
-import { axiosClient } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
 import { SessionResponse } from '../types';
 
 import {

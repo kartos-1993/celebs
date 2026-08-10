@@ -32,7 +32,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { CategoryTreeNode } from '../types';
-import { axiosClient } from '@/lib/axios';
+import { axiosClient } from '@/lib/axios/axios-client';
 
 interface CategoryTreeProps {
   categoryTree: CategoryTreeNode[];
