@@ -16,8 +16,7 @@ Enforce all file creation logic to follow this structure precisely:
 
 ## 3. Storage Separation & Component Architecture Controls
 
-- Store dynamic schemas, option variants, product properties, and catalog indices inside MongoDB using Mongoose maps.
-- Store users, transaction lineages, warehouse ledgers, balances, and security sessions inside PostgreSQL managed via Prisma.
+- Store all data models (users, transactions, catalog products, dynamic JSON attributes, option variants, ledgers, and sessions) 100% inside PostgreSQL managed via Prisma.
 - Component Layers must isolate logical boundaries cleanly:
   1. Routes: Maps structural URL endpoint properties and applies guards.
   2. Controllers: Captures request models, handles express headers. No inline DB execution blocks.
