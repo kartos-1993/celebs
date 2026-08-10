@@ -16,7 +16,6 @@ import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
 
 import pinoHttp from 'pino-http';
 
-
 import session from 'express-session';
 import { UpstashRedisStore } from './config/session-store';
 import sessionRoutes from './modules/session/session.routes';
@@ -45,16 +44,20 @@ app.use(json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-logger.info(
-  { APP_ORIGIN_CONFIG: config.APP_ORIGIN },
-  'CORS Origin Configuration'
-);
+logger.info({ APP_ORIGIN_CONFIG: config.APP_ORIGIN }, 'CORS Origin Configuration');
 app.use(
   cors({
     origin: config.APP_ORIGIN,
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'X-Session-Id', 'Accept', 'Origin'],
-  })
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-session-id',
+      'X-Session-Id',
+      'Accept',
+      'Origin',
+    ],
+  }),
 );
 
 app.use(cookieParser());
@@ -87,7 +90,7 @@ app.use(
     customErrorMessage(req, res, error) {
       return `${req.method} ${req.url} failed with status ${res.statusCode}: ${error.message}`;
     },
-  })
+  }),
 );
 app.use(helmet());
 app.use(compression());
@@ -95,9 +98,7 @@ app.use(globalRateLimiter);
 
 // Session management setup
 if (!config.JWT.SECRET) {
-  throw new Error(
-    'JWT_SECRET environment variable is required for session management'
-  );
+  throw new Error('JWT_SECRET environment variable is required for session management');
 }
 
 let sessionStore;
@@ -105,7 +106,9 @@ let sessionStore;
 if (config.REDIS.HOST && config.REDIS.PASSWORD) {
   sessionStore = new UpstashRedisStore('celebs_sess:', 86400);
 } else {
-  logger.warn('No Redis configuration found. Using in-memory session store (not recommended for production/staging)');
+  logger.warn(
+    'No Redis configuration found. Using in-memory session store (not recommended for production/staging)',
+  );
 }
 
 app.use(
@@ -121,7 +124,7 @@ app.use(
       domain: config.COOKIE.DOMAIN || undefined,
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
-  })
+  }),
 );
 
 app.use(`${config.BASE_PATH}/auth`, authRoutes);
@@ -143,16 +146,13 @@ app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {
-  app.use(
-    `${config.BASE_PATH}/docs`,
-    swaggerUi.serve,
-    swaggerUi.setup(generateOpenAPIDocument())
-  );
+  app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
 }
 
-app.get('/health', (req, res) => {
-  res.status(HTTPSTATUS.OK).json({ status: 'OK', message: 'Auth Service is healthy', data: null });
-});
+import healthRoutes from './modules/health/health.routes';
+
+app.use('/health', healthRoutes);
+app.use(`${config.BASE_PATH}/health`, healthRoutes);
 
 // Register error handler after all routes
 app.use(errorHandler);

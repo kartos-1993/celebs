@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { HTTPSTATUS, AppError, ErrorCode, logger } from '@celebs/shared-utils';
-import { categoryInputSchema, categoryUpdateSchema } from '@/common/validators/category.validator';
+import { createCategorySchema as categoryInputSchema, updateCategorySchema } from '@celebs/shared-types';
 import slugify from 'slugify';
 import mongoose from 'mongoose';
 
@@ -11,11 +11,7 @@ export class CategoryController {
   /**
    * Get all categories with populated attributes
    */
-  getAllCategories = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string) : 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
@@ -35,11 +31,7 @@ export class CategoryController {
   /**
    * Search categories globally by name (case-insensitive)
    */
-  searchCategories = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  searchCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const q = (req.query.q as string) || '';
       const limit = req.query.limit ? parseInt(String(req.query.limit)) : 20;
@@ -103,9 +95,7 @@ export class CategoryController {
       let path: string[] = [];
 
       if (parent) {
-        const parentCategory = await this.categoryService.getCategoryById(
-          parent.toString(),
-        );
+        const parentCategory = await this.categoryService.getCategoryById(parent.toString());
         if (!parentCategory) {
           throw new AppError(
             'Parent category not found',
@@ -114,7 +104,12 @@ export class CategoryController {
           );
         }
         level = parentCategory.level + 1;
-        path = [...(Array.isArray(parentCategory.path) ? parentCategory.path.map((p: string) => String(p)) : [String(parentCategory.path)]), slug];
+        path = [
+          ...(Array.isArray(parentCategory.path)
+            ? parentCategory.path.map((p: string) => String(p))
+            : [String(parentCategory.path)]),
+          slug,
+        ];
       } else {
         path = [slug];
       }
@@ -166,7 +161,7 @@ export class CategoryController {
 
       // Prepare update data
       const updateData: any = { ...validatedData };
-      
+
       // If name is present, generate new slug
       if (updateData.name) {
         updateData.slug = slugify(updateData.name, {
@@ -177,15 +172,10 @@ export class CategoryController {
 
       // If parent is present, convert to string or null
       if (updateData.parent !== undefined) {
-        updateData.parent = updateData.parent
-          ? updateData.parent.toString()
-          : null;
+        updateData.parent = updateData.parent ? updateData.parent.toString() : null;
       }
 
-      const updatedCategory = await this.categoryService.updateCategory(
-        id,
-        updateData,
-      );
+      const updatedCategory = await this.categoryService.updateCategory(id, updateData);
 
       return res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -201,11 +191,7 @@ export class CategoryController {
    * Get category tree with attributes
    * This method retrieves the entire category tree with their attributes
    */
-  getCategoryTreeWithAttributes = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  getCategoryTreeWithAttributes = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const activeOnly = req.query.activeOnly === 'true';
       const tree = await this.categoryService.getCategoryTreeWithAttributes(activeOnly);
@@ -222,11 +208,7 @@ export class CategoryController {
   /**
    * Get filters for a specific category
    */
-  getCategoryFilters = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  getCategoryFilters = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
       const filters = await this.categoryService.getCategoryFilters(id);
