@@ -23,8 +23,8 @@ export class ComboService {
       return combos.map((c) => ({ ...c, itemDetails: [] }));
     }
 
-    const mongoProducts = await this.comboRepository.findMongoProductsByIds(validProductIds);
-    const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
+    const products = await this.comboRepository.findProductsByIds(validProductIds);
+    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
 
     return combos.map((c) => ({
       ...c,

@@ -1,5 +1,4 @@
 import prisma, { Prisma } from '@/config/db.prisma';
-import { ProductModel } from '@/db/models/product.model';
 
 export class ComboRepository {
   async findActiveCombos(tag?: string) {
@@ -71,8 +70,8 @@ export class ComboRepository {
     });
   }
 
-  async findMongoProductsByIds(ids: string[]) {
-    return ProductModel.find({ _id: { $in: ids } }).lean();
+  async findProductsByIds(ids: string[]) {
+    return prisma.product.findMany({ where: { id: { in: ids } } });
   }
 }
 

@@ -12,46 +12,50 @@ const campaignService = new CampaignService();
 // Public routes for storefront
 router.get(
   '/active',
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     const campaigns = await campaignService.getActiveCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
-  }),
+  })
 );
 
 router.get(
   '/all',
   authenticateJWT,
   requirePermissions(Permission.CATALOG_MANAGE),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     const campaigns = await campaignService.getAllCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
-  }),
+  })
 );
 
 router.get(
   '/id/:id',
   asyncHandler(async (req, res) => {
-    const campaign = await campaignService.getCampaignById(req.params.id);
+    const id = req.params.id || '';
+    const campaign = await campaignService.getCampaignById(id);
     if (!campaign) {
-      return res
+      res
         .status(HTTPSTATUS.NOT_FOUND)
         .json({ success: false, message: 'Campaign not found' });
+      return;
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
-  }),
+  })
 );
 
 router.get(
   '/:slug',
   asyncHandler(async (req, res) => {
-    const campaign = await campaignService.getCampaignBySlug(req.params.slug);
+    const slug = req.params.slug || '';
+    const campaign = await campaignService.getCampaignBySlug(slug);
     if (!campaign) {
-      return res
+      res
         .status(HTTPSTATUS.NOT_FOUND)
         .json({ success: false, message: 'Campaign not found' });
+      return;
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
-  }),
+  })
 );
 
 // Protected Admin routes
@@ -63,7 +67,7 @@ router.post(
     const validatedPayload = createCampaignSchema.parse(req.body);
     const newCampaign = await campaignService.createCampaign(validatedPayload);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: newCampaign });
-  }),
+  })
 );
 
 router.put(
@@ -71,9 +75,10 @@ router.put(
   authenticateJWT,
   requirePermissions(Permission.CATALOG_MANAGE),
   asyncHandler(async (req, res) => {
-    const updated = await campaignService.updateCampaign(req.params.id, req.body);
+    const id = req.params.id || '';
+    const updated = await campaignService.updateCampaign(id, req.body);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
-  }),
+  })
 );
 
 export default router;
