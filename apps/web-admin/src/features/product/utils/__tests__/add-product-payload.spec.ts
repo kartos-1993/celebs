@@ -33,7 +33,7 @@ describe('buildProductPayload', () => {
     expect(payload.subcategoryId).toBe('60c72b2f9b1d8b2d88a67890');
     expect(payload.status).toBe('draft');
     expect(payload.colorVariants).toHaveLength(1);
-    expect(payload.colorVariants[0].name).toBe('Default');
+    expect(payload.colorVariants?.[0]?.name).toBe('Default');
   });
 
   it('should throw an error if regular price is missing or invalid', async () => {
