@@ -19,8 +19,7 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 
   try {
-    const redisOk = await verifyRedisConnection();
-    if (!redisOk) redisStatus = 'DEGRADED';
+    await verifyRedisConnection();
   } catch {
     redisStatus = 'DOWN';
   }

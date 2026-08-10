@@ -15,7 +15,7 @@
     "prisma:generate": "dotenv -e .env.development -- npx prisma generate --schema=src/db/schema.prisma --config=../../prisma.config.ts",
     "db:push": "dotenv -e .env.development -- npx prisma db push --schema=src/db/schema.prisma --config=../../prisma.config.ts",
     "db:push:staging": "dotenv -e .env.staging -- npx prisma db push --schema=src/db/schema.prisma --config=../../prisma.config.ts",
-    "migrate:dev": "dotenv -e .env.development -- npx prisma migrate dev --schema=src/db/schema.prisma --config=../../prisma.config.ts --name auto",
+    "migrate:dev": "dotenv -e .env.development -- npx prisma migrate dev --schema=src/db/schema.prisma --config=../../prisma.config.ts",
     "prisma:migrate:staging": "dotenv -e .env.staging -- npx prisma db push --schema=src/db/schema.prisma --config=../../prisma.config.ts",
     "prisma:studio": "dotenv -e .env.development -- npx prisma studio --schema=src/db/schema.prisma --config=../../prisma.config.ts",
     "//_SEEDING": "=== Database Seeding ===",

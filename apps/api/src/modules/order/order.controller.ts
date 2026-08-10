@@ -1,46 +1,42 @@
 import { Request, Response } from 'express';
-import { HTTPSTATUS } from '@celebs/shared-utils';
 import { OrderService } from './order.service';
 import {
   addressSchema,
-  checkoutSchema,
   updateAddressSchema,
+  checkoutSchema,
   updateOrderItemStatusSchema,
 } from '@celebs/shared-types';
+import { HTTPSTATUS, AppError, ErrorCode } from '@celebs/shared-utils';
 
 export class OrderController {
-  private orderService: OrderService;
-
-  constructor() {
-    this.orderService = new OrderService();
-  }
+  constructor(private orderService: OrderService) {}
 
   // --- ADDRESS HANDLERS ---
 
-  getAddresses = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+  getUserAddresses = async (req: Request, res: Response) => {
+    const userId = req.user?.id || req.user?.userId || '';
     const addresses = await this.orderService.getUserAddresses(userId);
     res.status(HTTPSTATUS.OK).json({ success: true, data: addresses });
   };
 
   createAddress = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+    const userId = req.user?.id || req.user?.userId || '';
     const validated = addressSchema.parse(req.body);
     const address = await this.orderService.createAddress(userId, validated);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: address });
   };
 
   updateAddress = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const { addressId } = req.params;
+    const userId = req.user?.id || req.user?.userId || '';
+    const addressId = req.params.addressId || '';
     const validated = updateAddressSchema.parse(req.body);
     const updated = await this.orderService.updateAddress(userId, addressId, validated);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
   };
 
   deleteAddress = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const { addressId } = req.params;
+    const userId = req.user?.id || req.user?.userId || '';
+    const addressId = req.params.addressId || '';
     await this.orderService.deleteAddress(userId, addressId);
     res.status(HTTPSTATUS.OK).json({ success: true, message: 'Address deleted successfully' });
   };
@@ -48,14 +44,14 @@ export class OrderController {
   // --- CHECKOUT & ORDER HANDLERS ---
 
   checkout = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+    const userId = req.user?.id || req.user?.userId || '';
     const validated = checkoutSchema.parse(req.body);
     const result = await this.orderService.checkout(userId, validated);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: result });
   };
 
   getMyOrders = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+    const userId = req.user?.id || req.user?.userId || '';
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const result = await this.orderService.getMyOrders(userId, page, limit);
@@ -63,15 +59,15 @@ export class OrderController {
   };
 
   getOrderById = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const { orderId } = req.params;
+    const userId = req.user?.id || req.user?.userId || '';
+    const orderId = req.params.orderId || '';
     const order = await this.orderService.getOrderById(userId, orderId);
     res.status(HTTPSTATUS.OK).json({ success: true, data: order });
   };
 
   cancelOrder = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const { orderId } = req.params;
+    const userId = req.user?.id || req.user?.userId || '';
+    const orderId = req.params.orderId || '';
     const cancelled = await this.orderService.cancelOrder(userId, orderId);
     res
       .status(HTTPSTATUS.OK)
@@ -81,8 +77,8 @@ export class OrderController {
   // --- VENDOR FULFILLMENT HANDLERS ---
 
   getVendorOrders = async (req: Request, res: Response) => {
-    const vendorId = (req as any).user.vendorId || (req as any).user.id;
-    const status = req.query.status as string;
+    const vendorId = req.user?.vendorProfile?.id || '';
+    const status = req.query.status as string | undefined;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
@@ -91,8 +87,8 @@ export class OrderController {
   };
 
   updateOrderItemStatus = async (req: Request, res: Response) => {
-    const vendorId = (req as any).user.vendorId || (req as any).user.id;
-    const { orderItemId } = req.params;
+    const vendorId = req.user?.vendorProfile?.id || '';
+    const orderItemId = req.params.orderItemId || '';
     const validated = updateOrderItemStatusSchema.parse(req.body);
 
     const updated = await this.orderService.updateOrderItemStatus(
@@ -100,18 +96,17 @@ export class OrderController {
       orderItemId,
       validated.itemStatus,
       validated.trackingNumber,
-      validated.courierPartner,
+      validated.courierPartner
     );
-
     res
       .status(HTTPSTATUS.OK)
-      .json({ success: true, data: updated, message: 'Order item status updated' });
+      .json({ success: true, data: updated, message: 'Item status updated successfully' });
   };
 
-  // --- ADMIN HANDLERS ---
+  // --- ADMIN OVERVIEW HANDLERS ---
 
   adminGetOrders = async (req: Request, res: Response) => {
-    const status = req.query.status as string;
+    const status = req.query.status as string | undefined;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
