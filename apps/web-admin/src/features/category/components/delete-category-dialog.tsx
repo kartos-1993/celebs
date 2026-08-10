@@ -59,7 +59,8 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
                   Cannot delete category with subcategories
                 </p>
                 <p className="text-xs text-amber-700 dark:text-amber-400">
-                  This category has {category.childCount} subcategory(ies). Please delete or move the subcategories before deleting this parent category.
+                  This category has {category.childCount} subcategory(ies). Please delete or move
+                  the subcategories before deleting this parent category.
                 </p>
               </div>
             ) : (
@@ -71,7 +72,8 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
                 {category.attributes && category.attributes.length > 0 && (
                   <ul className="list-disc list-inside pl-2 space-y-1 text-xs text-gray-500">
                     <li>
-                      Associated attributes ({category.attributes.map((attr) => attr.name).join(', ')}) will be removed.
+                      Associated attributes (
+                      {category.attributes.map((attr) => attr.name).join(', ')}) will be removed.
                     </li>
                   </ul>
                 )}
@@ -93,7 +95,12 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
             Cancel
           </Button>
           {!category.hasChildren && (
-            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="min-w-[130px]">
+            <Button
+              variant="destructive"
+              onClick={onConfirm}
+              disabled={isLoading}
+              className="min-w-[130px]"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -109,4 +116,3 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
     </Dialog>
   );
 };
-

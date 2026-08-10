@@ -4,16 +4,16 @@
 // scan({
 //   enabled: true,
 // });
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
-import { router } from "@/routes/router";
-import { RouterProvider } from "react-router-dom";
-import { ThemeProvider } from "@/context/theme-context";
-import { QueryClientProvider, QueryClient, MutationCache, QueryCache } from "@tanstack/react-query";
-import { AuthProvider } from "@/context/auth-provider";
-import { showErrorToast } from "@/lib/error-utils";
-import { Toaster } from "@/components/toaster";
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import { router } from '@/routes/router';
+import { RouterProvider } from 'react-router-dom';
+import { ThemeProvider } from '@/context/theme-context';
+import { QueryClientProvider, QueryClient, MutationCache, QueryCache } from '@tanstack/react-query';
+import { AuthProvider } from '@/context/auth-provider';
+import { showErrorToast } from '@/lib/error-utils';
+import { Toaster } from '@/components/toaster';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
   }),
 });
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="theme">
@@ -40,5 +40,5 @@ createRoot(document.getElementById("root")!).render(
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );

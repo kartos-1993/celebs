@@ -42,5 +42,3 @@ export const styles = StyleSheet.create({
     minHeight: responsiveFontSize(26),
   },
 });
-
-

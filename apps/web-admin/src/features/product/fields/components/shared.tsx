@@ -6,9 +6,7 @@ import type { FieldSpec } from '../ui-registry';
 export type ImageValue = File | string;
 
 export const imageValueKey = (value: ImageValue) =>
-  typeof value === 'string'
-    ? value
-    : `${value.name}-${value.size}-${value.lastModified}`;
+  typeof value === 'string' ? value : `${value.name}-${value.size}-${value.lastModified}`;
 
 export const uploadImageFiles = async (files: File[]) => {
   if (files.length === 0) return [];
@@ -48,15 +46,11 @@ export function rulesFrom(field: FieldSpec) {
   }
   if (field.uiType === 'multiselect') {
     rules.validate = (v: any) =>
-      !field.required ||
-      (Array.isArray(v) && v.length > 0) ||
-      `${field.label} is required`;
+      !field.required || (Array.isArray(v) && v.length > 0) || `${field.label} is required`;
   }
   if (field.uiType === 'VariantList') {
     rules.validate = (v: any) =>
-      !field.required ||
-      (Array.isArray(v) && v.length > 0) ||
-      `${field.label} is required`;
+      !field.required || (Array.isArray(v) && v.length > 0) || `${field.label} is required`;
   }
   return rules;
 }

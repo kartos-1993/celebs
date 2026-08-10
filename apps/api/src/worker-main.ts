@@ -9,7 +9,6 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
 
-import { connectMongoDB } from './db/mongodb';
 import prisma from './db';
 import { logger } from '@celebs/shared-utils';
 import { assetWorker } from './modules/media/asset.worker';
@@ -19,10 +18,9 @@ import { verifyS3Connection } from './common/utils/s3.client';
 const startWorker = async () => {
   try {
     logger.info('Starting Background Worker Service...');
-    
-    await connectMongoDB();
+
     await prisma.$connect();
-    logger.info('Database connections established successfully for Worker');
+    logger.info('PostgreSQL connection established successfully for Worker');
 
     // Connect and verify Redis and S3 connections for Worker
     await verifyRedisConnection();

@@ -1,12 +1,7 @@
 import React, { useRef, useCallback } from 'react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@celebs/shared-ui/components/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 import { SlidersHorizontal, FolderTree, Store, Loader2 } from 'lucide-react';
 import { useAuthContext } from '@/context/auth-provider';
 import { Category } from '../types';
@@ -33,7 +28,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 }) => {
   const { role } = useAuthContext();
   const isSuperadmin = role === 'SUPERADMIN';
-  const isEditing = !!initialData?._id;
+  const isEditing = !!initialData?.id;
 
   const storefrontSaveHandlerRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -59,9 +54,13 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     isUploadingImage,
     newColumnInput,
     setNewColumnInput,
+    newBodyColumnInput,
+    setNewBodyColumnInput,
     handleAddAttribute,
     handleAddSizeColumn,
     handleRemoveSizeColumn,
+    handleAddBodyColumn,
+    handleRemoveBodyColumn,
     handleImageUpload,
     handleSubmit,
   } = useCategoryForm({ initialData, onSave: handleSaveWithStorefront });
@@ -75,11 +74,11 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           <TabsList className={`grid w-full ${isSuperadmin ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FolderTree className="h-4 w-4" />
-              Basic Info & Size Chart
+              Basic Info
             </TabsTrigger>
             <TabsTrigger value="attributes" className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" />
-              Attributes ({attributeFields.length})
+              Attributes & Size Guide ({attributeFields.length})
             </TabsTrigger>
             {isSuperadmin && (
               <TabsTrigger value="storefront" className="flex items-center gap-2">
@@ -93,13 +92,9 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             <CategoryBasicInfoTab
               form={form}
               categories={categories}
-              initialDataId={initialData?._id}
+              initialDataId={initialData?.id}
               role={role}
               isUploadingImage={isUploadingImage}
-              newColumnInput={newColumnInput}
-              setNewColumnInput={setNewColumnInput}
-              handleAddSizeColumn={handleAddSizeColumn}
-              handleRemoveSizeColumn={handleRemoveSizeColumn}
               handleImageUpload={handleImageUpload}
             />
           </TabsContent>
@@ -110,13 +105,21 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               attributeFields={attributeFields}
               handleAddAttribute={handleAddAttribute}
               removeAttribute={removeAttribute}
+              newColumnInput={newColumnInput}
+              setNewColumnInput={setNewColumnInput}
+              newBodyColumnInput={newBodyColumnInput}
+              setNewBodyColumnInput={setNewBodyColumnInput}
+              handleAddSizeColumn={handleAddSizeColumn}
+              handleRemoveSizeColumn={handleRemoveSizeColumn}
+              handleAddBodyColumn={handleAddBodyColumn}
+              handleRemoveBodyColumn={handleRemoveBodyColumn}
             />
           </TabsContent>
 
           {isSuperadmin && (
             <TabsContent value="storefront">
               <CategoryStorefrontTab
-                categoryId={initialData?._id}
+                categoryId={initialData?.id}
                 onRegisterSaveHandler={handleRegisterStorefrontSave}
               />
             </TabsContent>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -12,7 +12,11 @@ import {
   SelectValue,
 } from '@celebs/shared-ui/components/select';
 import { ArrowLeft, Save, Flame } from 'lucide-react';
-import { createCampaignMutationFn, updateCampaignMutationFn, getCampaignByIdQueryFn } from '@/lib/api';
+import {
+  createCampaignMutationFn,
+  updateCampaignMutationFn,
+  getCampaignByIdQueryFn,
+} from '@/lib/api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
@@ -46,7 +50,9 @@ export function CampaignFormPage() {
       setTagline(c.tagline || '');
       setCampaignType(c.campaignType || 'FESTIVAL');
       setThemeColor(c.themeColor || '#D92525');
-      setStartDate(c.startDate ? new Date(c.startDate).toISOString().slice(0, 16) : '2026-09-15T00:00');
+      setStartDate(
+        c.startDate ? new Date(c.startDate).toISOString().slice(0, 16) : '2026-09-15T00:00',
+      );
       setEndDate(c.endDate ? new Date(c.endDate).toISOString().slice(0, 16) : '2026-10-05T23:59');
       setBannerImage(c.bannerImage || '');
       if (c.products && Array.isArray(c.products)) {
@@ -62,7 +68,7 @@ export function CampaignFormPage() {
         val
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, '')
+          .replace(/(^-|-$)+/g, ''),
       );
     }
   };
@@ -102,13 +108,10 @@ export function CampaignFormPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/marketing/campaigns')}
-          className="h-8 w-8 p-0"
-        >
-          <ArrowLeft className="w-4 h-4" />
+        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
+          <Link to="/marketing/campaigns" aria-label="Back to campaigns">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
         </Button>
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -116,7 +119,8 @@ export function CampaignFormPage() {
             {id ? 'Edit Festival Campaign' : 'Create Festival Campaign'}
           </h1>
           <p className="text-xs text-slate-500">
-            Schedule festival sales (Dashain, Tihar, New Year) with hero banners and countdown timers.
+            Schedule festival sales (Dashain, Tihar, New Year) with hero banners and countdown
+            timers.
           </p>
         </div>
       </div>

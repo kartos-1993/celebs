@@ -4,7 +4,6 @@ import sharp from 'sharp';
 import { redisConnection } from '@/common/services/queue.service';
 import { s3Client, buildPublicObjectUrl } from '@/common/utils/s3.client';
 import { config } from '@/config/app.config';
-import { MediaModel } from '@/db/models/media.model';
 import { logger } from '@celebs/shared-utils';
 
 // Configure Sharp memory limits to prevent V8 heap OOM crashes during heavy multi-image operations
@@ -23,7 +22,7 @@ async function getS3ObjectBuffer(key: string): Promise<Buffer> {
     new GetObjectCommand({
       Bucket: config.S3.BUCKET_NAME,
       Key: key,
-    })
+    }),
   );
 
   if (!response.Body) {
@@ -38,60 +37,49 @@ async function getS3ObjectBuffer(key: string): Promise<Buffer> {
 }
 
 export const assetWorker = new Worker<AssetJobPayload>(
-  'asset-processing',
+  'asset-optimization-queue',
   async (job: Job<AssetJobPayload>) => {
-    const { mediaId, key, originalname, mimeType } = job.data;
-    logger.info({ jobId: job.id, mediaId, key }, 'Processing asset job');
+    const { mediaId, key } = job.data;
+    logger.info({ jobId: job.id, mediaId, key }, 'Starting asset optimization job');
 
     try {
       const originalBuffer = await getS3ObjectBuffer(key);
 
-      // WebP optimized responsive product image (max 1600px width/height)
       const optimizedMainBuffer = await sharp(originalBuffer)
-        .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 85 })
+        .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
         .toBuffer();
 
-      // WebP thumbnail image (max 300px width/height)
-      const thumbnailBuffer = await sharp(originalBuffer)
-        .resize({ width: 300, height: 300, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 75 })
-        .toBuffer();
-
-      // Upload optimized main image back to original S3 key
       await s3Client.send(
         new PutObjectCommand({
           Bucket: config.S3.BUCKET_NAME,
           Key: key,
           Body: optimizedMainBuffer,
           ContentType: 'image/webp',
-        })
+        }),
       );
 
-      // Upload thumbnail to suffix key
-      const thumbKey = `${key}-thumb.webp`;
+      const thumbKey = key.replace(/\.([a-zA-Z0-9]+)$/, '-thumb.webp');
+      const thumbnailBuffer = await sharp(originalBuffer)
+        .resize({ width: 350, height: 350, fit: 'cover' })
+        .webp({ quality: 80 })
+        .toBuffer();
+
       await s3Client.send(
         new PutObjectCommand({
           Bucket: config.S3.BUCKET_NAME,
           Key: thumbKey,
           Body: thumbnailBuffer,
           ContentType: 'image/webp',
-        })
+        }),
       );
 
       const mainUrl = buildPublicObjectUrl(key);
       const thumbUrl = buildPublicObjectUrl(thumbKey);
 
-      await MediaModel.findByIdAndUpdate(mediaId, {
-        $set: {
-          size: optimizedMainBuffer.length,
-          mimeType: 'image/webp',
-        },
-      });
-
       logger.info(
         { jobId: job.id, mediaId, mainUrl, thumbUrl },
-        'Asset processing completed successfully'
+        'Asset processing completed successfully',
       );
 
       return {
@@ -103,7 +91,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
     } catch (error: any) {
       logger.error(
         { jobId: job.id, mediaId, error: error?.message || String(error) },
-        'Failed to process asset job'
+        'Failed to process asset job',
       );
       throw error;
     }
@@ -111,7 +99,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
   {
     connection: redisConnection,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY || '2', 10),
-  }
+  },
 );
 
 assetWorker.on('completed', (job) => {

@@ -88,7 +88,11 @@ export function Multiselect({
                     const stringVal = String(v);
                     const label = optionsMap.get(stringVal) ?? stringVal;
                     return (
-                      <Badge key={stringVal} variant="secondary" className="flex items-center gap-1 px-2 py-0.5 text-xs font-normal">
+                      <Badge
+                        key={stringVal}
+                        variant="secondary"
+                        className="flex items-center gap-1 px-2 py-0.5 text-xs font-normal"
+                      >
                         <span className="capitalize">{label}</span>
                         <button
                           type="button"

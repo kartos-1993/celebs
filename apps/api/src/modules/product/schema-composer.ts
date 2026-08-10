@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { IAttribute } from '@/db/models/attribute.model';
+import prisma from '@/config/db.prisma';
 
 // UI field types supported by the renderer
 export type UiType =
@@ -11,9 +11,38 @@ export type UiType =
   | 'SkuTableV2'
   | 'MainImage'
   | 'ColorInline'
-  | 'ColorMeta';
+  | 'ColorMeta'
+  | 'SizeMeasurementsTable';
 
 import type { AttributeGroup as FieldGroup } from '@celebs/shared-types';
+
+export interface IAttribute {
+  name: string;
+  type: string;
+  values?: string[];
+  isRequired?: boolean;
+  group?: FieldGroup;
+  isVariant?: boolean;
+  variantType?: string;
+  optionSetName?: string;
+  useStandardOptions?: boolean;
+  optionSetId?: string | number;
+  label?: string;
+  placeholder?: string;
+  info?: {
+    help?: string;
+    top?: string;
+  };
+}
+
+export interface CategoryDocLike {
+  id: string;
+  name: string;
+  version?: number;
+  attributes: IAttribute[];
+  sizeChartColumns?: string[];
+  bodyChartColumns?: string[];
+}
 
 export interface FieldSpec {
   name: string;
@@ -32,31 +61,46 @@ export interface FieldSpec {
   };
 }
 
-export interface CategoryDocLike {
-  _id: string;
-  name: string;
-  version?: number;
-  attributes: IAttribute[];
-  sizeChartColumns?: string[];
-}
-
 function titleCase(s: string) {
   return String(s)
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function selectDataSource(attr: IAttribute) {
-  // Prefer standard option sets; client will call this path via ProductAPI base URL
-  if (attr.useStandardOptions && attr.optionSetId) {
-    return { optionSetId: String(attr.optionSetId), fetch: `/option-sets/${String(attr.optionSetId)}` };
-  }
+function selectDataSource(attr: any, optionSetsMap: Map<string, string[]>) {
   const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
-  return vals.map((v) => ({ label: v, value: v }));
+
+  const searchName =
+    attr.optionSetName ||
+    (attr.name === 'Color' || attr.variantType === 'color'
+      ? 'Basic Colors'
+      : attr.name === 'Size' || attr.variantType === 'size'
+        ? 'Alpha Sizes (XXS-5XL)'
+        : attr.name);
+
+  const matched =
+    optionSetsMap.get(searchName.toLowerCase()) ||
+    optionSetsMap.get(String(attr.name).toLowerCase());
+  if (matched && matched.length > 0 && (vals.length === 0 || attr.useStandardOptions)) {
+    return matched.map((v) => ({ label: v, value: v }));
+  }
+
+  if (vals.length > 0) {
+    return vals.map((v) => ({ label: v, value: v }));
+  }
+
+  if (attr.useStandardOptions && attr.optionSetId) {
+    return {
+      optionSetId: String(attr.optionSetId),
+      fetch: `/option-sets/${String(attr.optionSetId)}`,
+    };
+  }
+
+  return [];
 }
 
-function attributeToField(attr: IAttribute): FieldSpec {
-  const group: FieldGroup = attr.isVariant ? 'variant' : (attr.group || 'details');
+function attributeToField(attr: IAttribute, optionSetsMap: Map<string, string[]>): FieldSpec {
+  const group: FieldGroup = attr.isVariant ? 'variant' : attr.group || 'details';
   const base = {
     name: attr.name,
     label: attr.label || titleCase(attr.name),
@@ -75,15 +119,15 @@ function attributeToField(attr: IAttribute): FieldSpec {
     case 'boolean':
       return { ...base, uiType: 'Switch' };
     case 'select':
-      return { ...base, uiType: 'select', dataSource: selectDataSource(attr) };
+      return { ...base, uiType: 'select', dataSource: selectDataSource(attr, optionSetsMap) };
     case 'multiselect':
-      return { ...base, uiType: 'multiselect', dataSource: selectDataSource(attr) };
+      return { ...base, uiType: 'multiselect', dataSource: selectDataSource(attr, optionSetsMap) };
     default:
       return { ...base, uiType: 'input' };
   }
 }
 
-export function composeSchema(params: {
+export async function composeSchema(params: {
   category: CategoryDocLike;
   locale: string;
   policy: {
@@ -100,33 +144,42 @@ export function composeSchema(params: {
     };
   };
 }) {
+  const optionSets = await prisma.optionSet.findMany();
+  const optionSetsMap = new Map<string, string[]>();
+  for (const s of optionSets) {
+    if (Array.isArray(s.options)) {
+      optionSetsMap.set(s.name.toLowerCase(), s.options as string[]);
+      if (s.displayName) {
+        optionSetsMap.set(s.displayName.toLowerCase(), s.options as string[]);
+      }
+    }
+  }
+
   const fields: FieldSpec[] = [];
 
   // System fields (images only; product name is handled in Basic Info section on the web app)
-  fields.push(
-    {
-      name: 'mainImage',
-      uiType: 'MainImage',
-      label: 'Product Images',
-      group: 'base',
-      required: true,
-      rule: {
-        maxItems: params.policy.media.maxImages,
-        accept: params.policy.media.accept,
-        maxSize: params.policy.media.maxSizeBytes,
-        minWidth: params.policy.media.minWidth,
-        minHeight: params.policy.media.minHeight,
-        aspectRatio: params.policy.media.aspectRatio,
-        ratioTolerance: params.policy.media.ratioTolerance,
-        maxWidth: params.policy.media.maxWidth,
-        maxHeight: params.policy.media.maxHeight,
-      },
+  fields.push({
+    name: 'mainImage',
+    uiType: 'MainImage',
+    label: 'Product Images',
+    group: 'base',
+    required: true,
+    rule: {
+      maxItems: params.policy.media.maxImages,
+      accept: params.policy.media.accept,
+      maxSize: params.policy.media.maxSizeBytes,
+      minWidth: params.policy.media.minWidth,
+      minHeight: params.policy.media.minHeight,
+      aspectRatio: params.policy.media.aspectRatio,
+      ratioTolerance: params.policy.media.ratioTolerance,
+      maxWidth: params.policy.media.maxWidth,
+      maxHeight: params.policy.media.maxHeight,
     },
-  );
+  });
 
   // Category-authored fields
   for (const attr of params.category.attributes || []) {
-    fields.push(attributeToField(attr));
+    fields.push(attributeToField(attr, optionSetsMap));
   }
 
   // Variations -> SKU matrix
@@ -172,14 +225,36 @@ export function composeSchema(params: {
     })),
   });
 
-  if (params.category.sizeChartColumns && params.category.sizeChartColumns.length > 0) {
+  const charts: Array<{ key: string; label: string; columns: string[] }> = [];
+  if (
+    Array.isArray(params.category.sizeChartColumns) &&
+    params.category.sizeChartColumns.length > 0
+  ) {
+    charts.push({
+      key: 'product',
+      label: 'Product Measurements (Garment Flat)',
+      columns: params.category.sizeChartColumns,
+    });
+  }
+  if (
+    Array.isArray(params.category.bodyChartColumns) &&
+    params.category.bodyChartColumns.length > 0
+  ) {
+    charts.push({
+      key: 'body',
+      label: 'Body Measurements (Wearer Fit Guide)',
+      columns: params.category.bodyChartColumns,
+    });
+  }
+
+  if (charts.length > 0) {
     fields.push({
       name: 'sizes',
       uiType: 'SizeMeasurementsTable' as unknown as UiType,
       label: 'Size & Fit Measurements',
-      group: 'details',
+      group: 'sale',
       required: false,
-      dataSource: params.category.sizeChartColumns,
+      dataSource: { charts },
       visible: true,
     });
   }
@@ -195,7 +270,9 @@ export function composeSchema(params: {
     params.policy.media.maxWidth ?? 0,
     params.policy.media.maxHeight ?? 0,
   ].join(':');
-  const renderTag = Buffer.from(`${String(params.category._id)}:${fieldsHash}:${policyFingerprint}`).toString('base64');
+  const renderTag = Buffer.from(
+    `${String(params.category.id)}:${fieldsHash}:${policyFingerprint}`,
+  ).toString('base64');
 
   return { fields, renderTag };
 }

@@ -15,9 +15,7 @@ export function MultiSelectInputField({ field, control }: UiProps) {
   const value: string[] = Array.isArray(f.value) ? f.value : [];
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>
-        {field.label}
-      </LabelWithRequired>
+      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <Multiselect
         options={opts}
         value={value}

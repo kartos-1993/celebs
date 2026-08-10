@@ -3,11 +3,11 @@ import Redis from 'ioredis';
 import { config } from '@/config/app.config';
 import { logger } from '@celebs/shared-utils';
 
-const isTls = config.REDIS.HOST && (
-  config.REDIS.HOST.includes('upstash.io') ||
-  config.NODE_ENV === 'production' ||
-  config.NODE_ENV === 'staging'
-);
+const isTls =
+  config.REDIS.HOST &&
+  (config.REDIS.HOST.includes('upstash.io') ||
+    config.NODE_ENV === 'production' ||
+    config.NODE_ENV === 'staging');
 
 export const redisConnection = {
   host: config.REDIS.HOST,
@@ -28,19 +28,27 @@ export async function verifyRedisConnection(): Promise<void> {
     await client.ping();
     logger.info(
       { host: redisConnection.host, port: redisConnection.port },
-      'Redis Connected successfully'
+      'Redis Connected successfully',
     );
   } catch (error: any) {
     if (isDev) {
       logger.warn(
-        { host: redisConnection.host, port: redisConnection.port, error: error?.message || String(error) },
-        'Redis Connection verification failed in development. Server will continue running but queues will fail.'
+        {
+          host: redisConnection.host,
+          port: redisConnection.port,
+          error: error?.message || String(error),
+        },
+        'Redis Connection verification failed in development. Server will continue running but queues will fail.',
       );
       return;
     }
     logger.error(
-      { host: redisConnection.host, port: redisConnection.port, error: error?.message || String(error) },
-      'Redis Connection verification failed'
+      {
+        host: redisConnection.host,
+        port: redisConnection.port,
+        error: error?.message || String(error),
+      },
+      'Redis Connection verification failed',
     );
     throw error;
   } finally {

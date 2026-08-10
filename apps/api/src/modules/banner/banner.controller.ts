@@ -8,10 +8,10 @@ export class BannerController {
   /**
    * Get all active banners (Public)
    */
-  getBanners = async (req: Request, res: Response, next: NextFunction) => {
+  getBanners = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const banners = await this.bannerService.getActiveBanners();
-      return res.status(HTTPSTATUS.OK).json({
+      res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Active banners retrieved successfully',
         data: banners,
@@ -24,10 +24,10 @@ export class BannerController {
   /**
    * Get all banners including inactive (Admin)
    */
-  getAllBanners = async (req: Request, res: Response, next: NextFunction) => {
+  getAllBanners = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const banners = await this.bannerService.getAllBanners();
-      return res.status(HTTPSTATUS.OK).json({
+      res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'All banners retrieved successfully',
         data: banners,
@@ -47,12 +47,12 @@ export class BannerController {
         throw new AppError(
           'Invalid banners data payload',
           HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR
+          ErrorCode.VALIDATION_ERROR,
         );
       }
 
       const updated = await this.bannerService.updateBanners(bannersData);
-      return res.status(HTTPSTATUS.OK).json({
+      res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Banners updated successfully',
         data: updated,

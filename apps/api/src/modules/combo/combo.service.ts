@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { ComboDiscountType } from '@prisma/client';
 import { CreateComboType } from '@celebs/shared-types';
 import { comboRepository, ComboRepository } from './combo.repository';
@@ -12,21 +11,19 @@ export class ComboService {
 
   private async attachProductDetails(combos: any[]) {
     const allProductIds = Array.from(
-      new Set(
-        combos.flatMap((c) => (c.items ? c.items.map((i: any) => i.productId) : []))
-      )
+      new Set(combos.flatMap((c) => (c.items ? c.items.map((i: any) => i.productId) : []))),
     );
 
     const validProductIds = allProductIds.filter(
-      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+      (id) => typeof id === 'string' && id.trim().length > 0,
     );
 
     if (validProductIds.length === 0) {
       return combos.map((c) => ({ ...c, itemDetails: [] }));
     }
 
-    const mongoProducts = await this.comboRepository.findMongoProductsByIds(validProductIds);
-    const productMap = new Map(mongoProducts.map((p) => [p._id.toString(), p]));
+    const products = await this.comboRepository.findProductsByIds(validProductIds);
+    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
 
     return combos.map((c) => ({
       ...c,
@@ -114,7 +111,7 @@ export class ComboService {
             }
           : undefined,
       },
-      payload.productIds
+      payload.productIds,
     );
 
     const [hydrated] = await this.attachProductDetails([combo]);

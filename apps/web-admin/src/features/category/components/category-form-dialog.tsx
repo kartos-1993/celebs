@@ -27,6 +27,12 @@ interface CategoryFormDialogProps {
   isLoading?: boolean;
 }
 
+function formatCategoryPath(path: unknown): string {
+  if (Array.isArray(path)) return path.join(' > ');
+  if (typeof path === 'string') return path.split('/').join(' > ');
+  return String(path || '');
+}
+
 export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   open,
   onOpenChange,
@@ -37,7 +43,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   onCancel,
   isLoading = false,
 }) => {
-  const editingId = editingCategory?._id || '';
+  const editingId = editingCategory?.id || '';
 
   // Fetch fresh category detail directly from server database when editing
   const { data: categoryDetailRes, isLoading: isLoadingDetail } = useCategory(editingId);
@@ -45,7 +51,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
   const freshCategoryData = categoryDetailRes?.data || editingCategory;
 
   const parentCategory = parentCategoryId
-    ? categories.find((c) => c._id === parentCategoryId)
+    ? categories.find((c) => c.id === parentCategoryId)
     : null;
 
   const activeCategoryName = freshCategoryData?.name || editingCategory?.name;
@@ -63,12 +69,10 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
         aria-describedby="dialog-description"
       >
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-gray-900">
-            {getDialogTitle()}
-          </DialogTitle>
-          {editingCategory && freshCategoryData?.path && freshCategoryData.path.length > 0 && (
+          <DialogTitle className="text-lg font-bold text-gray-900">{getDialogTitle()}</DialogTitle>
+          {editingCategory && freshCategoryData?.path && (
             <p className="text-xs text-fashion-600 font-medium pt-0.5">
-              Path: {freshCategoryData.path.join(' > ')}
+              Path: {formatCategoryPath(freshCategoryData.path)}
             </p>
           )}
         </DialogHeader>
@@ -76,8 +80,8 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
           {editingCategory
             ? `Edit the details of category ${activeCategoryName || ''}.`
             : parentCategoryId
-            ? 'Add a subcategory under the selected parent category.'
-            : 'Add a new category to the list.'}
+              ? 'Add a subcategory under the selected parent category.'
+              : 'Add a new category to the list.'}
         </div>
 
         {editingId && isLoadingDetail ? (
@@ -87,10 +91,9 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
           </div>
         ) : (
           <CategoryForm
-            key={freshCategoryData?._id || parentCategoryId || 'new-category'}
+            key={freshCategoryData?.id || parentCategoryId || 'new-category'}
             initialData={
-              freshCategoryData ||
-              (parentCategoryId ? { parent: parentCategoryId } : undefined)
+              freshCategoryData || (parentCategoryId ? { parent: parentCategoryId } : undefined)
             }
             categories={categories}
             onSave={onSave}

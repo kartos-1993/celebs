@@ -47,7 +47,9 @@ export function SearchableSelect({
             }`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={`truncate ${!selectedOption ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+              <span
+                className={`truncate ${!selectedOption ? 'text-muted-foreground' : 'text-foreground font-medium'}`}
+              >
                 {selectedOption ? selectedOption.label : placeholder}
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
@@ -109,7 +111,9 @@ export function SearchableSelect({
                       }`}
                     >
                       <span className="capitalize truncate text-xs sm:text-sm">{o.label}</span>
-                      {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0 stroke-[3]" />}
+                      {isSelected && (
+                        <Check className="h-3.5 w-3.5 text-primary shrink-0 stroke-[3]" />
+                      )}
                     </button>
                   );
                 })}

@@ -30,23 +30,13 @@ export function FlyToCartOverlay() {
       onRequestClose={() => {}}
     >
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <FlyItem
-          key={activeAnimation.id}
-          item={activeAnimation}
-          onComplete={onAnimationComplete}
-        />
+        <FlyItem key={activeAnimation.id} item={activeAnimation} onComplete={onAnimationComplete} />
       </View>
     </Modal>
   );
 }
 
-function FlyItem({
-  item,
-  onComplete,
-}: {
-  item: any;
-  onComplete: () => void;
-}) {
+function FlyItem({ item, onComplete }: { item: any; onComplete: () => void }) {
   const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
 
@@ -77,7 +67,7 @@ function FlyItem({
         if (finished) {
           runOnJS(onComplete)();
         }
-      }
+      },
     );
   }, [progress, onComplete]);
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -61,7 +61,7 @@ export function ComboFormPage() {
         val
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, '')
+          .replace(/(^-|-$)+/g, ''),
       );
     }
   };
@@ -101,13 +101,10 @@ export function ComboFormPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/marketing/combos')}
-          className="h-8 w-8 p-0"
-        >
-          <ArrowLeft className="w-4 h-4" />
+        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
+          <Link to="/marketing/combos" aria-label="Back to combos">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
         </Button>
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -115,7 +112,8 @@ export function ComboFormPage() {
             {id ? 'Edit Combo Bundle' : 'Create Generic Combo Bundle'}
           </h1>
           <p className="text-xs text-slate-500">
-            Configure multi-product kits, festive bundles, and travel packs with customer savings rules.
+            Configure multi-product kits, festive bundles, and travel packs with customer savings
+            rules.
           </p>
         </div>
       </div>
@@ -228,7 +226,11 @@ export function ComboFormPage() {
             className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-6 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Saving Bundle...' : id ? 'Update Combo Bundle' : 'Publish Combo Bundle'}
+            {isSubmitting
+              ? 'Saving Bundle...'
+              : id
+                ? 'Update Combo Bundle'
+                : 'Publish Combo Bundle'}
           </Button>
         </div>
       </div>

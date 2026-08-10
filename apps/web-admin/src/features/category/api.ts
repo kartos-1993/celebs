@@ -3,7 +3,7 @@
  * Centralized API calls with proper type safety
  */
 
-import { ProductAPI } from '../../lib/axios-client';
+import { axiosClient } from '@/lib/axios/axios-client';
 import {
   Category,
   CategoryTreeNode,
@@ -19,10 +19,8 @@ const BASE_PATH = '/category';
 /**
  * Creates a new category
  */
-export async function createCategory(
-  data: CreateCategoryRequest,
-): Promise<ApiResponse<Category>> {
-  const response = await ProductAPI.post<ApiResponse<Category>>(BASE_PATH, data);
+export async function createCategory(data: CreateCategoryRequest): Promise<ApiResponse<Category>> {
+  const response = await axiosClient.post<ApiResponse<Category>>(BASE_PATH, data);
   return response.data;
 }
 
@@ -33,7 +31,7 @@ export async function getCategories(
   page = 1,
   limit = 50,
 ): Promise<ApiResponse<PaginatedCategoriesResponse>> {
-  const response = await ProductAPI.get<ApiResponse<PaginatedCategoriesResponse>>(
+  const response = await axiosClient.get<ApiResponse<PaginatedCategoriesResponse>>(
     `${BASE_PATH}?page=${page}&limit=${limit}`,
   );
   return response.data;
@@ -43,7 +41,7 @@ export async function getCategories(
  * Retrieves category tree with attributes optimized for UI
  */
 export async function getCategoryTree(): Promise<ApiResponse<CategoryTreeNode[]>> {
-  const response = await ProductAPI.get<ApiResponse<CategoryTreeNode[]>>(
+  const response = await axiosClient.get<ApiResponse<CategoryTreeNode[]>>(
     `${BASE_PATH}/tree-with-attributes`,
   );
   return response.data;
@@ -53,7 +51,7 @@ export async function getCategoryTree(): Promise<ApiResponse<CategoryTreeNode[]>
  * Global search for categories (flat list for dropdown)
  */
 export async function searchCategories(query: string) {
-  const response = await ProductAPI.get(`${BASE_PATH}/search`, {
+  const response = await axiosClient.get(`${BASE_PATH}/search`, {
     params: { q: query, limit: 20 },
   });
   return response.data?.data ?? response.data ?? [];
@@ -63,7 +61,7 @@ export async function searchCategories(query: string) {
  * Retrieves a single category by ID
  */
 export async function getCategoryById(id: string): Promise<ApiResponse<Category>> {
-  const response = await ProductAPI.get<ApiResponse<Category>>(`${BASE_PATH}/${id}`);
+  const response = await axiosClient.get<ApiResponse<Category>>(`${BASE_PATH}/${id}`);
   return response.data;
 }
 
@@ -74,44 +72,46 @@ export async function updateCategory(
   id: string,
   data: UpdateCategoryRequest,
 ): Promise<ApiResponse<Category>> {
-  const response = await ProductAPI.put<ApiResponse<Category>>(
-    `${BASE_PATH}/${id}`,
-    data,
-  );
+  const response = await axiosClient.put<ApiResponse<Category>>(`${BASE_PATH}/${id}`, data);
   return response.data;
 }
 
 /**
  * Deletes a category
  */
-export async function deleteCategory(
-  id: string,
-): Promise<ApiResponse<{ success: boolean }>> {
-  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(
-    `${BASE_PATH}/${id}`,
+export async function deleteCategory(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  const response = await axiosClient.delete<ApiResponse<{ success: boolean }>>(`${BASE_PATH}/${id}`);
+  return response.data;
+}
+
+export async function getQuickFiltersForCategory(
+  categoryId: string,
+): Promise<ApiResponse<QuickFilter[]>> {
+  const response = await axiosClient.get<ApiResponse<QuickFilter[]>>(
+    `/quick-filter/category/${categoryId}`,
   );
   return response.data;
 }
 
-
-
-export async function getQuickFiltersForCategory(categoryId: string): Promise<ApiResponse<QuickFilter[]>> {
-  const response = await ProductAPI.get<ApiResponse<QuickFilter[]>>(`/quick-filter/category/${categoryId}`);
+export async function createQuickFilter(
+  data: Partial<QuickFilter>,
+): Promise<ApiResponse<QuickFilter>> {
+  const response = await axiosClient.post<ApiResponse<QuickFilter>>('/quick-filter', data);
   return response.data;
 }
 
-export async function createQuickFilter(data: Partial<QuickFilter>): Promise<ApiResponse<QuickFilter>> {
-  const response = await ProductAPI.post<ApiResponse<QuickFilter>>('/quick-filter', data);
-  return response.data;
-}
-
-export async function updateQuickFilter(id: string, data: Partial<QuickFilter>): Promise<ApiResponse<QuickFilter>> {
-  const response = await ProductAPI.put<ApiResponse<QuickFilter>>(`/quick-filter/${id}`, data);
+export async function updateQuickFilter(
+  id: string,
+  data: Partial<QuickFilter>,
+): Promise<ApiResponse<QuickFilter>> {
+  const response = await axiosClient.put<ApiResponse<QuickFilter>>(`/quick-filter/${id}`, data);
   return response.data;
 }
 
 export async function deleteQuickFilter(id: string): Promise<ApiResponse<{ success: boolean }>> {
-  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(`/quick-filter/${id}`);
+  const response = await axiosClient.delete<ApiResponse<{ success: boolean }>>(
+    `/quick-filter/${id}`,
+  );
   return response.data;
 }
 
@@ -130,10 +130,4 @@ export const CategoryApiService = {
 };
 
 // Re-export types for convenience
-export type {
-  Category,
-  CategoryTreeNode,
-  CreateCategoryRequest,
-  UpdateCategoryRequest,
-};
-
+export type { Category, CategoryTreeNode, CreateCategoryRequest, UpdateCategoryRequest };

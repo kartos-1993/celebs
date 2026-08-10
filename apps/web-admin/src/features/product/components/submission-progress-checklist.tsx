@@ -2,10 +2,7 @@ import { memo, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldSpec } from '../fields/ui-registry';
 import ProductFormSidebar from './productform-sidebar';
-import {
-  buildSidebarSections,
-  flattenFormErrors,
-} from '../utils/add-product-validation';
+import { buildSidebarSections, flattenFormErrors } from '../utils/add-product-validation';
 
 interface SubmissionProgressChecklistProps {
   schemaFields: FieldSpec[];
@@ -20,7 +17,10 @@ const SubmissionProgressChecklistComponent = ({
   variantMeta,
   onSectionClick,
 }: SubmissionProgressChecklistProps) => {
-  const { control, formState: { errors } } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
   const formValues = useWatch({ control }) as Record<string, unknown>;
   const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
 
@@ -39,9 +39,7 @@ const SubmissionProgressChecklistComponent = ({
   const completionPercentage = useMemo(() => {
     if (sidebarSections.length === 0) return 0;
     return Math.round(
-      (sidebarSections.filter((section) => section.status).length /
-        sidebarSections.length) *
-      100,
+      (sidebarSections.filter((section) => section.status).length / sidebarSections.length) * 100,
     );
   }, [sidebarSections]);
 
@@ -50,11 +48,7 @@ const SubmissionProgressChecklistComponent = ({
       completionPercentage={completionPercentage}
       sections={sidebarSections}
       onSectionClick={onSectionClick}
-      tips={[
-        'Upload 3+ clear images.',
-        'Fill category specs.',
-        'Verify discount prices.',
-      ]}
+      tips={['Upload 3+ clear images.', 'Fill category specs.', 'Verify discount prices.']}
     />
   );
 };

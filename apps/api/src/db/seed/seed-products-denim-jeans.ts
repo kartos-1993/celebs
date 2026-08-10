@@ -1,42 +1,40 @@
 import fs from 'fs';
 import path from 'path';
-import { CategoryModel } from '../models/category.model';
-import { ProductModel } from '../models/product.model';
-import { connectDb, disconnectDb } from './config';
+import prisma from '../../config/db.prisma';
 
 export async function seedProductsDenimJeans(): Promise<void> {
-  console.log('\n👖 Seeding Denim Jeans Products...');
-  await connectDb();
+  console.log('\n👖 Seeding Denim Jeans Products via PostgreSQL Prisma...');
 
-  // 1. Find or create "Men Jeans" category
-  let denimCategory = await CategoryModel.findOne({
-    $or: [
-      { name: /men jeans/i },
-      { name: /denim jeans/i },
-      { slug: 'men-jeans' },
-      { slug: 'denim-jeans' }
-    ]
+  let denimJeansCat = await prisma.category.findFirst({
+    where: {
+      OR: [
+        { name: { contains: 'denim jeans', mode: 'insensitive' } },
+        { slug: 'men-denim-jeans' },
+        { slug: 'denim-jeans' },
+      ],
+    },
   });
 
-  if (!denimCategory) {
-    console.log('  └─ Category not found. Resolving or creating category...');
-    let parentCat = await CategoryModel.findOne({ level: 1, name: /men/i }) || await CategoryModel.findOne({ level: 1 });
+  if (!denimJeansCat) {
+    console.log('  └─ Category not found. Creating Category in Postgres...');
+    const parentCat = await prisma.category.findFirst({
+      where: { level: 1, name: { contains: 'men', mode: 'insensitive' } },
+    });
 
-    denimCategory = await CategoryModel.create({
-      name: 'Men Jeans',
-      slug: 'men-jeans',
-      level: parentCat ? 2 : 1,
-      parentCategory: parentCat ? parentCat._id : null,
-      path: parentCat ? [...parentCat.path, 'men-jeans'] : ['men-jeans'],
-      isActive: true,
-      sizeChartColumns: ['Waist', 'Hip', 'Inseam', 'Thigh']
+    denimJeansCat = await prisma.category.create({
+      data: {
+        name: 'Men Denim Jeans',
+        slug: 'men-denim-jeans',
+        level: parentCat ? 2 : 1,
+        parentCategory: parentCat ? parentCat.id : null,
+        path: parentCat ? `${parentCat.path}/men-denim-jeans` : 'men-denim-jeans',
+        isActive: true,
+      },
     });
   }
 
-  const parentCategoryId = denimCategory.parentCategory || denimCategory._id;
-  const subcategoryId = denimCategory._id;
+  const categoryId = denimJeansCat.id;
 
-  // 2. Read denim_jeans.json data
   const jsonPath = path.join(__dirname, 'data', 'denim_jeans.json');
   if (!fs.existsSync(jsonPath)) {
     console.warn(`  └─ Dataset not found at: ${jsonPath}. Skipping.`);
@@ -46,91 +44,42 @@ export async function seedProductsDenimJeans(): Promise<void> {
   const rawData = fs.readFileSync(jsonPath, 'utf-8');
   const items = JSON.parse(rawData);
 
-  let insertedCount = 0;
-  let updatedCount = 0;
+  let count = 0;
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
 
-    const sizesPayload = (item.measurements?.sizeChart || []).map((sc: any) => {
-      const prodMeasurements = [];
-      if (sc.waist !== undefined) prodMeasurements.push({ name: 'Waist', value: String(sc.waist), unit: 'cm' });
-      if (sc.hip !== undefined) prodMeasurements.push({ name: 'Hip', value: String(sc.hip), unit: 'cm' });
-      if (sc.inseam !== undefined) prodMeasurements.push({ name: 'Inseam', value: String(sc.inseam), unit: 'cm' });
-      if (sc.thigh !== undefined) prodMeasurements.push({ name: 'Thigh', value: String(sc.thigh), unit: 'cm' });
+    const price = 2200 + ((i * 120) % 1800);
+    const discountedPrice = Math.round(price * 0.9);
+    const productSlug = item.slug
+      ? `${item.slug}-${i}`
+      : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-jeans-${i}`;
 
-      return {
-        name: sc.size,
-        productMeasurements: prodMeasurements,
-        bodyMeasurements: prodMeasurements
-      };
+    await prisma.product.upsert({
+      where: { slug: productSlug },
+      update: {
+        name: item.title,
+        brand: item.brand || 'Celebs',
+        description: `Premium denim jeans.`,
+        price,
+        discountedPrice,
+        categoryId,
+        status: 'published',
+      },
+      create: {
+        name: item.title,
+        slug: productSlug,
+        brand: item.brand || 'Celebs',
+        description: `Premium denim jeans.`,
+        price,
+        discountedPrice,
+        categoryId,
+        status: 'published',
+      },
     });
 
-    const colorVariants = (item.variants || []).map((v: any) => ({
-      name: v.color || 'Default',
-      colorCode: v.color === 'Black' ? '#000000' : v.color === 'Blue' ? '#0000FF' : '#888888',
-      images: v.images || [],
-      stocks: (item.measurements?.sizeChart || []).map((sc: any) => ({
-        size: sc.size,
-        quantity: 25
-      }))
-    }));
-
-    const mainImages = item.variants?.[0]?.images?.length > 0
-      ? item.variants[0].images.slice(0, 5)
-      : ['https://images.unsplash.com/photo-1542272604-780c36856d67?q=80&w=800'];
-
-    const price = 1500 + ((i * 120) % 1500);
-    const discountedPrice = Math.round(price * 0.85);
-    const productSlug = item.slug ? `${item.slug}-${i}` : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`;
-
-    const productDoc = {
-      name: item.title,
-      slug: productSlug,
-      brand: item.title.split(' ')[0] || 'Celebs',
-      description: `High quality denim jeans. Details: ${(item.attributes?.details || []).join(', ')}. Fit: ${item.attributes?.fitType || 'Regular'}. Material: ${item.attributes?.composition || 'Denim'}.`,
-      price,
-      discountedPrice,
-      category: parentCategoryId,
-      subcategory: subcategoryId,
-      sizes: sizesPayload,
-      colorVariants,
-      mainImages,
-      dynamicData: {
-        values: {
-          mainImage: mainImages,
-          ...(item.attributes || {})
-        }
-      },
-      tags: ['Denim', 'Jeans', item.attributes?.fitType || 'Regular'].filter(Boolean),
-      featured: i < 5,
-      status: 'published' as const,
-      createdBy: 'system-seed',
-      updatedBy: 'system-seed'
-    };
-
-    const result = await ProductModel.updateOne(
-      { slug: productDoc.slug },
-      { $set: productDoc },
-      { upsert: true }
-    );
-
-    if (result.upsertedCount > 0) {
-      insertedCount++;
-    } else {
-      updatedCount++;
-    }
+    count++;
   }
 
-  console.log(`✅ Seeded Denim Jeans: ${insertedCount} inserted, ${updatedCount} updated.`);
-}
-
-if (require.main === module) {
-  seedProductsDenimJeans()
-    .then(() => disconnectDb())
-    .catch((err) => {
-      console.error('❌ Seeding denim jeans products failed:', err);
-      disconnectDb();
-      process.exit(1);
-    });
+  console.log(`✅ Seeded Denim Jeans in Postgres: ${count} processed.`);
 }

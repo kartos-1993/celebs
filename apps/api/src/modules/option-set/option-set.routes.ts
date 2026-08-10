@@ -10,10 +10,13 @@ const controller = new OptionSetController(new OptionSetService());
 
 // Protect in production; keep open in dev/staging to simplify admin UI wiring
 if (config.NODE_ENV === 'production') {
-	router.use(authenticateJWT);
+  router.use(authenticateJWT);
 }
 
 router.get('/', asyncHandler(controller.list));
 router.get('/:id', asyncHandler(controller.getById));
+router.post('/', asyncHandler(controller.create));
+router.put('/:id', asyncHandler(controller.update));
+router.delete('/:id', asyncHandler(controller.delete));
 
 export default router;

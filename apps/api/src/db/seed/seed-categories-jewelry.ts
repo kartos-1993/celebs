@@ -1,8 +1,5 @@
-import { Types } from 'mongoose';
 import slugify from 'slugify';
-import { CategoryModel } from '../models/category.model';
-import { AttributeModel } from '../models/attribute.model';
-import { connectDb, disconnectDb } from './config';
+import prisma from '../../config/db.prisma';
 import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 interface SeedAttr {
@@ -24,11 +21,7 @@ interface SeedCategory {
 }
 
 function mkAttr(a: SeedAttr) {
-  const group: AllowedGroup = a.group
-    ? a.group
-    : a.isVariant
-    ? 'variant'
-    : 'details';
+  const group: AllowedGroup = a.group ? a.group : a.isVariant ? 'variant' : 'details';
   return {
     name: a.name,
     label: a.label || a.name,
@@ -56,7 +49,13 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Movement Type',
               type: 'select',
-              values: ['Automatic Self-Winding', 'Manual Hand-Wind', 'Skeleton Mechanical', 'Tourbillon', 'Quartz'],
+              values: [
+                'Automatic Self-Winding',
+                'Manual Hand-Wind',
+                'Skeleton Mechanical',
+                'Tourbillon',
+                'Quartz',
+              ],
               isRequired: true,
               group: 'details',
             },
@@ -70,7 +69,13 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Strap Material',
               type: 'multiselect',
-              values: ['316L Steel Bracelet', 'Genuine Leather', 'NATO Nylon Strap', 'Rubber Strap', 'Mesh Bracelet'],
+              values: [
+                '316L Steel Bracelet',
+                'Genuine Leather',
+                'NATO Nylon Strap',
+                'Rubber Strap',
+                'Mesh Bracelet',
+              ],
               isRequired: true,
               isVariant: true,
               group: 'variant',
@@ -78,7 +83,14 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Dial Color',
               type: 'multiselect',
-              values: ['Midnight Blue', 'Obsidian Black', 'Sunburst Silver', 'Emerald Green', 'Champagne Gold', 'Brown'],
+              values: [
+                'Midnight Blue',
+                'Obsidian Black',
+                'Sunburst Silver',
+                'Emerald Green',
+                'Champagne Gold',
+                'Brown',
+              ],
               isRequired: true,
               isVariant: true,
               group: 'variant',
@@ -98,14 +110,32 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
             {
               name: 'Base Metal',
               type: 'select',
-              values: ['925 Sterling Silver', '14K Gold', '18K Yellow Gold', 'Tungsten Carbide', 'Titanium', '316L Stainless Steel', 'Brass'],
+              values: [
+                '925 Sterling Silver',
+                '14K Gold',
+                '18K Yellow Gold',
+                'Tungsten Carbide',
+                'Titanium',
+                '316L Stainless Steel',
+                'Brass',
+              ],
               isRequired: true,
               group: 'details',
             },
             {
               name: 'Ring Size (US)',
               type: 'multiselect',
-              values: ['US 6', 'US 7', 'US 8', 'US 9', 'US 10', 'US 11', 'US 12', 'US 13', 'Free Size'],
+              values: [
+                'US 6',
+                'US 7',
+                'US 8',
+                'US 9',
+                'US 10',
+                'US 11',
+                'US 12',
+                'US 13',
+                'Free Size',
+              ],
               isRequired: true,
               isVariant: true,
               group: 'variant',
@@ -119,61 +149,70 @@ const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
 
 async function seedCategoryRecursively(
   cat: SeedCategory,
-  parentId: Types.ObjectId | null = null,
+  parentId: string | null = null,
   level = 1,
   parentPath: string[] = [],
 ): Promise<void> {
   const slug = slugify(cat.name, { lower: true, strict: true });
-  const currentPath = [...parentPath, cat.name];
+  const currentPathArray = [...parentPath, slug];
+  const path = currentPathArray.join('/');
 
-  const doc = await CategoryModel.findOneAndUpdate(
-    { name: cat.name, parentCategory: parentId },
-    {
-      name: cat.name,
-      slug,
-      level,
-      parentCategory: parentId,
-      path: currentPath,
-      imageUrl: cat.imageUrl || null,
-      isActive: true,
+  const formattedAttributes = cat.attributes ? cat.attributes.map((a) => mkAttr(a)) : [];
+
+  const existing = await prisma.category.findFirst({
+    where: {
+      OR: [{ slug }, { name: cat.name, parentCategory: parentId }],
     },
-    { new: true, upsert: true, setDefaultsOnInsert: true },
-  );
+  });
+
+  let doc;
+  if (existing) {
+    doc = await prisma.category.update({
+      where: { id: existing.id },
+      data: {
+        name: cat.name,
+        slug,
+        level,
+        parentCategory: parentId,
+        path,
+        imageUrl: cat.imageUrl || null,
+        attributes: formattedAttributes,
+        isActive: true,
+      },
+    });
+  } else {
+    doc = await prisma.category.create({
+      data: {
+        name: cat.name,
+        slug,
+        level,
+        parentCategory: parentId,
+        path,
+        imageUrl: cat.imageUrl || null,
+        attributes: formattedAttributes,
+        isActive: true,
+      },
+    });
+  }
 
   console.log(`  └─ Category: "${cat.name}" (Level ${level})`);
 
-  if (cat.attributes && cat.attributes.length > 0) {
-    for (const attrSeed of cat.attributes) {
-      const payload = mkAttr(attrSeed);
-
-      await AttributeModel.findOneAndUpdate(
-        { categoryId: doc._id, name: payload.name },
-        { categoryId: doc._id, ...payload },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
-      );
-    }
-  }
-
   if (cat.children && cat.children.length > 0) {
     for (const child of cat.children) {
-      await seedCategoryRecursively(child, doc._id as Types.ObjectId, level + 1, currentPath);
+      await seedCategoryRecursively(child, doc.id, level + 1, currentPathArray);
     }
   }
 }
 
 export async function seedCategoriesJewelry(): Promise<void> {
   console.log('\n💎 Seeding Jewelry & Accessories Categories & Attributes...');
-  await connectDb();
   await seedCategoryRecursively(JEWELRY_ACCESSORIES_TREE);
   console.log('✅ Jewelry & Accessories Categories Seeded Successfully!');
 }
 
 if (require.main === module) {
-  seedCategoriesJewelry()
-    .then(() => disconnectDb())
-    .catch((err) => {
-      console.error('❌ Seeding jewelry categories failed:', err);
-      disconnectDb();
-      process.exit(1);
-    });
+  seedCategoriesJewelry().catch((err) => {
+    console.error('❌ Seeding jewelry categories failed:', err);
+    process.exit(1);
+  });
 }

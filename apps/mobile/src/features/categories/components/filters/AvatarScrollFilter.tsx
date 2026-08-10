@@ -27,7 +27,9 @@ export const AvatarScrollFilter: React.FC<AvatarScrollFilterProps> = ({
       {items.map((item, idx) => {
         const itemKey = item.filterValue || item.slug || item.name;
         const isSelected = selectedItem === itemKey || (selectedItem === 'All' && idx === 0);
-        const imageUrl = resolveImageUrl(item.image) || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200&q=80';
+        const imageUrl =
+          resolveImageUrl(item.image) ||
+          'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200&q=80';
 
         return (
           <TouchableOpacity

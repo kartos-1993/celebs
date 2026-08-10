@@ -37,7 +37,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
   useEffect(() => {
     if (quickFilters && quickFilters.length > 0) {
       const qf = quickFilters[0];
-      setCurrentFilterId(qf._id);
+      setCurrentFilterId(qf.id);
       setType(qf.type || 'subcategory');
       setDisplayAs(qf.displayAs || 'avatar_scroll');
       setAutoPopulate(qf.autoPopulate !== false);
@@ -57,7 +57,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
       setStatusMessage(null);
       const isManual = items.length > 0;
       const payload: Partial<QuickFilter> = {
-        _id: currentFilterId,
+        id: currentFilterId,
         categoryId,
         type,
         displayAs,
@@ -116,9 +116,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
   };
 
   const handleItemChange = (index: number, field: keyof QuickFilterItem, value: any) => {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
   const handleFileUpload = async (index: number, e: ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +182,10 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
           {/* Display Style */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-gray-700">Display Component Style</Label>
-            <Select value={displayAs} onValueChange={(val) => setDisplayAs(val as QuickFilterDisplayAs)}>
+            <Select
+              value={displayAs}
+              onValueChange={(val) => setDisplayAs(val as QuickFilterDisplayAs)}
+            >
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Select display style" />
               </SelectTrigger>
@@ -207,7 +208,10 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
             checked={autoPopulate}
             onCheckedChange={(checked) => setAutoPopulate(!!checked)}
           />
-          <Label htmlFor="autoPopulate" className="text-xs font-medium text-gray-700 cursor-pointer">
+          <Label
+            htmlFor="autoPopulate"
+            className="text-xs font-medium text-gray-700 cursor-pointer"
+          >
             Auto-populate items from child categories (uses each child category's thumbnail image)
           </Label>
         </div>
@@ -276,7 +280,9 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
 
                 {/* Avatar Image Picker: Dual File Upload + Text URL */}
                 <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
-                  <Label className="text-xs text-gray-600 font-medium shrink-0">Avatar Image:</Label>
+                  <Label className="text-xs text-gray-600 font-medium shrink-0">
+                    Avatar Image:
+                  </Label>
 
                   {item.image ? (
                     <div className="relative w-12 h-12 rounded border overflow-hidden group shrink-0">

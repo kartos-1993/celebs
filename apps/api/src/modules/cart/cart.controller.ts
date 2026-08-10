@@ -1,10 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler, HTTPSTATUS, logger } from '@celebs/shared-utils';
-import {
-  addToCartSchema,
-  updateCartItemSchema,
-  syncCartSchema,
-} from '@celebs/shared-types';
+import { addToCartSchema, updateCartItemSchema, syncCartSchema } from '@celebs/shared-types';
 import { CartService } from './cart.service';
 
 interface AuthUser {
@@ -50,19 +46,24 @@ export class CartController {
 
   static addToCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { userId, sessionId } = CartController.getIdentifiers(req);
-    logger.info({ userId, sessionId, body: req.body }, '[CartController.addToCart] Received add to cart request');
+    logger.info(
+      { userId, sessionId, body: req.body },
+      '[CartController.addToCart] Received add to cart request',
+    );
 
     const validatedInput = addToCartSchema.parse(req.body);
 
     const cart = await CartService.addToCart(userId, sessionId, validatedInput);
-    logger.info({ userId, sessionId, itemCount: cart.itemCount }, '[CartController.addToCart] Successfully added item to cart');
+    logger.info(
+      { userId, sessionId, itemCount: cart.itemCount },
+      '[CartController.addToCart] Successfully added item to cart',
+    );
 
     res.status(HTTPSTATUS.OK).json({
       message: 'Item added to cart successfully',
       data: cart,
     });
   });
-
 
   static updateCartItem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { userId, sessionId } = CartController.getIdentifiers(req);
@@ -74,7 +75,7 @@ export class CartController {
       userId,
       sessionId,
       itemId,
-      validatedInput.quantity
+      validatedInput.quantity,
     );
 
     res.status(HTTPSTATUS.OK).json({

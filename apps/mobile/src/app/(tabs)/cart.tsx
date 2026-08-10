@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  StyleSheet,
-  ScrollView,
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShoppingBag, AlertTriangle } from 'lucide-react-native';
@@ -112,9 +106,7 @@ export default function CartScreen() {
       >
         {/* Title & Clear Cart Header */}
         <View style={styles.headerRow}>
-          <ThemedText style={styles.screenTitle}>
-            Shopping Cart ({itemCount})
-          </ThemedText>
+          <ThemedText style={styles.screenTitle}>Shopping Cart ({itemCount})</ThemedText>
           <TouchableOpacity onPress={() => clearCart()} activeOpacity={0.7}>
             <ThemedText style={styles.clearCartText}>Clear All</ThemedText>
           </TouchableOpacity>

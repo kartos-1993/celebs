@@ -1,120 +1,143 @@
 import { Prisma } from '@prisma/client';
+import crypto from 'crypto';
 
-export interface CartPricingInputItem {
-  id: string;
-  unitPrice: number | Prisma.Decimal;
+export interface PricingItem {
+  inventoryId: string;
+  sku: string;
   quantity: number;
-  comboBundleId?: string | null;
-  comboDiscountType?: 'PERCENTAGE' | 'FIXED_AMOUNT' | null;
-  comboDiscountValue?: number | Prisma.Decimal | null;
-  festivalDiscountPercent?: number | null;
+  unitPrice: Prisma.Decimal;
 }
 
-export interface CalculatedLineItem {
+export interface DiscountRule {
   id: string;
-  unitPrice: number;
-  quantity: number;
-  baseSubtotal: number;
-  comboDiscount: number;
-  festivalDiscount: number;
-  finalSubtotal: number;
+  code?: string;
+  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
+  discountValue: Prisma.Decimal;
+  isExclusive?: boolean;
 }
 
-export interface CartPricingSummary {
-  items: CalculatedLineItem[];
-  subtotal: number;
-  totalComboDiscount: number;
-  totalFestivalDiscount: number;
-  deliveryFee: number;
-  codSurcharge: number;
-  grandTotal: number;
-}
-
-export interface CartPricingOptions {
-  deliveryFee?: number;
-  isCod?: boolean;
-  codSurchargeAmount?: number;
-  maxDiscountPercentageCap?: number; // Default 50%
+export interface PricingCalculationResult {
+  subtotal: Prisma.Decimal;
+  totalDiscount: Prisma.Decimal;
+  shippingFee: Prisma.Decimal;
+  total: Prisma.Decimal;
+  itemCount: number;
+  appliedDiscounts: Array<{ id: string; code?: string; amount: Prisma.Decimal }>;
+  idempotencyKey: string;
 }
 
 export class CartPricingEngine {
-  public static calculate(
-    rawItems: CartPricingInputItem[],
-    options: CartPricingOptions = {}
-  ): CartPricingSummary {
-    const deliveryFee = options.deliveryFee ?? 150;
-    const codSurcharge = options.isCod ? (options.codSurchargeAmount ?? 50) : 0;
-    const maxDiscountCap = options.maxDiscountPercentageCap ?? 50;
+  /**
+   * Calculates exact monetary cart totals using Prisma.Decimal to prevent floating-point precision issues.
+   * Enforces exclusive vs combinable discount rules and ensures total never falls below 0.
+   */
+  static calculateCartTotal(
+    items: PricingItem[],
+    discounts: DiscountRule[] = [],
+    shippingFeeInput: Prisma.Decimal = new Prisma.Decimal(0),
+  ): PricingCalculationResult {
+    let subtotal = new Prisma.Decimal(0);
+    let totalItemCount = 0;
 
-    let subtotal = 0;
-    let totalComboDiscount = 0;
-    let totalFestivalDiscount = 0;
+    // Calculate Subtotal using Prisma.Decimal arithmetic
+    for (const item of items) {
+      const itemQty = new Prisma.Decimal(item.quantity);
+      const itemSubtotal = item.unitPrice.mul(itemQty);
+      subtotal = subtotal.add(itemSubtotal);
+      totalItemCount += item.quantity;
+    }
 
-    const items: CalculatedLineItem[] = rawItems.map((item) => {
-      const unitPrice = Number(item.unitPrice);
-      const quantity = Math.max(1, item.quantity);
-      const baseSubtotal = unitPrice * quantity;
-      subtotal += baseSubtotal;
+    const shippingFee = shippingFeeInput.gte(0) ? shippingFeeInput : new Prisma.Decimal(0);
+    let totalDiscount = new Prisma.Decimal(0);
+    const appliedDiscounts: Array<{ id: string; code?: string; amount: Prisma.Decimal }> = [];
 
-      let comboDiscount = 0;
-      if (item.comboBundleId && item.comboDiscountValue) {
-        const val = Number(item.comboDiscountValue);
-        if (item.comboDiscountType === 'PERCENTAGE') {
-          comboDiscount = (baseSubtotal * val) / 100;
-        } else if (item.comboDiscountType === 'FIXED_AMOUNT') {
-          // SAFETY GUARD: FIXED_AMOUNT discount cannot exceed base item subtotal
-          comboDiscount = Math.min(val, baseSubtotal);
+    // Filter and apply discounts
+    const exclusiveDiscount = discounts.find((d) => d.isExclusive);
+
+    if (exclusiveDiscount) {
+      // Exclusive discount rule: ONLY this discount is applied
+      const amount = this.calculateDiscountAmount(subtotal, exclusiveDiscount);
+      totalDiscount = amount;
+      appliedDiscounts.push({
+        id: exclusiveDiscount.id,
+        code: exclusiveDiscount.code,
+        amount,
+      });
+    } else if (discounts.length > 0) {
+      // Combinable discount rules: applied sequentially against remaining subtotal
+      let currentSubtotal = subtotal;
+
+      for (const discount of discounts) {
+        if (currentSubtotal.lte(0)) break;
+
+        const amount = this.calculateDiscountAmount(currentSubtotal, discount);
+        if (amount.gt(0)) {
+          totalDiscount = totalDiscount.add(amount);
+          currentSubtotal = currentSubtotal.sub(amount);
+          appliedDiscounts.push({
+            id: discount.id,
+            code: discount.code,
+            amount,
+          });
         }
       }
+    }
 
-      let remainingAfterCombo = baseSubtotal - comboDiscount;
-      let festivalDiscount = 0;
+    // Cap total discount so total never drops below 0
+    if (totalDiscount.gt(subtotal)) {
+      totalDiscount = subtotal;
+    }
 
-      if (item.festivalDiscountPercent && item.festivalDiscountPercent > 0) {
-        festivalDiscount = (remainingAfterCombo * item.festivalDiscountPercent) / 100;
-      }
+    const totalBeforeShipping = subtotal.sub(totalDiscount);
+    const finalTotal = totalBeforeShipping.add(shippingFee);
+    const cappedTotal = finalTotal.gte(0) ? finalTotal : new Prisma.Decimal(0);
 
-      // Max discount cap safety guard (never exceed e.g. 50% of base item subtotal)
-      const maxAllowedDiscount = (baseSubtotal * maxDiscountCap) / 100;
-      const combinedDiscount = comboDiscount + festivalDiscount;
-
-      let finalComboDiscount = comboDiscount;
-      let finalFestivalDiscount = festivalDiscount;
-
-      if (combinedDiscount > maxAllowedDiscount) {
-        // Proportionally scale discounts to fit within cap
-        const ratio = maxAllowedDiscount / combinedDiscount;
-        finalComboDiscount = Math.round(comboDiscount * ratio * 100) / 100;
-        finalFestivalDiscount = Math.round(festivalDiscount * ratio * 100) / 100;
-      }
-
-      totalComboDiscount += finalComboDiscount;
-      totalFestivalDiscount += finalFestivalDiscount;
-
-      const finalSubtotal = Math.max(0, baseSubtotal - finalComboDiscount - finalFestivalDiscount);
-
-      return {
-        id: item.id,
-        unitPrice,
-        quantity,
-        baseSubtotal,
-        comboDiscount: Math.round(finalComboDiscount * 100) / 100,
-        festivalDiscount: Math.round(finalFestivalDiscount * 100) / 100,
-        finalSubtotal: Math.round(finalSubtotal * 100) / 100,
-      };
-    });
-
-    const netItemTotal = subtotal - totalComboDiscount - totalFestivalDiscount;
-    const grandTotal = Math.max(0, netItemTotal + deliveryFee + codSurcharge);
+    // Generate deterministic idempotencyKey based on cart state
+    const idempotencyKey = this.generateIdempotencyKey(items, appliedDiscounts, cappedTotal);
 
     return {
-      items,
-      subtotal: Math.round(subtotal * 100) / 100,
-      totalComboDiscount: Math.round(totalComboDiscount * 100) / 100,
-      totalFestivalDiscount: Math.round(totalFestivalDiscount * 100) / 100,
-      deliveryFee,
-      codSurcharge,
-      grandTotal: Math.round(grandTotal * 100) / 100,
+      subtotal,
+      totalDiscount,
+      shippingFee,
+      total: cappedTotal,
+      itemCount: totalItemCount,
+      appliedDiscounts,
+      idempotencyKey,
     };
+  }
+
+  private static calculateDiscountAmount(
+    base: Prisma.Decimal,
+    discount: DiscountRule,
+  ): Prisma.Decimal {
+    if (base.lte(0)) return new Prisma.Decimal(0);
+
+    if (discount.discountType === 'PERCENTAGE') {
+      const percentage = discount.discountValue.div(new Prisma.Decimal(100));
+      return base.mul(percentage).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+    } else {
+      // FIXED_AMOUNT
+      return discount.discountValue.gt(base) ? base : discount.discountValue;
+    }
+  }
+
+  private static generateIdempotencyKey(
+    items: PricingItem[],
+    discounts: Array<{ id: string; amount: Prisma.Decimal }>,
+    total: Prisma.Decimal,
+  ): string {
+    const payload = {
+      items: items
+        .map((i) => `${i.inventoryId}:${i.quantity}:${i.unitPrice.toString()}`)
+        .sort()
+        .join('|'),
+      discounts: discounts
+        .map((d) => `${d.id}:${d.amount.toString()}`)
+        .sort()
+        .join('|'),
+      total: total.toString(),
+    };
+
+    return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
   }
 }

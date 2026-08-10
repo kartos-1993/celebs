@@ -27,8 +27,8 @@ export async function runMasterSeed(): Promise<void> {
     // Step 3: Products Catalog
     if (isReset) {
       console.log('\n⚠️ [--reset active] Wiping Product collection...');
-      const { ProductModel } = await import('../models/product.model');
-      await ProductModel.deleteMany({});
+      const prisma = (await import('../../config/db.prisma')).default;
+      await prisma.product.deleteMany({});
     }
 
     await seedProductsMockCatalog(false);
@@ -41,7 +41,6 @@ export async function runMasterSeed(): Promise<void> {
     console.log('\n================================================================');
     console.log('✨ MASTER SEED COMPLETED SUCCESSFULLY!');
     console.log('================================================================\n');
-
   } catch (error) {
     console.error('\n❌ Master Seeding Failed with Error:', error);
     process.exitCode = 1;

@@ -26,10 +26,22 @@ export default function RootLayout() {
                 <AnimatedSplashOverlay />
                 <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="product/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-                  <Stack.Screen name="category/[slug]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-                  <Stack.Screen name="checkout" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
-                  <Stack.Screen name="orders" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                  <Stack.Screen
+                    name="product/[id]"
+                    options={{ headerShown: false, animation: 'slide_from_right' }}
+                  />
+                  <Stack.Screen
+                    name="category/[slug]"
+                    options={{ headerShown: false, animation: 'slide_from_right' }}
+                  />
+                  <Stack.Screen
+                    name="checkout"
+                    options={{ headerShown: false, animation: 'slide_from_bottom' }}
+                  />
+                  <Stack.Screen
+                    name="orders"
+                    options={{ headerShown: false, animation: 'slide_from_right' }}
+                  />
                 </Stack>
                 <FlyToCartOverlay />
               </View>

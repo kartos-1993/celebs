@@ -51,7 +51,7 @@ export interface BannerImageUploadPropsType {
 }
 
 export interface CatalogProductType {
-  _id: string;
+  id: string;
   name: string;
   price: number;
   discountedPrice?: number;

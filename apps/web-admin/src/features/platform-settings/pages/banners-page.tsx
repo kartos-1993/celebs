@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@celebs/shared-ui/components/card';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@celebs/shared-ui/components/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@celebs/shared-ui/components/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye, Check } from 'lucide-react';
 import { PlatformSettingsApiService, Banner } from '../api';
@@ -34,33 +46,35 @@ const Banners: React.FC = () => {
       const [fetchedBanners, fetchedCategoriesData, fetchedProductsData] = await Promise.all([
         PlatformSettingsApiService.getBanners(),
         CategoryApiService.getCategories(1, 100),
-        ProductApiService.getProducts({ limit: 100 })
+        ProductApiService.getProducts({ limit: 100 }),
       ]);
 
       // Initialize with exactly 3 banners
       const initializedBanners: Banner[] = [1, 2, 3].map((order): Banner => {
         const found = fetchedBanners.find((b: Banner) => b.order === order);
-        return found || {
-          imageUrl: '',
-          linkType: 'NONE',
-          linkValue: '',
-          title: `Slide ${order}`,
-          order,
-          isActive: true
-        };
+        return (
+          found || {
+            imageUrl: '',
+            linkType: 'NONE',
+            linkValue: '',
+            title: `Slide ${order}`,
+            order,
+            isActive: true,
+          }
+        );
       });
 
       setBanners(initializedBanners);
-      
-      const categoriesList = 
-        fetchedCategoriesData?.data?.categories || 
-        (Array.isArray(fetchedCategoriesData?.data) ? fetchedCategoriesData.data : []) || 
+
+      const categoriesList =
+        fetchedCategoriesData?.data?.categories ||
+        (Array.isArray(fetchedCategoriesData?.data) ? fetchedCategoriesData.data : []) ||
         (Array.isArray(fetchedCategoriesData) ? fetchedCategoriesData : []);
       setCategories(categoriesList);
 
-      const productsList = 
-        fetchedProductsData?.data?.products || 
-        (Array.isArray(fetchedProductsData?.data) ? fetchedProductsData.data : []) || 
+      const productsList =
+        fetchedProductsData?.data?.products ||
+        (Array.isArray(fetchedProductsData?.data) ? fetchedProductsData.data : []) ||
         (Array.isArray(fetchedProductsData) ? fetchedProductsData : []);
       setProducts(productsList);
     } catch (error: any) {
@@ -80,7 +94,7 @@ const Banners: React.FC = () => {
       ...updated[index],
       [field]: value,
       // Reset link value if link type is set to NONE
-      ...(field === 'linkType' && value === 'NONE' ? { linkValue: '' } : {})
+      ...(field === 'linkType' && value === 'NONE' ? { linkValue: '' } : {}),
     };
     setBanners(updated);
   };
@@ -150,10 +164,7 @@ const Banners: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-        >
+        <Button onClick={handleSave} disabled={isSaving}>
           {isSaving && <Loader className="mr-2 h-4 w-4 animate-spin" />}
           Save Configuration
         </Button>
@@ -205,7 +216,9 @@ const Banners: React.FC = () => {
                           ) : (
                             <Upload className="w-6 h-6 text-zinc-400 mx-auto mb-1" />
                           )}
-                          <span className="text-xs text-zinc-500 font-medium">16:9 Banner Image</span>
+                          <span className="text-xs text-zinc-500 font-medium">
+                            16:9 Banner Image
+                          </span>
                         </div>
                       )}
                       <input
@@ -224,7 +237,9 @@ const Banners: React.FC = () => {
 
                   <div className="md:col-span-2 space-y-3">
                     <div className="space-y-1">
-                      <Label htmlFor={`title-${index}`} className="text-xs font-semibold">Accessibility Title</Label>
+                      <Label htmlFor={`title-${index}`} className="text-xs font-semibold">
+                        Accessibility Title
+                      </Label>
                       <Input
                         id={`title-${index}`}
                         placeholder="e.g. Summer Collection 20% Off"
@@ -266,7 +281,7 @@ const Banners: React.FC = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {(Array.isArray(categories) ? categories : []).map((c) => (
-                                  <SelectItem key={c._id} value={c._id}>
+                                  <SelectItem key={c.id} value={c.id}>
                                     {c.name}
                                   </SelectItem>
                                 ))}
@@ -282,7 +297,7 @@ const Banners: React.FC = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {(Array.isArray(products) ? products : []).map((p) => (
-                                  <SelectItem key={p._id} value={p._id}>
+                                  <SelectItem key={p.id} value={p.id}>
                                     {p.name}
                                   </SelectItem>
                                 ))}
@@ -292,7 +307,9 @@ const Banners: React.FC = () => {
                             <Input
                               placeholder="https://example.com"
                               value={banner.linkValue || ''}
-                              onChange={(e) => handleFieldChange(index, 'linkValue', e.target.value)}
+                              onChange={(e) =>
+                                handleFieldChange(index, 'linkValue', e.target.value)
+                              }
                               className="h-9"
                             />
                           )}
@@ -351,7 +368,9 @@ const Banners: React.FC = () => {
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-zinc-500 p-4 text-center">
                       <Eye className="w-8 h-8 opacity-40 mb-2" />
                       <span className="text-xs font-semibold">No Image Uploaded</span>
-                      <span className="text-[10px] opacity-75">Upload a banner in Slot {activePreviewIndex + 1} to preview</span>
+                      <span className="text-[10px] opacity-75">
+                        Upload a banner in Slot {activePreviewIndex + 1} to preview
+                      </span>
                     </div>
                   )}
 
@@ -371,7 +390,9 @@ const Banners: React.FC = () => {
                       <span className="text-white text-xs font-bold">C</span>
                     </div>
                     <div className="flex-1 text-center">
-                      <span className="text-xs font-bold text-white tracking-wide uppercase drop-shadow-md">Celebs</span>
+                      <span className="text-xs font-bold text-white tracking-wide uppercase drop-shadow-md">
+                        Celebs
+                      </span>
                     </div>
                     <div className="w-7 h-7 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center">
                       <Link2 className="w-3.5 h-3.5 text-white" />
@@ -384,9 +405,7 @@ const Banners: React.FC = () => {
                       <div
                         key={i}
                         className={`h-1.5 rounded-full transition-all duration-300 ${
-                          activePreviewIndex === i
-                            ? 'w-4 bg-white'
-                            : 'w-1.5 bg-white/50'
+                          activePreviewIndex === i ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
                         } ${!b.isActive ? 'opacity-30' : ''}`}
                       />
                     ))}

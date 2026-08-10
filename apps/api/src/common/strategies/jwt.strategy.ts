@@ -1,11 +1,7 @@
 import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
 
 import passport, { PassportStatic } from 'passport';
-import {
-  ExtractJwt,
-  Strategy as JwtStrategy,
-  StrategyOptionsWithRequest,
-} from 'passport-jwt';
+import { ExtractJwt, Strategy as JwtStrategy, StrategyOptionsWithRequest } from 'passport-jwt';
 import { config } from '@/config/app.config';
 import { UserService } from '@/modules/user/user.service';
 import prisma from '@/db';
@@ -54,20 +50,17 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
           return done(
             new UnauthorizedException(
               'Session expired or invalid',
-              ErrorCode.AUTH_UNAUTHORIZED_ACCESS
+              ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
             ),
-            false
+            false,
           );
         }
 
         const user = await userService.findUserById(payload.userId);
         if (!user) {
           return done(
-            new UnauthorizedException(
-              'User not found',
-              ErrorCode.AUTH_USER_NOT_FOUND
-            ),
-            false
+            new UnauthorizedException('User not found', ErrorCode.AUTH_USER_NOT_FOUND),
+            false,
           );
         }
 
@@ -78,9 +71,9 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
             return done(
               new UnauthorizedException(
                 'Access denied: Seller account is suspended or rejected.',
-                ErrorCode.FORBIDDEN_ACCESS
+                ErrorCode.FORBIDDEN_ACCESS,
               ),
-              false
+              false,
             );
           }
         }
@@ -96,7 +89,7 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
       } catch (error) {
         return done(error, false);
       }
-    })
+    }),
   );
 };
 
@@ -112,5 +105,3 @@ export const optionalAuthenticateJWT = (req: Request, res: Response, next: NextF
     next();
   })(req, res, next);
 };
-
-

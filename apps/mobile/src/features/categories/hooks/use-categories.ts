@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 
 export interface Category {
-  _id: string;
+  id: string;
   name: string;
   slug?: string;
   displayName?: string;

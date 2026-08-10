@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Pressable,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { X } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { DrawerFilterConfig } from '../types';
@@ -22,8 +15,28 @@ export const FALLBACK_COLOR_OPTIONS = [
   { name: 'Multicolor', code: 'gradient' },
 ];
 
-export const FALLBACK_SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36', '38'];
-export const FALLBACK_FIT_OPTIONS = ['Loose', 'Oversized', 'Regular Fit', 'Slim Fit', 'Wide Leg', 'Straight Leg'];
+export const FALLBACK_SIZE_OPTIONS = [
+  'XS',
+  'S',
+  'M',
+  'L',
+  'XL',
+  'XXL',
+  '28',
+  '30',
+  '32',
+  '34',
+  '36',
+  '38',
+];
+export const FALLBACK_FIT_OPTIONS = [
+  'Loose',
+  'Oversized',
+  'Regular Fit',
+  'Slim Fit',
+  'Wide Leg',
+  'Straight Leg',
+];
 export const FALLBACK_PRICE_RANGES = [
   { label: 'Under Rs. 2500', min: 0, max: 2500 },
   { label: 'Rs. 2500 - Rs. 5000', min: 2500, max: 5000 },
@@ -88,7 +101,7 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {hasApiFilters ? (
               drawerFilters.map((filter) => (
-                <View key={filter._id || filter.name} style={styles.section}>
+                <View key={filter.id || filter.name} style={styles.section}>
                   <ThemedText style={styles.sectionTitle}>{filter.name}</ThemedText>
                   <View style={styles.chipRow}>
                     {filter.values.map((val) => {
@@ -96,15 +109,15 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
                         filter.uiType === 'color_swatch'
                           ? selectedColors.includes(val)
                           : filter.uiType === 'size_box'
-                          ? selectedSizes.includes(val)
-                          : selectedFits.includes(val);
+                            ? selectedSizes.includes(val)
+                            : selectedFits.includes(val);
 
                       const toggleHandler =
                         filter.uiType === 'color_swatch'
                           ? () => onToggleColor(val)
                           : filter.uiType === 'size_box'
-                          ? () => onToggleSize(val)
-                          : () => onToggleFit(val);
+                            ? () => onToggleSize(val)
+                            : () => onToggleFit(val);
 
                       return (
                         <TouchableOpacity
@@ -234,9 +247,7 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
               <ThemedText style={styles.resetBtnText}>Clear All</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.applyBtn} onPress={onClose} activeOpacity={0.85}>
-              <ThemedText style={styles.applyBtnText}>
-                Show {totalFilteredCount} Items
-              </ThemedText>
+              <ThemedText style={styles.applyBtnText}>Show {totalFilteredCount} Items</ThemedText>
             </TouchableOpacity>
           </View>
         </View>

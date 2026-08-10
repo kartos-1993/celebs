@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ProductAPI } from '@/lib/axios-client';
+import { axiosClient } from '@/lib/axios/axios-client';
 import type { FieldSpec } from '../fields/ui-registry';
 import {
   addFallbackFields,
@@ -19,12 +19,11 @@ export function useProductSchema(catId: string, productId?: string) {
     queryFn: async (): Promise<FieldSpec[]> => {
       if (!catId) return [];
 
-      const response = await ProductAPI.get('/product-render', {
+      const response = await axiosClient.get('/product-render', {
         params: { catId, locale: 'en_US', productId },
       });
 
-      const serverFields: FieldSpec[] =
-        response.data?.data?.data ?? response.data?.data ?? [];
+      const serverFields: FieldSpec[] = response.data?.data?.data ?? response.data?.data ?? [];
 
       let merged = await addFallbackFields(catId, serverFields);
       merged = normalizeSchema(merged);

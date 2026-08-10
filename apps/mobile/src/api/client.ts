@@ -45,14 +45,15 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response Interceptor: Uniform error handling & 401 token cleanup
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const isPublicEndpoint = (error.config as AxiosError['config'] & { skipAuth?: boolean })?.skipAuth;
+    const isPublicEndpoint = (error.config as AxiosError['config'] & { skipAuth?: boolean })
+      ?.skipAuth;
 
     if (error.response?.status === 401 && !isPublicEndpoint) {
       try {
@@ -62,17 +63,16 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const responseData = error.response?.data as { message?: string; code?: string; errors?: unknown } | undefined;
+    const responseData = error.response?.data as
+      | { message?: string; code?: string; errors?: unknown }
+      | undefined;
     const formattedError: ApiError = {
-      message:
-        responseData?.message ||
-        error.message ||
-        'An unexpected network error occurred.',
+      message: responseData?.message || error.message || 'An unexpected network error occurred.',
       statusCode: error.response?.status,
       code: responseData?.code || error.code,
       errors: responseData?.errors,
     };
 
     return Promise.reject(formattedError);
-  }
+  },
 );

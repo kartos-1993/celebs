@@ -1,10 +1,8 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
 import { cartRepository } from './cart.repository';
-import { Prisma } from '@prisma/client';
-import { ProductModel } from '@/db/models/product.model';
+import prisma, { Prisma } from '@/config/db.prisma';
 import { InventoryService } from '../inventory/inventory.service';
-
 
 export class CartService {
   /**
@@ -15,7 +13,7 @@ export class CartService {
       throw new AppError(
         'Either userId or sessionId is required to access cart',
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
@@ -35,11 +33,10 @@ export class CartService {
   }
 
   /**
-   * Get hydrated Cart with live MongoDB product details & stock checks
+   * Get hydrated Cart with live PostgreSQL product details & stock checks
    */
   static async getCart(userId?: string, sessionId?: string): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
-
     const cartWithItems = await cartRepository.findUniqueWithItems(cartRecord.id);
 
     if (!cartWithItems) {
@@ -56,16 +53,15 @@ export class CartService {
       };
     }
 
-    // Collect product IDs for batch lookup in MongoDB
     const productIds = Array.from(
-      new Set(cartWithItems.items.map((item) => item.inventory.productId))
+      new Set(cartWithItems.items.map((item) => item.inventory.productId)),
     );
 
-    const products = await ProductModel.find({
-      _id: { $in: productIds },
-    }).exec();
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
 
-    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
     let subtotalDecimal = new Prisma.Decimal(0);
     let itemCount = 0;
@@ -89,19 +85,18 @@ export class CartService {
         stockWarning = `Only ${availableStock} left - order soon!`;
       }
 
-      const price = product?.discountedPrice || product?.price || 0;
-      const discountedPrice =
-        product?.discountedPrice && product.discountedPrice < product.price
-          ? product.discountedPrice
-          : undefined;
+      const rawPrice = product?.price ? Number(product.price) : 0;
+      const rawDiscounted = product?.discountedPrice ? Number(product.discountedPrice) : undefined;
+      const price = rawDiscounted || rawPrice;
+      const discountedPrice = rawDiscounted && rawDiscounted < rawPrice ? rawDiscounted : undefined;
 
-      // Color variant image lookup
       let variantImage = product?.mainImages?.[0] || '';
-      if (product && product.colorVariants) {
-        const variant = product.colorVariants.find(
-          (v) => v.name.toLowerCase() === item.inventory.colorVariantName.toLowerCase()
+      if (product && Array.isArray(product.colorVariants)) {
+        const variants = product.colorVariants as Array<{ name: string; images?: string[] }>;
+        const variant = variants.find(
+          (v) => v.name.toLowerCase() === item.inventory.colorVariantName.toLowerCase(),
         );
-        if (variant && variant.images && variant.images.length > 0) {
+        if (variant && variant.images && variant.images.length > 0 && variant.images[0]) {
           variantImage = variant.images[0];
         }
       }
@@ -119,8 +114,8 @@ export class CartService {
         productId: item.inventory.productId,
         productName: product?.name || 'Unknown Product',
         productSlug: product?.slug || '',
-        productBrand: product?.brand,
-        price: product?.price || 0,
+        productBrand: product?.brand || undefined,
+        price: rawPrice,
         discountedPrice,
         colorVariantName: item.inventory.colorVariantName,
         colorCode: '#000000',
@@ -154,15 +149,16 @@ export class CartService {
   static async addToCart(
     userId: string | undefined,
     sessionId: string | undefined,
-    input: AddToCartInput
+    input: AddToCartInput,
   ): Promise<CartResponse> {
     const { productId, colorVariantName, size, quantity } = input;
-    logger.info({ userId, sessionId, productId, colorVariantName, size, quantity }, '[CartService.addToCart] Starting item addition');
 
-    // 1. Validate Product Existence
-    const product = await ProductModel.findById(productId).exec();
+    // 1. Validate Product Existence in PostgreSQL Prisma
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
     if (!product) {
-      logger.error({ productId }, '[CartService.addToCart] Product not found in MongoDB');
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
@@ -170,13 +166,11 @@ export class CartService {
     const stockInfo = await InventoryService.findOrCreateInventory(
       productId,
       colorVariantName,
-      size
+      size,
     );
-    logger.info({ stockInfo }, '[CartService.addToCart] Inventory stock lookup complete');
 
     // 3. Get Cart
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
-    logger.info({ cartId: cartRecord.id, userId: cartRecord.userId, sessionId: cartRecord.sessionId }, '[CartService.addToCart] Cart record resolved');
 
     // Check existing item in cart
     const existingCart = await cartRepository.findUniqueWithItems(cartRecord.id);
@@ -185,11 +179,10 @@ export class CartService {
     const targetQuantity = (existingItem?.quantity || 0) + quantity;
 
     if (stockInfo.availableQuantity < targetQuantity) {
-      logger.warn({ availableStock: stockInfo.availableQuantity, targetQuantity }, '[CartService.addToCart] Stock insufficient');
       throw new AppError(
         `Requested quantity (${targetQuantity}) exceeds available stock (${stockInfo.availableQuantity})`,
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
@@ -206,7 +199,7 @@ export class CartService {
     userId: string | undefined,
     sessionId: string | undefined,
     itemId: string,
-    newQuantity: number
+    newQuantity: number,
   ): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
@@ -227,7 +220,7 @@ export class CartService {
       throw new AppError(
         `Cannot update to ${newQuantity}. Only ${availableStock} in stock.`,
         HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.VALIDATION_ERROR
+        ErrorCode.VALIDATION_ERROR,
       );
     }
 
@@ -242,7 +235,7 @@ export class CartService {
   static async removeCartItem(
     userId: string | undefined,
     sessionId: string | undefined,
-    itemId: string
+    itemId: string,
   ): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 

@@ -1,30 +1,16 @@
-import { useState } from "react";
-import { ChevronDown, Dot, LucideIcon } from "lucide-react";
+import { useState, useCallback } from 'react';
+import { ChevronDown, LucideIcon } from 'lucide-react';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@celebs/shared-ui/components/button";
-import { DropdownMenuArrow } from "@radix-ui/react-dropdown-menu";
+import { cn } from '@/lib/utils';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@celebs/shared-ui/components/collapsible";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from "@celebs/shared-ui/components/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-} from "@celebs/shared-ui/components/dropdown-menu";
+} from '@celebs/shared-ui/components/collapsible';
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from 'react-router-dom';
 
 type Submenu = {
   href: string;
@@ -49,140 +35,119 @@ export function CollapseMenuButton({
 }: CollapseMenuButtonProps) {
   const location = useLocation();
   const pathname = location.pathname;
+  const isCollapsed = isOpen === false;
   const isSubmenuActive = submenus.some((submenu) =>
-    submenu.active === undefined ? submenu.href === pathname : submenu.active
+    submenu.active === undefined ? submenu.href === pathname : submenu.active,
   );
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(isSubmenuActive);
+  const [isExpanded, setIsExpanded] = useState<boolean>(isSubmenuActive);
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
 
-  return isOpen ? (
-    <Collapsible
-      open={isCollapsed}
-      onOpenChange={setIsCollapsed}
-      className="w-full"
-    >
-      <CollapsibleTrigger
-        className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1"
-        asChild
-      >
-        <Button
-          variant={isSubmenuActive ? "secondary" : "ghost"}
-          className="w-full justify-start h-10"
-        >
-          <div className="w-full items-center flex justify-between">
-            <div className="flex items-center">
-              <span className="mr-4">
-                <Icon size={18} />
-              </span>
-              <p
-                className={cn(
-                  "max-w-[150px] truncate",
-                  isOpen
-                    ? "translate-x-0 opacity-100"
-                    : "-translate-x-96 opacity-0"
-                )}
-              >
-                {label}
-              </p>
-            </div>
-            <div
-              className={cn(
-                "whitespace-nowrap",
-                isOpen
-                  ? "translate-x-0 opacity-100"
-                  : "-translate-x-96 opacity-0"
-              )}
-            >
-              <ChevronDown
-                size={18}
-                className="transition-transform duration-200"
-              />
-            </div>
-          </div>
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-        {submenus.map(({ href, label, active }, index) => (
+  const openFlyout = useCallback(() => setFlyoutOpen(true), []);
+  const closeFlyout = useCallback(() => setFlyoutOpen(false), []);
+
+  // ── Expanded sidebar: collapsible tree ──────────────────────────────────
+  if (!isCollapsed) {
+    return (
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
+        <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full" asChild>
           <Button
-            key={index}
-            variant={
-              (active === undefined && pathname === href) || active
-                ? "secondary"
-                : "ghost"
-            }
-            className="w-full justify-start h-10 mb-1"
-            asChild
+            variant={isSubmenuActive ? 'secondary' : 'ghost'}
+            className="w-full justify-start h-10 px-3"
           >
-            <Link to={href}>
-              <span className="mr-4 ml-2">{/* <Dot size={18} /> */}</span>
-              <p
+            <div className="w-full items-center flex justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center shrink-0">
+                  <Icon size={18} />
+                </span>
+                <p className="max-w-[150px] truncate text-sm font-medium py-0.5">
+                  {label}
+                </p>
+              </div>
+              <div className="flex items-center justify-center shrink-0 ml-2">
+                <ChevronDown size={16} className="transition-transform duration-200" />
+              </div>
+            </div>
+          </Button>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+          {submenus.map(({ href, label, active }, index) => (
+            <Button
+              key={index}
+              variant={(active === undefined && pathname === href) || active ? 'secondary' : 'ghost'}
+              className="w-full justify-start h-8 mb-1 pl-9 pr-3"
+              asChild
+            >
+              <Link to={href} className="flex items-center w-full">
+                <p className="max-w-[170px] truncate text-sm font-light py-0.5">
+                  {label}
+                </p>
+              </Link>
+            </Button>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
+  // ── Collapsed sidebar: pure hover flyout (no click toggle) ───────────────
+  // Use PopoverPrimitive.Anchor so Radix knows where to position content
+  // but the trigger has NO click handler — hover-only via wrapper div.
+  return (
+    <PopoverPrimitive.Root open={flyoutOpen}>
+      <PopoverPrimitive.Anchor asChild>
+        {/* Hover zone: full-width row */}
+        <div
+          className="w-full"
+          onMouseEnter={openFlyout}
+          onMouseLeave={closeFlyout}
+        >
+          <Button
+            variant={isSubmenuActive ? 'secondary' : 'ghost'}
+            className="w-full justify-center h-10 mb-1 px-0 pointer-events-none"
+            tabIndex={-1}
+          >
+            <span className="flex items-center justify-center">
+              <Icon size={18} />
+            </span>
+          </Button>
+        </div>
+      </PopoverPrimitive.Anchor>
+
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Content
+          side="right"
+          sideOffset={8}
+          align="start"
+          onMouseEnter={openFlyout}
+          onMouseLeave={closeFlyout}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-50 w-48 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2 p-0"
+        >
+          {/* Section label */}
+          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b">
+            {label}
+          </div>
+          {/* Submenu links */}
+          <div className="py-1">
+            {submenus.map(({ href, label, active }, index) => (
+              <Link
+                key={index}
+                to={href}
+                onClick={closeFlyout}
                 className={cn(
-                  "max-w-[170px] truncate font-thin",
-                  isOpen
-                    ? "translate-x-0 opacity-100"
-                    : "-translate-x-96 opacity-0"
+                  'flex items-center px-3 py-2 text-sm font-light transition-colors hover:bg-accent hover:text-accent-foreground',
+                  (active === undefined && pathname === href) || active
+                    ? 'bg-secondary text-secondary-foreground'
+                    : 'text-foreground',
                 )}
               >
                 {label}
-              </p>
-            </Link>
-          </Button>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
-  ) : (
-    <DropdownMenu>
-      <TooltipProvider disableHoverableContent>
-        <Tooltip delayDuration={100}>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant={isSubmenuActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-10 mb-1"
-              >
-                <div className="w-full items-center flex justify-between">
-                  <div className="flex items-center">
-                    <span className={cn(isOpen === false ? "" : "mr-4")}>
-                      <Icon size={18} />
-                    </span>
-                    <p
-                      className={cn(
-                        "max-w-[200px] truncate",
-                        isOpen === false ? "opacity-0" : "opacity-100"
-                      )}
-                    >
-                      {label}
-                    </p>
-                  </div>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="right" align="start" alignOffset={2}>
-            {label}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <DropdownMenuContent side="right" sideOffset={25} align="start">
-        <DropdownMenuLabel className="max-w-[190px] truncate">
-          {label}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {submenus.map(({ href, label, active }, index) => (
-          <DropdownMenuItem key={index} asChild>
-            <Link
-              to={href}
-              className={`cursor-pointer ${
-                ((active === undefined && pathname === href) || active) &&
-                "bg-secondary"
-              }`}
-            >
-              <p className="max-w-[180px] truncate">{label}</p>
-            </Link>
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuArrow className="fill-border" />
-      </DropdownMenuContent>
-    </DropdownMenu>
+              </Link>
+            ))}
+          </div>
+        </PopoverPrimitive.Content>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
   );
 }
-

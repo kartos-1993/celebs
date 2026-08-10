@@ -88,7 +88,12 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
       )}
 
       {/* Fullscreen Zoom Modal */}
-      <Modal visible={isZoomModalOpen} transparent animationType="fade" onRequestClose={() => setIsZoomModalOpen(false)}>
+      <Modal
+        visible={isZoomModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsZoomModalOpen(false)}
+      >
         <View style={styles.modalOverlay}>
           <TouchableOpacity
             style={styles.closeBtn}
@@ -102,7 +107,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
           <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
             {galleryImages.map((img, idx) => (
               <View key={`zoom-${idx}`} style={styles.zoomSlide}>
-                <Image source={{ uri: resolveImageUrl(img) }} style={styles.zoomImage} contentFit="contain" />
+                <Image
+                  source={{ uri: resolveImageUrl(img) }}
+                  style={styles.zoomImage}
+                  contentFit="contain"
+                />
               </View>
             ))}
           </ScrollView>

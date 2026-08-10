@@ -11,7 +11,7 @@ export type CategoryAttribute = CategoryAttributeType & {
 };
 
 export interface Category {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   level: number;
@@ -19,6 +19,7 @@ export interface Category {
   path: string[];
   attributes: CategoryAttribute[];
   sizeChartColumns?: string[];
+  bodyChartColumns?: string[];
   imageUrl?: string | null;
   isActive?: boolean;
   createdAt: string;
@@ -38,7 +39,7 @@ export interface QuickFilterItem {
 }
 
 export interface QuickFilter {
-  _id?: string;
+  id?: string;
   categoryId: string;
   type: QuickFilterType;
   attributeId?: string | null;
@@ -71,7 +72,6 @@ export interface ApiResponse<T> {
 }
 
 export type CategoryFormData = CreateCategoryType;
-
 
 // UI State Types
 export interface CategoryUIState {

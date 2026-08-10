@@ -15,9 +15,29 @@ const quickFilterRoutes = Router();
 quickFilterRoutes.get('/storefront/:slug', asyncHandler(quickFilterController.getStorefrontConfig));
 
 // Protected admin routes for quick filter management
-quickFilterRoutes.get('/category/:categoryId', authenticateJWT, requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(quickFilterController.getQuickFiltersForCategory));
-quickFilterRoutes.post('/', authenticateJWT, requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(quickFilterController.createQuickFilter));
-quickFilterRoutes.put('/:id', authenticateJWT, requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(quickFilterController.updateQuickFilter));
-quickFilterRoutes.delete('/:id', authenticateJWT, requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(quickFilterController.deleteQuickFilter));
+quickFilterRoutes.get(
+  '/category/:categoryId',
+  authenticateJWT,
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(quickFilterController.getQuickFiltersForCategory),
+);
+quickFilterRoutes.post(
+  '/',
+  authenticateJWT,
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(quickFilterController.createQuickFilter),
+);
+quickFilterRoutes.put(
+  '/:id',
+  authenticateJWT,
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(quickFilterController.updateQuickFilter),
+);
+quickFilterRoutes.delete(
+  '/:id',
+  authenticateJWT,
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(quickFilterController.deleteQuickFilter),
+);
 
 export default quickFilterRoutes;

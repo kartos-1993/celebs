@@ -1,10 +1,8 @@
-import React, { ChangeEvent, KeyboardEvent } from 'react';
+import React, { ChangeEvent } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
-import { Label } from '@celebs/shared-ui/components/label';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import {
   Select,
   SelectContent,
@@ -19,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { X, Plus, Upload, Loader } from 'lucide-react';
+import { X, Upload, Loader } from 'lucide-react';
 import { Category } from '../types';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
@@ -29,10 +27,6 @@ export interface CategoryBasicInfoTabProps {
   initialDataId?: string;
   role?: string;
   isUploadingImage: boolean;
-  newColumnInput: string;
-  setNewColumnInput: (val: string) => void;
-  handleAddSizeColumn: () => void;
-  handleRemoveSizeColumn: (colToRemove: string) => void;
   handleImageUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }
 
@@ -42,22 +36,27 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
   initialDataId,
   role,
   isUploadingImage,
-  newColumnInput,
-  setNewColumnInput,
-  handleAddSizeColumn,
-  handleRemoveSizeColumn,
   handleImageUpload,
 }) => {
-  const availableParents = categories.filter(
-    (cat) =>
-      cat._id !== initialDataId && !cat.path?.includes(initialDataId || '')
-  );
+  const editingCategory = categories.find((c) => c.id === initialDataId);
+  const editingSlug = editingCategory?.slug;
+
+  const availableParents = categories.filter((cat) => {
+    if (cat.id === initialDataId) return false;
+    if (cat.parent === initialDataId || (cat as any).parentCategory === initialDataId) return false;
+    if (editingSlug && cat.path) {
+      const pathParts = Array.isArray(cat.path)
+        ? (cat.path as string[])
+        : String(cat.path).split('/');
+      if (pathParts.includes(editingSlug)) return false;
+    }
+    return true;
+  });
 
   const imageUrl = form.watch('imageUrl');
-  const sizeChartColumns = form.watch('sizeChartColumns') || [];
 
   return (
-    <div className="space-y-4 pt-2">
+    <div className="space-y-5 pt-2">
       <FormField
         control={form.control}
         name="name"
@@ -78,21 +77,16 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Parent Category (Optional)</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value || 'ROOT_CATEGORY'}
-            >
+            <Select onValueChange={field.onChange} value={field.value || 'ROOT_CATEGORY'}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent category (leave empty for root category)" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="ROOT_CATEGORY">
-                  No Parent (Root Category)
-                </SelectItem>
+                <SelectItem value="ROOT_CATEGORY">No Parent (Root Category)</SelectItem>
                 {availableParents.map((category) => (
-                  <SelectItem key={category._id} value={category._id}>
+                  <SelectItem key={category.id} value={category.id}>
                     {'  '.repeat(category.level - 1)}
                     {category.name} (Level {category.level})
                   </SelectItem>
@@ -112,11 +106,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
           <div className="flex items-center space-x-4">
             {imageUrl ? (
               <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
-                <img
-                  src={imageUrl}
-                  alt="Category image"
-                  className="w-full h-full object-cover"
-                />
+                <img src={imageUrl} alt="Category image" className="w-full h-full object-cover" />
                 <Button
                   type="button"
                   onClick={() => form.setValue('imageUrl', null, { shouldDirty: true })}

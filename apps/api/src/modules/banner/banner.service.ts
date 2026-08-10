@@ -1,4 +1,5 @@
-import { BannerModel, IBanner } from '@/db/models/banner.model';
+import { bannerRepository } from './banner.repository';
+import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
 
 interface BannerInput {
   imageUrl: string;
@@ -10,44 +11,42 @@ interface BannerInput {
 }
 
 export class BannerService {
-  /**
-   * Get all active banners sorted by order
-   */
-  async getActiveBanners(): Promise<IBanner[]> {
-    return BannerModel.find({ isActive: true }).sort({ order: 1 });
+  private formatBanner(banner: any) {
+    if (!banner) return null;
+    return {
+      ...banner,
+      id: banner.id,
+    };
   }
 
-  /**
-   * Get all banners (for admin management)
-   */
-  async getAllBanners(): Promise<IBanner[]> {
-    return BannerModel.find().sort({ order: 1 });
+  async getActiveBanners(): Promise<any[]> {
+    const banners = await bannerRepository.findActiveBanners();
+    return banners.map((b) => this.formatBanner(b));
   }
 
-  /**
-   * Bulk update/replace the banners list.
-   * Expects an array of banner inputs (exactly 3).
-   */
-  async updateBanners(bannersData: BannerInput[]): Promise<IBanner[]> {
-    // Validate that we have up to 3 banners
+  async getAllBanners(): Promise<any[]> {
+    const banners = await bannerRepository.findAllBanners();
+    return banners.map((b) => this.formatBanner(b));
+  }
+
+  async updateBanners(bannersData: BannerInput[]): Promise<any[]> {
     if (!Array.isArray(bannersData) || bannersData.length > 3) {
-      throw new Error('Banner list can have at most 3 banners');
+      throw new AppError(
+        'Banner list can have at most 3 banners',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
     }
 
-    // We can clear and recreate to avoid complex matching
-    await BannerModel.deleteMany({});
+    const payload = bannersData.map((b) => ({
+      imageUrl: b.imageUrl,
+      targetUrl: b.linkValue || null,
+      title: b.title || '',
+      position: 'home_hero',
+      isActive: b.isActive !== undefined ? b.isActive : true,
+    }));
 
-    const createdBanners = await BannerModel.create(
-      bannersData.map((b, index) => ({
-        imageUrl: b.imageUrl,
-        linkType: b.linkType || 'NONE',
-        linkValue: b.linkValue || '',
-        title: b.title || '',
-        order: b.order !== undefined ? b.order : index + 1,
-        isActive: b.isActive !== undefined ? b.isActive : true,
-      }))
-    );
-
-    return createdBanners;
+    const created = await bannerRepository.replaceBanners(payload);
+    return created.map((item) => this.formatBanner(item));
   }
 }

@@ -44,8 +44,20 @@ categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 // Apply authentication middleware to admin category routes
 categoryRoute.use(authenticateJWT);
 
-categoryRoute.post('/', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.createCategory));
-categoryRoute.put('/:id', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.updateCategory));
-categoryRoute.delete('/:id', requirePermissions(Permission.CATALOG_MANAGE), asyncHandler(categoryController.deleteCategory));
+categoryRoute.post(
+  '/',
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(categoryController.createCategory),
+);
+categoryRoute.put(
+  '/:id',
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(categoryController.updateCategory),
+);
+categoryRoute.delete(
+  '/:id',
+  requirePermissions(Permission.CATALOG_MANAGE),
+  asyncHandler(categoryController.deleteCategory),
+);
 
 export default categoryRoute;

@@ -7,7 +7,7 @@ export const passwordSchema = z
   .min(8, 'Password must be at least 8 characters long')
   .regex(
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
-    'Password must include uppercase, lowercase, number, and special character'
+    'Password must include uppercase, lowercase, number, and special character',
   )
   .max(255);
 export const verificationCodeSchema = z.string().trim().min(1).max(50);
@@ -30,10 +30,19 @@ export const vendorRegisterSchema = z
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: passwordSchema,
-    phoneNumber: z.string().trim().regex(/^9\d{9}$/, 'Phone number must be a valid 10-digit Nepalese mobile number starting with 9'),
+    phoneNumber: z
+      .string()
+      .trim()
+      .regex(
+        /^9\d{9}$/,
+        'Phone number must be a valid 10-digit Nepalese mobile number starting with 9',
+      ),
     shopName: z.string().trim().min(2, 'Shop name must be at least 2 characters').max(255),
     shopDescription: z.string().trim().max(1000).optional(),
-    panNumber: z.string().trim().regex(/^\d{9}$/, 'PAN number must be exactly 9 digits'),
+    panNumber: z
+      .string()
+      .trim()
+      .regex(/^\d{9}$/, 'PAN number must be exactly 9 digits'),
     citizenshipNumber: z.string().trim().min(5, 'Citizenship number must be provided'),
     panDocumentUrl: z.string().url('Invalid PAN document URL').optional(),
     citizenshipDocumentUrl: z.string().url('Invalid citizenship document URL').optional(),

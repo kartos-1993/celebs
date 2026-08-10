@@ -1,7 +1,4 @@
-import {
-  HeadObjectCommand,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3';
+import { HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
@@ -14,12 +11,7 @@ import {
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
 export const PRESIGN_EXPIRES_IN = 15 * 60; // 15 minutes
-export const ALLOWED_IMAGE_MIME = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-]);
+export const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 
 export interface PutImageInput {
   buffer: Buffer;
@@ -67,10 +59,7 @@ function sanitizeFileName(name: string): string {
   return base.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
 }
 
-export function buildObjectKey(
-  originalname: string,
-  folder = 'celebs/products',
-): string {
+export function buildObjectKey(originalname: string, folder = 'celebs/products'): string {
   const safeFolder = folder.replace(/^\/+|\/+$/g, '');
   const safeName = sanitizeFileName(originalname);
   return `${safeFolder}/${uuidv4()}-${safeName}`;
@@ -113,16 +102,14 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
   });
 
   // Convert the originalname extension to .webp
-  const nameWithoutExt = originalname.replace(/\.[^/.]+$/, "");
+  const nameWithoutExt = originalname.replace(/\.[^/.]+$/, '');
   const webpOriginalName = `${nameWithoutExt}.webp`;
-  
+
   // Build S3 object key with .webp extension
   const key = buildObjectKey(webpOriginalName, input.folder);
 
   // Synchronously convert input buffer to optimized WebP
-  const webpBuffer = await sharp(input.buffer)
-    .webp({ quality: 85 })
-    .toBuffer();
+  const webpBuffer = await sharp(input.buffer).webp({ quality: 85 }).toBuffer();
 
   await ensureDevPublicReadAccess();
 
@@ -132,7 +119,7 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
       Key: key,
       Body: webpBuffer,
       ContentType: 'image/webp',
-    })
+    }),
   );
 
   return {
@@ -148,9 +135,7 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
  * Create a presigned PUT URL for direct browser → MinIO/S3 upload.
  * Browser MUST send the same Content-Type header when uploading.
  */
-export async function createPresignedPut(
-  input: PresignFileInput,
-): Promise<PresignFileResult> {
+export async function createPresignedPut(input: PresignFileInput): Promise<PresignFileResult> {
   const { originalname, mimeType, size } = assertUploadMeta(input);
   const key = buildObjectKey(originalname, input.folder);
 
@@ -183,9 +168,7 @@ export async function createPresignedPut(
 /**
  * Verify object exists after browser PUT; return catalog metadata.
  */
-export async function confirmUploadedObject(
-  input: ConfirmUploadInput,
-): Promise<PutImageResult> {
+export async function confirmUploadedObject(input: ConfirmUploadInput): Promise<PutImageResult> {
   const key = (input.key || '').trim();
   if (!key || key.includes('..') || key.startsWith('/')) {
     throw new Error('Invalid object key');

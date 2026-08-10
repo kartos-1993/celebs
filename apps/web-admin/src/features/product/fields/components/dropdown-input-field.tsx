@@ -1,6 +1,6 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
-import { ProductAPI } from '@/lib/axios-client';
+import { axiosClient } from '@/lib/axios/axios-client';
 import { SearchableSelect } from '@celebs/shared-ui/components/searchable-select';
 import type { FieldSpec, UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
@@ -8,18 +8,17 @@ import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 export function useOptions(field: FieldSpec) {
   const ds = field.dataSource;
   const isArray = Array.isArray(ds);
-  const fetchUrl = typeof ds === 'object' && ds !== null && 'fetch' in ds ? (ds as any).fetch : undefined;
+  const fetchUrl =
+    typeof ds === 'object' && ds !== null && 'fetch' in ds ? (ds as any).fetch : undefined;
 
-  const [asyncOpts, setAsyncOpts] = React.useState<
-    Array<{ label: string; value: string }>
-  >([]);
+  const [asyncOpts, setAsyncOpts] = React.useState<Array<{ label: string; value: string }>>([]);
 
   React.useEffect(() => {
     if (!fetchUrl) return;
     let isMounted = true;
     (async () => {
       try {
-        const res = await ProductAPI.get(fetchUrl);
+        const res = await axiosClient.get(fetchUrl);
         const data = res.data;
         const values =
           data?.data?.values ??
@@ -72,9 +71,7 @@ export function DropdownInputField({ field, control }: UiProps) {
   const opts = useOptions(field);
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>
-        {field.label}
-      </LabelWithRequired>
+      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <SearchableSelect
         options={opts}
         value={f.value ?? ''}

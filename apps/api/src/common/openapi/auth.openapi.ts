@@ -8,25 +8,16 @@ import {
 } from '@celebs/shared-types';
 
 // We can register request/response bodies or schemas in components
-const registerRequestSchema = registry.register(
-  'RegisterRequest',
-  registerSchema._def.schema
-);
+const registerRequestSchema = registry.register('RegisterRequest', registerSchema._def.schema);
 
 const vendorRegisterRequestSchema = registry.register(
   'VendorRegisterRequest',
-  vendorRegisterSchema._def.schema
+  vendorRegisterSchema._def.schema,
 );
 
-const loginRequestSchema = registry.register(
-  'LoginRequest',
-  loginSchema
-);
+const loginRequestSchema = registry.register('LoginRequest', loginSchema);
 
-const verifyEmailRequestSchema = registry.register(
-  'VerifyEmailRequest',
-  verificationEmailSchema
-);
+const verifyEmailRequestSchema = registry.register('VerifyEmailRequest', verificationEmailSchema);
 
 // Register POST /auth/register
 registry.registerPath({

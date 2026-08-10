@@ -1,6 +1,12 @@
-import prisma from '../../db';
-import { ProductModel } from '../../db/models/product.model';
-import { logger } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import prisma from '@/config/db.prisma';
+
+export class OutOfStockError extends AppError {
+  constructor(message: string) {
+    super(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.VALIDATION_ERROR);
+    this.name = 'OutOfStockError';
+  }
+}
 
 export interface StockCheckResult {
   inventoryId: string;
@@ -15,12 +21,38 @@ export interface StockCheckResult {
 
 export class InventoryService {
   /**
-   * Find or auto-sync inventory from MongoDB Product document into PostgreSQL ProductInventory
+   * Atomic PostgreSQL stock decrement to prevent race conditions during concurrent orders.
+   */
+  static async decrementStock(
+    inventoryId: string,
+    quantity: number,
+  ): Promise<{ id: string; quantity: number }> {
+    logger.info(
+      { inventoryId, quantity },
+      '[InventoryService.decrementStock] Attempting stock decrement',
+    );
+
+    const updatedRows: Array<{ id: string; quantity: number }> = await prisma.$queryRaw`
+      UPDATE "ProductInventory"
+      SET "quantity" = "quantity" - ${quantity}
+      WHERE "id" = ${inventoryId} AND "quantity" >= ${quantity}
+      RETURNING "id", "quantity"
+    `;
+
+    if (!updatedRows || updatedRows.length === 0) {
+      throw new OutOfStockError(`Insufficient stock available for inventory item ${inventoryId}`);
+    }
+
+    return updatedRows[0]!;
+  }
+
+  /**
+   * Find or auto-sync inventory from Product record into PostgreSQL ProductInventory
    */
   static async findOrCreateInventory(
     productId: string,
     colorVariantName: string,
-    size: string
+    size: string,
   ): Promise<StockCheckResult> {
     logger.info({ productId, colorVariantName, size }, '[InventoryService] Looking up inventory');
     const existing = await prisma.productInventory.findUnique({
@@ -35,7 +67,10 @@ export class InventoryService {
 
     if (existing) {
       const available = existing.quantity - existing.reservedQuantity;
-      logger.info({ inventoryId: existing.id, available }, '[InventoryService] Found existing inventory in Postgres');
+      logger.info(
+        { inventoryId: existing.id, available },
+        '[InventoryService] Found existing inventory in Postgres',
+      );
       return {
         inventoryId: existing.id,
         productId: existing.productId,
@@ -48,29 +83,29 @@ export class InventoryService {
       };
     }
 
-
-    // Lookup stock from MongoDB product document to initialize PostgreSQL inventory
-    let initialQty = 10; // Default fallback if product stock is unspecified
+    let initialQty = 10;
     try {
-      const product = await ProductModel.findById(productId).exec();
-      if (product && product.colorVariants) {
-        const variant = product.colorVariants.find(
-          (v) => v.name.toLowerCase() === colorVariantName.toLowerCase()
+      const product = await prisma.product.findUnique({ where: { id: productId } });
+      if (product && Array.isArray(product.colorVariants)) {
+        const variants = product.colorVariants as Array<{
+          name: string;
+          stocks?: Array<{ size: string; quantity: number }>;
+        }>;
+        const variant = variants.find(
+          (v) => v.name.toLowerCase() === colorVariantName.toLowerCase(),
         );
         if (variant && variant.stocks) {
-          const stockItem = variant.stocks.find(
-            (s) => s.size.toLowerCase() === size.toLowerCase()
-          );
+          const stockItem = variant.stocks.find((s) => s.size.toLowerCase() === size.toLowerCase());
           if (stockItem && typeof stockItem.quantity === 'number') {
             initialQty = stockItem.quantity;
           }
         }
       }
     } catch {
-      // Keep default initialQty if Mongo lookup fails
+      // Keep default initialQty
     }
 
-    const sku = `SKU-${productId.substring(productId.length - 6)}-${colorVariantName
+    const sku = `SKU-${productId.substring(Math.max(0, productId.length - 6))}-${colorVariantName
       .substring(0, 3)
       .toUpperCase()}-${size.toUpperCase()}`;
 
@@ -81,6 +116,7 @@ export class InventoryService {
         size,
         sku,
         quantity: initialQty,
+        reservedQuantity: 0,
       },
     });
 
@@ -95,16 +131,5 @@ export class InventoryService {
       availableQuantity: available > 0 ? available : 0,
       isAvailable: available > 0,
     };
-  }
-
-  /**
-   * Check stock availability for a given product variant and size
-   */
-  static async checkStock(
-    productId: string,
-    colorVariantName: string,
-    size: string
-  ): Promise<StockCheckResult> {
-    return this.findOrCreateInventory(productId, colorVariantName, size);
   }
 }
