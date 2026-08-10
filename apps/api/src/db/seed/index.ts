@@ -41,7 +41,6 @@ export async function runMasterSeed(): Promise<void> {
     console.log('\n================================================================');
     console.log('✨ MASTER SEED COMPLETED SUCCESSFULLY!');
     console.log('================================================================\n');
-
   } catch (error) {
     console.error('\n❌ Master Seeding Failed with Error:', error);
     process.exitCode = 1;

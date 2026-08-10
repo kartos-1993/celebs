@@ -26,7 +26,9 @@ export function ProductSelector({
 }: ProductSelectorPropsType) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 350);
-  const [selectedItemsDetails, setSelectedItemsDetails] = useState<Record<string, CatalogProductType>>({});
+  const [selectedItemsDetails, setSelectedItemsDetails] = useState<
+    Record<string, CatalogProductType>
+  >({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', 'selector', debouncedSearchTerm],
@@ -161,10 +163,7 @@ export function ProductSelector({
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Checkbox
-                    checked={isSelected}
-                    className="shrink-0 pointer-events-none"
-                  />
+                  <Checkbox checked={isSelected} className="shrink-0 pointer-events-none" />
                   {imgUrl ? (
                     <img
                       src={imgUrl}
@@ -181,7 +180,9 @@ export function ProductSelector({
                       {product.name}
                     </div>
                     <div className="text-[11px] text-slate-500 font-mono">
-                      {product.price > 0 ? `NPR ${product.price.toLocaleString()}` : 'Price not set'}
+                      {product.price > 0
+                        ? `NPR ${product.price.toLocaleString()}`
+                        : 'Price not set'}
                     </div>
                   </div>
                 </div>

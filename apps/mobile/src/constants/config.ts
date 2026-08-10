@@ -11,7 +11,10 @@ export const STAGING_HOST = 'https://celebs-api-staging.onrender.com';
  */
 export function getDevBaseUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  const useLocal = process.env.EXPO_PUBLIC_USE_LOCAL_API === 'true' || envUrl?.includes('localhost') || envUrl?.includes('127.0.0.1');
+  const useLocal =
+    process.env.EXPO_PUBLIC_USE_LOCAL_API === 'true' ||
+    envUrl?.includes('localhost') ||
+    envUrl?.includes('127.0.0.1');
 
   if (__DEV__ && useLocal) {
     const debuggerHost = Constants.expoConfig?.hostUri;
@@ -41,7 +44,8 @@ export function resolveImageUrl(url?: string | null): string {
   return url;
 }
 
-export const GOOGLE_CLIENT_ID = '998383824177-mvfgjhqjqeq2dc1ecmunajarlgbjlo4m.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID =
+  '998383824177-mvfgjhqjqeq2dc1ecmunajarlgbjlo4m.apps.googleusercontent.com';
 
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),

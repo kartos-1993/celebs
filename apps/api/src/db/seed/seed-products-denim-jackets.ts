@@ -14,13 +14,15 @@ export async function seedProductsDenimJackets(): Promise<void> {
       { name: /men denim jacket/i },
       { name: /denim jacket/i },
       { slug: 'men-denim-jackets' },
-      { slug: 'denim-jackets' }
-    ]
+      { slug: 'denim-jackets' },
+    ],
   });
 
   if (!denimJacketCat) {
     console.log('  └─ Category not found. Resolving or creating category...');
-    let parentCat = await CategoryModel.findOne({ level: 1, name: /men/i }) || await CategoryModel.findOne({ level: 1 });
+    let parentCat =
+      (await CategoryModel.findOne({ level: 1, name: /men/i })) ||
+      (await CategoryModel.findOne({ level: 1 }));
 
     denimJacketCat = await CategoryModel.create({
       name: 'Men Denim Jackets',
@@ -29,7 +31,7 @@ export async function seedProductsDenimJackets(): Promise<void> {
       parentCategory: parentCat ? parentCat.id : null,
       path: parentCat ? [...parentCat.path, 'men-denim-jackets'] : ['men-denim-jackets'],
       isActive: true,
-      sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length']
+      sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length'],
     });
   }
 
@@ -54,14 +56,41 @@ export async function seedProductsDenimJackets(): Promise<void> {
 
     const sizesPayload = (item.measurements?.sizeChart || []).map((sc: any) => {
       const prodMeasurements = [];
-      if (sc.shoulder !== undefined) prodMeasurements.push({ name: 'Shoulder', value: String(sc.shoulder), unit: 'cm' });
-      if (sc.chest !== undefined) prodMeasurements.push({ name: 'Chest', value: String(sc.chest), unit: 'cm' });
-      if (sc.length !== undefined) prodMeasurements.push({ name: 'Length', value: String(sc.length), unit: 'cm' });
-      if (sc.sleeveLength !== undefined) prodMeasurements.push({ name: 'Sleeve Length', value: String(sc.sleeveLength), unit: 'cm' });
+      if (sc.shoulder !== undefined)
+        prodMeasurements.push({ name: 'Shoulder', value: String(sc.shoulder), unit: 'cm' });
+      if (sc.chest !== undefined)
+        prodMeasurements.push({ name: 'Chest', value: String(sc.chest), unit: 'cm' });
+      if (sc.length !== undefined)
+        prodMeasurements.push({ name: 'Length', value: String(sc.length), unit: 'cm' });
+      if (sc.sleeveLength !== undefined)
+        prodMeasurements.push({
+          name: 'Sleeve Length',
+          value: String(sc.sleeveLength),
+          unit: 'cm',
+        });
 
       const bodyMeasurements = [
-        { name: 'Height', value: sc.size === 'XS' ? '160-165' : sc.size === 'S' ? '165-170' : sc.size === 'M' ? '170-175' : sc.size === 'L' ? '175-180' : '180-185', unit: 'cm' },
-        { name: 'Bust', value: sc.chest ? `${Math.round(sc.chest * 0.95)}-${Math.round(sc.chest * 1.05)}` : '88-92', unit: 'cm' },
+        {
+          name: 'Height',
+          value:
+            sc.size === 'XS'
+              ? '160-165'
+              : sc.size === 'S'
+                ? '165-170'
+                : sc.size === 'M'
+                  ? '170-175'
+                  : sc.size === 'L'
+                    ? '175-180'
+                    : '180-185',
+          unit: 'cm',
+        },
+        {
+          name: 'Bust',
+          value: sc.chest
+            ? `${Math.round(sc.chest * 0.95)}-${Math.round(sc.chest * 1.05)}`
+            : '88-92',
+          unit: 'cm',
+        },
         { name: 'Waist Size', value: '74-82', unit: 'cm' },
         { name: 'Hip Size', value: '88-96', unit: 'cm' },
       ];
@@ -79,17 +108,20 @@ export async function seedProductsDenimJackets(): Promise<void> {
       images: v.images || [],
       stocks: (item.measurements?.sizeChart || []).map((sc: any) => ({
         size: sc.size,
-        quantity: 20
-      }))
+        quantity: 20,
+      })),
     }));
 
-    const mainImages = item.variants?.[0]?.images?.length > 0
-      ? item.variants[0].images
-      : ['https://images.unsplash.com/photo-1576995853123-5a10305d93c0?q=80&w=800'];
+    const mainImages =
+      item.variants?.[0]?.images?.length > 0
+        ? item.variants[0].images
+        : ['https://images.unsplash.com/photo-1576995853123-5a10305d93c0?q=80&w=800'];
 
     const price = 2400 + ((i * 150) % 2000);
     const discountedPrice = Math.round(price * 0.85);
-    const productSlug = item.slug ? `${item.slug}-${i}` : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`;
+    const productSlug = item.slug
+      ? `${item.slug}-${i}`
+      : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`;
 
     const productDoc = {
       name: item.title,
@@ -106,20 +138,20 @@ export async function seedProductsDenimJackets(): Promise<void> {
       dynamicData: {
         values: {
           mainImage: mainImages,
-          ...(item.attributes || {})
-        }
+          ...(item.attributes || {}),
+        },
       },
       tags: ['Denim', 'Jacket', item.attributes?.fitType || 'Regular'].filter(Boolean),
       featured: true,
       status: 'published' as const,
       createdBy: 'system-seed',
-      updatedBy: 'system-seed'
+      updatedBy: 'system-seed',
     };
 
     const result = await ProductModel.updateOne(
       { slug: productDoc.slug },
       { $set: productDoc },
-      { upsert: true }
+      { upsert: true },
     );
 
     if (result.upsertedCount > 0) {

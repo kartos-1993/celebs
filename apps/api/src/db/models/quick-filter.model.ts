@@ -79,7 +79,4 @@ const QuickFilterSchema = new Schema(
 
 QuickFilterSchema.index({ categoryId: 1, displayOrder: 1 });
 
-export const QuickFilterModel = mongoose.model<IQuickFilter>(
-  'QuickFilter',
-  QuickFilterSchema,
-);
+export const QuickFilterModel = mongoose.model<IQuickFilter>('QuickFilter', QuickFilterSchema);

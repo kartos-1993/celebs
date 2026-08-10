@@ -23,8 +23,7 @@ export function useProductSchema(catId: string, productId?: string) {
         params: { catId, locale: 'en_US', productId },
       });
 
-      const serverFields: FieldSpec[] =
-        response.data?.data?.data ?? response.data?.data ?? [];
+      const serverFields: FieldSpec[] = response.data?.data?.data ?? response.data?.data ?? [];
 
       let merged = await addFallbackFields(catId, serverFields);
       merged = normalizeSchema(merged);

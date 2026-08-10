@@ -20,52 +20,52 @@ export interface IMedia extends Document {
 // Schema for Media
 const MediaSchema: Schema = new Schema(
   {
-    fileName: { 
-      type: String, 
-      required: true 
+    fileName: {
+      type: String,
+      required: true,
     },
-    originalname: { 
-      type: String, 
-      required: true 
+    originalname: {
+      type: String,
+      required: true,
     },
-    mimeType: { 
-      type: String, 
-      required: true 
+    mimeType: {
+      type: String,
+      required: true,
     },
-    size: { 
-      type: Number, 
-      required: true 
+    size: {
+      type: Number,
+      required: true,
     },
-    url: { 
-      type: String, 
-      required: true 
+    url: {
+      type: String,
+      required: true,
     },
     filePath: {
       type: String,
-      required: true
+      required: true,
     },
-    key: { 
-      type: String, 
-      required: true 
+    key: {
+      type: String,
+      required: true,
     },
-    productId: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Product'
+    productId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Product',
     },
     entityId: {
-      type: String
+      type: String,
     },
     entityType: {
-      type: String
+      type: String,
     },
-    createdBy: { 
-      type: String, 
-      required: true 
-    }
+    createdBy: {
+      type: String,
+      required: true,
+    },
   },
-  { 
-    timestamps: true 
-  }
+  {
+    timestamps: true,
+  },
 );
 
 export const MediaModel = mongoose.model<IMedia>('Media', MediaSchema);

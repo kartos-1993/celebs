@@ -49,13 +49,14 @@ const FALLBACK_CAMPAIGN: CampaignData = {
   startDate: '2026-08-01T00:00:00Z',
   endDate: '2026-10-15T23:59:59Z',
   isActive: true,
-  bannerImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&auto=format&fit=crop',
+  bannerImage:
+    'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&auto=format&fit=crop',
 };
 
 export function CampaignCountdownBanner() {
   const [campaign, setCampaign] = useState<CampaignData>(FALLBACK_CAMPAIGN);
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() =>
-    calculateTimeRemaining(FALLBACK_CAMPAIGN.endDate)
+    calculateTimeRemaining(FALLBACK_CAMPAIGN.endDate),
   );
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export function CampaignCountdownBanner() {
       try {
         const response = await apiClient.get<{ success: boolean; data: CampaignData[] }>(
           '/campaigns/active',
-          { skipAuth: true }
+          { skipAuth: true },
         );
         if (isMounted && response.data?.data && response.data.data.length > 0) {
           const active = response.data.data[0];
@@ -104,7 +105,9 @@ export function CampaignCountdownBanner() {
         imageStyle={styles.backgroundImageStyle}
       >
         {/* Color Overlay */}
-        <View style={[styles.colorOverlay, { backgroundColor: campaign.themeColor || '#D92525' }]} />
+        <View
+          style={[styles.colorOverlay, { backgroundColor: campaign.themeColor || '#D92525' }]}
+        />
 
         {/* Content Box */}
         <View style={styles.contentContainer}>

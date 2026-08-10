@@ -1,5 +1,5 @@
-import { Outlet, useLoaderData } from "react-router-dom";
-import { ProtectedLoaderData } from "./types";
+import { Outlet, useLoaderData } from 'react-router-dom';
+import { ProtectedLoaderData } from './types';
 
 function App() {
   const data = useLoaderData() as ProtectedLoaderData;

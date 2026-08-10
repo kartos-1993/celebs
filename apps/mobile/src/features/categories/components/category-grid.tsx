@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, useColorScheme } from 'react-native';
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  useColorScheme,
+} from 'react-native';
 import { Image } from 'expo-image';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -17,7 +23,8 @@ export function CategoryGrid() {
   const router = useRouter();
 
   const handleCategoryPress = (cat: any) => {
-    const slug = cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
+    const slug =
+      cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
     router.push({
       pathname: '/category/[slug]',
       params: { slug, title: cat.displayName || cat.name },
@@ -43,8 +50,8 @@ export function CategoryGrid() {
 
   return (
     <View style={styles.categoriesSection}>
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesScrollContent}
       >
@@ -66,7 +73,9 @@ export function CategoryGrid() {
                         contentFit="cover"
                       />
                     ) : (
-                      <View style={[styles.categoryImage, { backgroundColor: 'rgba(150,150,150,0.1)' }]} />
+                      <View
+                        style={[styles.categoryImage, { backgroundColor: 'rgba(150,150,150,0.1)' }]}
+                      />
                     )}
                   </View>
                   <ThemedText

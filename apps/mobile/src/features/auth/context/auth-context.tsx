@@ -17,7 +17,12 @@ interface AuthContextType {
   token: string | null;
   isLoggedIn: boolean;
   isLoading: boolean;
-  loginWithGoogle: (data: { email: string; name: string; picture?: string; googleId?: string }) => Promise<void>;
+  loginWithGoogle: (data: {
+    email: string;
+    name: string;
+    picture?: string;
+    googleId?: string;
+  }) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -62,7 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Google 1-Tap Login
-  const loginWithGoogle = async (data: { email: string; name: string; picture?: string; googleId?: string }) => {
+  const loginWithGoogle = async (data: {
+    email: string;
+    name: string;
+    picture?: string;
+    googleId?: string;
+  }) => {
     setIsLoading(true);
     try {
       const response = await apiClient.post('/auth/google', data, { skipAuth: true });
@@ -89,7 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post('/auth/register', { name, email, password }, { skipAuth: true });
+      const response = await apiClient.post(
+        '/auth/register',
+        { name, email, password },
+        { skipAuth: true },
+      );
       // After registration, log the user in automatically or return
       return response.data;
     } finally {

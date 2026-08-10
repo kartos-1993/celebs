@@ -1,12 +1,6 @@
-import {
-  useContext,
-  createContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import { useContext, createContext, useEffect, useState, useCallback } from 'react';
 
-type Theme = "light" | "dark" | "system";
+type Theme = 'light' | 'dark' | 'system';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -20,7 +14,7 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: "system",
+  theme: 'system',
   setTheme: () => null,
 };
 
@@ -28,37 +22,33 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 const applyTheme = (theme: Theme, mediaQuery: MediaQueryList) => {
   const root = window.document.documentElement;
-  const systemTheme = mediaQuery.matches ? "dark" : "light";
-  const effectiveTheme = theme === "system" ? systemTheme : theme;
-  root.classList.remove("light", "dark");
+  const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+  const effectiveTheme = theme === 'system' ? systemTheme : theme;
+  root.classList.remove('light', 'dark');
   root.classList.add(effectiveTheme);
 };
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
-  storageKey = "theme",
+  defaultTheme = 'system',
+  storageKey = 'theme',
 }: ThemeProviderProps) {
   const [theme, _setTheme] = useState<Theme>(() => {
     const storedTheme = localStorage.getItem(storageKey);
-    if (
-      storedTheme === "light" ||
-      storedTheme === "dark" ||
-      storedTheme === "system"
-    ) {
+    if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system') {
       return storedTheme;
     }
     return defaultTheme;
   });
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     applyTheme(theme, mediaQuery);
     const handleChange = () => applyTheme(theme, mediaQuery);
 
-    mediaQuery.addEventListener("change", handleChange);
+    mediaQuery.addEventListener('change', handleChange);
 
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
   const setTheme = useCallback(
@@ -66,7 +56,7 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, newTheme);
       _setTheme(newTheme);
     },
-    [storageKey]
+    [storageKey],
   );
 
   const value = {
@@ -74,17 +64,13 @@ export function ThemeProvider({
     setTheme,
   };
 
-  return (
-    <ThemeProviderContext.Provider value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  );
+  return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeProviderContext);
   if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    throw new Error('useTheme must be used within a ThemeProvider');
   }
 
   return context;

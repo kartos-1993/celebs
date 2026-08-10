@@ -117,10 +117,7 @@ export default function MeScreen() {
           <View style={styles.sectionContainer}>
             <ThemedText style={styles.sectionTitle}>MY ACCOUNT</ThemedText>
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push('/orders')}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/orders')}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: '#f0fdf4' }]}>
                   <ShoppingBag size={20} color="#16a34a" />
@@ -220,7 +217,9 @@ export default function MeScreen() {
             style={[styles.tabToggleBtn, authMode === 'login' && styles.tabToggleActive]}
             onPress={() => setAuthMode('login')}
           >
-            <ThemedText style={[styles.tabToggleText, authMode === 'login' && styles.tabToggleTextActive]}>
+            <ThemedText
+              style={[styles.tabToggleText, authMode === 'login' && styles.tabToggleTextActive]}
+            >
               Log In
             </ThemedText>
           </TouchableOpacity>
@@ -229,7 +228,9 @@ export default function MeScreen() {
             style={[styles.tabToggleBtn, authMode === 'register' && styles.tabToggleActive]}
             onPress={() => setAuthMode('register')}
           >
-            <ThemedText style={[styles.tabToggleText, authMode === 'register' && styles.tabToggleTextActive]}>
+            <ThemedText
+              style={[styles.tabToggleText, authMode === 'register' && styles.tabToggleTextActive]}
+            >
               Register
             </ThemedText>
           </TouchableOpacity>

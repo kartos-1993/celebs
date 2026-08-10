@@ -51,12 +51,17 @@ function titleCase(s: string) {
 function selectDataSource(attr: any, optionSetsMap: Map<string, string[]>) {
   const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
 
-  const searchName = attr.optionSetName ||
-    (attr.name === 'Color' || attr.variantType === 'color' ? 'Basic Colors' :
-     attr.name === 'Size' || attr.variantType === 'size' ? 'Alpha Sizes (XXS-5XL)' :
-     attr.name);
+  const searchName =
+    attr.optionSetName ||
+    (attr.name === 'Color' || attr.variantType === 'color'
+      ? 'Basic Colors'
+      : attr.name === 'Size' || attr.variantType === 'size'
+        ? 'Alpha Sizes (XXS-5XL)'
+        : attr.name);
 
-  const matched = optionSetsMap.get(searchName.toLowerCase()) || optionSetsMap.get(String(attr.name).toLowerCase());
+  const matched =
+    optionSetsMap.get(searchName.toLowerCase()) ||
+    optionSetsMap.get(String(attr.name).toLowerCase());
   if (matched && matched.length > 0 && (vals.length === 0 || attr.useStandardOptions)) {
     return matched.map((v) => ({ label: v, value: v }));
   }
@@ -66,14 +71,17 @@ function selectDataSource(attr: any, optionSetsMap: Map<string, string[]>) {
   }
 
   if (attr.useStandardOptions && attr.optionSetId) {
-    return { optionSetId: String(attr.optionSetId), fetch: `/option-sets/${String(attr.optionSetId)}` };
+    return {
+      optionSetId: String(attr.optionSetId),
+      fetch: `/option-sets/${String(attr.optionSetId)}`,
+    };
   }
 
   return [];
 }
 
 function attributeToField(attr: IAttribute, optionSetsMap: Map<string, string[]>): FieldSpec {
-  const group: FieldGroup = attr.isVariant ? 'variant' : (attr.group || 'details');
+  const group: FieldGroup = attr.isVariant ? 'variant' : attr.group || 'details';
   const base = {
     name: attr.name,
     label: attr.label || titleCase(attr.name),
@@ -131,26 +139,24 @@ export async function composeSchema(params: {
   const fields: FieldSpec[] = [];
 
   // System fields (images only; product name is handled in Basic Info section on the web app)
-  fields.push(
-    {
-      name: 'mainImage',
-      uiType: 'MainImage',
-      label: 'Product Images',
-      group: 'base',
-      required: true,
-      rule: {
-        maxItems: params.policy.media.maxImages,
-        accept: params.policy.media.accept,
-        maxSize: params.policy.media.maxSizeBytes,
-        minWidth: params.policy.media.minWidth,
-        minHeight: params.policy.media.minHeight,
-        aspectRatio: params.policy.media.aspectRatio,
-        ratioTolerance: params.policy.media.ratioTolerance,
-        maxWidth: params.policy.media.maxWidth,
-        maxHeight: params.policy.media.maxHeight,
-      },
+  fields.push({
+    name: 'mainImage',
+    uiType: 'MainImage',
+    label: 'Product Images',
+    group: 'base',
+    required: true,
+    rule: {
+      maxItems: params.policy.media.maxImages,
+      accept: params.policy.media.accept,
+      maxSize: params.policy.media.maxSizeBytes,
+      minWidth: params.policy.media.minWidth,
+      minHeight: params.policy.media.minHeight,
+      aspectRatio: params.policy.media.aspectRatio,
+      ratioTolerance: params.policy.media.ratioTolerance,
+      maxWidth: params.policy.media.maxWidth,
+      maxHeight: params.policy.media.maxHeight,
     },
-  );
+  });
 
   // Category-authored fields
   for (const attr of params.category.attributes || []) {
@@ -201,14 +207,20 @@ export async function composeSchema(params: {
   });
 
   const charts: Array<{ key: string; label: string; columns: string[] }> = [];
-  if (Array.isArray(params.category.sizeChartColumns) && params.category.sizeChartColumns.length > 0) {
+  if (
+    Array.isArray(params.category.sizeChartColumns) &&
+    params.category.sizeChartColumns.length > 0
+  ) {
     charts.push({
       key: 'product',
       label: 'Product Measurements (Garment Flat)',
       columns: params.category.sizeChartColumns,
     });
   }
-  if (Array.isArray(params.category.bodyChartColumns) && params.category.bodyChartColumns.length > 0) {
+  if (
+    Array.isArray(params.category.bodyChartColumns) &&
+    params.category.bodyChartColumns.length > 0
+  ) {
     charts.push({
       key: 'body',
       label: 'Body Measurements (Wearer Fit Guide)',
@@ -239,7 +251,9 @@ export async function composeSchema(params: {
     params.policy.media.maxWidth ?? 0,
     params.policy.media.maxHeight ?? 0,
   ].join(':');
-  const renderTag = Buffer.from(`${String(params.category.id)}:${fieldsHash}:${policyFingerprint}`).toString('base64');
+  const renderTag = Buffer.from(
+    `${String(params.category.id)}:${fieldsHash}:${policyFingerprint}`,
+  ).toString('base64');
 
   return { fields, renderTag };
 }

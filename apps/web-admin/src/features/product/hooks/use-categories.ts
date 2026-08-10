@@ -55,8 +55,7 @@ export const useCategories = () => {
   };
 
   const searchCategories = (query: string, parentId?: string): Category[] => {
-    if (!query.trim())
-      return parentId ? getChildCategories(parentId) : getRootCategories();
+    if (!query.trim()) return parentId ? getChildCategories(parentId) : getRootCategories();
 
     const searchTerm = query.toLowerCase();
     return allCategories.filter((cat) => {
@@ -86,8 +85,8 @@ export const useCategories = () => {
     searchCategories,
     recentCategories,
     addToRecent,
-  // New helpers for robust path resolution
-  findCategoryById: (id: string) => allCategories.find((c) => c.id === id),
-  getAllCategories: () => allCategories,
+    // New helpers for robust path resolution
+    findCategoryById: (id: string) => allCategories.find((c) => c.id === id),
+    getAllCategories: () => allCategories,
   };
 };

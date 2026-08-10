@@ -88,12 +88,10 @@ const ImageUpload = ({ onImagesChange }: ImageUploadProps) => {
         )}
       </div>
       <p className="text-sm text-gray-500">
-        Upload up to 5 images. First image will be used as the product
-        thumbnail.
+        Upload up to 5 images. First image will be used as the product thumbnail.
       </p>
     </div>
   );
 };
 
 export default ImageUpload;
-

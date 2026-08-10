@@ -15,7 +15,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const campaigns = await campaignService.getActiveCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
-  })
+  }),
 );
 
 router.get(
@@ -25,7 +25,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const campaigns = await campaignService.getAllCampaigns();
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaigns });
-  })
+  }),
 );
 
 router.get(
@@ -33,10 +33,12 @@ router.get(
   asyncHandler(async (req, res) => {
     const campaign = await campaignService.getCampaignById(req.params.id);
     if (!campaign) {
-      return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Campaign not found' });
+      return res
+        .status(HTTPSTATUS.NOT_FOUND)
+        .json({ success: false, message: 'Campaign not found' });
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
-  })
+  }),
 );
 
 router.get(
@@ -44,10 +46,12 @@ router.get(
   asyncHandler(async (req, res) => {
     const campaign = await campaignService.getCampaignBySlug(req.params.slug);
     if (!campaign) {
-      return res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Campaign not found' });
+      return res
+        .status(HTTPSTATUS.NOT_FOUND)
+        .json({ success: false, message: 'Campaign not found' });
     }
     res.status(HTTPSTATUS.OK).json({ success: true, data: campaign });
-  })
+  }),
 );
 
 // Protected Admin routes
@@ -59,7 +63,7 @@ router.post(
     const validatedPayload = createCampaignSchema.parse(req.body);
     const newCampaign = await campaignService.createCampaign(validatedPayload);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: newCampaign });
-  })
+  }),
 );
 
 router.put(
@@ -69,7 +73,7 @@ router.put(
   asyncHandler(async (req, res) => {
     const updated = await campaignService.updateCampaign(req.params.id, req.body);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
-  })
+  }),
 );
 
 export default router;

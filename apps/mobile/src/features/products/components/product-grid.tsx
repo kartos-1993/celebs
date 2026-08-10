@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import {
+  View,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  useColorScheme,
+} from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -32,59 +39,53 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
       }
     }, [loadMoreTrigger, loading, loadingMore, hasMore, loadMore]);
 
-  return (
-    <View style={styles.container}>
-      {/* Section Title Header */}
-      <View style={styles.sectionHeader}>
-        <View style={styles.titleWithIcon}>
-          <Sparkles size={18} color="#e63946" style={{ marginRight: 6 }} />
-          <ThemedText type="subtitle" style={styles.headerTitle}>
-            Just For You
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* 2-Column Dynamic Product Grid */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.text} />
-          <ThemedText type="small" style={styles.loadingText}>
-            Fetching latest styles...
-          </ThemedText>
-        </View>
-      ) : products.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <ThemedText style={{ opacity: 0.6 }}>No products found</ThemedText>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => refetch()}
-          >
-            <ThemedText style={styles.retryText}>Retry</ThemedText>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <View style={styles.gridWrapper}>
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onPress={onProductPress}
-              />
-            ))}
+    return (
+      <View style={styles.container}>
+        {/* Section Title Header */}
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleWithIcon}>
+            <Sparkles size={18} color="#e63946" style={{ marginRight: 6 }} />
+            <ThemedText type="subtitle" style={styles.headerTitle}>
+              Just For You
+            </ThemedText>
           </View>
+        </View>
 
-          {/* Infinite Scroll Bottom Spinner */}
-          {loadingMore && (
-            <View style={styles.paginationFooter}>
-              <ActivityIndicator size="small" color={colors.text} />
+        {/* 2-Column Dynamic Product Grid */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.text} />
+            <ThemedText type="small" style={styles.loadingText}>
+              Fetching latest styles...
+            </ThemedText>
+          </View>
+        ) : products.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <ThemedText style={{ opacity: 0.6 }}>No products found</ThemedText>
+            <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+              <ThemedText style={styles.retryText}>Retry</ThemedText>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <View style={styles.gridWrapper}>
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} onPress={onProductPress} />
+              ))}
             </View>
-          )}
-        </>
-      )}
-    </View>
-  );
-});
+
+            {/* Infinite Scroll Bottom Spinner */}
+            {loadingMore && (
+              <View style={styles.paginationFooter}>
+                <ActivityIndicator size="small" color={colors.text} />
+              </View>
+            )}
+          </>
+        )}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   container: {

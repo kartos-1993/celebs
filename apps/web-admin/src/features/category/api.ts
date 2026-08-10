@@ -19,9 +19,7 @@ const BASE_PATH = '/category';
 /**
  * Creates a new category
  */
-export async function createCategory(
-  data: CreateCategoryRequest,
-): Promise<ApiResponse<Category>> {
+export async function createCategory(data: CreateCategoryRequest): Promise<ApiResponse<Category>> {
   const response = await ProductAPI.post<ApiResponse<Category>>(BASE_PATH, data);
   return response.data;
 }
@@ -74,44 +72,46 @@ export async function updateCategory(
   id: string,
   data: UpdateCategoryRequest,
 ): Promise<ApiResponse<Category>> {
-  const response = await ProductAPI.put<ApiResponse<Category>>(
-    `${BASE_PATH}/${id}`,
-    data,
-  );
+  const response = await ProductAPI.put<ApiResponse<Category>>(`${BASE_PATH}/${id}`, data);
   return response.data;
 }
 
 /**
  * Deletes a category
  */
-export async function deleteCategory(
-  id: string,
-): Promise<ApiResponse<{ success: boolean }>> {
-  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(
-    `${BASE_PATH}/${id}`,
+export async function deleteCategory(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(`${BASE_PATH}/${id}`);
+  return response.data;
+}
+
+export async function getQuickFiltersForCategory(
+  categoryId: string,
+): Promise<ApiResponse<QuickFilter[]>> {
+  const response = await ProductAPI.get<ApiResponse<QuickFilter[]>>(
+    `/quick-filter/category/${categoryId}`,
   );
   return response.data;
 }
 
-
-
-export async function getQuickFiltersForCategory(categoryId: string): Promise<ApiResponse<QuickFilter[]>> {
-  const response = await ProductAPI.get<ApiResponse<QuickFilter[]>>(`/quick-filter/category/${categoryId}`);
-  return response.data;
-}
-
-export async function createQuickFilter(data: Partial<QuickFilter>): Promise<ApiResponse<QuickFilter>> {
+export async function createQuickFilter(
+  data: Partial<QuickFilter>,
+): Promise<ApiResponse<QuickFilter>> {
   const response = await ProductAPI.post<ApiResponse<QuickFilter>>('/quick-filter', data);
   return response.data;
 }
 
-export async function updateQuickFilter(id: string, data: Partial<QuickFilter>): Promise<ApiResponse<QuickFilter>> {
+export async function updateQuickFilter(
+  id: string,
+  data: Partial<QuickFilter>,
+): Promise<ApiResponse<QuickFilter>> {
   const response = await ProductAPI.put<ApiResponse<QuickFilter>>(`/quick-filter/${id}`, data);
   return response.data;
 }
 
 export async function deleteQuickFilter(id: string): Promise<ApiResponse<{ success: boolean }>> {
-  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(`/quick-filter/${id}`);
+  const response = await ProductAPI.delete<ApiResponse<{ success: boolean }>>(
+    `/quick-filter/${id}`,
+  );
   return response.data;
 }
 
@@ -130,10 +130,4 @@ export const CategoryApiService = {
 };
 
 // Re-export types for convenience
-export type {
-  Category,
-  CategoryTreeNode,
-  CreateCategoryRequest,
-  UpdateCategoryRequest,
-};
-
+export type { Category, CategoryTreeNode, CreateCategoryRequest, UpdateCategoryRequest };

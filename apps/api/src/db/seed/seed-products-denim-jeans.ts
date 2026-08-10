@@ -14,13 +14,15 @@ export async function seedProductsDenimJeans(): Promise<void> {
       { name: /men jeans/i },
       { name: /denim jeans/i },
       { slug: 'men-jeans' },
-      { slug: 'denim-jeans' }
-    ]
+      { slug: 'denim-jeans' },
+    ],
   });
 
   if (!denimCategory) {
     console.log('  └─ Category not found. Resolving or creating category...');
-    let parentCat = await CategoryModel.findOne({ level: 1, name: /men/i }) || await CategoryModel.findOne({ level: 1 });
+    let parentCat =
+      (await CategoryModel.findOne({ level: 1, name: /men/i })) ||
+      (await CategoryModel.findOne({ level: 1 }));
 
     denimCategory = await CategoryModel.create({
       name: 'Men Jeans',
@@ -29,7 +31,7 @@ export async function seedProductsDenimJeans(): Promise<void> {
       parentCategory: parentCat ? parentCat.id : null,
       path: parentCat ? [...parentCat.path, 'men-jeans'] : ['men-jeans'],
       isActive: true,
-      sizeChartColumns: ['Waist', 'Hip', 'Inseam', 'Thigh']
+      sizeChartColumns: ['Waist', 'Hip', 'Inseam', 'Thigh'],
     });
   }
 
@@ -54,15 +56,40 @@ export async function seedProductsDenimJeans(): Promise<void> {
 
     const sizesPayload = (item.measurements?.sizeChart || []).map((sc: any) => {
       const prodMeasurements = [];
-      if (sc.waist !== undefined) prodMeasurements.push({ name: 'Waist', value: String(sc.waist), unit: 'cm' });
-      if (sc.hip !== undefined) prodMeasurements.push({ name: 'Hip', value: String(sc.hip), unit: 'cm' });
-      if (sc.inseam !== undefined) prodMeasurements.push({ name: 'Inseam', value: String(sc.inseam), unit: 'cm' });
-      if (sc.thigh !== undefined) prodMeasurements.push({ name: 'Thigh', value: String(sc.thigh), unit: 'cm' });
+      if (sc.waist !== undefined)
+        prodMeasurements.push({ name: 'Waist', value: String(sc.waist), unit: 'cm' });
+      if (sc.hip !== undefined)
+        prodMeasurements.push({ name: 'Hip', value: String(sc.hip), unit: 'cm' });
+      if (sc.inseam !== undefined)
+        prodMeasurements.push({ name: 'Inseam', value: String(sc.inseam), unit: 'cm' });
+      if (sc.thigh !== undefined)
+        prodMeasurements.push({ name: 'Thigh', value: String(sc.thigh), unit: 'cm' });
 
       const bodyMeasurements = [
-        { name: 'Height', value: sc.size === '28' ? '165-170' : sc.size === '30' ? '170-175' : sc.size === '32' ? '175-180' : '180-185', unit: 'cm' },
-        { name: 'Waist Size', value: sc.waist ? `${Math.round(sc.waist * 0.96)}-${Math.round(sc.waist * 1.04)}` : '72-76', unit: 'cm' },
-        { name: 'Hip Size', value: sc.hip ? `${Math.round(sc.hip * 0.96)}-${Math.round(sc.hip * 1.04)}` : '90-95', unit: 'cm' },
+        {
+          name: 'Height',
+          value:
+            sc.size === '28'
+              ? '165-170'
+              : sc.size === '30'
+                ? '170-175'
+                : sc.size === '32'
+                  ? '175-180'
+                  : '180-185',
+          unit: 'cm',
+        },
+        {
+          name: 'Waist Size',
+          value: sc.waist
+            ? `${Math.round(sc.waist * 0.96)}-${Math.round(sc.waist * 1.04)}`
+            : '72-76',
+          unit: 'cm',
+        },
+        {
+          name: 'Hip Size',
+          value: sc.hip ? `${Math.round(sc.hip * 0.96)}-${Math.round(sc.hip * 1.04)}` : '90-95',
+          unit: 'cm',
+        },
       ];
 
       return {
@@ -78,17 +105,20 @@ export async function seedProductsDenimJeans(): Promise<void> {
       images: v.images || [],
       stocks: (item.measurements?.sizeChart || []).map((sc: any) => ({
         size: sc.size,
-        quantity: 25
-      }))
+        quantity: 25,
+      })),
     }));
 
-    const mainImages = item.variants?.[0]?.images?.length > 0
-      ? item.variants[0].images.slice(0, 5)
-      : ['https://images.unsplash.com/photo-1542272604-780c36856d67?q=80&w=800'];
+    const mainImages =
+      item.variants?.[0]?.images?.length > 0
+        ? item.variants[0].images.slice(0, 5)
+        : ['https://images.unsplash.com/photo-1542272604-780c36856d67?q=80&w=800'];
 
     const price = 1500 + ((i * 120) % 1500);
     const discountedPrice = Math.round(price * 0.85);
-    const productSlug = item.slug ? `${item.slug}-${i}` : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`;
+    const productSlug = item.slug
+      ? `${item.slug}-${i}`
+      : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`;
 
     const productDoc = {
       name: item.title,
@@ -105,20 +135,20 @@ export async function seedProductsDenimJeans(): Promise<void> {
       dynamicData: {
         values: {
           mainImage: mainImages,
-          ...(item.attributes || {})
-        }
+          ...(item.attributes || {}),
+        },
       },
       tags: ['Denim', 'Jeans', item.attributes?.fitType || 'Regular'].filter(Boolean),
       featured: i < 5,
       status: 'published' as const,
       createdBy: 'system-seed',
-      updatedBy: 'system-seed'
+      updatedBy: 'system-seed',
     };
 
     const result = await ProductModel.updateOne(
       { slug: productDoc.slug },
       { $set: productDoc },
-      { upsert: true }
+      { upsert: true },
     );
 
     if (result.upsertedCount > 0) {

@@ -63,7 +63,10 @@ export default function CheckoutScreen() {
     }
 
     if (paymentMethod === 'COD' && isCodDisabled) {
-      Alert.alert('COD Limit Exceeded', 'Cash on Delivery is limited to max NPR 5,000. Please select Stripe or digital wallet.');
+      Alert.alert(
+        'COD Limit Exceeded',
+        'Cash on Delivery is limited to max NPR 5,000. Please select Stripe or digital wallet.',
+      );
       return;
     }
 
@@ -72,7 +75,7 @@ export default function CheckoutScreen() {
     try {
       // Live API Call to backend checkout endpoint
       const idempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      
+
       const payload = {
         idempotencyKey,
         shippingAddress: {
@@ -93,10 +96,18 @@ export default function CheckoutScreen() {
 
       const res = await apiClient.post('/orders/checkout', payload).catch(async () => {
         // Fallback simulation for staging if endpoint isn't fully seeded
-        return { data: { success: true, data: { orderId: `CEL-2026-${Math.floor(10000 + Math.random() * 90000)}` } } };
+        return {
+          data: {
+            success: true,
+            data: { orderId: `CEL-2026-${Math.floor(10000 + Math.random() * 90000)}` },
+          },
+        };
       });
 
-      const orderId = res.data?.data?.orderId || res.data?.data?.id || `CEL-${Math.floor(10000 + Math.random() * 90000)}`;
+      const orderId =
+        res.data?.data?.orderId ||
+        res.data?.data?.id ||
+        `CEL-${Math.floor(10000 + Math.random() * 90000)}`;
 
       Alert.alert(
         'Order Confirmed! 🎉',
@@ -109,10 +120,13 @@ export default function CheckoutScreen() {
               router.push('/orders');
             },
           },
-        ]
+        ],
       );
     } catch (err: any) {
-      Alert.alert('Order Failed', err?.message || 'Something went wrong while placing your order. Please try again.');
+      Alert.alert(
+        'Order Failed',
+        err?.message || 'Something went wrong while placing your order. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -133,7 +147,8 @@ export default function CheckoutScreen() {
           <Lock size={48} color="#208AEF" />
           <ThemedText style={styles.authNoticeTitle}>Sign In to Proceed to Checkout</ThemedText>
           <ThemedText style={styles.authNoticeDesc}>
-            Your items are saved safely in your cart. Sign in with Google to enter your Kathmandu delivery address and complete order.
+            Your items are saved safely in your cart. Sign in with Google to enter your Kathmandu
+            delivery address and complete order.
           </ThemedText>
 
           {/* Real Google Sign-In Button */}
@@ -252,12 +267,16 @@ export default function CheckoutScreen() {
             activeOpacity={isCodDisabled ? 1 : 0.8}
           >
             <View style={styles.paymentRadioRow}>
-              <View style={[styles.radioOuter, paymentMethod === 'COD' && styles.radioOuterSelected]}>
+              <View
+                style={[styles.radioOuter, paymentMethod === 'COD' && styles.radioOuterSelected]}
+              >
                 {paymentMethod === 'COD' && <View style={styles.radioInner} />}
               </View>
               <View style={{ flex: 1 }}>
                 <ThemedText style={styles.paymentName}>Cash on Delivery (COD)</ThemedText>
-                <ThemedText style={styles.paymentDesc}>Pay cash when order arrives at your doorstep</ThemedText>
+                <ThemedText style={styles.paymentDesc}>
+                  Pay cash when order arrives at your doorstep
+                </ThemedText>
               </View>
             </View>
 
@@ -273,34 +292,48 @@ export default function CheckoutScreen() {
 
           {/* Stripe Option */}
           <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === 'STRIPE' && styles.paymentOptionSelected]}
+            style={[
+              styles.paymentOption,
+              paymentMethod === 'STRIPE' && styles.paymentOptionSelected,
+            ]}
             onPress={() => setPaymentMethod('STRIPE')}
             activeOpacity={0.8}
           >
             <View style={styles.paymentRadioRow}>
-              <View style={[styles.radioOuter, paymentMethod === 'STRIPE' && styles.radioOuterSelected]}>
+              <View
+                style={[styles.radioOuter, paymentMethod === 'STRIPE' && styles.radioOuterSelected]}
+              >
                 {paymentMethod === 'STRIPE' && <View style={styles.radioInner} />}
               </View>
               <View style={{ flex: 1 }}>
                 <ThemedText style={styles.paymentName}>Stripe (Credit / Debit Card)</ThemedText>
-                <ThemedText style={styles.paymentDesc}>Ideal for international cards & Nepalis buying from abroad</ThemedText>
+                <ThemedText style={styles.paymentDesc}>
+                  Ideal for international cards & Nepalis buying from abroad
+                </ThemedText>
               </View>
             </View>
           </TouchableOpacity>
 
           {/* eSewa Option */}
           <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === 'ESEWA' && styles.paymentOptionSelected]}
+            style={[
+              styles.paymentOption,
+              paymentMethod === 'ESEWA' && styles.paymentOptionSelected,
+            ]}
             onPress={() => setPaymentMethod('ESEWA')}
             activeOpacity={0.8}
           >
             <View style={styles.paymentRadioRow}>
-              <View style={[styles.radioOuter, paymentMethod === 'ESEWA' && styles.radioOuterSelected]}>
+              <View
+                style={[styles.radioOuter, paymentMethod === 'ESEWA' && styles.radioOuterSelected]}
+              >
                 {paymentMethod === 'ESEWA' && <View style={styles.radioInner} />}
               </View>
               <View style={{ flex: 1 }}>
                 <ThemedText style={styles.paymentName}>eSewa / Khalti Digital Wallet</ThemedText>
-                <ThemedText style={styles.paymentDesc}>Instant payment via Nepal digital wallet app</ThemedText>
+                <ThemedText style={styles.paymentDesc}>
+                  Instant payment via Nepal digital wallet app
+                </ThemedText>
               </View>
             </View>
           </TouchableOpacity>
@@ -333,7 +366,9 @@ export default function CheckoutScreen() {
         {/* Security badge */}
         <View style={styles.securityRow}>
           <ShieldCheck size={16} color="#16a34a" />
-          <ThemedText style={styles.securityText}>100% Encrypted & Authenticated Order Processing</ThemedText>
+          <ThemedText style={styles.securityText}>
+            100% Encrypted & Authenticated Order Processing
+          </ThemedText>
         </View>
       </ScrollView>
 

@@ -12,7 +12,7 @@ export const productRejectionEmailTemplate = (
   paramsOrName: string | IProductRejectionParams,
   legacyReason?: string,
   legacyBrand = 'Celebs',
-  legacyColor = '#EF4444'
+  legacyColor = '#EF4444',
 ) => {
   let productName: string;
   let rejectionReason: string;
@@ -35,20 +35,22 @@ export const productRejectionEmailTemplate = (
     rejectionReason = legacyReason || '';
   }
 
-  const subcategoriesHtml = subcategories.length > 0
-    ? `<ul style="margin: 5px 0 10px 20px; padding: 0; color: #7F1D1D;">
+  const subcategoriesHtml =
+    subcategories.length > 0
+      ? `<ul style="margin: 5px 0 10px 20px; padding: 0; color: #7F1D1D;">
         ${subcategories.map((sub) => `<li>${sub}</li>`).join('')}
        </ul>`
-    : '';
+      : '';
 
-  const flaggedFieldsHtml = flaggedFields.length > 0
-    ? `<div style="margin-top: 10px;">
+  const flaggedFieldsHtml =
+    flaggedFields.length > 0
+      ? `<div style="margin-top: 10px;">
         <span style="font-weight: bold; color: #991B1B;">Flagged Item Fields:</span>
         <div style="margin-top: 5px;">
           ${flaggedFields.map((f) => `<span style="display: inline-block; background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; font-size: 12px; font-weight: bold; padding: 3px 8px; border-radius: 4px; margin-right: 5px; margin-bottom: 5px;">${f}</span>`).join('')}
         </div>
        </div>`
-    : '';
+      : '';
 
   return {
     subject: `Product Review Update: Action Required for "${productName}"`,

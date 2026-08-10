@@ -11,8 +11,8 @@ import {
   Sparkles,
   Flame,
   LucideIcon,
-} from "lucide-react";
-import { Permission, can, type Role } from "@celebs/rbac";
+} from 'lucide-react';
+import { Permission, can, type Role } from '@celebs/rbac';
 
 type Submenu = {
   href: string;
@@ -46,20 +46,20 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   // 1. Products Operations Group
   const productSubmenus: Submenu[] = [];
   if (hasPerm(Permission.PRODUCT_VIEW) || hasPerm(Permission.PRODUCT_CREATE)) {
-    productSubmenus.push({ href: "/products/manage", label: "Manage Product" });
-    productSubmenus.push({ href: "/products/new", label: "Add Product" });
-    productSubmenus.push({ href: "/products/mediacenter", label: "Media Center" });
+    productSubmenus.push({ href: '/products/manage', label: 'Manage Product' });
+    productSubmenus.push({ href: '/products/new', label: 'Add Product' });
+    productSubmenus.push({ href: '/products/mediacenter', label: 'Media Center' });
   }
   if (hasPerm(Permission.PRODUCT_REVIEW)) {
-    productSubmenus.push({ href: "/products/review-product-queue", label: "Review Queue" });
+    productSubmenus.push({ href: '/products/review-product-queue', label: 'Review Queue' });
   }
 
   if (productSubmenus.length > 0) {
     list.push({
       menus: [
         {
-          href: "",
-          label: "Products",
+          href: '',
+          label: 'Products',
           icon: ShoppingBag,
           submenus: productSubmenus,
         },
@@ -70,16 +70,16 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   // 2. Catalog & Taxonomy Architecture Group
   const catalogSubmenus: Submenu[] = [];
   if (hasPerm(Permission.CATALOG_MANAGE)) {
-    catalogSubmenus.push({ href: "/categories", label: "Categories" });
-    catalogSubmenus.push({ href: "/option-sets", label: "Option Sets" });
+    catalogSubmenus.push({ href: '/categories', label: 'Categories' });
+    catalogSubmenus.push({ href: '/option-sets', label: 'Option Sets' });
   }
 
   if (catalogSubmenus.length > 0) {
     list.push({
       menus: [
         {
-          href: "",
-          label: "Catalog Setup",
+          href: '',
+          label: 'Catalog Setup',
           icon: FolderTree,
           submenus: catalogSubmenus,
         },
@@ -92,13 +92,13 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     list.push({
       menus: [
         {
-          href: "",
-          label: "Orders & Reviews",
+          href: '',
+          label: 'Orders & Reviews',
           icon: ListOrdered,
           submenus: [
-            { href: "/orders", label: "Orders" },
-            { href: "/orders/return", label: "Return Orders" },
-            { href: "/orders/reviews", label: "Reviews" },
+            { href: '/orders', label: 'Orders' },
+            { href: '/orders/return', label: 'Return Orders' },
+            { href: '/orders/reviews', label: 'Reviews' },
           ],
         },
       ],
@@ -110,8 +110,8 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     list.push({
       menus: [
         {
-          href: "/vendors",
-          label: "Vendor Management",
+          href: '/vendors',
+          label: 'Vendor Management',
           icon: Store,
         },
       ],
@@ -123,8 +123,8 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     list.push({
       menus: [
         {
-          href: "/users",
-          label: "User Management",
+          href: '/users',
+          label: 'User Management',
           icon: UserCog,
         },
       ],
@@ -136,8 +136,8 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     list.push({
       menus: [
         {
-          href: "/staff",
-          label: "Staff & Team",
+          href: '/staff',
+          label: 'Staff & Team',
           icon: Users,
         },
       ],
@@ -149,12 +149,10 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     list.push({
       menus: [
         {
-          href: "",
-          label: "Finance",
+          href: '',
+          label: 'Finance',
           icon: IndianRupee,
-          submenus: [
-            { href: "/finance", label: "Finance" },
-          ],
+          submenus: [{ href: '/finance', label: 'Finance' }],
         },
       ],
     });
@@ -164,8 +162,8 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   list.push({
     menus: [
       {
-        href: "/account/profile",
-        label: "My Account",
+        href: '/account/profile',
+        label: 'My Account',
         icon: UserPen,
       },
     ],

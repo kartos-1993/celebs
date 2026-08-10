@@ -65,11 +65,16 @@ export default function UserList() {
           <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold">Create New Account</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>✕</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+                ✕
+              </Button>
             </div>
 
             <Form {...createForm}>
-              <form onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))} className="space-y-4">
+              <form
+                onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
+                className="space-y-4"
+              >
                 <FormField
                   control={createForm.control}
                   name="name"

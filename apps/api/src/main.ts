@@ -3,7 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const envName = process.env.NODE_ENV ?? 'development';
-const envPath = path.resolve(process.cwd(), `apps/api/.env.${envName}`);
+const localEnvPath = path.resolve(process.cwd(), `.env.${envName}`);
+const monorepoEnvPath = path.resolve(process.cwd(), `apps/api/.env.${envName}`);
+const envPath = fs.existsSync(localEnvPath) ? localEnvPath : monorepoEnvPath;
 
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });

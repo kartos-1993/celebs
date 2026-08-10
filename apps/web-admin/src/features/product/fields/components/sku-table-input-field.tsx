@@ -39,22 +39,19 @@ export function SkuTableInputField({ field }: UiProps) {
   const ds = field.dataSource as VariantDataSource | undefined;
   const labelsMap: Record<string, Record<string, string>> = ds?.labels ?? {};
   const labelOf = React.useCallback(
-    (axisKey: string, value: string) =>
-      labelsMap?.[axisKey]?.[String(value)] ?? String(value),
+    (axisKey: string, value: string) => labelsMap?.[axisKey]?.[String(value)] ?? String(value),
     [labelsMap],
   );
 
-  const [variantMeta, setVariantMeta] = React.useState<
-    Array<{ key: string; label: string }>
-  >(
+  const [variantMeta, setVariantMeta] = React.useState<Array<{ key: string; label: string }>>(
     Array.isArray(ds)
       ? (ds as Array<{ key: string; label: string }>)
       : Array.isArray(ds?.variants)
-      ? ds.variants.map((v) => ({
-          key: v.key ?? v.name ?? v.value ?? '',
-          label: v.label ?? v.name ?? v.key ?? String(v.value ?? ''),
-        }))
-      : [],
+        ? ds.variants.map((v) => ({
+            key: v.key ?? v.name ?? v.value ?? '',
+            label: v.label ?? v.name ?? v.key ?? String(v.value ?? ''),
+          }))
+        : [],
   );
 
   React.useEffect(() => {
@@ -88,10 +85,7 @@ export function SkuTableInputField({ field }: UiProps) {
         // silently ignore
       }
     })();
-  }, [
-    ds?.fetch,
-    Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants,
-  ]);
+  }, [ds?.fetch, Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants]);
 
   const { control: formControl, setValue, getValues } = useFormContext();
 
@@ -133,8 +127,7 @@ export function SkuTableInputField({ field }: UiProps) {
       .replace(/\s+/g, ' ')
       .trim();
 
-  const pathFor = (...parts: string[]) =>
-    ['sku', 'variants', ...parts.map(sanitize)].join('.');
+  const pathFor = (...parts: string[]) => ['sku', 'variants', ...parts.map(sanitize)].join('.');
 
   const [applyAll, setApplyAll] = React.useState<{
     price?: string;
@@ -147,9 +140,7 @@ export function SkuTableInputField({ field }: UiProps) {
   const [applyScope, setApplyScope] = React.useState<string>('ALL');
 
   const scopeOptions = React.useMemo(() => {
-    const opts: Array<{ value: string; label: string }> = [
-      { value: 'ALL', label: 'All Variants' },
-    ];
+    const opts: Array<{ value: string; label: string }> = [{ value: 'ALL', label: 'All Variants' }];
     if (variants.length === 1) {
       for (const v of variants[0].values)
         opts.push({
@@ -168,12 +159,7 @@ export function SkuTableInputField({ field }: UiProps) {
     return opts;
   }, [variants, labelOf]);
 
-  const matchesScope = (
-    aKey: string,
-    aVal: string,
-    bKey?: string,
-    bVal?: string,
-  ) => {
+  const matchesScope = (aKey: string, aVal: string, bKey?: string, bVal?: string) => {
     if (applyScope === 'ALL') return true;
     if (!applyScope.includes('||')) {
       const [k, v] = applyScope.split('::');
@@ -190,20 +176,14 @@ export function SkuTableInputField({ field }: UiProps) {
 
   const applyToAll = () => {
     if (variants.length === 0) return;
-    const fill = (name: string, value: any) =>
-      setValue(name, value, { shouldDirty: true });
+    const fill = (name: string, value: any) => setValue(name, value, { shouldDirty: true });
     if (variants.length === 1) {
       for (const opt of variants[0].values) {
         if (!matchesScope(variants[0].key, opt)) continue;
-        if (applyAll.price != null)
-          fill(pathFor(variants[0].key, opt, 'price'), applyAll.price);
+        if (applyAll.price != null) fill(pathFor(variants[0].key, opt, 'price'), applyAll.price);
         if (applyAll.specialPrice != null)
-          fill(
-            pathFor(variants[0].key, opt, 'specialPrice'),
-            applyAll.specialPrice,
-          );
-        if (applyAll.stock != null)
-          fill(pathFor(variants[0].key, opt, 'stock'), applyAll.stock);
+          fill(pathFor(variants[0].key, opt, 'specialPrice'), applyAll.specialPrice);
+        if (applyAll.stock != null) fill(pathFor(variants[0].key, opt, 'stock'), applyAll.stock);
         if (applyAll.sellerSku != null)
           fill(pathFor(variants[0].key, opt, 'sellerSku'), applyAll.sellerSku);
         if (applyAll.freeItems != null)
@@ -214,60 +194,29 @@ export function SkuTableInputField({ field }: UiProps) {
     } else if (variants.length >= 2) {
       for (const opt1 of variants[0].values) {
         for (const opt2 of variants[1].values) {
-          if (!matchesScope(variants[0].key, opt1, variants[1].key, opt2))
-            continue;
+          if (!matchesScope(variants[0].key, opt1, variants[1].key, opt2)) continue;
           if (applyAll.price != null)
-            fill(
-              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price'),
-              applyAll.price,
-            );
+            fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price'), applyAll.price);
           if (applyAll.specialPrice != null)
             fill(
-              pathFor(
-                variants[0].key,
-                opt1,
-                variants[1].key,
-                opt2,
-                'specialPrice',
-              ),
+              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'specialPrice'),
               applyAll.specialPrice,
             );
           if (applyAll.stock != null)
-            fill(
-              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock'),
-              applyAll.stock,
-            );
+            fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock'), applyAll.stock);
           if (applyAll.sellerSku != null)
             fill(
-              pathFor(
-                variants[0].key,
-                opt1,
-                variants[1].key,
-                opt2,
-                'sellerSku',
-              ),
+              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku'),
               applyAll.sellerSku,
             );
           if (applyAll.freeItems != null)
             fill(
-              pathFor(
-                variants[0].key,
-                opt1,
-                variants[1].key,
-                opt2,
-                'freeItems',
-              ),
+              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'freeItems'),
               applyAll.freeItems,
             );
           if (applyAll.available != null)
             fill(
-              pathFor(
-                variants[0].key,
-                opt1,
-                variants[1].key,
-                opt2,
-                'available',
-              ),
+              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'available'),
               applyAll.available,
             );
         }
@@ -342,17 +291,10 @@ export function SkuTableInputField({ field }: UiProps) {
             <TableBody>
               <TableRow>
                 <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name="sku.default.price"
-                    type="number"
-                    required
-                  />
+                  <VariantFieldInput name="sku.default.price" type="number" required />
                 </TableCell>
                 <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name="sku.default.specialPrice"
-                    type="number"
-                  />
+                  <VariantFieldInput name="sku.default.specialPrice" type="number" />
                 </TableCell>
                 <TableCell className="p-1.5">
                   <VariantFieldInput name="sku.default.stock" type="number" />
@@ -400,9 +342,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <NumberInput
                 className="bg-background h-8 text-xs"
                 value={applyAll.price ?? ''}
-                onChange={(e) =>
-                  setApplyAll((p) => ({ ...p, price: e.target.value }))
-                }
+                onChange={(e) => setApplyAll((p) => ({ ...p, price: e.target.value }))}
                 placeholder="0"
               />
             </div>
@@ -411,9 +351,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <NumberInput
                 className="bg-background h-8 text-xs"
                 value={applyAll.specialPrice ?? ''}
-                onChange={(e) =>
-                  setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))
-                }
+                onChange={(e) => setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))}
                 placeholder="0"
               />
             </div>
@@ -422,9 +360,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <NumberInput
                 className="bg-background h-8 text-xs"
                 value={applyAll.stock ?? ''}
-                onChange={(e) =>
-                  setApplyAll((p) => ({ ...p, stock: e.target.value }))
-                }
+                onChange={(e) => setApplyAll((p) => ({ ...p, stock: e.target.value }))}
                 placeholder="0"
               />
             </div>
@@ -433,9 +369,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <Input
                 className="bg-background font-mono text-xs h-8"
                 value={applyAll.sellerSku ?? ''}
-                onChange={(e) =>
-                  setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))
-                }
+                onChange={(e) => setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))}
                 placeholder="SKU"
               />
             </div>
@@ -444,9 +378,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <NumberInput
                 className="bg-background h-8 text-xs"
                 value={applyAll.freeItems ?? ''}
-                onChange={(e) =>
-                  setApplyAll((p) => ({ ...p, freeItems: e.target.value }))
-                }
+                onChange={(e) => setApplyAll((p) => ({ ...p, freeItems: e.target.value }))}
                 placeholder="0"
               />
             </div>
@@ -455,9 +387,7 @@ export function SkuTableInputField({ field }: UiProps) {
             <label className="flex items-center gap-2 text-xs cursor-pointer">
               <Checkbox
                 checked={!!applyAll.available}
-                onCheckedChange={(v) =>
-                  setApplyAll((p) => ({ ...p, available: !!v }))
-                }
+                onCheckedChange={(v) => setApplyAll((p) => ({ ...p, available: !!v }))}
               />
               <span className="text-xs font-medium">Mark as Available</span>
             </label>
@@ -510,9 +440,7 @@ export function SkuTableInputField({ field }: UiProps) {
                     />
                   </TableCell>
                   <TableCell className="p-1.5">
-                    <VariantFieldInput
-                      name={pathFor(variants[0].key, opt, 'sellerSku')}
-                    />
+                    <VariantFieldInput name={pathFor(variants[0].key, opt, 'sellerSku')} />
                   </TableCell>
                   <TableCell className="p-1.5">
                     <VariantFieldInput
@@ -521,9 +449,7 @@ export function SkuTableInputField({ field }: UiProps) {
                     />
                   </TableCell>
                   <TableCell className="p-1 text-center">
-                    <VariantAvailability
-                      name={pathFor(variants[0].key, opt, 'available')}
-                    />
+                    <VariantAvailability name={pathFor(variants[0].key, opt, 'available')} />
                   </TableCell>
                 </TableRow>
               ))}
@@ -538,7 +464,9 @@ export function SkuTableInputField({ field }: UiProps) {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[10%] px-1.5 py-2">{variants[0].label}</TableHead>
-                <TableHead className="w-[4%] px-0.5 py-2 text-center">{variants[1].label}</TableHead>
+                <TableHead className="w-[4%] px-0.5 py-2 text-center">
+                  {variants[1].label}
+                </TableHead>
                 <TableHead className="w-[13%] px-1.5 py-2">
                   Price <span className="text-red-500 ml-0.5">*</span>
                 </TableHead>
@@ -546,7 +474,9 @@ export function SkuTableInputField({ field }: UiProps) {
                 <TableHead className="w-[10%] px-1.5 py-2">Stock</TableHead>
                 <TableHead className="w-[31%] px-1.5 py-2">SellerSKU</TableHead>
                 <TableHead className="w-[11%] px-1 py-2">Free</TableHead>
-                <TableHead className="w-[6%] px-0.5 py-2 text-center" title="Availability">Active</TableHead>
+                <TableHead className="w-[6%] px-0.5 py-2 text-center" title="Availability">
+                  Active
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -561,73 +491,37 @@ export function SkuTableInputField({ field }: UiProps) {
                     </TableCell>
                     <TableCell className="p-1.5">
                       <VariantFieldInput
-                        name={pathFor(
-                          variants[0].key,
-                          opt1,
-                          variants[1].key,
-                          opt2,
-                          'price',
-                        )}
+                        name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price')}
                         type="number"
                         required
                       />
                     </TableCell>
                     <TableCell className="p-1.5">
                       <VariantFieldInput
-                        name={pathFor(
-                          variants[0].key,
-                          opt1,
-                          variants[1].key,
-                          opt2,
-                          'specialPrice',
-                        )}
+                        name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'specialPrice')}
                         type="number"
                       />
                     </TableCell>
                     <TableCell className="p-1.5">
                       <VariantFieldInput
-                        name={pathFor(
-                          variants[0].key,
-                          opt1,
-                          variants[1].key,
-                          opt2,
-                          'stock',
-                        )}
+                        name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock')}
                         type="number"
                       />
                     </TableCell>
                     <TableCell className="p-1.5">
                       <VariantFieldInput
-                        name={pathFor(
-                          variants[0].key,
-                          opt1,
-                          variants[1].key,
-                          opt2,
-                          'sellerSku',
-                        )}
+                        name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku')}
                       />
                     </TableCell>
                     <TableCell className="p-1.5">
                       <VariantFieldInput
-                        name={pathFor(
-                          variants[0].key,
-                          opt1,
-                          variants[1].key,
-                          opt2,
-                          'freeItems',
-                        )}
+                        name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'freeItems')}
                         type="number"
                       />
                     </TableCell>
                     <TableCell className="p-0.5 text-center">
                       <VariantAvailability
-                        name={pathFor(
-                          variants[0].key,
-                          opt1,
-                          variants[1].key,
-                          opt2,
-                          'available',
-                        )}
+                        name={pathFor(variants[0].key, opt1, variants[1].key, opt2, 'available')}
                       />
                     </TableCell>
                   </TableRow>
@@ -653,8 +547,7 @@ function VariantFieldInput({
   const { control, getValues } = useFormContext();
   const isPriceField = name.endsWith('.price');
   const isSpecialPriceField = name.endsWith('.specialPrice');
-  const isNonNegativeField =
-    name.endsWith('.stock') || name.endsWith('.freeItems');
+  const isNonNegativeField = name.endsWith('.stock') || name.endsWith('.freeItems');
   const { field, fieldState } = useController({
     name,
     control,
@@ -677,9 +570,7 @@ function VariantFieldInput({
                 return 'Cannot be negative';
               }
               if (isSpecialPriceField) {
-                const basePrice = Number(
-                  getValues(name.replace(/\.specialPrice$/, '.price')),
-                );
+                const basePrice = Number(getValues(name.replace(/\.specialPrice$/, '.price')));
                 if (Number.isFinite(basePrice) && numeric >= basePrice) {
                   return 'Must be lower than price';
                 }
@@ -722,10 +613,7 @@ function VariantAvailability({ name }: { name: string }) {
   const { field } = useController({ name, control });
   return (
     <div className="flex justify-center items-center">
-      <Checkbox
-        checked={!!field.value}
-        onCheckedChange={(v) => field.onChange(!!v)}
-      />
+      <Checkbox checked={!!field.value} onCheckedChange={(v) => field.onChange(!!v)} />
     </div>
   );
 }

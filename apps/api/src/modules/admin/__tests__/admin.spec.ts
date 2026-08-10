@@ -45,23 +45,19 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
     };
 
     // 1. Create and login SUPERADMIN
-    await request(app)
-      .post('/api/v1/auth/setup-superadmin')
-      .send(superadminPayload);
+    await request(app).post('/api/v1/auth/setup-superadmin').send(superadminPayload);
     const saLogin = await request(app)
       .post('/api/v1/auth/login')
       .send({ email: superadminPayload.email, password: superadminPayload.password });
     superadminCookie = getCookie(saLogin);
 
     // 2. Create and login ADMIN (Promoted via DB update)
-    await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        name: adminPayload.name,
-        email: adminPayload.email,
-        password: adminPayload.password,
-        confirmPassword: adminPayload.password,
-      });
+    await request(app).post('/api/v1/auth/register').send({
+      name: adminPayload.name,
+      email: adminPayload.email,
+      password: adminPayload.password,
+      confirmPassword: adminPayload.password,
+    });
     const adminUser = await prisma.user.findFirst({ where: { email: adminPayload.email } });
     await prisma.user.update({
       where: { id: adminUser!.id },
@@ -73,15 +69,15 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
     adminCookie = getCookie(adminLogin);
 
     // 3. Create and login VENDOR
-    await request(app)
-      .post('/api/v1/auth/vendor/register')
-      .send(vendorPayload);
+    await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
     const vendorRecord = await prisma.user.findFirst({ where: { email: vendorPayload.email } });
     await prisma.user.update({
       where: { id: vendorRecord!.id },
       data: { isEmailVerified: true },
     });
-    const vendorProfile = await prisma.vendorProfile.findUnique({ where: { userId: vendorRecord!.id } });
+    const vendorProfile = await prisma.vendorProfile.findUnique({
+      where: { userId: vendorRecord!.id },
+    });
     vendorId = vendorProfile!.id;
 
     const vendorLogin = await request(app)
@@ -92,17 +88,13 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
 
   describe('Vendor Approval Management (ADMIN & SUPERADMIN)', () => {
     it('should deny VENDOR access to list vendors', async () => {
-      const res = await request(app)
-        .get('/api/v1/admin/vendors')
-        .set('Cookie', vendorCookie);
+      const res = await request(app).get('/api/v1/admin/vendors').set('Cookie', vendorCookie);
 
       expect(res.status).toBe(403);
     });
 
     it('should allow ADMIN to list vendors', async () => {
-      const res = await request(app)
-        .get('/api/v1/admin/vendors')
-        .set('Cookie', adminCookie);
+      const res = await request(app).get('/api/v1/admin/vendors').set('Cookie', adminCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -140,23 +132,18 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
 
   describe('User Management (SUPERADMIN only)', () => {
     it('should deny ADMIN access to create users', async () => {
-      const res = await request(app)
-        .post('/api/v1/admin/users')
-        .set('Cookie', adminCookie)
-        .send({
-          name: 'Staff user',
-          email: 'staff.created@example.com',
-          password: 'Password123!',
-          role: 'STAFF',
-        });
+      const res = await request(app).post('/api/v1/admin/users').set('Cookie', adminCookie).send({
+        name: 'Staff user',
+        email: 'staff.created@example.com',
+        password: 'Password123!',
+        role: 'STAFF',
+      });
 
       expect(res.status).toBe(403);
     });
 
     it('should allow SUPERADMIN to list all users', async () => {
-      const res = await request(app)
-        .get('/api/v1/admin/users')
-        .set('Cookie', superadminCookie);
+      const res = await request(app).get('/api/v1/admin/users').set('Cookie', superadminCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

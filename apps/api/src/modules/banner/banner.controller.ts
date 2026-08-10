@@ -47,7 +47,7 @@ export class BannerController {
         throw new AppError(
           'Invalid banners data payload',
           HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR
+          ErrorCode.VALIDATION_ERROR,
         );
       }
 

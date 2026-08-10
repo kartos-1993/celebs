@@ -50,7 +50,7 @@ export class InventoryService {
   static async findOrCreateInventory(
     productId: string,
     colorVariantName: string,
-    size: string
+    size: string,
   ): Promise<StockCheckResult> {
     logger.info({ productId, colorVariantName, size }, '[InventoryService] Looking up inventory');
     const existing = await prisma.productInventory.findUnique({
@@ -65,7 +65,10 @@ export class InventoryService {
 
     if (existing) {
       const available = existing.quantity - existing.reservedQuantity;
-      logger.info({ inventoryId: existing.id, available }, '[InventoryService] Found existing inventory in Postgres');
+      logger.info(
+        { inventoryId: existing.id, available },
+        '[InventoryService] Found existing inventory in Postgres',
+      );
       return {
         inventoryId: existing.id,
         productId: existing.productId,
@@ -83,12 +86,10 @@ export class InventoryService {
       const product = await ProductModel.findById(productId).exec();
       if (product && product.colorVariants) {
         const variant = product.colorVariants.find(
-          (v) => v.name.toLowerCase() === colorVariantName.toLowerCase()
+          (v) => v.name.toLowerCase() === colorVariantName.toLowerCase(),
         );
         if (variant && variant.stocks) {
-          const stockItem = variant.stocks.find(
-            (s) => s.size.toLowerCase() === size.toLowerCase()
-          );
+          const stockItem = variant.stocks.find((s) => s.size.toLowerCase() === size.toLowerCase());
           if (stockItem && typeof stockItem.quantity === 'number') {
             initialQty = stockItem.quantity;
           }
@@ -131,7 +132,7 @@ export class InventoryService {
   static async checkStock(
     productId: string,
     colorVariantName: string,
-    size: string
+    size: string,
   ): Promise<StockCheckResult> {
     return this.findOrCreateInventory(productId, colorVariantName, size);
   }

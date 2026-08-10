@@ -34,7 +34,7 @@ export class CartPricingEngine {
   static calculateCartTotal(
     items: PricingItem[],
     discounts: DiscountRule[] = [],
-    shippingFeeInput: Prisma.Decimal = new Prisma.Decimal(0)
+    shippingFeeInput: Prisma.Decimal = new Prisma.Decimal(0),
   ): PricingCalculationResult {
     let subtotal = new Prisma.Decimal(0);
     let totalItemCount = 0;
@@ -106,7 +106,10 @@ export class CartPricingEngine {
     };
   }
 
-  private static calculateDiscountAmount(base: Prisma.Decimal, discount: DiscountRule): Prisma.Decimal {
+  private static calculateDiscountAmount(
+    base: Prisma.Decimal,
+    discount: DiscountRule,
+  ): Prisma.Decimal {
     if (base.lte(0)) return new Prisma.Decimal(0);
 
     if (discount.discountType === 'PERCENTAGE') {
@@ -121,7 +124,7 @@ export class CartPricingEngine {
   private static generateIdempotencyKey(
     items: PricingItem[],
     discounts: Array<{ id: string; amount: Prisma.Decimal }>,
-    total: Prisma.Decimal
+    total: Prisma.Decimal,
   ): string {
     const payload = {
       items: items

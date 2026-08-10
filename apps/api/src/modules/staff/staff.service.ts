@@ -90,7 +90,9 @@ export class StaffService {
 
     if (!effectiveVendorId) {
       if (user.role === 'SUPERADMIN' || user.role === 'ADMIN') {
-        throw new BadRequestException('Vendor ID is required when creating staff as an administrator');
+        throw new BadRequestException(
+          'Vendor ID is required when creating staff as an administrator',
+        );
       }
       throw new NotFoundException('Vendor profile not found for creator');
     }

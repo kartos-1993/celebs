@@ -1,5 +1,5 @@
 // types.ts
-import { LoaderFunction } from "react-router-dom";
+import { LoaderFunction } from 'react-router-dom';
 
 export type Role = 'CUSTOMER' | 'VENDOR' | 'STAFF' | 'ADMIN' | 'SUPERADMIN';
 
@@ -38,8 +38,6 @@ export interface SessionData {
 }
 
 export interface SessionResponse extends ApiResponse<SessionData> {}
-
-
 
 export interface ProtectedLoaderData {
   user: UserData;

@@ -11,11 +11,7 @@ import { ProductService } from './product.service';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  createProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  createProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user?.userId) {
         throw new AppError(
@@ -27,8 +23,8 @@ export class ProductController {
 
       const payload = createProductSchema.parse(req.body);
       const isVendor = req.user.role === 'VENDOR';
-      
-      // If vendor, we set status to pending_review directly if they hit submit, 
+
+      // If vendor, we set status to pending_review directly if they hit submit,
       // but creation payload by default sets draft. Service handles default input.status.
       const product = await this.productService.createProduct(
         payload,
@@ -47,11 +43,7 @@ export class ProductController {
     }
   };
 
-  getProductById = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  getProductById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const product = await this.productService.getProductById(req.params.id);
       if (!product) {
@@ -60,11 +52,16 @@ export class ProductController {
 
       // Allow viewing published products publicly for everyone (storefront + mobile).
       // For draft or unpublished products, restrict viewing to the owner vendor or admin.
-      const isPublished = product.status === 'published' || (product.status as string) === 'PUBLISHED';
+      const isPublished =
+        product.status === 'published' || (product.status as string) === 'PUBLISHED';
       if (!isPublished && req.user?.role === 'VENDOR') {
         const vendorId = req.user.vendorProfile?.id;
         if (String(product.vendorId) !== String(vendorId)) {
-          throw new AppError('Forbidden: You do not own this unpublished product', HTTPSTATUS.FORBIDDEN, ErrorCode.FORBIDDEN_RESOURCE);
+          throw new AppError(
+            'Forbidden: You do not own this unpublished product',
+            HTTPSTATUS.FORBIDDEN,
+            ErrorCode.FORBIDDEN_RESOURCE,
+          );
         }
       }
 
@@ -78,16 +75,12 @@ export class ProductController {
     }
   };
 
-  getProducts = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string) : 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const cursor = req.query.cursor ? (req.query.cursor as string) : undefined;
-      
+
       const filters = productFilterSchema.parse({
         ...req.query,
         cursor,
@@ -110,11 +103,7 @@ export class ProductController {
     }
   };
 
-  getProductReviewQueue = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  getProductReviewQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string) : 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
@@ -131,15 +120,15 @@ export class ProductController {
     }
   };
 
-  submitProductForReview = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  submitProductForReview = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const vendorId = req.user?.vendorProfile?.id;
       if (!vendorId) {
-        throw new AppError('Vendor profile not found', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+        throw new AppError(
+          'Vendor profile not found',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
       }
 
       const product = await this.productService.submitProductForReview(req.params.id, vendorId);
@@ -154,29 +143,26 @@ export class ProductController {
     }
   };
 
-  reviewProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  reviewProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user?.userId) {
-        throw new AppError('Authentication required', HTTPSTATUS.UNAUTHORIZED, ErrorCode.AUTH_TOKEN_MISSING);
+        throw new AppError(
+          'Authentication required',
+          HTTPSTATUS.UNAUTHORIZED,
+          ErrorCode.AUTH_TOKEN_MISSING,
+        );
       }
 
       const parsed = productReviewActionSchema.parse(req.body);
-      const product = await this.productService.reviewProduct(
-        req.params.id,
-        {
-          action: parsed.action,
-          reviewerId: req.user.userId,
-          reviewerName: (req.user as any)?.email || 'Superadmin',
-          note: parsed.note,
-          rejectionCategory: parsed.rejectionCategory,
-          rejectionSubcategories: parsed.rejectionSubcategories,
-          rejectionFields: parsed.rejectionFields,
-        }
-      );
+      const product = await this.productService.reviewProduct(req.params.id, {
+        action: parsed.action,
+        reviewerId: req.user.userId,
+        reviewerName: (req.user as any)?.email || 'Superadmin',
+        note: parsed.note,
+        rejectionCategory: parsed.rejectionCategory,
+        rejectionSubcategories: parsed.rejectionSubcategories,
+        rejectionFields: parsed.rejectionFields,
+      });
 
       return res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -188,14 +174,14 @@ export class ProductController {
     }
   };
 
-  updateProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  updateProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user?.userId) {
-        throw new AppError('Authentication required', HTTPSTATUS.UNAUTHORIZED, ErrorCode.AUTH_TOKEN_MISSING);
+        throw new AppError(
+          'Authentication required',
+          HTTPSTATUS.UNAUTHORIZED,
+          ErrorCode.AUTH_TOKEN_MISSING,
+        );
       }
 
       const payload = updateProductSchema.parse(req.body);
@@ -217,14 +203,14 @@ export class ProductController {
     }
   };
 
-  archiveProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  archiveProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user?.userId) {
-        throw new AppError('Authentication required', HTTPSTATUS.UNAUTHORIZED, ErrorCode.AUTH_TOKEN_MISSING);
+        throw new AppError(
+          'Authentication required',
+          HTTPSTATUS.UNAUTHORIZED,
+          ErrorCode.AUTH_TOKEN_MISSING,
+        );
       }
 
       const product = await this.productService.archiveProduct(
@@ -244,15 +230,15 @@ export class ProductController {
     }
   };
 
-  toggleProductActivation = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  toggleProductActivation = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const vendorId = req.user?.vendorProfile?.id;
       if (!vendorId) {
-        throw new AppError('Vendor profile not found', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+        throw new AppError(
+          'Vendor profile not found',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
       }
 
       const product = await this.productService.toggleProductActivation(req.params.id, vendorId);

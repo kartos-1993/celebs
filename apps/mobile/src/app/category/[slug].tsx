@@ -10,12 +10,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  ChevronLeft,
-  Search,
-  ShoppingCart,
-  SlidersHorizontal,
-} from 'lucide-react-native';
+import { ChevronLeft, Search, ShoppingCart, SlidersHorizontal } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -56,7 +51,9 @@ export default function CategoryProductsScreen() {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedFits, setSelectedFits] = useState<string[]>([]);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(null);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(
+    null,
+  );
 
   // Filter Drawer State
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -70,19 +67,19 @@ export default function CategoryProductsScreen() {
   // Toggle Handlers
   const handleToggleColor = useCallback((colorName: string) => {
     setSelectedColors((prev) =>
-      prev.includes(colorName) ? prev.filter((c) => c !== colorName) : [...prev, colorName]
+      prev.includes(colorName) ? prev.filter((c) => c !== colorName) : [...prev, colorName],
     );
   }, []);
 
   const handleToggleSize = useCallback((size: string) => {
     setSelectedSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
     );
   }, []);
 
   const handleToggleFit = useCallback((fit: string) => {
     setSelectedFits((prev) =>
-      prev.includes(fit) ? prev.filter((f) => f !== fit) : [...prev, fit]
+      prev.includes(fit) ? prev.filter((f) => f !== fit) : [...prev, fit],
     );
   }, []);
 
@@ -108,9 +105,11 @@ export default function CategoryProductsScreen() {
       // 2. Quick Filter subcategory / tag matching
       if (selectedQuickFilterValue) {
         const valLower = selectedQuickFilterValue.toLowerCase();
-        const matchesSubcat = p.subcategory && String(p.subcategory).toLowerCase().includes(valLower);
+        const matchesSubcat =
+          p.subcategory && String(p.subcategory).toLowerCase().includes(valLower);
         const matchesName = p.name.toLowerCase().includes(valLower);
-        const matchesTags = Array.isArray(p.tags) && p.tags.some((t: string) => t.toLowerCase() === valLower);
+        const matchesTags =
+          Array.isArray(p.tags) && p.tags.some((t: string) => t.toLowerCase() === valLower);
         if (!matchesSubcat && !matchesName && !matchesTags) return false;
       }
 
@@ -184,9 +183,7 @@ export default function CategoryProductsScreen() {
 
       {/* Filter Control Action Bar */}
       <View style={styles.actionBar}>
-        <ThemedText style={styles.itemCountText}>
-          {filteredProducts.length} Items Found
-        </ThemedText>
+        <ThemedText style={styles.itemCountText}>{filteredProducts.length} Items Found</ThemedText>
 
         <TouchableOpacity
           style={[styles.filterBtn, activeFilterCount > 0 && styles.filterBtnActive]}
@@ -197,7 +194,9 @@ export default function CategoryProductsScreen() {
           accessibilityLabel="Open Filters"
         >
           <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#ffffff' : '#18181b'} />
-          <ThemedText style={[styles.filterBtnText, activeFilterCount > 0 && styles.filterBtnTextActive]}>
+          <ThemedText
+            style={[styles.filterBtnText, activeFilterCount > 0 && styles.filterBtnTextActive]}
+          >
             Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
           </ThemedText>
         </TouchableOpacity>

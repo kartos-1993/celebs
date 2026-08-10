@@ -13,12 +13,12 @@ export class CampaignService {
   private async attachProductDetails(campaigns: any[]) {
     const allProductIds = Array.from(
       new Set(
-        campaigns.flatMap((c) => (c.products ? c.products.map((p: any) => p.productId) : []))
-      )
+        campaigns.flatMap((c) => (c.products ? c.products.map((p: any) => p.productId) : [])),
+      ),
     );
 
     const validProductIds = allProductIds.filter(
-      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+      (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id),
     );
 
     if (validProductIds.length === 0) {
@@ -108,7 +108,7 @@ export class CampaignService {
             }
           : undefined,
       },
-      payload.productIds
+      payload.productIds,
     );
 
     const [hydrated] = await this.attachProductDetails([campaign]);

@@ -45,10 +45,17 @@ export class OptionSetService {
     };
   }
 
-  async create(data: { name: string; displayName?: string; description?: string; values: string[] }) {
+  async create(data: {
+    name: string;
+    displayName?: string;
+    description?: string;
+    values: string[];
+  }) {
     const name = String(data.name || '').trim();
     const displayName = String(data.displayName || data.name || '').trim();
-    const values = Array.isArray(data.values) ? data.values.map((v) => String(v).trim()).filter(Boolean) : [];
+    const values = Array.isArray(data.values)
+      ? data.values.map((v) => String(v).trim()).filter(Boolean)
+      : [];
 
     const created = await prisma.optionSet.create({
       data: {
@@ -68,11 +75,15 @@ export class OptionSetService {
     };
   }
 
-  async update(id: string, data: { name?: string; displayName?: string; description?: string; values?: string[] }) {
+  async update(
+    id: string,
+    data: { name?: string; displayName?: string; description?: string; values?: string[] },
+  ) {
     const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = String(data.name).trim();
     if (data.displayName !== undefined) updateData.displayName = String(data.displayName).trim();
-    if (data.description !== undefined) updateData.description = data.description ? String(data.description).trim() : null;
+    if (data.description !== undefined)
+      updateData.description = data.description ? String(data.description).trim() : null;
     if (data.values !== undefined) {
       updateData.options = Array.isArray(data.values)
         ? data.values.map((v) => String(v).trim()).filter(Boolean)

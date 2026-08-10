@@ -34,5 +34,7 @@ export async function seedQuickFilters(isReset = false): Promise<void> {
     }
   }
 
-  console.log(`✅ Category Quick Filters Seeded: ${createdCount} created, ${existingCount} existing.`);
+  console.log(
+    `✅ Category Quick Filters Seeded: ${createdCount} created, ${existingCount} existing.`,
+  );
 }

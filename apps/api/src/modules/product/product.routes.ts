@@ -14,7 +14,11 @@ const productController = new ProductController(new ProductService());
 // Optional JWT authentication: populates req.user if token is present, but doesn't block unauthenticated storefront users
 const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  const hasAuthHeader = !!authHeader && authHeader.startsWith('Bearer ') && authHeader !== 'Bearer null' && authHeader !== 'Bearer undefined';
+  const hasAuthHeader =
+    !!authHeader &&
+    authHeader.startsWith('Bearer ') &&
+    authHeader !== 'Bearer null' &&
+    authHeader !== 'Bearer undefined';
   const hasCookieToken = !!req.cookies?.accessToken;
   if (!hasAuthHeader && !hasCookieToken) {
     return next();
@@ -32,19 +36,58 @@ const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction
 };
 
 // Public / Storefront Product Routes (Optional Auth)
-productRoutes.get('/', searchRateLimiter, optionalAuthenticateJWT, asyncHandler(productController.getProducts));
-productRoutes.get('/review-product-queue', authenticateJWT, requirePermissions(Permission.PRODUCT_REVIEW), asyncHandler(productController.getProductReviewQueue));
-productRoutes.get('/:id', searchRateLimiter, optionalAuthenticateJWT, asyncHandler(productController.getProductById));
+productRoutes.get(
+  '/',
+  searchRateLimiter,
+  optionalAuthenticateJWT,
+  asyncHandler(productController.getProducts),
+);
+productRoutes.get(
+  '/review-product-queue',
+  authenticateJWT,
+  requirePermissions(Permission.PRODUCT_REVIEW),
+  asyncHandler(productController.getProductReviewQueue),
+);
+productRoutes.get(
+  '/:id',
+  searchRateLimiter,
+  optionalAuthenticateJWT,
+  asyncHandler(productController.getProductById),
+);
 
 // Protected Admin / Vendor Routes (Require Auth & Permissions)
 productRoutes.use(authenticateJWT);
 
-productRoutes.post('/', requirePermissions(Permission.PRODUCT_CREATE), asyncHandler(productController.createProduct));
-productRoutes.put('/:id', requirePermissions(Permission.PRODUCT_EDIT), asyncHandler(productController.updateProduct));
+productRoutes.post(
+  '/',
+  requirePermissions(Permission.PRODUCT_CREATE),
+  asyncHandler(productController.createProduct),
+);
+productRoutes.put(
+  '/:id',
+  requirePermissions(Permission.PRODUCT_EDIT),
+  asyncHandler(productController.updateProduct),
+);
 
-productRoutes.post('/:id/submit-for-review', requirePermissions(Permission.PRODUCT_CREATE), asyncHandler(productController.submitProductForReview));
-productRoutes.post('/:id/review', requirePermissions(Permission.PRODUCT_PUBLISH), asyncHandler(productController.reviewProduct));
-productRoutes.post('/:id/archive', requirePermissions(Permission.PRODUCT_DELETE), asyncHandler(productController.archiveProduct));
-productRoutes.post('/:id/toggle-activation', requirePermissions(Permission.PRODUCT_EDIT), asyncHandler(productController.toggleProductActivation));
+productRoutes.post(
+  '/:id/submit-for-review',
+  requirePermissions(Permission.PRODUCT_CREATE),
+  asyncHandler(productController.submitProductForReview),
+);
+productRoutes.post(
+  '/:id/review',
+  requirePermissions(Permission.PRODUCT_PUBLISH),
+  asyncHandler(productController.reviewProduct),
+);
+productRoutes.post(
+  '/:id/archive',
+  requirePermissions(Permission.PRODUCT_DELETE),
+  asyncHandler(productController.archiveProduct),
+);
+productRoutes.post(
+  '/:id/toggle-activation',
+  requirePermissions(Permission.PRODUCT_EDIT),
+  asyncHandler(productController.toggleProductActivation),
+);
 
 export default productRoutes;

@@ -73,7 +73,6 @@ export interface ApiResponse<T> {
 
 export type CategoryFormData = CreateCategoryType;
 
-
 // UI State Types
 export interface CategoryUIState {
   isLoading: boolean;

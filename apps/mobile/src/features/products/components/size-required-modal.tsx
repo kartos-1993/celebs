@@ -46,8 +46,10 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
     if (!selectedSize) return;
     if (confirmBtnRef.current) {
       confirmBtnRef.current.measureInWindow((x, y, width, height) => {
-        const startX = typeof x === 'number' && !isNaN(x) && x !== 0 ? x + width / 2 : SCREEN_WIDTH / 2;
-        const startY = typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : SCREEN_WIDTH * 1.2;
+        const startX =
+          typeof x === 'number' && !isNaN(x) && x !== 0 ? x + width / 2 : SCREEN_WIDTH / 2;
+        const startY =
+          typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : SCREEN_WIDTH * 1.2;
         onSelectSizeAndConfirm(selectedSize, { x: startX, y: startY });
       });
     } else {
@@ -58,12 +60,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View
-          style={[
-            styles.sheetContainer,
-            { backgroundColor: '#ffffff' },
-          ]}
-        >
+        <View style={[styles.sheetContainer, { backgroundColor: '#ffffff' }]}>
           {/* Header Bar */}
           <View style={styles.headerRow}>
             <View>
@@ -93,28 +90,18 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
                   onPress={() => setSelectedSize(size)}
                   style={[
                     styles.sizePill,
-                    isSelected
-                      ? { backgroundColor: '#000000' }
-                      : { backgroundColor: '#f4f4f5' },
+                    isSelected ? { backgroundColor: '#000000' } : { backgroundColor: '#f4f4f5' },
                   ]}
                 >
                   <ThemedText
                     style={[
                       styles.sizeText,
-                      isSelected
-                        ? { color: '#ffffff', fontWeight: '800' }
-                        : { color: '#1c1c1e' },
+                      isSelected ? { color: '#ffffff', fontWeight: '800' } : { color: '#1c1c1e' },
                     ]}
                   >
                     {size}
                   </ThemedText>
-                  {isSelected && (
-                    <Check
-                      size={14}
-                      color="#ffffff"
-                      style={{ marginLeft: 4 }}
-                    />
-                  )}
+                  {isSelected && <Check size={14} color="#ffffff" style={{ marginLeft: 4 }} />}
                 </TouchableOpacity>
               );
             })}
@@ -123,10 +110,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
           {/* Action Button */}
           <View ref={confirmBtnRef} collapsable={false}>
             <TouchableOpacity
-              style={[
-                styles.confirmBtn,
-                !selectedSize && { opacity: 0.4 },
-              ]}
+              style={[styles.confirmBtn, !selectedSize && { opacity: 0.4 }]}
               disabled={!selectedSize}
               activeOpacity={0.85}
               onPress={handleConfirm}

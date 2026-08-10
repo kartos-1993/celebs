@@ -45,8 +45,12 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
 
     if (imageRef.current && imageUrl) {
       imageRef.current.measureInWindow((x, y, width, height) => {
-        const startX = (typeof x === 'number' && !isNaN(x) && x !== 0) ? x + width / 2 : (touchX || SCREEN_WIDTH / 2);
-        const startY = (typeof y === 'number' && !isNaN(y) && y !== 0) ? y + height / 2 : (touchY || 300);
+        const startX =
+          typeof x === 'number' && !isNaN(x) && x !== 0
+            ? x + width / 2
+            : touchX || SCREEN_WIDTH / 2;
+        const startY =
+          typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : touchY || 300;
         startFlyAnimation({
           imageUrl,
           startX,
@@ -101,7 +105,11 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
       onPress={handlePress}
     >
       {/* 3:4 Aspect Ratio Image Container */}
-      <View ref={imageRef} collapsable={false} style={[styles.imageContainer, { backgroundColor: '#f4f4f5' }]}>
+      <View
+        ref={imageRef}
+        collapsable={false}
+        style={[styles.imageContainer, { backgroundColor: '#f4f4f5' }]}
+      >
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -111,7 +119,9 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           />
         ) : (
           <View style={[styles.placeholderImage, { backgroundColor: '#f2f2f7' }]}>
-            <ThemedText type="small" style={{ opacity: 0.4 }}>No Image</ThemedText>
+            <ThemedText type="small" style={{ opacity: 0.4 }}>
+              No Image
+            </ThemedText>
           </View>
         )}
 
@@ -136,13 +146,11 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
                 key={idx}
                 style={[
                   styles.capsuleColorDot,
-                  { backgroundColor: variant.colorCode || '#8e8e93' }
+                  { backgroundColor: variant.colorCode || '#8e8e93' },
                 ]}
               />
             ))}
-            <ThemedText style={styles.capsuleCountText}>
-              {product.colorVariants.length}
-            </ThemedText>
+            <ThemedText style={styles.capsuleCountText}>{product.colorVariants.length}</ThemedText>
           </View>
         )}
       </View>
@@ -154,7 +162,10 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           <View style={styles.trendsBadge}>
             <ThemedText style={styles.trendsText}>Trends</ThemedText>
           </View>
-          <TouchableOpacity style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]}
+            activeOpacity={0.7}
+          >
             <ThemedText style={[styles.storeText, { color: '#6b21a8' }]}>{storeName}</ThemedText>
             <ChevronRight size={9} color="#7c3aed" />
           </TouchableOpacity>
@@ -178,7 +189,9 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
         {/* Sales / New Arrival Row */}
         <View style={styles.salesRow}>
           <View style={[styles.newArrivalBadge, { backgroundColor: '#ecfdf5' }]}>
-            <ThemedText style={[styles.newArrivalText, { color: '#047857' }]}>NEW ARRIVAL</ThemedText>
+            <ThemedText style={[styles.newArrivalText, { color: '#047857' }]}>
+              NEW ARRIVAL
+            </ThemedText>
           </View>
           <ThemedText style={[styles.soldText, { color: '#71717a' }]}>80+ sold</ThemedText>
         </View>
@@ -189,8 +202,12 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           <View style={styles.priceLeftCol}>
             <View style={styles.mainPriceGroup}>
               <ThemedText style={[styles.currencySymbol, { color: priceColor }]}>Rs.</ThemedText>
-              <ThemedText style={[styles.integerPrice, { color: priceColor }]}>{integerPart}</ThemedText>
-              <ThemedText style={[styles.decimalPrice, { color: priceColor }]}>{decimalPart}</ThemedText>
+              <ThemedText style={[styles.integerPrice, { color: priceColor }]}>
+                {integerPart}
+              </ThemedText>
+              <ThemedText style={[styles.decimalPrice, { color: priceColor }]}>
+                {decimalPart}
+              </ThemedText>
             </View>
 
             {hasDiscount && (
@@ -203,7 +220,10 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           {/* Column 2: Add to Cart Action Button */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.cartActionButton, { backgroundColor: '#f4f4f5', borderColor: '#e4e4e7' }]}
+            style={[
+              styles.cartActionButton,
+              { backgroundColor: '#f4f4f5', borderColor: '#e4e4e7' },
+            ]}
             onPress={handleAddToCart}
           >
             <ShoppingBag size={14} color="#1c1c1e" strokeWidth={2.2} />

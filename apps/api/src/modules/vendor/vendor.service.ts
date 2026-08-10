@@ -13,7 +13,10 @@ export class VendorService {
     return profile;
   }
 
-  public async updateProfile(userId: string, data: { shopDescription?: string; phoneNumber?: string; storeLogo?: string }) {
+  public async updateProfile(
+    userId: string,
+    data: { shopDescription?: string; phoneNumber?: string; storeLogo?: string },
+  ) {
     const profile = await prisma.vendorProfile.findUnique({
       where: { userId },
     });
@@ -46,7 +49,7 @@ export class VendorService {
       district: string;
       province: string;
       postalCode?: string;
-    }
+    },
   ) {
     const profile = await prisma.vendorProfile.findUnique({
       where: { userId },
@@ -107,7 +110,7 @@ export class VendorService {
       vatDocumentUrl?: string;
       businessRegDocumentUrl?: string;
       ownerPhotoUrl?: string;
-    }
+    },
   ) {
     const profile = await prisma.vendorProfile.findUnique({
       where: { userId },
@@ -137,7 +140,7 @@ export class VendorService {
       businessName: string;
       businessRegNumber: string;
       businessPhoneNumber: string;
-    }
+    },
   ) {
     const profile = await prisma.vendorProfile.findUnique({
       where: { userId },

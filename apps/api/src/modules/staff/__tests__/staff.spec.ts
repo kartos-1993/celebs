@@ -68,15 +68,12 @@ describe('Staff Management API Integration Tests', () => {
   });
 
   it('should allow VENDOR 1 to create staff linked to their own vendor profile', async () => {
-    const res = await request(app)
-      .post('/api/v1/staff')
-      .set('Cookie', vendor1Cookie)
-      .send({
-        name: 'Staff Member A',
-        email: 'staff.a@example.com',
-        password: 'Password123!',
-        confirmPassword: 'Password123!',
-      });
+    const res = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+      name: 'Staff Member A',
+      email: 'staff.a@example.com',
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -95,28 +92,21 @@ describe('Staff Management API Integration Tests', () => {
 
   it('should allow VENDOR 1 to list only their own staff', async () => {
     // VENDOR 1 creates staff
-    await request(app)
-      .post('/api/v1/staff')
-      .set('Cookie', vendor1Cookie)
-      .send({
-        name: 'Staff Member A',
-        email: 'staff.a@example.com',
-        password: 'Password123!',
-        confirmPassword: 'Password123!',
-      });
+    await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+      name: 'Staff Member A',
+      email: 'staff.a@example.com',
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+    });
 
     // VENDOR 2 lists staff (should be empty)
-    const list2 = await request(app)
-      .get('/api/v1/staff')
-      .set('Cookie', vendor2Cookie);
+    const list2 = await request(app).get('/api/v1/staff').set('Cookie', vendor2Cookie);
 
     expect(list2.status).toBe(200);
     expect(list2.body.data.length).toBe(0);
 
     // VENDOR 1 lists staff (should see 1 staff member)
-    const list1 = await request(app)
-      .get('/api/v1/staff')
-      .set('Cookie', vendor1Cookie);
+    const list1 = await request(app).get('/api/v1/staff').set('Cookie', vendor1Cookie);
 
     expect(list1.status).toBe(200);
     expect(list1.body.data.length).toBe(1);
@@ -125,15 +115,12 @@ describe('Staff Management API Integration Tests', () => {
 
   it('should prevent VENDOR 2 from deleting VENDOR 1 staff', async () => {
     // VENDOR 1 creates staff
-    const createRes = await request(app)
-      .post('/api/v1/staff')
-      .set('Cookie', vendor1Cookie)
-      .send({
-        name: 'Staff Member A',
-        email: 'staff.a@example.com',
-        password: 'Password123!',
-        confirmPassword: 'Password123!',
-      });
+    const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+      name: 'Staff Member A',
+      email: 'staff.a@example.com',
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+    });
 
     const targetStaffId = createRes.body.data.id;
 
@@ -163,12 +150,12 @@ describe('Staff Management API Integration Tests', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'subuser1@example.com', password: 'Password123!' });
     const rawStaffCookies = staffLoginRes.headers['set-cookie'];
-    const staffCookie = Array.isArray(rawStaffCookies) ? rawStaffCookies.join('; ') : rawStaffCookies || '';
+    const staffCookie = Array.isArray(rawStaffCookies)
+      ? rawStaffCookies.join('; ')
+      : rawStaffCookies || '';
 
     // STAFF sub-user lists staff (should resolve vendor profile via user.vendorId)
-    const staffListRes = await request(app)
-      .get('/api/v1/staff')
-      .set('Cookie', staffCookie);
+    const staffListRes = await request(app).get('/api/v1/staff').set('Cookie', staffCookie);
     expect(staffListRes.status).toBe(200);
     expect(staffListRes.body.data.length).toBe(1);
 
@@ -187,11 +174,11 @@ describe('Staff Management API Integration Tests', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'superadmin.stafftest@example.com', password: 'Password123!' });
     const rawAdminCookies = adminLoginRes.headers['set-cookie'];
-    const adminCookie = Array.isArray(rawAdminCookies) ? rawAdminCookies.join('; ') : rawAdminCookies || '';
+    const adminCookie = Array.isArray(rawAdminCookies)
+      ? rawAdminCookies.join('; ')
+      : rawAdminCookies || '';
 
-    const adminListRes = await request(app)
-      .get('/api/v1/staff')
-      .set('Cookie', adminCookie);
+    const adminListRes = await request(app).get('/api/v1/staff').set('Cookie', adminCookie);
 
     expect(adminListRes.status).toBe(200);
     expect(adminListRes.body.data.length).toBeGreaterThanOrEqual(1);

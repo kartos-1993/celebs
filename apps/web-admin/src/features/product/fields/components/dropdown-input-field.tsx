@@ -8,11 +8,10 @@ import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 export function useOptions(field: FieldSpec) {
   const ds = field.dataSource;
   const isArray = Array.isArray(ds);
-  const fetchUrl = typeof ds === 'object' && ds !== null && 'fetch' in ds ? (ds as any).fetch : undefined;
+  const fetchUrl =
+    typeof ds === 'object' && ds !== null && 'fetch' in ds ? (ds as any).fetch : undefined;
 
-  const [asyncOpts, setAsyncOpts] = React.useState<
-    Array<{ label: string; value: string }>
-  >([]);
+  const [asyncOpts, setAsyncOpts] = React.useState<Array<{ label: string; value: string }>>([]);
 
   React.useEffect(() => {
     if (!fetchUrl) return;
@@ -72,9 +71,7 @@ export function DropdownInputField({ field, control }: UiProps) {
   const opts = useOptions(field);
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>
-        {field.label}
-      </LabelWithRequired>
+      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <SearchableSelect
         options={opts}
         value={f.value ?? ''}

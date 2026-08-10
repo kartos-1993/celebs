@@ -17,44 +17,36 @@ adminRoutes.use(authenticateJWT);
 adminRoutes.get(
   '/vendors',
   requirePermissions(Permission.VENDOR_MANAGE),
-  adminController.getAllVendors
+  adminController.getAllVendors,
 );
 adminRoutes.get(
   '/vendors/:id',
   requirePermissions(Permission.VENDOR_MANAGE),
-  adminController.getVendorById
+  adminController.getVendorById,
 );
 adminRoutes.patch(
   '/vendors/:id/approve',
   requirePermissions(Permission.VENDOR_MANAGE),
-  adminController.approveVendor
+  adminController.approveVendor,
 );
 adminRoutes.patch(
   '/vendors/:id/reject',
   requirePermissions(Permission.VENDOR_MANAGE),
-  adminController.rejectVendor
+  adminController.rejectVendor,
 );
 adminRoutes.patch(
   '/vendors/:id/suspend',
   requirePermissions(Permission.VENDOR_MANAGE),
-  adminController.suspendVendor
+  adminController.suspendVendor,
 );
 
 // User Management (requires USER_MANAGE permission, typically SUPERADMIN only)
-adminRoutes.get(
-  '/users',
-  requirePermissions(Permission.USER_MANAGE),
-  adminController.getAllUsers
-);
-adminRoutes.post(
-  '/users',
-  requirePermissions(Permission.USER_MANAGE),
-  adminController.createUser
-);
+adminRoutes.get('/users', requirePermissions(Permission.USER_MANAGE), adminController.getAllUsers);
+adminRoutes.post('/users', requirePermissions(Permission.USER_MANAGE), adminController.createUser);
 adminRoutes.delete(
   '/users/:id',
   requirePermissions(Permission.USER_MANAGE),
-  adminController.deleteUser
+  adminController.deleteUser,
 );
 
 export default adminRoutes;

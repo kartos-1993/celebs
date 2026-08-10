@@ -15,7 +15,7 @@ export default defineConfig({
       '@celebs/shared-types': resolve(__dirname, '../../packages/shared-types/src'),
       '@celebs/shared-utils': resolve(__dirname, '../../packages/shared-utils/src'),
       '@celebs/rbac': resolve(__dirname, '../../packages/rbac/src'),
-      'zod': resolve(__dirname, '../../node_modules/zod'),
+      zod: resolve(__dirname, '../../node_modules/zod'),
     },
   },
   test: {

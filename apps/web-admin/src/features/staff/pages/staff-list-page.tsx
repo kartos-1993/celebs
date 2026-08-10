@@ -3,7 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getStaffQueryFn, createStaffMutationFn, deleteStaffMutationFn, getAdminVendorsQueryFn } from '@/lib/api';
+import {
+  getStaffQueryFn,
+  createStaffMutationFn,
+  deleteStaffMutationFn,
+  getAdminVendorsQueryFn,
+} from '@/lib/api';
 import { useAuthContext } from '@/context/auth-provider';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -18,7 +23,17 @@ import {
   FormMessage,
 } from '@celebs/shared-ui/components/form';
 import { createStaffSchema } from '@celebs/shared-types';
-import { Shield, UserPlus, Trash2, CheckCircle2, Package, Truck, Receipt, ShieldCheck, Store } from 'lucide-react';
+import {
+  Shield,
+  UserPlus,
+  Trash2,
+  CheckCircle2,
+  Package,
+  Truck,
+  Receipt,
+  ShieldCheck,
+  Store,
+} from 'lucide-react';
 import { Permission } from '@celebs/rbac';
 
 type FormValues = z.infer<typeof createStaffSchema>;
@@ -29,7 +44,12 @@ const STAFF_ROLE_PRESETS = [
     label: 'Product & Inventory Lead',
     description: 'Can manage products, add new items, and update media center.',
     icon: Package,
-    permissions: [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT, Permission.PRODUCT_DELETE],
+    permissions: [
+      Permission.PRODUCT_VIEW,
+      Permission.PRODUCT_CREATE,
+      Permission.PRODUCT_EDIT,
+      Permission.PRODUCT_DELETE,
+    ],
   },
   {
     id: 'fulfillment',
@@ -51,8 +71,14 @@ const STAFF_ROLE_PRESETS = [
     description: 'Has full operational access to products, orders, reviews, and finance.',
     icon: ShieldCheck,
     permissions: [
-      Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT, Permission.PRODUCT_DELETE,
-      Permission.ORDER_VIEW, Permission.ORDER_MANAGE, Permission.FINANCE_VIEW, Permission.CATALOG_VIEW,
+      Permission.PRODUCT_VIEW,
+      Permission.PRODUCT_CREATE,
+      Permission.PRODUCT_EDIT,
+      Permission.PRODUCT_DELETE,
+      Permission.ORDER_VIEW,
+      Permission.ORDER_MANAGE,
+      Permission.FINANCE_VIEW,
+      Permission.CATALOG_VIEW,
     ],
   },
 ];
@@ -100,7 +126,8 @@ export default function StaffList() {
       createForm.reset();
     },
     onError: (error: any) => {
-      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to create staff account';
+      const errorMsg =
+        error?.response?.data?.message || error?.message || 'Failed to create staff account';
       createForm.setError('confirmPassword', {
         type: 'server',
         message: errorMsg,
@@ -139,7 +166,8 @@ export default function StaffList() {
             <Shield className="h-6 w-6 text-primary" /> Vendor Staff & Sub-Accounts
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Delegate specialized store permissions to employee accounts (Daraz Seller Sub-Account Model).
+            Delegate specialized store permissions to employee accounts (Daraz Seller Sub-Account
+            Model).
           </p>
         </div>
 
@@ -177,21 +205,30 @@ export default function StaffList() {
           <div className="bg-card border rounded-xl shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold text-foreground">Add Vendor Staff Account</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>✕</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+                ✕
+              </Button>
             </div>
 
             <Form {...createForm}>
-              <form onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))} className="space-y-4">
+              <form
+                onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
+                className="space-y-4"
+              >
                 {isAdminOrSuperAdmin && (
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">Target Vendor Shop</label>
+                    <label className="text-xs font-semibold text-foreground">
+                      Target Vendor Shop
+                    </label>
                     <select
                       value={targetVendorForCreate || selectedVendorFilter || ''}
                       onChange={(e) => setTargetVendorForCreate(e.target.value)}
                       className="w-full h-9 px-3 py-1 rounded-md border border-input bg-background text-xs focus:outline-hidden focus:ring-1 focus:ring-ring"
                       required
                     >
-                      <option value="" disabled>Select Vendor Shop...</option>
+                      <option value="" disabled>
+                        Select Vendor Shop...
+                      </option>
                       {vendorsList.map((v: any) => (
                         <option key={v.id} value={v.id}>
                           {v.shopName} ({v.user?.email || 'Vendor'})
@@ -221,7 +258,12 @@ export default function StaffList() {
                     <FormItem>
                       <FormLabel className="text-xs">Email Address</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="staff@example.com" {...field} className="text-sm" />
+                        <Input
+                          type="email"
+                          placeholder="staff@example.com"
+                          {...field}
+                          className="text-sm"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -248,7 +290,11 @@ export default function StaffList() {
                       <FormItem>
                         <FormLabel className="text-xs">Confirm Password</FormLabel>
                         <FormControl>
-                          <PasswordInput placeholder="Repeat password" {...field} className="text-sm" />
+                          <PasswordInput
+                            placeholder="Repeat password"
+                            {...field}
+                            className="text-sm"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -258,7 +304,9 @@ export default function StaffList() {
 
                 {/* Role Preset Selector */}
                 <div className="space-y-2 border-t pt-3">
-                  <FormLabel className="text-xs font-semibold block text-foreground">Select Delegated Role Preset & Permissions</FormLabel>
+                  <FormLabel className="text-xs font-semibold block text-foreground">
+                    Select Delegated Role Preset & Permissions
+                  </FormLabel>
                   <div className="grid grid-cols-1 gap-2">
                     {STAFF_ROLE_PRESETS.map((preset) => {
                       const PresetIcon = preset.icon;
@@ -277,8 +325,12 @@ export default function StaffList() {
                               <PresetIcon className="w-4 h-4" />
                             </div>
                             <div className="space-y-0.5">
-                              <span className="font-bold text-foreground block">{preset.label}</span>
-                              <span className="text-[11px] text-muted-foreground leading-tight block">{preset.description}</span>
+                              <span className="font-bold text-foreground block">
+                                {preset.label}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground leading-tight block">
+                                {preset.description}
+                              </span>
                             </div>
                           </div>
                           {selectedPreset === preset.id && (
@@ -290,8 +342,14 @@ export default function StaffList() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full text-xs" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Creating Staff Account...' : 'Create Staff Sub-Account'}
+                <Button
+                  type="submit"
+                  className="w-full text-xs"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending
+                    ? 'Creating Staff Account...'
+                    : 'Create Staff Sub-Account'}
                 </Button>
               </form>
             </Form>
@@ -313,13 +371,19 @@ export default function StaffList() {
           <tbody>
             {staff.length === 0 ? (
               <tr>
-                <td colSpan={isAdminOrSuperAdmin ? 5 : 4} className="p-8 text-center text-xs text-muted-foreground">
+                <td
+                  colSpan={isAdminOrSuperAdmin ? 5 : 4}
+                  className="p-8 text-center text-xs text-muted-foreground"
+                >
                   No staff sub-accounts found. Click "Add Sub-Account" to delegate employee access.
                 </td>
               </tr>
             ) : (
               staff.map((member: any) => (
-                <tr key={member.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                <tr
+                  key={member.id}
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                >
                   <td className="p-3.5 font-bold text-sm text-foreground">{member.name}</td>
                   <td className="p-3.5 text-xs text-muted-foreground font-mono">{member.email}</td>
                   {isAdminOrSuperAdmin && (
@@ -331,7 +395,11 @@ export default function StaffList() {
                     <div className="flex flex-wrap gap-1">
                       {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
                         member.permissions.slice(0, 4).map((perm: string) => (
-                          <Badge key={perm} variant="outline" className="text-[10px] py-0 px-1.5 font-mono">
+                          <Badge
+                            key={perm}
+                            variant="outline"
+                            className="text-[10px] py-0 px-1.5 font-mono"
+                          >
                             {perm}
                           </Badge>
                         ))

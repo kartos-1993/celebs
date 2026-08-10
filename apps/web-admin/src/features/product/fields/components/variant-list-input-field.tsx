@@ -16,9 +16,7 @@ export function VariantListInputField({ field, control }: UiProps) {
   const selected = Array.isArray(f.value) ? f.value : [];
   return (
     <div className="space-y-1">
-      <LabelWithRequired required={field.required}>
-        {field.label}
-      </LabelWithRequired>
+      <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <Multiselect
         options={opts}
         value={selected}

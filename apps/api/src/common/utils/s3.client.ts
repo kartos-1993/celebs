@@ -30,18 +30,21 @@ export const s3Client = new S3Client({
 export async function verifyS3Connection(): Promise<void> {
   try {
     await s3Client.send(new HeadBucketCommand({ Bucket: config.S3.BUCKET_NAME }));
-    logger.info({ bucket: config.S3.BUCKET_NAME }, 'S3/MinIO Connected and bucket verified successfully');
+    logger.info(
+      { bucket: config.S3.BUCKET_NAME },
+      'S3/MinIO Connected and bucket verified successfully',
+    );
   } catch (error: any) {
     if (isDev) {
       logger.warn(
         { bucket: config.S3.BUCKET_NAME, error: error?.message || String(error) },
-        'S3/MinIO Connection verification failed in development. Server will continue running but S3 uploads will fail.'
+        'S3/MinIO Connection verification failed in development. Server will continue running but S3 uploads will fail.',
       );
       return;
     }
     logger.error(
       { bucket: config.S3.BUCKET_NAME, error: error?.message || String(error) },
-      'S3/MinIO Connection verification failed'
+      'S3/MinIO Connection verification failed',
     );
     throw error;
   }
@@ -73,7 +76,12 @@ export function buildPublicObjectUrl(key: string): string {
 let devBucketReady: Promise<void> | null = null;
 
 export async function ensureDevPublicReadAccess(): Promise<void> {
-  if (!isDev || !config.S3.ENDPOINT || (!config.S3.ENDPOINT.includes('localhost') && !config.S3.ENDPOINT.includes('127.0.0.1'))) return;
+  if (
+    !isDev ||
+    !config.S3.ENDPOINT ||
+    (!config.S3.ENDPOINT.includes('localhost') && !config.S3.ENDPOINT.includes('127.0.0.1'))
+  )
+    return;
 
   if (!devBucketReady) {
     devBucketReady = (async () => {
@@ -109,13 +117,9 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
       }
 
       // CORS so browser can PUT presigned uploads from web-admin origin
-      const origins = Array.isArray(config.APP_ORIGIN)
-        ? config.APP_ORIGIN.filter(Boolean)
-        : [];
+      const origins = Array.isArray(config.APP_ORIGIN) ? config.APP_ORIGIN.filter(Boolean) : [];
       const allowedOrigins =
-        origins.length > 0
-          ? origins
-          : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+        origins.length > 0 ? origins : ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
       try {
         await s3Client.send(

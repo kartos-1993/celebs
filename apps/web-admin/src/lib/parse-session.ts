@@ -1,8 +1,8 @@
-import { UAParser } from "ua-parser-js";
-import { format, formatDistanceToNowStrict, isPast } from "date-fns";
-import { Smartphone, Laptop, LucideIcon } from "lucide-react";
+import { UAParser } from 'ua-parser-js';
+import { format, formatDistanceToNowStrict, isPast } from 'date-fns';
+import { Smartphone, Laptop, LucideIcon } from 'lucide-react';
 
-type DeviceType = "desktop" | "mobile";
+type DeviceType = 'desktop' | 'mobile';
 
 interface SessionInfo {
   deviceType: string;
@@ -12,24 +12,21 @@ interface SessionInfo {
   icon: LucideIcon;
 }
 
-export const parseSession = (
-  userAgent: string,
-  createdAt: string
-): SessionInfo => {
+export const parseSession = (userAgent: string, createdAt: string): SessionInfo => {
   const parser = new UAParser(userAgent);
   const result = parser.getResult();
 
-  const deviceType = result.device.type || "Desktop";
-  const browser = `${result.browser.name}` || "Web";
+  const deviceType = result.device.type || 'Desktop';
+  const browser = `${result.browser.name}` || 'Web';
   const os = `${result.os.name} ${result.os.version}`;
 
   // Choose an icon based on device type
-  const icon = deviceType === "mobile" ? Smartphone : Laptop;
+  const icon = deviceType === 'mobile' ? Smartphone : Laptop;
 
   // Format expiration information
   const formattedAt = isPast(new Date(createdAt))
     ? `${formatDistanceToNowStrict(new Date(createdAt))} ago`
-    : format(new Date(createdAt), "d MMM, yyyy");
+    : format(new Date(createdAt), 'd MMM, yyyy');
 
   return {
     deviceType,

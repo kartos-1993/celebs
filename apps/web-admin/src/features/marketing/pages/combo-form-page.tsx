@@ -61,7 +61,7 @@ export function ComboFormPage() {
         val
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, '')
+          .replace(/(^-|-$)+/g, ''),
       );
     }
   };
@@ -115,7 +115,8 @@ export function ComboFormPage() {
             {id ? 'Edit Combo Bundle' : 'Create Generic Combo Bundle'}
           </h1>
           <p className="text-xs text-slate-500">
-            Configure multi-product kits, festive bundles, and travel packs with customer savings rules.
+            Configure multi-product kits, festive bundles, and travel packs with customer savings
+            rules.
           </p>
         </div>
       </div>
@@ -228,7 +229,11 @@ export function ComboFormPage() {
             className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-6 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {isSubmitting ? 'Saving Bundle...' : id ? 'Update Combo Bundle' : 'Publish Combo Bundle'}
+            {isSubmitting
+              ? 'Saving Bundle...'
+              : id
+                ? 'Update Combo Bundle'
+                : 'Publish Combo Bundle'}
           </Button>
         </div>
       </div>

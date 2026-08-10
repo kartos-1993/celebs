@@ -1,11 +1,15 @@
-import { IPaymentGateway, PaymentIntentResult, PaymentVerificationResult } from './payment-gateway.interface';
+import {
+  IPaymentGateway,
+  PaymentIntentResult,
+  PaymentVerificationResult,
+} from './payment-gateway.interface';
 
 export class MockPaymentAdapter implements IPaymentGateway {
   async createPaymentIntent(
     orderId: string,
     amount: number,
     currency = 'NPR',
-    metadata: Record<string, any> = {}
+    metadata: Record<string, any> = {},
   ): Promise<PaymentIntentResult> {
     const mockPaymentId = `mock_pay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     return {
@@ -22,10 +26,7 @@ export class MockPaymentAdapter implements IPaymentGateway {
     };
   }
 
-  async verifyPayment(
-    paymentId: string,
-    payload: any = {}
-  ): Promise<PaymentVerificationResult> {
+  async verifyPayment(paymentId: string, payload: any = {}): Promise<PaymentVerificationResult> {
     const isSuccess = payload?.status !== 'failed';
     return {
       success: isSuccess,

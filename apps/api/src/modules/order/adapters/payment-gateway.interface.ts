@@ -17,11 +17,8 @@ export interface IPaymentGateway {
     orderId: string,
     amount: number,
     currency: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<PaymentIntentResult>;
 
-  verifyPayment(
-    paymentId: string,
-    payload: any
-  ): Promise<PaymentVerificationResult>;
+  verifyPayment(paymentId: string, payload: any): Promise<PaymentVerificationResult>;
 }

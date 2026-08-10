@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 import prisma from '../../config/db.prisma';
 import { connectMongoDB } from '../../config/db.mongo';
 
-const envPath = process.env.DOTENV_CONFIG_PATH || path.resolve(__dirname, '../../../.env.development');
+const envPath =
+  process.env.DOTENV_CONFIG_PATH || path.resolve(__dirname, '../../../.env.development');
 dotenv.config({ path: envPath });
 
 export async function connectDb(): Promise<typeof prisma> {

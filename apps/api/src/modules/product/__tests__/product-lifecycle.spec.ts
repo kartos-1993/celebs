@@ -122,13 +122,19 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     };
 
     const originalTransaction = prisma.$transaction;
-    prisma.$transaction = vi.fn().mockRejectedValueOnce(new Error('PostgreSQL Database Failure')) as unknown as typeof prisma.$transaction;
+    prisma.$transaction = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error('PostgreSQL Database Failure'),
+      ) as unknown as typeof prisma.$transaction;
 
     await expect(
-      productService.createProduct(input, 'user-id-123', mockVendor.id, 'Fail Store')
+      productService.createProduct(input, 'user-id-123', mockVendor.id, 'Fail Store'),
     ).rejects.toThrow();
 
-    const rolledBackProduct = await prisma.product.findFirst({ where: { name: 'Faulty Product Rollback Test' } });
+    const rolledBackProduct = await prisma.product.findFirst({
+      where: { name: 'Faulty Product Rollback Test' },
+    });
     expect(rolledBackProduct).toBeNull();
 
     prisma.$transaction = originalTransaction;
@@ -151,10 +157,18 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     };
 
     const vendorId = mockVendor.id;
-    const product = await productService.createProduct(input, 'user-id-123', vendorId, 'Apple Store');
+    const product = await productService.createProduct(
+      input,
+      'user-id-123',
+      vendorId,
+      'Apple Store',
+    );
     expect(product).not.toBeNull();
 
-    const submittedProduct = await productService.submitProductForReview(String(product?.id), vendorId);
+    const submittedProduct = await productService.submitProductForReview(
+      String(product?.id),
+      vendorId,
+    );
     expect(submittedProduct).not.toBeNull();
     expect(submittedProduct?.status).toBe('pending_review');
 
@@ -180,12 +194,21 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     };
 
     const vendorId = mockVendor.id;
-    const product = await productService.createProduct(input, 'user-id-123', vendorId, 'Apple Store');
+    const product = await productService.createProduct(
+      input,
+      'user-id-123',
+      vendorId,
+      'Apple Store',
+    );
     expect(product).not.toBeNull();
 
     await productService.submitProductForReview(String(product?.id), vendorId);
 
-    const approved = await productService.reviewProduct(String(product?.id), 'approve', 'admin-id-456');
+    const approved = await productService.reviewProduct(
+      String(product?.id),
+      'approve',
+      'admin-id-456',
+    );
     expect(approved).not.toBeNull();
     expect(approved?.status).toBe('published');
     expect(approved?.reviewedBy).toBe('admin-id-456');
@@ -208,7 +231,12 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     };
 
     const vendorId = mockVendor.id;
-    const product = await productService.createProduct(input, 'user-id-123', vendorId, 'Fake Store');
+    const product = await productService.createProduct(
+      input,
+      'user-id-123',
+      vendorId,
+      'Fake Store',
+    );
     expect(product).not.toBeNull();
 
     await productService.submitProductForReview(String(product?.id), vendorId);
@@ -222,8 +250,8 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
 
     expect(rejected).not.toBeNull();
     expect(rejected?.status).toBe('rejected');
-    expect(rejected?.reviewNote).toBe('This product violates our safety policies on replica accessories.');
+    expect(rejected?.reviewNote).toBe(
+      'This product violates our safety policies on replica accessories.',
+    );
   });
 });
-
-

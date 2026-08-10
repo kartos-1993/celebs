@@ -46,7 +46,10 @@ export const appConfig = () => {
       /** Optional CDN / public base (e.g. CloudFront). When set, public URLs use this prefix. */
       PUBLIC_BASE_URL: getEnv('MEDIA_PUBLIC_BASE_URL', getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', '')),
     },
-    GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID', '998383824177-n0b1v1cr5iq1pr456ik5jhfafqj7m9p6.apps.googleusercontent.com'),
+    GOOGLE_CLIENT_ID: getEnv(
+      'GOOGLE_CLIENT_ID',
+      '998383824177-n0b1v1cr5iq1pr456ik5jhfafqj7m9p6.apps.googleusercontent.com',
+    ),
     REDIS: {
       HOST: getEnv('REDIS_HOST', 'localhost'),
       PORT: parseInt(getEnv('REDIS_PORT', '6379'), 10),

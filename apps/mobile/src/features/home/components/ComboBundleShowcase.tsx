@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Sparkles, Plane, Tag, ArrowRight } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { apiClient } from '@/api/client';
@@ -57,7 +51,8 @@ const DEMO_COMBOS: ComboBundleData[] = [
     discountValue: 2500,
     isFirstParty: true,
     tag: 'abroad-travel',
-    bannerImage: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop',
     items: [{ id: '1', productId: 'p1', defaultQuantity: 1 }],
     createdAt: '2026-08-01T00:00:00Z',
   },
@@ -70,7 +65,8 @@ const DEMO_COMBOS: ComboBundleData[] = [
     discountValue: 20,
     isFirstParty: true,
     tag: 'abroad-travel',
-    bannerImage: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop',
     items: [{ id: '2', productId: 'p2', defaultQuantity: 1 }],
     createdAt: '2026-08-02T00:00:00Z',
   },
@@ -83,7 +79,8 @@ const DEMO_COMBOS: ComboBundleData[] = [
     discountValue: 15,
     isFirstParty: true,
     tag: 'festive',
-    bannerImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop',
     items: [{ id: '3', productId: 'p3', defaultQuantity: 1 }],
     createdAt: '2026-08-03T00:00:00Z',
   },
@@ -103,7 +100,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
       try {
         const response = await apiClient.get<{ success: boolean; data: ComboBundleData[] }>(
           '/combos',
-          { skipAuth: true }
+          { skipAuth: true },
         );
         if (isMounted && response.data?.data && response.data.data.length > 0) {
           setCombos(response.data.data);
@@ -170,7 +167,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
                     <Tag size={11} color="#ffffff" />
                   )}
                   <ThemedText style={styles.tagBadgeText}>
-                    {isTravel ? 'ABROAD TRAVEL PACK' : (item.tag?.toUpperCase() || 'COMBO')}
+                    {isTravel ? 'ABROAD TRAVEL PACK' : item.tag?.toUpperCase() || 'COMBO'}
                   </ThemedText>
                 </View>
 

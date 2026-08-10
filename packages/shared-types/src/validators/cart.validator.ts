@@ -18,7 +18,7 @@ export const syncCartSchema = z.object({
       colorVariantName: z.string().min(1),
       size: z.string().min(1),
       quantity: z.number().int().positive(),
-    })
+    }),
   ),
 });
 

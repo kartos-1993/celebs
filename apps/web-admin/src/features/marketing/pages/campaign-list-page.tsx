@@ -38,7 +38,7 @@ export function CampaignListPage() {
   }));
 
   const filteredCampaigns = campaigns.filter((c) =>
-    c.title.toLowerCase().includes(searchQuery.toLowerCase())
+    c.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -51,7 +51,8 @@ export function CampaignListPage() {
             Festival & Marketing Campaigns
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Schedule Dashain, Tihar, and seasonal sales with custom countdown timers and hero themes.
+            Schedule Dashain, Tihar, and seasonal sales with custom countdown timers and hero
+            themes.
           </p>
         </div>
         <Button
@@ -127,14 +128,17 @@ export function CampaignListPage() {
                   <TableCell>
                     <div className="text-xs text-slate-700 font-medium flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      {new Date(camp.startDate).toLocaleDateString()} — {new Date(camp.endDate).toLocaleDateString()}
+                      {new Date(camp.startDate).toLocaleDateString()} —{' '}
+                      {new Date(camp.endDate).toLocaleDateString()}
                     </div>
                   </TableCell>
 
                   <TableCell>
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        camp.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                        camp.isActive
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-slate-100 text-slate-500'
                       }`}
                     >
                       {camp.isActive ? 'ACTIVE' : 'INACTIVE'}

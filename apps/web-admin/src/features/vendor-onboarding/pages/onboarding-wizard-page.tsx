@@ -143,7 +143,10 @@ export default function OnboardingWizard() {
       <div className="bg-card p-6 rounded-lg border shadow-sm">
         {step === 1 && (
           <Form {...profileForm}>
-            <form onSubmit={profileForm.handleSubmit((values) => profileMutation.mutate(values))} className="space-y-4">
+            <form
+              onSubmit={profileForm.handleSubmit((values) => profileMutation.mutate(values))}
+              className="space-y-4"
+            >
               <h3 className="text-lg font-semibold">Store Profile Information</h3>
               <FormField
                 control={profileForm.control}
@@ -193,7 +196,10 @@ export default function OnboardingWizard() {
 
         {step === 2 && (
           <Form {...warehouseForm}>
-            <form onSubmit={warehouseForm.handleSubmit((values) => warehouseMutation.mutate(values))} className="space-y-4">
+            <form
+              onSubmit={warehouseForm.handleSubmit((values) => warehouseMutation.mutate(values))}
+              className="space-y-4"
+            >
               <h3 className="text-lg font-semibold">Warehouse / Dispatch Address</h3>
               <div className="grid grid-cols-2 gap-2">
                 <FormField
@@ -299,7 +305,10 @@ export default function OnboardingWizard() {
 
         {step === 3 && (
           <Form {...documentsForm}>
-            <form onSubmit={documentsForm.handleSubmit((values) => documentsMutation.mutate(values))} className="space-y-4">
+            <form
+              onSubmit={documentsForm.handleSubmit((values) => documentsMutation.mutate(values))}
+              className="space-y-4"
+            >
               <h3 className="text-lg font-semibold">Upload KYC Documents</h3>
               <FormField
                 control={documentsForm.control}
@@ -336,7 +345,10 @@ export default function OnboardingWizard() {
 
         {step === 4 && (
           <Form {...businessForm}>
-            <form onSubmit={businessForm.handleSubmit((values) => businessMutation.mutate(values))} className="space-y-4">
+            <form
+              onSubmit={businessForm.handleSubmit((values) => businessMutation.mutate(values))}
+              className="space-y-4"
+            >
               <h3 className="text-lg font-semibold">Legal Business Details</h3>
               <FormField
                 control={businessForm.control}
@@ -388,7 +400,8 @@ export default function OnboardingWizard() {
           <div className="space-y-6">
             <h3 className="text-lg font-semibold">Review & Submit Profile</h3>
             <p className="text-sm text-muted-foreground">
-              Please confirm that all business documents and addresses are correct. After submitting, your profile will be reviewed by platform administrators for approval.
+              Please confirm that all business documents and addresses are correct. After
+              submitting, your profile will be reviewed by platform administrators for approval.
             </p>
             <Button
               className="w-full"

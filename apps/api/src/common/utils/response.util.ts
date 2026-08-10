@@ -23,7 +23,7 @@ export const sendSuccess = <T>(
   data: T,
   statusCode = 200,
   message?: string,
-  meta?: Omit<NonNullable<ApiResponseEnvelope['meta']>, 'timestamp'>
+  meta?: Omit<NonNullable<ApiResponseEnvelope['meta']>, 'timestamp'>,
 ) => {
   const payload: ApiResponseEnvelope<T> = {
     success: true,
@@ -39,7 +39,7 @@ export const sendError = (
   statusCode: number,
   code: string,
   message: string,
-  details?: any
+  details?: any,
 ) => {
   const payload: ApiResponseEnvelope = {
     success: false,

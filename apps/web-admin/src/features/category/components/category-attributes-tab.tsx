@@ -47,13 +47,20 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
       <div className="flex items-center justify-between border-b pb-3">
         <div>
           <Label className="text-base font-semibold text-foreground flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-primary" /> Category Attributes & Variations ({attributeFields.length})
+            <SlidersHorizontal className="h-4 w-4 text-primary" /> Category Attributes & Variations
+            ({attributeFields.length})
           </Label>
           <p className="text-xs text-muted-foreground mt-0.5">
             Define specifications (e.g. Fit Type, Fabric) and SKU Variation axes (Color, Size).
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={handleAddAttribute} className="gap-1.5 text-xs">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAddAttribute}
+          className="gap-1.5 text-xs"
+        >
           <Plus className="h-3.5 w-3.5" /> Add Attribute
         </Button>
       </div>
@@ -89,7 +96,9 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
       {/* Measurement Charts & Fit Guides Section */}
       <div className="space-y-4 border-t pt-5">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-foreground">Category Measurement Charts & Fit Guides</h3>
+          <h3 className="text-sm font-bold text-foreground">
+            Category Measurement Charts & Fit Guides
+          </h3>
           <p className="text-xs text-muted-foreground">
             Specify physical garment and wearer body measurement headers for 2D size guide charts.
           </p>
@@ -146,7 +155,9 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
               </Badge>
             ))}
             {sizeChartColumns.length === 0 && (
-              <span className="text-xs text-muted-foreground italic">No product garment columns defined.</span>
+              <span className="text-xs text-muted-foreground italic">
+                No product garment columns defined.
+              </span>
             )}
           </div>
         </div>
@@ -202,7 +213,9 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
               </Badge>
             ))}
             {bodyChartColumns.length === 0 && (
-              <span className="text-xs text-muted-foreground italic">No wearer body columns defined.</span>
+              <span className="text-xs text-muted-foreground italic">
+                No wearer body columns defined.
+              </span>
             )}
           </div>
         </div>

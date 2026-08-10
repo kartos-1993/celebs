@@ -58,7 +58,10 @@ export function VendorRegisterPage() {
     mutate(values, {
       onSuccess: () => {
         navigate('/login', {
-          state: { successMessage: 'Vendor registered successfully! Check your email for verification link.' },
+          state: {
+            successMessage:
+              'Vendor registered successfully! Check your email for verification link.',
+          },
         });
       },
       onError: (error: any) => {
@@ -133,7 +136,7 @@ export function VendorRegisterPage() {
               {serverError}
             </div>
           )}
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <FormField

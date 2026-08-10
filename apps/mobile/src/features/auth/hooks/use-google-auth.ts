@@ -39,7 +39,11 @@ export function useGoogleAuth() {
         setAuthError(null);
         try {
           const { id_token, access_token } = response.params;
-          const tokenToUse = id_token || response.authentication?.idToken || access_token || response.authentication?.accessToken;
+          const tokenToUse =
+            id_token ||
+            response.authentication?.idToken ||
+            access_token ||
+            response.authentication?.accessToken;
 
           let googleUser = {
             email: '',

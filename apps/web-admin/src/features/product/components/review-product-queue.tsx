@@ -215,7 +215,9 @@ export default function ReviewProductQueue() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [activePreviewImage, setActivePreviewImage] = useState<string>('');
-  const [previewTab, setPreviewTab] = useState<'overview' | 'specs' | 'sizes' | 'variants' | 'qc' | 'history'>('overview');
+  const [previewTab, setPreviewTab] = useState<
+    'overview' | 'specs' | 'sizes' | 'variants' | 'qc' | 'history'
+  >('overview');
 
   // Rejection State
   const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -305,13 +307,13 @@ export default function ReviewProductQueue() {
 
   const toggleSubcategory = (sub: string) => {
     setSelectedSubcategories((prev) =>
-      prev.includes(sub) ? prev.filter((item) => item !== sub) : [...prev, sub]
+      prev.includes(sub) ? prev.filter((item) => item !== sub) : [...prev, sub],
     );
   };
 
   const toggleFlaggedField = (fieldId: string) => {
     setFlaggedFields((prev) =>
-      prev.includes(fieldId) ? prev.filter((item) => item !== fieldId) : [...prev, fieldId]
+      prev.includes(fieldId) ? prev.filter((item) => item !== fieldId) : [...prev, fieldId],
     );
   };
 
@@ -329,7 +331,8 @@ export default function ReviewProductQueue() {
     if (!rejectionNote.trim() && selectedSubcategories.length === 0) {
       toast({
         title: 'Feedback required',
-        description: 'Please select at least one issue subcategory or type detailed feedback for the vendor.',
+        description:
+          'Please select at least one issue subcategory or type detailed feedback for the vendor.',
         variant: 'destructive',
       });
       return;
@@ -408,7 +411,8 @@ export default function ReviewProductQueue() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Superadmin Review Queue</h1>
           <p className="text-muted-foreground">
-            Daraz & SHEIN quality control station with live customer PDP simulation and structured feedback.
+            Daraz & SHEIN quality control station with live customer PDP simulation and structured
+            feedback.
           </p>
         </div>
       </div>
@@ -453,7 +457,8 @@ export default function ReviewProductQueue() {
             )}
             <div className="text-sm text-muted-foreground ml-auto flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              Total listings found: <span className="font-semibold text-foreground">{products.length}</span>
+              Total listings found:{' '}
+              <span className="font-semibold text-foreground">{products.length}</span>
             </div>
           </div>
         </CardContent>
@@ -509,7 +514,8 @@ export default function ReviewProductQueue() {
                               {product.name}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              Brand: <strong className="text-foreground">{product.brand || 'N/A'}</strong>
+                              Brand:{' '}
+                              <strong className="text-foreground">{product.brand || 'N/A'}</strong>
                             </span>
                           </div>
                         </div>
@@ -627,7 +633,8 @@ export default function ReviewProductQueue() {
               <XCircle className="w-5 h-5" /> Reject Product Listing
             </DialogTitle>
             <DialogDescription>
-              Select quality control issues and specify required seller actions. An automated structured notification will be sent to the vendor.
+              Select quality control issues and specify required seller actions. An automated
+              structured notification will be sent to the vendor.
             </DialogDescription>
           </DialogHeader>
 
@@ -658,7 +665,10 @@ export default function ReviewProductQueue() {
               <div className="space-y-2 bg-muted/30 p-3 rounded-lg border">
                 {REJECTION_CATEGORIES.find((c) => c.id === selectedCategory)?.subcategories.map(
                   (sub, idx) => (
-                    <label key={idx} className="flex items-start gap-2 cursor-pointer text-xs leading-tight">
+                    <label
+                      key={idx}
+                      className="flex items-start gap-2 cursor-pointer text-xs leading-tight"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedSubcategories.includes(sub)}
@@ -667,7 +677,7 @@ export default function ReviewProductQueue() {
                       />
                       <span>{sub}</span>
                     </label>
-                  )
+                  ),
                 )}
               </div>
             </div>
@@ -713,7 +723,11 @@ export default function ReviewProductQueue() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectOpen(false)} disabled={submittingAction}>
+            <Button
+              variant="outline"
+              onClick={() => setIsRejectOpen(false)}
+              disabled={submittingAction}
+            >
               Cancel
             </Button>
             <Button
@@ -742,15 +756,22 @@ export default function ReviewProductQueue() {
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                     <span>
-                      Vendor: <strong className="text-foreground">{selectedProduct.vendorName || 'Independent'}</strong>
+                      Vendor:{' '}
+                      <strong className="text-foreground">
+                        {selectedProduct.vendorName || 'Independent'}
+                      </strong>
                     </span>
                     <span>•</span>
                     <span>
-                      Category: <strong className="text-foreground">{getCategoryName(selectedProduct.category)}</strong>
+                      Category:{' '}
+                      <strong className="text-foreground">
+                        {getCategoryName(selectedProduct.category)}
+                      </strong>
                     </span>
                     <span>•</span>
                     <span>
-                      Brand: <strong className="text-foreground">{selectedProduct.brand || 'N/A'}</strong>
+                      Brand:{' '}
+                      <strong className="text-foreground">{selectedProduct.brand || 'N/A'}</strong>
                     </span>
                   </div>
                 </div>
@@ -812,13 +833,23 @@ export default function ReviewProductQueue() {
               <div className="p-6">
                 {/* 1. Live Customer PDP View */}
                 {previewTab === 'overview' && (
-                  <div className={previewDevice === 'mobile' ? 'max-w-sm mx-auto border-4 border-foreground/20 rounded-2xl p-4 shadow-2xl bg-background' : ''}>
+                  <div
+                    className={
+                      previewDevice === 'mobile'
+                        ? 'max-w-sm mx-auto border-4 border-foreground/20 rounded-2xl p-4 shadow-2xl bg-background'
+                        : ''
+                    }
+                  >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Image Gallery Switcher */}
                       <div className="space-y-3">
                         <div className="relative aspect-square rounded-xl overflow-hidden border bg-muted group">
                           <img
-                            src={activePreviewImage || selectedProduct.mainImages?.[0] || '/placeholder.svg'}
+                            src={
+                              activePreviewImage ||
+                              selectedProduct.mainImages?.[0] ||
+                              '/placeholder.svg'
+                            }
                             alt={selectedProduct.name}
                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                           />
@@ -839,7 +870,11 @@ export default function ReviewProductQueue() {
                                   : 'border-transparent opacity-70 hover:opacity-100'
                               }`}
                             >
-                              <img src={imgUrl} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                              <img
+                                src={imgUrl}
+                                alt={`Thumbnail ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
                             </button>
                           ))}
                         </div>
@@ -851,7 +886,9 @@ export default function ReviewProductQueue() {
                           <Badge variant="outline" className="mb-2">
                             {selectedProduct.brand || 'No Brand'}
                           </Badge>
-                          <h3 className="text-2xl font-bold text-foreground">{selectedProduct.name}</h3>
+                          <h3 className="text-2xl font-bold text-foreground">
+                            {selectedProduct.name}
+                          </h3>
                           <div className="flex items-baseline gap-3 mt-2">
                             <span className="text-2xl font-extrabold text-foreground">
                               Rs. {selectedProduct.price.toLocaleString()}
@@ -865,7 +902,7 @@ export default function ReviewProductQueue() {
                                   {Math.round(
                                     ((selectedProduct.price - selectedProduct.discountedPrice) /
                                       selectedProduct.price) *
-                                      100
+                                      100,
                                   )}
                                   % OFF
                                 </Badge>
@@ -882,7 +919,11 @@ export default function ReviewProductQueue() {
                             </span>
                             <div className="flex flex-wrap gap-2">
                               {selectedProduct.sizes.map((s, idx) => (
-                                <Badge key={idx} variant="secondary" className="px-3 py-1 text-sm font-medium">
+                                <Badge
+                                  key={idx}
+                                  variant="secondary"
+                                  className="px-3 py-1 text-sm font-medium"
+                                >
                                   {s.name}
                                 </Badge>
                               ))}
@@ -891,27 +932,28 @@ export default function ReviewProductQueue() {
                         )}
 
                         {/* Color Variants */}
-                        {selectedProduct.colorVariants && selectedProduct.colorVariants.length > 0 && (
-                          <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
-                              Color Options ({selectedProduct.colorVariants.length})
-                            </span>
-                            <div className="flex gap-2">
-                              {selectedProduct.colorVariants.map((c, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center gap-2 border p-1.5 rounded-lg bg-muted/30"
-                                >
+                        {selectedProduct.colorVariants &&
+                          selectedProduct.colorVariants.length > 0 && (
+                            <div>
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
+                                Color Options ({selectedProduct.colorVariants.length})
+                              </span>
+                              <div className="flex gap-2">
+                                {selectedProduct.colorVariants.map((c, idx) => (
                                   <div
-                                    className="w-5 h-5 rounded-full border shadow-sm"
-                                    style={{ backgroundColor: c.colorCode }}
-                                  />
-                                  <span className="text-xs font-medium pr-1">{c.name}</span>
-                                </div>
-                              ))}
+                                    key={idx}
+                                    className="flex items-center gap-2 border p-1.5 rounded-lg bg-muted/30"
+                                  >
+                                    <div
+                                      className="w-5 h-5 rounded-full border shadow-sm"
+                                      style={{ backgroundColor: c.colorCode }}
+                                    />
+                                    <span className="text-xs font-medium pr-1">{c.name}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* Description Preview */}
                         <div>
@@ -931,9 +973,11 @@ export default function ReviewProductQueue() {
                 {previewTab === 'specs' && (
                   <div className="space-y-4">
                     <h4 className="font-semibold text-base flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-primary" /> Vendor Specifications & Category Attributes
+                      <Tag className="w-4 h-4 text-primary" /> Vendor Specifications & Category
+                      Attributes
                     </h4>
-                    {selectedProduct.dynamicData && Object.keys(selectedProduct.dynamicData).length > 0 ? (
+                    {selectedProduct.dynamicData &&
+                    Object.keys(selectedProduct.dynamicData).length > 0 ? (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {Object.entries(selectedProduct.dynamicData).map(([key, val]) => (
                           <div key={key} className="p-3 bg-muted/30 rounded-lg border">
@@ -972,33 +1016,52 @@ export default function ReviewProductQueue() {
                             <CardContent className="pt-3">
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                 <div>
-                                  <span className="font-semibold block mb-1 text-muted-foreground">Product Measurements</span>
-                                  {size.productMeasurements && size.productMeasurements.length > 0 ? (
+                                  <span className="font-semibold block mb-1 text-muted-foreground">
+                                    Product Measurements
+                                  </span>
+                                  {size.productMeasurements &&
+                                  size.productMeasurements.length > 0 ? (
                                     <ul className="space-y-1">
                                       {size.productMeasurements.map((m, mIdx) => (
-                                        <li key={mIdx} className="flex justify-between border-b py-1">
+                                        <li
+                                          key={mIdx}
+                                          className="flex justify-between border-b py-1"
+                                        >
                                           <span>{m.name}:</span>
-                                          <strong className="text-foreground">{m.value} {m.unit}</strong>
+                                          <strong className="text-foreground">
+                                            {m.value} {m.unit}
+                                          </strong>
                                         </li>
                                       ))}
                                     </ul>
                                   ) : (
-                                    <span className="text-muted-foreground">No product dimensions specified</span>
+                                    <span className="text-muted-foreground">
+                                      No product dimensions specified
+                                    </span>
                                   )}
                                 </div>
                                 <div>
-                                  <span className="font-semibold block mb-1 text-muted-foreground">Body Measurements</span>
+                                  <span className="font-semibold block mb-1 text-muted-foreground">
+                                    Body Measurements
+                                  </span>
                                   {size.bodyMeasurements && size.bodyMeasurements.length > 0 ? (
                                     <ul className="space-y-1">
                                       {size.bodyMeasurements.map((bm, bmIdx) => (
-                                        <li key={bmIdx} className="flex justify-between border-b py-1">
+                                        <li
+                                          key={bmIdx}
+                                          className="flex justify-between border-b py-1"
+                                        >
                                           <span>{bm.name}:</span>
-                                          <strong className="text-foreground">{bm.value} {bm.unit}</strong>
+                                          <strong className="text-foreground">
+                                            {bm.value} {bm.unit}
+                                          </strong>
                                         </li>
                                       ))}
                                     </ul>
                                   ) : (
-                                    <span className="text-muted-foreground">No body measurements specified</span>
+                                    <span className="text-muted-foreground">
+                                      No body measurements specified
+                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -1031,14 +1094,24 @@ export default function ReviewProductQueue() {
                               />
                               <div>
                                 <h5 className="font-bold text-sm text-foreground">{c.name}</h5>
-                                <span className="text-xs text-muted-foreground">Hex Code: {c.colorCode}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  Hex Code: {c.colorCode}
+                                </span>
                               </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {c.stocks?.map((st, sIdx) => (
-                                <div key={sIdx} className="text-xs bg-muted px-3 py-1.5 rounded-md border flex items-center gap-2">
-                                  <span className="font-medium text-foreground">Size {st.size}:</span>
-                                  <Badge variant={st.quantity > 0 ? 'default' : 'destructive'} className="text-[10px]">
+                                <div
+                                  key={sIdx}
+                                  className="text-xs bg-muted px-3 py-1.5 rounded-md border flex items-center gap-2"
+                                >
+                                  <span className="font-medium text-foreground">
+                                    Size {st.size}:
+                                  </span>
+                                  <Badge
+                                    variant={st.quantity > 0 ? 'default' : 'destructive'}
+                                    className="text-[10px]"
+                                  >
                                     {st.quantity} units left
                                   </Badge>
                                 </div>
@@ -1061,7 +1134,8 @@ export default function ReviewProductQueue() {
                     <div className="flex items-center justify-between p-4 bg-muted/30 border rounded-xl">
                       <div>
                         <h4 className="font-bold text-lg flex items-center gap-2">
-                          <ShieldCheck className="w-5 h-5 text-emerald-600" /> Automated QC Quality Score
+                          <ShieldCheck className="w-5 h-5 text-emerald-600" /> Automated QC Quality
+                          Score
                         </h4>
                         <p className="text-xs text-muted-foreground">
                           System audit computed from listing completeness & guideline metrics.
@@ -1074,7 +1148,9 @@ export default function ReviewProductQueue() {
                       <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5" />
                         <div>
-                          <span className="font-semibold block text-foreground">Main Product Images</span>
+                          <span className="font-semibold block text-foreground">
+                            Main Product Images
+                          </span>
                           <span className="text-muted-foreground">
                             {selectedProduct.mainImages?.length || 0} main photos provided.
                           </span>
@@ -1084,7 +1160,9 @@ export default function ReviewProductQueue() {
                       <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5" />
                         <div>
-                          <span className="font-semibold block text-foreground">Title & Description</span>
+                          <span className="font-semibold block text-foreground">
+                            Title & Description
+                          </span>
                           <span className="text-muted-foreground">
                             Title length ({selectedProduct.name?.length || 0} chars).
                           </span>
@@ -1094,7 +1172,9 @@ export default function ReviewProductQueue() {
                       <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
                         <Info className="w-4 h-4 text-blue-600 mt-0.5" />
                         <div>
-                          <span className="font-semibold block text-foreground">Size Chart & Measurements</span>
+                          <span className="font-semibold block text-foreground">
+                            Size Chart & Measurements
+                          </span>
                           <span className="text-muted-foreground">
                             {selectedProduct.sizes?.length || 0} sizes configured.
                           </span>
@@ -1104,7 +1184,9 @@ export default function ReviewProductQueue() {
                       <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
                         <Info className="w-4 h-4 text-blue-600 mt-0.5" />
                         <div>
-                          <span className="font-semibold block text-foreground">Pricing & Discount Logic</span>
+                          <span className="font-semibold block text-foreground">
+                            Pricing & Discount Logic
+                          </span>
                           <span className="text-muted-foreground">
                             Price: Rs. {selectedProduct.price}
                           </span>
@@ -1123,7 +1205,10 @@ export default function ReviewProductQueue() {
                     {selectedProduct.reviewHistory && selectedProduct.reviewHistory.length > 0 ? (
                       <div className="space-y-3">
                         {selectedProduct.reviewHistory.map((log, idx) => (
-                          <div key={idx} className="p-3 border rounded-lg bg-card text-xs space-y-1">
+                          <div
+                            key={idx}
+                            className="p-3 border rounded-lg bg-card text-xs space-y-1"
+                          >
                             <div className="flex justify-between items-center">
                               <Badge
                                 variant={log.action === 'approve' ? 'default' : 'destructive'}

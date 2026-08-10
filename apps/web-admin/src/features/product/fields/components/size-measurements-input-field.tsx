@@ -22,14 +22,14 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
   const charts: MeasurementChartSpec[] = Array.isArray(dataSource.charts)
     ? dataSource.charts
     : Array.isArray(field.dataSource)
-    ? [
-        {
-          key: 'product',
-          label: 'Product Measurements (Garment Flat)',
-          columns: field.dataSource,
-        },
-      ]
-    : [];
+      ? [
+          {
+            key: 'product',
+            label: 'Product Measurements (Garment Flat)',
+            columns: field.dataSource,
+          },
+        ]
+      : [];
 
   // If no size chart columns or charts are configured for this category, do not render at all
   if (charts.length === 0) {
@@ -48,8 +48,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
   const activeSizesIndex = sizeFieldNames.findIndex(
     (_, idx) => watchedSizes?.[idx] && watchedSizes[idx].length > 0,
   );
-  const selectedSizes =
-    activeSizesIndex !== -1 ? (watchedSizes[activeSizesIndex] as string[]) : [];
+  const selectedSizes = activeSizesIndex !== -1 ? (watchedSizes[activeSizesIndex] as string[]) : [];
 
   const sizesState = watch('sizes') || [];
 
@@ -95,8 +94,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
     });
 
     const isDifferent =
-      JSON.stringify(currentSizes.map((s: any) => s.name)) !==
-        JSON.stringify(selectedSizes) ||
+      JSON.stringify(currentSizes.map((s: any) => s.name)) !== JSON.stringify(selectedSizes) ||
       currentSizes.some((s: any) => {
         const pNames = (s.productMeasurements || []).map((m: any) => m.name);
         const bNames = (s.bodyMeasurements || []).map((m: any) => m.name);
@@ -153,7 +151,10 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             <TableHead className="w-24 font-bold text-foreground">Size</TableHead>
             {chart.columns.map((c) => (
               <TableHead key={c} className="font-semibold text-foreground">
-                {c} <span className="text-xs text-muted-foreground font-normal">({unit.toLowerCase()})</span>
+                {c}{' '}
+                <span className="text-xs text-muted-foreground font-normal">
+                  ({unit.toLowerCase()})
+                </span>
               </TableHead>
             ))}
           </TableRow>
@@ -178,7 +179,8 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                     : -1;
                   const cellError =
                     colIndex !== -1
-                      ? (formState.errors.sizes as any)?.[sizeIndex]?.[listKey]?.[colIndex]?.value?.message
+                      ? (formState.errors.sizes as any)?.[sizeIndex]?.[listKey]?.[colIndex]?.value
+                          ?.message
                       : undefined;
 
                   return (
@@ -243,7 +245,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             <button
               type="button"
               className={`px-2.5 py-0.5 text-xs font-semibold rounded-sm transition-all ${
-                unit === 'CM' ? 'bg-background text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+                unit === 'CM'
+                  ? 'bg-background text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => handleUnitToggle('CM')}
             >
@@ -252,7 +256,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             <button
               type="button"
               className={`px-2.5 py-0.5 text-xs font-semibold rounded-sm transition-all ${
-                unit === 'IN' ? 'bg-background text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'
+                unit === 'IN'
+                  ? 'bg-background text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => handleUnitToggle('IN')}
             >
@@ -274,7 +280,8 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
       ))}
 
       <p className="text-[11px] text-muted-foreground italic pt-1">
-        *Measurements entered here will be saved and displayed to customers on the storefront product detail page size guide.
+        *Measurements entered here will be saved and displayed to customers on the storefront
+        product detail page size guide.
       </p>
     </div>
   );

@@ -45,7 +45,7 @@ projects:
               - key: REDIS_PASSWORD
                 sync: false
               - key: REDIS_PORT
-                value: "6379"
+                value: '6379'
               - key: REDIS_HOST
                 value: promoted-mastodon-182323.upstash.io
               - key: DATABASE_URL

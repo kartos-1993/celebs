@@ -59,7 +59,13 @@ export const useCategoryForm = ({
         label: attr.label || '',
         type: attr.type || 'text',
         values: (attr.values || [])
-          .map((v) => (typeof v === 'string' ? v : (v as { value?: string; name?: string }).value ?? (v as { value?: string; name?: string }).name ?? ''))
+          .map((v) =>
+            typeof v === 'string'
+              ? v
+              : ((v as { value?: string; name?: string }).value ??
+                (v as { value?: string; name?: string }).name ??
+                ''),
+          )
           .filter(Boolean),
         isRequired: !!attr.isRequired,
         group: attr.group || (attr.isVariant ? 'variant' : 'details'),
@@ -116,7 +122,7 @@ export const useCategoryForm = ({
     form.setValue(
       'sizeChartColumns',
       current.filter((c) => c !== colToRemove),
-      { shouldDirty: true }
+      { shouldDirty: true },
     );
   };
 
@@ -135,7 +141,7 @@ export const useCategoryForm = ({
     form.setValue(
       'bodyChartColumns',
       current.filter((c) => c !== colToRemove),
-      { shouldDirty: true }
+      { shouldDirty: true },
     );
   };
 
@@ -163,10 +169,7 @@ export const useCategoryForm = ({
   const onSubmit = (values: CategoryFormData) => {
     const normalizedData: CategoryFormData = {
       ...values,
-      parent:
-        values.parent && values.parent !== 'ROOT_CATEGORY'
-          ? values.parent
-          : null,
+      parent: values.parent && values.parent !== 'ROOT_CATEGORY' ? values.parent : null,
       attributes: values.attributes.map((attr) => ({
         ...attr,
         id: attr.id || undefined,
@@ -177,7 +180,7 @@ export const useCategoryForm = ({
           attr.isVariant && attr.useStandardOptions && attr.optionSetId
             ? attr.optionSetId.trim() || null
             : null,
-        group: attr.isVariant ? 'variant' : (attr.group || 'details'),
+        group: attr.isVariant ? 'variant' : attr.group || 'details',
       })),
     };
 
