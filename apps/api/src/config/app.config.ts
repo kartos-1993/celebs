@@ -39,11 +39,14 @@ export const appConfig = () => {
     S3: {
       REGION: getEnv('S3_REGION', 'ap-south-1'),
       BUCKET_NAME: getEnv('S3_BUCKET_NAME', 'celebs'),
-      ENDPOINT: getEnv('S3_ENDPOINT', ''),
-      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID'),
-      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY'),
+      ENDPOINT: getEnv('S3_ENDPOINT', 'http://127.0.0.1:9000'),
+      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID', 'minioadmin'),
+      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY', 'minioadmin'),
       /** Optional CDN / public base (e.g. CloudFront). When set, public URLs use this prefix. */
-      PUBLIC_BASE_URL: getEnv('MEDIA_PUBLIC_BASE_URL', getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', '')),
+      PUBLIC_BASE_URL: getEnv(
+        'MEDIA_PUBLIC_BASE_URL',
+        getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', 'http://127.0.0.1:9000/celebs'),
+      ),
     },
     GOOGLE_CLIENT_ID: getEnv(
       'GOOGLE_CLIENT_ID',
