@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildProductPayload } from '../add-product-payload';
 import { ProductApiService } from '../../api';
+import type { FieldSpec } from '../../fields/ui-registry';
 
 describe('buildProductPayload', () => {
   it('should construct a valid CreateProductRequest payload from form values', async () => {
     vi.spyOn(ProductApiService, 'uploadFiles').mockResolvedValue(['https://example.com/image.jpg']);
 
-    const fields: any[] = [];
+    const fields: FieldSpec[] = [];
     const values = {
       name: '  Test Polo Shirt  ',
       brand: 'Manfinity',
