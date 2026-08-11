@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { logger } from '@celebs/shared-utils';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -99,7 +100,7 @@ export function CampaignFormPage() {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       navigate('/marketing/campaigns');
     } catch (err) {
-      console.error('Failed to save campaign:', err);
+      logger.error({ error: err }, 'Failed to save campaign');
     } finally {
       setIsSubmitting(false);
     }

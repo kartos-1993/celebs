@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Label } from '@celebs/shared-ui/components/label';
 import { Input } from '@celebs/shared-ui/components/input';
-import { ImagePlus, Upload, Trash2, Link as LinkIcon, Loader2, RefreshCw } from 'lucide-react';
+import { ImagePlus, Trash2, Link as LinkIcon, Loader2, RefreshCw } from 'lucide-react';
 import { uploadMediaFilesMutationFn } from '@/lib/api';
 import type { BannerImageUploadPropsType } from '@celebs/shared-types';
 

@@ -25,14 +25,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
+import { logger } from '@celebs/shared-utils';
 import {
   Package,
   Truck,
-  CheckCircle2,
-  Clock,
   MapPin,
   Search,
-  ExternalLink,
   RefreshCw,
   Send,
   DollarSign,
@@ -207,7 +205,7 @@ const Orders: React.FC = () => {
         ),
       );
     } catch (err) {
-      console.error('3PL Dispatch error:', err);
+      logger.error({ error: err }, '3PL Dispatch error');
     }
   };
 
@@ -225,7 +223,7 @@ const Orders: React.FC = () => {
       );
       setIsDialogOpen(false);
     } catch (err) {
-      console.error('COD settlement error:', err);
+      logger.error({ error: err }, 'COD settlement error');
     }
   };
 
@@ -460,7 +458,7 @@ const Orders: React.FC = () => {
               {/* Status Selector */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Update Fulfillment Stage</Label>
-                <Select value={newStatus} onValueChange={(val: any) => setNewStatus(val)}>
+                <Select value={newStatus} onValueChange={(val: string) => setNewStatus(val as 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED')}>
                   <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>

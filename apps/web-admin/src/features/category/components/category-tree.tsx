@@ -26,13 +26,11 @@ import {
   ChevronDown,
   Edit,
   Trash2,
-  FolderPlus,
   Folder,
   FolderOpen,
   Plus,
 } from 'lucide-react';
 import { CategoryTreeNode } from '../types';
-import { axiosClient } from '@/lib/axios/axios-client';
 
 interface CategoryTreeProps {
   categoryTree: CategoryTreeNode[];
@@ -292,7 +290,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
         },
       },
     ],
-    [onEdit, onDelete, onAddSubcategory, updatingId],
+    [onEdit, onDelete, onAddSubcategory, updatingId, handleActiveToggle],
   );
 
   const table = useReactTable({

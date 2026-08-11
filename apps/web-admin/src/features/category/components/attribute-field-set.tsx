@@ -22,13 +22,12 @@ import {
 } from '@celebs/shared-ui/components/form';
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
-import { X, Plus, ChevronDown, ChevronUp, Layers, Sliders } from 'lucide-react';
+import { X, Plus, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { axiosClient } from '@/lib/axios/axios-client';
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 

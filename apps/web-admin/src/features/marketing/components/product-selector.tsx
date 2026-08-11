@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -35,13 +35,17 @@ export function ProductSelector({
     queryFn: () => getProducts({ search: debouncedSearchTerm || undefined, limit: 20 }),
   });
 
-  const productsList = (data?.data?.products as unknown as CatalogProductType[]) ?? [];
+  const rawProducts = data?.data?.products;
+  const productsList = useMemo(
+    () => (rawProducts as unknown as CatalogProductType[]) ?? [],
+    [rawProducts],
+  );
 
   useEffect(() => {
     if (productsList.length > 0) {
       setSelectedItemsDetails((prev) => {
         const next = { ...prev };
-        productsList.forEach((p) => {
+        productsList.forEach((p: CatalogProductType) => {
           if (p.id) next[p.id] = p;
         });
         return next;
@@ -150,7 +154,7 @@ export function ProductSelector({
             {isLoading ? 'Loading catalog products...' : 'No products found matching search.'}
           </div>
         ) : (
-          productsList.map((product) => {
+          productsList.map((product: CatalogProductType) => {
             const isSelected = selectedProductIds.includes(product.id);
             const imgUrl = getProductImage(product);
 

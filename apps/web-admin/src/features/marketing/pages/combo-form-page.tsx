@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@celebs/shared-utils';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
@@ -92,7 +93,7 @@ export function ComboFormPage() {
       queryClient.invalidateQueries({ queryKey: ['combos'] });
       navigate('/marketing/combos');
     } catch (err) {
-      console.error('Failed to save combo bundle:', err);
+      logger.error({ error: err }, 'Failed to save combo bundle');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -35,25 +35,26 @@ export default function OptionSetsPage() {
   const [deleteTarget, setDeleteTarget] = useState<OptionSet | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const loadSets = async () => {
+  const loadSets = useCallback(async () => {
     try {
       setLoading(true);
       const data = await fetchOptionSets();
       setOptionSets(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Error loading option sets',
-        description: err.message || 'Failed to fetch option sets',
+        description: errObj.message || 'Failed to fetch option sets',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadSets();
-  }, []);
+  }, [loadSets]);
 
   const handleOpenCreate = () => {
     setEditingSet(null);
@@ -115,10 +116,11 @@ export default function OptionSetsPage() {
       }
       setIsDialogOpen(false);
       loadSets();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Save failed',
-        description: err.message || 'Failed to save option set',
+        description: errObj.message || 'Failed to save option set',
         variant: 'destructive',
       });
     } finally {
@@ -134,10 +136,11 @@ export default function OptionSetsPage() {
       toast({ title: 'Option set deleted', description: `Deleted ${deleteTarget.name}` });
       setDeleteTarget(null);
       loadSets();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Delete failed',
-        description: err.message || 'Failed to delete option set',
+        description: errObj.message || 'Failed to delete option set',
         variant: 'destructive',
       });
     } finally {

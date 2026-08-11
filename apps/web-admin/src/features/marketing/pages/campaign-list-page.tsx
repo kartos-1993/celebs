@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import { Plus, Search, Calendar, Sparkles, Flame, Clock } from 'lucide-react';
+import { Plus, Search, Calendar, Flame } from 'lucide-react';
 import type { CampaignItemType } from '@celebs/shared-types';
 
 export function CampaignListPage() {
