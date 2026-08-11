@@ -37,7 +37,7 @@ interface TabConfig {
 
 const TAB_CONFIG: TabConfig[] = [
   { id: 'details', label: 'Specifications', icon: Ruler, groups: ['details'], anchorId: 'product-section-details' },
-  { id: 'media', label: 'Media & Swatches', icon: ImageIcon, groups: ['variant', 'media'], anchorId: 'product-section-base' },
+  { id: 'media', label: 'Media & Swatches', icon: ImageIcon, groups: ['base', 'variant', 'media'], anchorId: 'product-section-base' },
   { id: 'sale', label: 'SKUs & Pricing', icon: Palette, groups: ['sale'], anchorId: 'product-section-sale' },
   { id: 'package', label: 'Shipping & Warranty', icon: Package, groups: ['package'], anchorId: 'product-section-package' },
   { id: 'termcondition', label: 'Terms & Conditions', icon: FileText, groups: ['termcondition'], anchorId: 'product-section-termcondition' },

@@ -134,7 +134,7 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
         (v) => v.key.toLowerCase() === 'color' || v.key.toLowerCase().includes('color'),
       );
 
-      if (colorVariant && !merged.some((f) => f.uiType === 'ColorMeta')) {
+      if (colorVariant && !merged.some((f) => f.uiType === 'ColorMeta' || f.uiType === 'ColorInline')) {
         merged.push({
           name: 'colorMeta',
           uiType: 'ColorMeta',

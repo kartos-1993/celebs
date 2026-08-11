@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { ImagePlus, Trash2, Upload } from 'lucide-react';
+import { ImagePlus, Trash2, Upload, Loader2 } from 'lucide-react';
 import type { UiProps } from '../ui-registry';
 import {
   LabelWithRequired,
@@ -206,10 +206,17 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             }}
           />
           {swatchPreview ? (
-            <img src={swatchPreview} alt={color} className="h-full w-full object-cover" />
+            <div className="relative h-full w-full">
+              <img src={swatchPreview} alt={color} className="h-full w-full object-cover" />
+              {isUploading && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="grid h-full w-full place-items-center bg-accent text-[10px] text-muted-foreground">
-              Img
+            <div className="grid h-full w-full place-items-center bg-accent text-[10px] text-muted-foreground relative">
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : 'Img'}
             </div>
           )}
         </label>
@@ -267,7 +274,10 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
                 }}
               />
               {isUploading ? (
-                <Upload className="h-4 w-4 animate-pulse" />
+                <div className="flex flex-col items-center justify-center text-primary gap-0.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-[9px] font-medium">Uploading</span>
+                </div>
               ) : (
                 <ImagePlus className="h-4 w-4" />
               )}
