@@ -1,5 +1,5 @@
 import React from 'react';
-import { useController, useFormContext } from 'react-hook-form';
+import { useController } from 'react-hook-form';
 import { Multiselect } from '@celebs/shared-ui/components/multiselect';
 import type { UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
