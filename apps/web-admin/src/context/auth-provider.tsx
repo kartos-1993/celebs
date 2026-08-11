@@ -1,43 +1,13 @@
 import React, { createContext, useContext, useCallback, useEffect } from 'react';
-import { UAParser } from 'ua-parser-js';
-import { format, formatDistanceToNowStrict, isPast } from 'date-fns';
-import { Smartphone, Laptop, LucideIcon } from 'lucide-react';
+import { logger } from '@celebs/shared-utils';
 import useAuth from '@/hooks/use-auth';
 import { UserData } from '@/types';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
 import { axiosClient } from '@/lib/axios/axios-client';
 import { setAuthCallbacks, broadcastLogout } from '@/lib/axios/interceptors';
+import { parseSession, type SessionInfo } from '@/lib/session-utils';
 
-// ─── Session Parsing Utility ──────────────────────────────────────────────────
-export interface SessionInfo {
-  deviceType: string;
-  browser: string;
-  os: string;
-  timeAgo: string;
-  icon: LucideIcon;
-}
-
-export const parseSession = (userAgent: string, createdAt: string): SessionInfo => {
-  const parser = new UAParser(userAgent);
-  const result = parser.getResult();
-
-  const deviceType = result.device.type || 'Desktop';
-  const browser = `${result.browser.name}` || 'Web';
-  const os = `${result.os.name} ${result.os.version}`;
-  const icon = deviceType === 'mobile' ? Smartphone : Laptop;
-
-  const formattedAt = isPast(new Date(createdAt))
-    ? `${formatDistanceToNowStrict(new Date(createdAt))} ago`
-    : format(new Date(createdAt), 'd MMM, yyyy');
-
-  return {
-    deviceType,
-    browser,
-    os,
-    timeAgo: formattedAt,
-    icon,
-  };
-};
+export { parseSession, type SessionInfo };
 
 // ─── Context Shape ────────────────────────────────────────────────────────────
 type AuthContextType = {
@@ -97,12 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Idle logout ───────────────────────────────────────────────────────────
   const handleIdle = useCallback(async () => {
     if (user) {
-      console.warn('User idle for 15 minutes. Logging out for security.');
+      logger.warn('User idle for 15 minutes. Logging out for security.');
       try {
         broadcastLogout();
         await axiosClient.post('/auth/logout');
       } catch (e) {
-        console.error('Logout on idle failed:', e);
+        logger.error({ error: e }, 'Logout on idle failed');
       } finally {
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
