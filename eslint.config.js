@@ -45,6 +45,22 @@ module.exports = tseslint.config(
     },
   },
   {
+    files: ['**/*.js', '**/*.cjs'],
+    languageOptions: {
+      globals: {
+        module: 'writable',
+        require: 'readonly',
+        __dirname: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-undef': 'off',
+    },
+  },
+  {
     ignores: ['dist/**', 'node_modules/**', '.next/**', '.expo/**', 'coverage/**'],
   },
 );
