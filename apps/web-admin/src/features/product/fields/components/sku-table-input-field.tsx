@@ -36,6 +36,8 @@ interface VariantDataSource {
 }
 
 export function SkuTableInputField({ field }: UiProps) {
+
+  const { control: formControl, setValue, getValues } = useFormContext();
   const ds = field.dataSource as VariantDataSource | undefined;
   const labelsMap: Record<string, Record<string, string>> = ds?.labels ?? {};
   const labelOf = React.useCallback(
@@ -43,30 +45,33 @@ export function SkuTableInputField({ field }: UiProps) {
     [labelsMap],
   );
 
-  const [variantMeta, setVariantMeta] = React.useState<Array<{ key: string; label: string }>>(
-    Array.isArray(ds)
-      ? (ds as Array<{ key: string; label: string }>)
-      : Array.isArray(ds?.variants)
-        ? ds.variants.map((v) => ({
-            key: v.key ?? v.name ?? v.value ?? '',
-            label: v.label ?? v.name ?? v.key ?? String(v.value ?? ''),
-          }))
-        : [],
-  );
+  // Static variants are derived synchronously (no effect, no re-render loop)
+  const staticVariantMeta = React.useMemo(() => {
+    if (Array.isArray(ds?.variants)) {
+      return ds.variants.map((a) => ({
+        key: a.key ?? a.name ?? a.value ?? '',
+        label: a.label ?? a.name ?? a.key ?? String(a.value ?? ''),
+      }));
+    }
+    return undefined;
+  }, [ds?.variants]);
+
+  // Async variant source (schema-driven fetch) — stable, serializable deps
+  const fetchUrl = typeof ds?.fetch === 'string' ? ds.fetch : undefined;
+  const fetchParamsKey = React.useMemo(() => JSON.stringify(ds?.params ?? {}), [ds?.params]);
+  const fetchParamsRef = React.useRef(ds?.params);
+  fetchParamsRef.current = ds?.params;
+
+  const [asyncVariantMeta, setAsyncVariantMeta] = React.useState<
+    Array<{ key: string; label: string }> | null
+  >(null);
 
   React.useEffect(() => {
+    if (staticVariantMeta || !fetchUrl) return;
+    let cancelled = false;
     (async () => {
-      if (Array.isArray(ds?.variants)) {
-        const normalized = ds.variants.map((a) => ({
-          key: a.key ?? a.name ?? a.value ?? '',
-          label: a.label ?? a.name ?? a.key ?? String(a.value ?? ''),
-        }));
-        setVariantMeta(normalized);
-        return;
-      }
-      if (!ds || !ds.fetch) return;
       try {
-        const res = await axiosClient.get(ds.fetch, { params: ds.params });
+        const res = await axiosClient.get(fetchUrl, { params: fetchParamsRef.current });
         const data = res.data;
         const raw =
           data?.data?.variants ??
@@ -80,15 +85,17 @@ export function SkuTableInputField({ field }: UiProps) {
           key: String(a.key ?? a.name ?? a.value ?? ''),
           label: String(a.label ?? a.name ?? a.key ?? a.value ?? ''),
         }));
-        setVariantMeta(normalized);
-      } catch (_e) {
-        // silently ignore
+        if (!cancelled) setAsyncVariantMeta(normalized);
+      } catch (_error) {
+        // Keep the empty variant list; the default-SKU table still renders.
       }
     })();
-  }, [ds?.fetch, Array.isArray(ds?.variants) ? ds?.variants?.length : ds?.variants]);
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchUrl, fetchParamsKey, staticVariantMeta]);
 
-  const { control: formControl, setValue, getValues } = useFormContext();
-
+  const variantMeta = staticVariantMeta ?? asyncVariantMeta ?? [];
   const watchedValues = useWatch({
     control: formControl,
     name: variantMeta.map((a) => a.key),
@@ -554,30 +561,30 @@ function VariantFieldInput({
     rules:
       type === 'number'
         ? {
-            validate: (value: unknown) => {
-              const raw = String(value ?? '').trim();
-              if (!raw) {
-                return required ? 'This field is required' : true;
+          validate: (value: unknown) => {
+            const raw = String(value ?? '').trim();
+            if (!raw) {
+              return required ? 'This field is required' : true;
+            }
+            const numeric = Number(raw);
+            if (!Number.isFinite(numeric)) {
+              return 'Enter a valid number';
+            }
+            if ((isPriceField || isSpecialPriceField) && numeric <= 0) {
+              return 'Must be greater than 0';
+            }
+            if (isNonNegativeField && numeric < 0) {
+              return 'Cannot be negative';
+            }
+            if (isSpecialPriceField) {
+              const basePrice = Number(getValues(name.replace(/\.specialPrice$/, '.price')));
+              if (Number.isFinite(basePrice) && numeric >= basePrice) {
+                return 'Must be lower than price';
               }
-              const numeric = Number(raw);
-              if (!Number.isFinite(numeric)) {
-                return 'Enter a valid number';
-              }
-              if ((isPriceField || isSpecialPriceField) && numeric <= 0) {
-                return 'Must be greater than 0';
-              }
-              if (isNonNegativeField && numeric < 0) {
-                return 'Cannot be negative';
-              }
-              if (isSpecialPriceField) {
-                const basePrice = Number(getValues(name.replace(/\.specialPrice$/, '.price')));
-                if (Number.isFinite(basePrice) && numeric >= basePrice) {
-                  return 'Must be lower than price';
-                }
-              }
-              return true;
-            },
-          }
+            }
+            return true;
+          },
+        }
         : required
           ? { required: 'This field is required' }
           : undefined,
@@ -597,9 +604,8 @@ function VariantFieldInput({
           required={required}
           placeholder=""
           title={String(field.value ?? '')}
-          className={`font-mono text-[11px] sm:text-xs px-1.5 h-7 sm:h-8 ${
-            fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
-          }`}
+          className={`font-mono text-[11px] sm:text-xs px-1.5 h-7 sm:h-8 ${fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
+            }`}
           {...field}
         />
       )}

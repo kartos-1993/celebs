@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertTriangle, Info, Loader, Search, ShoppingBag, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
   Table,
-  TableHeader,
-  TableRow,
-  TableHead,
   TableBody,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@celebs/shared-ui/components/table';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -20,17 +21,22 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
-import { ShoppingBag, Search, Info, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import {
-  getProducts,
-  toggleProductActivation,
-  archiveProduct,
-  ProductApiService,
-} from '../api';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@celebs/shared-ui/components/dialog';
 import { useAuthContext } from '@/context/auth-provider';
+import type { ProductFilterRequest } from '../api';
+import type { ProductListItem, ProductStatus } from '../types';
+import { useProductMutations, useProductsQuery } from '../hooks/use-product-queries';
 
-const productStatusTabs = [
+const PAGE_SIZE = 10;
+
+const productStatusTabs: Array<{ id: ProductStatus | 'all'; label: string }> = [
   { id: 'all', label: 'All' },
   { id: 'draft', label: 'Draft' },
   { id: 'pending_review', label: 'Pending Review' },
@@ -39,143 +45,70 @@ const productStatusTabs = [
   { id: 'deactivated', label: 'Deactivated' },
 ];
 
-interface ProductItem {
-  id: string;
-  name: string;
-  brand?: string;
-  price: number;
-  status: string;
-  vendorName?: string;
-}
+const statusBadgeVariant = (
+  status: string,
+): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  if (status === 'published') return 'default';
+  if (status === 'pending_review') return 'secondary';
+  if (status === 'rejected') return 'destructive';
+  return 'outline';
+};
 
 const ManageProduct = () => {
-  const { toast } = useToast();
   const { role } = useAuthContext();
-  const [products, setProducts] = useState<ProductItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [showHelpNotification, setShowHelpNotification] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<ProductStatus | 'all'>('all');
   const [page, setPage] = useState(1);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [showHelpNotification, setShowHelpNotification] = useState(true);
+  const [archiveTarget, setArchiveTarget] = useState<ProductListItem | null>(null);
 
-  const fetchProducts = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await getProducts({
-        search: searchTerm || undefined,
-        status: filterStatus === 'all' ? undefined : (filterStatus as 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived'),
-        page,
-        limit: 10,
-      });
-      setProducts((res.data?.products ?? []) as unknown as ProductItem[]);
-      setTotal(res.data?.total ?? 0);
-    } catch (err: unknown) {
-      const errObj = err as { message?: string };
-      toast({
-        title: 'Failed to load products',
-        description: errObj.message || 'Operation failed',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchTerm, filterStatus, page, toast]);
+  const filters = useMemo<ProductFilterRequest>(
+    () => ({
+      search: appliedSearch || undefined,
+      status: filterStatus === 'all' ? undefined : filterStatus,
+      page,
+      limit: PAGE_SIZE,
+    }),
+    [appliedSearch, filterStatus, page],
+  );
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  const { data, isLoading, isFetching } = useProductsQuery(filters);
+  const products = (data?.data?.products ?? []) as unknown as ProductListItem[];
+  const total = data?.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const { toggleActivation, archive, submitForReview } = useProductMutations();
+
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    setAppliedSearch(searchInput.trim());
     setPage(1);
-    fetchProducts();
   };
 
   const handleSelectProduct = (productId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedProducts([...selectedProducts, productId]);
-    } else {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
-    }
+    setSelectedProducts((previous) =>
+      checked ? [...previous, productId] : previous.filter((id) => id !== productId),
+    );
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedProducts(products.map((p) => String(p.id)));
-    } else {
-      setSelectedProducts([]);
-    }
-  };
-
-  const handleToggleActivation = async (id: string) => {
-    try {
-      await toggleProductActivation(id);
-      toast({
-        title: 'Status Updated',
-        description: 'Successfully toggled product status.',
-      });
-      fetchProducts();
-    } catch (err: unknown) {
-      const errObj = err as { message?: string };
-      toast({
-        title: 'Action failed',
-        description: errObj.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleArchive = async (id: string) => {
-    try {
-      await archiveProduct(id);
-      toast({
-        title: 'Product Archived',
-        description: 'The product was successfully soft deleted.',
-      });
-      fetchProducts();
-    } catch (err: unknown) {
-      const errObj = err as { message?: string };
-      toast({
-        title: 'Archive failed',
-        description: errObj.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleResubmit = async (id: string) => {
-    try {
-      await ProductApiService.submitProductForReview(id);
-      toast({
-        title: 'Product Submitted',
-        description: 'Product has been queued for review successfully.',
-      });
-      fetchProducts();
-    } catch (err: unknown) {
-      const errObj = err as { message?: string };
-      toast({
-        title: 'Submission failed',
-        description: errObj.message,
-        variant: 'destructive',
-      });
-    }
+    setSelectedProducts(checked ? products.map((product) => product.id) : []);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-fashion-700">Manage Products</h1>
           <p className="text-gray-500 mt-1">Manage your product inventory and track performance</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild className="bg-orange-500 hover:bg-orange-600">
-            <Link to="/products/new">+ New Product</Link>
-          </Button>
-        </div>
+        <Button asChild className="bg-orange-500 hover:bg-orange-600">
+          <Link to="/products/new">+ New Product</Link>
+        </Button>
       </div>
 
       {/* Help Notification */}
@@ -216,147 +149,139 @@ const ManageProduct = () => {
                   setFilterStatus(tab.id);
                   setPage(1);
                 }}
-                className={`pb-3 px-1 border-b-2 transition-colors ${
-                  filterStatus === tab.id
+                className={`pb-3 px-1 border-b-2 transition-colors ${filterStatus === tab.id
                     ? 'border-orange-500 text-orange-600 font-medium'
                     : 'border-transparent text-gray-600 hover:text-gray-800'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
-          {/* Filters and Search */}
+          {/* Search */}
           <form onSubmit={handleSearch} className="flex gap-4 mb-6 max-w-md">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search products..."
                 className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
             <Button type="submit">Search</Button>
           </form>
 
-          {/* Products Table */}
-          {isLoading ? (
-            <div className="py-8 text-center text-sm text-gray-500">Loading products...</div>
-          ) : products.length === 0 ? (
-            <div className="py-8 text-center text-sm text-gray-500">No products found.</div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedProducts.length === products.length && products.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead>Product Info</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ownership</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
+          {/* Table */}
+          <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+            {isLoading ? (
+              <div className="py-8 text-center text-sm text-gray-500">Loading products...</div>
+            ) : products.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-500">No products found.</div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
                         <Checkbox
-                          checked={selectedProducts.includes(product.id)}
-                          onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
+                          checked={selectedProducts.length === products.length && products.length > 0}
+                          onCheckedChange={handleSelectAll}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          {product.brand && (
-                            <div className="text-xs text-gray-500">Brand: {product.brand}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        Rs. {product.price.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            product.status === 'published'
-                              ? 'default'
-                              : product.status === 'pending_review'
-                                ? 'secondary'
-                                : product.status === 'rejected'
-                                  ? 'destructive'
-                                  : 'outline'
-                          }
-                        >
-                          {product.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {product.vendorName || 'Independent Seller'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {role === 'VENDOR' &&
-                            (product.status === 'draft' || product.status === 'rejected') && (
-                              <Button size="sm" onClick={() => handleResubmit(product.id)}>
-                                Submit
-                              </Button>
-                            )}
-
-                          {role === 'VENDOR' &&
-                            (product.status === 'published' ||
-                              product.status === 'deactivated') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleToggleActivation(product.id)}
-                              >
-                                {product.status === 'published' ? 'Deactivate' : 'Activate'}
-                              </Button>
-                            )}
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                More ▼
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link to={`/products/edit/${product.id}`}>Edit</Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleArchive(product.id)}>
-                                Archive (Delete)
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
+                      </TableHead>
+                      <TableHead>Product Info</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Ownership</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedProducts.includes(product.id)}
+                            onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            {product.brand && (
+                              <div className="text-xs text-gray-500">Brand: {product.brand}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          Rs. {product.price.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusBadgeVariant(product.status)}>{product.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {product.vendorName || 'Independent Seller'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {role === 'VENDOR' &&
+                              (product.status === 'draft' || product.status === 'rejected') && (
+                                <Button
+                                  size="sm"
+                                  disabled={submitForReview.isPending}
+                                  onClick={() => submitForReview.mutate(product.id)}
+                                >
+                                  Submit
+                                </Button>
+                              )}
+                            {role === 'VENDOR' &&
+                              (product.status === 'published' || product.status === 'deactivated') && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={toggleActivation.isPending}
+                                  onClick={() => toggleActivation.mutate(product.id)}
+                                >
+                                  {product.status === 'published' ? 'Deactivate' : 'Activate'}
+                                </Button>
+                              )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  More ▼
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/products/edit/${product.id}`}>Edit</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setArchiveTarget(product)}>
+                                  Archive (Delete)
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
 
-          {total > 10 && (
+          {/* Pagination */}
+          {totalPages > 1 && (
             <div className="flex justify-between items-center mt-4">
               <Button disabled={page === 1} onClick={() => setPage(page - 1)} variant="outline">
                 Previous
               </Button>
               <span className="text-sm text-gray-500">
-                Page {page} of {Math.ceil(total / 10)}
+                Page {page} of {totalPages}
               </span>
               <Button
-                disabled={page * 10 >= total}
+                disabled={page >= totalPages}
                 onClick={() => setPage(page + 1)}
                 variant="outline"
               >
@@ -366,6 +291,40 @@ const ManageProduct = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Archive confirmation — was previously an instant, unconfirmed soft-delete */}
+      <Dialog open={Boolean(archiveTarget)} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Archive “{archiveTarget?.name}”?
+            </DialogTitle>
+            <DialogDescription>
+              This product will be soft-deleted: it is hidden from the storefront and removed from
+              active listings. This action is tracked in the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArchiveTarget(null)} disabled={archive.isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={archive.isPending || !archiveTarget}
+              onClick={() => {
+                if (!archiveTarget) return;
+                archive.mutate(archiveTarget.id, {
+                  onSuccess: () => setArchiveTarget(null),
+                });
+              }}
+            >
+              {archive.isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+              Archive Product
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

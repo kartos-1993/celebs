@@ -1,6 +1,6 @@
 import { getCategoryById } from '../../category/api';
 import type { CategoryAttribute } from '../../category/types';
-import type { FieldSpec } from '../fields/ui-registry';
+import type { FieldSpec } from '../types';
 import { extractVariantsMeta } from '../fields/variant-utils';
 
 export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
@@ -18,7 +18,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     let colorFieldKey = merged.find((f) =>
       Boolean(
         f.group === 'variant' &&
-          (f.name.toLowerCase() === 'color' || f.name.toLowerCase().includes('color')),
+        (f.name.toLowerCase() === 'color' || f.name.toLowerCase().includes('color')),
       ),
     )?.name;
 
@@ -42,17 +42,17 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
               ? { label: value, value }
               : typeof value === 'object' && value !== null
                 ? {
-                    label: String(
-                      (value as Record<string, unknown>).label ??
-                        (value as Record<string, unknown>).name ??
-                        (value as Record<string, unknown>).value ??
-                        value,
-                    ),
-                    value:
-                      (value as Record<string, unknown>).value ??
-                      (value as Record<string, unknown>).label ??
-                      (value as Record<string, unknown>).name,
-                  }
+                  label: String(
+                    (value as Record<string, unknown>).label ??
+                    (value as Record<string, unknown>).name ??
+                    (value as Record<string, unknown>).value ??
+                    value,
+                  ),
+                  value:
+                    (value as Record<string, unknown>).value ??
+                    (value as Record<string, unknown>).label ??
+                    (value as Record<string, unknown>).name,
+                }
                 : { label: String(value), value: String(value) },
           );
         } else {

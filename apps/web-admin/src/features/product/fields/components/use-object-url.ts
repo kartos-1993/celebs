@@ -1,8 +1,8 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 
 export function useObjectUrl(file: File | string | undefined) {
-  const [url, setUrl] = React.useState<string | null>(null);
-  React.useEffect(() => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
     if (!file) return setUrl(null);
     if (typeof file === 'string') return setUrl(file);
     const u = URL.createObjectURL(file);

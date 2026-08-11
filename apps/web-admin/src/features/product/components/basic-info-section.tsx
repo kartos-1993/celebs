@@ -10,8 +10,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { CascadingDropdown, Category as DropdownCategory } from './cascading-dropdown';
-
+import { CascadingDropdown } from './cascading-dropdown';
+import type { DropdownCategory } from '../types';
 interface BasicInfoSectionProps {
   control: Control<FieldValues>;
   selectedCategoryId: string;
