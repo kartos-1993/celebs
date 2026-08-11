@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, memo } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch, type Control, type FieldValues } from 'react-hook-form';
 import type { FieldErrors } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { logger } from '@celebs/shared-utils';
@@ -13,7 +13,7 @@ import { useProductForm } from '../hooks/use-product-form';
 import type { FieldSpec } from '../fields/ui-registry';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import BasicInfoSection from './basic-info-section';
-import DynamicProductForm from './dynamic-product-form';
+import { DynamicProductForm } from './dynamic-product-form';
 import ProductFormActions from './product-form-action';
 import SubmissionProgressChecklist from './submission-progress-checklist';
 import {
@@ -38,7 +38,7 @@ const DraftAutoSaver = memo(
     getValues,
     userId,
   }: {
-    control: any;
+    control: Control<FieldValues>;
     draftRestored: boolean;
     isEditMode: boolean;
     watchedCategoryId: string;
@@ -245,21 +245,23 @@ const AddProduct = () => {
       }
     });
 
-    form.setValue('sku.default.price' as never, '1200', { shouldValidate: true });
-    form.setValue('sku.default.stock' as never, '15', { shouldValidate: true });
-    form.setValue('sku.default.sellerSku' as never, 'POLO-SHIRT-MOCK', { shouldValidate: true });
-    form.setValue('sku.default.available' as never, true, { shouldValidate: true });
+    const setFormValue = form.setValue as unknown as (field: string, val: unknown, opts?: Record<string, boolean>) => void;
+
+    setFormValue('sku.default.price', '1200', { shouldValidate: true });
+    setFormValue('sku.default.stock', '15', { shouldValidate: true });
+    setFormValue('sku.default.sellerSku', 'POLO-SHIRT-MOCK', { shouldValidate: true });
+    setFormValue('sku.default.available', true, { shouldValidate: true });
 
     const colors = (form.getValues('Color' as never) as string[] | undefined) || ['Blue', 'White'];
     if (Array.isArray(colors)) {
       colors.forEach((color) => {
         const prefix = `variants.colorMeta.${color}`;
-        form.setValue(`${prefix}.hot` as never, false);
-        form.setValue(
-          `${prefix}.swatch` as never,
+        setFormValue(`${prefix}.hot`, false);
+        setFormValue(
+          `${prefix}.swatch`,
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941189/celebs/products/qrxlasu3b8wercsjciod.png',
         );
-        form.setValue(`${prefix}.images` as never, [
+        setFormValue(`${prefix}.images`, [
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png',
         ]);
@@ -284,7 +286,7 @@ const AddProduct = () => {
           bodyMeasurements: populateList(sizeObj.bodyMeasurements),
         };
       });
-      form.setValue('sizes' as never, updated, { shouldValidate: true });
+      setFormValue('sizes', updated, { shouldValidate: true });
     }
 
     toast({
@@ -326,15 +328,16 @@ const AddProduct = () => {
       }
 
       if (draft.values) {
-        const valObj = draft.values as Record<string, any>;
+        const valObj = draft.values as Record<string, unknown>;
         const flatVals = flattenObject(valObj);
+        const setFormValue = form.setValue as unknown as (field: string, val: unknown, opts?: Record<string, boolean>) => void;
 
         // Ensure categoryId and subcategoryId are set first
         if (valObj.categoryId && !form.getValues('categoryId')) {
-          form.setValue('categoryId', valObj.categoryId, { shouldValidate: true });
+          setFormValue('categoryId', String(valObj.categoryId), { shouldValidate: true });
         }
         if (valObj.subcategoryId && !form.getValues('subcategoryId')) {
-          form.setValue('subcategoryId', valObj.subcategoryId, { shouldValidate: true });
+          setFormValue('subcategoryId', String(valObj.subcategoryId), { shouldValidate: true });
         }
 
         // Full reset with all saved values
@@ -348,7 +351,7 @@ const AddProduct = () => {
         // Batch set values across all fields
         Object.entries({ ...valObj, ...flatVals }).forEach(([key, val]) => {
           if (val !== undefined && val !== null) {
-            form.setValue(key as never, val, { shouldDirty: true, shouldValidate: false });
+            setFormValue(key, val, { shouldDirty: true, shouldValidate: false });
           }
         });
       }

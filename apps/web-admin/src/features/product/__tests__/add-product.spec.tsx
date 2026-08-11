@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createProductSchema } from '@celebs/shared-types';
 
 describe('Product Specifications & Size Measurements', () => {

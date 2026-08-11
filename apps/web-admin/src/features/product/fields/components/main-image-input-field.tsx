@@ -12,7 +12,8 @@ import {
 
 export function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
-  const files: ImageValue[] = watch(field.name) ?? [];
+  const rawFiles = watch(field.name);
+  const files: ImageValue[] = React.useMemo(() => rawFiles ?? [], [rawFiles]);
   const [previews, setPreviews] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
   const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
@@ -49,10 +50,14 @@ export function MainImageInputField({ field }: UiProps) {
       if (rule.minWidth || rule.minHeight || rule.maxWidth || rule.maxHeight) {
         try {
           const dims = await getDims(file);
-          if (rule.minWidth && dims.w < rule.minWidth) return `${file.name} width < ${rule.minWidth}px`;
-          if (rule.minHeight && dims.h < rule.minHeight) return `${file.name} height < ${rule.minHeight}px`;
-          if (rule.maxWidth && dims.w > rule.maxWidth) return `${file.name} width > ${rule.maxWidth}px`;
-          if (rule.maxHeight && dims.h > rule.maxHeight) return `${file.name} height > ${rule.maxHeight}px`;
+          const minW = typeof rule.minWidth === 'number' ? rule.minWidth : undefined;
+          const minH = typeof rule.minHeight === 'number' ? rule.minHeight : undefined;
+          const maxW = typeof rule.maxWidth === 'number' ? rule.maxWidth : undefined;
+          const maxH = typeof rule.maxHeight === 'number' ? rule.maxHeight : undefined;
+          if (typeof minW === 'number' && dims.w < minW) return `${file.name} width < ${minW}px`;
+          if (typeof minH === 'number' && dims.h < minH) return `${file.name} height < ${minH}px`;
+          if (typeof maxW === 'number' && dims.w > maxW) return `${file.name} width > ${maxW}px`;
+          if (typeof maxH === 'number' && dims.h > maxH) return `${file.name} height > ${maxH}px`;
         } catch (_e) {
           return `Could not inspect ${file.name} dimensions`;
         }
@@ -97,7 +102,7 @@ export function MainImageInputField({ field }: UiProps) {
       });
       if (!active) setPreviews([]);
     };
-  }, [filesHash]);
+  }, [filesHash, files]);
 
   const onAddFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = Array.from(e.target.files || []);
@@ -349,7 +354,7 @@ export function MainImageInputField({ field }: UiProps) {
         {/* Specifications Footer */}
         {field.rule ? (
           <div className="text-[11px] text-muted-foreground">
-            Max size: {Math.round((field.rule.maxSize || 5242880) / 1024 / 1024)}MB.
+            Max size: {Math.round(((typeof field.rule.maxSize === 'number' ? field.rule.maxSize : 5242880) / 1024 / 1024))}MB.
             {field.rule.minWidth || field.rule.minHeight ? (
               <>
                 {' '}

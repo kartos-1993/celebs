@@ -1,15 +1,8 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
-import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@celebs/shared-ui/components/tooltip';
 import type { UiProps } from '../ui-registry';
 import {
   LabelWithRequired,
@@ -355,7 +348,7 @@ export function ColorMetaInputField({ field }: UiProps) {
   const { setValue } = useFormContext();
   const dsVariants = Array.isArray(field.dataSource?.variants) ? field.dataSource.variants : [];
   const colorField: string =
-    field.dataSource?.colorField ??
+    (field.dataSource?.colorField as string | undefined) ??
     (dsVariants as Array<{ label?: string; key?: string }>).find((v) => /color/i.test(v?.label ?? v?.key ?? ''))?.key ??
     'color';
   const labelsMap: Record<string, Record<string, string>> =
