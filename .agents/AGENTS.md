@@ -52,27 +52,35 @@ Enforce all file creation logic to follow this structure precisely:
 - **Password Hashing for Auth Fixtures**: NEVER insert plain-text passwords into test database records directly. When seeding `User` records for integration tests that perform `/auth/login`, ALWAYS hash the password using `await hashValue(...)`.
 - **No External Container/Cloud Dependencies for Tests**: Tests must execute cleanly against local native servers and rely on stubs/mocks for S3 presigned URLs without requiring external cloud connectivity.
 
-## 8. Senior Architect Guidelines & Monorepo Anti-Pattern Guardrails
+## 8. Senior Architect Guidelines & Monorepo Architectural Mandates
 
-- **React Fast Refresh & Component Export Isolation (`react-refresh/only-export-components`)**:
-  - React component files (`.tsx`) MUST ONLY export React components.
-  - Extract all non-component functions, data mappers, static schemas, and utility helpers into standalone `.ts` files (e.g. `dynamic-form-utils.ts`, `session-utils.ts`).
-  - Extract custom hooks into dedicated `use-*.ts` files.
+- **Monorepo Package Boundaries & Single Source of Truth**:
+  - Core domain entity types, data contracts, Zod schemas, and cross-application invariants MUST strictly originate from `@celebs/shared-types`. Apps (`apps/api`, `apps/web-admin`, `apps/mobile`) must re-export or consume shared contracts rather than redefining duplicate interfaces locally.
+  - `@celebs/shared-*` packages must maintain strict downward dependency flow and NEVER depend on target application scopes (`apps/*`). `@celebs/shared-types` must remain pure TypeScript type declarations without runtime side effects.
 
-- **Two-Step Type Conversions for Dynamic Objects (`TS2352`)**:
-  - Direct type assertions from concrete domain interfaces (e.g., `Product`, `Category`, `ProductColorVariant`) to indexable records (`Record<string, unknown>`) trigger `TS2352` errors.
-  - ALWAYS perform two-step type assertions via `unknown`: `((product as unknown) as Record<string, unknown>)`.
-  - NEVER introduce explicit `any` to bypass index signature constraints.
+- **React Architecture & Fast Refresh Isolation (`react-refresh/only-export-components`)**:
+  - Component files (`.tsx`) MUST ONLY export React components.
+  - Data transformation mappers, static configuration objects, schema parsing helpers, and utility functions must be extracted into standalone `.ts` files to ensure HMR state preservation and fast refresh compliance.
+  - Custom React hooks MUST be isolated into dedicated `use-*.ts` files.
 
-- **Dynamic Form Field Setters in React Hook Form (`TS2345`)**:
-  - Dynamic string template literals passed to `form.setValue` (e.g. `variants.colorMeta.${color}` or `sku.default.price`) fail strict path tuple inference (`Type '...' is not assignable to type 'never'`).
-  - Declare a strongly typed helper setter in the component scope: `const setFormValue = form.setValue as unknown as (field: string, val: unknown, opts?: Record<string, boolean>) => void;`.
+- **Hook Stability & Event Handler Closure Management**:
+  - Functions passed down as props or used as effect dependencies MUST be stabilized using `useCallback` or `useMemo` to prevent unnecessary render cascades and broken effect lifecycles (`react-hooks/exhaustive-deps`).
+  - Heavy or dynamic object transformations (e.g. data table columns, filtered lists) must be memoized at component boundaries.
 
-- **React Native & Expo UI Event & Color Typing**:
-  - Tab icon and header theme color properties must be typed as `ColorValue` (from `react-native`), not plain `string`.
-  - Scroll and touch handlers must use concrete React Native event signatures: `NativeSyntheticEvent<NativeScrollEvent>` and `GestureResponderEvent`.
-  - Asset requires in Expo components must use `// eslint-disable-next-line @typescript-eslint/no-require-imports`.
+- **Resource & Memory Leak Prevention**:
+  - Dynamic object URLs created via `URL.createObjectURL()` during file previews MUST be explicitly revoked in effect cleanup callbacks (`URL.revokeObjectURL()`).
+  - Event listeners, timers, and WebSocket subscriptions must include explicit tear-down routines on unmount.
 
-- **Canonical Domain Model Single Source of Truth**:
-  - User and core entity types (`UserData`, `VendorProfileData`, `Role`) must be declared 100% inside `@celebs/shared-types`.
-  - Local app type files (`apps/web-admin/src/types.ts`) must re-export shared domain types rather than redefining duplicate interfaces.
+- **Domain Model Extensibility & Type-Safe Guards (No Hacky Double-Casts)**:
+  - Avoid unsafe double-cast escape hatches (`as unknown as Record<string, unknown>`).
+  - Shared domain entity interfaces in `@celebs/shared-types` that accommodate dynamic attributes or optional metadata MUST explicitly declare structured optional fields (e.g. `dynamicData?: Record<string, unknown>`, `uploadedAssets?: Record<string, unknown>`) or index signatures (`[key: string]: unknown`) when dynamic keys are part of the domain contract.
+  - Use runtime type guards (e.g. `isRecord(val)`, `Array.isArray(val)`) and Zod schema parsing to safely inspect dynamic payloads.
+
+- **React Hook Form Path Invariants (`Path<TFormValues>` & `FieldValues`)**:
+  - Avoid casting `form.setValue` itself to untyped function signatures.
+  - Dynamic forms handling schema-driven category fields should be bound using `useForm<FieldValues>()` or `UseFormReturn<FieldValues>`, allowing native `form.setValue(name, value)` without path inference breakage.
+  - Statically typed forms with dynamic nested paths MUST type field paths using React Hook Form's `Path<TFormValues>` or `FieldPath<TFormValues>` (e.g., `form.setValue(path as Path<ProductFormValues>, value)`).
+
+- **Cross-Platform & Native Invariants (Mobile / Web)**:
+  - Mobile UI components MUST use native synthetic event signatures (`GestureResponderEvent`, `NativeSyntheticEvent<NativeScrollEvent>`) and native theme properties (`ColorValue`).
+  - Platform-specific dynamic module imports or asset requires in Expo MUST be guarded with scoped lint rules (`// eslint-disable-next-line @typescript-eslint/no-require-imports`).
