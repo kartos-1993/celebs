@@ -176,14 +176,17 @@ export async function buildProductPayload({
     mainImages,
     dynamicData: {
       values: Object.fromEntries(
-        Object.entries(values)
+        fields
+          .map((field) => field.name)
           .filter(
-            ([key]) =>
-              !['name', 'brand', 'description', 'categoryId', 'subcategoryId', 'status'].includes(
-                key,
-              ),
+            (name) =>
+              !name.includes('.') &&
+              !['name', 'brand', 'description', 'price', 'specialPrice', 'categoryId', 'subcategoryId', 'mainImage', 'sizes', 'skus', 'status'].includes(name) &&
+              name !== colorFieldName &&
+              name !== sizeFieldName,
           )
-          .map(([key, value]) => [key, value]),
+          .filter((name) => values[name] !== undefined && values[name] !== null && values[name] !== '')
+          .map((name) => [name, values[name]]),
       ),
       uploadedAssets: {
         mainImages,
