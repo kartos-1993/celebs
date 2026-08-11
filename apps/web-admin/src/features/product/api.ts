@@ -1,35 +1,29 @@
 import { axiosClient } from '@/lib/axios/axios-client';
+import type { IApiResponse } from '@celebs/shared-types';
 import type {
-  CreateProductType,
-  UpdateProductType,
-  ProductFilterType,
-  ProductType,
-} from '@celebs/shared-types';
+  CreateProductRequest,
+  ProductFilterRequest,
+  ProductRecord,
+  UpdateProductRequest,
+} from './types';
 
-export type CreateProductRequest = CreateProductType;
-export type UpdateProductRequest = UpdateProductType;
-export type ProductFilterRequest = ProductFilterType;
-export type ProductRecord = ProductType;
+// Public type aliases — required by manage-product, use-product-queries, add-product
+export type {
+  CreateProductRequest,
+  ProductFilterRequest,
+  ProductRecord,
+  UpdateProductRequest,
+} from './types';
+export type ProductApiResponse<T> = IApiResponse<T>;
+
 
 export interface PaginatedProductsResponse {
   products: ProductRecord[];
   total: number;
+  page?: number;
+  limit?: number;
   nextCursor?: string;
   hasMore?: boolean;
-}
-
-interface ApiResponse<T> {
-  success?: boolean;
-  message?: string;
-  data: T;
-}
-
-interface UploadedFileResponse {
-  url: string;
-  publicId?: string;
-  bytes?: number;
-  format?: string;
-  originalname?: string;
 }
 
 export interface ReviewProductRequestPayload {
@@ -40,68 +34,39 @@ export interface ReviewProductRequestPayload {
   rejectionFields?: string[];
 }
 
+interface UploadedFileResponse {
+  url: string;
+  publicId?: string;
+  bytes?: number;
+  format?: string;
+  originalname?: string;
+}
+
 const BASE_PATH = '/products';
+/** Uploads ride the shared client but with an extended timeout. */
+const UPLOAD_TIMEOUT_MS = 120_000;
+
 
 export async function createProduct(
   data: CreateProductRequest,
-): Promise<ApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ApiResponse<ProductRecord>>(BASE_PATH, data);
+): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(BASE_PATH, data);
   return response.data;
 }
 
 export async function getProducts(
   filters?: ProductFilterRequest,
-): Promise<ApiResponse<PaginatedProductsResponse>> {
-  const response = await axiosClient.get<ApiResponse<PaginatedProductsResponse>>(BASE_PATH, {
-    params: filters,
-  });
-  return response.data;
-}
-
-export async function getProductById(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await axiosClient.get<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`);
-  return response.data;
-}
-
-export async function getProductReviewQueue(
-  page = 1,
-  limit = 10,
-): Promise<ApiResponse<PaginatedProductsResponse>> {
-  const response = await axiosClient.get<ApiResponse<PaginatedProductsResponse>>(
-    `${BASE_PATH}/review-product-queue`,
-    { params: { page, limit } },
+): Promise<ProductApiResponse<PaginatedProductsResponse>> {
+  const response = await axiosClient.get<ProductApiResponse<PaginatedProductsResponse>>(
+    BASE_PATH,
+    { params: filters },
   );
   return response.data;
 }
 
-export async function submitProductForReview(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/submit-for-review`,
-  );
-  return response.data;
-}
-
-export async function reviewProduct(
-  id: string,
-  payload: ReviewProductRequestPayload | 'approve' | 'reject',
-  note?: string,
-): Promise<ApiResponse<ProductRecord>> {
-  const body = typeof payload === 'object' ? payload : { action: payload, note };
-  const response = await axiosClient.post<ApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/review`,
-    body,
-  );
-  return response.data;
-}
-
-export async function archiveProduct(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}/archive`);
-  return response.data;
-}
-
-export async function toggleProductActivation(id: string): Promise<ApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/toggle-activation`,
+export async function getProductById(id: string): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.get<ProductApiResponse<ProductRecord>>(
+    `${BASE_PATH}/${id}`,
   );
   return response.data;
 }
@@ -109,11 +74,68 @@ export async function toggleProductActivation(id: string): Promise<ApiResponse<P
 export async function updateProduct(
   id: string,
   data: UpdateProductRequest,
-): Promise<ApiResponse<ProductRecord>> {
-  const response = await axiosClient.put<ApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`, data);
+): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.put<ProductApiResponse<ProductRecord>>(
+    `${BASE_PATH}/${id}`,
+    data,
+  );
   return response.data;
 }
 
+export async function getProductReviewQueue(
+  page = 1,
+  limit = 10,
+): Promise<ProductApiResponse<PaginatedProductsResponse>> {
+  const response = await axiosClient.get<ProductApiResponse<PaginatedProductsResponse>>(
+    `${BASE_PATH}/review-product-queue`,
+    { params: { page, limit } },
+  );
+  return response.data;
+}
+
+
+export async function submitProductForReview(
+  id: string,
+): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+    `${BASE_PATH}/${id}/submit-for-review`,
+  );
+  return response.data;
+}
+
+/** Single payload signature — callers pass `{ action: 'approve' }` etc. */
+export async function reviewProduct(
+  id: string,
+  payload: ReviewProductRequestPayload,
+): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+    `${BASE_PATH}/${id}/review`,
+    payload,
+  );
+  return response.data;
+}
+
+export async function archiveProduct(id: string): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+    `${BASE_PATH}/${id}/archive`,
+  );
+  return response.data;
+}
+
+export async function toggleProductActivation(
+  id: string,
+): Promise<ProductApiResponse<ProductRecord>> {
+  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+    `${BASE_PATH}/${id}/toggle-activation`,
+  );
+  return response.data;
+}
+
+/**
+ * Uploads media files. Accepts a mix of already-uploaded URLs (passed
+ * through untouched) and File instances (uploaded to /media/upload).
+ * Returns the ordered list of public URLs.
+ */
 export async function uploadFiles(
   files: Array<File | string | null | undefined>,
 ): Promise<string[]> {
@@ -122,39 +144,37 @@ export async function uploadFiles(
   );
   const pendingFiles = files.filter((file): file is File => file instanceof File);
 
-  if (pendingFiles.length === 0) {
-    return existingUrls;
-  }
+  if (pendingFiles.length === 0) return existingUrls;
 
   const formData = new FormData();
   pendingFiles.forEach((file) => formData.append('files', file));
 
-  const response = await axiosClient.post<ApiResponse<UploadedFileResponse[]>>(
+  const response = await axiosClient.post<ProductApiResponse<UploadedFileResponse[]>>(
     '/media/upload',
     formData,
     {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      timeout: UPLOAD_TIMEOUT_MS,
+      headers: { 'Content-Type': 'multipart/form-data' },
     },
   );
 
   const uploadedUrls = (response.data?.data ?? [])
-    .map((file: { url?: string }) => file.url)
+    .map((file) => file.url)
     .filter((url): url is string => Boolean(url));
 
   return [...existingUrls, ...uploadedUrls];
 }
 
+
 export const ProductApiService = {
   createProduct,
   getProducts,
   getProductById,
+  updateProduct,
   getProductReviewQueue,
   submitProductForReview,
   reviewProduct,
   archiveProduct,
   toggleProductActivation,
-  updateProduct,
   uploadFiles,
 };

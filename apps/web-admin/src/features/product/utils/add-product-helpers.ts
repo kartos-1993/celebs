@@ -1,12 +1,6 @@
 import type { FieldSpec } from '../fields/ui-registry';
-
-export type PageSectionKey =
-  | 'basic'
-  | 'images'
-  | 'specification'
-  | 'pricing'
-  | 'shipping'
-  | 'terms';
+import type { PageSectionKey } from '../types';
+export type { PageSectionKey } from '../types';
 
 export const MANAGE_PRODUCTS_PATH = '/products/manage';
 export const DRAFT_STORAGE_KEY = 'web-admin.product-draft.add';
