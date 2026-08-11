@@ -64,12 +64,14 @@ export function VendorRegisterPage() {
           },
         });
       },
-      onError: (error: any) => {
-        const errorData = error?.response?.data || error;
+      onError: (error: unknown) => {
+        const errorData =
+          (error as { response?: { data?: { errors?: Array<{ field?: string; message?: string }>; message?: string } } })?.response?.data ||
+          (error as { message?: string; errors?: Array<{ field?: string; message?: string }> });
         if (errorData?.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-          errorData.errors.forEach((err: any) => {
+          errorData.errors.forEach((err: { field?: string; message?: string }) => {
             if (err.field) {
-              form.setError(err.field as any, {
+              form.setError(err.field as never, {
                 type: 'server',
                 message: err.message,
               });

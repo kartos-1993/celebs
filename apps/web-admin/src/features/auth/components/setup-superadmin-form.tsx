@@ -49,9 +49,10 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
           state: { successMessage: 'Superadmin setup completed successfully! You can now log in.' },
         });
       },
-      onError: (error: AxiosError<{ message?: string }>) => {
+      onError: (error: unknown) => {
+        const axiosErr = error as AxiosError<{ message?: string }>;
         const errorMsg =
-          error?.response?.data?.message || error?.message || 'Failed to complete setup';
+          axiosErr?.response?.data?.message || axiosErr?.message || 'Failed to complete setup';
         form.setError('setupSecret', {
           type: 'server',
           message: errorMsg,

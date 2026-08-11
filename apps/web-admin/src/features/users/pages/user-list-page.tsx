@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { getUsersQueryFn, createUserMutationFn, deleteUserMutationFn } from '@/lib/api';
+import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import {

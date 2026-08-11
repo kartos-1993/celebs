@@ -20,7 +20,6 @@ import {
   Plane,
   Percent,
   DollarSign,
-  ExternalLink,
 } from 'lucide-react';
 import type { ComboBundleType } from '@celebs/shared-types';
 

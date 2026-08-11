@@ -11,6 +11,7 @@ import {
   getAdminVendorsQueryFn,
 } from '@/lib/api';
 import { useAuthContext } from '@/context/auth-provider';
+import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
@@ -380,7 +381,7 @@ export default function StaffList() {
                 </td>
               </tr>
             ) : (
-              staff.map((member: { id: string; name: string; email: string; role: string; vendorProfile?: { shopName: string } }) => (
+              staff.map((member: UserData) => (
                 <tr
                   key={member.id}
                   className="border-b last:border-0 hover:bg-muted/30 transition-colors"
@@ -389,7 +390,7 @@ export default function StaffList() {
                   <td className="p-3.5 text-xs text-muted-foreground font-mono">{member.email}</td>
                   {isAdminOrSuperAdmin && (
                     <td className="p-3.5 text-xs font-medium text-foreground">
-                      {member.vendor?.shopName || 'Vendor Shop'}
+                      {member.vendorProfile?.shopName || 'Vendor Shop'}
                     </td>
                   )}
                   <td className="p-3.5">
