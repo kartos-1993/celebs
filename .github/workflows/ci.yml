@@ -101,15 +101,9 @@ jobs:
 
       - name: Push Test Database Schema
         run: npx dotenv -e apps/api/.env.test -- npx prisma db push --schema=apps/api/src/db/schema.prisma --config=prisma.config.ts
-        env:
-          DATABASE_URL: postgresql://postgres:celebs@localhost:5432/celebs_test
 
       - name: Run Unit Tests
         run: pnpm test
-        env:
-          DATABASE_URL: postgresql://postgres:celebs@localhost:5432/celebs_test
-          JWT_SECRET: test_jwt_secret_key_long_enough_for_hmac_32_chars
-          JWT_REFRESH_SECRET: test_jwt_refresh_secret_key_long_enough_for_hmac_32_chars
 
   build:
     name: Production Build

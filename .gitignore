@@ -9,6 +9,7 @@ tmp/
 
 # Ignore environment files
 .env.*
+!.env.test
 
 # Ignore build output folders
 dist/
