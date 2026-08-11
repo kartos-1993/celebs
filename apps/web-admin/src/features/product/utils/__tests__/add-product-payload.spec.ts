@@ -21,10 +21,15 @@ describe('buildProductPayload', () => {
       categoryId: '60c72b2f9b1d8b2d88a12345',
       subcategoryId: '60c72b2f9b1d8b2d88a67890',
       mainImage: ['https://example.com/image.jpg'],
+      Material: 'Cotton',
     };
 
+    const fields: FieldSpec[] = [
+      { name: 'Material', uiType: 'select', label: 'Material', group: 'details' },
+    ];
+
     const payload = await buildProductPayload({
-      fields: [] as FieldSpec[],
+      fields,
       status: 'draft',
       values,
       upload: fakeUpload,
@@ -41,6 +46,9 @@ describe('buildProductPayload', () => {
     expect(payload.mainImages).toEqual(['https://example.com/image.jpg']);
     expect(payload.colorVariants).toHaveLength(1);
     expect(payload.colorVariants?.[0]?.name).toBe('Default');
+    expect(payload.dynamicData?.values).toEqual({
+      Material: 'Cotton',
+    });
     expect(fakeUpload).toHaveBeenCalled();
   });
 
