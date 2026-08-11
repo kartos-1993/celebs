@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, {useState } from 'react';
+import { Linking,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
-  Package,
-  Truck,
   CheckCircle2,
-  Clock,
-  MapPin,
   ChevronLeft,
-  ShoppingBag,
   ExternalLink,
+  ShoppingBag,
+  Truck,
 } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { apiClient } from '@/api/client';
 
 interface OrderItem {
   id: string;

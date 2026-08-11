@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/api/client';
+
 import { StorefrontConfigData } from '../types';
+
+import { apiClient } from '@/api/client';
 
 export function useStorefrontConfig(categorySlug: string) {
   const fetchStorefrontConfig = async (): Promise<StorefrontConfigData | null> => {

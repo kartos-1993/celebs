@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  ScrollView,
-  View,
-  TouchableOpacity,
-  TextInput,
-  Alert,
   ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
-  MapPin,
-  CreditCard,
-  ChevronLeft,
-  Lock,
   AlertCircle,
+  ChevronLeft,
+  CreditCard,
+  Lock,
+  MapPin,
   ShieldCheck,
 } from 'lucide-react-native';
 
+import { apiClient } from '@/api/client';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useCart } from '@/features/cart/context/cart-context';
 import { useAuth } from '@/features/auth/context/auth-context';
-import { apiClient } from '@/api/client';
-
 import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
+import { useCart } from '@/features/cart/context/cart-context';
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -87,14 +86,14 @@ export default function CheckoutScreen() {
           streetAddress,
         },
         paymentMethod,
-        items: (cart?.items || []).map((item: any) => ({
+        items: (cart?.items || []).map((item: { productId?: string; id?: string; quantity: number; unitPrice?: number; price?: number }) => ({
           productId: item.productId || item.id,
           quantity: item.quantity,
           unitPrice: item.unitPrice || item.price,
         })),
       };
 
-      const res = await apiClient.post('/orders/checkout', payload).catch(async () => {
+      await apiClient.post('/orders/checkout', payload).catch(async () => {
         // Fallback simulation for staging if endpoint isn't fully seeded
         return {
           data: {
@@ -104,28 +103,24 @@ export default function CheckoutScreen() {
         };
       });
 
-      const orderId =
-        res.data?.data?.orderId ||
-        res.data?.data?.id ||
-        `CEL-${Math.floor(10000 + Math.random() * 90000)}`;
+      await clearCart();
 
       Alert.alert(
-        'Order Confirmed! 🎉',
-        `Your order has been placed successfully!\nOrder ID: ${orderId}`,
+        'Order Placed!',
+        'Thank you for your order. We are processing it and will update you soon.',
         [
           {
-            text: 'View My Orders',
-            onPress: async () => {
-              await clearCart();
-              router.push('/orders');
+            text: 'OK',
+            onPress: () => {
+              router.replace('/(tabs)');
             },
           },
         ],
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert(
         'Order Failed',
-        err?.message || 'Something went wrong while placing your order. Please try again.',
+        (err as { message?: string })?.message || 'Something went wrong while placing your order. Please try again.',
       );
     } finally {
       setLoading(false);

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet,TouchableOpacity, View } from 'react-native';
 import { ArrowRight, ShieldCheck } from 'lucide-react-native';
+
 import { ThemedText } from '@/components/themed-text';
 
 interface CartSummaryFooterProps {

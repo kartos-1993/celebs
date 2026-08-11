@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
+import { Dimensions, GestureResponderEvent, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Heart, ShoppingBag, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight,Heart, ShoppingBag } from 'lucide-react-native';
+
+import { Product, resolveImageUrl } from '../hooks/use-products';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Spacing } from '@/constants/theme';
-import { Product, resolveImageUrl } from '../hooks/use-products';
+import { Spacing } from '@/constants/theme';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
-import { moderateScale, responsiveFontSize, responsiveIconSize } from '@/utils/responsive';
+import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 6;
@@ -28,17 +29,21 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const { startFlyAnimation } = useFlyToCart();
   const imageRef = React.useRef<View>(null);
 
-  // Get image URI from mainImages, dynamicData, uploadedAssets or colorVariants
+  const productRecord = (product as unknown) as Record<string, unknown>;
+  const dynamicDataObj = productRecord.dynamicData as Record<string, unknown> | undefined;
+  const dynamicValuesObj = dynamicDataObj?.values as Record<string, unknown> | undefined;
+  const uploadedAssetsObj = productRecord.uploadedAssets as Record<string, unknown> | undefined;
+
   const primaryImage =
     product.mainImages?.[0] ||
-    (product as any).dynamicData?.values?.mainImage?.[0] ||
-    (product as any).dynamicData?.mainImage?.[0] ||
-    (product as any).uploadedAssets?.mainImages?.[0] ||
+    (Array.isArray(dynamicValuesObj?.mainImage) ? (dynamicValuesObj?.mainImage[0] as string) : undefined) ||
+    (Array.isArray(dynamicDataObj?.mainImage) ? (dynamicDataObj?.mainImage[0] as string) : undefined) ||
+    (Array.isArray(uploadedAssetsObj?.mainImages) ? (uploadedAssetsObj?.mainImages[0] as string) : undefined) ||
     product.colorVariants?.[0]?.images?.[0] ||
     '';
   const imageUrl = resolveImageUrl(primaryImage);
 
-  const handleAddToCart = (evt?: any) => {
+  const handleAddToCart = (evt?: GestureResponderEvent) => {
     evt?.stopPropagation?.();
     const touchX = evt?.nativeEvent?.pageX;
     const touchY = evt?.nativeEvent?.pageY;
@@ -76,7 +81,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
-    : (product as any).discountPercent || 15;
+    : (productRecord.discountPercent as number | undefined) || 15;
 
   const priceColor = hasDiscount ? '#FF5000' : '#000000';
 
@@ -85,7 +90,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
 
   // Brand / Store Name
-  const storeName = product.brand || (product as any).vendorName || 'BODI';
+  const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
 
   const handlePress = () => {
     if (onPress) {

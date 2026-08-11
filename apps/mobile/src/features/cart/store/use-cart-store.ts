@@ -1,6 +1,8 @@
-import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import { create } from 'zustand';
+
 import { AddToCartInput, CartResponse } from '@celebs/shared-types';
+
 import { CartApiService } from '../services/cart-service';
 
 const GUEST_SESSION_KEY = 'celebs_guest_session_id';

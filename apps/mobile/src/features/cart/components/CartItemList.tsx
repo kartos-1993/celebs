@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { ActivityIndicator,StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Plus, Minus, Trash2 } from 'lucide-react-native';
+import { Minus, Plus, Trash2 } from 'lucide-react-native';
+
 import { CartItemHydrated } from '@celebs/shared-types';
-import { resolveImageUrl } from '@/features/products/hooks/use-products';
+
 import { ThemedText } from '@/components/themed-text';
+import { resolveImageUrl } from '@/features/products/hooks/use-products';
 
 interface CartItemListProps {
   items: CartItemHydrated[];

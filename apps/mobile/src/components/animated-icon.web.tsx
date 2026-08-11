@@ -1,6 +1,6 @@
-import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
-import Animated, { Keyframe, Easing } from 'react-native-reanimated';
+import Animated, { Easing,Keyframe } from 'react-native-reanimated';
+import { Image } from 'expo-image';
 
 import classes from './animated-icon.module.css';
 const DURATION = 300;
@@ -58,6 +58,7 @@ export function AnimatedIcon() {
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
+        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>
 
@@ -66,6 +67,7 @@ export function AnimatedIcon() {
       </Animated.View>
 
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
+        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
       </Animated.View>
     </View>

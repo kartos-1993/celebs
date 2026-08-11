@@ -1,4 +1,4 @@
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data: T;
@@ -7,7 +7,7 @@ export interface ApiResponse<T = any> {
     limit?: number;
     total?: number;
     totalPages?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -15,5 +15,5 @@ export interface ApiError {
   message: string;
   statusCode?: number;
   code?: string;
-  errors?: Record<string, string[]> | any;
+  errors?: Record<string, string[]> | unknown;
 }

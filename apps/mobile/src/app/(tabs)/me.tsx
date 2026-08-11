@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  View,
-  TextInput,
   ActivityIndicator,
   Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
-  User,
-  ShoppingBag,
-  MapPin,
-  Heart,
-  LogOut,
   ChevronRight,
-  ShieldCheck,
-  Mail,
+  Heart,
   Lock,
+  LogOut,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  ShoppingBag,
+  User,
 } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -41,8 +41,8 @@ export default function MeScreen() {
   const handleRealGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-    } catch (err: any) {
-      Alert.alert('Google Sign-In Error', err?.message || 'Failed to initialize Google Sign-In');
+    } catch (err: unknown) {
+      Alert.alert('Google Sign-In Error', (err as { message?: string })?.message || 'Failed to initialize Google Sign-In');
     }
   };
 
@@ -63,8 +63,8 @@ export default function MeScreen() {
         await loginWithEmail(email, password);
         Alert.alert('Account Created', 'Welcome to Celebs Fashion!');
       }
-    } catch (err: any) {
-      Alert.alert('Authentication Error', err?.message || 'Authentication failed');
+    } catch (err: unknown) {
+      Alert.alert('Authentication Error', (err as { message?: string })?.message || 'Authentication failed');
     } finally {
       setIsSubmitting(false);
     }

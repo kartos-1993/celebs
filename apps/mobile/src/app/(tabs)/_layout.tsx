@@ -1,18 +1,18 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
-import { useColorScheme, View, StyleSheet, Platform } from 'react-native';
-import { Home, TrendingUp, ShoppingCart, User, Search } from 'lucide-react-native';
+import { ColorValue, Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSequence,
   withSpring,
 } from 'react-native-reanimated';
+import { Tabs } from 'expo-router';
+import { Home, Search, ShoppingCart, TrendingUp, User } from 'lucide-react-native';
 
 import { Colors } from '@/constants/theme';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
-function CategoryIcon({ color, size }: { color: any; size: number }) {
+function CategoryIcon({ color, size }: { color: ColorValue; size: number }) {
   return (
     <View style={styles.categoryIconContainer}>
       <Search size={size} color={color} strokeWidth={2.2} />
@@ -25,7 +25,7 @@ function CategoryIcon({ color, size }: { color: any; size: number }) {
   );
 }
 
-function CartTabIcon({ color, focused }: { color: any; focused: boolean }) {
+function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
   const { pulseTrigger } = useFlyToCart();
   const scale = useSharedValue(1);
 

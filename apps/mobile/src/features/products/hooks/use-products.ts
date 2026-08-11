@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import Constants from 'expo-constants';
+
 import { apiClient } from '@/api/client';
 import { resolveImageUrl } from '@/constants/config';
 export { resolveImageUrl };
@@ -45,7 +45,7 @@ export interface Product {
 
 export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
   const fetchProductsPage = async ({ pageParam = null }: { pageParam: string | null }) => {
-    const params: Record<string, any> = { limit: initialLimit, status: 'published' };
+    const params: Record<string, unknown> = { limit: initialLimit, status: 'published' };
     if (categorySlugOrId) params.category = categorySlugOrId;
     if (pageParam) params.cursor = pageParam;
 

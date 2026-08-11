@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import * as Google from 'expo-auth-session/providers/google';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { GOOGLE_CLIENT_ID } from '@/constants/config';
+
 import { useAuth } from '../context/auth-context';
+
+import { GOOGLE_CLIENT_ID } from '@/constants/config';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -21,6 +23,7 @@ export function useGoogleAuth() {
   useEffect(() => {
     if (Constants.appOwnership !== 'expo') {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { GoogleSignin } = require('@react-native-google-signin/google-signin');
         GoogleSignin.configure({
           webClientId: GOOGLE_CLIENT_ID,
@@ -73,9 +76,10 @@ export function useGoogleAuth() {
           }
 
           await loginWithGoogle(googleUser);
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const errObj = err as { message?: string };
           console.error('[useGoogleAuth] Authentication failed:', err);
-          setAuthError(err?.message || 'Google Sign-In failed');
+          setAuthError(errObj?.message || 'Google Sign-In failed');
         } finally {
           setIsAuthenticating(false);
         }
@@ -96,11 +100,12 @@ export function useGoogleAuth() {
     if (Constants.appOwnership !== 'expo') {
       setIsAuthenticating(true);
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { GoogleSignin } = require('@react-native-google-signin/google-signin');
         await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
         const userInfo = await GoogleSignin.signIn();
 
-        const user = userInfo.data?.user || (userInfo as any).user;
+        const user = userInfo.data?.user || (userInfo as { user?: { email?: string; name?: string; givenName?: string; photo?: string; id?: string } }).user;
         if (!user?.email) {
           throw new Error('Could not retrieve Google profile details');
         }
@@ -111,9 +116,10 @@ export function useGoogleAuth() {
           picture: user.photo,
           googleId: user.id,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errObj = error as { message?: string };
         console.error('[GoogleSignin] Native Error:', error);
-        setAuthError(error?.message || 'Google Sign-In failed');
+        setAuthError(errObj?.message || 'Google Sign-In failed');
       } finally {
         setIsAuthenticating(false);
       }
