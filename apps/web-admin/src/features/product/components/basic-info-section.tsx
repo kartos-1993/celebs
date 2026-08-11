@@ -12,8 +12,10 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { CascadingDropdown, Category as DropdownCategory } from './cascading-dropdown';
 
+import { Control, FieldValues } from 'react-hook-form';
+
 interface BasicInfoSectionProps {
-  control: Control<any>;
+  control: Control<FieldValues>;
   selectedCategoryId: string;
   selectedSubcategoryId: string;
   onCategoryChange: (categoryId: string) => void;
