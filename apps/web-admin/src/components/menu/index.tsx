@@ -33,7 +33,7 @@ interface MenuProps {
 export function Menu({ isSideBarOpen }: MenuProps) {
   const { role, user } = useAuthContext();
   const { theme, setTheme } = useTheme();
-  const menuList = getMenuList(role, (user as any)?.permissions);
+  const menuList = getMenuList(role, user?.permissions);
   const location = useLocation();
   const pathname = location.pathname;
 
