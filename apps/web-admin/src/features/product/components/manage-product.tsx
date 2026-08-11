@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
@@ -14,28 +14,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@celebs/shared-ui/components/select';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
-import { ShoppingBag, Plus, Search, AlertTriangle, Info, X } from 'lucide-react';
+import { ShoppingBag, Search, Info, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   getProducts,
   toggleProductActivation,
   archiveProduct,
-  submitProductForReview,
   ProductApiService,
 } from '../api';
 import { useAuthContext } from '@/context/auth-provider';
@@ -51,43 +41,42 @@ const productStatusTabs = [
 
 const ManageProduct = () => {
   const { toast } = useToast();
-  const { role } = useAuthContext();
-  const [products, setProducts] = useState<any[]>([]);
+  const { role: _role } = useAuthContext();
+  const [products, setProducts] = useState<Array<Record<string, unknown>>>([]);
   const [total, setTotal] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('');
   const [showHelpNotification, setShowHelpNotification] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await getProducts({
         search: searchTerm || undefined,
-        status: filterStatus === 'all' ? undefined : (filterStatus as any),
+        status: filterStatus === 'all' ? undefined : (filterStatus as 'DRAFT' | 'PUBLISHED' | 'PENDING_REVIEW' | 'REJECTED' | 'ARCHIVED'),
         page,
         limit: 10,
       });
-      setProducts(res.data?.products ?? []);
+      setProducts((res.data?.products ?? []) as Array<Record<string, unknown>>);
       setTotal(res.data?.total ?? 0);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Failed to load products',
-        description: err.message || 'Operation failed',
+        description: errObj.message || 'Operation failed',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchTerm, filterStatus, page, toast]);
 
   useEffect(() => {
     fetchProducts();
-  }, [filterStatus, page]);
+  }, [fetchProducts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +94,7 @@ const ManageProduct = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(products.map((p) => p.id));
+      setSelectedProducts(products.map((p) => String(p.id)));
     } else {
       setSelectedProducts([]);
     }
@@ -119,10 +108,11 @@ const ManageProduct = () => {
         description: 'Successfully toggled product status.',
       });
       fetchProducts();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Action failed',
-        description: err.message,
+        description: errObj.message,
         variant: 'destructive',
       });
     }
@@ -136,10 +126,11 @@ const ManageProduct = () => {
         description: 'The product was successfully soft deleted.',
       });
       fetchProducts();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Archive failed',
-        description: err.message,
+        description: errObj.message,
         variant: 'destructive',
       });
     }
@@ -153,10 +144,11 @@ const ManageProduct = () => {
         description: 'Product has been queued for review successfully.',
       });
       fetchProducts();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
       toast({
         title: 'Submission failed',
-        description: err.message,
+        description: errObj.message,
         variant: 'destructive',
       });
     }

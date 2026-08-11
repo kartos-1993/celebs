@@ -229,7 +229,7 @@ export default function ReviewProductQueue() {
 
   const { toast } = useToast();
 
-  const fetchQueue = async () => {
+  const fetchQueue = useCallback(async () => {
     setLoading(true);
     try {
       let res;
@@ -259,11 +259,11 @@ export default function ReviewProductQueue() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, currentPage, search, toast]);
 
   useEffect(() => {
     fetchQueue();
-  }, [activeTab, currentPage, search]);
+  }, [fetchQueue]);
 
   const handleApprove = async (id: string) => {
     setSubmittingAction(true);
