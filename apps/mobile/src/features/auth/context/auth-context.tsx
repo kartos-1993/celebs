@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect,useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+
 import { apiClient } from '@/api/client';
-import { useCart } from '@/features/cart/context/cart-context';
 
 export interface UserProfile {
   id: string;

@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+
 import { API_CONFIG, getDevBaseUrl } from '../constants/config';
+
 import { ApiError } from './types';
 
 const TOKEN_KEY = 'auth_access_token';

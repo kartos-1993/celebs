@@ -1,7 +1,9 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
+import { ScrollView, StyleSheet,TouchableOpacity } from 'react-native';
+
 import { QuickFilterItem } from '../../types';
+
+import { ThemedText } from '@/components/themed-text';
 
 interface ChipListFilterProps {
   items: QuickFilterItem[];

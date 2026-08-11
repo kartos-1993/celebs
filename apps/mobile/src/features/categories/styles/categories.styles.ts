@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+
 import { Spacing } from '@/constants/theme';
 import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 

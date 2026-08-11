@@ -1,25 +1,25 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useCallback, useRef,useState } from 'react';
 import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
   ScrollView,
   StatusBar,
   useColorScheme,
-  RefreshControl,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
 
-import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
+import { ThemedView } from '@/components/themed-view';
+import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CampaignCountdownBanner } from '@/features/home/components/CampaignCountdownBanner';
-import {
-  ComboBundleShowcase,
-  ComboBundleData,
-} from '@/features/home/components/ComboBundleShowcase';
 import { ComboBundleModal } from '@/features/home/components/ComboBundleModal';
-import { CategoryGrid } from '@/features/categories/components/category-grid';
-import { ProductGrid, ProductGridRef } from '@/features/products/components/product-grid';
+import {
+  ComboBundleData,
+  ComboBundleShowcase,
+} from '@/features/home/components/ComboBundleShowcase';
 import { styles } from '@/features/home/styles/home.styles';
+import { ProductGrid, ProductGridRef } from '@/features/products/components/product-grid';
 
 export default function HomeScreen() {
   const scheme = useColorScheme();

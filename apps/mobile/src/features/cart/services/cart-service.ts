@@ -1,10 +1,11 @@
-import { apiClient } from '../../../api/client';
 import {
   AddToCartInput,
   CartResponse,
   SyncCartInput,
   UpdateCartItemInput,
 } from '@celebs/shared-types';
+
+import { apiClient } from '../../../api/client';
 
 export class CartApiService {
   static async getCart(sessionId?: string): Promise<CartResponse> {

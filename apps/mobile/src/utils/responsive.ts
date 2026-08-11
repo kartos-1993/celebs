@@ -32,4 +32,4 @@ export const responsiveFontSize = (size: number) =>
  */
 export const responsiveIconSize = (size: number) => Math.round(moderateScale(size, 0.25));
 
-export { SCREEN_WIDTH, SCREEN_HEIGHT };
+export { SCREEN_HEIGHT,SCREEN_WIDTH };

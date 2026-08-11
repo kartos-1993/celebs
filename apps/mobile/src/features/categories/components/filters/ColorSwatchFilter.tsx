@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet,TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { ThemedText } from '@/components/themed-text';
+
 import { QuickFilterItem } from '../../types';
+
+import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
 
 interface ColorSwatchFilterProps {
