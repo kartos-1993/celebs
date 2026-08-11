@@ -25,19 +25,21 @@ export type UiType =
   | 'ColorMeta'
   | 'SizeMeasurementsTable';
 
+import { Control, FieldValues } from 'react-hook-form';
+
 export interface FieldSpec {
   name: string;
   uiType: UiType;
   label: string;
   group: string;
   required?: boolean;
-  value?: any;
-  dataSource?: any;
-  rule?: any;
+  value?: unknown;
+  dataSource?: Record<string, unknown>;
+  rule?: Record<string, unknown>;
   visible?: boolean;
 }
 
-export type UiProps = { field: FieldSpec; control: Control<any> };
+export type UiProps = { field: FieldSpec; control: Control<FieldValues> };
 
 export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   input: TextInputField,

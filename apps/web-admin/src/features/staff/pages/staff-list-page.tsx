@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -111,7 +112,7 @@ export default function StaffList() {
   const createMutation = useMutation({
     mutationFn: (values: FormValues) => {
       const preset = STAFF_ROLE_PRESETS.find((p) => p.id === selectedPreset);
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         ...values,
         permissions: preset?.permissions || [],
       };
@@ -125,7 +126,7 @@ export default function StaffList() {
       setShowCreateModal(false);
       createForm.reset();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       const errorMsg =
         error?.response?.data?.message || error?.message || 'Failed to create staff account';
       createForm.setError('confirmPassword', {
@@ -185,7 +186,7 @@ export default function StaffList() {
                 className="h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-ring"
               >
                 <option value="">All Vendor Shops</option>
-                {vendorsList.map((v: any) => (
+                {vendorsList.map((v: { id: string; shopName: string }) => (
                   <option key={v.id} value={v.id}>
                     {v.shopName}
                   </option>
@@ -229,7 +230,7 @@ export default function StaffList() {
                       <option value="" disabled>
                         Select Vendor Shop...
                       </option>
-                      {vendorsList.map((v: any) => (
+                      {vendorsList.map((v: { id: string; shopName: string; user?: { email?: string } }) => (
                         <option key={v.id} value={v.id}>
                           {v.shopName} ({v.user?.email || 'Vendor'})
                         </option>
@@ -379,7 +380,7 @@ export default function StaffList() {
                 </td>
               </tr>
             ) : (
-              staff.map((member: any) => (
+              staff.map((member: { id: string; name: string; email: string; role: string; vendorProfile?: { shopName: string } }) => (
                 <tr
                   key={member.id}
                   className="border-b last:border-0 hover:bg-muted/30 transition-colors"

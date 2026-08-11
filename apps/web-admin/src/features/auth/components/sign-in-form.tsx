@@ -35,7 +35,7 @@ const formSchema = z.object({
 export function SignInForm({ className, ...props }: SignInFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const successMessage = (location.state as any)?.successMessage;
+  const successMessage = (location.state as { successMessage?: string } | null)?.successMessage;
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: loginMutationFn,
@@ -76,18 +76,22 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
       const returnUrlParam = searchParams.get('returnUrl');
       const targetUrl = returnUrlParam ? decodeURIComponent(returnUrlParam) : '/';
       navigate(targetUrl, { replace: true });
-    } catch (error: any) {
-      if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
-        error.errors.forEach((err: any) => {
+    } catch (error: unknown) {
+      const errObj = error as {
+        message?: string;
+        errors?: Array<{ field?: keyof z.infer<typeof formSchema>; message?: string }>;
+      };
+      if (errObj?.errors && Array.isArray(errObj.errors) && errObj.errors.length > 0) {
+        errObj.errors.forEach((err) => {
           if (err.field) {
-            form.setError(err.field as any, {
+            form.setError(err.field, {
               type: 'server',
               message: err.message,
             });
           }
         });
-      } else if (error?.message) {
-        setServerError(error.message);
+      } else if (errObj?.message) {
+        setServerError(errObj.message);
       } else {
         setServerError('Invalid email or password');
       }

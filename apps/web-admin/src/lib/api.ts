@@ -132,7 +132,7 @@ export const getUsersQueryFn = async () => {
   return response.data;
 };
 
-export const createUserMutationFn = async (data: any) => await axiosClient.post(`/admin/users`, data);
+export const createUserMutationFn = async (data: Record<string, unknown>) => await axiosClient.post(`/admin/users`, data);
 
 export const deleteUserMutationFn = async (id: string) =>
   await axiosClient.delete(`/admin/users/${id}`);
@@ -143,7 +143,7 @@ export const getStaffQueryFn = async (vendorId?: string) => {
   return response.data;
 };
 
-export const createStaffMutationFn = async (data: any) => await axiosClient.post(`/staff`, data);
+export const createStaffMutationFn = async (data: Record<string, unknown>) => await axiosClient.post(`/staff`, data);
 
 export const deleteStaffMutationFn = async (id: string) => await axiosClient.delete(`/staff/${id}`);
 

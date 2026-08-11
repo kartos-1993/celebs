@@ -187,8 +187,8 @@ export async function buildProductPayload({
     },
     tags: [],
     featured: false,
-    skus: (values as any).skus ?? [],
-    variantOptions: (values as any).variantOptions ?? [],
+    skus: (values as unknown as { skus?: CreateProductType['skus'] }).skus ?? [],
+    variantOptions: (values as unknown as { variantOptions?: CreateProductType['variantOptions'] }).variantOptions ?? [],
     status,
   };
 }

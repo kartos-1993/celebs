@@ -67,7 +67,7 @@ export default function VendorList() {
                 </td>
               </tr>
             ) : (
-              vendors.map((vendor: any) => (
+              vendors.map((vendor: { id: string; shopName: string; phoneNumber: string; status: string; user?: { name?: string } }) => (
                 <tr key={vendor.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="p-4 font-medium">{vendor.shopName}</td>
                   <td className="p-4">{vendor.user?.name}</td>
