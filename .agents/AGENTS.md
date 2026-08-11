@@ -51,3 +51,28 @@ Enforce all file creation logic to follow this structure precisely:
 - **Single Subshell Env Wrapping**: Package `package.json` test scripts must wrap all chained commands inside a single subshell environment scope (`dotenv -e .env.test -- sh -c "..."` or explicit per-command `dotenv -e`) so `vitest` and `prisma db push` always run against the exact same database.
 - **Password Hashing for Auth Fixtures**: NEVER insert plain-text passwords into test database records directly. When seeding `User` records for integration tests that perform `/auth/login`, ALWAYS hash the password using `await hashValue(...)`.
 - **No External Container/Cloud Dependencies for Tests**: Tests must execute cleanly against local native servers and rely on stubs/mocks for S3 presigned URLs without requiring external cloud connectivity.
+
+## 8. Senior Architect Guidelines & Monorepo Anti-Pattern Guardrails
+
+- **React Fast Refresh & Component Export Isolation (`react-refresh/only-export-components`)**:
+  - React component files (`.tsx`) MUST ONLY export React components.
+  - Extract all non-component functions, data mappers, static schemas, and utility helpers into standalone `.ts` files (e.g. `dynamic-form-utils.ts`, `session-utils.ts`).
+  - Extract custom hooks into dedicated `use-*.ts` files.
+
+- **Two-Step Type Conversions for Dynamic Objects (`TS2352`)**:
+  - Direct type assertions from concrete domain interfaces (e.g., `Product`, `Category`, `ProductColorVariant`) to indexable records (`Record<string, unknown>`) trigger `TS2352` errors.
+  - ALWAYS perform two-step type assertions via `unknown`: `((product as unknown) as Record<string, unknown>)`.
+  - NEVER introduce explicit `any` to bypass index signature constraints.
+
+- **Dynamic Form Field Setters in React Hook Form (`TS2345`)**:
+  - Dynamic string template literals passed to `form.setValue` (e.g. `variants.colorMeta.${color}` or `sku.default.price`) fail strict path tuple inference (`Type '...' is not assignable to type 'never'`).
+  - Declare a strongly typed helper setter in the component scope: `const setFormValue = form.setValue as unknown as (field: string, val: unknown, opts?: Record<string, boolean>) => void;`.
+
+- **React Native & Expo UI Event & Color Typing**:
+  - Tab icon and header theme color properties must be typed as `ColorValue` (from `react-native`), not plain `string`.
+  - Scroll and touch handlers must use concrete React Native event signatures: `NativeSyntheticEvent<NativeScrollEvent>` and `GestureResponderEvent`.
+  - Asset requires in Expo components must use `// eslint-disable-next-line @typescript-eslint/no-require-imports`.
+
+- **Canonical Domain Model Single Source of Truth**:
+  - User and core entity types (`UserData`, `VendorProfileData`, `Role`) must be declared 100% inside `@celebs/shared-types`.
+  - Local app type files (`apps/web-admin/src/types.ts`) must re-export shared domain types rather than redefining duplicate interfaces.
