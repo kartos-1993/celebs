@@ -91,7 +91,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     }
 
     if (colorFieldKey) {
-      const existingColorMeta = merged.find((f) => f.uiType === 'ColorMeta');
+      const existingColorMeta = merged.find((f) => f.uiType === 'ColorMeta' || f.uiType === 'ColorInline');
       if (!existingColorMeta) {
         merged.push({
           name: 'colorMeta',

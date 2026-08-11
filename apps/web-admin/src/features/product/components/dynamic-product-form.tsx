@@ -236,7 +236,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
               />
             ) : activeConfig.id === 'media' ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {renderFieldNodes([...(grouped.variant || []), ...(grouped.media || [])])}
+                {renderFieldNodes([...(grouped.base || []), ...(grouped.variant || []), ...(grouped.media || [])])}
               </div>
             ) : (
               <div className="space-y-6">

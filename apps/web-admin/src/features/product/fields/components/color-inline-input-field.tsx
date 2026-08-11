@@ -22,7 +22,8 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
   const swatchUrl: string = watch(`${namePrefix}.swatch`) || '';
   const images: ImageValue[] = watch(`${namePrefix}.images`) || [];
-  const [isUploading, setIsUploading] = React.useState(false);
+  const [isUploadingSwatch, setIsUploadingSwatch] = React.useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = React.useState(false);
   const [swatchPreview, setSwatchPreview] = React.useState<string>('');
   const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
   const safeLimits = React.useMemo(() => limits || {}, [limits]);
@@ -79,7 +80,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
       });
       return;
     }
-    setIsUploading(true);
+    setIsUploadingSwatch(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
       setValue(`${namePrefix}.swatch`, uploadedUrl, {
@@ -94,7 +95,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
         message: uploadErrorMessage(error),
       });
     } finally {
-      setIsUploading(false);
+      setIsUploadingSwatch(false);
     }
   };
 
@@ -120,7 +121,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
       }
       return;
     }
-    setIsUploading(true);
+    setIsUploadingGallery(true);
     try {
       const uploadedUrls = await uploadImageFiles(valids);
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
@@ -137,7 +138,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
         message: uploadErrorMessage(error),
       });
     } finally {
-      setIsUploading(false);
+      setIsUploadingGallery(false);
     }
   };
 
@@ -154,7 +155,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
       });
       return;
     }
-    setIsUploading(true);
+    setIsUploadingGallery(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
@@ -172,7 +173,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
         message: uploadErrorMessage(error),
       });
     } finally {
-      setIsUploading(false);
+      setIsUploadingGallery(false);
     }
   };
 
@@ -197,6 +198,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             type="file"
             className="hidden"
             accept={Array.isArray(accept) ? accept.join(',') : undefined}
+            disabled={isUploadingSwatch}
             onChange={(e) => {
               const input = e.currentTarget;
               const file = input.files?.[0] || null;
@@ -208,7 +210,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
           {swatchPreview ? (
             <div className="relative h-full w-full">
               <img src={swatchPreview} alt={color} className="h-full w-full object-cover" />
-              {isUploading && (
+              {isUploadingSwatch && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <Loader2 className="h-4 w-4 animate-spin text-white" />
                 </div>
@@ -216,7 +218,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             </div>
           ) : (
             <div className="grid h-full w-full place-items-center bg-accent text-[10px] text-muted-foreground relative">
-              {isUploading ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : 'Img'}
+              {isUploadingSwatch ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : 'Img'}
             </div>
           )}
         </label>
@@ -239,6 +241,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
                       type="file"
                       className="hidden"
                       accept={Array.isArray(accept) ? accept.join(',') : undefined}
+                      disabled={isUploadingGallery}
                       onChange={(e) => {
                         const input = e.currentTarget;
                         const file = input.files?.[0] || null;
@@ -265,7 +268,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
-                disabled={isUploading}
+                disabled={isUploadingGallery}
                 onChange={(e) => {
                   const input = e.currentTarget;
                   void addFiles(input.files).finally(() => {
@@ -273,7 +276,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
                   });
                 }}
               />
-              {isUploading ? (
+              {isUploadingGallery ? (
                 <div className="flex flex-col items-center justify-center text-primary gap-0.5">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <span className="text-[9px] font-medium">Uploading</span>
