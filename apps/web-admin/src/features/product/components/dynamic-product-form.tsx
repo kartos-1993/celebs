@@ -1,12 +1,11 @@
 import React from 'react';
-import { useFormContext, type Control } from 'react-hook-form';
+import { useFormContext, type Control, type FieldValues } from 'react-hook-form';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
 import { Button } from '@celebs/shared-ui/components/button';
-import { axiosClient } from '@/lib/axios/axios-client';
 import { ImageIcon, Palette, Ruler } from 'lucide-react';
 import { getCategoryById } from '../../category/api';
 import type { CategoryAttribute } from '../../category/types';
@@ -150,7 +149,7 @@ export const normalizeSchema = (fields: FieldSpec[]) =>
   });
 
 export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
-  let merged = [...fields];
+  const merged = [...fields];
 
   try {
     const { variants } = extractVariantsMeta(merged);
@@ -452,7 +451,7 @@ function DetailsSection({
   onOpenChange,
 }: {
   fields: FieldSpec[];
-  control: Control<any>;
+  control: Control<FieldValues>;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {

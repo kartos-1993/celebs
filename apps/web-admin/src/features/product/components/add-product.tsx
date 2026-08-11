@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, memo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldErrors } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
+import { logger } from '@celebs/shared-utils';
 import { Form } from '@celebs/shared-ui/components/form';
 import { Button } from '@celebs/shared-ui/components/button';
 import { useToast } from '@/hooks/use-toast';
@@ -244,21 +245,21 @@ const AddProduct = () => {
       }
     });
 
-    form.setValue('sku.default.price' as any, '1200', { shouldValidate: true });
-    form.setValue('sku.default.stock' as any, '15', { shouldValidate: true });
-    form.setValue('sku.default.sellerSku' as any, 'POLO-SHIRT-MOCK', { shouldValidate: true });
-    form.setValue('sku.default.available' as any, true, { shouldValidate: true });
+    form.setValue('sku.default.price' as never, '1200', { shouldValidate: true });
+    form.setValue('sku.default.stock' as never, '15', { shouldValidate: true });
+    form.setValue('sku.default.sellerSku' as never, 'POLO-SHIRT-MOCK', { shouldValidate: true });
+    form.setValue('sku.default.available' as never, true, { shouldValidate: true });
 
-    const colors = (form.getValues('Color' as any) as string[] | undefined) || ['Blue', 'White'];
+    const colors = (form.getValues('Color' as never) as string[] | undefined) || ['Blue', 'White'];
     if (Array.isArray(colors)) {
       colors.forEach((color) => {
         const prefix = `variants.colorMeta.${color}`;
-        form.setValue(`${prefix}.hot` as any, false);
+        form.setValue(`${prefix}.hot` as never, false);
         form.setValue(
-          `${prefix}.swatch` as any,
+          `${prefix}.swatch` as never,
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941189/celebs/products/qrxlasu3b8wercsjciod.png',
         );
-        form.setValue(`${prefix}.images` as any, [
+        form.setValue(`${prefix}.images` as never, [
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
           'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png',
         ]);
@@ -266,7 +267,7 @@ const AddProduct = () => {
     }
 
     const currentSizes =
-      (form.getValues('sizes' as any) as Array<{
+      (form.getValues('sizes' as never) as Array<{
         name?: string;
         productMeasurements?: Array<{ name?: string; value?: string }>;
         bodyMeasurements?: Array<{ name?: string; value?: string }>;
@@ -283,7 +284,7 @@ const AddProduct = () => {
           bodyMeasurements: populateList(sizeObj.bodyMeasurements),
         };
       });
-      form.setValue('sizes' as any, updated, { shouldValidate: true });
+      form.setValue('sizes' as never, updated, { shouldValidate: true });
     }
 
     toast({
@@ -347,12 +348,12 @@ const AddProduct = () => {
         // Batch set values across all fields
         Object.entries({ ...valObj, ...flatVals }).forEach(([key, val]) => {
           if (val !== undefined && val !== null) {
-            form.setValue(key as any, val, { shouldDirty: true, shouldValidate: false });
+            form.setValue(key as never, val, { shouldDirty: true, shouldValidate: false });
           }
         });
       }
     } catch (err) {
-      console.error('Failed to restore draft:', err);
+      logger.error({ error: err }, 'Failed to restore draft');
       // Don't wipe storage on transient JSON parse errors during HMR
     } finally {
       setDraftRestored(true);
@@ -522,7 +523,7 @@ const AddProduct = () => {
     const firstInvalidSection = currentSections.find((section) => !section.status);
 
     if (firstInvalidSection) {
-      console.warn('Submit blocked by section validation:', firstInvalidSection);
+      logger.warn({ section: firstInvalidSection }, 'Submit blocked by section validation');
       scrollToSection(firstInvalidSection.anchorId);
       toast({
         title: 'Complete the required sections',
@@ -535,14 +536,14 @@ const AddProduct = () => {
     setIsSubmitting(true);
 
     try {
-      console.log('Building payload for product submission...');
+      logger.info('Building payload for product submission...');
       const payload = await buildProductPayload({
         fields: schemaFields,
         status,
         values: currentValues,
       });
 
-      console.log('Submitting product payload to API:', payload);
+      logger.info({ payload }, 'Submitting product payload to API');
 
       if (isEditMode && id) {
         await updateProduct(id, payload);
@@ -565,7 +566,7 @@ const AddProduct = () => {
 
       navigate(MANAGE_PRODUCTS_PATH);
     } catch (error: unknown) {
-      console.error('Submit Product API Error:', error);
+      logger.error({ error }, 'Submit Product API Error');
       const serverMessages = applyServerErrors(error);
 
       toast({
@@ -582,7 +583,7 @@ const AddProduct = () => {
   };
 
   const handleFormInvalid = (errors: FieldErrors<Record<string, unknown>>) => {
-    console.warn('Form validation failed on submit:', errors);
+    logger.warn({ errors }, 'Form validation failed on submit');
     const flatErrs = flattenFormErrors(errors);
     const sections = buildSidebarSections({
       fieldErrors: flatErrs,
