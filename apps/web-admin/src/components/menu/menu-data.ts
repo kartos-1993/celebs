@@ -7,9 +7,6 @@ import {
   Store,
   UserCog,
   UserPen,
-  Shield,
-  Sparkles,
-  Flame,
   LucideIcon,
 } from 'lucide-react';
 import { Permission, can, type Role } from '@celebs/rbac';
