@@ -10,7 +10,7 @@ function flattenTree(nodes: CategoryTreeNode[]): Category[] {
     out.push({
       id: n.id,
       name: n.name,
-      parentId: (n as any).parentCategory ?? n.parent ?? null,
+      parentId: ((n as unknown as Record<string, unknown>).parentCategory as string | null) ?? n.parent ?? null,
       hasChildren: Array.isArray(n.children) && n.children.length > 0,
       level: n.level ?? Math.max(0, (n.path?.length ?? 1) - 1),
       path: n.path && n.path.length ? n.path : [n.name],
@@ -34,7 +34,7 @@ export const useCategories = () => {
         const tree = res?.data ?? [];
         const flat = flattenTree(tree);
         if (active) setAllCategories(flat);
-      } catch (e) {
+      } catch (_e) {
         // Keep empty list on failure; dropdown will show none
         if (active) setAllCategories([]);
       }

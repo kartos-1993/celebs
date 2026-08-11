@@ -1,4 +1,5 @@
 import { HTMLAttributes } from 'react';
+import { AxiosError } from 'axios';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +49,7 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
           state: { successMessage: 'Superadmin setup completed successfully! You can now log in.' },
         });
       },
-      onError: (error: any) => {
+      onError: (error: AxiosError<{ message?: string }>) => {
         const errorMsg =
           error?.response?.data?.message || error?.message || 'Failed to complete setup';
         form.setError('setupSecret', {

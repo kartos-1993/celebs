@@ -5,7 +5,7 @@ export interface ApiErrorResponse {
   message: string;
   errorCode?: string;
   errors?: Record<string, string[]>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface CustomAxiosRequestConfig extends AxiosRequestConfig {

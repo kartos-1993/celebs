@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 import type { UiProps } from '../ui-registry';
-import { LabelWithRequired, FieldError } from './shared';
+import { FieldError } from './shared';
 import {
   generateCollisionProofBaseSku,
   cleanSkuAttributeCode,
@@ -81,7 +81,7 @@ export function SkuTableInputField({ field }: UiProps) {
           label: String(a.label ?? a.name ?? a.key ?? a.value ?? ''),
         }));
         setVariantMeta(normalized);
-      } catch (e) {
+      } catch (_e) {
         // silently ignore
       }
     })();
@@ -176,7 +176,7 @@ export function SkuTableInputField({ field }: UiProps) {
 
   const applyToAll = () => {
     if (variants.length === 0) return;
-    const fill = (name: string, value: any) => setValue(name, value, { shouldDirty: true });
+    const fill = (name: string, value: unknown) => setValue(name, value, { shouldDirty: true });
     if (variants.length === 1) {
       for (const opt of variants[0].values) {
         if (!matchesScope(variants[0].key, opt)) continue;
@@ -225,7 +225,7 @@ export function SkuTableInputField({ field }: UiProps) {
   };
 
   const handleAutoGenerateSkus = () => {
-    const fill = (name: string, value: any) =>
+    const fill = (name: string, value: unknown) =>
       setValue(name, value, { shouldDirty: true, shouldValidate: true });
 
     const basePrefix = generateCollisionProofBaseSku(getValues('brand'));

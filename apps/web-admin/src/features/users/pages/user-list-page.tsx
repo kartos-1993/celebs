@@ -162,7 +162,7 @@ export default function UserList() {
                 </td>
               </tr>
             ) : (
-              users.map((account: any) => (
+              users.map((account: UserData) => (
                 <tr key={account.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="p-4 font-medium">{account.name}</td>
                   <td className="p-4">{account.email}</td>
