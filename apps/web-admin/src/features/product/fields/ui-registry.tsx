@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Control } from 'react-hook-form';
+import type { Control, FieldValues } from 'react-hook-form';
 import { TextInputField } from './components/text-input-field';
 import { NumberInputField } from './components/number-input-field';
 import { SwitchInputField } from './components/switch-input-field';
@@ -25,7 +25,6 @@ export type UiType =
   | 'ColorMeta'
   | 'SizeMeasurementsTable';
 
-import { Control, FieldValues } from 'react-hook-form';
 
 export interface FieldSpec {
   name: string;

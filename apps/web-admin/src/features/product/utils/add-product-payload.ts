@@ -1,4 +1,5 @@
 import { CreateProductRequest, uploadFiles } from '../api';
+import type { CreateProductType } from '@celebs/shared-types';
 import type { FieldSpec } from '../fields/ui-registry';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import {

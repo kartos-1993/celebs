@@ -39,10 +39,19 @@ const productStatusTabs = [
   { id: 'deactivated', label: 'Deactivated' },
 ];
 
+interface ProductItem {
+  id: string;
+  name: string;
+  brand?: string;
+  price: number;
+  status: string;
+  vendorName?: string;
+}
+
 const ManageProduct = () => {
   const { toast } = useToast();
-  const { role: _role } = useAuthContext();
-  const [products, setProducts] = useState<Array<Record<string, unknown>>>([]);
+  const { role } = useAuthContext();
+  const [products, setProducts] = useState<ProductItem[]>([]);
   const [total, setTotal] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,11 +65,11 @@ const ManageProduct = () => {
     try {
       const res = await getProducts({
         search: searchTerm || undefined,
-        status: filterStatus === 'all' ? undefined : (filterStatus as 'DRAFT' | 'PUBLISHED' | 'PENDING_REVIEW' | 'REJECTED' | 'ARCHIVED'),
+        status: filterStatus === 'all' ? undefined : (filterStatus as 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived'),
         page,
         limit: 10,
       });
-      setProducts((res.data?.products ?? []) as Array<Record<string, unknown>>);
+      setProducts((res.data?.products ?? []) as unknown as ProductItem[]);
       setTotal(res.data?.total ?? 0);
     } catch (err: unknown) {
       const errObj = err as { message?: string };

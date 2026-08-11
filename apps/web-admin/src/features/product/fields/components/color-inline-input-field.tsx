@@ -285,10 +285,9 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
 }
 
 export function ColorInlineInputField({ field }: UiProps) {
-  const { watch } = useFormContext();
   const dsVariants = Array.isArray(field.dataSource?.variants) ? field.dataSource.variants : [];
   const colorField: string =
-    field.dataSource?.colorField ??
+    (field.dataSource?.colorField as string | undefined) ??
     (dsVariants as Array<{ label?: string; key?: string }>).find((v) => /color/i.test(v?.label ?? v?.key ?? ''))?.key ??
     'color';
   const labelsMap: Record<string, Record<string, string>> =
