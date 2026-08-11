@@ -165,6 +165,79 @@ const priceRangeAttr: SeedAttr = {
   filterUiType: 'range_slider',
 };
 
+const nepaliFestivalsAttr: SeedAttr = {
+  name: 'Festivals',
+  type: 'multiselect',
+  values: [
+    'Dashain',
+    'Tihar / Deepawali',
+    'Holi',
+    'Teej',
+    'Lhosar',
+    'Chhath',
+    'Eid',
+    'Spring Festival',
+    'Christmas',
+    'New Year',
+    "Valentine's Day",
+    "Father's Day",
+    'Independence Day',
+  ],
+};
+
+const placketAttr: SeedAttr = {
+  name: 'Placket',
+  type: 'select',
+  values: [
+    'Single Breasted',
+    'Double Breasted',
+    'Covered Placket',
+    'Half Placket',
+    'Zip Placket',
+  ],
+};
+
+const hemShapedAttr: SeedAttr = {
+  name: 'Hem Shaped',
+  type: 'select',
+  values: ['Regular', 'Curved', 'Straight', 'Asymmetrical', 'Side Split'],
+};
+
+const fabricElasticityAttr: SeedAttr = {
+  name: 'Fabric Elasticity',
+  type: 'select',
+  values: ['Non-Stretch', 'Slight Stretch', 'Medium Stretch', 'High Stretch'],
+};
+
+const sheerAttr: SeedAttr = {
+  name: 'Sheer',
+  type: 'select',
+  values: ['No', 'Semi-Sheer', 'Yes'],
+};
+
+const linedWarmthAttr: SeedAttr = {
+  name: 'Lined For Added Warmth',
+  type: 'select',
+  values: ['No', 'Fleece Lined', 'Thermal Lined'],
+};
+
+const careInstructionsAttr: SeedAttr = {
+  name: 'Care Instructions',
+  type: 'select',
+  values: [
+    'Machine wash or professional dry clean',
+    'Hand wash cold',
+    'Do not dry clean',
+    'Machine wash cold, gentle cycle',
+  ],
+};
+
+const numberOfPiecesAttr: SeedAttr = {
+  name: 'Number of Pieces',
+  type: 'select',
+  values: ['1 Piece Set', '2 Piece Set', '3 Piece Set'],
+};
+
 const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
   name: 'Men',
   children: [
@@ -1670,43 +1743,53 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
           name: 'Men Shirts',
           imageUrl:
             'https://img.ltwebstatic.com/v4/j/spmp/2025/07/12/e7/17523233863dc8cde4cd5bdc679f14a5eb4ea11d2b_thumbnail_192x.avif',
-          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length', 'Bicep Length', 'Cuff'],
+          bodyChartColumns: ['Height', 'Bust', 'Waist Size', 'Hip Size'],
           attributes: [
-            { name: 'Style', type: 'select', values: ['Casual', 'Elegant', 'Boho'] },
+            {
+              name: 'Type',
+              type: 'select',
+              values: [
+                'Casual Shirts',
+                'Business / Dress Shirts',
+                'Denim Shirts',
+                'Linen Shirts',
+                'Utility / Cargo Shirts',
+                'Hawaiian / Resort Shirts',
+                'Oxford Shirts',
+                'Flannel / Plaid Shirts',
+              ],
+            },
+            {
+              name: 'Style',
+              type: 'select',
+              values: [
+                'Business Commuting',
+                'Casual / Modern',
+                'Streetwear',
+                'Minimalist',
+                'Vintage / Retro',
+                'Boho / Preppy',
+              ],
+            },
             {
               name: 'Fit Type',
               type: 'select',
-              values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'],
+              values: ['Regular Fit', 'Slim Fit', 'Oversized', 'Loose Fit', 'Relaxed Fit'],
             },
             colorAttr,
             sizeAttr,
             {
-              name: 'Material',
-              type: 'select',
-              values: ['Lace', 'Knitwear', 'Composite Fabric', 'Viscose', 'Organza', 'Canvas'],
-            },
-            { name: 'Length', type: 'select', values: ['Long', 'Crop'] },
-            {
-              name: 'Details',
-              type: 'multiselect',
-              values: ['Button', 'Knot', 'Pocket', 'Contrast Binding', 'Tie Front', 'Pearls'],
-            },
-            {
-              name: 'Pattern Type',
-              type: 'select',
-              values: [
-                'Chevron',
-                'Scarf Print',
-                'Baroque',
-                'Polka Dot',
-                'Tie Dye',
-                'Music & Instruments',
-              ],
-            },
-            {
               name: 'Neckline',
               type: 'select',
-              values: ['Deep V Neck', 'Square Neck', 'Mandarin Collar'],
+              values: [
+                'Shirt Collar',
+                'Mandarin Collar',
+                'Button-Down Collar',
+                'Camp Collar',
+                'Grandad Collar',
+                'Deep V Neck',
+              ],
             },
             {
               name: 'Sleeve Length',
@@ -1721,16 +1804,105 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
               ],
             },
             {
+              name: 'Sleeve Type',
+              type: 'select',
+              values: ['Regular Sleeve', 'Drop Shoulder', 'Raglan Sleeve', 'Shirt Sleeve'],
+            },
+            placketAttr,
+            hemShapedAttr,
+            {
+              name: 'Pattern Type',
+              type: 'select',
+              values: [
+                'Plain',
+                'Striped',
+                'Plaid',
+                'Floral Pattern',
+                'Abstract Print',
+                'Geometric',
+                'Tie Dye',
+                'Polka Dot',
+              ],
+            },
+            {
+              name: 'Details',
+              type: 'multiselect',
+              values: [
+                'Button',
+                'Pocket',
+                'Button Front',
+                'Chest Pocket',
+                'Embroidery',
+                'Contrast Piping',
+                'Patched',
+                'Contrast Binding',
+                'Raw Hem',
+                'Ripped',
+              ],
+            },
+            {
+              name: 'Material',
+              type: 'select',
+              values: [
+                '100% Cotton',
+                'Linen Blend',
+                'Viscose / Rayon',
+                'Polyester Blend',
+                'Oxford Cloth',
+                'Poplin',
+                'Denim',
+                'Satin / Silk Blend',
+                'Corduroy',
+              ],
+            },
+            {
+              name: 'Composition',
+              type: 'select',
+              values: [
+                '100% Cotton',
+                '98% Polyester, 2% Elastane',
+                '65% Cotton, 35% Polyester',
+                '100% Linen',
+                '55% Linen, 45% Cotton',
+              ],
+            },
+            fabricElasticityAttr,
+            sheerAttr,
+            linedWarmthAttr,
+            careInstructionsAttr,
+            numberOfPiecesAttr,
+            {
               name: 'Features',
               type: 'multiselect',
               values: [
+                'Soft',
                 'Comfortable',
                 'Great quality',
-                'Lightweight',
-                'Soft',
-                'Soft & Lightweight',
-                'Skin-friendly',
+                'Breathable',
+                'Anti-Wrinkle',
+                'Quick-Drying',
+                'Cooling',
+                'Easy Care',
               ],
+            },
+            {
+              name: 'Scenes',
+              type: 'multiselect',
+              values: [
+                'Daily',
+                'Office / Work',
+                'Party',
+                'Holiday',
+                'Vacation',
+                'Weekend Casual',
+                'Wedding',
+              ],
+            },
+            nepaliFestivalsAttr,
+            {
+              name: 'Ideal For',
+              type: 'select',
+              values: ['Conventional', 'Unisex', 'Executive / Professional', 'Young Adult', 'Couple Male'],
             },
             priceRangeAttr,
           ],
