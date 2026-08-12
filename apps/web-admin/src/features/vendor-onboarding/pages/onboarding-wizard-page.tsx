@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/context/auth-provider';
 import {
   Form,
@@ -21,17 +20,21 @@ import {
   vendorBusinessInfoSchema,
 } from '@celebs/shared-types';
 import {
-  updateVendorProfileMutationFn,
-  updateVendorWarehouseMutationFn,
-  updateVendorDocumentsMutationFn,
-  updateVendorBusinessInfoMutationFn,
-  submitVendorForReviewMutationFn,
-} from '@/lib/api';
+  updateVendorProfile,
+  updateVendorWarehouse,
+  updateVendorDocuments,
+  updateVendorBusinessInfo,
+  submitVendorForReview,
+} from '../api';
+import { PendingReviewScreen } from '../components/pending-review-screen';
+import { RejectionScreen } from '../components/rejection-screen';
 
 export default function OnboardingWizard() {
   const { user, refetch } = useAuthContext();
-  const navigate = useNavigate();
-  const initialStep = user?.vendorProfile?.onboardingStep || 1;
+  // onboardingStep is only used inside the wizard form — not for routing.
+  // status is the single source of truth for what screen to show.
+  const vendorStatus = user?.vendorProfile?.status;
+  const initialStep = user?.vendorProfile?.onboardingStep ?? 1;
   const [step, setStep] = useState(initialStep);
 
   // Step 1: Profile Form
@@ -45,7 +48,7 @@ export default function OnboardingWizard() {
   });
 
   const profileMutation = useMutation({
-    mutationFn: updateVendorProfileMutationFn,
+    mutationFn: updateVendorProfile,
     onSuccess: () => {
       refetch();
       setStep(2);
@@ -69,7 +72,7 @@ export default function OnboardingWizard() {
   });
 
   const warehouseMutation = useMutation({
-    mutationFn: updateVendorWarehouseMutationFn,
+    mutationFn: updateVendorWarehouse,
     onSuccess: () => {
       refetch();
       setStep(3);
@@ -89,7 +92,7 @@ export default function OnboardingWizard() {
   });
 
   const documentsMutation = useMutation({
-    mutationFn: updateVendorDocumentsMutationFn,
+    mutationFn: updateVendorDocuments,
     onSuccess: () => {
       refetch();
       setStep(4);
@@ -107,7 +110,7 @@ export default function OnboardingWizard() {
   });
 
   const businessMutation = useMutation({
-    mutationFn: updateVendorBusinessInfoMutationFn,
+    mutationFn: updateVendorBusinessInfo,
     onSuccess: () => {
       refetch();
       setStep(5);
@@ -116,17 +119,33 @@ export default function OnboardingWizard() {
 
   // Step 5: Submit Mutation
   const submitMutation = useMutation({
-    mutationFn: submitVendorForReviewMutationFn,
+    mutationFn: submitVendorForReview,
     onSuccess: () => {
+      // Refetch updates vendorProfile.status to UNDER_REVIEW;
+      // AuthContext re-renders → wizard picks up new status.
       refetch();
-      navigate('/');
     },
   });
+
+  // ── Status-based screen routing ─────────────────────────────────────────
+  // Status is the single source of truth. onboardingStep is only used inside
+  // the step forms below.
+  if (vendorStatus === 'UNDER_REVIEW') {
+    return <PendingReviewScreen vendorName={user?.name} />;
+  }
+
+  if (vendorStatus === 'REJECTED') {
+    return (
+      <RejectionScreen
+        rejectionReason={user?.vendorProfile?.rejectionReason}
+      />
+    );
+  }
 
   const progressPercentage = (step / 5) * 100;
 
   return (
-    <div className="container mx-auto py-10 max-w-2xl">
+    <div className="w-full">
       <div className="mb-8">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-xl font-bold">Seller Onboarding — Step {step} of 5</h2>

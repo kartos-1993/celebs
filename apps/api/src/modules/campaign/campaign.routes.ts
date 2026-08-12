@@ -1,10 +1,13 @@
 import { Router } from 'express';
-import { CampaignService } from './campaign.service';
+
+import { Permission } from '@celebs/rbac';
+import { createCampaignSchema } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
+
 import { authenticateJWT } from '../../middlewares/auth.middleware';
 import { requirePermissions } from '../../middlewares/rbac.middleware';
-import { Permission } from '@celebs/rbac';
-import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
-import { createCampaignSchema } from '@celebs/shared-types';
+
+import { CampaignService } from './campaign.service';
 
 const router = Router();
 const campaignService = new CampaignService();

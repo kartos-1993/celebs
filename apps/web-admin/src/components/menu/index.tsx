@@ -22,7 +22,8 @@ import {
 } from '@celebs/shared-ui/components/dropdown-menu';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { logoutMutationFn } from '@/lib/api';
+import { logout as logoutApi } from '@/features/auth/api';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
 import { useAuthContext } from '@/context/auth-provider';
 import { useTheme } from '@/context/theme-context';
 
@@ -33,18 +34,18 @@ interface MenuProps {
 export function Menu({ isSideBarOpen }: MenuProps) {
   const { role, user } = useAuthContext();
   const { theme, setTheme } = useTheme();
-  const menuList = getMenuList(role, (user as any)?.permissions);
+  const menuList = getMenuList(role, user?.permissions);
   const location = useLocation();
   const pathname = location.pathname;
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { mutate: logout } = useMutation({
-    mutationFn: logoutMutationFn,
+    mutationFn: logoutApi,
     onSuccess: () => {
-      queryClient.setQueryData(['authUser'], null);
+      queryClient.setQueryData(ACCOUNT_QUERY_KEYS.userSession(), null);
       queryClient.removeQueries({
-        predicate: (query) => query.queryKey[0] !== 'authUser',
+        predicate: (query) => query.queryKey[0] !== ACCOUNT_QUERY_KEYS.all[0],
       });
       const currentPath = window.location.pathname + window.location.search;
       if (currentPath && currentPath !== '/' && currentPath !== '/login') {

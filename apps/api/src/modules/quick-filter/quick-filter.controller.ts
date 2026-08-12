@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import { QuickFilterService } from './quick-filter.service';
+
 import { HTTPSTATUS } from '@celebs/shared-utils';
+
+import { QuickFilterService } from './quick-filter.service';
 
 export class QuickFilterController {
   constructor(private readonly quickFilterService: QuickFilterService) {}

@@ -1,6 +1,8 @@
 import slugify from 'slugify';
-import prisma from '../../config/db.prisma';
+
 import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
+
+import prisma from '../../config/db.prisma';
 
 interface SeedAttr {
   name: string;
@@ -163,6 +165,79 @@ const priceRangeAttr: SeedAttr = {
   isVariant: false,
   isStorefrontFilter: true,
   filterUiType: 'range_slider',
+};
+
+const nepaliFestivalsAttr: SeedAttr = {
+  name: 'Festivals',
+  type: 'multiselect',
+  values: [
+    'Dashain',
+    'Tihar / Deepawali',
+    'Holi',
+    'Teej',
+    'Lhosar',
+    'Chhath',
+    'Eid',
+    'Spring Festival',
+    'Christmas',
+    'New Year',
+    "Valentine's Day",
+    "Father's Day",
+    'Independence Day',
+  ],
+};
+
+const placketAttr: SeedAttr = {
+  name: 'Placket',
+  type: 'select',
+  values: [
+    'Single Breasted',
+    'Double Breasted',
+    'Covered Placket',
+    'Half Placket',
+    'Zip Placket',
+  ],
+};
+
+const hemShapedAttr: SeedAttr = {
+  name: 'Hem Shaped',
+  type: 'select',
+  values: ['Regular', 'Curved', 'Straight', 'Asymmetrical', 'Side Split'],
+};
+
+const fabricElasticityAttr: SeedAttr = {
+  name: 'Fabric Elasticity',
+  type: 'select',
+  values: ['Non-Stretch', 'Slight Stretch', 'Medium Stretch', 'High Stretch'],
+};
+
+const sheerAttr: SeedAttr = {
+  name: 'Sheer',
+  type: 'select',
+  values: ['No', 'Semi-Sheer', 'Yes'],
+};
+
+const linedWarmthAttr: SeedAttr = {
+  name: 'Lined For Added Warmth',
+  type: 'select',
+  values: ['No', 'Fleece Lined', 'Thermal Lined'],
+};
+
+const careInstructionsAttr: SeedAttr = {
+  name: 'Care Instructions',
+  type: 'select',
+  values: [
+    'Machine wash or professional dry clean',
+    'Hand wash cold',
+    'Do not dry clean',
+    'Machine wash cold, gentle cycle',
+  ],
+};
+
+const numberOfPiecesAttr: SeedAttr = {
+  name: 'Number of Pieces',
+  type: 'select',
+  values: ['1 Piece Set', '2 Piece Set', '3 Piece Set'],
 };
 
 const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
@@ -802,53 +877,145 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
           imageUrl:
             'https://img.ltwebstatic.com/v4/j/pi/2026/04/20/ca/1776662630f7a5b534e2b7e89ebafdef1f671ade3a_thumbnail_192x.avif',
           sizeChartColumns: ['Waist Size', 'Hip Size', 'Length', 'Thigh'],
+          bodyChartColumns: ['Waist Size', 'Hip Size', 'Height'],
           attributes: [
-            { name: 'Fit Type', type: 'select', values: ['Regular Fit', 'Skinny', 'Loose'] },
-            { name: 'Type', type: 'select', values: ['Skinny', 'Harem/Genie', 'Wide Leg'] },
-            colorAttr,
-            sizeAttr,
             {
-              name: 'Material',
+              name: 'Type',
               type: 'select',
-              values: ['Knitwear', 'Composite Fabric', 'Polyester'],
+              values: [
+                'Track Pants',
+                'Sweatpants',
+                'Joggers',
+                'Cargo Sweatpants',
+                'Harem/Genie',
+                'Wide Leg',
+                'Skinny',
+                'Straight Leg',
+                'Tapered Pants',
+              ],
+            },
+            {
+              name: 'Fit Type',
+              type: 'select',
+              values: ['Regular Fit', 'Loose', 'Oversized', 'Skinny', 'Slim Fit'],
+            },
+            {
+              name: 'Waist Line',
+              type: 'select',
+              values: [
+                'Natural(Mid Waist)',
+                'Mid Waist',
+                'High Waist',
+                'Low Waist',
+                'Drawstring Waist',
+                'Elastic Waist',
+              ],
             },
             {
               name: 'Length',
               type: 'select',
-              values: ['Long', 'Extra Long', 'Bermuda shorts', 'Cropped'],
+              values: ['Long', 'Extra Long', 'Ankle-Length', 'Cropped', 'Mid-Length'],
+            },
+            colorAttr,
+            sizeAttr,
+            fabricElasticityAttr,
+            {
+              name: 'Material',
+              type: 'select',
+              values: [
+                'Knitted Fabric',
+                'Cotton',
+                'Polyester Blend',
+                'Fleece',
+                'French Terry',
+                'Knitwear',
+                'Composite Fabric',
+                'Velvet',
+                'Polyester',
+              ],
+            },
+            {
+              name: 'Composition',
+              type: 'select',
+              values: [
+                '100% Polyester',
+                '100% Cotton',
+                '65% Polyester 35% Cotton',
+                '80% Cotton 20% Polyester',
+                'Cotton Blend',
+              ],
+            },
+            careInstructionsAttr,
+            {
+              name: 'Temperature',
+              type: 'select',
+              values: [
+                'Summer',
+                'Spring',
+                'Fall',
+                'Winter (<10/50)',
+                'Late Autumn (10-17/50-63)',
+                'Early Autumn (17-25/63-77)',
+              ],
+            },
+            {
+              name: 'Season',
+              type: 'select',
+              values: ['Summer', 'Spring', 'Fall', 'Winter', 'All-Season'],
+            },
+            linedWarmthAttr,
+            {
+              name: 'Body',
+              type: 'select',
+              values: ['Unlined', 'Fleece Lined', 'Flannel Lined', 'Padded'],
+            },
+            sheerAttr,
+            {
+              name: 'Pattern Type',
+              type: 'select',
+              values: [
+                'Plain',
+                'Baroque',
+                'Polka Dot',
+                'Tie Dye',
+                'Letter',
+                'Camo',
+                'Striped',
+                'Colorblock',
+                'Graphic',
+                'Floral',
+                'Geometric',
+              ],
             },
             {
               name: 'Details',
               type: 'multiselect',
-              values: ['Button', 'Knot', 'Pocket', 'Contrast Binding', 'Tie Front', 'Pearls'],
-            },
-            {
-              name: 'Pattern Type',
-              type: 'select',
-              values: ['Baroque', 'Polka Dot', 'Tie Dye', 'Music & Instruments', 'Geometric'],
-            },
-            {
-              name: 'Features',
-              type: 'multiselect',
-              values: ['Soft', 'Great quality', 'Comfortable', 'Warming'],
+              values: [
+                'Drawstring',
+                'Pocket',
+                'Zipper Pocket',
+                'Elastic Waist',
+                'Button',
+                'Knot',
+                'Contrast Binding',
+                'Tie Front',
+              ],
             },
             {
               name: 'Occasion',
               type: 'multiselect',
-              values: ['Daily', 'Weekend Casual', 'Going Out', 'Sports', 'Night Out', 'Holiday'],
-            },
-            {
-              name: 'Festivals',
-              type: 'multiselect',
               values: [
-                'Halloween',
-                'Christmas',
-                'Spring Festival',
-                'Thanksgiving Day',
-                "Valentine's Day",
-                "International Workers' Day",
+                'Daily',
+                'Weekend Casual',
+                'Going Out',
+                'Sports',
+                'Gym',
+                'Night Out',
+                'Holiday',
+                'Office / Work',
               ],
             },
+            nepaliFestivalsAttr,
             priceRangeAttr,
           ],
         },
@@ -1670,43 +1837,53 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
           name: 'Men Shirts',
           imageUrl:
             'https://img.ltwebstatic.com/v4/j/spmp/2025/07/12/e7/17523233863dc8cde4cd5bdc679f14a5eb4ea11d2b_thumbnail_192x.avif',
-          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length'],
+          sizeChartColumns: ['Shoulder', 'Bust', 'Length', 'Sleeve Length', 'Bicep Length', 'Cuff'],
+          bodyChartColumns: ['Height', 'Bust', 'Waist Size', 'Hip Size'],
           attributes: [
-            { name: 'Style', type: 'select', values: ['Casual', 'Elegant', 'Boho'] },
+            {
+              name: 'Type',
+              type: 'select',
+              values: [
+                'Casual Shirts',
+                'Business / Dress Shirts',
+                'Denim Shirts',
+                'Linen Shirts',
+                'Utility / Cargo Shirts',
+                'Hawaiian / Resort Shirts',
+                'Oxford Shirts',
+                'Flannel / Plaid Shirts',
+              ],
+            },
+            {
+              name: 'Style',
+              type: 'select',
+              values: [
+                'Business Commuting',
+                'Casual / Modern',
+                'Streetwear',
+                'Minimalist',
+                'Vintage / Retro',
+                'Boho / Preppy',
+              ],
+            },
             {
               name: 'Fit Type',
               type: 'select',
-              values: ['Oversized', 'Regular Fit', 'Loose', 'Slim Fit'],
+              values: ['Regular Fit', 'Slim Fit', 'Oversized', 'Loose Fit', 'Relaxed Fit'],
             },
             colorAttr,
             sizeAttr,
             {
-              name: 'Material',
-              type: 'select',
-              values: ['Lace', 'Knitwear', 'Composite Fabric', 'Viscose', 'Organza', 'Canvas'],
-            },
-            { name: 'Length', type: 'select', values: ['Long', 'Crop'] },
-            {
-              name: 'Details',
-              type: 'multiselect',
-              values: ['Button', 'Knot', 'Pocket', 'Contrast Binding', 'Tie Front', 'Pearls'],
-            },
-            {
-              name: 'Pattern Type',
-              type: 'select',
-              values: [
-                'Chevron',
-                'Scarf Print',
-                'Baroque',
-                'Polka Dot',
-                'Tie Dye',
-                'Music & Instruments',
-              ],
-            },
-            {
               name: 'Neckline',
               type: 'select',
-              values: ['Deep V Neck', 'Square Neck', 'Mandarin Collar'],
+              values: [
+                'Shirt Collar',
+                'Mandarin Collar',
+                'Button-Down Collar',
+                'Camp Collar',
+                'Grandad Collar',
+                'Deep V Neck',
+              ],
             },
             {
               name: 'Sleeve Length',
@@ -1721,16 +1898,105 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
               ],
             },
             {
+              name: 'Sleeve Type',
+              type: 'select',
+              values: ['Regular Sleeve', 'Drop Shoulder', 'Raglan Sleeve', 'Shirt Sleeve'],
+            },
+            placketAttr,
+            hemShapedAttr,
+            {
+              name: 'Pattern Type',
+              type: 'select',
+              values: [
+                'Plain',
+                'Striped',
+                'Plaid',
+                'Floral Pattern',
+                'Abstract Print',
+                'Geometric',
+                'Tie Dye',
+                'Polka Dot',
+              ],
+            },
+            {
+              name: 'Details',
+              type: 'multiselect',
+              values: [
+                'Button',
+                'Pocket',
+                'Button Front',
+                'Chest Pocket',
+                'Embroidery',
+                'Contrast Piping',
+                'Patched',
+                'Contrast Binding',
+                'Raw Hem',
+                'Ripped',
+              ],
+            },
+            {
+              name: 'Material',
+              type: 'select',
+              values: [
+                '100% Cotton',
+                'Linen Blend',
+                'Viscose / Rayon',
+                'Polyester Blend',
+                'Oxford Cloth',
+                'Poplin',
+                'Denim',
+                'Satin / Silk Blend',
+                'Corduroy',
+              ],
+            },
+            {
+              name: 'Composition',
+              type: 'select',
+              values: [
+                '100% Cotton',
+                '98% Polyester, 2% Elastane',
+                '65% Cotton, 35% Polyester',
+                '100% Linen',
+                '55% Linen, 45% Cotton',
+              ],
+            },
+            fabricElasticityAttr,
+            sheerAttr,
+            linedWarmthAttr,
+            careInstructionsAttr,
+            numberOfPiecesAttr,
+            {
               name: 'Features',
               type: 'multiselect',
               values: [
+                'Soft',
                 'Comfortable',
                 'Great quality',
-                'Lightweight',
-                'Soft',
-                'Soft & Lightweight',
-                'Skin-friendly',
+                'Breathable',
+                'Anti-Wrinkle',
+                'Quick-Drying',
+                'Cooling',
+                'Easy Care',
               ],
+            },
+            {
+              name: 'Scenes',
+              type: 'multiselect',
+              values: [
+                'Daily',
+                'Office / Work',
+                'Party',
+                'Holiday',
+                'Vacation',
+                'Weekend Casual',
+                'Wedding',
+              ],
+            },
+            nepaliFestivalsAttr,
+            {
+              name: 'Ideal For',
+              type: 'select',
+              values: ['Conventional', 'Unisex', 'Executive / Professional', 'Young Adult', 'Couple Male'],
             },
             priceRangeAttr,
           ],

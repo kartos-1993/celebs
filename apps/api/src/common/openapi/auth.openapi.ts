@@ -1,11 +1,13 @@
-import { registry } from './registry';
 import { z } from 'zod';
+
 import {
-  registerSchema,
   loginSchema,
-  verificationEmailSchema,
+  registerSchema,
   vendorRegisterSchema,
+  verificationEmailSchema,
 } from '@celebs/shared-types';
+
+import { registry } from './registry';
 
 // We can register request/response bodies or schemas in components
 const registerRequestSchema = registry.register('RegisterRequest', registerSchema._def.schema);

@@ -1,4 +1,5 @@
 import { HTMLAttributes } from 'react';
+import { AxiosError } from 'axios';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +18,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 import { setupSuperadminSchema } from '@celebs/shared-types';
-import { setupSuperadminMutationFn } from '@/lib/api';
+import { setupSuperadmin } from '../api';
 
 type SetupSuperadminFormProps = HTMLAttributes<HTMLDivElement>;
 
@@ -27,7 +28,7 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: setupSuperadminMutationFn,
+    mutationFn: setupSuperadmin,
     meta: { suppressErrorToast: true },
   });
 
@@ -48,9 +49,10 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
           state: { successMessage: 'Superadmin setup completed successfully! You can now log in.' },
         });
       },
-      onError: (error: any) => {
+      onError: (error: unknown) => {
+        const axiosErr = error as AxiosError<{ message?: string }>;
         const errorMsg =
-          error?.response?.data?.message || error?.message || 'Failed to complete setup';
+          axiosErr?.response?.data?.message || axiosErr?.message || 'Failed to complete setup';
         form.setError('setupSecret', {
           type: 'server',
           message: errorMsg,

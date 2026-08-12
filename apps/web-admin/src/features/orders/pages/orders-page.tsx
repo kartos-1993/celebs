@@ -25,19 +25,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
+import { logger } from '@celebs/shared-utils';
 import {
   Package,
   Truck,
-  CheckCircle2,
-  Clock,
   MapPin,
   Search,
-  ExternalLink,
   RefreshCw,
   Send,
   DollarSign,
 } from 'lucide-react';
-import { dispatch3PLOrderMutationFn, settleCodOrderMutationFn } from '@/lib/api';
+import { dispatch3PLOrder, settleCodOrder } from '../api';
 
 export interface OrderItemUI {
   id: string;
@@ -132,9 +130,7 @@ const Orders: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
   // Form states for fulfillment update
-  const [newStatus, setNewStatus] = useState<'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED'>(
-    'PACKED',
-  );
+  const [newStatus, setNewStatus] = useState<OrderItemUI['itemStatus']>('PACKED');
   const [courier, setCourier] = useState<string>('Upaya Logistics');
   const [trackingNo, setTrackingNo] = useState<string>('');
 
@@ -150,21 +146,14 @@ const Orders: React.FC = () => {
 
   const handleOpenFulfillModal = (item: OrderItemUI) => {
     setSelectedItem(item);
-    setNewStatus(
-      item.itemStatus === 'PENDING'
-        ? 'PACKED'
-        : item.itemStatus === 'PACKED'
-          ? 'HANDED_OVER'
-          : 'DELIVERED',
-    );
-    setCourier(item.courierPartner || 'Upaya Logistics');
-    setTrackingNo(item.trackingNumber || `TRK-${Math.floor(100000 + Math.random() * 900000)}`);
+    setNewStatus(item.itemStatus);
+    setCourier(item.courierPartner || 'Nepal Can Move');
+    setTrackingNo(item.trackingNumber || '');
     setIsDialogOpen(true);
   };
 
   const handleSaveFulfillment = () => {
     if (!selectedItem) return;
-
     setOrders((prev) =>
       prev.map((item) =>
         item.id === selectedItem.id
@@ -173,19 +162,17 @@ const Orders: React.FC = () => {
               itemStatus: newStatus,
               courierPartner: courier,
               trackingNumber: trackingNo,
-              paymentStatus: newStatus === 'DELIVERED' ? 'COMPLETED' : item.paymentStatus,
             }
           : item,
       ),
     );
-
     setIsDialogOpen(false);
   };
 
   const handleDispatch3PL = async () => {
     if (!selectedItem) return;
     try {
-      const res = await dispatch3PLOrderMutationFn({
+      const res = await dispatch3PLOrder({
         orderId: selectedItem.id,
         provider: 'NEPAL_CAN_MOVE',
       });
@@ -207,14 +194,14 @@ const Orders: React.FC = () => {
         ),
       );
     } catch (err) {
-      console.error('3PL Dispatch error:', err);
+      logger.error({ error: err }, '3PL Dispatch error');
     }
   };
 
   const handleSettleCOD = async () => {
     if (!selectedItem) return;
     try {
-      await settleCodOrderMutationFn({
+      await settleCodOrder({
         orderId: selectedItem.id,
         reference: `VOUCHER-${Date.now()}`,
       });
@@ -225,7 +212,7 @@ const Orders: React.FC = () => {
       );
       setIsDialogOpen(false);
     } catch (err) {
-      console.error('COD settlement error:', err);
+      logger.error({ error: err }, 'COD settlement error');
     }
   };
 
@@ -460,7 +447,7 @@ const Orders: React.FC = () => {
               {/* Status Selector */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Update Fulfillment Stage</Label>
-                <Select value={newStatus} onValueChange={(val: any) => setNewStatus(val)}>
+                <Select value={newStatus} onValueChange={(val: string) => setNewStatus(val as 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED')}>
                   <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>

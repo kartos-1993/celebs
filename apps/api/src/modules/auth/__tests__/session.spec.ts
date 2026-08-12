@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import request from 'supertest';
 import { faker } from '@faker-js/faker';
+import request from 'supertest';
+import { describe, expect,it } from 'vitest';
+
 import app from '@/app';
-import prisma from '@/config/db.prisma';
 import { hashValue } from '@/common/utils/bcrypt';
 import { signJwtToken } from '@/common/utils/jwt';
+import prisma from '@/config/db.prisma';
 
 describe('Session Integration Test Suite', () => {
   it('should create a valid session on login and allow authenticated requests', async () => {

@@ -1,12 +1,15 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { NextFunction,Request, Response, Router } from 'express';
 import passport from 'passport';
-import { authenticateJWT } from '@/middlewares/auth.middleware';
-import { requirePermissions } from '@/middlewares/rbac.middleware';
+
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
+
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
+
+import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
 import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const productRoutes = Router();
 const productController = new ProductController(new ProductService());
@@ -60,17 +63,20 @@ productRoutes.use(authenticateJWT);
 
 productRoutes.post(
   '/',
+  requireApprovedVendor,
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(productController.createProduct),
 );
 productRoutes.put(
   '/:id',
+  requireApprovedVendor,
   requirePermissions(Permission.PRODUCT_EDIT),
   asyncHandler(productController.updateProduct),
 );
 
 productRoutes.post(
   '/:id/submit-for-review',
+  requireApprovedVendor,
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(productController.submitProductForReview),
 );

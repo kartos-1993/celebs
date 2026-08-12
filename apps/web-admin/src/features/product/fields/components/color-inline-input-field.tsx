@@ -1,73 +1,71 @@
 import React from 'react';
-import { useFormContext, useController } from 'react-hook-form';
-import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
-import { Input } from '@celebs/shared-ui/components/input';
-import type { FieldSpec, UiProps } from '../ui-registry';
+import { useFormContext, useWatch } from 'react-hook-form';
+import { ImagePlus, Trash2, Upload, Loader2 } from 'lucide-react';
+import type { UiProps } from '../ui-registry';
 import {
   LabelWithRequired,
   imageValueKey,
   uploadImageFiles,
-  validateFileBasics,
   uploadErrorMessage,
+  validateFileBasics,
   ImageValue,
 } from './shared';
 
-export function ColorInlineRow({
-  color,
-  namePrefix,
-  accept,
-  limits,
-}: {
+interface ColorInlineRowProps {
   color: string;
   namePrefix: string;
   accept?: string[];
-  limits: { maxImages?: number; maxSize?: number };
-}) {
-  const { watch, setValue, trigger, register, formState, setError, clearErrors } = useFormContext();
-  const safeLimits = limits ?? {};
-  const swatch: File | string | undefined = watch(`${namePrefix}.swatch`);
-  const swatchUrl = React.useMemo(() => {
-    if (!swatch) return null;
-    if (typeof swatch === 'string') return swatch;
-    return URL.createObjectURL(swatch);
-  }, [swatch]);
-  const images: ImageValue[] = watch(`${namePrefix}.images`) ?? [];
-  const [isUploading, setIsUploading] = React.useState(false);
-  const [urls, setUrls] = React.useState<string[]>([]);
-  const imagesHash = (images || []).map((f) => imageValueKey(f)).join(',');
+  limits?: { maxImages?: number; maxSize?: number };
+}
+
+function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowProps) {
+  const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
+  const swatchUrl: string = watch(`${namePrefix}.swatch`) || '';
+  const images: ImageValue[] = watch(`${namePrefix}.images`) || [];
+  const [isUploadingSwatch, setIsUploadingSwatch] = React.useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = React.useState(false);
+  const [swatchPreview, setSwatchPreview] = React.useState<string>('');
+  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
+  const safeLimits = React.useMemo(() => limits || {}, [limits]);
 
   React.useEffect(() => {
-    const next = (images || []).map((f) => (typeof f === 'string' ? f : URL.createObjectURL(f)));
-    setUrls(next);
+    if (typeof swatchUrl === 'string') {
+      setSwatchPreview(swatchUrl);
+    }
+  }, [swatchUrl]);
+
+  const imagesHash = (images || []).map((file) => imageValueKey(file)).join('|');
+  React.useEffect(() => {
+    let active = true;
+    const urls = (images || []).map((item) =>
+      typeof item === 'string' ? item : URL.createObjectURL(item),
+    );
+    setImagePreviews(urls);
     return () => {
-      next.forEach((u) => {
-        if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+      active = false;
+      urls.forEach((url, idx) => {
+        if (typeof images?.[idx] !== 'string') {
+          URL.revokeObjectURL(url);
+        }
       });
+      if (!active) setImagePreviews([]);
     };
   }, [imagesHash]);
 
   React.useEffect(() => {
-    register(`${namePrefix}.swatch` as any, {
-      validate: (v: any) => {
-        if (!v) return true;
-        const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
-        if (typeof ms === 'number' && v instanceof File && v.size > ms)
-          return `Swatch must be <= ${Math.round(ms / 1024 / 1024)}MB`;
-        return true;
-      },
-    });
-    register(`${namePrefix}.images` as any, {
-      validate: (v: any) => {
-        const arr: ImageValue[] = Array.isArray(v) ? v : [];
-        if (typeof safeLimits?.maxImages === 'number' && arr.length > safeLimits.maxImages)
+    register(`${namePrefix}.swatch`);
+    register(`${namePrefix}.images`, {
+      validate: (v: unknown) => {
+        const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
+        if (typeof safeLimits.maxImages === 'number' && arr.length > safeLimits.maxImages)
           return `Max ${safeLimits.maxImages} images`;
-        const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
+        const ms = safeLimits.maxSize;
         if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms))
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
       },
     });
-  }, [namePrefix]);
+  }, [register, namePrefix, safeLimits]);
 
   const uploadSwatch = async (file: File | null) => {
     if (!file) return;
@@ -76,28 +74,28 @@ export function ColorInlineRow({
       maxSize: safeLimits.maxSize,
     });
     if (err) {
-      setError(`${namePrefix}.swatch` as any, {
+      setError(`${namePrefix}.swatch`, {
         type: 'validate',
         message: err,
       });
       return;
     }
-    setIsUploading(true);
+    setIsUploadingSwatch(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
       setValue(`${namePrefix}.swatch`, uploadedUrl, {
         shouldDirty: true,
         shouldValidate: true,
       });
-      clearErrors(`${namePrefix}.swatch` as any);
+      clearErrors(`${namePrefix}.swatch`);
       trigger(`${namePrefix}.swatch`);
     } catch (error) {
-      setError(`${namePrefix}.swatch` as any, {
+      setError(`${namePrefix}.swatch`, {
         type: 'upload',
         message: uploadErrorMessage(error),
       });
     } finally {
-      setIsUploading(false);
+      setIsUploadingSwatch(false);
     }
   };
 
@@ -116,14 +114,14 @@ export function ColorInlineRow({
     });
     if (valids.length === 0) {
       if (errors.length) {
-        setError(`${namePrefix}.images` as any, {
+        setError(`${namePrefix}.images`, {
           type: 'validate',
           message: errors[0],
         });
       }
       return;
     }
-    setIsUploading(true);
+    setIsUploadingGallery(true);
     try {
       const uploadedUrls = await uploadImageFiles(valids);
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
@@ -132,15 +130,15 @@ export function ColorInlineRow({
         shouldDirty: true,
         shouldValidate: true,
       });
-      clearErrors(`${namePrefix}.images` as any);
+      clearErrors(`${namePrefix}.images`);
       trigger(`${namePrefix}.images`);
     } catch (error) {
-      setError(`${namePrefix}.images` as any, {
+      setError(`${namePrefix}.images`, {
         type: 'upload',
         message: uploadErrorMessage(error),
       });
     } finally {
-      setIsUploading(false);
+      setIsUploadingGallery(false);
     }
   };
 
@@ -151,13 +149,13 @@ export function ColorInlineRow({
       maxSize: safeLimits.maxSize,
     });
     if (err) {
-      setError(`${namePrefix}.images` as any, {
+      setError(`${namePrefix}.images`, {
         type: 'validate',
         message: err,
       });
       return;
     }
-    setIsUploading(true);
+    setIsUploadingGallery(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
@@ -167,15 +165,15 @@ export function ColorInlineRow({
         shouldDirty: true,
         shouldValidate: true,
       });
-      clearErrors(`${namePrefix}.images` as any);
+      clearErrors(`${namePrefix}.images`);
       trigger(`${namePrefix}.images`);
     } catch (error) {
-      setError(`${namePrefix}.images` as any, {
+      setError(`${namePrefix}.images`, {
         type: 'upload',
         message: uploadErrorMessage(error),
       });
     } finally {
-      setIsUploading(false);
+      setIsUploadingGallery(false);
     }
   };
 
@@ -188,6 +186,9 @@ export function ColorInlineRow({
     trigger(`${namePrefix}.images`);
   };
 
+  const fieldErrors = formState.errors as Record<string, { message?: string }> | undefined;
+  const imagesError = fieldErrors?.[`${namePrefix}.images`]?.message;
+
   return (
     <div className="flex items-start gap-4 rounded border p-3">
       <div className="w-28">
@@ -197,75 +198,60 @@ export function ColorInlineRow({
             type="file"
             className="hidden"
             accept={Array.isArray(accept) ? accept.join(',') : undefined}
+            disabled={isUploadingSwatch}
             onChange={(e) => {
               const input = e.currentTarget;
-              void uploadSwatch(input.files?.[0] ?? null).finally(() => {
+              const file = input.files?.[0] || null;
+              void uploadSwatch(file).finally(() => {
                 input.value = '';
               });
             }}
           />
-          {swatchUrl ? (
-            <img src={swatchUrl} alt={`${color}-swatch`} className="h-full w-full object-cover" />
+          {swatchPreview ? (
+            <div className="relative h-full w-full">
+              <img src={swatchPreview} alt={color} className="h-full w-full object-cover" />
+              {isUploadingSwatch && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
-              +
+            <div className="grid h-full w-full place-items-center bg-accent text-[10px] text-muted-foreground relative">
+              {isUploadingSwatch ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : 'Img'}
             </div>
           )}
         </label>
       </div>
 
-      <div className="w-40">
-        <div className="text-xs text-muted-foreground mb-1">Color</div>
-        <Input value={color} readOnly className="capitalize" />
-      </div>
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">Color Product Images</div>
-          <div className="flex items-center gap-2 text-sm">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 text-blue-600 underline"
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.multiple = true;
-                input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                input.onchange = (e: any) => {
-                  void addFiles(e.target.files);
-                };
-                input.click();
-              }}
-            >
-              <Upload className="h-3 w-3" /> Upload
-            </button>
-            <span className="text-muted-foreground">|</span>
-            <button type="button" className="text-blue-600 underline" onClick={() => {}}>
-              Media Center
-            </button>
-          </div>
-        </div>
-        <div className="min-h-[56px] w-full rounded border border-dashed p-2">
-          <div className="flex flex-wrap items-start gap-2">
-            {urls.map((src, idx) => (
-              <div key={idx} className="group relative h-12 w-12 overflow-hidden rounded border">
-                {src ? <img src={src} className="h-full w-full object-cover" /> : null}
-                <div className="absolute inset-0 hidden items-center justify-center gap-2 bg-black/40 group-hover:flex">
-                  <button
-                    type="button"
-                    className="h-6 w-6 rounded bg-white/90 grid place-items-center"
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = Array.isArray(accept) ? accept.join(',') : '';
-                      input.onchange = (e: any) => {
-                        void replaceAt(idx, e.target.files?.[0] ?? null);
-                      };
-                      input.click();
-                    }}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </button>
+      <div className="flex-1">
+        <div className="text-sm font-semibold mb-1">{color}</div>
+        <div className="space-y-1">
+          <div className="text-xs text-muted-foreground">Gallery Images</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {imagePreviews.map((src, idx) => (
+              <div
+                key={idx}
+                className="group relative h-12 w-12 rounded border overflow-hidden bg-accent/20"
+              >
+                <img src={src} alt={`${color} ${idx + 1}`} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                  <label className="grid h-6 w-6 cursor-pointer place-items-center rounded bg-white/90 text-black">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept={Array.isArray(accept) ? accept.join(',') : undefined}
+                      disabled={isUploadingGallery}
+                      onChange={(e) => {
+                        const input = e.currentTarget;
+                        const file = input.files?.[0] || null;
+                        void replaceAt(idx, file).finally(() => {
+                          input.value = '';
+                        });
+                      }}
+                    />
+                    <Upload className="h-3 w-3" />
+                  </label>
                   <button
                     type="button"
                     className="h-6 w-6 rounded bg-white/90 grid place-items-center text-red-600"
@@ -282,7 +268,7 @@ export function ColorInlineRow({
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
-                disabled={isUploading}
+                disabled={isUploadingGallery}
                 onChange={(e) => {
                   const input = e.currentTarget;
                   void addFiles(input.files).finally(() => {
@@ -290,16 +276,19 @@ export function ColorInlineRow({
                   });
                 }}
               />
-              {isUploading ? (
-                <Upload className="h-4 w-4 animate-pulse" />
+              {isUploadingGallery ? (
+                <div className="flex flex-col items-center justify-center text-primary gap-0.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-[9px] font-medium">Uploading</span>
+                </div>
               ) : (
                 <ImagePlus className="h-4 w-4" />
               )}
             </label>
           </div>
-          {(formState.errors as any)?.[`${namePrefix}.images`] ? (
+          {imagesError ? (
             <div className="text-xs text-red-500 mt-1">
-              {(formState.errors as any)[`${namePrefix}.images`]?.message as string}
+              {String(imagesError)}
             </div>
           ) : null}
         </div>
@@ -309,22 +298,23 @@ export function ColorInlineRow({
 }
 
 export function ColorInlineInputField({ field }: UiProps) {
-  const { watch } = useFormContext();
+  const dsVariants = Array.isArray(field.dataSource?.variants) ? field.dataSource.variants : [];
   const colorField: string =
-    field.dataSource?.colorField ??
-    field.dataSource?.variants?.find((v: any) => /color/i.test(v?.label ?? v?.key))?.key ??
+    (field.dataSource?.colorField as string | undefined) ??
+    (dsVariants as Array<{ label?: string; key?: string }>).find((v) => /color/i.test(v?.label ?? v?.key ?? ''))?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> = (field.dataSource?.labels as any) ?? {};
+  const labelsMap: Record<string, Record<string, string>> =
+    (field.dataSource?.labels as Record<string, Record<string, string>>) ?? {};
   const labelOf = (value: string) => labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = Array.isArray(field.rule?.accept)
-    ? field.rule.accept
+    ? (field.rule.accept as string[])
     : undefined;
   const limits = {
     maxImages: typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : undefined,
     maxSize: typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
-  const selected = watch(colorField);
-  const colors: string[] = Array.isArray(selected) ? selected : selected ? [selected] : [];
+  const selected = useWatch({ name: colorField });
+  const colors: string[] = Array.isArray(selected) ? (selected as string[]) : selected ? [String(selected)] : [];
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">

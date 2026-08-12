@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { Menu, Mail, Search, Heart, ShoppingCart } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useColorScheme } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Heart, Mail, Menu, Search, ShoppingCart } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
-import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 interface AppHeaderProps {
   showSubHeader?: boolean;
@@ -83,7 +82,7 @@ export function AppHeader({
         <TouchableOpacity
           style={styles.logoContainer}
           activeOpacity={0.8}
-          onPress={() => router.push('/(tabs)' as any)}
+          onPress={() => router.push('/(tabs)' as never)}
         >
           <ThemedText style={[styles.logoText, { color: textColor }]}>CELEBS</ThemedText>
         </TouchableOpacity>

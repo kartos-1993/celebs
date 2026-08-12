@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect,useState } from 'react';
 import {
-  Modal,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  useColorScheme,
   Dimensions,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { X, Check } from 'lucide-react-native';
-import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { Check,X } from 'lucide-react-native';
+
 import { ThemedText } from '@/components/themed-text';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

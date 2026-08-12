@@ -18,7 +18,9 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 
-import { loginMutationFn, getUserSessionQueryFn } from '@/lib/api';
+import { login } from '../api';
+import { getUserSession } from '@/features/account/api';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
 
 type SignInFormProps = HTMLAttributes<HTMLDivElement>;
 
@@ -35,10 +37,10 @@ const formSchema = z.object({
 export function SignInForm({ className, ...props }: SignInFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const successMessage = (location.state as any)?.successMessage;
+  const successMessage = (location.state as { successMessage?: string } | null)?.successMessage;
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: loginMutationFn,
+    mutationFn: login,
     meta: { suppressErrorToast: true },
   });
   const form = useForm<z.infer<typeof formSchema>>({
@@ -70,24 +72,28 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
         navigate(`/verify-mfa?email=${values.email}`);
         return;
       }
-      const sessionData = await getUserSessionQueryFn();
-      queryClient.setQueryData(['authUser'], sessionData);
+      const sessionData = await getUserSession();
+      queryClient.setQueryData(ACCOUNT_QUERY_KEYS.userSession(), sessionData);
       const searchParams = new URLSearchParams(location.search);
       const returnUrlParam = searchParams.get('returnUrl');
       const targetUrl = returnUrlParam ? decodeURIComponent(returnUrlParam) : '/';
       navigate(targetUrl, { replace: true });
-    } catch (error: any) {
-      if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
-        error.errors.forEach((err: any) => {
+    } catch (error: unknown) {
+      const errObj = error as {
+        message?: string;
+        errors?: Array<{ field?: keyof z.infer<typeof formSchema>; message?: string }>;
+      };
+      if (errObj?.errors && Array.isArray(errObj.errors) && errObj.errors.length > 0) {
+        errObj.errors.forEach((err) => {
           if (err.field) {
-            form.setError(err.field as any, {
+            form.setError(err.field, {
               type: 'server',
               message: err.message,
             });
           }
         });
-      } else if (error?.message) {
-        setServerError(error.message);
+      } else if (errObj?.message) {
+        setServerError(errObj.message);
       } else {
         setServerError('Invalid email or password');
       }

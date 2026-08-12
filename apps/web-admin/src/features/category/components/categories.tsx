@@ -6,7 +6,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import { Button } from '@celebs/shared-ui/components/button';
-import { FolderTree, FolderPlus, Loader2 } from 'lucide-react';
+import { FolderTree, FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 import { CategoryFormDialog } from './category-form-dialog';
@@ -67,7 +67,7 @@ export const Categories: React.FC = () => {
         });
       }
       actions.closeForm();
-    } catch (error) {
+    } catch (_error) {
       // Error is handled by the mutation in useCategories
     }
   };
@@ -86,7 +86,7 @@ export const Categories: React.FC = () => {
 
         await deleteCategory(uiState.categoryToDelete);
         actions.closeDeleteDialog();
-      } catch (error) {
+      } catch (_error) {
         // Error is handled by the mutation in useCategories
       }
     }

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+
+import { addToCartSchema, syncCartSchema,updateCartItemSchema } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS, logger } from '@celebs/shared-utils';
-import { addToCartSchema, updateCartItemSchema, syncCartSchema } from '@celebs/shared-types';
+
 import { CartService } from './cart.service';
 
 interface AuthUser {

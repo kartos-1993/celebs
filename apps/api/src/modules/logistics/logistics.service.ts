@@ -1,7 +1,10 @@
-import prisma from '../../db/index';
-import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
-import { OrderStatus, CodStatus, DispatchMode } from '@prisma/client';
+import { CodStatus, DispatchMode,OrderStatus } from '@prisma/client';
+
 import { DispatchOrderType } from '@celebs/shared-types';
+
+import prisma from '../../db/index';
+
+import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 
 export class LogisticsService {
   async dispatchOrder(payload: DispatchOrderType) {

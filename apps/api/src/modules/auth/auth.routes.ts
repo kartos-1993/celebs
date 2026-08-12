@@ -1,6 +1,8 @@
 import { Router } from 'express';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const authService = new AuthService();
@@ -15,6 +17,7 @@ authRoutes.post('/login', authRateLimiter, authController.login);
 authRoutes.post('/google', authRateLimiter, authController.googleSignIn);
 authRoutes.post('/refresh', authRateLimiter, authController.refreshToken);
 authRoutes.post('/verify-email', authRateLimiter, authController.verifyEmail);
+authRoutes.get('/verify-email', authRateLimiter, authController.verifyEmail);
 authRoutes.post('/logout', authenticateJWT, authController.logout);
 authRoutes.post('/setup-superadmin', authRateLimiter, authController.setupSuperadmin);
 authRoutes.get('/setup-status', authController.getSetupStatus);

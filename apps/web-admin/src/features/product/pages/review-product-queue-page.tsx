@@ -1,4 +1,3 @@
-import ReviewProductQueue from '../components/review-product-queue';
-
+import ReviewProductQueue from '../components/review-queue';
 export const ReviewProductQueuePage = ReviewProductQueue;
 export default ReviewProductQueuePage;

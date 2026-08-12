@@ -1,4 +1,5 @@
 import React, { useRef, useCallback } from 'react';
+import { logger } from '@celebs/shared-utils';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
@@ -42,7 +43,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       try {
         await storefrontSaveHandlerRef.current();
       } catch (err) {
-        console.error('Failed to save storefront config:', err);
+        logger.error({ error: err }, 'Failed to save storefront config');
       }
     }
   };

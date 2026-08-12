@@ -1,13 +1,12 @@
 import axios from 'axios';
 import { setupInterceptors } from './interceptors';
 
-const FALLBACK_API_URL = 'http://localhost:3333/api/v1/';
+// Standardized API Base URL and Versioning configuration
+const apiHost = (import.meta.env.VITE_API_HOST || 'http://localhost:3333').replace(/\/+$/, '');
+const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_AUTH_URL ||
-  import.meta.env.VITE_API_PRODUCT_URL ||
-  FALLBACK_API_URL;
+export const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL || `${apiHost}/api/${apiVersion}`).replace(/\/+$/, '');
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,

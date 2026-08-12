@@ -1,20 +1,20 @@
 import React from 'react';
 import {
-  View,
+  ActivityIndicator,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   useColorScheme,
+  View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
-import { ThemedText } from '@/components/themed-text';
 import { useCategories } from '../hooks/use-categories';
 import { styles } from '../styles/categories.styles';
-import { Colors } from '@/constants/theme';
+
+import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
+import { Colors } from '@/constants/theme';
 
 export function CategoryGrid() {
   const scheme = useColorScheme();
@@ -22,7 +22,7 @@ export function CategoryGrid() {
   const { categories, loading } = useCategories();
   const router = useRouter();
 
-  const handleCategoryPress = (cat: any) => {
+  const handleCategoryPress = (cat: { slug?: string; name?: string; displayName?: string }) => {
     const slug =
       cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
     router.push({

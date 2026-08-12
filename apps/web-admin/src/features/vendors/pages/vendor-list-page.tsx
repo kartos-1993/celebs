@@ -1,86 +1,202 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getAdminVendorsQueryFn,
-  approveVendorMutationFn,
-  rejectVendorMutationFn,
-  suspendVendorMutationFn,
-} from '@/lib/api';
+  getAdminVendors,
+  getAdminVendorById,
+  approveVendor,
+  rejectVendor,
+  suspendVendor,
+} from '../api';
+import { VENDORS_QUERY_KEYS } from '../hooks/use-vendor-queries';
 import { Button } from '@celebs/shared-ui/components/button';
+import { Input } from '@celebs/shared-ui/components/input';
+import { VendorDetailModal } from '../components/vendor-detail-modal';
+import { VendorRejectionDialog } from '../components/vendor-rejection-dialog';
+
+interface VendorListItem {
+  id: string;
+  shopName: string;
+  phoneNumber: string;
+  status: string;
+  createdAt?: string;
+  user?: {
+    name?: string;
+    email?: string;
+    isEmailVerified?: boolean;
+  };
+}
 
 export default function VendorList() {
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  // Modal State
+  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  // Rejection Dialog State
+  const [rejectingVendor, setRejectingVendor] = useState<{ id: string; shopName: string } | null>(null);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ['admin-vendors'],
-    queryFn: getAdminVendorsQueryFn,
+    queryKey: VENDORS_QUERY_KEYS.list(),
+    queryFn: getAdminVendors,
+  });
+
+  const { data: detailResponse } = useQuery({
+    queryKey: VENDORS_QUERY_KEYS.detail(selectedVendorId || ''),
+    queryFn: () => getAdminVendorById(selectedVendorId!),
+    enabled: !!selectedVendorId && isDetailOpen,
   });
 
   const approveMutation = useMutation({
-    mutationFn: approveVendorMutationFn,
+    mutationFn: approveVendor,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-vendors'] });
+      queryClient.invalidateQueries({ queryKey: VENDORS_QUERY_KEYS.all });
+      setIsDetailOpen(false);
     },
   });
 
   const rejectMutation = useMutation({
-    mutationFn: rejectVendorMutationFn,
+    mutationFn: rejectVendor,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-vendors'] });
+      queryClient.invalidateQueries({ queryKey: VENDORS_QUERY_KEYS.all });
+      setIsRejectDialogOpen(false);
+      setIsDetailOpen(false);
     },
   });
 
   const suspendMutation = useMutation({
-    mutationFn: suspendVendorMutationFn,
+    mutationFn: suspendVendor,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-vendors'] });
+      queryClient.invalidateQueries({ queryKey: VENDORS_QUERY_KEYS.all });
+      setIsDetailOpen(false);
     },
   });
 
   if (isLoading) {
-    return <div className="p-6">Loading vendors...</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Loading vendors list...</div>;
   }
 
-  const vendors = response?.data || [];
+  const vendors: VendorListItem[] = response?.data || [];
+
+  const filteredVendors = vendors.filter((v) => {
+    const matchesSearch =
+      v.shopName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (v.user?.name && v.user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (v.user?.email && v.user.email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesStatus =
+      statusFilter === 'ALL'
+        ? true
+        : statusFilter === 'UNDER_REVIEW'
+          ? v.status === 'UNDER_REVIEW' || v.status === 'SUBMITTED' || v.status === 'PENDING'
+          : v.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleInspect = (id: string) => {
+    setSelectedVendorId(id);
+    setIsDetailOpen(true);
+  };
+
+  const handleInitiateReject = (vendor: { id: string; shopName: string }) => {
+    setRejectingVendor(vendor);
+    setIsRejectDialogOpen(true);
+  };
+
+  const handleConfirmReject = (reason: string) => {
+    if (!rejectingVendor) return;
+    rejectMutation.mutate({ id: rejectingVendor.id, reason });
+  };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Vendor Management</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Vendor Management</h1>
+          <p className="text-sm text-muted-foreground">
+            Review vendor onboarding submissions, legal documents, and approve seller accounts.
+          </p>
+        </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-card">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border">
+        <div className="w-full sm:w-72">
+          <Input
+            placeholder="Search by shop, owner, or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-1 w-full sm:w-auto">
+          {['ALL', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED'].map((status) => (
+            <Button
+              key={status}
+              size="sm"
+              variant={statusFilter === status ? 'default' : 'ghost'}
+              onClick={() => setStatusFilter(status)}
+              className="text-xs"
+            >
+              {status === 'ALL' ? 'All Vendors' : status.replace('_', ' ')}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Vendors Table */}
+      <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b bg-muted/50 text-sm font-medium">
-              <th className="p-4">Shop Name</th>
-              <th className="p-4">Owner Name</th>
-              <th className="p-4">Phone Number</th>
-              <th className="p-4">Status</th>
+            <tr className="border-b bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <th className="p-4">Shop & Owner</th>
+              <th className="p-4">Contact Phone</th>
+              <th className="p-4">Email Status</th>
+              <th className="p-4">Vendor Status</th>
               <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {vendors.length === 0 ? (
+          <tbody className="text-sm divide-y">
+            {filteredVendors.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                  No vendors registered yet.
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  No vendors found matching your filter criteria.
                 </td>
               </tr>
             ) : (
-              vendors.map((vendor: any) => (
-                <tr key={vendor.id} className="border-b last:border-0 hover:bg-muted/30">
-                  <td className="p-4 font-medium">{vendor.shopName}</td>
-                  <td className="p-4">{vendor.user?.name}</td>
-                  <td className="p-4">{vendor.phoneNumber}</td>
+              filteredVendors.map((vendor) => (
+                <tr key={vendor.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-4">
+                    <div className="font-semibold text-foreground">{vendor.shopName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {vendor.user?.name} ({vendor.user?.email})
+                    </div>
+                  </td>
+                  <td className="p-4 font-mono text-xs">{vendor.phoneNumber}</td>
+                  <td className="p-4">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        vendor.user?.isEmailVerified
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-amber-50 text-amber-700'
+                      }`}
+                    >
+                      {vendor.user?.isEmailVerified ? 'Verified' : 'Unverified'}
+                    </span>
+                  </td>
                   <td className="p-4">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         vendor.status === 'APPROVED'
                           ? 'bg-green-100 text-green-800'
-                          : vendor.status === 'PENDING'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : vendor.status === 'DOCUMENTS_SUBMITTED'
-                              ? 'bg-blue-100 text-blue-800'
+                          : vendor.status === 'UNDER_REVIEW' || vendor.status === 'SUBMITTED'
+                            ? 'bg-blue-100 text-blue-800'
+                            : vendor.status === 'PENDING'
+                              ? 'bg-yellow-100 text-yellow-800'
                               : 'bg-red-100 text-red-800'
                       }`}
                     >
@@ -88,39 +204,33 @@ export default function VendorList() {
                     </span>
                   </td>
                   <td className="p-4 text-right space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleInspect(vendor.id)}
+                    >
+                      Inspect Documents
+                    </Button>
+
                     {vendor.status !== 'APPROVED' && (
                       <Button
                         size="sm"
-                        variant="outline"
+                        className="bg-green-600 hover:bg-green-700 text-white"
                         onClick={() => approveMutation.mutate(vendor.id)}
                         disabled={approveMutation.isPending}
                       >
                         Approve
                       </Button>
                     )}
+
                     {vendor.status !== 'REJECTED' && vendor.status !== 'APPROVED' && (
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => {
-                          const reason = prompt('Enter rejection reason:');
-                          if (reason !== null) {
-                            rejectMutation.mutate({ id: vendor.id, reason });
-                          }
-                        }}
+                        onClick={() => handleInitiateReject(vendor)}
                         disabled={rejectMutation.isPending}
                       >
                         Reject
-                      </Button>
-                    )}
-                    {vendor.status === 'APPROVED' && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => suspendMutation.mutate(vendor.id)}
-                        disabled={suspendMutation.isPending}
-                      >
-                        Suspend
                       </Button>
                     )}
                   </td>
@@ -130,6 +240,26 @@ export default function VendorList() {
           </tbody>
         </table>
       </div>
+
+      {/* Vendor Detail & Document Inspection Modal */}
+      <VendorDetailModal
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        vendor={detailResponse?.data || null}
+        onApprove={(id) => approveMutation.mutate(id)}
+        onRejectClick={(v) => handleInitiateReject(v)}
+        onSuspend={(id) => suspendMutation.mutate(id)}
+        isActionPending={approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending}
+      />
+
+      {/* Structured Rejection Dialog */}
+      <VendorRejectionDialog
+        open={isRejectDialogOpen}
+        onOpenChange={setIsRejectDialogOpen}
+        shopName={rejectingVendor?.shopName || ''}
+        onConfirm={handleConfirmReject}
+        isSubmitting={rejectMutation.isPending}
+      />
     </div>
   );
 }

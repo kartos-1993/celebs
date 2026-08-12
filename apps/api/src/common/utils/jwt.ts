@@ -1,4 +1,5 @@
 import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
+
 import { config } from '@/config/app.config';
 
 type StringValue = `${number}${'s' | 'm' | 'h' | 'd'}`;

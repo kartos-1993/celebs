@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
@@ -51,17 +51,16 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
     }
   }, [quickFilters]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!categoryId) return;
     try {
-      setStatusMessage(null);
-      const isManual = items.length > 0;
-      const payload: Partial<QuickFilter> = {
+      const payload: Partial<QuickFilter> & { name?: string } = {
         id: currentFilterId,
         categoryId,
+        name: `${type} filters`,
         type,
         displayAs,
-        autoPopulate: isManual ? false : autoPopulate,
+        autoPopulate,
         items,
         isActive: true,
       };
@@ -69,16 +68,17 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
       await saveQuickFilter(payload);
       setStatusMessage('Storefront display settings saved successfully!');
       setTimeout(() => setStatusMessage(null), 3000);
-    } catch (err: any) {
-      setStatusMessage(`Failed to save: ${err?.message || String(err)}`);
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
+      setStatusMessage(`Failed to save: ${errObj?.message || String(err)}`);
     }
-  };
+  }, [categoryId, currentFilterId, type, displayAs, autoPopulate, items, saveQuickFilter]);
 
   useEffect(() => {
     if (onRegisterSaveHandler) {
       onRegisterSaveHandler(handleSave);
     }
-  }, [onRegisterSaveHandler, categoryId, currentFilterId, type, displayAs, autoPopulate, items]);
+  }, [onRegisterSaveHandler, handleSave]);
 
   if (!categoryId) {
     return (
@@ -115,7 +115,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleItemChange = (index: number, field: keyof QuickFilterItem, value: any) => {
+  const handleItemChange = (index: number, field: keyof QuickFilterItem, value: QuickFilterItem[keyof QuickFilterItem]) => {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
@@ -128,8 +128,9 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
         if (urls && urls.length > 0) {
           handleItemChange(index, 'image', urls[0]);
         }
-      } catch (err: any) {
-        setStatusMessage(`Image upload failed: ${err?.message || 'Upload error'}`);
+      } catch (err: unknown) {
+        const errObj = err as { message?: string };
+        setStatusMessage(`Image upload failed: ${errObj?.message || 'Upload error'}`);
       } finally {
         setUploadingIndex(null);
       }

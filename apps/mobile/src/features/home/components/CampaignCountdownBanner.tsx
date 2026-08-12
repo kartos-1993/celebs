@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, ImageBackground, TouchableOpacity } from 'react-native';
-import { Flame, Clock, ArrowRight } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import { ImageBackground, StyleSheet, TouchableOpacity,View } from 'react-native';
+import { ArrowRight, Flame } from 'lucide-react-native';
+
 import { apiClient } from '@/api/client';
+import { ThemedText } from '@/components/themed-text';
 
 export interface CampaignData {
   id: string;

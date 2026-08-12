@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
+import { Modal, Pressable,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { X } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+
 import { DrawerFilterConfig } from '../types';
+
+import { ThemedText } from '@/components/themed-text';
 
 export const FALLBACK_COLOR_OPTIONS = [
   { name: 'Blue', code: '#2563eb' },

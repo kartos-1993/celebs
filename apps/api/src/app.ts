@@ -1,42 +1,39 @@
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import express from 'express';
 import { json } from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import passport from './middlewares/passport';
-import { config } from './config/app.config';
-import { errorHandler } from './middlewares/errorHandler';
-import { HTTPSTATUS, asyncHandler, logger } from '@celebs/shared-utils';
+import session from 'express-session';
+import helmet from 'helmet';
+import pinoHttp from 'pino-http';
+import swaggerUi from 'swagger-ui-express';
 
+import { logger } from '@celebs/shared-utils';
+
+import { generateOpenAPIDocument } from './common/openapi/openapi.config';
+import { config } from './config/app.config';
+import { UpstashRedisStore } from './config/session-store';
+import { errorHandler } from './middlewares/errorHandler';
+import passport from './middlewares/passport';
+import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
+import adminRoutes from './modules/admin/admin.routes';
 // import { authRouter } from './routes/auth.routes';
 import authRoutes from './modules/auth/auth.routes';
-import { authenticateJWT } from './common/strategies/jwt.strategy';
-import helmet from 'helmet';
-import compression from 'compression';
-import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
-
-import pinoHttp from 'pino-http';
-
-import session from 'express-session';
-import { UpstashRedisStore } from './config/session-store';
-import sessionRoutes from './modules/session/session.routes';
-
-import categoryRoutes from './modules/category/category.routes';
-import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
-import optionSetRoutes from './modules/option-set/option-set.routes';
-import productRoutes from './modules/product/product.routes';
-import mediaRoutes from './modules/media/media.routes';
-import renderRoutes from './modules/product/product-render.routes';
-import vendorRoutes from './modules/vendor/vendor.routes';
-import adminRoutes from './modules/admin/admin.routes';
-import staffRoutes from './modules/staff/staff.routes';
 import bannerRoutes from './modules/banner/banner.routes';
-import cartRoutes from './modules/cart/cart.routes';
-import orderRoutes from './modules/order/order.routes';
 import campaignRoutes from './modules/campaign/campaign.routes';
+import cartRoutes from './modules/cart/cart.routes';
+import categoryRoutes from './modules/category/category.routes';
 import comboRoutes from './modules/combo/combo.routes';
 import logisticsRoutes from './modules/logistics/logistics.routes';
-import swaggerUi from 'swagger-ui-express';
-import { generateOpenAPIDocument } from './common/openapi/openapi.config';
+import mediaRoutes from './modules/media/media.routes';
+import optionSetRoutes from './modules/option-set/option-set.routes';
+import orderRoutes from './modules/order/order.routes';
+import productRoutes from './modules/product/product.routes';
+import renderRoutes from './modules/product/product-render.routes';
+import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
+import sessionRoutes from './modules/session/session.routes';
+import staffRoutes from './modules/staff/staff.routes';
+import vendorRoutes from './modules/vendor/vendor.routes';
 
 const app = express();
 app.set('trust proxy', 1);

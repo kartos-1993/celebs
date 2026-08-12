@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo,useRef, useState } from 'react';
 import {
-  View,
-  FlatList,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
+  FlatList,
   Linking,
-  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { apiClient } from '@/api/client';
-import { resolveImageUrl } from '@/constants/config';
+
 import { styles } from '../styles/home.styles';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { apiClient } from '@/api/client';
+import { resolveImageUrl } from '@/constants/config';
 
 interface Banner {
   id: string;
@@ -128,7 +129,7 @@ export function BannerCarousel() {
     }
   };
 
-  const onScroll = (event: any) => {
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const index = event.nativeEvent.contentOffset.x / slideSize;
     const roundIndex = Math.round(index);

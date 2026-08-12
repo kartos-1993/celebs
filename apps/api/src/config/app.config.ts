@@ -1,4 +1,5 @@
 import { getEnv } from '@celebs/shared-utils';
+
 import { env as validatedEnv } from './env.validation';
 
 export const appConfig = () => {
@@ -11,7 +12,9 @@ export const appConfig = () => {
     NODE_ENV: env,
     APP_ORIGIN: appOrigins,
     PORT: validatedEnv.PORT,
-    BASE_PATH: validatedEnv.BASE_PATH,
+    API_PREFIX: '/api',
+    API_VERSION: 'v1',
+    BASE_PATH: validatedEnv.BASE_PATH || '/api/v1',
     JWT: {
       SECRET: validatedEnv.JWT_SECRET,
       EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m'),
@@ -39,11 +42,14 @@ export const appConfig = () => {
     S3: {
       REGION: getEnv('S3_REGION', 'ap-south-1'),
       BUCKET_NAME: getEnv('S3_BUCKET_NAME', 'celebs'),
-      ENDPOINT: getEnv('S3_ENDPOINT', ''),
-      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID'),
-      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY'),
+      ENDPOINT: getEnv('S3_ENDPOINT', 'http://127.0.0.1:9000'),
+      ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID', 'minioadmin'),
+      SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY', 'minioadmin'),
       /** Optional CDN / public base (e.g. CloudFront). When set, public URLs use this prefix. */
-      PUBLIC_BASE_URL: getEnv('MEDIA_PUBLIC_BASE_URL', getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', '')),
+      PUBLIC_BASE_URL: getEnv(
+        'MEDIA_PUBLIC_BASE_URL',
+        getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', 'http://127.0.0.1:9000/celebs'),
+      ),
     },
     GOOGLE_CLIENT_ID: getEnv(
       'GOOGLE_CLIENT_ID',

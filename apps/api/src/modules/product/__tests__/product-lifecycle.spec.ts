@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Category, VendorProfile } from '@prisma/client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { CreateProductType } from '@celebs/shared-types';
-import { ProductService } from '@/modules/product/product.service';
+
 import prisma from '@/config/db.prisma';
+import { ProductService } from '@/modules/product/product.service';
 
 vi.mock('@/mailers/mailer', () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),

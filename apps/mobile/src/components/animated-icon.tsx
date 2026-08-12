@@ -1,9 +1,9 @@
-import { Image } from 'expo-image';
-import * as SplashScreen from 'expo-splash-screen';
-import React, { useState, useEffect } from 'react';
+import React, {useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { Image } from 'expo-image';
+import * as SplashScreen from 'expo-splash-screen';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
@@ -39,6 +39,7 @@ export function AnimatedSplashOverlay() {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
 
   return animate ? (
@@ -98,11 +99,13 @@ export function AnimatedIcon() {
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
+        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>
 
       <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
+        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
       </Animated.View>
     </View>

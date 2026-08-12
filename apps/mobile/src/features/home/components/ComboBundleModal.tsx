@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { X, Sparkles, ShoppingBag, Tag } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import React, { useEffect,useState } from 'react';
+import { Image,Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ShoppingBag, Sparkles, Tag,X } from 'lucide-react-native';
+
 import { ComboBundleData } from './ComboBundleShowcase';
+
+import { ThemedText } from '@/components/themed-text';
 
 interface ComboBundleModalProps {
   visible: boolean;

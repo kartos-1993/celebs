@@ -1,16 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect,useRef, useState } from 'react';
 import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
   Dimensions,
   Modal,
-  NativeSyntheticEvent,
   NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { X } from 'lucide-react-native';
+
 import { resolveImageUrl } from '@/constants/config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

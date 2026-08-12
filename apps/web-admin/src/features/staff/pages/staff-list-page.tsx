@@ -1,15 +1,19 @@
+import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  getStaffQueryFn,
-  createStaffMutationFn,
-  deleteStaffMutationFn,
-  getAdminVendorsQueryFn,
-} from '@/lib/api';
+  getStaff,
+  createStaff,
+  deleteStaff,
+} from '../api';
+import { STAFF_QUERY_KEYS } from '../hooks/use-staff-queries';
+import { getAdminVendors } from '@/features/vendors/api';
+import { VENDORS_QUERY_KEYS } from '@/features/vendors/hooks/use-vendor-queries';
 import { useAuthContext } from '@/context/auth-provider';
+import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
@@ -95,8 +99,8 @@ export default function StaffList() {
 
   // Query vendors for Admin/Superadmin selector
   const { data: vendorsResponse } = useQuery({
-    queryKey: ['admin-vendors'],
-    queryFn: getAdminVendorsQueryFn,
+    queryKey: VENDORS_QUERY_KEYS.list(),
+    queryFn: getAdminVendors,
     enabled: isAdminOrSuperAdmin,
   });
 
@@ -104,28 +108,28 @@ export default function StaffList() {
 
   // Query staff list (filtered by selectedVendorFilter if admin)
   const { data: response, isLoading } = useQuery({
-    queryKey: ['vendor-staff', selectedVendorFilter],
-    queryFn: () => getStaffQueryFn(selectedVendorFilter),
+    queryKey: STAFF_QUERY_KEYS.list(selectedVendorFilter),
+    queryFn: () => getStaff(selectedVendorFilter),
   });
 
   const createMutation = useMutation({
     mutationFn: (values: FormValues) => {
       const preset = STAFF_ROLE_PRESETS.find((p) => p.id === selectedPreset);
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         ...values,
         permissions: preset?.permissions || [],
       };
       if (isAdminOrSuperAdmin && (targetVendorForCreate || selectedVendorFilter)) {
         payload.vendorId = targetVendorForCreate || selectedVendorFilter;
       }
-      return createStaffMutationFn(payload);
+      return createStaff(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor-staff'] });
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
       setShowCreateModal(false);
       createForm.reset();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       const errorMsg =
         error?.response?.data?.message || error?.message || 'Failed to create staff account';
       createForm.setError('confirmPassword', {
@@ -136,9 +140,9 @@ export default function StaffList() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteStaffMutationFn,
+    mutationFn: (id: string) => deleteStaff(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor-staff'] });
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
     },
   });
 
@@ -185,7 +189,7 @@ export default function StaffList() {
                 className="h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-ring"
               >
                 <option value="">All Vendor Shops</option>
-                {vendorsList.map((v: any) => (
+                {vendorsList.map((v: { id: string; shopName: string }) => (
                   <option key={v.id} value={v.id}>
                     {v.shopName}
                   </option>
@@ -229,7 +233,7 @@ export default function StaffList() {
                       <option value="" disabled>
                         Select Vendor Shop...
                       </option>
-                      {vendorsList.map((v: any) => (
+                      {vendorsList.map((v: { id: string; shopName: string; user?: { email?: string } }) => (
                         <option key={v.id} value={v.id}>
                           {v.shopName} ({v.user?.email || 'Vendor'})
                         </option>
@@ -379,7 +383,7 @@ export default function StaffList() {
                 </td>
               </tr>
             ) : (
-              staff.map((member: any) => (
+              staff.map((member: UserData) => (
                 <tr
                   key={member.id}
                   className="border-b last:border-0 hover:bg-muted/30 transition-colors"
@@ -388,7 +392,7 @@ export default function StaffList() {
                   <td className="p-3.5 text-xs text-muted-foreground font-mono">{member.email}</td>
                   {isAdminOrSuperAdmin && (
                     <td className="p-3.5 text-xs font-medium text-foreground">
-                      {member.vendor?.shopName || 'Vendor Shop'}
+                      {member.vendorProfile?.shopName || 'Vendor Shop'}
                     </td>
                   )}
                   <td className="p-3.5">

@@ -1,18 +1,19 @@
 import React from 'react';
 import {
-  View,
-  ScrollView,
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
+  View,
 } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 
+import { Product,useProducts } from '../hooks/use-products';
+
+import { ProductCard } from './product-card';
+
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
-import { ProductCard } from './product-card';
-import { useProducts, Product } from '../hooks/use-products';
 
 export interface ProductGridRef {
   loadMore: () => void;
