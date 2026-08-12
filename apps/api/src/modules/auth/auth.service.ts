@@ -240,7 +240,11 @@ export class AuthService {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        vendorProfile: true,
+        vendorProfile: {
+          include: {
+            warehouses: true,
+          },
+        },
       },
     });
 
@@ -454,7 +458,17 @@ export class AuthService {
     // Check if session exists in DB
     const session = await prisma.session.findUnique({
       where: { id: payload.sessionId },
-      include: { user: { include: { vendorProfile: true } } },
+      include: {
+        user: {
+          include: {
+            vendorProfile: {
+              include: {
+                warehouses: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!session || !session.user) {

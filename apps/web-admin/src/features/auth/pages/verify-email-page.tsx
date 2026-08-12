@@ -36,21 +36,15 @@ export default function VerifyEmailPage() {
     if (hasAttemptedRef.current) return;
     hasAttemptedRef.current = true;
 
-    let isMounted = true;
     verifyEmail({ code })
       .then(() => {
-        if (isMounted) {
-          setStatus('success');
-          refetch();
-          setTimeout(() => {
-            navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
-          }, 1800);
-        }
+        setStatus('success');
+        refetch();
+        setTimeout(() => {
+          navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
+        }, 1800);
       })
       .catch(async (err: { response?: { data?: { message?: string } } }) => {
-        if (!isMounted) return;
-
-        // If the code was already consumed (e.g., previous attempt set cookie), check latest user state
         refetch();
         if (user?.isEmailVerified) {
           setStatus('success');
@@ -65,10 +59,6 @@ export default function VerifyEmailPage() {
           err?.response?.data?.message || 'Verification link is invalid or has expired.',
         );
       });
-
-    return () => {
-      isMounted = false;
-    };
   }, [code, navigate, refetch, user?.isEmailVerified]);
 
   return (
