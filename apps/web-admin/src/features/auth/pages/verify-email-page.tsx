@@ -41,7 +41,7 @@ export default function VerifyEmailPage() {
           }, 1800);
         }
       })
-      .catch((err: any) => {
+      .catch((err: { response?: { data?: { message?: string } } }) => {
         if (isMounted) {
           // If user logged in and already verified during fallback GET call
           if (user?.isEmailVerified) {
