@@ -36,23 +36,25 @@ export async function verifyS3Connection(): Promise<void> {
   try {
     await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
     logger.info({ bucket }, 'S3/MinIO Connected and bucket verified successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     if (isDev) {
       try {
         await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
         logger.info({ bucket }, 'Created local MinIO bucket automatically');
         await ensureDevPublicReadAccess();
         return;
-      } catch (createErr: any) {
+      } catch (createErr: unknown) {
+        const createErrMsg = createErr instanceof Error ? createErr.message : String(createErr);
         logger.warn(
-          { bucket, error: createErr?.message || String(createErr) },
+          { bucket, error: createErrMsg },
           'Could not auto-create local MinIO bucket. Make sure MinIO is running on port 9000.',
         );
         return;
       }
     }
     logger.error(
-      { bucket, error: error?.message || String(error) },
+      { bucket, error: errorMsg },
       'S3/MinIO Connection verification failed',
     );
     throw error;
@@ -103,9 +105,10 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
         try {
           await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
           logger.info({ bucket }, 'Created local MinIO bucket');
-        } catch (createErr: any) {
+        } catch (createErr: unknown) {
+          const createErrMsg = createErr instanceof Error ? createErr.message : String(createErr);
           logger.warn(
-            { bucket, error: createErr?.message || String(createErr) },
+            { bucket, error: createErrMsg },
             'Could not auto-create MinIO bucket',
           );
         }
@@ -133,9 +136,10 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
           }),
         );
         logger.info({ bucket }, 'MinIO/S3 bucket public-read policy applied (development)');
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
         logger.warn(
-          { bucket, err: err?.message || String(err) },
+          { bucket, err: errMsg },
           'Could not apply public-read bucket policy. Browser image URLs may 403.',
         );
       }
@@ -166,9 +170,10 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
           { bucket, allowedOrigins },
           'MinIO/S3 bucket CORS applied for presigned browser uploads (development)',
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
         logger.warn(
-          { bucket, err: err?.message || String(err) },
+          { bucket, err: errMsg },
           'Could not apply bucket CORS. Presigned browser PUT may fail (CORS). ' +
             'In MinIO console: bucket → Access → set CORS for your admin origin.',
         );

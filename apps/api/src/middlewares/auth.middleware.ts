@@ -5,7 +5,7 @@ import { ErrorCode, ForbiddenException, UnauthorizedException } from '@celebs/sh
 export { authenticateJWT, optionalAuthenticateJWT } from '@/common/strategies/jwt.strategy';
 
 export const requireApprovedVendor = (req: Request, _res: Response, next: NextFunction) => {
-  const user = req.user as any;
+  const user = req.user;
   if (!user) {
     return next(new UnauthorizedException('Authentication required', ErrorCode.UNAUTHORIZED_ACCESS));
   }

@@ -12,42 +12,42 @@ export class UpstashRedisStore extends Store {
     this.ttl = ttl;
   }
 
-  public get = (sid: string, callback: (err: any, session?: SessionData | null) => void): void => {
+  public get = (sid: string, callback: (err: unknown, session?: SessionData | null) => void): void => {
     upstashRedis
       .get<SessionData>(`${this.prefix}${sid}`)
       .then((data: SessionData | null) => callback(null, data || null))
-      .catch((err: any) => callback(err));
+      .catch((err: unknown) => callback(err));
   };
 
-  public set = (sid: string, session: SessionData, callback?: (err?: any) => void): void => {
+  public set = (sid: string, session: SessionData, callback?: (err?: unknown) => void): void => {
     upstashRedis
       .set(`${this.prefix}${sid}`, session, { ex: this.ttl })
       .then(() => {
         if (callback) callback(null);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (callback) callback(err);
       });
   };
 
-  public destroy = (sid: string, callback?: (err?: any) => void): void => {
+  public destroy = (sid: string, callback?: (err?: unknown) => void): void => {
     upstashRedis
       .del(`${this.prefix}${sid}`)
       .then(() => {
         if (callback) callback(null);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (callback) callback(err);
       });
   };
 
-  public touch = (sid: string, session: SessionData, callback?: (err?: any) => void): void => {
+  public touch = (sid: string, session: SessionData, callback?: (err?: unknown) => void): void => {
     upstashRedis
       .expire(`${this.prefix}${sid}`, this.ttl)
       .then(() => {
         if (callback) callback(null);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (callback) callback(err);
       });
   };

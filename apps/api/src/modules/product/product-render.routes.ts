@@ -36,8 +36,8 @@ router.get('/product-render', async (req, res) => {
       category: {
         id: String(category.id),
         name: category.name,
-        version: category.version ?? 1,
-        attributes: (category.attributes as any) || [],
+        version: (category.version as number) ?? 1,
+        attributes: category.attributes || [],
         sizeChartColumns: category.sizeChartColumns || [],
         bodyChartColumns: category.bodyChartColumns || [],
       },
@@ -59,8 +59,9 @@ router.get('/product-render', async (req, res) => {
       return;
     }
     res.json(payload);
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Failed to compose render schema' });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : 'Failed to compose render schema';
+    res.status(500).json({ error: errMsg });
   }
 });
 

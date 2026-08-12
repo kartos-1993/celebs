@@ -9,7 +9,7 @@ export class MockPaymentAdapter implements IPaymentGateway {
     orderId: string,
     amount: number,
     currency = 'NPR',
-    metadata: Record<string, any> = {},
+    metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {
     const mockPaymentId = `mock_pay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     return {
@@ -26,7 +26,7 @@ export class MockPaymentAdapter implements IPaymentGateway {
     };
   }
 
-  async verifyPayment(paymentId: string, payload: any = {}): Promise<PaymentVerificationResult> {
+  async verifyPayment(paymentId: string, payload: Record<string, unknown> = {}): Promise<PaymentVerificationResult> {
     const isSuccess = payload?.status !== 'failed';
     return {
       success: isSuccess,

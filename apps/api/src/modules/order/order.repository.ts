@@ -1,3 +1,5 @@
+import { OrderStatus } from '@prisma/client';
+
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export class OrderRepository {
@@ -108,7 +110,7 @@ export class OrderRepository {
 
   async findAdminOrders(status?: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    const whereCondition: Prisma.OrderWhereInput = status ? { status: status as any } : {};
+    const whereCondition: Prisma.OrderWhereInput = status ? { status: status as OrderStatus } : {};
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({

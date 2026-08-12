@@ -2,14 +2,14 @@ export interface PaymentIntentResult {
   paymentId: string;
   clientSecret?: string;
   redirectUrl?: string;
-  rawResponse?: any;
+  rawResponse?: Record<string, unknown>;
 }
 
 export interface PaymentVerificationResult {
   success: boolean;
   transactionId?: string;
   status: 'COMPLETED' | 'FAILED' | 'PENDING';
-  rawResponse?: any;
+  rawResponse?: Record<string, unknown>;
 }
 
 export interface IPaymentGateway {
@@ -17,8 +17,8 @@ export interface IPaymentGateway {
     orderId: string,
     amount: number,
     currency: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<PaymentIntentResult>;
 
-  verifyPayment(paymentId: string, payload: any): Promise<PaymentVerificationResult>;
+  verifyPayment(paymentId: string, payload: unknown): Promise<PaymentVerificationResult>;
 }

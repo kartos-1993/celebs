@@ -140,7 +140,7 @@ export class ProductService {
     return this.formatProductResponse(createdProduct);
   }
 
-  async getProductById(id: string): Promise<any> {
+  async getProductById(id: string) {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
@@ -161,8 +161,8 @@ export class ProductService {
     filters: ProductFilterType = {},
     page = 1,
     limit = 10,
-  ): Promise<{ products: any[]; total: number }> {
-    const where: any = {
+  ) {
+    const where: Record<string, unknown> = {
       vendorId,
       status: filters.status ? filters.status : { not: 'archived' },
     };
@@ -177,9 +177,10 @@ export class ProductService {
       where.featured = filters.featured;
     }
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      where.price = {};
-      if (filters.minPrice !== undefined) where.price.gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) where.price.lte = filters.maxPrice;
+      const priceFilter: Record<string, number> = {};
+      if (filters.minPrice !== undefined) priceFilter.gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) priceFilter.lte = filters.maxPrice;
+      where.price = priceFilter;
     }
     if (filters.subcategoryId) {
       where.subcategoryId = filters.subcategoryId;
@@ -553,7 +554,7 @@ export class ProductService {
     userId: string,
     role: string,
     vendorId?: string,
-  ): Promise<any> {
+  ) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
@@ -609,14 +610,14 @@ export class ProductService {
             : {}),
           categoryId: resolvedCategoryId,
           subcategoryId: resolvedSubcategoryId,
-          ...(updateData.sizes ? { sizes: updateData.sizes as any } : {}),
-          ...(updateData.colorVariants ? { colorVariants: updateData.colorVariants as any } : {}),
-          ...(updateData.skus ? { skus: updateData.skus as any } : {}),
+          ...(updateData.sizes ? { sizes: updateData.sizes as unknown as Prisma.InputJsonValue } : {}),
+          ...(updateData.colorVariants ? { colorVariants: updateData.colorVariants as unknown as Prisma.InputJsonValue } : {}),
+          ...(updateData.skus ? { skus: updateData.skus as unknown as Prisma.InputJsonValue } : {}),
           ...(updateData.variantOptions
-            ? { variantOptions: updateData.variantOptions as any }
+            ? { variantOptions: updateData.variantOptions as unknown as Prisma.InputJsonValue }
             : {}),
           ...(updateData.mainImages ? { mainImages: updateData.mainImages } : {}),
-          ...(updateData.dynamicData ? { dynamicData: updateData.dynamicData as any } : {}),
+          ...(updateData.dynamicData ? { dynamicData: updateData.dynamicData as unknown as Prisma.InputJsonValue } : {}),
           ...(updateData.tags ? { tags: updateData.tags } : {}),
           ...(updateData.featured !== undefined ? { featured: updateData.featured } : {}),
           ...(updateData.status ? { status: updateData.status } : {}),
@@ -669,7 +670,7 @@ export class ProductService {
     return this.formatProductResponse(updated);
   }
 
-  async archiveProduct(id: string, userId: string, role: string, vendorId?: string): Promise<any> {
+  async archiveProduct(id: string, userId: string, role: string, vendorId?: string) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
@@ -698,7 +699,7 @@ export class ProductService {
     return this.formatProductResponse(updated);
   }
 
-  async toggleProductActivation(id: string, vendorId: string): Promise<any> {
+  async toggleProductActivation(id: string, vendorId: string) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);

@@ -44,12 +44,12 @@ export function calculateProductQCScore(
     };
   }
 
-  const product = productInput as any;
+  const product = productInput as Record<string, unknown>;
 
   // 1. Main Images Check (25 pts max)
-  const imageCount = (product.mainImages || product.images)?.length || 0;
+  const imageCount = ((product.mainImages || product.images) as unknown[])?.length || 0;
   const hasVariantImages = Boolean(
-    product.colorVariants?.some((variant: any) => variant.images && variant.images.length > 0),
+    (product.colorVariants as Record<string, unknown>[])?.some((variant: Record<string, unknown>) => variant.images && (variant.images as unknown[]).length > 0),
   );
 
   let imageScore = 0;
@@ -107,13 +107,13 @@ export function calculateProductQCScore(
   };
 
   // 4. Sizing & Size Chart Check (15 pts max)
-  const sizes = product.sizes || [];
+  const sizes = (product.sizes as Record<string, unknown>[]) || [];
   const hasSizeData =
     sizes.length > 0 &&
     sizes.some(
-      (s: any) =>
-        (s.productMeasurements && s.productMeasurements.length > 0) ||
-        (s.bodyMeasurements && s.bodyMeasurements.length > 0),
+      (s: Record<string, unknown>) =>
+        ((s.productMeasurements as unknown[]) && (s.productMeasurements as unknown[]).length > 0) ||
+        ((s.bodyMeasurements as unknown[]) && (s.bodyMeasurements as unknown[]).length > 0),
     );
   const sizingScore = hasSizeData ? 15 : sizes.length > 0 ? 8 : 0;
   const sizingCheck: IQCCheckItem = {
@@ -128,7 +128,7 @@ export function calculateProductQCScore(
   };
 
   // 5. Attributes / Specs Check (15 pts max)
-  const dynamicVals = product.dynamicData?.values || {};
+  const dynamicVals = (product.dynamicData as { values?: Record<string, unknown> })?.values || {};
   const attrCount = Object.keys(dynamicVals).length;
   let attrScore = 0;
   if (attrCount >= 4) {
@@ -161,13 +161,13 @@ export function calculateProductQCScore(
   };
 
   // 7. Variants & Stock Check (5 pts max)
-  const variants = product.colorVariants || [];
-  const skus = product.skus || [];
-  const legacyStock = variants.reduce((acc: number, v: any) => {
-    const vStock = v.stocks?.reduce((sAcc: number, s: any) => sAcc + (s.quantity || 0), 0) || 0;
+  const variants = (product.colorVariants as Record<string, unknown>[]) || [];
+  const skus = (product.skus as Record<string, unknown>[]) || [];
+  const legacyStock = variants.reduce((acc: number, v: Record<string, unknown>) => {
+    const vStock = (v.stocks as Record<string, unknown>[])?.reduce((sAcc: number, s: Record<string, unknown>) => sAcc + ((s.quantity as number) || 0), 0) || 0;
     return acc + vStock;
   }, 0);
-  const matrixStock = skus.reduce((acc: number, s: any) => acc + (s.stock || 0), 0);
+  const matrixStock = skus.reduce((acc: number, s: Record<string, unknown>) => acc + ((s.stock as number) || 0), 0);
   const totalStock = legacyStock + matrixStock;
 
   const variantScore = totalStock > 0 ? 5 : 0;

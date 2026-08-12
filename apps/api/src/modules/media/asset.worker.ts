@@ -32,7 +32,7 @@ async function getS3ObjectBuffer(key: string): Promise<Buffer> {
   }
 
   const chunks: Uint8Array[] = [];
-  for await (const chunk of response.Body as any) {
+  for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
     chunks.push(chunk);
   }
   return Buffer.concat(chunks);
@@ -90,9 +90,10 @@ export const assetWorker = new Worker<AssetJobPayload>(
         mainSize: optimizedMainBuffer.length,
         thumbSize: thumbnailBuffer.length,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       logger.error(
-        { jobId: job.id, mediaId, error: error?.message || String(error) },
+        { jobId: job.id, mediaId, error: errMsg },
         'Failed to process asset job',
       );
       throw error;

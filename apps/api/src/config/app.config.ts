@@ -33,12 +33,7 @@ export const appConfig = () => {
       DOMAIN: getEnv('COOKIE_DOMAIN', isProduction ? 'yourdomain.com' : ''),
     },
     SETUP_SECRET: getEnv('SETUP_SECRET', 'celebs-superadmin-secret-2026'),
-    CLOUDINARY: {
-      CLOUD_NAME: getEnv('CLOUDINARY_CLOUD_NAME'),
-      API_KEY: getEnv('CLOUDINARY_API_KEY'),
-      API_SECRET: getEnv('CLOUDINARY_API_SECRET'),
-      FOLDER: getEnv('CLOUDINARY_FOLDER', 'celebs_media'),
-    },
+
     S3: {
       REGION: getEnv('S3_REGION', 'ap-south-1'),
       BUCKET_NAME: getEnv('S3_BUCKET_NAME', 'celebs'),

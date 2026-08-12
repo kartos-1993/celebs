@@ -28,10 +28,6 @@ export type CategoryUpdateInput = UpdateCategoryType & {
   path?: string[];
 };
 
-interface CategoryDeleteResult {
-  success: boolean;
-}
-
 interface CategoryTreeNode {
   id: string;
   name: string;
@@ -40,13 +36,13 @@ interface CategoryTreeNode {
   parentCategory?: string | null;
   parent?: string | null;
   path?: string | string[];
-  attributes?: any[];
+  attributes?: Record<string, unknown>[];
   imageUrl?: string | null;
   children: CategoryTreeNode[];
 }
 
 interface PaginatedCategoriesResponse {
-  categories: any[];
+  categories: Record<string, unknown>[];
   total: number;
   page: number;
   limit: number;
@@ -59,10 +55,17 @@ export class CategoryService {
 
   constructor(private categoryRepository: CategoryRepository = defaultCategoryRepo) {}
 
-  async createCategory(categoryData: CategoryInput): Promise<any> {
+  async createCategory(categoryData: CategoryInput) {
     await this.validateCategoryUniqueness(categoryData.name, categoryData.parent || null);
 
     const categoryDoc = await this.createCategoryDocument(categoryData);
+    if (!categoryDoc) {
+      throw new AppError(
+        'Failed to create category document',
+        HTTPSTATUS.INTERNAL_SERVER_ERROR,
+        ErrorCode.INTERNAL_SERVER_ERROR,
+      );
+    }
 
     if (this.hasAttributes(categoryData)) {
       await this.updateCategoryAttributes(categoryDoc.id, categoryData.attributes!);
@@ -85,22 +88,22 @@ export class CategoryService {
   async searchCategories(query: string, limit = 20) {
     if (!query || !query.trim()) return [];
     const results = await this.categoryRepository.find({ name: query.trim() }, limit);
-    return results.map((c: any) => ({
+    return results.map((c: Record<string, unknown>) => ({
       id: String(c.id),
       name: c.name,
       parentId: c.parentCategory ? String(c.parentCategory) : null,
       hasChildren: false,
-      level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
+      level: (c.level as number) ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
       path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
     }));
   }
 
-  async getCategoryById(id: string): Promise<any | null> {
+  async getCategoryById(id: string) {
     this.validateObjectId(id);
     return await this.categoryRepository.findById(id);
   }
 
-  async getCategoryBySlug(slug: string): Promise<any | null> {
+  async getCategoryBySlug(slug: string) {
     return await this.categoryRepository.findOne({ slug });
   }
 
@@ -108,7 +111,7 @@ export class CategoryService {
     return this.getCategoryTreeWithAttributes();
   }
 
-  async getStorefrontSchema(slug: string): Promise<any | null> {
+  async getStorefrontSchema(slug: string) {
     const cat = await this.getCategoryBySlug(slug);
     return cat ? { fields: cat.attributes || [] } : null;
   }
@@ -118,13 +121,13 @@ export class CategoryService {
     return this.buildCategoryTree(categories);
   }
 
-  async getCategoryFilters(categoryId: string): Promise<any[]> {
+  async getCategoryFilters(categoryId: string) {
     this.validateObjectId(categoryId);
     const category = await this.categoryRepository.findById(categoryId);
     return Array.isArray(category?.attributes) ? category.attributes : [];
   }
 
-  async updateCategory(categoryId: string, updateData: CategoryUpdateInput): Promise<any> {
+  async updateCategory(categoryId: string, updateData: CategoryUpdateInput) {
     this.validateObjectId(categoryId);
 
     const existingCategory = await this.getExistingCategoryOrThrow(categoryId);
@@ -200,17 +203,24 @@ export class CategoryService {
     return !!(categoryData.attributes && categoryData.attributes.length > 0);
   }
 
-  private fetchCategoriesWithAttributes(activeOnly = false): Promise<any[]> {
+  private fetchCategoriesWithAttributes(activeOnly = false) {
     const query = activeOnly ? { isActive: true } : {};
     return this.categoryRepository.find(query);
   }
 
-  private buildCategoryTree(categories: any[]): CategoryTreeNode[] {
+  private buildCategoryTree(categories: Record<string, unknown>[]): CategoryTreeNode[] {
     const categoryMap: Record<string, CategoryTreeNode> = {};
 
     categories.forEach((cat) => {
       const idStr = String(cat.id);
-      categoryMap[idStr] = { ...cat, id: idStr, children: [] };
+      categoryMap[idStr] = {
+        ...cat,
+        id: idStr,
+        name: String(cat.name || ''),
+        slug: String(cat.slug || ''),
+        level: Number(cat.level || 1),
+        children: [],
+      };
     });
 
     const rootCategories: CategoryTreeNode[] = [];
@@ -250,7 +260,7 @@ export class CategoryService {
   private async validateUpdateData(
     updateData: CategoryUpdateInput,
     categoryId: string,
-    existingCategory: any,
+    existingCategory: Record<string, unknown>,
   ): Promise<void> {
     if (updateData.parent !== undefined) {
       await this.validateParentUpdate(updateData, categoryId, existingCategory);
@@ -264,7 +274,7 @@ export class CategoryService {
   private async validateParentUpdate(
     updateData: CategoryUpdateInput,
     categoryId: string,
-    existingCategory: any,
+    existingCategory: Record<string, unknown>,
   ): Promise<void> {
     if (updateData.parent === categoryId) {
       throw new AppError(
@@ -290,17 +300,17 @@ export class CategoryService {
         : typeof parentCategory.path === 'string' && parentCategory.path.length > 0
           ? parentCategory.path.split('/')
           : [];
-      updateData.path = [...parentPathParts, existingCategory.slug];
+      updateData.path = [...parentPathParts, existingCategory.slug as string];
     } else {
       updateData.level = 1;
-      updateData.path = [existingCategory.slug];
+      updateData.path = [existingCategory.slug as string];
     }
   }
 
   private async validateNameUpdate(
     updateData: CategoryUpdateInput,
     categoryId: string,
-    existingCategory: any,
+    existingCategory: Record<string, unknown>,
   ): Promise<void> {
     const parentVal =
       updateData.parent !== undefined ? updateData.parent : existingCategory.parentCategory;
@@ -332,7 +342,7 @@ export class CategoryService {
       isRequired: !!attr.isRequired,
       group: attr.group || 'basic',
       isVariant: !!attr.isVariant,
-      variantType: (attr as any).variantType ?? null,
+      variantType: (attr as Record<string, unknown>).variantType ?? null,
       useStandardOptions: !!attr.useStandardOptions,
     }));
 
@@ -356,7 +366,7 @@ export class CategoryService {
     }
   }
 
-  private async createCategoryDocument(categoryData: CategoryInput): Promise<any> {
+  private async createCategoryDocument(categoryData: CategoryInput) {
     return await this.categoryRepository.create({
       name: categoryData.name,
       slug: categoryData.slug,

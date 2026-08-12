@@ -1,4 +1,4 @@
-import { prisma } from '@/config/db.prisma';
+import prisma, { Prisma } from '@/config/db.prisma';
 
 export class PostgresInventoryRepository {
   public async createInventoryRecord(data: {
@@ -21,7 +21,7 @@ export class PostgresInventoryRepository {
     });
   }
 
-  public async createOutboxEvent(data: { aggregate: string; eventType: string; payload: any }) {
+  public async createOutboxEvent(data: { aggregate: string; eventType: string; payload: Prisma.InputJsonValue }) {
     return await prisma.outboxEvent.create({
       data: {
         aggregate: data.aggregate,

@@ -1,13 +1,13 @@
 import { Response } from 'express';
 
-export interface ApiResponseEnvelope<T = any> {
+export interface ApiResponseEnvelope<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: Record<string, any> | Array<any>;
+    details?: unknown;
   };
   meta?: {
     page?: number;
@@ -39,7 +39,7 @@ export const sendError = (
   statusCode: number,
   code: string,
   message: string,
-  details?: any,
+  details?: unknown,
 ) => {
   const payload: ApiResponseEnvelope = {
     success: false,

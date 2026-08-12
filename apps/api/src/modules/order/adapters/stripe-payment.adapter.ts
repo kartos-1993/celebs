@@ -15,7 +15,7 @@ export class StripePaymentAdapter implements IPaymentGateway {
     orderId: string,
     amount: number,
     currency = 'usd',
-    metadata: Record<string, any> = {},
+    metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {
     if (!this.secretKey) {
       // Fallback to simulation if Stripe key is not configured in env
@@ -49,22 +49,23 @@ export class StripePaymentAdapter implements IPaymentGateway {
         }).toString(),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as Record<string, unknown>;
       if (!response.ok) {
-        throw new Error(data.error?.message || 'Stripe API error');
+        throw new Error((data.error as { message?: string })?.message || 'Stripe API error');
       }
 
       return {
-        paymentId: data.id,
-        clientSecret: data.client_secret,
+        paymentId: data.id as string,
+        clientSecret: data.client_secret as string,
         rawResponse: data,
       };
-    } catch (error: any) {
-      throw new Error(`Stripe Payment Intent failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Stripe Payment Intent failed: ${errMsg}`);
     }
   }
 
-  async verifyPayment(paymentId: string, _payload: any = {}): Promise<PaymentVerificationResult> {
+  async verifyPayment(paymentId: string, _payload: unknown = {}): Promise<PaymentVerificationResult> {
     if (!this.secretKey) {
       return {
         success: true,
@@ -81,11 +82,11 @@ export class StripePaymentAdapter implements IPaymentGateway {
         },
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as Record<string, unknown>;
       const isSucceeded = data.status === 'succeeded';
       return {
         success: isSucceeded,
-        transactionId: data.id,
+        transactionId: data.id as string,
         status: isSucceeded
           ? 'COMPLETED'
           : data.status === 'requires_payment_method'
@@ -93,11 +94,12 @@ export class StripePaymentAdapter implements IPaymentGateway {
             : 'PENDING',
         rawResponse: data,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       return {
         success: false,
         status: 'FAILED',
-        rawResponse: { error: error.message },
+        rawResponse: { error: errMsg },
       };
     }
   }

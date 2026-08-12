@@ -40,7 +40,7 @@ export interface CategoryDocLike {
   id: string;
   name: string;
   version?: number;
-  attributes: IAttribute[];
+  attributes?: IAttribute[] | unknown;
   sizeChartColumns?: string[];
   bodyChartColumns?: string[];
 }
@@ -51,9 +51,9 @@ export interface FieldSpec {
   label: string;
   group: FieldGroup;
   required?: boolean;
-  value?: any;
-  dataSource?: any;
-  rule?: any;
+  value?: unknown;
+  dataSource?: unknown;
+  rule?: unknown;
   visible?: boolean;
   placeholder?: string;
   info?: {
@@ -68,16 +68,17 @@ function titleCase(s: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function selectDataSource(attr: any, optionSetsMap: Map<string, string[]>) {
+function selectDataSource(attr: Record<string, unknown> | IAttribute, optionSetsMap: Map<string, string[]>) {
   const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
 
-  const searchName =
+  const searchName = String(
     attr.optionSetName ||
-    (attr.name === 'Color' || attr.variantType === 'color'
-      ? 'Basic Colors'
-      : attr.name === 'Size' || attr.variantType === 'size'
-        ? 'Alpha Sizes (XXS-5XL)'
-        : attr.name);
+      (attr.name === 'Color' || attr.variantType === 'color'
+        ? 'Basic Colors'
+        : attr.name === 'Size' || attr.variantType === 'size'
+          ? 'Alpha Sizes (XXS-5XL)'
+          : attr.name || ''),
+  );
 
   const matched =
     optionSetsMap.get(searchName.toLowerCase()) ||
@@ -178,16 +179,20 @@ export async function composeSchema(params: {
     },
   });
 
+  const categoryAttributes = (
+    Array.isArray(params.category.attributes) ? params.category.attributes : []
+  ) as IAttribute[];
+
   // Category-authored fields
-  for (const attr of params.category.attributes || []) {
+  for (const attr of categoryAttributes) {
     fields.push(attributeToField(attr, optionSetsMap));
   }
 
   // Variations -> SKU matrix
-  const saleProps = (params.category.attributes || []).filter((a) => a.isVariant);
+  const saleProps = categoryAttributes.filter((a) => a.isVariant);
 
   // If there's a Color variant, add per-color images field with same media rules
-  const colorAttr = (params.category.attributes || []).find((a) => {
+  const colorAttr = categoryAttributes.find((a) => {
     const key = String(a.name || '').toLowerCase();
     return a.isVariant && key.includes('color');
   });

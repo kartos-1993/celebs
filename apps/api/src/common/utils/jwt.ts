@@ -56,9 +56,10 @@ export const verifyJwtToken = <TPayload extends object = AccessTPayload>(
       ...opts,
     }) as TPayload;
     return { payload };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     return {
-      error: err.message,
+      error: message,
     };
   }
 };

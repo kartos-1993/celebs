@@ -40,7 +40,7 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
   let vendorId: string;
 
   beforeEach(async () => {
-    const getCookie = (res: any): string => {
+    const getCookie = (res: { headers: Record<string, string | string[]> }): string => {
       const rawCookies = res.headers['set-cookie'];
       return Array.isArray(rawCookies) ? rawCookies.join('; ') : rawCookies || '';
     };

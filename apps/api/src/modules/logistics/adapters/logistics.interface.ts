@@ -14,10 +14,10 @@ export interface ShipmentResult {
   trackingUrl: string;
   courierName: string;
   estimatedDelivery?: Date;
-  rawResponse?: any;
+  rawResponse?: Record<string, unknown>;
 }
 
 export interface ILogisticsAdapter {
   createShipment(payload: CreateShipmentPayload): Promise<ShipmentResult>;
-  trackShipment(trackingNumber: string): Promise<any>;
+  trackShipment(trackingNumber: string): Promise<Record<string, unknown>>;
 }

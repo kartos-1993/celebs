@@ -5,7 +5,7 @@ import { ForbiddenException, UnauthorizedException } from '@celebs/shared-utils'
 
 export const requirePermissions = (...requiredPermissions: Permission[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user as any;
+    const user = req.user;
     if (!user) {
       return next(new UnauthorizedException('Authentication required'));
     }
