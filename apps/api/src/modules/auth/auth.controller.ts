@@ -105,11 +105,18 @@ export class AuthController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
   public verifyEmail = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-    const { code } = verificationEmailSchema.parse(req.body);
+    const code = (req.body?.code || req.query?.code) as string;
+    if (!code) {
+      throw new BadRequestException('Verification code is required', ErrorCode.VERIFICATION_ERROR);
+    }
     const { user, accessToken, refreshToken } = await this.authService.verifyEmail(code);
 
     // Set authentication cookies just like login endpoint
     setAuthenticationCookies({ res, accessToken, refreshToken });
+
+    if (req.method === 'GET') {
+      return res.redirect(`${config.APP_ORIGIN}/onboarding?verified=true`);
+    }
 
     const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> =
       {
