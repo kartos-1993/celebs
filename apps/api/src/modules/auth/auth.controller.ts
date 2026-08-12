@@ -38,7 +38,7 @@ export class AuthController {
     } catch (err: unknown) {
       if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
         const issues = (err as z.ZodError).issues;
-        const msg = issues && issues.length > 0 ? issues[0].message : 'Validation failed';
+        const msg = issues?.[0]?.message || 'Validation failed';
         throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
       }
       throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
@@ -61,7 +61,7 @@ export class AuthController {
     } catch (err: unknown) {
       if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
         const issues = (err as z.ZodError).issues;
-        const msg = issues && issues.length > 0 ? issues[0].message : 'Validation failed';
+        const msg = issues?.[0]?.message || 'Validation failed';
         throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
       }
       throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
@@ -86,7 +86,7 @@ export class AuthController {
     } catch (err: unknown) {
       if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
         const issues = (err as z.ZodError).issues;
-        const msg = issues && issues.length > 0 ? issues[0].message : 'Validation failed';
+        const msg = issues?.[0]?.message || 'Validation failed';
         throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
       }
       throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
@@ -145,7 +145,7 @@ export class AuthController {
     } catch (err: unknown) {
       if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
         const issues = (err as z.ZodError).issues;
-        const msg = issues && issues.length > 0 ? issues[0].message : 'Validation failed';
+        const msg = issues?.[0]?.message || 'Validation failed';
         throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
       }
       throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
