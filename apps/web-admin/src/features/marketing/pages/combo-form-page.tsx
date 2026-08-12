@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from '@celebs/shared-ui/components/select';
 import { ArrowLeft, Save, Sparkles } from 'lucide-react';
-import { createComboMutationFn, updateComboMutationFn, getComboByIdQueryFn } from '@/lib/api';
+import { createCombo, updateCombo, getComboById } from '../api';
+import { MARKETING_QUERY_KEYS } from '../hooks/use-marketing-queries';
 import type { ComboDiscountType } from '@celebs/shared-types';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
@@ -34,8 +35,8 @@ export function ComboFormPage() {
   const [productIds, setProductIds] = useState<string[]>([]);
 
   const { data: comboDetail } = useQuery({
-    queryKey: ['combo-detail', id],
-    queryFn: () => getComboByIdQueryFn(id!),
+    queryKey: MARKETING_QUERY_KEYS.comboDetail(id),
+    queryFn: () => getComboById(id!),
     enabled: Boolean(id),
   });
 
@@ -68,7 +69,7 @@ export function ComboFormPage() {
   };
 
   const handleSaveCombo = async () => {
-    if (!title || !slug || productIds.length === 0) return;
+    if (!title || !slug || productIds.length < 2) return;
 
     setIsSubmitting(true);
     try {
@@ -85,12 +86,12 @@ export function ComboFormPage() {
       };
 
       if (id) {
-        await updateComboMutationFn({ id, data: payload });
+        await updateCombo({ id, data: payload });
       } else {
-        await createComboMutationFn(payload);
+        await createCombo(payload);
       }
 
-      queryClient.invalidateQueries({ queryKey: ['combos'] });
+      queryClient.invalidateQueries({ queryKey: MARKETING_QUERY_KEYS.all });
       navigate('/marketing/combos');
     } catch (err) {
       logger.error({ error: err }, 'Failed to save combo bundle');

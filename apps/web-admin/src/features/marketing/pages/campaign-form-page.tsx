@@ -14,10 +14,11 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { ArrowLeft, Save, Flame } from 'lucide-react';
 import {
-  createCampaignMutationFn,
-  updateCampaignMutationFn,
-  getCampaignByIdQueryFn,
-} from '@/lib/api';
+  createCampaign,
+  updateCampaign,
+  getCampaignById,
+} from '../api';
+import { MARKETING_QUERY_KEYS } from '../hooks/use-marketing-queries';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
@@ -38,8 +39,8 @@ export function CampaignFormPage() {
   const [productIds, setProductIds] = useState<string[]>([]);
 
   const { data: campaignDetail } = useQuery({
-    queryKey: ['campaign-detail', id],
-    queryFn: () => getCampaignByIdQueryFn(id!),
+    queryKey: MARKETING_QUERY_KEYS.campaignDetail(id),
+    queryFn: () => getCampaignById(id!),
     enabled: Boolean(id),
   });
 
@@ -92,12 +93,12 @@ export function CampaignFormPage() {
       };
 
       if (id) {
-        await updateCampaignMutationFn({ id, data: payload });
+        await updateCampaign({ id, data: payload });
       } else {
-        await createCampaignMutationFn(payload);
+        await createCampaign(payload);
       }
 
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: MARKETING_QUERY_KEYS.all });
       navigate('/marketing/campaigns');
     } catch (err) {
       logger.error({ error: err }, 'Failed to save campaign');
