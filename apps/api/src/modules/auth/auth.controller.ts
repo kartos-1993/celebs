@@ -26,6 +26,7 @@ import {
   getRefreshTokenCookieOptions,
   setAuthenticationCookies,
 } from '@/common/utils/cookie';
+import { config } from '@/config/app.config';
 
 export class AuthController {
   private authService: AuthService;
