@@ -5,34 +5,37 @@ import prisma from '../../config/db.prisma';
 export async function seedProductsDenimJackets(): Promise<void> {
   console.log('\n🧥 Seeding Denim Jackets Products via PostgreSQL Prisma...');
 
-  // 1. Find or create "Men Denim Jackets" subcategory in PostgreSQL
+  // 1. Find "Men Denim Jackets" subcategory (Level 3 under Men Denim)
   let denimJacketCat = await prisma.category.findFirst({
     where: {
       OR: [
-        { name: { contains: 'denim jacket', mode: 'insensitive' } },
         { slug: 'men-denim-jackets' },
-        { slug: 'denim-jackets' },
+        { name: 'Men Denim Jackets' },
       ],
     },
   });
 
   if (!denimJacketCat) {
-    console.log('  └─ Category not found. Creating Category in Postgres...');
-    const parentCat = await prisma.category.findFirst({
-      where: { level: 1, name: { contains: 'men', mode: 'insensitive' } },
+    const menDenim = await prisma.category.findFirst({
+      where: { slug: 'men-denim' },
     });
 
-    denimJacketCat = await prisma.category.create({
-      data: {
-        name: 'Men Denim Jackets',
-        slug: 'men-denim-jackets',
-        level: parentCat ? 2 : 1,
-        parentCategory: parentCat ? parentCat.id : null,
-        path: parentCat ? `${parentCat.path}/men-denim-jackets` : 'men-denim-jackets',
-        isActive: true,
-        sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length'],
-      },
-    });
+    if (menDenim) {
+      denimJacketCat = await prisma.category.create({
+        data: {
+          name: 'Men Denim Jackets',
+          slug: 'men-denim-jackets',
+          level: 3,
+          parentCategory: menDenim.id,
+          path: `${menDenim.path}/men-denim-jackets`,
+          isActive: true,
+          sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length'],
+          bodyChartColumns: ['Height', 'Bust', 'Waist Size', 'Hip Size'],
+        },
+      });
+    } else {
+      throw new Error('Category "Men Denim Jackets" not found. Run seedCategoriesMen first.');
+    }
   }
 
   const categoryId = denimJacketCat.id;
