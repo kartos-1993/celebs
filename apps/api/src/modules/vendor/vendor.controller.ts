@@ -96,7 +96,18 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public toggleHolidayMode = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public resubmitForReview = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+    const userId = this.getUserId(req);
+    const profile = await this.vendorService.resubmitForReview(userId);
+    const response: IApiResponse<typeof profile> = {
+      success: true,
+      message: 'Application resubmitted for review',
+      data: profile,
+    };
+    return res.status(HTTPSTATUS.OK).json(response);
+  });
+
+  public toggleHolidayMode = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const profile = await this.vendorService.toggleHolidayMode(userId);
     const response: IApiResponse<typeof profile> = {

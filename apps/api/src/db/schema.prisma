@@ -65,7 +65,7 @@ model VendorProfile {
   citizenshipDocumentUrl String?
   ownerPhotoUrl          String?
   payoutDetails          Json?
-  status                 String   @default("PENDING") // PENDING, APPROVED, SUSPENDED, REJECTED
+  status                 String   @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED, SUSPENDED
   availableBalance       Decimal  @default(0.00) @db.Decimal(12, 2)
   withholdingEscrow      Decimal  @default(0.00) @db.Decimal(12, 2)
   currencyCode           String   @default("NPR")

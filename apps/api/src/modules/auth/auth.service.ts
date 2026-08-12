@@ -277,9 +277,9 @@ export class AuthService {
         where: { userId: user.id },
       });
 
-      if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
+      if (!profile || profile.status === 'SUSPENDED') {
         throw new ForbiddenException(
-          'Access denied: Seller account is suspended or rejected.',
+          'Your seller account has been suspended. Please contact support.',
           ErrorCode.FORBIDDEN_ACCESS,
         );
       }
