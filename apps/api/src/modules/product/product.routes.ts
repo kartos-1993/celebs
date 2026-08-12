@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
-import { authenticateJWT } from '@/middlewares/auth.middleware';
+import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
@@ -60,17 +60,20 @@ productRoutes.use(authenticateJWT);
 
 productRoutes.post(
   '/',
+  requireApprovedVendor,
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(productController.createProduct),
 );
 productRoutes.put(
   '/:id',
+  requireApprovedVendor,
   requirePermissions(Permission.PRODUCT_EDIT),
   asyncHandler(productController.updateProduct),
 );
 
 productRoutes.post(
   '/:id/submit-for-review',
+  requireApprovedVendor,
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(productController.submitProductForReview),
 );

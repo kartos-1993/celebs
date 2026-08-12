@@ -1,6 +1,11 @@
 import { NotFoundException } from '@celebs/shared-utils';
 import prisma from '@/db';
 import { hashValue } from '@/common/utils/bcrypt';
+import { sendEmail } from '@/mailers/mailer';
+import {
+  vendorApprovalTemplate,
+  vendorRejectionTemplate,
+} from '@/mailers/templates/vendor-review.template';
 
 export class AdminService {
   // Vendor Management
@@ -12,8 +17,14 @@ export class AdminService {
             id: true,
             name: true,
             email: true,
+            isEmailVerified: true,
+            createdAt: true,
           },
         },
+        warehouses: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
@@ -27,6 +38,8 @@ export class AdminService {
             id: true,
             name: true,
             email: true,
+            isEmailVerified: true,
+            createdAt: true,
           },
         },
         warehouses: true,
@@ -39,25 +52,86 @@ export class AdminService {
   }
 
   public async approveVendor(id: string) {
-    const vendor = await prisma.vendorProfile.findUnique({ where: { id } });
+    const vendor = await prisma.vendorProfile.findUnique({
+      where: { id },
+      include: { user: { select: { email: true } } },
+    });
     if (!vendor) {
       throw new NotFoundException('Vendor profile not found');
     }
-    return await prisma.vendorProfile.update({
+
+    const updated = await prisma.vendorProfile.update({
       where: { id },
-      data: { status: 'APPROVED' },
+      data: {
+        status: 'APPROVED',
+        rejectionReason: null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isEmailVerified: true,
+          },
+        },
+      },
     });
+
+    if (vendor.user?.email) {
+      const template = vendorApprovalTemplate(vendor.shopName);
+      await sendEmail({
+        to: vendor.user.email,
+        subject: template.subject,
+        text: template.text,
+        html: template.html,
+      });
+    }
+
+    return updated;
   }
 
   public async rejectVendor(id: string, reason?: string) {
-    const vendor = await prisma.vendorProfile.findUnique({ where: { id } });
+    const vendor = await prisma.vendorProfile.findUnique({
+      where: { id },
+      include: { user: { select: { email: true } } },
+    });
     if (!vendor) {
       throw new NotFoundException('Vendor profile not found');
     }
-    return await prisma.vendorProfile.update({
+
+    const rejectionReasonText =
+      reason?.trim() || 'Your seller profile details require updates before account activation.';
+
+    const updated = await prisma.vendorProfile.update({
       where: { id },
-      data: { status: 'REJECTED' }, // In a real app we might log the reason
+      data: {
+        status: 'REJECTED',
+        rejectionReason: rejectionReasonText,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isEmailVerified: true,
+          },
+        },
+      },
     });
+
+    if (vendor.user?.email) {
+      const template = vendorRejectionTemplate(vendor.shopName, rejectionReasonText);
+      await sendEmail({
+        to: vendor.user.email,
+        subject: template.subject,
+        text: template.text,
+        html: template.html,
+      });
+    }
+
+    return updated;
   }
 
   public async suspendVendor(id: string) {
@@ -114,7 +188,6 @@ export class AdminService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    await prisma.user.delete({ where: { id } });
-    return { id };
+    return await prisma.user.delete({ where: { id } });
   }
 }
