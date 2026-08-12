@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { getUsersQueryFn, createUserMutationFn, deleteUserMutationFn } from '@/lib/api';
+import { getUsers, createUser, deleteUser } from '../api';
+import { USERS_QUERY_KEYS } from '../hooks/use-user-queries';
 import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -19,23 +20,23 @@ export default function UserList() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: getUsersQueryFn,
+    queryKey: USERS_QUERY_KEYS.list(),
+    queryFn: getUsers,
   });
 
   const createMutation = useMutation({
-    mutationFn: createUserMutationFn,
+    mutationFn: createUser,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEYS.all });
       setShowCreateModal(false);
       createForm.reset();
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteUserMutationFn,
+    mutationFn: deleteUser,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEYS.all });
     },
   });
 

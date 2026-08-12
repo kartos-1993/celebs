@@ -5,11 +5,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  getStaffQueryFn,
-  createStaffMutationFn,
-  deleteStaffMutationFn,
-  getAdminVendorsQueryFn,
-} from '@/lib/api';
+  getStaff,
+  createStaff,
+  deleteStaff,
+} from '../api';
+import { STAFF_QUERY_KEYS } from '../hooks/use-staff-queries';
+import { getAdminVendors } from '@/features/vendors/api';
+import { VENDORS_QUERY_KEYS } from '@/features/vendors/hooks/use-vendor-queries';
 import { useAuthContext } from '@/context/auth-provider';
 import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -97,8 +99,8 @@ export default function StaffList() {
 
   // Query vendors for Admin/Superadmin selector
   const { data: vendorsResponse } = useQuery({
-    queryKey: ['admin-vendors'],
-    queryFn: getAdminVendorsQueryFn,
+    queryKey: VENDORS_QUERY_KEYS.list(),
+    queryFn: getAdminVendors,
     enabled: isAdminOrSuperAdmin,
   });
 
@@ -106,8 +108,8 @@ export default function StaffList() {
 
   // Query staff list (filtered by selectedVendorFilter if admin)
   const { data: response, isLoading } = useQuery({
-    queryKey: ['vendor-staff', selectedVendorFilter],
-    queryFn: () => getStaffQueryFn(selectedVendorFilter),
+    queryKey: STAFF_QUERY_KEYS.list(selectedVendorFilter),
+    queryFn: () => getStaff(selectedVendorFilter),
   });
 
   const createMutation = useMutation({
@@ -120,10 +122,10 @@ export default function StaffList() {
       if (isAdminOrSuperAdmin && (targetVendorForCreate || selectedVendorFilter)) {
         payload.vendorId = targetVendorForCreate || selectedVendorFilter;
       }
-      return createStaffMutationFn(payload);
+      return createStaff(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor-staff'] });
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
       setShowCreateModal(false);
       createForm.reset();
     },
@@ -138,9 +140,9 @@ export default function StaffList() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteStaffMutationFn,
+    mutationFn: (id: string) => deleteStaff(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor-staff'] });
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
     },
   });
 
