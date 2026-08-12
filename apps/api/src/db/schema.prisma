@@ -81,6 +81,7 @@ model VendorProfile {
   businessRegDocumentUrl String?
   holidayMode            Boolean  @default(false)
   onboardingStep         Int      @default(1)
+  rejectionReason        String?
 
   // Relations
   warehouses             Warehouse[]
