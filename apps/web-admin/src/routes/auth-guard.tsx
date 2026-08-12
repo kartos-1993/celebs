@@ -21,11 +21,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     return <Navigate to={`${PATHS.AUTH.LOGIN}?returnUrl=${returnUrl}`} replace />;
   }
 
-  // Redirect vendor to onboarding if step < 5 and not currently on /onboarding
+  // Vendor access gate: only APPROVED vendors reach the full AdminLayout.
+  // All other statuses (PENDING, UNDER_REVIEW, REJECTED) are redirected to
+  // /onboarding where the wizard decides what to render based on status.
   if (
     user.role === 'VENDOR' &&
     user.vendorProfile &&
-    user.vendorProfile.onboardingStep < 5 &&
+    user.vendorProfile.status !== 'APPROVED' &&
     !location.pathname.startsWith(PATHS.VENDORS.ONBOARDING)
   ) {
     return <Navigate to={PATHS.VENDORS.ONBOARDING} replace />;

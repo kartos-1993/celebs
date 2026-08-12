@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/layouts/admin-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import VendorPortalLayout from '@/layouts/vendor-portal-layout';
 import AuthGuard from './auth-guard';
 import GuestGuard from './guest-guard';
 import { PATHS } from './paths';
@@ -25,6 +26,7 @@ import { optionSetRoutes } from '@/features/option-sets/routes';
 const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
 
 export const routesConfig: RouteObject[] = [
+  // ── Full Admin App (approved vendors + admins only) ───────────────────────
   {
     path: PATHS.DASHBOARD,
     element: (
@@ -40,7 +42,6 @@ export const routesConfig: RouteObject[] = [
       vendorRoutes,
       userRoutes,
       staffRoutes,
-      vendorOnboardingRoutes,
       orderRoutes,
       accountRoutes,
       financeRoutes,
@@ -49,6 +50,17 @@ export const routesConfig: RouteObject[] = [
       campaignRoutes,
     ],
   },
+  // ── Vendor Portal (onboarding / under-review / rejected) ──────────────────
+  {
+    path: PATHS.VENDORS.ONBOARDING,
+    element: (
+      <AuthGuard>
+        <VendorPortalLayout />
+      </AuthGuard>
+    ),
+    children: [vendorOnboardingRoutes],
+  },
+  // ── Auth (guest only) ─────────────────────────────────────────────────────
   {
     element: (
       <GuestGuard>
@@ -62,3 +74,4 @@ export const routesConfig: RouteObject[] = [
     element: <NotFoundError />,
   },
 ];
+
