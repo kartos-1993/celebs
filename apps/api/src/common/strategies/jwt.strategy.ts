@@ -65,13 +65,13 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
           );
         }
 
-        // Check if user is a vendor and status is suspended/rejected
+        // Check if user is a vendor and status is suspended
         if (user.role === 'VENDOR' && user.vendorProfile) {
           const status = user.vendorProfile.status;
-          if (status === 'REJECTED' || status === 'SUSPENDED') {
+          if (status === 'SUSPENDED') {
             return done(
               new UnauthorizedException(
-                'Access denied: Seller account is suspended or rejected.',
+                'Access denied: Seller account is suspended.',
                 ErrorCode.FORBIDDEN_ACCESS,
               ),
               false,
