@@ -12,7 +12,7 @@ interface BannerInput {
 }
 
 export class BannerService {
-  private formatBanner(banner: any) {
+  private formatBanner<T extends Record<string, unknown>>(banner: T | null) {
     if (!banner) return null;
     return {
       ...banner,
@@ -20,17 +20,17 @@ export class BannerService {
     };
   }
 
-  async getActiveBanners(): Promise<any[]> {
+  async getActiveBanners() {
     const banners = await bannerRepository.findActiveBanners();
-    return banners.map((b) => this.formatBanner(b));
+    return banners.map((b) => this.formatBanner(b as Record<string, unknown>));
   }
 
-  async getAllBanners(): Promise<any[]> {
+  async getAllBanners() {
     const banners = await bannerRepository.findAllBanners();
-    return banners.map((b) => this.formatBanner(b));
+    return banners.map((b) => this.formatBanner(b as Record<string, unknown>));
   }
 
-  async updateBanners(bannersData: BannerInput[]): Promise<any[]> {
+  async updateBanners(bannersData: BannerInput[]) {
     if (!Array.isArray(bannersData) || bannersData.length > 3) {
       throw new AppError(
         'Banner list can have at most 3 banners',

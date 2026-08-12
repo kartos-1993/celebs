@@ -59,8 +59,9 @@ const startSelfPing = () => {
     try {
       const response = await fetch(pingUrl);
       logger.info(`Self-ping status: ${response.status} ${response.statusText}`);
-    } catch (err: any) {
-      logger.error({ err: err?.message || String(err) }, 'Self-ping failed');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error({ err: errMsg }, 'Self-ping failed');
     }
   }, intervalMs);
 };

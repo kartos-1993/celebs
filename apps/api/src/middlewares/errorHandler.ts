@@ -23,15 +23,8 @@ const formatZodError = (res: Response, error: z.ZodError) => {
   return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
 };
 
-export const errorHandler: ErrorRequestHandler = (error, req, res, next): any => {
-  try {
-    console.error(`Error occured on PATH: ${req.path}`, error);
-  } catch (e) {
-    console.error(
-      `Error occured on PATH: ${req.path} (Failed to inspect error object):`,
-      error?.message || error,
-    );
-  }
+export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Response | void => {
+  console.error(`Error occured on PATH: ${req.path}`, error);
 
   // Set content type to ensure JSON response
   res.setHeader('Content-Type', 'application/json');

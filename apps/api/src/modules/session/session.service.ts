@@ -3,7 +3,7 @@ import { NotFoundException } from '@celebs/shared-utils';
 import prisma from '@/db';
 
 export class SessionService {
-  public async getSessionById(sessionId: string): Promise<any> {
+  public async getSessionById(sessionId: string) {
     const session = await prisma.session.findUnique({
       where: {
         id: sessionId,

@@ -67,8 +67,8 @@ export class QuickFilterService {
       displayAs: config.displayAs || 'avatar_scroll',
       attributeId: config.attributeId || null,
       autoPopulate: config.autoPopulate !== false,
-      displayOrder: (qf as any).displayOrder ?? 0,
-      isActive: (qf as any).isActive !== false,
+      displayOrder: (qf as Record<string, unknown>).displayOrder ?? 0,
+      isActive: (qf as Record<string, unknown>).isActive !== false,
     };
   }
 

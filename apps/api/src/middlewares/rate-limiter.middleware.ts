@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import rateLimit from 'express-rate-limit';
 
 // Standard error payload for rate limit responses
@@ -8,7 +9,7 @@ const standardRateLimitMessage = {
 };
 
 // Secure helper to allow rate limit bypass ONLY during verified local test runner executions
-const shouldSkipRateLimit = (req: any) => {
+const shouldSkipRateLimit = (req: Request) => {
   if (req?.headers?.['x-test-rate-limit'] === 'true') {
     return false;
   }
@@ -38,7 +39,7 @@ export const searchRateLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req: any) => shouldSkipRateLimit(req) || !!req.user,
+  skip: (req: Request) => shouldSkipRateLimit(req) || !!req.user,
   message: standardRateLimitMessage,
 });
 

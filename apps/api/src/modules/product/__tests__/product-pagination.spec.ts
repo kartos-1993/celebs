@@ -7,7 +7,7 @@ import { ProductService } from '@/modules/product/product.service';
 
 describe('Product Cursor-Based Pagination & Storefront API (PostgreSQL)', () => {
   let productService: ProductService;
-  let mockCategory: any;
+  let mockCategory: { id: string; name: string; slug: string };
   let createdProductIds: string[] = [];
 
   beforeEach(async () => {

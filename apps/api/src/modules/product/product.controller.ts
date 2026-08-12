@@ -137,7 +137,7 @@ export class ProductController {
       const product = await this.productService.reviewProduct(id, {
         action: parsed.action,
         reviewerId: req.user.userId,
-        reviewerName: (req.user as any)?.email || 'Superadmin',
+        reviewerName: (req.user as { email?: string })?.email || 'Superadmin',
         note: parsed.note,
         rejectionCategory: parsed.rejectionCategory,
         rejectionSubcategories: parsed.rejectionSubcategories,
@@ -228,7 +228,7 @@ export class ProductController {
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: `Product successfully ${product.status === 'published' ? 'activated' : 'deactivated'}`,
+        message: `Product successfully ${product?.status === 'published' ? 'activated' : 'deactivated'}`,
         data: product,
       });
     } catch (error) {

@@ -7,7 +7,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { CategoryService } from './category.service';
+import { CategoryInput, CategoryService } from './category.service';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
@@ -34,12 +34,12 @@ export class CategoryController {
       logger.debug({ body: req.body, user: req.user }, 'Create category request received');
       const validatedData = categoryInputSchema.parse(req.body);
 
-      const categoryData: any = {
+      const categoryData = {
         name: validatedData.name,
         slug: slugify(validatedData.name, { lower: true, strict: true }),
         parent: validatedData.parent || null,
         attributes: validatedData.attributes || [],
-      };
+      } as CategoryInput;
 
       const category = await this.categoryService.createCategory(categoryData);
 
@@ -143,10 +143,10 @@ export class CategoryController {
       const id = req.params.id || '';
       const validatedData = updateCategorySchema.parse(req.body);
 
-      const updateData: any = { ...validatedData };
+      const updateData: Record<string, unknown> = { ...validatedData };
 
       if (updateData.name) {
-        updateData.slug = slugify(updateData.name, {
+        updateData.slug = slugify(updateData.name as string, {
           lower: true,
           strict: true,
         });

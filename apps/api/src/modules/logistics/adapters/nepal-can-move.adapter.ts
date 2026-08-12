@@ -31,7 +31,7 @@ export class NepalCanMoveAdapter implements ILogisticsAdapter {
     };
   }
 
-  async trackShipment(trackingNumber: string): Promise<any> {
+  async trackShipment(trackingNumber: string): Promise<Record<string, unknown>> {
     return {
       trackingNumber,
       carrier: 'Nepal Can Move',

@@ -4,6 +4,16 @@ import { CreateComboType } from '@celebs/shared-types';
 
 import { ComboRepository,comboRepository } from './combo.repository';
 
+interface ComboItemInput {
+  productId: string;
+  [key: string]: unknown;
+}
+
+interface ComboInput {
+  items?: ComboItemInput[];
+  [key: string]: unknown;
+}
+
 export class ComboService {
   private comboRepository: ComboRepository;
 
@@ -11,9 +21,9 @@ export class ComboService {
     this.comboRepository = repository;
   }
 
-  private async attachProductDetails(combos: any[]) {
+  private async attachProductDetails(combos: ComboInput[]) {
     const allProductIds = Array.from(
-      new Set(combos.flatMap((c) => (c.items ? c.items.map((i: any) => i.productId) : []))),
+      new Set(combos.flatMap((c) => (c.items ? c.items.map((i: ComboItemInput) => i.productId) : []))),
     );
 
     const validProductIds = allProductIds.filter(
@@ -25,11 +35,11 @@ export class ComboService {
     }
 
     const products = await this.comboRepository.findProductsByIds(validProductIds);
-    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
+    const productMap = new Map(products.map((p: { id: string }) => [p.id.toString(), p]));
 
     return combos.map((c) => ({
       ...c,
-      itemDetails: (c.items || []).map((item: any) => ({
+      itemDetails: (c.items || []).map((item: ComboItemInput) => ({
         ...item,
         product: productMap.get(item.productId) || null,
       })),

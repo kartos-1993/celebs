@@ -56,7 +56,7 @@ export async function seedProductsDenimJackets(): Promise<void> {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
 
-    const sizesPayload = (item.measurements?.sizeChart || []).map((sc: any) => ({
+    const sizesPayload = (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
       name: sc.size,
       productMeasurements: [
         { name: 'Shoulder', value: String(sc.shoulder || 45), unit: 'cm' },
@@ -64,11 +64,11 @@ export async function seedProductsDenimJackets(): Promise<void> {
       ],
     }));
 
-    const colorVariants = (item.variants || []).map((v: any) => ({
+    const colorVariants = (item.variants || []).map((v: Record<string, unknown>) => ({
       name: v.color || 'Default',
       colorCode: v.color === 'Black' ? '#000000' : v.color === 'Blue' ? '#0000FF' : '#888888',
       images: v.images || [],
-      stocks: (item.measurements?.sizeChart || []).map((sc: any) => ({
+      stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
         size: sc.size,
         quantity: 20,
       })),

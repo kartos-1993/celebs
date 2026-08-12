@@ -21,7 +21,7 @@ async function ensureDefaults() {
 }
 
 export class OptionSetService {
-  async list(type?: string) {
+  async list(_type?: string) {
     await ensureDefaults();
     const sets = await prisma.optionSet.findMany({ orderBy: { name: 'asc' } });
     return sets.map((s) => ({

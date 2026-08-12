@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { beforeEach,describe, expect, it } from 'vitest';
 
@@ -51,7 +52,6 @@ describe('Category RBAC & Tree Operations', () => {
     });
 
     // Mock session token generator
-    const jwt = require('jsonwebtoken');
 
     // Create mock sessions in postgres database for these users to satisfy setupJwtStrategy check
     const adminSession = await prisma.session.create({

@@ -52,16 +52,16 @@ function mkAttr(a: SeedAttr, optionSetMap: Map<string, string>) {
 }
 
 async function ensureCategory(
-  parent: any | null,
+  parent: Record<string, unknown> | null,
   name: string,
   sizeChartColumns?: string[],
   bodyChartColumns?: string[],
   imageUrl?: string,
 ) {
   const slug = slugify(name, { lower: true, strict: true });
-  const level = parent ? (parent.level || 1) + 1 : 1;
+  const level = parent ? ((parent.level as number) || 1) + 1 : 1;
   const parentCategory = parent ? String(parent.id) : null;
-  const parentPath = parent ? (Array.isArray(parent.path) ? parent.path : [parent.path]) : [];
+  const parentPath = parent ? (Array.isArray(parent.path) ? parent.path : [parent.path as string]) : [];
   const pathParts = [...parentPath, slug];
   const path = pathParts.join('/');
 
@@ -123,7 +123,7 @@ async function seedTree(root: SeedCategory) {
     optionSetMap.set(set.name, set.id);
   }
 
-  async function walk(node: SeedCategory, parent: any | null) {
+  async function walk(node: SeedCategory, parent: Record<string, unknown> | null) {
     const cat = await ensureCategory(
       parent,
       node.name,

@@ -2,6 +2,17 @@ import { createCampaignSchema } from '@celebs/shared-types';
 
 import { CampaignRepository } from './campaign.repository';
 
+interface ProductItem {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface CampaignProductInput {
+  productId: string;
+  discountType?: string;
+  discountValue?: number;
+}
+
 export class CampaignService {
   constructor(private campaignRepository: CampaignRepository = new CampaignRepository()) {}
 
@@ -18,12 +29,12 @@ export class CampaignService {
     }
 
     const products = await this.campaignRepository.findProductsByIds(allProductIds);
-    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
+    const productMap = new Map(products.map((p: ProductItem) => [p.id.toString(), p]));
 
     return campaigns.map((c) => ({
       ...c,
       productDetails: (c.products || [])
-        .map((p: any) => productMap.get(p.productId))
+        .map((p: { productId: string }) => productMap.get(p.productId))
         .filter(Boolean),
     }));
   }
@@ -38,12 +49,12 @@ export class CampaignService {
 
     const productIds = (campaign.products || []).map((p) => p.productId);
     const products = await this.campaignRepository.findProductsByIds(productIds);
-    const productMap = new Map(products.map((p: any) => [p.id.toString(), p]));
+    const productMap = new Map(products.map((p: ProductItem) => [p.id.toString(), p]));
 
     return {
       ...campaign,
       productDetails: (campaign.products || [])
-        .map((p: any) => productMap.get(p.productId))
+        .map((p: { productId: string }) => productMap.get(p.productId))
         .filter(Boolean),
     };
   }
@@ -52,7 +63,7 @@ export class CampaignService {
     return this.campaignRepository.findById(id);
   }
 
-  async createCampaign(input: any) {
+  async createCampaign(input: unknown) {
     const validated = createCampaignSchema.parse(input);
     const { productIds, ...campaignData } = validated;
 
@@ -72,16 +83,16 @@ export class CampaignService {
     });
   }
 
-  async updateCampaign(id: string, input: any) {
+  async updateCampaign(id: string, input: Record<string, unknown> & { products?: CampaignProductInput[]; startDate?: string; endDate?: string }) {
     const { products, ...campaignData } = input;
 
-    const dataToUpdate: any = { ...campaignData };
+    const dataToUpdate: Record<string, unknown> = { ...campaignData };
     if (campaignData.startDate) dataToUpdate.startDate = new Date(campaignData.startDate);
     if (campaignData.endDate) dataToUpdate.endDate = new Date(campaignData.endDate);
 
     if (products && Array.isArray(products)) {
       dataToUpdate.products = {
-        create: products.map((p: any) => ({
+        create: products.map((p: CampaignProductInput) => ({
           productId: p.productId,
           discountType: p.discountType,
           discountValue: p.discountValue,
@@ -92,7 +103,7 @@ export class CampaignService {
     return this.campaignRepository.update(
       id,
       dataToUpdate,
-      products ? products.map((p: any) => p.productId) : undefined,
+      products ? products.map((p: CampaignProductInput) => p.productId) : undefined,
     );
   }
 }

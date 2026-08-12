@@ -1,3 +1,5 @@
+import { Role } from '@prisma/client';
+
 import { NotFoundException } from '@celebs/shared-utils';
 
 import { hashValue } from '@/common/utils/bcrypt';
@@ -161,7 +163,12 @@ export class AdminService {
     });
   }
 
-  public async createUser(data: any) {
+  public async createUser(data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: Role;
+  }) {
     const hashedPassword = await hashValue(data.password);
     const user = await prisma.user.create({
       data: {

@@ -278,7 +278,7 @@ export class OrderService {
         gateway: paymentMethod,
         transactionId: paymentResult.paymentId,
         status: 'PENDING',
-        rawResponse: paymentResult.rawResponse || {},
+        rawResponse: (paymentResult.rawResponse as Prisma.InputJsonValue) || {},
       });
     }
 
@@ -357,7 +357,7 @@ export class OrderService {
   // --- VENDOR FULFILLMENT ---
 
   async getVendorOrders(vendorId: string, status?: string, page = 1, limit = 10) {
-    const whereCondition: any = { vendorId };
+    const whereCondition: Record<string, unknown> = { vendorId };
     if (status) {
       whereCondition.itemStatus = status;
     }

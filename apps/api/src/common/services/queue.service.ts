@@ -32,13 +32,14 @@ export async function verifyRedisConnection(): Promise<void> {
       { host: redisConnection.host, port: redisConnection.port },
       'Redis Connected successfully',
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     if (isDev) {
       logger.warn(
         {
           host: redisConnection.host,
           port: redisConnection.port,
-          error: error?.message || String(error),
+          error: errorMsg,
         },
         'Redis Connection verification failed in development. Server will continue running but queues will fail.',
       );
@@ -48,7 +49,7 @@ export async function verifyRedisConnection(): Promise<void> {
       {
         host: redisConnection.host,
         port: redisConnection.port,
-        error: error?.message || String(error),
+        error: error instanceof Error ? error.message : String(error),
       },
       'Redis Connection verification failed',
     );

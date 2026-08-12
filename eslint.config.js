@@ -4,6 +4,18 @@ const simpleImportSort = require('eslint-plugin-simple-import-sort');
 const unusedImports = require('eslint-plugin-unused-imports');
 
 module.exports = tseslint.config(
+  {
+    name: 'global-ignores',
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/.expo/**',
+      '**/coverage/**',
+      '**/generated/**',
+      '**/db/seed/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -59,8 +71,5 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-require-imports': 'off',
       'no-undef': 'off',
     },
-  },
-  {
-    ignores: ['dist/**', 'node_modules/**', '.next/**', '.expo/**', 'coverage/**'],
   },
 );
