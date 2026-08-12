@@ -21,12 +21,12 @@ import {
   vendorBusinessInfoSchema,
 } from '@celebs/shared-types';
 import {
-  updateVendorProfileMutationFn,
-  updateVendorWarehouseMutationFn,
-  updateVendorDocumentsMutationFn,
-  updateVendorBusinessInfoMutationFn,
-  submitVendorForReviewMutationFn,
-} from '@/lib/api';
+  updateVendorProfile,
+  updateVendorWarehouse,
+  updateVendorDocuments,
+  updateVendorBusinessInfo,
+  submitVendorForReview,
+} from '../api';
 
 export default function OnboardingWizard() {
   const { user, refetch } = useAuthContext();
@@ -45,7 +45,7 @@ export default function OnboardingWizard() {
   });
 
   const profileMutation = useMutation({
-    mutationFn: updateVendorProfileMutationFn,
+    mutationFn: updateVendorProfile,
     onSuccess: () => {
       refetch();
       setStep(2);
@@ -69,7 +69,7 @@ export default function OnboardingWizard() {
   });
 
   const warehouseMutation = useMutation({
-    mutationFn: updateVendorWarehouseMutationFn,
+    mutationFn: updateVendorWarehouse,
     onSuccess: () => {
       refetch();
       setStep(3);
@@ -89,7 +89,7 @@ export default function OnboardingWizard() {
   });
 
   const documentsMutation = useMutation({
-    mutationFn: updateVendorDocumentsMutationFn,
+    mutationFn: updateVendorDocuments,
     onSuccess: () => {
       refetch();
       setStep(4);
@@ -107,7 +107,7 @@ export default function OnboardingWizard() {
   });
 
   const businessMutation = useMutation({
-    mutationFn: updateVendorBusinessInfoMutationFn,
+    mutationFn: updateVendorBusinessInfo,
     onSuccess: () => {
       refetch();
       setStep(5);
@@ -116,7 +116,7 @@ export default function OnboardingWizard() {
 
   // Step 5: Submit Mutation
   const submitMutation = useMutation({
-    mutationFn: submitVendorForReviewMutationFn,
+    mutationFn: submitVendorForReview,
     onSuccess: () => {
       refetch();
       navigate('/');
