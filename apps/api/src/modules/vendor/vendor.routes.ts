@@ -1,6 +1,8 @@
 import { Router } from 'express';
+
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
+
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const vendorService = new VendorService();

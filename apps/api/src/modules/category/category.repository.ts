@@ -1,5 +1,6 @@
-import prisma from '@/config/db.prisma';
 import { Prisma } from '@prisma/client';
+
+import prisma from '@/config/db.prisma';
 
 export interface FormattedCategory {
   id: string;

@@ -1,7 +1,10 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { NextFunction,Request, Response, Router } from 'express';
+
+import { asyncHandler, logger } from '@celebs/shared-utils';
+
 import { CategoryController } from './category.controller';
 import { CategoryService } from './category.service';
-import { asyncHandler, logger } from '@celebs/shared-utils';
+
 import { authenticateJWT } from '@/middlewares/auth.middleware';
 
 const categoryRoute = Router();
@@ -22,11 +25,12 @@ categoryRoute.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 
-import { QuickFilterService } from '../quick-filter/quick-filter.service';
 import { QuickFilterController } from '../quick-filter/quick-filter.controller';
+import { QuickFilterService } from '../quick-filter/quick-filter.service';
+
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const quickFilterController = new QuickFilterController(new QuickFilterService());
 

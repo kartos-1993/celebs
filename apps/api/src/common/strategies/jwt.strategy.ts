@@ -1,10 +1,11 @@
-import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
-
 import passport, { PassportStatic } from 'passport';
 import { ExtractJwt, Strategy as JwtStrategy, StrategyOptionsWithRequest } from 'passport-jwt';
+
+import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
+
 import { config } from '@/config/app.config';
-import { UserService } from '@/modules/user/user.service';
 import prisma from '@/db';
+import { UserService } from '@/modules/user/user.service';
 
 const userService = new UserService();
 
@@ -93,7 +94,7 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   );
 };
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction,Request, Response } from 'express';
 
 export const authenticateJWT = passport.authenticate('jwt', { session: false });
 

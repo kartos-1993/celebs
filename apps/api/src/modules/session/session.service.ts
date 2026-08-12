@@ -1,4 +1,5 @@
 import { NotFoundException } from '@celebs/shared-utils';
+
 import prisma from '@/db';
 
 export class SessionService {

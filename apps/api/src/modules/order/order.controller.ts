@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
-import { OrderService } from './order.service';
+
 import {
   addressSchema,
-  updateAddressSchema,
   checkoutSchema,
+  updateAddressSchema,
   updateOrderItemStatusSchema,
 } from '@celebs/shared-types';
-import { HTTPSTATUS, AppError, ErrorCode } from '@celebs/shared-utils';
+import {HTTPSTATUS } from '@celebs/shared-utils';
+
+import { OrderService } from './order.service';
 
 export class OrderController {
   constructor(private orderService: OrderService) {}

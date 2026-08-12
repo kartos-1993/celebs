@@ -1,8 +1,10 @@
-import { z } from 'zod';
 import { ErrorRequestHandler, Response } from 'express';
-import { HTTPSTATUS, AppError, ErrorCode } from '@celebs/shared-utils';
-import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
+import { z } from 'zod';
+
 import { IApiResponse } from '@celebs/shared-types';
+import { AppError, ErrorCode,HTTPSTATUS } from '@celebs/shared-utils';
+
+import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
 
 const formatZodError = (res: Response, error: z.ZodError) => {
   const errors = error?.issues?.map((err) => ({

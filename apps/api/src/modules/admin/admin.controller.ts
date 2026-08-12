@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
-import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
-import { AdminService } from './admin.service';
+
 import { IApiResponse } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
+
+import { AdminService } from './admin.service';
 
 export class AdminController {
   private adminService: AdminService;

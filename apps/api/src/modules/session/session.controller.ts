@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
-import { HTTPSTATUS, NotFoundException, asyncHandler } from '@celebs/shared-utils';
+
 import { IApiResponse } from '@celebs/shared-types';
+import { asyncHandler,HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
+
 import { SessionService } from './session.service';
+
 import { verifyJwtToken } from '@/common/utils/jwt';
 
 export class SessionController {

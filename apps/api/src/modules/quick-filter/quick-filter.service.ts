@@ -1,6 +1,8 @@
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
-import prisma from '@/config/db.prisma';
 import { Prisma } from '@prisma/client';
+
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
+import prisma from '@/config/db.prisma';
 
 export interface CreateQuickFilterInput {
   categoryId: string;

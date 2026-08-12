@@ -1,12 +1,15 @@
 import { Router } from 'express';
+
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const adminService = new AdminService();
 const adminController = new AdminController(adminService);
-import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
+
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const adminRoutes = Router();
 

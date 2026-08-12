@@ -1,11 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
-import { CategoryService } from './category.service';
-import { HTTPSTATUS, AppError, ErrorCode, logger } from '@celebs/shared-utils';
+import { NextFunction,Request, Response } from 'express';
+import slugify from 'slugify';
+
 import {
   createCategorySchema as categoryInputSchema,
   updateCategorySchema,
 } from '@celebs/shared-types';
-import slugify from 'slugify';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
+
+import { CategoryService } from './category.service';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}

@@ -1,4 +1,5 @@
 import { getEnv } from '@celebs/shared-utils';
+
 import { env as validatedEnv } from './env.validation';
 
 export const appConfig = () => {

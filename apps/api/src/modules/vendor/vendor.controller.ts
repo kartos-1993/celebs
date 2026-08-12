@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
-import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-utils';
-import { VendorService } from './vendor.service';
+
 import {
+  IApiResponse,
+  vendorBusinessInfoSchema,
+  vendorDocumentsSchema,
   vendorProfileSchema,
   warehouseSchema,
-  vendorDocumentsSchema,
-  vendorBusinessInfoSchema,
-  IApiResponse,
 } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-utils';
+
+import { VendorService } from './vendor.service';
 
 export class VendorController {
   private vendorService: VendorService;

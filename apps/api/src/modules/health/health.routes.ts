@@ -1,7 +1,9 @@
-import { Router, Request, Response } from 'express';
-import prisma from '@/config/db.prisma';
-import { verifyRedisConnection } from '@/common/services/queue.service';
+import { Request, Response,Router } from 'express';
+
 import { HTTPSTATUS } from '@celebs/shared-utils';
+
+import { verifyRedisConnection } from '@/common/services/queue.service';
+import prisma from '@/config/db.prisma';
 
 const router = Router();
 

@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { ForbiddenException, ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
+import { NextFunction,Request, Response } from 'express';
+
+import { ErrorCode, ForbiddenException, UnauthorizedException } from '@celebs/shared-utils';
 
 export { authenticateJWT, optionalAuthenticateJWT } from '@/common/strategies/jwt.strategy';
 

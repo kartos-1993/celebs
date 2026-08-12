@@ -1,6 +1,8 @@
 import slugify from 'slugify';
-import prisma from '../../config/db.prisma';
+
 import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
+
+import prisma from '../../config/db.prisma';
 
 interface SeedAttr {
   name: string;

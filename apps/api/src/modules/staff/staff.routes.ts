@@ -1,12 +1,15 @@
 import { Router } from 'express';
+
 import { StaffController } from './staff.controller';
 import { StaffService } from './staff.service';
+
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const staffService = new StaffService();
 const staffController = new StaffController(staffService);
-import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
+
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const staffRoutes = Router();
 
