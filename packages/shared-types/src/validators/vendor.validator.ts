@@ -18,7 +18,11 @@ export const vendorProfileSchema = z.object({
 
 export const warehouseSchema = z.object({
   label: z.string().trim().min(2, 'Warehouse label must be at least 2 characters').max(255),
-  contactName: z.string().trim().min(3, 'Contact person name must be at least 3 characters').max(255),
+  contactName: z
+    .string()
+    .trim()
+    .min(3, 'Contact person name must be at least 3 characters')
+    .max(255),
   contactPhone: z
     .string()
     .trim()
@@ -53,7 +57,11 @@ export const vendorDocumentsSchema = z.object({
 
 export const vendorBusinessInfoSchema = z.object({
   businessName: z.string().trim().min(3, 'Registered business name is required').max(255),
-  businessRegNumber: z.string().trim().min(3, 'Business registration / PAN number is required').max(100),
+  businessRegNumber: z
+    .string()
+    .trim()
+    .min(3, 'Business registration / PAN number is required')
+    .max(100),
   businessPhoneNumber: z
     .string()
     .trim()

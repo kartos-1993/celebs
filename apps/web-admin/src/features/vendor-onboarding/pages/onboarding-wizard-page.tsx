@@ -66,7 +66,10 @@ export default function OnboardingWizard() {
     defaultValues: {
       label: user?.vendorProfile?.warehouses?.[0]?.label || 'Main Warehouse',
       contactName: user?.vendorProfile?.warehouses?.[0]?.contactName || user?.name || '',
-      contactPhone: user?.vendorProfile?.warehouses?.[0]?.contactPhone || user?.vendorProfile?.phoneNumber || '',
+      contactPhone:
+        user?.vendorProfile?.warehouses?.[0]?.contactPhone ||
+        user?.vendorProfile?.phoneNumber ||
+        '',
       addressLine1: user?.vendorProfile?.warehouses?.[0]?.addressLine1 || '',
       addressLine2: user?.vendorProfile?.warehouses?.[0]?.addressLine2 || '',
       city: user?.vendorProfile?.warehouses?.[0]?.city || '',
@@ -110,7 +113,8 @@ export default function OnboardingWizard() {
     defaultValues: {
       businessName: user?.vendorProfile?.businessName || '',
       businessRegNumber: user?.vendorProfile?.businessRegNumber || '',
-      businessPhoneNumber: user?.vendorProfile?.businessPhoneNumber || user?.vendorProfile?.phoneNumber || '',
+      businessPhoneNumber:
+        user?.vendorProfile?.businessPhoneNumber || user?.vendorProfile?.phoneNumber || '',
     },
   });
 
@@ -145,12 +149,7 @@ export default function OnboardingWizard() {
 
   // If application was rejected and vendor hasn't clicked "Edit Application" yet
   if (vendorStatus === 'REJECTED' && !isEditing) {
-    return (
-      <RejectionScreen
-        rejectionReason={rejectionReason}
-        onEdit={() => setIsEditing(true)}
-      />
-    );
+    return <RejectionScreen rejectionReason={rejectionReason} onEdit={() => setIsEditing(true)} />;
   }
 
   const isRejectedMode = vendorStatus === 'REJECTED';
@@ -175,7 +174,8 @@ export default function OnboardingWizard() {
               Moderation Feedback — Revision Required
             </AlertTitle>
             <AlertDescription className="text-xs text-foreground mt-1">
-              {rejectionReason || 'Please review your application steps below and correct any flagged details.'}
+              {rejectionReason ||
+                'Please review your application steps below and correct any flagged details.'}
             </AlertDescription>
           </div>
         </Alert>
@@ -187,7 +187,11 @@ export default function OnboardingWizard() {
           <div>
             <h2 className="text-xl font-bold text-foreground">
               Seller Setup Wizard
-              {isRejectedMode && <span className="ml-2 text-xs bg-amber-100 text-amber-900 font-semibold px-2 py-0.5 rounded border border-amber-300">Editing Revision</span>}
+              {isRejectedMode && (
+                <span className="ml-2 text-xs bg-amber-100 text-amber-900 font-semibold px-2 py-0.5 rounded border border-amber-300">
+                  Editing Revision
+                </span>
+              )}
             </h2>
             <p className="text-xs text-muted-foreground">
               Step {step} of 5 — {stepsList.find((s) => s.num === step)?.label}
@@ -213,8 +217,8 @@ export default function OnboardingWizard() {
                   isCurrent
                     ? 'bg-primary text-primary-foreground font-bold shadow-sm'
                     : canClick
-                    ? 'bg-muted/50 hover:bg-muted text-foreground cursor-pointer'
-                    : 'bg-muted/20 text-muted-foreground cursor-not-allowed opacity-50'
+                      ? 'bg-muted/50 hover:bg-muted text-foreground cursor-pointer'
+                      : 'bg-muted/20 text-muted-foreground cursor-not-allowed opacity-50'
                 }`}
               >
                 <div className="flex items-center gap-1">
@@ -487,9 +491,9 @@ export default function OnboardingWizard() {
               className="space-y-6"
             >
               <div>
-                <h3 className="text-lg font-bold">Step 3: Upload KYC Verification Documents</h3>
+                <h3 className="text-lg font-bold">Step 3: Upload KYC Verification Photos</h3>
                 <p className="text-xs text-muted-foreground">
-                  Upload clear photos or PDFs of your official business documents for identity verification.
+                  Upload clear photos of your official business documents (JPEG, PNG, WEBP, AVIF).
                 </p>
               </div>
 
@@ -500,8 +504,8 @@ export default function OnboardingWizard() {
                   render={({ field }) => (
                     <FormItem>
                       <DocumentUploader
-                        label="PAN Certificate Document"
-                        description="Official PAN registration document issued by Inland Revenue."
+                        label="PAN Certificate Photo"
+                        description="Clear photo of official PAN registration document issued by Inland Revenue."
                         required
                         value={field.value}
                         onChange={field.onChange}
@@ -517,7 +521,7 @@ export default function OnboardingWizard() {
                   render={({ field }) => (
                     <FormItem>
                       <DocumentUploader
-                        label="Citizenship Document Photo"
+                        label="Citizenship Card Photo"
                         description="Clear photo of the business owner's Citizenship Card (Front/Back)."
                         required
                         value={field.value}
@@ -534,8 +538,8 @@ export default function OnboardingWizard() {
                   render={({ field }) => (
                     <FormItem>
                       <DocumentUploader
-                        label="VAT Certificate (Optional)"
-                        description="Value Added Tax registration certificate if applicable."
+                        label="VAT Certificate Photo (Optional)"
+                        description="Value Added Tax registration photo if applicable."
                         value={field.value}
                         onChange={field.onChange}
                       />
@@ -550,8 +554,8 @@ export default function OnboardingWizard() {
                   render={({ field }) => (
                     <FormItem>
                       <DocumentUploader
-                        label="Business Registration Certificate (Optional)"
-                        description="Company registrar certificate or local ward registration document."
+                        label="Business Registration Photo (Optional)"
+                        description="Company registrar certificate or local ward registration photo."
                         value={field.value}
                         onChange={field.onChange}
                       />
@@ -689,22 +693,35 @@ export default function OnboardingWizard() {
             <div>
               <h3 className="text-lg font-bold">Step 5: Final Review & Application Submission</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Please confirm that all business documents and addresses are accurate before submitting for platform verification.
+                Please confirm that all business documents and addresses are accurate before
+                submitting for platform verification.
               </p>
             </div>
 
             <div className="border rounded-lg p-4 bg-muted/20 space-y-3 text-sm">
               <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground text-xs font-medium">Store Name / Description</span>
-                <span className="font-semibold text-foreground text-xs">{user?.vendorProfile?.shopDescription || 'Provided'}</span>
+                <span className="text-muted-foreground text-xs font-medium">
+                  Store Name / Description
+                </span>
+                <span className="font-semibold text-foreground text-xs">
+                  {user?.vendorProfile?.shopDescription || 'Provided'}
+                </span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground text-xs font-medium">Business Legal Name</span>
-                <span className="font-semibold text-foreground text-xs">{user?.vendorProfile?.businessName || 'Provided'}</span>
+                <span className="text-muted-foreground text-xs font-medium">
+                  Business Legal Name
+                </span>
+                <span className="font-semibold text-foreground text-xs">
+                  {user?.vendorProfile?.businessName || 'Provided'}
+                </span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground text-xs font-medium">PAN / Registration No.</span>
-                <span className="font-semibold text-foreground text-xs">{user?.vendorProfile?.businessRegNumber || 'Provided'}</span>
+                <span className="text-muted-foreground text-xs font-medium">
+                  PAN / Registration No.
+                </span>
+                <span className="font-semibold text-foreground text-xs">
+                  {user?.vendorProfile?.businessRegNumber || 'Provided'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs font-medium">KYC Documents</span>
@@ -715,12 +732,7 @@ export default function OnboardingWizard() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep(4)}
-                className="w-1/3"
-              >
+              <Button type="button" variant="outline" onClick={() => setStep(4)} className="w-1/3">
                 Back
               </Button>
 
