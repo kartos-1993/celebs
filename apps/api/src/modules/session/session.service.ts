@@ -27,13 +27,8 @@ export class SessionService {
             updatedAt: true,
             vendorId: true,
             vendorProfile: {
-              select: {
-                id: true,
-                shopName: true,
-                status: true,
-                onboardingStep: true,
-                storeLogo: true,
-                holidayMode: true,
+              include: {
+                warehouses: true,
               },
             },
           },

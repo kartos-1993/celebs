@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -141,6 +141,50 @@ export default function OnboardingWizard() {
       refetch();
     },
   });
+
+  const { reset: resetProfile } = profileForm;
+  const { reset: resetWarehouse } = warehouseForm;
+  const { reset: resetDocuments } = documentsForm;
+  const { reset: resetBusiness } = businessForm;
+
+  // Automatically reset form fields whenever user profile data resolves or updates
+  useEffect(() => {
+    if (user?.vendorProfile) {
+      resetProfile({
+        shopDescription: user.vendorProfile.shopDescription || '',
+        phoneNumber: user.vendorProfile.phoneNumber || '',
+        storeLogo: user.vendorProfile.storeLogo || '',
+      });
+
+      const primaryWarehouse = user.vendorProfile.warehouses?.[0];
+      resetWarehouse({
+        label: primaryWarehouse?.label || 'Main Warehouse',
+        contactName: primaryWarehouse?.contactName || user.name || '',
+        contactPhone: primaryWarehouse?.contactPhone || user.vendorProfile.phoneNumber || '',
+        addressLine1: primaryWarehouse?.addressLine1 || '',
+        addressLine2: primaryWarehouse?.addressLine2 || '',
+        city: primaryWarehouse?.city || '',
+        district: primaryWarehouse?.district || '',
+        province: primaryWarehouse?.province || '',
+        postalCode: primaryWarehouse?.postalCode || '',
+      });
+
+      resetDocuments({
+        panDocumentUrl: user.vendorProfile.panDocumentUrl || '',
+        citizenshipDocumentUrl: user.vendorProfile.citizenshipDocumentUrl || '',
+        vatDocumentUrl: user.vendorProfile.vatDocumentUrl || '',
+        businessRegDocumentUrl: user.vendorProfile.businessRegDocumentUrl || '',
+        ownerPhotoUrl: user.vendorProfile.ownerPhotoUrl || '',
+      });
+
+      resetBusiness({
+        businessName: user.vendorProfile.businessName || '',
+        businessRegNumber: user.vendorProfile.businessRegNumber || '',
+        businessPhoneNumber:
+          user.vendorProfile.businessPhoneNumber || user.vendorProfile.phoneNumber || '',
+      });
+    }
+  }, [user, resetProfile, resetWarehouse, resetDocuments, resetBusiness]);
 
   // ── Status-based screen routing ─────────────────────────────────────────
   if (vendorStatus === 'UNDER_REVIEW') {
