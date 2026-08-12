@@ -2,7 +2,7 @@ import { ComboDiscountType } from '@prisma/client';
 
 import { CreateComboType } from '@celebs/shared-types';
 
-import { ComboRepository,comboRepository } from './combo.repository';
+import { ComboRepository, comboRepository } from './combo.repository';
 
 interface ComboItemInput {
   productId: string;
@@ -23,7 +23,9 @@ export class ComboService {
 
   private async attachProductDetails(combos: ComboInput[]) {
     const allProductIds = Array.from(
-      new Set(combos.flatMap((c) => (c.items ? c.items.map((i: ComboItemInput) => i.productId) : []))),
+      new Set(
+        combos.flatMap((c) => (c.items ? c.items.map((i: ComboItemInput) => i.productId) : [])),
+      ),
     );
 
     const validProductIds = allProductIds.filter(

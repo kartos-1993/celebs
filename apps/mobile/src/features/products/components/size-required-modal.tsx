@@ -1,12 +1,6 @@
-import React, { useEffect,useState } from 'react';
-import {
-  Dimensions,
-  Modal,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { Check,X } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Check, X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 

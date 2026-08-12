@@ -1,4 +1,4 @@
-import { NextFunction,Request, Response, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import passport from 'passport';
 
 import { Permission } from '@celebs/rbac';
@@ -27,12 +27,16 @@ const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction
     return next();
   }
   try {
-    passport.authenticate('jwt', { session: false }, (_err: unknown, user: Express.User | false) => {
-      if (user) {
-        req.user = user;
-      }
-      next();
-    })(req, res, next);
+    passport.authenticate(
+      'jwt',
+      { session: false },
+      (_err: unknown, user: Express.User | false) => {
+        if (user) {
+          req.user = user;
+        }
+        next();
+      },
+    )(req, res, next);
   } catch {
     next();
   }

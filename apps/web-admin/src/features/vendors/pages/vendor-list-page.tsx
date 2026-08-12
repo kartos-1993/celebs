@@ -36,7 +36,9 @@ export default function VendorList() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Rejection Dialog State
-  const [rejectingVendor, setRejectingVendor] = useState<{ id: string; shopName: string } | null>(null);
+  const [rejectingVendor, setRejectingVendor] = useState<{ id: string; shopName: string } | null>(
+    null,
+  );
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
   const { data: response, isLoading } = useQuery({
@@ -204,11 +206,7 @@ export default function VendorList() {
                     </span>
                   </td>
                   <td className="p-4 text-right space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleInspect(vendor.id)}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => handleInspect(vendor.id)}>
                       Inspect Documents
                     </Button>
 
@@ -249,7 +247,9 @@ export default function VendorList() {
         onApprove={(id) => approveMutation.mutate(id)}
         onRejectClick={(v) => handleInitiateReject(v)}
         onSuspend={(id) => suspendMutation.mutate(id)}
-        isActionPending={approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending}
+        isActionPending={
+          approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending
+        }
       />
 
       {/* Structured Rejection Dialog */}

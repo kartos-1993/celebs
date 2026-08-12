@@ -21,10 +21,7 @@ export function sanitizeErrorMessage(
 ): string {
   if (!rawMessage) return fallback;
 
-  if (
-    rawMessage.includes('unique constraint') ||
-    rawMessage.includes('duplicate key')
-  ) {
+  if (rawMessage.includes('unique constraint') || rawMessage.includes('duplicate key')) {
     return 'A record with this unique value already exists';
   }
 

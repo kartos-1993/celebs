@@ -94,7 +94,7 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   );
 };
 
-import { NextFunction,Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 export const authenticateJWT = passport.authenticate('jwt', { session: false });
 

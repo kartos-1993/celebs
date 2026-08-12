@@ -115,7 +115,11 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleItemChange = (index: number, field: keyof QuickFilterItem, value: QuickFilterItem[keyof QuickFilterItem]) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof QuickFilterItem,
+    value: QuickFilterItem[keyof QuickFilterItem],
+  ) => {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 

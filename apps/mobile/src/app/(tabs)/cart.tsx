@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ActivityIndicator,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { AlertTriangle,ShoppingBag } from 'lucide-react-native';
+import { AlertTriangle, ShoppingBag } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -14,8 +14,16 @@ export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { cart, loading, error: _error, subtotal, itemCount, updateQuantity, removeItem, clearCart } =
-    useCart();
+  const {
+    cart,
+    loading,
+    error: _error,
+    subtotal,
+    itemCount,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  } = useCart();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const items = cart?.items || [];

@@ -1,4 +1,4 @@
-import { useCallback, useEffect,useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -34,7 +34,7 @@ import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { ProductGallery } from '@/features/products/components/ProductGallery';
 import { ProductVariantSelector } from '@/features/products/components/ProductVariantSelector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
-import { resolveImageUrl,useProduct } from '@/features/products/hooks/use-products';
+import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -1,4 +1,4 @@
-import { AppError, ErrorCode,HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { bannerRepository } from './banner.repository';
 

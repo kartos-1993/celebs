@@ -74,4 +74,3 @@ export const routesConfig: RouteObject[] = [
     element: <NotFoundError />,
   },
 ];
-

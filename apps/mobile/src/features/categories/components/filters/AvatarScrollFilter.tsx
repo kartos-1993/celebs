@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet,TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { QuickFilterItem } from '../../types';

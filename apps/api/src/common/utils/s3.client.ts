@@ -53,10 +53,7 @@ export async function verifyS3Connection(): Promise<void> {
         return;
       }
     }
-    logger.error(
-      { bucket, error: errorMsg },
-      'S3/MinIO Connection verification failed',
-    );
+    logger.error({ bucket, error: errorMsg }, 'S3/MinIO Connection verification failed');
     throw error;
   }
 }
@@ -107,10 +104,7 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
           logger.info({ bucket }, 'Created local MinIO bucket');
         } catch (createErr: unknown) {
           const createErrMsg = createErr instanceof Error ? createErr.message : String(createErr);
-          logger.warn(
-            { bucket, error: createErrMsg },
-            'Could not auto-create MinIO bucket',
-          );
+          logger.warn({ bucket, error: createErrMsg }, 'Could not auto-create MinIO bucket');
         }
       }
 
@@ -183,4 +177,3 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
 
   await devBucketReady;
 }
-

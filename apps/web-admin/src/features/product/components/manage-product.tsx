@@ -149,10 +149,11 @@ const ManageProduct = () => {
                   setFilterStatus(tab.id);
                   setPage(1);
                 }}
-                className={`pb-3 px-1 border-b-2 transition-colors ${filterStatus === tab.id
+                className={`pb-3 px-1 border-b-2 transition-colors ${
+                  filterStatus === tab.id
                     ? 'border-orange-500 text-orange-600 font-medium'
                     : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                }`}
               >
                 {tab.label}
               </button>
@@ -174,7 +175,11 @@ const ManageProduct = () => {
           </form>
 
           {/* Table */}
-          <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+          <div
+            className={
+              isFetching && !isLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'
+            }
+          >
             {isLoading ? (
               <div className="py-8 text-center text-sm text-gray-500">Loading products...</div>
             ) : products.length === 0 ? (
@@ -186,7 +191,9 @@ const ManageProduct = () => {
                     <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={selectedProducts.length === products.length && products.length > 0}
+                          checked={
+                            selectedProducts.length === products.length && products.length > 0
+                          }
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
@@ -203,7 +210,9 @@ const ManageProduct = () => {
                         <TableCell>
                           <Checkbox
                             checked={selectedProducts.includes(product.id)}
-                            onCheckedChange={(checked) => handleSelectProduct(product.id, !!checked)}
+                            onCheckedChange={(checked) =>
+                              handleSelectProduct(product.id, !!checked)
+                            }
                           />
                         </TableCell>
                         <TableCell>
@@ -218,7 +227,9 @@ const ManageProduct = () => {
                           Rs. {product.price.toLocaleString()}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusBadgeVariant(product.status)}>{product.status}</Badge>
+                          <Badge variant={statusBadgeVariant(product.status)}>
+                            {product.status}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
                           {product.vendorName || 'Independent Seller'}
@@ -236,7 +247,8 @@ const ManageProduct = () => {
                                 </Button>
                               )}
                             {role === 'VENDOR' &&
-                              (product.status === 'published' || product.status === 'deactivated') && (
+                              (product.status === 'published' ||
+                                product.status === 'deactivated') && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -293,7 +305,10 @@ const ManageProduct = () => {
       </Card>
 
       {/* Archive confirmation — was previously an instant, unconfirmed soft-delete */}
-      <Dialog open={Boolean(archiveTarget)} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+      <Dialog
+        open={Boolean(archiveTarget)}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -306,7 +321,11 @@ const ManageProduct = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setArchiveTarget(null)} disabled={archive.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => setArchiveTarget(null)}
+              disabled={archive.isPending}
+            >
               Cancel
             </Button>
             <Button

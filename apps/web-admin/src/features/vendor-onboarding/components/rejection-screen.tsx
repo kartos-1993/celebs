@@ -28,8 +28,8 @@ export const RejectionScreen = ({ rejectionReason }: RejectionScreenProps) => {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Application Not Approved</h1>
         <p className="text-muted-foreground text-sm max-w-sm">
-          Your seller application was reviewed and could not be approved at this time.
-          Please review the reason below and resubmit.
+          Your seller application was reviewed and could not be approved at this time. Please review
+          the reason below and resubmit.
         </p>
       </div>
 
@@ -51,9 +51,7 @@ export const RejectionScreen = ({ rejectionReason }: RejectionScreenProps) => {
       </div>
 
       {resubmitMutation.isError && (
-        <p className="text-sm text-destructive">
-          Failed to resubmit. Please try again.
-        </p>
+        <p className="text-sm text-destructive">Failed to resubmit. Please try again.</p>
       )}
 
       <Button

@@ -10,8 +10,6 @@ export type ProductFormValues = Partial<CreateProductType> & Record<string, unkn
 
 const productFormBasicSchema = baseProductSchema.partial();
 
-
-
 /** API category refs can be plain ids or populated objects — normalize both. */
 const toId = (value: unknown): string => {
   if (typeof value === 'string') return value;

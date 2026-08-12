@@ -42,7 +42,8 @@ export const VendorRejectionDialog: React.FC<VendorRejectionDialogProps> = ({
             Reject Vendor Application
           </DialogTitle>
           <DialogDescription>
-            Provide a specific reason for rejecting <strong>{shopName}</strong>. This feedback will be emailed to the vendor and displayed on their seller dashboard.
+            Provide a specific reason for rejecting <strong>{shopName}</strong>. This feedback will
+            be emailed to the vendor and displayed on their seller dashboard.
           </DialogDescription>
         </DialogHeader>
 
@@ -69,11 +70,7 @@ export const VendorRejectionDialog: React.FC<VendorRejectionDialogProps> = ({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="destructive"
-              disabled={!reason.trim() || isSubmitting}
-            >
+            <Button type="submit" variant="destructive" disabled={!reason.trim() || isSubmitting}>
               {isSubmitting ? 'Rejecting...' : 'Reject Vendor Application'}
             </Button>
           </DialogFooter>

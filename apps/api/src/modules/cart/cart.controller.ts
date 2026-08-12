@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { addToCartSchema, syncCartSchema,updateCartItemSchema } from '@celebs/shared-types';
+import { addToCartSchema, syncCartSchema, updateCartItemSchema } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { CartService } from './cart.service';

@@ -105,7 +105,19 @@ export function useGoogleAuth() {
         await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
         const userInfo = await GoogleSignin.signIn();
 
-        const user = userInfo.data?.user || (userInfo as { user?: { email?: string; name?: string; givenName?: string; photo?: string; id?: string } }).user;
+        const user =
+          userInfo.data?.user ||
+          (
+            userInfo as {
+              user?: {
+                email?: string;
+                name?: string;
+                givenName?: string;
+                photo?: string;
+                id?: string;
+              };
+            }
+          ).user;
         if (!user?.email) {
           throw new Error('Could not retrieve Google profile details');
         }

@@ -1,6 +1,6 @@
-import { NextFunction,Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
-import { AppError, ErrorCode,HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { BannerService } from './banner.service';
 

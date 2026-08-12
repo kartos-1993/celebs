@@ -4,7 +4,7 @@ import {
   COD_MAX_LIMIT,
   UpdateAddressInput,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode,HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { MockPaymentAdapter } from './adapters/mock-payment.adapter';
 import { IPaymentGateway } from './adapters/payment-gateway.interface';

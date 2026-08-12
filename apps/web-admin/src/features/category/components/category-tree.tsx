@@ -21,15 +21,7 @@ import {
   TableCell,
 } from '@celebs/shared-ui/components/table';
 import { Button } from '@celebs/shared-ui/components/button';
-import {
-  ChevronRight,
-  ChevronDown,
-  Edit,
-  Trash2,
-  Folder,
-  FolderOpen,
-  Plus,
-} from 'lucide-react';
+import { ChevronRight, ChevronDown, Edit, Trash2, Folder, FolderOpen, Plus } from 'lucide-react';
 import { CategoryTreeNode } from '../types';
 
 interface CategoryTreeProps {

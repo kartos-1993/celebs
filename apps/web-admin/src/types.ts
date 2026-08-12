@@ -1,5 +1,10 @@
 import { LoaderFunction } from 'react-router-dom';
-import { IApiResponse as ApiResponse, Role, UserData, VendorProfileData } from '@celebs/shared-types';
+import {
+  IApiResponse as ApiResponse,
+  Role,
+  UserData,
+  VendorProfileData,
+} from '@celebs/shared-types';
 
 export type { Role, UserData, VendorProfileData };
 

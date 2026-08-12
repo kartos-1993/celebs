@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { Permission } from '@celebs/rbac';
-import { codSettlementSchema,dispatchOrderSchema } from '@celebs/shared-types';
+import { codSettlementSchema, dispatchOrderSchema } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { authenticateJWT } from '../../middlewares/auth.middleware';

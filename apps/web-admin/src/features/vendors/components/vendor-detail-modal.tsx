@@ -140,7 +140,9 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="legal">Legal & Tax</TabsTrigger>
               <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-              <TabsTrigger value="warehouses">Warehouses ({vendor.warehouses?.length || 0})</TabsTrigger>
+              <TabsTrigger value="warehouses">
+                Warehouses ({vendor.warehouses?.length || 0})
+              </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -173,7 +175,9 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
 
               {vendor.rejectionReason && (
                 <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-900 rounded-r-lg">
-                  <span className="font-semibold text-xs uppercase block text-red-700">Previous Rejection Reason</span>
+                  <span className="font-semibold text-xs uppercase block text-red-700">
+                    Previous Rejection Reason
+                  </span>
                   <p className="text-sm mt-1">{vendor.rejectionReason}</p>
                 </div>
               )}
@@ -188,19 +192,29 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
                 </div>
                 <div className="p-3 bg-muted/40 rounded-lg border">
                   <span className="text-xs text-muted-foreground block">Citizenship Number</span>
-                  <span className="font-mono font-semibold text-sm">{vendor.citizenshipNumber}</span>
+                  <span className="font-mono font-semibold text-sm">
+                    {vendor.citizenshipNumber}
+                  </span>
                 </div>
                 <div className="p-3 bg-muted/40 rounded-lg border">
-                  <span className="text-xs text-muted-foreground block">Registered Business Name</span>
+                  <span className="text-xs text-muted-foreground block">
+                    Registered Business Name
+                  </span>
                   <span className="font-semibold text-sm">{vendor.businessName || 'N/A'}</span>
                 </div>
                 <div className="p-3 bg-muted/40 rounded-lg border">
                   <span className="text-xs text-muted-foreground block">Business Reg Number</span>
-                  <span className="font-mono font-semibold text-sm">{vendor.businessRegNumber || 'N/A'}</span>
+                  <span className="font-mono font-semibold text-sm">
+                    {vendor.businessRegNumber || 'N/A'}
+                  </span>
                 </div>
                 <div className="p-3 bg-muted/40 rounded-lg border col-span-2">
-                  <span className="text-xs text-muted-foreground block">Business Contact Phone</span>
-                  <span className="font-semibold text-sm">{vendor.businessPhoneNumber || vendor.phoneNumber}</span>
+                  <span className="text-xs text-muted-foreground block">
+                    Business Contact Phone
+                  </span>
+                  <span className="font-semibold text-sm">
+                    {vendor.businessPhoneNumber || vendor.phoneNumber}
+                  </span>
                 </div>
               </div>
             </TabsContent>
@@ -208,7 +222,9 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
             {/* Documents Tab */}
             <TabsContent value="documents" className="space-y-4">
               {documents.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No verification documents uploaded yet.</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No verification documents uploaded yet.
+                </p>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   {documents.map((doc, idx) => (
@@ -238,18 +254,28 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
             {/* Warehouses Tab */}
             <TabsContent value="warehouses" className="space-y-4">
               {!vendor.warehouses || vendor.warehouses.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No warehouse locations registered.</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No warehouse locations registered.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {vendor.warehouses.map((wh) => (
                     <div key={wh.id} className="p-4 border rounded-lg bg-card space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="font-semibold text-sm">{wh.label || 'Default Warehouse'}</span>
-                        <span className="text-xs text-muted-foreground">{wh.city}, {wh.province}</span>
+                        <span className="font-semibold text-sm">
+                          {wh.label || 'Default Warehouse'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {wh.city}, {wh.province}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground space-y-1">
-                        <p>{wh.addressLine1} {wh.addressLine2}</p>
-                        <p>Contact: {wh.contactName || 'N/A'} ({wh.contactPhone || 'N/A'})</p>
+                        <p>
+                          {wh.addressLine1} {wh.addressLine2}
+                        </p>
+                        <p>
+                          Contact: {wh.contactName || 'N/A'} ({wh.contactPhone || 'N/A'})
+                        </p>
                       </div>
                     </div>
                   ))}

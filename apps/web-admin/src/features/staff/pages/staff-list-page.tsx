@@ -4,11 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  getStaff,
-  createStaff,
-  deleteStaff,
-} from '../api';
+import { getStaff, createStaff, deleteStaff } from '../api';
 import { STAFF_QUERY_KEYS } from '../hooks/use-staff-queries';
 import { getAdminVendors } from '@/features/vendors/api';
 import { VENDORS_QUERY_KEYS } from '@/features/vendors/hooks/use-vendor-queries';
@@ -233,11 +229,13 @@ export default function StaffList() {
                       <option value="" disabled>
                         Select Vendor Shop...
                       </option>
-                      {vendorsList.map((v: { id: string; shopName: string; user?: { email?: string } }) => (
-                        <option key={v.id} value={v.id}>
-                          {v.shopName} ({v.user?.email || 'Vendor'})
-                        </option>
-                      ))}
+                      {vendorsList.map(
+                        (v: { id: string; shopName: string; user?: { email?: string } }) => (
+                          <option key={v.id} value={v.id}>
+                            {v.shopName} ({v.user?.email || 'Vendor'})
+                          </option>
+                        ),
+                      )}
                     </select>
                   </div>
                 )}

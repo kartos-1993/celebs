@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import { IApiResponse } from '@celebs/shared-types';
-import { asyncHandler,HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
+import { asyncHandler, HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
 
 import { SessionService } from './session.service';
 

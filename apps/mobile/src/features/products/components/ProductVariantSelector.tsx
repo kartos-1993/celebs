@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet,TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { ProductColorVariant, ProductSize } from '../hooks/use-products';
@@ -24,7 +24,9 @@ interface ColorSwatchItemProps {
 
 const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, onSelect }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const rawImage = variant.images?.[0] || ((variant as unknown as Record<string, unknown>).image as string | undefined);
+  const rawImage =
+    variant.images?.[0] ||
+    ((variant as unknown as Record<string, unknown>).image as string | undefined);
   const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
 
   return (

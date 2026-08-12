@@ -13,15 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import {
-  Plus,
-  Search,
-  Tag,
-  Sparkles,
-  Plane,
-  Percent,
-  DollarSign,
-} from 'lucide-react';
+import { Plus, Search, Tag, Sparkles, Plane, Percent, DollarSign } from 'lucide-react';
 import type { ComboBundleType } from '@celebs/shared-types';
 
 export function ComboListPage() {

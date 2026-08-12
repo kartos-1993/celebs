@@ -69,8 +69,14 @@ export const sendEmail = async ({
       text,
       html,
     });
-    logger.info({ to: recipients, subject, mailhogUrl: 'http://localhost:8025' }, 'Email dispatched to MailHog SMTP (View at http://localhost:8025)');
+    logger.info(
+      { to: recipients, subject, mailhogUrl: 'http://localhost:8025' },
+      'Email dispatched to MailHog SMTP (View at http://localhost:8025)',
+    );
   } catch (err) {
-    logger.warn({ err, to, subject }, '[DEV FALLBACK] Failed to connect to MailHog SMTP. Email logged to console.');
+    logger.warn(
+      { err, to, subject },
+      '[DEV FALLBACK] Failed to connect to MailHog SMTP. Email logged to console.',
+    );
   }
 };

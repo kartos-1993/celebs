@@ -16,7 +16,6 @@ export type {
 } from './types';
 export type ProductApiResponse<T> = IApiResponse<T>;
 
-
 export interface PaginatedProductsResponse {
   products: ProductRecord[];
   total: number;
@@ -46,7 +45,6 @@ const BASE_PATH = '/products';
 /** Uploads ride the shared client but with an extended timeout. */
 const UPLOAD_TIMEOUT_MS = 120_000;
 
-
 export async function createProduct(
   data: CreateProductRequest,
 ): Promise<ProductApiResponse<ProductRecord>> {
@@ -57,17 +55,14 @@ export async function createProduct(
 export async function getProducts(
   filters?: ProductFilterRequest,
 ): Promise<ProductApiResponse<PaginatedProductsResponse>> {
-  const response = await axiosClient.get<ProductApiResponse<PaginatedProductsResponse>>(
-    BASE_PATH,
-    { params: filters },
-  );
+  const response = await axiosClient.get<ProductApiResponse<PaginatedProductsResponse>>(BASE_PATH, {
+    params: filters,
+  });
   return response.data;
 }
 
 export async function getProductById(id: string): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.get<ProductApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}`,
-  );
+  const response = await axiosClient.get<ProductApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`);
   return response.data;
 }
 
@@ -92,7 +87,6 @@ export async function getProductReviewQueue(
   );
   return response.data;
 }
-
 
 export async function submitProductForReview(
   id: string,
@@ -164,7 +158,6 @@ export async function uploadFiles(
 
   return [...existingUrls, ...uploadedUrls];
 }
-
 
 export const ProductApiService = {
   createProduct,

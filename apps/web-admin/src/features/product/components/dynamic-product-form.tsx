@@ -36,11 +36,41 @@ interface TabConfig {
 }
 
 const TAB_CONFIG: TabConfig[] = [
-  { id: 'details', label: 'Specifications', icon: Ruler, groups: ['details'], anchorId: 'product-section-details' },
-  { id: 'media', label: 'Media & Swatches', icon: ImageIcon, groups: ['base', 'variant', 'media'], anchorId: 'product-section-base' },
-  { id: 'sale', label: 'SKUs & Pricing', icon: Palette, groups: ['sale'], anchorId: 'product-section-sale' },
-  { id: 'package', label: 'Shipping & Warranty', icon: Package, groups: ['package'], anchorId: 'product-section-package' },
-  { id: 'termcondition', label: 'Terms & Conditions', icon: FileText, groups: ['termcondition'], anchorId: 'product-section-termcondition' },
+  {
+    id: 'details',
+    label: 'Specifications',
+    icon: Ruler,
+    groups: ['details'],
+    anchorId: 'product-section-details',
+  },
+  {
+    id: 'media',
+    label: 'Media & Swatches',
+    icon: ImageIcon,
+    groups: ['base', 'variant', 'media'],
+    anchorId: 'product-section-base',
+  },
+  {
+    id: 'sale',
+    label: 'SKUs & Pricing',
+    icon: Palette,
+    groups: ['sale'],
+    anchorId: 'product-section-sale',
+  },
+  {
+    id: 'package',
+    label: 'Shipping & Warranty',
+    icon: Package,
+    groups: ['package'],
+    anchorId: 'product-section-package',
+  },
+  {
+    id: 'termcondition',
+    label: 'Terms & Conditions',
+    icon: FileText,
+    groups: ['termcondition'],
+    anchorId: 'product-section-termcondition',
+  },
 ];
 
 export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicProductFormProps>(
@@ -108,7 +138,9 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
           setActiveTab(tab.id);
           // Wait one frame so the newly-active tab content is mounted
           window.requestAnimationFrame(() => {
-            document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document
+              .getElementById(anchorId)
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           });
           return true;
         },
@@ -213,10 +245,11 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${isActive
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                  isActive
                     ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                  }`}
+                }`}
               >
                 <Icon className="h-4 w-4" /> {tab.label}
               </button>
@@ -236,7 +269,11 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
               />
             ) : activeConfig.id === 'media' ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {renderFieldNodes([...(grouped.base || []), ...(grouped.variant || []), ...(grouped.media || [])])}
+                {renderFieldNodes([
+                  ...(grouped.base || []),
+                  ...(grouped.variant || []),
+                  ...(grouped.media || []),
+                ])}
               </div>
             ) : (
               <div className="space-y-6">

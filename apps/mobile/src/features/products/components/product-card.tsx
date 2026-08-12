@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Dimensions, GestureResponderEvent, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  Dimensions,
+  GestureResponderEvent,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ChevronRight,Heart, ShoppingBag } from 'lucide-react-native';
+import { ChevronRight, Heart, ShoppingBag } from 'lucide-react-native';
 
 import { Product, resolveImageUrl } from '../hooks/use-products';
 
@@ -29,16 +35,22 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const { startFlyAnimation } = useFlyToCart();
   const imageRef = React.useRef<View>(null);
 
-  const productRecord = (product as unknown) as Record<string, unknown>;
+  const productRecord = product as unknown as Record<string, unknown>;
   const dynamicDataObj = productRecord.dynamicData as Record<string, unknown> | undefined;
   const dynamicValuesObj = dynamicDataObj?.values as Record<string, unknown> | undefined;
   const uploadedAssetsObj = productRecord.uploadedAssets as Record<string, unknown> | undefined;
 
   const primaryImage =
     product.mainImages?.[0] ||
-    (Array.isArray(dynamicValuesObj?.mainImage) ? (dynamicValuesObj?.mainImage[0] as string) : undefined) ||
-    (Array.isArray(dynamicDataObj?.mainImage) ? (dynamicDataObj?.mainImage[0] as string) : undefined) ||
-    (Array.isArray(uploadedAssetsObj?.mainImages) ? (uploadedAssetsObj?.mainImages[0] as string) : undefined) ||
+    (Array.isArray(dynamicValuesObj?.mainImage)
+      ? (dynamicValuesObj?.mainImage[0] as string)
+      : undefined) ||
+    (Array.isArray(dynamicDataObj?.mainImage)
+      ? (dynamicDataObj?.mainImage[0] as string)
+      : undefined) ||
+    (Array.isArray(uploadedAssetsObj?.mainImages)
+      ? (uploadedAssetsObj?.mainImages[0] as string)
+      : undefined) ||
     product.colorVariants?.[0]?.images?.[0] ||
     '';
   const imageUrl = resolveImageUrl(primaryImage);

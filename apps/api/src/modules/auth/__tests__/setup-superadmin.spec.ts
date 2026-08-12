@@ -1,5 +1,5 @@
 import request from 'supertest';
-import {describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 import prisma from '@/db';

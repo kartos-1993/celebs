@@ -74,10 +74,8 @@ export async function buildProductPayload({
     }),
   ]);
 
-  const uploadedColorAssets: Record<
-    string,
-    { hot: boolean; images: string[]; swatch?: string }
-  > = Object.fromEntries(colorAssetEntries);
+  const uploadedColorAssets: Record<string, { hot: boolean; images: string[]; swatch?: string }> =
+    Object.fromEntries(colorAssetEntries);
 
   const price = getFirstPrice(values, '.price');
   if (price === undefined) {
@@ -123,7 +121,7 @@ export async function buildProductPayload({
         quantity:
           toNonNegativeInteger(
             flatValues[
-            `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
+              `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
             ],
           ) ?? defaultStock,
       }));
@@ -132,8 +130,9 @@ export async function buildProductPayload({
         {
           size: 'default',
           quantity:
-            toNonNegativeInteger(flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`]) ??
-            defaultStock,
+            toNonNegativeInteger(
+              flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`],
+            ) ?? defaultStock,
         },
       ];
     } else if (sizeFieldName && selectedSizes.length > 0) {
@@ -181,11 +180,25 @@ export async function buildProductPayload({
           .filter(
             (name) =>
               !name.includes('.') &&
-              !['name', 'brand', 'description', 'price', 'specialPrice', 'categoryId', 'subcategoryId', 'mainImage', 'sizes', 'skus', 'status'].includes(name) &&
+              ![
+                'name',
+                'brand',
+                'description',
+                'price',
+                'specialPrice',
+                'categoryId',
+                'subcategoryId',
+                'mainImage',
+                'sizes',
+                'skus',
+                'status',
+              ].includes(name) &&
               name !== colorFieldName &&
               name !== sizeFieldName,
           )
-          .filter((name) => values[name] !== undefined && values[name] !== null && values[name] !== '')
+          .filter(
+            (name) => values[name] !== undefined && values[name] !== null && values[name] !== '',
+          )
           .map((name) => [name, values[name]]),
       ),
       uploadedAssets: {

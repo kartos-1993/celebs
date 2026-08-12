@@ -55,28 +55,34 @@ Enforce all file creation logic to follow this structure precisely:
 ## 8. Senior Architect Guidelines & Monorepo Architectural Mandates
 
 - **Monorepo Package Boundaries & Single Source of Truth**:
+
   - Core domain entity types, data contracts, Zod schemas, and cross-application invariants MUST strictly originate from `@celebs/shared-types`. Apps (`apps/api`, `apps/web-admin`, `apps/mobile`) must re-export or consume shared contracts rather than redefining duplicate interfaces locally.
   - `@celebs/shared-*` packages must maintain strict downward dependency flow and NEVER depend on target application scopes (`apps/*`). `@celebs/shared-types` must remain pure TypeScript type declarations without runtime side effects.
 
 - **React Architecture & Fast Refresh Isolation (`react-refresh/only-export-components`)**:
+
   - Component files (`.tsx`) MUST ONLY export React components.
   - Data transformation mappers, static configuration objects, schema parsing helpers, and utility functions must be extracted into standalone `.ts` files to ensure HMR state preservation and fast refresh compliance.
   - Custom React hooks MUST be isolated into dedicated `use-*.ts` files.
 
 - **Hook Stability & Event Handler Closure Management**:
+
   - Functions passed down as props or used as effect dependencies MUST be stabilized using `useCallback` or `useMemo` to prevent unnecessary render cascades and broken effect lifecycles (`react-hooks/exhaustive-deps`).
   - Heavy or dynamic object transformations (e.g. data table columns, filtered lists) must be memoized at component boundaries.
 
 - **Resource & Memory Leak Prevention**:
+
   - Dynamic object URLs created via `URL.createObjectURL()` during file previews MUST be explicitly revoked in effect cleanup callbacks (`URL.revokeObjectURL()`).
   - Event listeners, timers, and WebSocket subscriptions must include explicit tear-down routines on unmount.
 
 - **Domain Model Extensibility & Type-Safe Guards (No Hacky Double-Casts)**:
+
   - Avoid unsafe double-cast escape hatches (`as unknown as Record<string, unknown>`).
   - Shared domain entity interfaces in `@celebs/shared-types` that accommodate dynamic attributes or optional metadata MUST explicitly declare structured optional fields (e.g. `dynamicData?: Record<string, unknown>`, `uploadedAssets?: Record<string, unknown>`) or index signatures (`[key: string]: unknown`) when dynamic keys are part of the domain contract.
   - Use runtime type guards (e.g. `isRecord(val)`, `Array.isArray(val)`) and Zod schema parsing to safely inspect dynamic payloads.
 
 - **React Hook Form Path Invariants (`Path<TFormValues>` & `FieldValues`)**:
+
   - Avoid casting `form.setValue` itself to untyped function signatures.
   - Dynamic forms handling schema-driven category fields should be bound using `useForm<FieldValues>()` or `UseFormReturn<FieldValues>`, allowing native `form.setValue(name, value)` without path inference breakage.
   - Statically typed forms with dynamic nested paths MUST type field paths using React Hook Form's `Path<TFormValues>` or `FieldPath<TFormValues>` (e.g., `form.setValue(path as Path<ProductFormValues>, value)`).
@@ -88,6 +94,7 @@ Enforce all file creation logic to follow this structure precisely:
 ## 9. Frontend Ecosystem Architectural Mandate (`apps/web-admin`)
 
 ### 1. Feature-Sliced Domain Architecture & Modularity
+
 - The `web-admin` application MUST strictly adhere to a Feature-Sliced Design (FSD) paradigm. Monolithic folders (e.g., global `/components`, `/hooks`, `/services`) are strictly prohibited.
 - **Domain Co-location**: Every business domain (e.g., `product`, `category`, `order`, `vendor`) MUST exist as an isolated module under `src/features/{domain}/`.
 - **Internal Module Structure**: Each feature folder MUST encapsulate its own boundaries:
@@ -100,6 +107,7 @@ Enforce all file creation logic to follow this structure precisely:
 - **Barrel File Eradication**: Do not use `index.ts` barrel files for exporting components or hooks within a feature. Import directly from the exact file path.
 
 ### 2. Server-State Orchestration (TanStack Query)
+
 - The application relies on TanStack Query for all asynchronous server state. Manual global state management (Redux, Zustand, Context) for API data is strictly forbidden.
 - **Query Key Factory Pattern**: Query keys MUST NOT be hardcoded strings. They MUST be generated via centralized factory objects (e.g., `PRODUCT_QUERY_KEYS.list(filters)`) to ensure type-safe cache invalidation.
 - **Cache Invalidation Precision**: Mutations MUST invalidate specific query keys, not broad global refetches. Use `queryClient.invalidateQueries({ queryKey: [...] })` surgically.
@@ -107,6 +115,7 @@ Enforce all file creation logic to follow this structure precisely:
 - **Pagination & Infinite Queries**: List views with large datasets MUST use `useInfiniteQuery` or cursor-based pagination hooks. Offset-based pagination that refetches the entire list on page change is prohibited.
 
 ### 3. Advanced Form Engine & Dynamic Schema Binding
+
 - Complex dynamic form handling (e.g., Category Attributes, Product SKU Matrices) MUST utilize React Hook Form (RHF) and Zod with extreme precision to prevent render thrashing.
 - **Context Isolation**: Avoid wrapping massive DOM trees in `<FormProvider>`. Use `useFormContext` only within isolated sub-components. For deeply nested dynamic fields, pass `control` explicitly as a prop to prevent global form re-renders on every keystroke.
 - **Path Type Safety**: When using `form.setValue` or `form.watch` on dynamic paths, utilize React Hook Form's `Path<TFormValues>` or `FieldPath<TFormValues>` generics:
@@ -116,37 +125,45 @@ Enforce all file creation logic to follow this structure precisely:
 - **Dynamic Field Registry**: UI registries (e.g., `ui-registry.tsx`) mapping backend schema types to React components MUST be statically typed using discriminated unions.
 
 ### 4. Render Determinism, Memoization & Closure Stability
+
 - **Stable Closures in Effects**: Functions invoked inside `useEffect` or passed to TanStack Query `queryFn`/`mutationFn` MUST be wrapped in `useCallback` or defined outside component scope.
 - **Referential Equality for Props**: Objects, arrays, and inline functions passed as props to memoized children (`React.memo`), TanStack Table column definitions, or Radix UI primitives MUST be memoized via `useMemo` or `useCallback`.
 - **Derived State Computation**: Heavy computations MUST be wrapped in `useMemo`. Never compute derived state during the render phase outside of memoization boundaries.
 
 ### 5. Memory Management & Resource Teardown
+
 - **Object URL Revocation**: Usage of `URL.createObjectURL()` for image previews MUST be paired with a `useEffect` cleanup callback calling `URL.revokeObjectURL()`.
 - **AbortController Integration**: All Axios requests initiated inside `useEffect` or component lifecycles MUST be tied to an `AbortController` with `.abort()` in cleanup.
 - **Event Listener Teardown**: Global event listeners MUST be explicitly removed in the `useEffect` teardown phase.
 
 ### 6. Type Contract Enforcement & Anti-Pattern Eradication
+
 - **The `any` Eradication Mandate**: Use of `any`, `@ts-ignore`, and `@ts-nocheck` is strictly prohibited.
 - **No Hacky Double-Casts**: Escape hatches like `as unknown as Record<string, any>` are forbidden. Use structured optional types or index signatures with runtime type guards.
 - **Discriminated Unions for State**: UI states MUST be modeled using discriminated unions (e.g. `{ status: 'loading' } | { status: 'error', message: string } | { status: 'success', data: T }`).
 
 ### 7. Routing, Code-Splitting & Security Boundaries
+
 - **Lazy Loading Mandate**: ALL route-level page components MUST be imported using `React.lazy()` and wrapped in `<Suspense>`.
 - **Guard Composition**: `AuthGuard` and `RoleGuard` wrappers MUST handle loading states gracefully without layout shifts.
 - **Route Handle Metadata**: Utilize React Router's `handle` property for breadcrumbs, titles, and permissions declaratively.
 
 ### 8. UI Composition, Accessibility & Design System Invariants
+
 - **Radix Primitive Supremacy**: Do not build custom dropdowns/modals using raw `div`s and manual z-index. Use headless Radix primitives from `@celebs/shared-ui`.
 - **Tailwind Class Determinism**: Use `cn()` utility (`clsx` + `tailwind-merge`) for conditional class names.
 - **Component Purity**: `.tsx` files MUST ONLY export React components. Data mappers, constants, and helpers MUST be extracted into adjacent `.ts` files to preserve HMR.
 
 ### 9. Testing & Mocking Isolation
+
 - **MSW Mandate**: All API interactions in integration tests MUST be intercepted using MSW without hitting live backend services.
 - **Component Testing over E2E**: Use Vitest + React Testing Library for component unit/integration testing.
 - **Deterministic Mocks**: Mock data MUST be generated using `@faker-js/faker` with seeded values.
 
 ### 🚀 Execution Protocol for Web-Admin Tasks
+
 When modifying `apps/web-admin`:
+
 1. **Trace the Domain**: Identify `src/features/{domain}`. Do not bleed logic across domains.
 2. **Verify the Contract**: Check `@celebs/shared-types` before creating new interfaces.
 3. **Protect the Render**: Ensure memoization before passing objects/functions down the tree.

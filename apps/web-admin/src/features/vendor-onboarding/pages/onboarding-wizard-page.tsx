@@ -135,11 +135,7 @@ export default function OnboardingWizard() {
   }
 
   if (vendorStatus === 'REJECTED') {
-    return (
-      <RejectionScreen
-        rejectionReason={user?.vendorProfile?.rejectionReason}
-      />
-    );
+    return <RejectionScreen rejectionReason={user?.vendorProfile?.rejectionReason} />;
   }
 
   const progressPercentage = (step / 5) * 100;

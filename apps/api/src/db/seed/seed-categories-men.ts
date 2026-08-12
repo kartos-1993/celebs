@@ -61,7 +61,11 @@ async function ensureCategory(
   const slug = slugify(name, { lower: true, strict: true });
   const level = parent ? ((parent.level as number) || 1) + 1 : 1;
   const parentCategory = parent ? String(parent.id) : null;
-  const parentPath = parent ? (Array.isArray(parent.path) ? parent.path : [parent.path as string]) : [];
+  const parentPath = parent
+    ? Array.isArray(parent.path)
+      ? parent.path
+      : [parent.path as string]
+    : [];
   const pathParts = [...parentPath, slug];
   const path = pathParts.join('/');
 
@@ -190,13 +194,7 @@ const nepaliFestivalsAttr: SeedAttr = {
 const placketAttr: SeedAttr = {
   name: 'Placket',
   type: 'select',
-  values: [
-    'Single Breasted',
-    'Double Breasted',
-    'Covered Placket',
-    'Half Placket',
-    'Zip Placket',
-  ],
+  values: ['Single Breasted', 'Double Breasted', 'Covered Placket', 'Half Placket', 'Zip Placket'],
 };
 
 const hemShapedAttr: SeedAttr = {
@@ -1996,7 +1994,13 @@ const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
             {
               name: 'Ideal For',
               type: 'select',
-              values: ['Conventional', 'Unisex', 'Executive / Professional', 'Young Adult', 'Couple Male'],
+              values: [
+                'Conventional',
+                'Unisex',
+                'Executive / Professional',
+                'Young Adult',
+                'Couple Male',
+              ],
             },
             priceRangeAttr,
           ],

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Image,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ArrowRight,Plane, Sparkles, Tag } from 'lucide-react-native';
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ArrowRight, Plane, Sparkles, Tag } from 'lucide-react-native';
 
 import { apiClient } from '@/api/client';
 import { ThemedText } from '@/components/themed-text';

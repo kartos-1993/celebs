@@ -20,13 +20,17 @@ export const PendingReviewScreen = ({ vendorName }: PendingReviewScreenProps) =>
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Application Submitted!</h1>
         {vendorName && (
-          <p className="text-muted-foreground text-sm">Hi {vendorName}, your seller application is now under review.</p>
+          <p className="text-muted-foreground text-sm">
+            Hi {vendorName}, your seller application is now under review.
+          </p>
         )}
       </div>
 
       {/* Status timeline */}
       <div className="w-full max-w-sm border rounded-lg p-4 text-left space-y-4 bg-card">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Review Progress</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Review Progress
+        </h3>
 
         <div className="space-y-3">
           <div className="flex items-start gap-3">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { X } from 'lucide-react-native';
 
 import { DrawerFilterConfig } from '../types';

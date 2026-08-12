@@ -1,5 +1,5 @@
 import { CreateStaffType } from '@celebs/shared-types';
-import { BadRequestException,ForbiddenException, NotFoundException } from '@celebs/shared-utils';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/db';

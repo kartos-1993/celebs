@@ -49,7 +49,10 @@ export function CollapseMenuButton({
   if (!isCollapsed) {
     return (
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
-        <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full" asChild>
+        <CollapsibleTrigger
+          className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full"
+          asChild
+        >
           <Button
             variant={isSubmenuActive ? 'secondary' : 'ghost'}
             className="w-full justify-start h-10 px-3"
@@ -59,9 +62,7 @@ export function CollapseMenuButton({
                 <span className="flex items-center justify-center shrink-0">
                   <Icon size={18} />
                 </span>
-                <p className="max-w-[150px] truncate text-sm font-medium py-0.5">
-                  {label}
-                </p>
+                <p className="max-w-[150px] truncate text-sm font-medium py-0.5">{label}</p>
               </div>
               <div className="flex items-center justify-center shrink-0 ml-2">
                 <ChevronDown size={16} className="transition-transform duration-200" />
@@ -74,14 +75,14 @@ export function CollapseMenuButton({
           {submenus.map(({ href, label, active }, index) => (
             <Button
               key={index}
-              variant={(active === undefined && pathname === href) || active ? 'secondary' : 'ghost'}
+              variant={
+                (active === undefined && pathname === href) || active ? 'secondary' : 'ghost'
+              }
               className="w-full justify-start h-8 mb-1 pl-9 pr-3"
               asChild
             >
               <Link to={href} className="flex items-center w-full">
-                <p className="max-w-[170px] truncate text-sm font-light py-0.5">
-                  {label}
-                </p>
+                <p className="max-w-[170px] truncate text-sm font-light py-0.5">{label}</p>
               </Link>
             </Button>
           ))}
@@ -97,11 +98,7 @@ export function CollapseMenuButton({
     <PopoverPrimitive.Root open={flyoutOpen}>
       <PopoverPrimitive.Anchor asChild>
         {/* Hover zone: full-width row */}
-        <div
-          className="w-full"
-          onMouseEnter={openFlyout}
-          onMouseLeave={closeFlyout}
-        >
+        <div className="w-full" onMouseEnter={openFlyout} onMouseLeave={closeFlyout}>
           <Button
             variant={isSubmenuActive ? 'secondary' : 'ghost'}
             className="w-full justify-center h-10 mb-1 px-0 pointer-events-none"

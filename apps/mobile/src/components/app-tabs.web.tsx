@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet,useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import {
   TabList,
   TabListProps,

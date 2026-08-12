@@ -24,7 +24,8 @@ export const OnboardingStatusBanner: React.FC = () => {
         </AlertTitle>
         <AlertDescription className="mt-1 flex items-center justify-between gap-4">
           <span>
-            Please verify your email address (<strong>{user.email}</strong>) to activate full seller features. Check your inbox for the activation link.
+            Please verify your email address (<strong>{user.email}</strong>) to activate full seller
+            features. Check your inbox for the activation link.
           </span>
         </AlertDescription>
       </Alert>
@@ -40,7 +41,8 @@ export const OnboardingStatusBanner: React.FC = () => {
         </AlertTitle>
         <AlertDescription className="mt-2 flex items-center justify-between gap-4">
           <span>
-            Your store setup is incomplete. Complete all 5 steps to submit your documents for admin verification.
+            Your store setup is incomplete. Complete all 5 steps to submit your documents for admin
+            verification.
           </span>
           <Button
             size="sm"
@@ -62,7 +64,8 @@ export const OnboardingStatusBanner: React.FC = () => {
           Application Submitted & Under Review
         </AlertTitle>
         <AlertDescription className="mt-1">
-          Your shop details and uploaded documents are currently being reviewed by platform moderation. Product upload tools will be unlocked upon admin approval.
+          Your shop details and uploaded documents are currently being reviewed by platform
+          moderation. Product upload tools will be unlocked upon admin approval.
         </AlertDescription>
       </Alert>
     );
@@ -76,9 +79,7 @@ export const OnboardingStatusBanner: React.FC = () => {
           Application Revision Required
         </AlertTitle>
         <AlertDescription className="mt-2 flex flex-col gap-2">
-          <span>
-            Your vendor application requires updates before activation.
-          </span>
+          <span>Your vendor application requires updates before activation.</span>
           {rejectionReason && (
             <div className="bg-white p-3 rounded border border-red-200 text-red-800 font-mono text-xs">
               <strong>Reason:</strong> {rejectionReason}

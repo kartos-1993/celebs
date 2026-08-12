@@ -1,6 +1,6 @@
-import React, { useEffect,useState } from 'react';
-import { Image,Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ShoppingBag, Sparkles, Tag,X } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ShoppingBag, Sparkles, Tag, X } from 'lucide-react-native';
 
 import { ComboBundleData } from './ComboBundleShowcase';
 

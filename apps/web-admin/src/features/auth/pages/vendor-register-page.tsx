@@ -66,7 +66,13 @@ export function VendorRegisterPage() {
       },
       onError: (error: unknown) => {
         const errorData =
-          (error as { response?: { data?: { errors?: Array<{ field?: string; message?: string }>; message?: string } } })?.response?.data ||
+          (
+            error as {
+              response?: {
+                data?: { errors?: Array<{ field?: string; message?: string }>; message?: string };
+              };
+            }
+          )?.response?.data ||
           (error as { message?: string; errors?: Array<{ field?: string; message?: string }> });
         if (errorData?.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
           errorData.errors.forEach((err: { field?: string; message?: string }) => {

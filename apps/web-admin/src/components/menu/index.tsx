@@ -110,9 +110,7 @@ export function Menu({ isSideBarOpen }: MenuProps) {
                             </Link>
                           </Button>
                         </TooltipTrigger>
-                        {isCollapsed && (
-                          <TooltipContent side="right">{label}</TooltipContent>
-                        )}
+                        {isCollapsed && <TooltipContent side="right">{label}</TooltipContent>}
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -164,9 +162,7 @@ export function Menu({ isSideBarOpen }: MenuProps) {
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
-                  {isCollapsed && (
-                    <TooltipContent side="right">My Account</TooltipContent>
-                  )}
+                  {isCollapsed && <TooltipContent side="right">My Account</TooltipContent>}
                 </Tooltip>
               </TooltipProvider>
 

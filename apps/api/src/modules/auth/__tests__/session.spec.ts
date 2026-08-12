@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
