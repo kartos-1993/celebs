@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyEmail } from '../api';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -13,10 +13,11 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { user } = useAuthContext();
+  const { user, refetch } = useAuthContext();
+  const hasAttemptedRef = useRef(false);
 
   useEffect(() => {
-    // If the user is already verified (e.g. refreshed after verification), skip duplicate call
+    // If the user is already verified (e.g. refreshed after verification), skip API call
     if (user?.isEmailVerified) {
       setStatus('success');
       setTimeout(() => {
@@ -31,38 +32,44 @@ export default function VerifyEmailPage() {
       return;
     }
 
+    // Prevent duplicate API calls from React 18 StrictMode double-invocation
+    if (hasAttemptedRef.current) return;
+    hasAttemptedRef.current = true;
+
     let isMounted = true;
     verifyEmail({ code })
       .then(() => {
         if (isMounted) {
           setStatus('success');
+          refetch();
           setTimeout(() => {
             navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
           }, 1800);
         }
       })
-      .catch((err: { response?: { data?: { message?: string } } }) => {
-        if (isMounted) {
-          // If user logged in and already verified during fallback GET call
-          if (user?.isEmailVerified) {
-            setStatus('success');
-            setTimeout(() => {
-              navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
-            }, 1200);
-            return;
-          }
+      .catch(async (err: { response?: { data?: { message?: string } } }) => {
+        if (!isMounted) return;
 
-          setStatus('error');
-          setErrorMessage(
-            err?.response?.data?.message || 'Verification link is invalid or has expired.',
-          );
+        // If the code was already consumed (e.g., previous attempt set cookie), check latest user state
+        refetch();
+        if (user?.isEmailVerified) {
+          setStatus('success');
+          setTimeout(() => {
+            navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
+          }, 1200);
+          return;
         }
+
+        setStatus('error');
+        setErrorMessage(
+          err?.response?.data?.message || 'Verification link is invalid or has expired.',
+        );
       });
 
     return () => {
       isMounted = false;
     };
-  }, [code, navigate, user?.isEmailVerified]);
+  }, [code, navigate, refetch, user?.isEmailVerified]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-4">
