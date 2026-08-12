@@ -23,4 +23,8 @@ export const authRoutes: RouteObject[] = [
     path: '/verify-email',
     element: <VerifyEmailPage />,
   },
+  {
+    path: '/api/v1/auth/verify-email',
+    element: <VerifyEmailPage />,
+  },
 ];
