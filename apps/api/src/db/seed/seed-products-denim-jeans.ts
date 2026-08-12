@@ -5,32 +5,44 @@ import prisma from '../../config/db.prisma';
 export async function seedProductsDenimJeans(): Promise<void> {
   console.log('\n👖 Seeding Denim Jeans Products via PostgreSQL Prisma...');
 
+  // 1. Find official "Men Jeans" subcategory (nested under Men Denim)
   let denimJeansCat = await prisma.category.findFirst({
     where: {
       OR: [
-        { name: { contains: 'denim jeans', mode: 'insensitive' } },
-        { slug: 'men-denim-jeans' },
-        { slug: 'denim-jeans' },
+        { slug: 'men-jeans' },
+        { name: 'Men Jeans' },
       ],
     },
   });
 
-  if (!denimJeansCat) {
-    console.log('  └─ Category not found. Creating Category in Postgres...');
-    const parentCat = await prisma.category.findFirst({
-      where: { level: 1, name: { contains: 'men', mode: 'insensitive' } },
-    });
+  // Clean up legacy orphan "Men Denim Jeans" category if present
+  const orphanCat = await prisma.category.findFirst({
+    where: {
+      OR: [
+        { slug: 'men-denim-jeans' },
+        { name: 'Men Denim Jeans' },
+      ],
+    },
+  });
 
-    denimJeansCat = await prisma.category.create({
-      data: {
-        name: 'Men Denim Jeans',
-        slug: 'men-denim-jeans',
-        level: parentCat ? 2 : 1,
-        parentCategory: parentCat ? parentCat.id : null,
-        path: parentCat ? `${parentCat.path}/men-denim-jeans` : 'men-denim-jeans',
-        isActive: true,
-      },
-    });
+  if (orphanCat) {
+    if (denimJeansCat && orphanCat.id !== denimJeansCat.id) {
+      console.log('  └─ Re-linking products from orphan "Men Denim Jeans" to "Men Jeans"...');
+      await prisma.product.updateMany({
+        where: { categoryId: orphanCat.id },
+        data: { categoryId: denimJeansCat.id },
+      });
+      await prisma.category.delete({
+        where: { id: orphanCat.id },
+      });
+      console.log('  └─ Removed orphan "Men Denim Jeans" category.');
+    } else if (!denimJeansCat) {
+      denimJeansCat = orphanCat;
+    }
+  }
+
+  if (!denimJeansCat) {
+    throw new Error('Category "Men Jeans" not found. Run seedCategoriesMen first.');
   }
 
   const categoryId = denimJeansCat.id;
