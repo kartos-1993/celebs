@@ -13,7 +13,7 @@ import { useProductSchema } from '../../hooks/use-product-schema';
 import { useProductDraft } from '../../hooks/use-product-draft';
 import { useSubmissionState } from '../../hooks/use-submission-state';
 import { extractVariantsMeta } from '../../fields/variant-utils';
-import type { FieldSpec, ProductSidebarSection } from '../../types';
+import type { FieldSpec } from '../../types';
 import BasicInfoSection from '../basic-info-section';
 import { DynamicProductForm, type DynamicProductFormHandle } from '../dynamic-product-form';
 import { SubmissionProgressChecklist } from '../submission-progress-checklist';
