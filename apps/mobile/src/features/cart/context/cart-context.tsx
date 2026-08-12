@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, ReactNode,useContext, useEffect } from 'react';
+
 import { AddToCartInput, CartResponse } from '@celebs/shared-types';
+
 import { useCartStore } from '../store/use-cart-store';
 
 interface CartContextType {

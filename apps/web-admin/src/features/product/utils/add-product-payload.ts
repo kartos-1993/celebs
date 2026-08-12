@@ -1,5 +1,6 @@
-import { CreateProductRequest, uploadFiles } from '../api';
-import type { FieldSpec } from '../fields/ui-registry';
+import { uploadFiles } from '../api';
+import type { CreateProductRequest } from '../types';
+import type { FieldSpec } from '../types';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import {
   flattenObject,
@@ -23,48 +24,60 @@ interface SizeFormValue {
   bodyMeasurements?: MeasurementItem[];
 }
 
+type UploadFn = (files: Array<File | string | null | undefined>) => Promise<string[]>;
+
+interface BuildProductPayloadOptions {
+  fields: FieldSpec[];
+  status: CreateProductRequest['status'];
+  values: Record<string, unknown>;
+  /** Injectable for tests; defaults to the real uploader. */
+  upload?: UploadFn;
+}
+
 export async function buildProductPayload({
   fields,
   status,
   values,
-}: {
-  fields: FieldSpec[];
-  status: CreateProductRequest['status'];
-  values: Record<string, unknown>;
-}): Promise<CreateProductRequest> {
+  upload = uploadFiles,
+}: BuildProductPayloadOptions): Promise<CreateProductRequest> {
   const flatValues = flattenObject(values);
   const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
   const sizeFieldName = variantMeta.find((variant) => variant.kind === 'size')?.key;
   const colorLabelMap = getLabelMap(fields, colorFieldName);
   const sizeLabelMap = getLabelMap(fields, sizeFieldName);
 
-  const mainImages = await uploadFiles(
-    Array.isArray(values.mainImage) ? (values.mainImage as Array<File | string>) : [],
-  );
-
   const selectedColors = colorFieldName ? toStringArray(values[colorFieldName]) : [];
   const selectedSizes = sizeFieldName ? toStringArray(values[sizeFieldName]) : [];
 
-  const uploadedColorAssets: Record<string, { hot: boolean; images: string[]; swatch?: string }> =
-    {};
+  // Upload main images and all per-color assets concurrently
+  // (previously a serial for-of loop — one round trip per swatch/gallery).
+  const [mainImages, ...colorAssetEntries] = await Promise.all([
+    upload(Array.isArray(values.mainImage) ? (values.mainImage as Array<File | string>) : []),
+    ...selectedColors.map(async (colorValue) => {
+      const prefix = `variants.colorMeta.${colorValue}`;
+      const [swatchUrls, images] = await Promise.all([
+        upload([flatValues[`${prefix}.swatch`] as File | string | undefined]),
+        upload(
+          Array.isArray(flatValues[`${prefix}.images`])
+            ? (flatValues[`${prefix}.images`] as Array<File | string>)
+            : [],
+        ),
+      ]);
+      return [
+        colorValue,
+        {
+          swatch: swatchUrls[0],
+          images,
+          hot: Boolean(flatValues[`${prefix}.hot`]),
+        },
+      ] as const;
+    }),
+  ]);
 
-  for (const colorValue of selectedColors) {
-    const prefix = `variants.colorMeta.${colorValue}`;
-    const swatchUrls = await uploadFiles([
-      flatValues[`${prefix}.swatch`] as File | string | undefined,
-    ]);
-    const images = await uploadFiles(
-      Array.isArray(flatValues[`${prefix}.images`])
-        ? (flatValues[`${prefix}.images`] as Array<File | string>)
-        : [],
-    );
-
-    uploadedColorAssets[colorValue] = {
-      swatch: swatchUrls[0],
-      images,
-      hot: Boolean(flatValues[`${prefix}.hot`]),
-    };
-  }
+  const uploadedColorAssets: Record<
+    string,
+    { hot: boolean; images: string[]; swatch?: string }
+  > = Object.fromEntries(colorAssetEntries);
 
   const price = getFirstPrice(values, '.price');
   if (price === undefined) {
@@ -84,22 +97,18 @@ export async function buildProductPayload({
     const formSizeObj = Array.isArray(values.sizes)
       ? (values.sizes as SizeFormValue[]).find((s) => s?.name === sizeName)
       : null;
+    const toMeasurements = (list?: MeasurementItem[]) =>
+      (list || [])
+        .filter((m) => m.value && String(m.value).trim() !== '')
+        .map((m) => ({
+          name: String(m.name || ''),
+          value: String(m.value || ''),
+          unit: String(m.unit || 'cm'),
+        }));
     return {
       name: sizeName,
-      productMeasurements: (formSizeObj?.productMeasurements || [])
-        .filter((m) => m.value && String(m.value).trim() !== '')
-        .map((m) => ({
-          name: String(m.name || ''),
-          value: String(m.value || ''),
-          unit: String(m.unit || 'cm'),
-        })),
-      bodyMeasurements: (formSizeObj?.bodyMeasurements || [])
-        .filter((m) => m.value && String(m.value).trim() !== '')
-        .map((m) => ({
-          name: String(m.name || ''),
-          value: String(m.value || ''),
-          unit: String(m.unit || 'cm'),
-        })),
+      productMeasurements: toMeasurements(formSizeObj?.productMeasurements),
+      bodyMeasurements: toMeasurements(formSizeObj?.bodyMeasurements),
     };
   });
 
@@ -108,14 +117,13 @@ export async function buildProductPayload({
       colorValue === 'default' ? 'Default' : colorLabelMap.get(colorValue) || colorValue;
 
     let stocks: Array<{ size: string; quantity: number }> = [];
-
     if (selectedColors.length > 0 && sizeFieldName && selectedSizes.length > 0) {
       stocks = selectedSizes.map((sizeValue) => ({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
           toNonNegativeInteger(
             flatValues[
-              `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
+            `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
             ],
           ) ?? defaultStock,
       }));
@@ -124,9 +132,8 @@ export async function buildProductPayload({
         {
           size: 'default',
           quantity:
-            toNonNegativeInteger(
-              flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`],
-            ) ?? defaultStock,
+            toNonNegativeInteger(flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`]) ??
+            defaultStock,
         },
       ];
     } else if (sizeFieldName && selectedSizes.length > 0) {
@@ -141,7 +148,6 @@ export async function buildProductPayload({
     }
 
     const assets = uploadedColorAssets[colorValue];
-
     return {
       name: label,
       colorCode:
@@ -170,14 +176,17 @@ export async function buildProductPayload({
     mainImages,
     dynamicData: {
       values: Object.fromEntries(
-        Object.entries(values)
+        fields
+          .map((field) => field.name)
           .filter(
-            ([key]) =>
-              !['name', 'brand', 'description', 'categoryId', 'subcategoryId', 'status'].includes(
-                key,
-              ),
+            (name) =>
+              !name.includes('.') &&
+              !['name', 'brand', 'description', 'price', 'specialPrice', 'categoryId', 'subcategoryId', 'mainImage', 'sizes', 'skus', 'status'].includes(name) &&
+              name !== colorFieldName &&
+              name !== sizeFieldName,
           )
-          .map(([key, value]) => [key, value]),
+          .filter((name) => values[name] !== undefined && values[name] !== null && values[name] !== '')
+          .map((name) => [name, values[name]]),
       ),
       uploadedAssets: {
         mainImages,
@@ -187,8 +196,10 @@ export async function buildProductPayload({
     },
     tags: [],
     featured: false,
-    skus: (values as any).skus ?? [],
-    variantOptions: (values as any).variantOptions ?? [],
+    skus: (values as unknown as { skus?: CreateProductRequest['skus'] }).skus ?? [],
+    variantOptions:
+      (values as unknown as { variantOptions?: CreateProductRequest['variantOptions'] })
+        .variantOptions ?? [],
     status,
   };
 }

@@ -1,44 +1,39 @@
 import {
-  ErrorCode,
-  BadRequestException,
-  ForbiddenException,
-  HttpException,
-  InternalServerException,
-  NotFoundException,
-  UnauthorizedException,
-  HTTPSTATUS,
-  logger,
-} from '@celebs/shared-utils';
-import { VerificationEnum } from '@/common/enums/verification-code.enum';
-import {
   loginType,
   registerType,
-  vendorRegisterType,
   setupSuperadminType,
+  vendorRegisterType,
   VerifyEmailResponse,
 } from '@celebs/shared-types';
+import {
+  BadRequestException,
+  ErrorCode,
+  ForbiddenException,
+  HttpException,
+  HTTPSTATUS,
+  InternalServerException,
+  logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@celebs/shared-utils';
 
+import { VerificationEnum } from '@/common/enums/verification-code.enum';
+import { comparePassword,hashValue } from '@/common/utils/bcrypt';
 import {
-  anHourFromNow,
-  calculateExpirationDate,
   fortyFiveMinutesFromNow,
-  ONE_DAY_IN_MS,
-  threeMinutesAgo,
 } from '@/common/utils/date-time';
-import { config } from '@/config/app.config';
 import {
+  AccessTPayload,
   refreshTokenSignOptions,
   RefreshTPayload,
   signJwtToken,
   verifyJwtToken,
-  AccessTPayload,
 } from '@/common/utils/jwt';
+import { buildWebUrl } from '@/common/utils/url';
+import { config } from '@/config/app.config';
+import prisma, { Prisma } from '@/db';
 import { sendEmail } from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
-
-import { hashValue, comparePassword } from '@/common/utils/bcrypt';
-
-import prisma, { Prisma } from '@/db';
 
 export class AuthService {
   public async register(registerData: registerType) {
@@ -77,7 +72,7 @@ export class AuthService {
       },
     });
 
-    const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
+    const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
     logger.info({ email: newUser.email, verificationUrl }, 'Attempting to send verification email');
     try {
       await sendEmail({
@@ -210,7 +205,7 @@ export class AuthService {
       },
     });
 
-    const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
+    const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
     logger.info(
       { email: newUser.email, verificationUrl },
       'Attempting to send verification email to vendor',
@@ -271,13 +266,20 @@ export class AuthService {
     logger.info({ userId: user.id }, 'User authenticated successfully');
 
     if (user.role === 'VENDOR') {
+      if (!user.isEmailVerified) {
+        throw new ForbiddenException(
+          'Email address is not verified. Please check your inbox for the verification link.',
+          ErrorCode.VERIFICATION_ERROR,
+        );
+      }
+
       const profile = await prisma.vendorProfile.findUnique({
         where: { userId: user.id },
       });
 
-      if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
+      if (!profile || profile.status === 'SUSPENDED') {
         throw new ForbiddenException(
-          'Access denied: Seller account is suspended or rejected.',
+          'Your seller account has been suspended. Please contact support.',
           ErrorCode.FORBIDDEN_ACCESS,
         );
       }

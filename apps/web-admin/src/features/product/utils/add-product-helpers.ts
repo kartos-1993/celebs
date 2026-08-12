@@ -1,12 +1,6 @@
 import type { FieldSpec } from '../fields/ui-registry';
-
-export type PageSectionKey =
-  | 'basic'
-  | 'images'
-  | 'specification'
-  | 'pricing'
-  | 'shipping'
-  | 'terms';
+import type { PageSectionKey } from '../types';
+export type { PageSectionKey } from '../types';
 
 export const MANAGE_PRODUCTS_PATH = '/products/manage';
 export const DRAFT_STORAGE_KEY = 'web-admin.product-draft.add';
@@ -118,6 +112,12 @@ export const getFirstPrice = (
   values: Record<string, unknown>,
   suffix: '.price' | '.specialPrice',
 ): number | undefined => {
+  const rootKey = suffix.substring(1);
+  const rootVal = toPositiveNumber(values[rootKey]);
+  if (rootVal !== undefined) {
+    return rootVal;
+  }
+
   const flat = flattenObject(values);
   const preferredKeys = [
     `sku.default${suffix}`,

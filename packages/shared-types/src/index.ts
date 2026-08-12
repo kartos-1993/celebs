@@ -59,3 +59,4 @@ export type CreateStaffType = z.infer<typeof createStaffSchema>;
 export * from './types/api';
 export * from './types/cart';
 export * from './types/marketing';
+export * from './types/user';

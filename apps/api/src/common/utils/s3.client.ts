@@ -1,11 +1,14 @@
 import {
+  CreateBucketCommand,
+  HeadBucketCommand,
   PutBucketCorsCommand,
   PutBucketPolicyCommand,
   S3Client,
-  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
-import { config } from '@/config/app.config';
+
 import { logger } from '@celebs/shared-utils';
+
+import { config } from '@/config/app.config';
 
 const isDev = config.NODE_ENV === 'development';
 
@@ -25,25 +28,31 @@ export const s3Client = new S3Client({
 });
 
 /**
- * Verify S3 connection by running a HeadBucket command
+ * Verify S3 connection by running a HeadBucket command.
+ * Auto-creates bucket in development mode if it does not exist in MinIO.
  */
 export async function verifyS3Connection(): Promise<void> {
+  const bucket = config.S3.BUCKET_NAME;
   try {
-    await s3Client.send(new HeadBucketCommand({ Bucket: config.S3.BUCKET_NAME }));
-    logger.info(
-      { bucket: config.S3.BUCKET_NAME },
-      'S3/MinIO Connected and bucket verified successfully',
-    );
+    await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+    logger.info({ bucket }, 'S3/MinIO Connected and bucket verified successfully');
   } catch (error: any) {
     if (isDev) {
-      logger.warn(
-        { bucket: config.S3.BUCKET_NAME, error: error?.message || String(error) },
-        'S3/MinIO Connection verification failed in development. Server will continue running but S3 uploads will fail.',
-      );
-      return;
+      try {
+        await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+        logger.info({ bucket }, 'Created local MinIO bucket automatically');
+        await ensureDevPublicReadAccess();
+        return;
+      } catch (createErr: any) {
+        logger.warn(
+          { bucket, error: createErr?.message || String(createErr) },
+          'Could not auto-create local MinIO bucket. Make sure MinIO is running on port 9000.',
+        );
+        return;
+      }
     }
     logger.error(
-      { bucket: config.S3.BUCKET_NAME, error: error?.message || String(error) },
+      { bucket, error: error?.message || String(error) },
       'S3/MinIO Connection verification failed',
     );
     throw error;
@@ -86,6 +95,21 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
   if (!devBucketReady) {
     devBucketReady = (async () => {
       const bucket = config.S3.BUCKET_NAME;
+
+      // Ensure bucket exists in local MinIO
+      try {
+        await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+      } catch {
+        try {
+          await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+          logger.info({ bucket }, 'Created local MinIO bucket');
+        } catch (createErr: any) {
+          logger.warn(
+            { bucket, error: createErr?.message || String(createErr) },
+            'Could not auto-create MinIO bucket',
+          );
+        }
+      }
 
       // Public read so permanent product URLs work in <img src>
       const policy = {
@@ -154,3 +178,4 @@ export async function ensureDevPublicReadAccess(): Promise<void> {
 
   await devBucketReady;
 }
+

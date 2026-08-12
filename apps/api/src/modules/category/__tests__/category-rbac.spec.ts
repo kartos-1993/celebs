@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
+import { beforeEach,describe, expect, it } from 'vitest';
+
 import app from '@/app';
-import prisma from '@/config/db.prisma';
-import { config } from '@/config/app.config';
 import { hashValue } from '@/common/utils/bcrypt';
+import { config } from '@/config/app.config';
+import prisma from '@/config/db.prisma';
 
 describe('Category RBAC & Tree Operations', () => {
   let adminToken: string;

@@ -1,25 +1,24 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StatusBar,
-  useColorScheme,
-  View,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
+  useColorScheme,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
-import Constants from 'expo-constants';
 
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
 import { AppHeader } from '@/components/app-header';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { resolveImageUrl } from '@/constants/config';
+import { Colors,Spacing } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { useCategories } from '@/features/categories/hooks/use-categories';
-import { Spacing, Colors } from '@/constants/theme';
-import { resolveImageUrl } from '@/constants/config';
 
 export default function CategoryExploreScreen() {
   const scheme = useColorScheme();

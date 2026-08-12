@@ -5,7 +5,7 @@ import { RoleGuard } from '@/routes/role-guard';
 const OnboardingWizardPage = lazy(() => import('./pages/onboarding-wizard-page'));
 
 export const vendorOnboardingRoutes: RouteObject = {
-  path: 'onboarding',
+  index: true,
   element: (
     <RoleGuard allowedRoles={['VENDOR']}>
       <OnboardingWizardPage />

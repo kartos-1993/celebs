@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { authenticateJWT } from '@/common/strategies/jwt.strategy';
+
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
+
+import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const orderRoutes = Router();
 const orderService = new OrderService();

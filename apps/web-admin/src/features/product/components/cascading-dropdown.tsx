@@ -1,34 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, Search, ChevronDown } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { logger } from '@celebs/shared-utils';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@celebs/shared-ui/components/popover';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
-
-import { useCategories } from '../hooks/use-categories';
+import { cn } from '@/lib/utils';
 import { CategoryApiService } from '../../category/api';
-import { cn } from '../../../lib/utils';
+import { useCategoryTree } from '../hooks/use-category-tree';
+import type { DropdownCategory, RecentCategory } from '../types';
 
-export interface Category {
-  id: string;
-  name: string;
-  parentId: string | null;
-  hasChildren: boolean;
-  level: number;
-  path: string[] | string;
-  slug?: string;
-}
-
-export interface CategoryNode extends Category {
-  children?: CategoryNode[];
-}
-
-export interface RecentCategory {
-  id: string;
-  name: string;
-  path: string[] | string;
-  usedAt: Date;
-}
+// Canonical types live in ../types — aliases kept for backwards compatibility
+export type { DropdownCategory as Category, RecentCategory } from '../types';
+export type CategoryNode = DropdownCategory & { children?: CategoryNode[] };
 
 export function formatCategoryPath(path: string[] | string | undefined | null): string {
   if (!path) return '';
@@ -44,10 +32,10 @@ interface ColumnData {
 }
 
 interface CascadingDropdownProps {
-  onSelect?: (category: Category) => void;
+  onSelect?: (category: DropdownCategory) => void;
   placeholder?: string;
-  selectedCategory?: Category | null;
-  onSearch?: (query: string) => Promise<Category[]>;
+  selectedCategory?: DropdownCategory | null;
+  onSearch?: (query: string) => Promise<DropdownCategory[]>;
 }
 
 export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
@@ -60,13 +48,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const [columns, setColumns] = useState<ColumnData[]>([
     { parentId: null, parentName: 'Categories', searchQuery: '' },
   ]);
-  const [selectedPath, setSelectedPath] = useState<Category[]>([]);
+  const [selectedPath, setSelectedPath] = useState<DropdownCategory[]>([]);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [tempSelectedPath, setTempSelectedPath] = useState<Category[]>([]);
-  const [globalSearchResults, setGlobalSearchResults] = useState<Category[]>([]);
+  const [tempSelectedPath, setTempSelectedPath] = useState<DropdownCategory[]>([]);
+  const [globalSearchResults, setGlobalSearchResults] = useState<DropdownCategory[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<number | null>(null);
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
   const {
     getRootCategories,
     getChildCategories,
@@ -74,28 +63,37 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     recentCategories,
     addToRecent,
     findCategoryById,
-  } = useCategories();
+  } = useCategoryTree();
+
+  // ── FIX: clear the pending global-search timer on unmount ─────────────────
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, []);
 
   // Helper: collect all leaf descendants for a given parent id
-  const collectLeafDescendants = (parentId: string): Category[] => {
-    const result: Category[] = [];
-    const children = getChildCategories(parentId);
-    const dfs = (node: Category) => {
+  const collectLeafDescendants = (parentId: string): DropdownCategory[] => {
+    const result: DropdownCategory[] = [];
+    const dfs = (node: DropdownCategory) => {
       const kids = getChildCategories(node.id);
       if (!kids || kids.length === 0) {
         result.push(node);
       } else {
-        for (const k of kids) dfs(k);
+        for (const kid of kids) dfs(kid);
       }
     };
-    for (const ch of children) dfs(ch);
+    getChildCategories(parentId).forEach(dfs);
     return result;
   };
 
   // Helper: resolve a category to local tree by its path segments
   const resolveLocalByPath = (
     rawPath: string[] | string | undefined | null,
-  ): Category | undefined => {
+  ): DropdownCategory | undefined => {
     if (!rawPath) return undefined;
     const segments = Array.isArray(rawPath)
       ? rawPath
@@ -103,12 +101,13 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         ? rawPath.split('/')
         : [];
     if (segments.length === 0) return undefined;
+
     let parentId: string | null = null;
-    let last: Category | undefined = undefined;
+    let last: DropdownCategory | undefined;
     for (const name of segments) {
-      const candidates: Category[] = parentId ? getChildCategories(parentId) : getRootCategories();
-      const match: Category | undefined = candidates.find(
-        (c: Category) => c.name === name || c.slug === name,
+      const candidates: DropdownCategory[] = parentId === null ? getRootCategories() : getChildCategories(parentId);
+      const match: DropdownCategory | undefined = candidates.find(
+        (c: DropdownCategory) => c.name === name || c.slug === name,
       );
       if (!match) return undefined;
       last = match;
@@ -117,35 +116,28 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     return last;
   };
 
-  const handleCategoryClick = (category: Category, columnIndex: number) => {
-    if (category.hasChildren) {
-      expandToCategory(category, columnIndex);
-      return;
-    }
-    // Select leaf category
-    const newPath = selectedPath.slice(0, columnIndex);
-    newPath.push(category);
-    setTempSelectedPath(newPath);
-  };
-
-  const expandToCategory = (category: Category, columnIndex: number) => {
+  const expandToCategory = (category: DropdownCategory, columnIndex: number) => {
     const newPath = selectedPath.slice(0, columnIndex);
     newPath.push(category);
     setSelectedPath(newPath);
     // Clear any previous leaf selection when navigating non-leaf levels
     setTempSelectedPath([]);
 
-    // Only add a new column if the category has children AND there are actual child categories
     if (category.hasChildren) {
       const newColumns = columns.slice(0, columnIndex + 1);
-      // Always add a next column to reflect hierarchy, even if data not yet present
-      newColumns.push({
-        parentId: category.id,
-        parentName: category.name,
-        searchQuery: '',
-      });
+      newColumns.push({ parentId: category.id, parentName: category.name, searchQuery: '' });
       setColumns(newColumns);
     }
+  };
+
+  const handleCategoryClick = (category: DropdownCategory, columnIndex: number) => {
+    if (category.hasChildren) {
+      expandToCategory(category, columnIndex);
+      return;
+    }
+    const newPath = selectedPath.slice(0, columnIndex);
+    newPath.push(category);
+    setTempSelectedPath(newPath);
   };
 
   const handleSearchChange = (value: string, columnIndex: number) => {
@@ -156,7 +148,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
   const handleGlobalSearchChange = (value: string) => {
     setGlobalSearchQuery(value);
-    // clear pending
+
     if (debounceRef.current) {
       window.clearTimeout(debounceRef.current);
       debounceRef.current = null;
@@ -169,14 +161,15 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     }
 
     setIsSearching(true);
-    const q = value;
+    const query = value;
+
     debounceRef.current = window.setTimeout(async () => {
       try {
-        let results: Category[] = [];
+        let results: DropdownCategory[] = [];
         if (onSearch) {
-          results = await onSearch(q);
+          results = await onSearch(query);
         } else {
-          const apiResults = await CategoryApiService.searchCategories(q);
+          const apiResults = await CategoryApiService.searchCategories(query);
           results = apiResults.map(
             (c: {
               id: string;
@@ -205,12 +198,15 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             }),
           );
         }
-        // Expand any matched parent categories into their leaf descendants using local tree
-        const expandedLeaves: Category[] = [];
-        for (const r of results) {
-          let local: Category | undefined = r.id ? findCategoryById?.(r.id) : undefined;
+
+        // Expand matched parent categories into their leaf descendants
+        const expandedLeaves: DropdownCategory[] = [];
+        for (const result of results) {
+          let local: DropdownCategory | undefined = result.id
+            ? findCategoryById?.(result.id)
+            : undefined;
           if (!local) {
-            local = resolveLocalByPath(r.path);
+            local = resolveLocalByPath(result.path);
           }
           if (local) {
             const children = getChildCategories(local.id);
@@ -221,12 +217,12 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             }
           }
         }
-        // Dedupe by id
+
         const deduped = Array.from(new Map(expandedLeaves.map((c) => [c.id, c])).values());
         setGlobalSearchResults(deduped);
-      } catch (_error) {
-        // Log error using a proper logging mechanism or handle it appropriately
-        // Example: send error to monitoring service or display user-friendly message
+      } catch (error) {
+        // FIX: was an empty catch — now logged per project convention
+        logger.error({ error, query }, 'Global category search failed');
         setGlobalSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -234,27 +230,21 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     }, 300);
   };
 
-  const handleRecentSelect = (category: Category) => {
-    applyPathSelection(category);
-  };
-
   // Build and apply columns/paths from a category.path
-  const applyPathSelection = (category: Category) => {
-    // First try to resolve by ID (most reliable)
+  const applyPathSelection = (category: DropdownCategory) => {
     const byId = category.id ? findCategoryById?.(category.id) : undefined;
-    let finalPath: Category[] = [];
+    let finalPath: DropdownCategory[] = [];
 
     if (byId) {
       // Walk up via parentId to construct full path
-      const chain: Category[] = [];
-      let node: Category | undefined = byId;
+      const chain: DropdownCategory[] = [];
+      let node: DropdownCategory | undefined = byId;
       while (node) {
         chain.unshift(node);
         node = node.parentId ? findCategoryById?.(node.parentId) : undefined;
       }
       finalPath = chain;
     } else {
-      // Fallback to resolving each segment by name from our local cache
       const pathSegments = Array.isArray(category.path)
         ? category.path
         : typeof category.path === 'string'
@@ -264,26 +254,22 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         setTempSelectedPath([category]);
         return;
       }
-      const resolvedPath: Category[] = [];
+      const resolvedPath: DropdownCategory[] = [];
       for (let i = 0; i < pathSegments.length; i++) {
         const name = pathSegments[i];
-        const parentId = i === 0 ? null : (resolvedPath[i - 1]?.id ?? null);
-        const candidates = parentId === null ? getRootCategories() : getChildCategories(parentId!);
-        const match = candidates.find((c) => c.name === name || c.slug === name);
-        if (!match) {
-          break;
-        }
+        const parentId = i === 0 ? null : resolvedPath[i - 1]?.id ?? null;
+        const candidates: DropdownCategory[] =
+          parentId === null ? getRootCategories() : getChildCategories(parentId);
+        const match: DropdownCategory | undefined = candidates.find(
+          (c: DropdownCategory) => c.name === name || c.slug === name,
+        );
+        if (!match) break;
         resolvedPath.push(match);
       }
       finalPath = resolvedPath.length > 0 ? resolvedPath : [category];
     }
 
-    // Build columns so that each selected level opens the next column
-    const newColumns: ColumnData[] = [
-      { parentId: null, parentName: 'Categories', searchQuery: '' },
-    ];
-    // For each resolved level, add a column showing its children list.
-    // Do not add an extra empty column after a leaf node without children.
+    const newColumns: ColumnData[] = [{ parentId: null, parentName: 'Categories', searchQuery: '' }];
     for (let i = 0; i < finalPath.length; i++) {
       const node = finalPath[i];
       const isLast = i === finalPath.length - 1;
@@ -293,16 +279,30 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     }
 
     setSelectedPath(finalPath);
-    // Only treat as selectable if final node is a leaf
     const isLeaf = finalPath.length > 0 && !finalPath[finalPath.length - 1].hasChildren;
     setTempSelectedPath(isLeaf ? finalPath : []);
     setColumns(newColumns);
   };
 
-  const handleGlobalResultSelect = (category: Category) => {
+  const handleGlobalResultSelect = (category: DropdownCategory) => {
     applyPathSelection(category);
     setGlobalSearchQuery('');
     setGlobalSearchResults([]);
+  };
+
+  const handleRecentSelect = (recent: RecentCategory) => {
+    // FIX: path can be string[] OR string — old code assumed array
+    const recentLevel = Array.isArray(recent.path)
+      ? recent.path.length - 1
+      : String(recent.path).split('/').length - 1;
+    applyPathSelection({
+      id: recent.id,
+      name: recent.name,
+      parentId: null,
+      hasChildren: false,
+      level: recentLevel,
+      path: recent.path,
+    });
   };
 
   const handleConfirm = () => {
@@ -329,9 +329,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     if (!selectedCategory) {
       resetDropdownState();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
-  const getCategoriesForColumn = (column: ColumnData): Category[] => {
+  const getCategoriesForColumn = (column: ColumnData): DropdownCategory[] => {
     if (column.searchQuery) {
       return searchCategories(column.searchQuery, column.parentId || undefined);
     }
@@ -345,12 +346,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   useEffect(() => {
     const path = selectedPath.length > 0 ? selectedPath : tempSelectedPath;
     if (!path.length) return;
-    // Wait for DOM to paint after column updates
     requestAnimationFrame(() => {
       path.forEach((cat, i) => {
         const key = `${i}:${cat.id}`;
-        const el = itemRefs.current[key];
-        el?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        itemRefs.current[key]?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
       });
     });
   }, [columns, selectedPath, tempSelectedPath]);
@@ -372,7 +371,6 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
           </Button>
         </PopoverTrigger>
-
         <PopoverContent
           className="p-0 w-[min(800px,95vw)] bg-background border shadow-xl z-50 max-h-[var(--radix-popover-content-available-height)] overflow-hidden"
           align="start"
@@ -381,7 +379,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
           avoidCollisions={true}
         >
           <div className="p-3 sm:p-4 space-y-3 max-h-[var(--radix-popover-content-available-height)] overflow-hidden flex flex-col">
-            {/* Global Search at Top */}
+            {/* Global search */}
             <div className="relative flex-shrink-0">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -392,12 +390,12 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               />
               {isSearching && (
                 <div className="absolute right-3 top-2.5">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
                 </div>
               )}
             </div>
 
-            {/* Global Search Results */}
+            {/* Global search results */}
             {globalSearchResults.length > 0 && (
               <div className="border rounded-lg max-h-40 overflow-y-auto flex-shrink-0">
                 <div className="p-2 bg-muted/30 border-b text-sm font-medium">Search Results</div>
@@ -416,7 +414,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               </div>
             )}
 
-            {/* Recently Used Section */}
+            {/* Recently used */}
             {recentCategories.length > 0 && !globalSearchQuery && (
               <div className="flex-shrink-0">
                 <div className="text-xs text-muted-foreground">
@@ -427,16 +425,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                       variant="link"
                       size="sm"
                       className="h-auto p-0 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                      onClick={() =>
-                        handleRecentSelect({
-                          id: recent.id,
-                          name: recent.name,
-                          parentId: null,
-                          hasChildren: false,
-                          level: recent.path.length - 1,
-                          path: recent.path,
-                        })
-                      }
+                      onClick={() => handleRecentSelect(recent)}
                     >
                       {recent.name}
                       {index < Math.min(recentCategories.length, 2) - 1 && (
@@ -448,20 +437,18 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               </div>
             )}
 
-            {/* Category Columns - only show if not searching globally */}
+            {/* Category columns */}
             {!globalSearchQuery && (
               <div className="border rounded-lg overflow-hidden flex-1 min-h-0">
                 <div className="overflow-x-auto">
                   <div className="flex h-56 w-max min-w-full">
                     {columns.map((column, columnIndex) => {
                       const categoriesForColumn = getCategoriesForColumn(column);
-
                       return (
                         <div
                           key={columnIndex}
                           className="w-56 sm:w-64 shrink-0 border-r border-border last:border-r-0 flex flex-col"
                         >
-                          {/* Column Header with Filter */}
                           <div className="p-2 border-b border-border bg-muted/30 flex-shrink-0">
                             <div className="relative">
                               <Search className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
@@ -473,8 +460,6 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                               />
                             </div>
                           </div>
-
-                          {/* Categories List - Scrollable */}
                           <ScrollArea className="flex-1">
                             <div className="p-1">
                               {categoriesForColumn.map((category) => (
@@ -483,15 +468,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                                   variant="ghost"
                                   className={cn(
                                     'w-full justify-between text-left h-8 px-2 text-xs font-normal',
-                                    selectedPath.some((cat) => cat.id === category.id) &&
-                                      'bg-accent',
+                                    selectedPath.some((cat) => cat.id === category.id) && 'bg-accent',
                                     tempSelectedPath.some((cat) => cat.id === category.id) &&
-                                      'bg-primary/10 text-primary font-semibold',
+                                    'bg-primary/10 text-primary font-semibold',
                                   )}
                                   ref={(el) => {
-                                    const k = `${columnIndex}:${category.id}`;
-                                    if (el) itemRefs.current[k] = el;
-                                    else delete itemRefs.current[k];
+                                    const key = `${columnIndex}:${category.id}`;
+                                    if (el) itemRefs.current[key] = el;
+                                    else delete itemRefs.current[key];
                                   }}
                                   onClick={() => handleCategoryClick(category, columnIndex)}
                                 >
@@ -513,7 +497,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               </div>
             )}
 
-            {/* Current Selection */}
+            {/* Current selection */}
             {currentSelectionText && (
               <div className="p-2.5 bg-muted/50 rounded-lg border flex-shrink-0">
                 <div className="text-xs sm:text-sm">
@@ -523,11 +507,11 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               </div>
             )}
 
-            {/* Action Buttons Footer */}
+            {/* Footer actions */}
             <div className="flex items-center justify-between border-t border-border pt-2.5 flex-shrink-0 bg-background">
               <span className="text-xs text-muted-foreground">
                 {tempSelectedPath.length > 0 &&
-                !tempSelectedPath[tempSelectedPath.length - 1].hasChildren
+                  !tempSelectedPath[tempSelectedPath.length - 1].hasChildren
                   ? 'Ready to confirm selection'
                   : 'Select a final subcategory'}
               </span>

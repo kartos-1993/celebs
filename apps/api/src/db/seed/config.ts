@@ -1,5 +1,6 @@
-import path from 'path';
 import dotenv from 'dotenv';
+import path from 'path';
+
 import prisma from '../../config/db.prisma';
 
 const envPath =

@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { Control } from 'react-hook-form';
+import { Control, FieldValues } from 'react-hook-form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 import {
@@ -10,10 +10,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { CascadingDropdown, Category as DropdownCategory } from './cascading-dropdown';
-
+import { CascadingDropdown } from './cascading-dropdown';
+import type { DropdownCategory } from '../types';
 interface BasicInfoSectionProps {
-  control: Control<any>;
+  control: Control<FieldValues>;
   selectedCategoryId: string;
   selectedSubcategoryId: string;
   onCategoryChange: (categoryId: string) => void;

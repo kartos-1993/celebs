@@ -1,5 +1,6 @@
 import { OrderStatus } from '@prisma/client';
-import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
+
+import { AppError, ErrorCode,HTTPSTATUS } from '@celebs/shared-utils';
 
 export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING_PAYMENT: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],

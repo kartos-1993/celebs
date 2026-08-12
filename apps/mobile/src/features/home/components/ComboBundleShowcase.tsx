@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { Sparkles, Plane, Tag, ArrowRight } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import { Image,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ArrowRight,Plane, Sparkles, Tag } from 'lucide-react-native';
+
 import { apiClient } from '@/api/client';
+import { ThemedText } from '@/components/themed-text';
 
 export interface HydratedProduct {
   id?: string;

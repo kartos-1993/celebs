@@ -1,40 +1,40 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect,useRef, useState } from 'react';
 import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
   ActivityIndicator,
+  ScrollView,
   Share,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ChevronLeft,
   Heart,
-  ShoppingCart,
-  Share2,
-  Truck,
   RotateCcw,
+  Share2,
   ShieldCheck,
+  ShoppingCart,
   Star,
+  Truck,
 } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useProduct, resolveImageUrl } from '@/features/products/hooks/use-products';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { ProductGallery } from '@/features/products/components/ProductGallery';
 import { ProductVariantSelector } from '@/features/products/components/ProductVariantSelector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
+import { resolveImageUrl,useProduct } from '@/features/products/hooks/use-products';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -9,11 +9,12 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
 
-import prisma from './db';
 import { logger } from '@celebs/shared-utils';
-import { assetWorker } from './modules/media/asset.worker';
+
 import { verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
+import { assetWorker } from './modules/media/asset.worker';
+import prisma from './db';
 
 const startWorker = async () => {
   try {

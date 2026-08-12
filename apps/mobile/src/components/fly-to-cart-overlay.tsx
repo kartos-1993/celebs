@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Modal, Dimensions } from 'react-native';
+import { Dimensions,Modal, StyleSheet, View } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
-  runOnJS,
   ReduceMotion,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
-import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image as ExpoImage } from 'expo-image';
 
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
@@ -36,7 +36,25 @@ export function FlyToCartOverlay() {
   );
 }
 
-function FlyItem({ item, onComplete }: { item: any; onComplete: () => void }) {
+function FlyItem({
+  item,
+  onComplete,
+}: {
+  item: {
+    id: string;
+    imageUrl?: string;
+    imageUri?: string;
+    startX?: number;
+    startY?: number;
+    targetX?: number;
+    targetY?: number;
+    endX?: number;
+    endY?: number;
+    startWidth?: number;
+    startHeight?: number;
+  };
+  onComplete: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
 

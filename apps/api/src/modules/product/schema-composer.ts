@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+
 import prisma from '@/config/db.prisma';
 
 // UI field types supported by the renderer
@@ -218,11 +219,13 @@ export async function composeSchema(params: {
     label: 'Price & Stock',
     group: 'sale',
     required: true,
-    dataSource: saleProps.map((p) => ({
-      key: p.name,
-      label: titleCase(p.name),
-      type: 'custom',
-    })),
+    dataSource: {
+      variants: saleProps.map((p) => ({
+        key: p.name,
+        label: titleCase(p.name),
+        type: 'custom',
+      })),
+    },
   });
 
   const charts: Array<{ key: string; label: string; columns: string[] }> = [];

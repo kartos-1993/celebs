@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import multer from 'multer';
-import cloudinary from '@/config/cloudinary.config';
-import { authenticateJWT } from '@/middlewares/auth.middleware';
-import { requirePermissions } from '@/middlewares/rbac.middleware';
+
 import { Permission } from '@celebs/rbac';
-import { asyncHandler, logger } from '@celebs/shared-utils';
+import { asyncHandler } from '@celebs/shared-utils';
+
 import { putImage } from './storage.service';
-import { assetQueue } from '@/common/services/queue.service';
+
+import cloudinary from '@/config/cloudinary.config';
+import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
 router.use(uploadRateLimiter);
@@ -32,8 +34,9 @@ const memoryUpload = multer({
   },
 });
 
-// All media routes require auth + product create permission
+// All media routes require auth + approved vendor + product create permission
 router.use(authenticateJWT);
+router.use(requireApprovedVendor);
 router.use(requirePermissions(Permission.PRODUCT_CREATE));
 
 // POST /api/v1/media/upload

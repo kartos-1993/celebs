@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { authenticateJWT, optionalAuthenticateJWT } from '@/common/strategies/jwt.strategy';
+
 import { CartController } from './cart.controller';
+
+import { authenticateJWT, optionalAuthenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const cartRoutes = Router();
 

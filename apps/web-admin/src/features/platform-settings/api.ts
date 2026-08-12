@@ -40,7 +40,7 @@ export class PlatformSettingsApiService {
       },
     });
 
-    const urls = (response.data?.data ?? []).map((f: any) => f.url);
+    const urls = (response.data?.data ?? []).map((f: { url: string }) => f.url);
     if (urls.length > 0) {
       return urls[0];
     }

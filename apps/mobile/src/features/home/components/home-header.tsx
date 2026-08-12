@@ -1,10 +1,11 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Search, Bell, ShoppingBag } from 'lucide-react-native';
+import { Bell, Search, ShoppingBag } from 'lucide-react-native';
+
+import { styles } from '../styles/home.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { styles } from '../styles/home.styles';
 
 interface HomeHeaderProps {
   topOffset: number;

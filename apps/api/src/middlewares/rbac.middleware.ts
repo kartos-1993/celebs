@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { ForbiddenException, UnauthorizedException } from '@celebs/shared-utils';
+
 import { can, Permission } from '@celebs/rbac';
+import { ForbiddenException, UnauthorizedException } from '@celebs/shared-utils';
 
 export const requirePermissions = (...requiredPermissions: Permission[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

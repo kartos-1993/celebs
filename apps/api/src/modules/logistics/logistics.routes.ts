@@ -1,10 +1,13 @@
 import { Router } from 'express';
-import { logisticsService } from './logistics.service';
+
+import { Permission } from '@celebs/rbac';
+import { codSettlementSchema,dispatchOrderSchema } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
+
 import { authenticateJWT } from '../../middlewares/auth.middleware';
 import { requirePermissions } from '../../middlewares/rbac.middleware';
-import { Permission } from '@celebs/rbac';
-import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
-import { dispatchOrderSchema, codSettlementSchema } from '@celebs/shared-types';
+
+import { logisticsService } from './logistics.service';
 
 const router = Router();
 

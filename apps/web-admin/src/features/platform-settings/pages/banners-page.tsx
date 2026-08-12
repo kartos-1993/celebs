@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@celebs/shared-ui/components/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye, Check } from 'lucide-react';
+import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye } from 'lucide-react';
 import { PlatformSettingsApiService, Banner } from '../api';
 import { CategoryApiService } from '../../category/api';
 import { ProductApiService } from '../../product/api';
@@ -29,66 +29,49 @@ const Banners: React.FC = () => {
     { imageUrl: '', linkType: 'NONE', linkValue: '', title: 'Slide 2', order: 2, isActive: true },
     { imageUrl: '', linkType: 'NONE', linkValue: '', title: 'Slide 3', order: 3, isActive: true },
   ]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Array<Record<string, unknown>>>([]);
+  const [products, setProducts] = useState<Array<Record<string, unknown>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [fetchedBanners, fetchedCategoriesData, fetchedProductsData] = await Promise.all([
+      const [fetchedBanners, fetchedCategories, fetchedProductsData] = await Promise.all([
         PlatformSettingsApiService.getBanners(),
-        CategoryApiService.getCategories(1, 100),
+        CategoryApiService.getCategories(),
         ProductApiService.getProducts({ limit: 100 }),
       ]);
 
-      // Initialize with exactly 3 banners
-      const initializedBanners: Banner[] = [1, 2, 3].map((order): Banner => {
-        const found = fetchedBanners.find((b: Banner) => b.order === order);
-        return (
-          found || {
-            imageUrl: '',
-            linkType: 'NONE',
-            linkValue: '',
-            title: `Slide ${order}`,
-            order,
-            isActive: true,
-          }
-        );
-      });
-
-      setBanners(initializedBanners);
-
-      const categoriesList =
-        fetchedCategoriesData?.data?.categories ||
-        (Array.isArray(fetchedCategoriesData?.data) ? fetchedCategoriesData.data : []) ||
-        (Array.isArray(fetchedCategoriesData) ? fetchedCategoriesData : []);
-      setCategories(categoriesList);
+      if (fetchedBanners.length > 0) {
+        setBanners(fetchedBanners);
+      }
+      setCategories(((fetchedCategories || []) as unknown) as Array<Record<string, unknown>>);
 
       const productsList =
         fetchedProductsData?.data?.products ||
         (Array.isArray(fetchedProductsData?.data) ? fetchedProductsData.data : []) ||
         (Array.isArray(fetchedProductsData) ? fetchedProductsData : []);
-      setProducts(productsList);
-    } catch (error: any) {
+      setProducts(productsList as Array<Record<string, unknown>>);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       toast({
         variant: 'destructive',
         title: 'Error fetching data',
-        description: error.message || 'Failed to load banner settings.',
+        description: err.message || 'Failed to load banner settings.',
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleFieldChange = (index: number, field: keyof Banner, value: any) => {
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleFieldChange = (index: number, field: keyof Banner, value: Banner[keyof Banner]) => {
     const updated = [...banners];
     updated[index] = {
       ...updated[index],
@@ -108,11 +91,12 @@ const Banners: React.FC = () => {
         title: 'Image uploaded',
         description: `Banner ${index + 1} image uploaded successfully.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       toast({
         variant: 'destructive',
         title: 'Upload failed',
-        description: error.message || 'Failed to upload image.',
+        description: err.message || 'Failed to upload image.',
       });
     } finally {
       setUploadingIndex(null);
@@ -133,11 +117,12 @@ const Banners: React.FC = () => {
         title: 'Settings saved',
         description: 'Mobile banner slider updated successfully.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       toast({
         variant: 'destructive',
         title: 'Save failed',
-        description: error.message || 'Failed to save settings.',
+        description: err.message || 'Failed to save settings.',
       });
     } finally {
       setIsSaving(false);
@@ -280,9 +265,9 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {(Array.isArray(categories) ? categories : []).map((c) => (
-                                  <SelectItem key={c.id} value={c.id}>
-                                    {c.name}
+                                {(Array.isArray(categories) ? categories : []).map((c: Record<string, unknown>) => (
+                                  <SelectItem key={String(c.id)} value={String(c.id)}>
+                                    {String(c.name ?? '')}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -296,9 +281,9 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Product" />
                               </SelectTrigger>
                               <SelectContent>
-                                {(Array.isArray(products) ? products : []).map((p) => (
-                                  <SelectItem key={p.id} value={p.id}>
-                                    {p.name}
+                                {(Array.isArray(products) ? products : []).map((p: Record<string, unknown>) => (
+                                  <SelectItem key={String(p.id)} value={String(p.id)}>
+                                    {String(p.name ?? '')}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ProductService } from '@/modules/product/product.service';
-import prisma from '@/config/db.prisma';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+
 import { productFilterSchema } from '@celebs/shared-types';
+
+import prisma from '@/config/db.prisma';
+import { ProductService } from '@/modules/product/product.service';
 
 describe('Product Cursor-Based Pagination & Storefront API (PostgreSQL)', () => {
   let productService: ProductService;

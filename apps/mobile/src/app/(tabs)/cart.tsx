@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ActivityIndicator,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ShoppingBag, AlertTriangle } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { AlertTriangle,ShoppingBag } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useCart } from '@/features/cart/context/cart-context';
 import { CartItemList } from '@/features/cart/components/CartItemList';
 import { CartSummaryFooter } from '@/features/cart/components/CartSummaryFooter';
+import { useCart } from '@/features/cart/context/cart-context';
 
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { cart, loading, error, subtotal, itemCount, updateQuantity, removeItem, clearCart } =
+  const { cart, loading, error: _error, subtotal, itemCount, updateQuantity, removeItem, clearCart } =
     useCart();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -80,7 +80,7 @@ export default function CartScreen() {
           <TouchableOpacity
             style={styles.exploreBtn}
             activeOpacity={0.85}
-            onPress={() => router.push('/(tabs)' as any)}
+            onPress={() => router.push('/(tabs)' as never)}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Explore products"

@@ -1,26 +1,26 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useCallback,useMemo, useState } from 'react';
 import {
-  View,
-  TouchableOpacity,
   ActivityIndicator,
-  StyleSheet,
-  StatusBar,
-  useColorScheme,
-  TextInput,
   FlatList,
+  StatusBar,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Search, ShoppingCart, SlidersHorizontal } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useProducts } from '@/features/products/hooks/use-products';
-import { ProductCard } from '@/features/products/components/product-card';
-import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
-import { QuickFilterRenderer } from '@/features/categories/components/QuickFilterRenderer';
 import { DynamicFilterDrawer } from '@/features/categories/components/DynamicFilterDrawer';
+import { QuickFilterRenderer } from '@/features/categories/components/QuickFilterRenderer';
+import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
 import { QuickFilterItem } from '@/features/categories/types';
+import { ProductCard } from '@/features/products/components/product-card';
+import { useProducts } from '@/features/products/hooks/use-products';
 
 export default function CategoryProductsScreen() {
   const { slug, title } = useLocalSearchParams<{ slug: string; title?: string }>();

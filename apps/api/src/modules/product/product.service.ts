@@ -1,18 +1,21 @@
+import { Prisma } from '@prisma/client';
 import slugify from 'slugify';
-import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
+
 import {
-  ProductFilterType,
   CreateProductType,
-  ProductSizeType,
   ProductColorVariantType,
-  ProductStockType,
+  ProductFilterType,
   ProductMeasurementType,
+  ProductSizeType,
+  ProductStockType,
 } from '@celebs/shared-types';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
+import { calculateProductQCScore } from './utils/product-qc';
+
+import prisma from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
-import { Prisma } from '@prisma/client';
-import prisma from '@/config/db.prisma';
-import { calculateProductQCScore } from './utils/product-qc';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;

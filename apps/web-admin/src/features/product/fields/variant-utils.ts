@@ -1,13 +1,6 @@
-import type { FieldSpec } from './ui-registry';
+import type { FieldSpec, VariantKind, VariantMetaItem } from '../types';
 
-export type VariantKind = 'color' | 'size' | 'other';
-
-export interface VariantMetaItem {
-  key: string;
-  label: string;
-  kind: VariantKind;
-  ui: 'select' | 'multiselect' | 'VariantList';
-}
+export type { VariantKind, VariantMetaItem } from '../types';
 
 export function normalizeUi(
   uiType?: string,
@@ -25,19 +18,7 @@ export function normalizeUi(
   const ui = String(uiType || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '');
-  const map: Record<
-    string,
-    | 'input'
-    | 'number'
-    | 'Switch'
-    | 'select'
-    | 'multiselect'
-    | 'VariantList'
-    | 'MainImage'
-    | 'SkuTableV2'
-    | 'ColorMeta'
-    | 'ColorInline'
-  > = {
+  const map: Record<string, ReturnType<typeof normalizeUi>> = {
     input: 'input',
     number: 'number',
     switch: 'Switch',
@@ -73,7 +54,9 @@ export function extractVariantsMeta(fields: FieldSpec[]): {
       .includes('variant'),
   );
   const variants: VariantMetaItem[] = variantFields
-    .filter((f) => ['select', 'multiselect', 'VariantList'].includes(String(normalizeUi(f.uiType))))
+    .filter((f) =>
+      ['select', 'multiselect', 'VariantList'].includes(String(normalizeUi(f.uiType))),
+    )
     .map((f) => {
       const ui = normalizeUi(f.uiType) as 'select' | 'multiselect' | 'VariantList';
       const kind = detectVariantKind(f) ?? 'other';
@@ -84,25 +67,20 @@ export function extractVariantsMeta(fields: FieldSpec[]): {
 }
 
 export const getLabelMap = (fields: FieldSpec[], fieldName?: string): Map<string, string> => {
-  if (!fieldName) {
-    return new Map<string, string>();
-  }
-
+  if (!fieldName) return new Map<string, string>();
   const field = fields.find((entry) => entry.name === fieldName);
-  if (!field || !Array.isArray(field.dataSource)) {
-    return new Map<string, string>();
-  }
-
+  const items = field?.dataSource?.items;
+  if (!field || !Array.isArray(items)) return new Map<string, string>();
   return new Map<string, string>(
-    field.dataSource
+    items
       .filter(
         (option): option is { value: string; label: string } =>
           typeof option === 'object' &&
           option !== null &&
           'value' in option &&
           'label' in option &&
-          Boolean(option.value) &&
-          Boolean(option.label),
+          Boolean((option as { value?: string }).value) &&
+          Boolean((option as { label?: string }).label),
       )
       .map((option) => [String(option.value), String(option.label)]),
   );

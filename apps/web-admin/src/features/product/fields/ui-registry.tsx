@@ -1,5 +1,6 @@
 import React from 'react';
-import type { Control } from 'react-hook-form';
+import type { Control, FieldValues } from 'react-hook-form';
+import type { FieldSpec, UiType } from '../types';
 import { TextInputField } from './components/text-input-field';
 import { NumberInputField } from './components/number-input-field';
 import { SwitchInputField } from './components/switch-input-field';
@@ -12,32 +13,10 @@ import { ColorMetaInputField } from './components/color-meta-input-field';
 import { ColorInlineInputField } from './components/color-inline-input-field';
 import { SizeMeasurementsInputField } from './components/size-measurements-input-field';
 
-export type UiType =
-  | 'input'
-  | 'number'
-  | 'Switch'
-  | 'select'
-  | 'multiselect'
-  | 'VariantList'
-  | 'ColorInline'
-  | 'SkuTableV2'
-  | 'MainImage'
-  | 'ColorMeta'
-  | 'SizeMeasurementsTable';
+// Canonical definitions live in ../types — re-exported for backwards compat
+export type { FieldSpec, UiType } from '../types';
 
-export interface FieldSpec {
-  name: string;
-  uiType: UiType;
-  label: string;
-  group: string;
-  required?: boolean;
-  value?: any;
-  dataSource?: any;
-  rule?: any;
-  visible?: boolean;
-}
-
-export type UiProps = { field: FieldSpec; control: Control<any> };
+export type UiProps = { field: FieldSpec; control: Control<FieldValues> };
 
 export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   input: TextInputField,
@@ -52,4 +31,5 @@ export const uiTypeRegistry: Record<UiType, React.FC<UiProps>> = {
   ColorInline: ColorInlineInputField,
   SizeMeasurementsTable: SizeMeasurementsInputField,
 };
+
 export { getLabelMap } from './variant-utils';

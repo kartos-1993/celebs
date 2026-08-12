@@ -1,14 +1,9 @@
 import { Badge } from '@celebs/shared-ui/components/badge';
+import type { ProductSidebarSection } from '../types';
 import { Progress } from '@celebs/shared-ui/components/progress';
 import { CheckCircle2, Circle, Sparkles } from 'lucide-react';
 
-export interface ProductSidebarSection {
-  anchorId: string;
-  errors: string[];
-  key: string;
-  label: string;
-  status: boolean;
-}
+export type { ProductSidebarSection };
 
 interface ProductFormSidebarProps {
   completionPercentage: number;
