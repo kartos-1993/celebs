@@ -11,7 +11,9 @@ export const appConfig = () => {
     NODE_ENV: env,
     APP_ORIGIN: appOrigins,
     PORT: validatedEnv.PORT,
-    BASE_PATH: validatedEnv.BASE_PATH,
+    API_PREFIX: '/api',
+    API_VERSION: 'v1',
+    BASE_PATH: validatedEnv.BASE_PATH || '/api/v1',
     JWT: {
       SECRET: validatedEnv.JWT_SECRET,
       EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m'),
