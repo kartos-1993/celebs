@@ -1,5 +1,4 @@
 import { CheckCircle2, Clock, Mail } from 'lucide-react';
-import { Button } from '@celebs/shared-ui/components/button';
 
 interface PendingReviewScreenProps {
   vendorName?: string;

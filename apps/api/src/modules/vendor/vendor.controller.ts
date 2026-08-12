@@ -26,7 +26,7 @@ export class VendorController {
     return userId;
   }
 
-  public getOnboardingStatus = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public getOnboardingStatus = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const profile = await this.vendorService.getOnboardingStatus(userId);
     const response: IApiResponse<typeof profile> = {
@@ -37,7 +37,7 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public updateProfile = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public updateProfile = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const body = vendorProfileSchema.parse(req.body);
     const profile = await this.vendorService.updateProfile(userId, body);
@@ -49,7 +49,7 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public updateWarehouse = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public updateWarehouse = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const body = warehouseSchema.parse(req.body);
     const profile = await this.vendorService.updateWarehouse(userId, body);
@@ -61,7 +61,7 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public updateDocuments = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public updateDocuments = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const body = vendorDocumentsSchema.parse(req.body);
     const profile = await this.vendorService.updateDocuments(userId, body);
@@ -73,7 +73,7 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public updateBusinessInfo = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public updateBusinessInfo = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const body = vendorBusinessInfoSchema.parse(req.body);
     const profile = await this.vendorService.updateBusinessInfo(userId, body);
@@ -85,7 +85,7 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public submitForReview = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  public submitForReview = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const profile = await this.vendorService.submitForReview(userId);
     const response: IApiResponse<typeof profile> = {
