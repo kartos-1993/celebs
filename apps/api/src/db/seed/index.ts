@@ -1,7 +1,7 @@
 import { connectDb, disconnectDb } from './config';
-import { seedOptionSets } from './seed-option-sets';
-import { seedCategoriesMen } from './seed-categories-men';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
+import { seedCategoriesMen } from './seed-categories-men';
+import { seedOptionSets } from './seed-option-sets';
 import { seedProductsDenimJackets } from './seed-products-denim-jackets';
 import { seedProductsDenimJeans } from './seed-products-denim-jeans';
 import { seedProductsMockCatalog } from './seed-products-mock-catalog';

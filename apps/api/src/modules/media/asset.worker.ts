@@ -1,10 +1,12 @@
-import { Worker, Job } from 'bullmq';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { Job,Worker } from 'bullmq';
 import sharp from 'sharp';
-import { redisConnection } from '@/common/services/queue.service';
-import { s3Client, buildPublicObjectUrl } from '@/common/utils/s3.client';
-import { config } from '@/config/app.config';
+
 import { logger } from '@celebs/shared-utils';
+
+import { redisConnection } from '@/common/services/queue.service';
+import { buildPublicObjectUrl,s3Client } from '@/common/utils/s3.client';
+import { config } from '@/config/app.config';
 
 // Configure Sharp memory limits to prevent V8 heap OOM crashes during heavy multi-image operations
 sharp.cache({ memory: 256, items: 100, files: 0 });

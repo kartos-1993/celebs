@@ -1,7 +1,9 @@
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
-import { config } from '@/config/app.config';
+
 import { logger } from '@celebs/shared-utils';
+
+import { config } from '@/config/app.config';
 
 const isTls =
   config.REDIS.HOST &&

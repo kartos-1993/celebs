@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
 import app from '@/app';
-import prisma from '@/db';
 import { hashValue } from '@/common/utils/bcrypt';
+import prisma from '@/db';
 
 // Mock the mailer to avoid making external HTTP calls
 vi.mock('../../../mailers/mailer', () => ({

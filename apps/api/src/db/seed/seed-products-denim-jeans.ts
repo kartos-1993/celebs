@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import prisma from '../../config/db.prisma';
 
 export async function seedProductsDenimJeans(): Promise<void> {

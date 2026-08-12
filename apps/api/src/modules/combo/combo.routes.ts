@@ -1,10 +1,13 @@
 import { Router } from 'express';
-import { ComboService } from './combo.service';
+
+import { Permission } from '@celebs/rbac';
+import { createComboSchema } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
+
 import { authenticateJWT } from '../../middlewares/auth.middleware';
 import { requirePermissions } from '../../middlewares/rbac.middleware';
-import { Permission } from '@celebs/rbac';
-import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
-import { createComboSchema } from '@celebs/shared-types';
+
+import { ComboService } from './combo.service';
 
 const router = Router();
 const comboService = new ComboService();

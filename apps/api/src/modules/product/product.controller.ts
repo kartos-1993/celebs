@@ -1,11 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
+
 import {
   createProductSchema,
-  updateProductSchema,
-  productReviewActionSchema,
   productFilterSchema,
+  productReviewActionSchema,
+  updateProductSchema,
 } from '@celebs/shared-types';
-import { ErrorCode, AppError, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
 import { ProductService } from './product.service';
 
 export class ProductController {

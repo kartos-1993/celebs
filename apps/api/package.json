@@ -31,7 +31,8 @@
     "seed:products-mock": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-mock-catalog.ts",
     "//_QUALITY": "=== Code Quality & Testing ===",
     "test": "dotenv -e .env.test -- sh -c \"prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run\"",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1086.0",

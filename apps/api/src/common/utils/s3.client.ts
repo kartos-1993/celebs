@@ -5,8 +5,10 @@ import {
   PutBucketPolicyCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { config } from '@/config/app.config';
+
 import { logger } from '@celebs/shared-utils';
+
+import { config } from '@/config/app.config';
 
 const isDev = config.NODE_ENV === 'development';
 

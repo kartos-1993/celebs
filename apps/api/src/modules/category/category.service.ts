@@ -1,4 +1,3 @@
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import slugify from 'slugify';
 
 import type {
@@ -6,6 +5,7 @@ import type {
   CreateCategoryType,
   UpdateCategoryType,
 } from '@celebs/shared-types';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import {
   CategoryRepository,

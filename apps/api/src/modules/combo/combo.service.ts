@@ -1,6 +1,8 @@
 import { ComboDiscountType } from '@prisma/client';
+
 import { CreateComboType } from '@celebs/shared-types';
-import { comboRepository, ComboRepository } from './combo.repository';
+
+import { ComboRepository,comboRepository } from './combo.repository';
 
 export class ComboService {
   private comboRepository: ComboRepository;

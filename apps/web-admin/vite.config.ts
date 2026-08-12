@@ -22,6 +22,10 @@ export default defineConfig(({ mode }) => {
         '@celebs/shared-utils': path.resolve(__dirname, '../../packages/shared-utils/src'),
       },
     },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+    },
     build: {
       // Keep your minify setting, but make it conditional
       minify: mode === 'production' ? 'esbuild' : false,

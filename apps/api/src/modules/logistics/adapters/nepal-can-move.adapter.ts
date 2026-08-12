@@ -1,4 +1,4 @@
-import { ILogisticsAdapter, CreateShipmentPayload, ShipmentResult } from './logistics.interface';
+import { CreateShipmentPayload, ILogisticsAdapter, ShipmentResult } from './logistics.interface';
 
 export class NepalCanMoveAdapter implements ILogisticsAdapter {
   private apiToken: string;

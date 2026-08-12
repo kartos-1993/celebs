@@ -1,6 +1,6 @@
-import { CampaignRepository } from './campaign.repository';
-import { AppError, HTTPSTATUS, ErrorCode } from '@celebs/shared-utils';
 import { createCampaignSchema } from '@celebs/shared-types';
+
+import { CampaignRepository } from './campaign.repository';
 
 export class CampaignService {
   constructor(private campaignRepository: CampaignRepository = new CampaignRepository()) {}

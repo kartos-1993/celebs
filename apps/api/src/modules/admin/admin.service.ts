@@ -1,6 +1,7 @@
 import { NotFoundException } from '@celebs/shared-utils';
-import prisma from '@/db';
+
 import { hashValue } from '@/common/utils/bcrypt';
+import prisma from '@/db';
 import { sendEmail } from '@/mailers/mailer';
 import {
   vendorApprovalTemplate,

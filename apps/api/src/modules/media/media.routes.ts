@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import multer from 'multer';
+
+import { Permission } from '@celebs/rbac';
+import { asyncHandler } from '@celebs/shared-utils';
+
+import { putImage } from './storage.service';
+
 import cloudinary from '@/config/cloudinary.config';
 import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
-import { requirePermissions } from '@/middlewares/rbac.middleware';
-import { Permission } from '@celebs/rbac';
-import { asyncHandler, logger } from '@celebs/shared-utils';
-import { putImage } from './storage.service';
-import { assetQueue } from '@/common/services/queue.service';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
 router.use(uploadRateLimiter);

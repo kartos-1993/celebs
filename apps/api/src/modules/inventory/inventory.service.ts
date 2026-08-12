@@ -1,4 +1,5 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
+
 import prisma from '@/config/db.prisma';
 
 export class OutOfStockError extends AppError {

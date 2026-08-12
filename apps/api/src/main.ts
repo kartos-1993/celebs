@@ -11,12 +11,13 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
 
-import app from './app';
-import { config } from './config/app.config';
-import prisma from './config/db.prisma';
 import { logger } from '@celebs/shared-utils';
+
 import { verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
+import { config } from './config/app.config';
+import prisma from './config/db.prisma';
+import app from './app';
 
 const port = config.PORT;
 

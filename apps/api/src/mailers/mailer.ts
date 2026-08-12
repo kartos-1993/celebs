@@ -1,6 +1,8 @@
 import axios from 'axios';
 import nodemailer from 'nodemailer';
+
 import { logger } from '@celebs/shared-utils';
+
 import { config } from '@/config/app.config';
 
 type Params = {

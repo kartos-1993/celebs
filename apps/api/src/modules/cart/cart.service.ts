@@ -1,8 +1,11 @@
-import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
-import { cartRepository } from './cart.repository';
-import prisma, { Prisma } from '@/config/db.prisma';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
 import { InventoryService } from '../inventory/inventory.service';
+
+import { cartRepository } from './cart.repository';
+
+import prisma, { Prisma } from '@/config/db.prisma';
 
 export class CartService {
   /**

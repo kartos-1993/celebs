@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
-import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-utils';
-import { StaffService } from './staff.service';
+
 import { createStaffSchema, IApiResponse } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-utils';
+
+import { StaffService } from './staff.service';
 
 export class StaffController {
   private staffService: StaffService;

@@ -1,5 +1,7 @@
 import { Router } from 'express';
+
 import { composeSchema } from './schema-composer';
+
 import { CategoryService } from '@/modules/category/category.service';
 
 const router = Router();

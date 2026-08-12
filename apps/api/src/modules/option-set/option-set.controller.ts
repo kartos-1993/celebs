@@ -1,6 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import { OptionSetService } from './option-set.service';
+import { NextFunction,Request, Response } from 'express';
+
 import { HTTPSTATUS } from '@celebs/shared-utils';
+
+import { OptionSetService } from './option-set.service';
 
 export class OptionSetController {
   constructor(private svc: OptionSetService) {}

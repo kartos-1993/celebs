@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { OptionSetService } from './option-set.service';
-import { OptionSetController } from './option-set.controller';
+
 import { asyncHandler } from '@celebs/shared-utils';
-import { authenticateJWT } from '@/middlewares/auth.middleware';
+
+import { OptionSetController } from './option-set.controller';
+import { OptionSetService } from './option-set.service';
+
 import { config } from '@/config/app.config';
+import { authenticateJWT } from '@/middlewares/auth.middleware';
 
 const router = Router();
 const controller = new OptionSetController(new OptionSetService());

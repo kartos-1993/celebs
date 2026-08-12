@@ -1,7 +1,8 @@
-import { ForbiddenException, NotFoundException, BadRequestException } from '@celebs/shared-utils';
 import { CreateStaffType } from '@celebs/shared-types';
-import prisma from '@/db';
+import { BadRequestException,ForbiddenException, NotFoundException } from '@celebs/shared-utils';
+
 import { hashValue } from '@/common/utils/bcrypt';
+import prisma from '@/db';
 
 export interface CreateStaffInput extends CreateStaffType {
   vendorId?: string;

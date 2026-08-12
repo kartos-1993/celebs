@@ -1,13 +1,14 @@
 import { HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
-import { config } from '@/config/app.config';
+import { v4 as uuidv4 } from 'uuid';
+
 import {
   buildPublicObjectUrl,
   ensureDevPublicReadAccess,
   s3Client,
 } from '@/common/utils/s3.client';
+import { config } from '@/config/app.config';
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
 export const PRESIGN_EXPIRES_IN = 15 * 60; // 15 minutes

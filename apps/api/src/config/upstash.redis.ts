@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+
 import { config } from './app.config';
 
 const host = config.REDIS.HOST || 'localhost';
