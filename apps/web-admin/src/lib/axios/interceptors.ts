@@ -158,7 +158,7 @@ export const setupInterceptors = (client: AxiosInstance) => {
         authChannel?.postMessage({ type: 'REFRESH_START' });
 
         try {
-          await client.post('/auth/refresh', null, {
+          await client.post('/auth/refresh', {}, {
             skipAuthRefresh: true,
           } as CustomAxiosRequestConfig);
 

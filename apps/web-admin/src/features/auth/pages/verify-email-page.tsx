@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyEmail } from '../api';
 import { Button } from '@celebs/shared-ui/components/button';
 import { PATHS } from '@/routes/paths';
+import { useAuthContext } from '@/context/auth-provider';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -12,7 +13,18 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
 
+  const { user } = useAuthContext();
+
   useEffect(() => {
+    // If the user is already verified (e.g. refreshed after verification), skip duplicate call
+    if (user?.isEmailVerified) {
+      setStatus('success');
+      setTimeout(() => {
+        navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
+      }, 1200);
+      return;
+    }
+
     if (!code) {
       setStatus('error');
       setErrorMessage('Verification code is missing from the link.');
@@ -31,6 +43,15 @@ export default function VerifyEmailPage() {
       })
       .catch((err: any) => {
         if (isMounted) {
+          // If user logged in and already verified during fallback GET call
+          if (user?.isEmailVerified) {
+            setStatus('success');
+            setTimeout(() => {
+              navigate(PATHS.VENDORS.ONBOARDING, { replace: true });
+            }, 1200);
+            return;
+          }
+
           setStatus('error');
           setErrorMessage(
             err?.response?.data?.message || 'Verification link is invalid or has expired.',
@@ -41,7 +62,7 @@ export default function VerifyEmailPage() {
     return () => {
       isMounted = false;
     };
-  }, [code, navigate]);
+  }, [code, navigate, user?.isEmailVerified]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-4">
