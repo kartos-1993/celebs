@@ -77,7 +77,7 @@ export class AuthService {
       },
     });
 
-    const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
+    const verificationUrl = `${config.APP_ORIGIN}/verify-email?code=${verification.code}`;
     logger.info({ email: newUser.email, verificationUrl }, 'Attempting to send verification email');
     try {
       await sendEmail({
@@ -210,7 +210,7 @@ export class AuthService {
       },
     });
 
-    const verificationUrl = `${config.APP_ORIGIN}/${config.BASE_PATH}/auth/verify-email?code=${verification.code}`;
+    const verificationUrl = `${config.APP_ORIGIN}/verify-email?code=${verification.code}`;
     logger.info(
       { email: newUser.email, verificationUrl },
       'Attempting to send verification email to vendor',
