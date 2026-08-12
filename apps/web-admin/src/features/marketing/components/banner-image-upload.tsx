@@ -3,7 +3,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Label } from '@celebs/shared-ui/components/label';
 import { Input } from '@celebs/shared-ui/components/input';
 import { ImagePlus, Trash2, Link as LinkIcon, Loader2, RefreshCw } from 'lucide-react';
-import { uploadMediaFilesMutationFn } from '@/lib/api';
+import { uploadMarketingBanner } from '../api';
 import type { BannerImageUploadPropsType } from '@celebs/shared-types';
 
 export function BannerImageUpload({
@@ -29,7 +29,7 @@ export function BannerImageUpload({
     setError(null);
     setIsUploading(true);
     try {
-      const uploadedUrl = await uploadMediaFilesMutationFn(file);
+      const uploadedUrl = await uploadMarketingBanner(file);
       onChange(uploadedUrl);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to upload image. Please try again.');

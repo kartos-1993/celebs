@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getCampaignsQueryFn } from '@/lib/api';
+import { getCampaigns } from '../api';
+import { MARKETING_QUERY_KEYS } from '../hooks/use-marketing-queries';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import {
@@ -19,8 +20,8 @@ export function CampaignListPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ['campaigns'],
-    queryFn: getCampaignsQueryFn,
+    queryKey: MARKETING_QUERY_KEYS.campaigns(),
+    queryFn: getCampaigns,
   });
 
   const campaigns: CampaignItemType[] = (response?.data || []).map((c: CampaignItemType) => ({
