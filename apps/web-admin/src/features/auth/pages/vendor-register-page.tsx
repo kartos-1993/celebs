@@ -16,7 +16,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 import { vendorRegisterSchema } from '@celebs/shared-types';
-import { vendorRegisterMutationFn } from '@/lib/api';
+import { registerVendor } from '../api';
 
 type FormValues = z.infer<typeof vendorRegisterSchema>;
 
@@ -24,7 +24,7 @@ export function VendorRegisterPage() {
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: vendorRegisterMutationFn,
+    mutationFn: registerVendor,
     meta: { suppressErrorToast: true },
   });
 
