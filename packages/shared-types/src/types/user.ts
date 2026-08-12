@@ -1,9 +1,11 @@
 export type Role = 'CUSTOMER' | 'VENDOR' | 'STAFF' | 'ADMIN' | 'SUPERADMIN';
 
+export type VendorStatus = 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
 export interface VendorProfileData {
   id: string;
   shopName: string;
-  status: string;
+  status: VendorStatus;
   onboardingStep: number;
   storeLogo?: string;
   holidayMode: boolean;

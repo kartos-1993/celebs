@@ -30,3 +30,7 @@ export async function updateVendorBusinessInfo(data: vendorBusinessInfoType) {
 export async function submitVendorForReview() {
   return await axiosClient.post('/vendor/submit-for-review');
 }
+
+export async function resubmitForReview() {
+  return await axiosClient.post('/vendor/resubmit');
+}

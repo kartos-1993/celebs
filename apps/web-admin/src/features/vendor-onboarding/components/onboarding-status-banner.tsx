@@ -55,7 +55,7 @@ export const OnboardingStatusBanner: React.FC = () => {
   }
 
   // Application Under Review
-  if (status === 'UNDER_REVIEW' || status === 'SUBMITTED' || status === 'PENDING') {
+  if (status === 'UNDER_REVIEW' || status === 'PENDING') {
     return (
       <Alert className="bg-indigo-50 border-indigo-300 text-indigo-900 mb-6">
         <AlertTitle className="font-bold flex items-center gap-2">
