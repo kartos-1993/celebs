@@ -467,9 +467,9 @@ export class AuthService {
     const user = session.user;
     if (user.role === 'VENDOR' && user.vendorProfile) {
       const status = user.vendorProfile.status;
-      if (status === 'REJECTED' || status === 'SUSPENDED') {
+      if (status === 'SUSPENDED') {
         throw new ForbiddenException(
-          'Access denied: Seller account is suspended or rejected.',
+          'Access denied: Seller account is suspended.',
           ErrorCode.FORBIDDEN_ACCESS,
         );
       }
@@ -559,9 +559,9 @@ export class AuthService {
         where: { userId: user.id },
       });
 
-      if (!profile || profile.status === 'REJECTED' || profile.status === 'SUSPENDED') {
+      if (!profile || profile.status === 'SUSPENDED') {
         throw new ForbiddenException(
-          'Access denied: Seller account is suspended or rejected.',
+          'Access denied: Seller account is suspended.',
           ErrorCode.FORBIDDEN_ACCESS,
         );
       }
