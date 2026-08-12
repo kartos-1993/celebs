@@ -19,6 +19,7 @@ vendorRoutes.put('/warehouse', vendorController.updateWarehouse);
 vendorRoutes.put('/documents', vendorController.updateDocuments);
 vendorRoutes.put('/business-info', vendorController.updateBusinessInfo);
 vendorRoutes.post('/submit-for-review', vendorController.submitForReview);
+vendorRoutes.post('/resubmit', vendorController.resubmitForReview);
 vendorRoutes.put('/holiday-mode', vendorController.toggleHolidayMode);
 
 export default vendorRoutes;

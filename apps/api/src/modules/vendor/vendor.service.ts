@@ -1,4 +1,4 @@
-import { NotFoundException } from '@celebs/shared-utils';
+import { BadRequestException, ErrorCode, NotFoundException } from '@celebs/shared-utils';
 
 import prisma from '@/db';
 
@@ -170,11 +170,40 @@ export class VendorService {
     if (!profile) {
       throw new NotFoundException('Vendor profile not found');
     }
+    if (profile.onboardingStep < 5) {
+      throw new BadRequestException(
+        'Complete all onboarding steps before submitting for review',
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
 
     return await prisma.vendorProfile.update({
       where: { userId },
       data: {
-        status: 'DOCUMENTS_SUBMITTED',
+        status: 'UNDER_REVIEW',
+      },
+    });
+  }
+
+  public async resubmitForReview(userId: string) {
+    const profile = await prisma.vendorProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) {
+      throw new NotFoundException('Vendor profile not found');
+    }
+    if (profile.status !== 'REJECTED') {
+      throw new BadRequestException(
+        'Only rejected vendors can resubmit for review',
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    return await prisma.vendorProfile.update({
+      where: { userId },
+      data: {
+        status: 'UNDER_REVIEW',
+        rejectionReason: null,
       },
     });
   }
