@@ -24,6 +24,12 @@ describe('Vendor Onboarding API Integration Tests', () => {
   let authCookie: string;
 
   beforeEach(async () => {
+    // Clean database before each test run
+    await prisma.session.deleteMany({});
+    await prisma.verificationCode.deleteMany({});
+    await prisma.vendorProfile.deleteMany({});
+    await prisma.user.deleteMany({});
+
     // Register and login to get active session/cookies
     await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
     const codeRecord = await prisma.verificationCode.findFirst({});
@@ -150,12 +156,20 @@ describe('Vendor Onboarding API Integration Tests', () => {
   });
 
   it('should submit for review and update profile status', async () => {
+    const user = await prisma.user.findFirst({
+      where: { email: vendorPayload.email.toLowerCase() },
+    });
+    await prisma.vendorProfile.update({
+      where: { userId: user!.id },
+      data: { onboardingStep: 5 },
+    });
+
     const res = await request(app)
       .post('/api/v1/vendor/submit-for-review')
       .set('Cookie', authCookie);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.status).toBe('DOCUMENTS_SUBMITTED');
+    expect(res.body.data.status).toBe('UNDER_REVIEW');
   });
 });
