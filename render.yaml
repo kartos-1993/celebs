@@ -26,6 +26,10 @@ projects:
                 sync: false
               - key: SMTP_FROM
                 sync: false
+              - key: SMTP_API_KEY
+                sync: false
+              - key: SETUP_SECRET
+                sync: false
               - key: SMTP_PASS
                 sync: false
               - key: SMTP_USER
