@@ -1,0 +1,16 @@
+import { axiosClient } from '@/lib/axios/axios-client';
+
+export async function getStaff(vendorId?: string) {
+  const response = await axiosClient.get('/staff', {
+    params: vendorId ? { vendorId } : undefined,
+  });
+  return response.data;
+}
+
+export async function createStaff(data: Record<string, unknown>) {
+  return await axiosClient.post('/staff', data);
+}
+
+export async function deleteStaff(id: string) {
+  return await axiosClient.delete(`/staff/${id}`);
+}
