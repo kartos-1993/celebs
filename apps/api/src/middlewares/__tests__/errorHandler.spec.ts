@@ -28,7 +28,7 @@ describe('errorHandler Middleware Unit Tests', () => {
     const req = mockRequest('/api/v1/auth/login');
     const res = mockResponse();
     const error = new SyntaxError('Unexpected token in JSON');
-    (error as any).status = 400;
+    (error as unknown as { status: number }).status = 400;
 
     errorHandler(error, req, res, vi.fn());
 
@@ -53,8 +53,8 @@ describe('errorHandler Middleware Unit Tests', () => {
     let zodErr: z.ZodError | null = null;
     try {
       dummySchema.parse({ email: 'not-an-email' });
-    } catch (err: any) {
-      zodErr = err;
+    } catch (err: unknown) {
+      zodErr = err as z.ZodError;
     }
 
     errorHandler(zodErr!, req, res, vi.fn());
