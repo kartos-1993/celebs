@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { AlertTriangle, Check, Eye, Search, ShieldCheck, Store, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
@@ -69,19 +69,22 @@ export default function ReviewProductQueue() {
     );
   };
 
-  const handleRejectSubmit = (payload: ReviewProductRequestPayload) => {
-    if (!selectedProduct) return;
-    review.mutate(
-      { id: selectedProduct.id, payload },
-      {
-        onSuccess: () => {
-          setIsRejectOpen(false);
-          setIsPreviewOpen(false);
-          setSelectedProduct(null);
+  const handleRejectSubmit = useCallback(
+    (payload: ReviewProductRequestPayload) => {
+      if (!selectedProduct) return;
+      review.mutate(
+        { id: selectedProduct.id, payload },
+        {
+          onSuccess: () => {
+            setIsRejectOpen(false);
+            setIsPreviewOpen(false);
+            setSelectedProduct(null);
+          },
         },
-      },
-    );
-  };
+      );
+    },
+    [selectedProduct, review],
+  );
 
   const openPreview = (product: ProductQueueItem) => {
     setSelectedProduct(product);

@@ -3,7 +3,7 @@
  * Uses TanStack Table to display hierarchical category structures with visual guidelines
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -68,14 +68,17 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const handleActiveToggle = async (categoryId: string, currentStatus: boolean) => {
-    try {
-      setUpdatingId(categoryId);
-      await onToggleActive(categoryId, !currentStatus);
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+  const handleActiveToggle = useCallback(
+    async (categoryId: string, currentStatus: boolean) => {
+      try {
+        setUpdatingId(categoryId);
+        await onToggleActive(categoryId, !currentStatus);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [onToggleActive],
+  );
 
   const columns = React.useMemo<ColumnDef<CategoryTreeNode>[]>(
     () => [

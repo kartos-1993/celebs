@@ -4,16 +4,23 @@ const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 export function useIdleTimer(onIdle: () => void, timeoutMs: number = IDLE_TIMEOUT_MS) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onIdleRef = useRef(onIdle);
 
-  const resetTimer = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(onIdle, timeoutMs);
-  };
+  useEffect(() => {
+    onIdleRef.current = onIdle;
+  }, [onIdle]);
 
   useEffect(() => {
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+
+    const resetTimer = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        onIdleRef.current();
+      }, timeoutMs);
+    };
 
     const handleUserActivity = () => {
       resetTimer();
@@ -33,5 +40,5 @@ export function useIdleTimer(onIdle: () => void, timeoutMs: number = IDLE_TIMEOU
         window.removeEventListener(event, handleUserActivity);
       });
     };
-  }, [onIdle, timeoutMs]);
+  }, [timeoutMs]);
 }

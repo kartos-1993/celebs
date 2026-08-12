@@ -5,12 +5,8 @@ import { UserData } from '@/types';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
 import { axiosClient } from '@/lib/axios/axios-client';
 import { setAuthCallbacks, broadcastLogout } from '@/lib/axios/interceptors';
-import { parseSession, type SessionInfo } from '@/lib/session-utils';
-
-export { parseSession, type SessionInfo };
-
 // ─── Context Shape ────────────────────────────────────────────────────────────
-type AuthContextType = {
+export type AuthContextType = {
   user?: UserData;
   error: Error | null;
   isLoading: boolean;
@@ -24,7 +20,8 @@ type AuthContextType = {
   isStaff: boolean;
 };
 
-const defaultAuthContext: AuthContextType = {
+// eslint-disable-next-line react-refresh/only-export-components
+export const defaultAuthContext: AuthContextType = {
   user: undefined,
   error: null,
   isLoading: true,
@@ -38,7 +35,8 @@ const defaultAuthContext: AuthContextType = {
   isStaff: false,
 };
 
-const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   return context ?? defaultAuthContext;

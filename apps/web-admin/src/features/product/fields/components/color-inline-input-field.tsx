@@ -50,6 +50,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
       });
       if (!active) setImagePreviews([]);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagesHash]);
 
   React.useEffect(() => {

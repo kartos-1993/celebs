@@ -16,6 +16,7 @@ export const SideBarProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export default SideBarProvider;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSideBarContext = () => {
   const context = React.useContext(SideBarContext);
   if (!context) {
