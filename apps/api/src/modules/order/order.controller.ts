@@ -6,7 +6,7 @@ import {
   updateAddressSchema,
   updateOrderItemStatusSchema,
 } from '@celebs/shared-types';
-import {HTTPSTATUS } from '@celebs/shared-utils';
+import { HTTPSTATUS } from '@celebs/shared-utils';
 
 import { OrderService } from './order.service';
 

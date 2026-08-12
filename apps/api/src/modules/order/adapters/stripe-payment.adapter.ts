@@ -65,7 +65,10 @@ export class StripePaymentAdapter implements IPaymentGateway {
     }
   }
 
-  async verifyPayment(paymentId: string, _payload: unknown = {}): Promise<PaymentVerificationResult> {
+  async verifyPayment(
+    paymentId: string,
+    _payload: unknown = {},
+  ): Promise<PaymentVerificationResult> {
     if (!this.secretKey) {
       return {
         success: true,

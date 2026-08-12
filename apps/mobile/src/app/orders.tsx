@@ -1,14 +1,8 @@
-import React, {useState } from 'react';
-import { Linking,ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import {
-  CheckCircle2,
-  ChevronLeft,
-  ExternalLink,
-  ShoppingBag,
-  Truck,
-} from 'lucide-react-native';
+import { CheckCircle2, ChevronLeft, ExternalLink, ShoppingBag, Truck } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';

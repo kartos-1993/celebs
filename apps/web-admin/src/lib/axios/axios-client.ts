@@ -5,8 +5,9 @@ import { setupInterceptors } from './interceptors';
 const apiHost = (import.meta.env.VITE_API_HOST || 'http://localhost:3333').replace(/\/+$/, '');
 const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
 
-export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL || `${apiHost}/api/${apiVersion}`).replace(/\/+$/, '');
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || `${apiHost}/api/${apiVersion}`
+).replace(/\/+$/, '');
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,

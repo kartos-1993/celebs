@@ -26,7 +26,10 @@ export class MockPaymentAdapter implements IPaymentGateway {
     };
   }
 
-  async verifyPayment(paymentId: string, payload: Record<string, unknown> = {}): Promise<PaymentVerificationResult> {
+  async verifyPayment(
+    paymentId: string,
+    payload: Record<string, unknown> = {},
+  ): Promise<PaymentVerificationResult> {
     const isSuccess = payload?.status !== 'failed';
     return {
       success: isSuccess,

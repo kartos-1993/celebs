@@ -18,7 +18,10 @@ export function useCategories() {
     if (resData.success && Array.isArray(resData.data)) {
       const flattened: Category[] = [];
 
-      const processNodes = (nodes: Array<Category & { name: string; children?: Category[] }>, parentName?: string) => {
+      const processNodes = (
+        nodes: Array<Category & { name: string; children?: Category[] }>,
+        parentName?: string,
+      ) => {
         nodes.forEach((node) => {
           const prefixRegex = parentName ? new RegExp(`^${parentName}\\s+`, 'i') : null;
           const displayName = prefixRegex ? node.name.replace(prefixRegex, '') : node.name;
@@ -29,7 +32,10 @@ export function useCategories() {
           });
 
           if (node.children && node.children.length > 0) {
-            processNodes(node.children as Array<Category & { name: string; children?: Category[] }>, parentName || node.name);
+            processNodes(
+              node.children as Array<Category & { name: string; children?: Category[] }>,
+              parentName || node.name,
+            );
           }
         });
       };

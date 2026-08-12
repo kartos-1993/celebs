@@ -54,9 +54,7 @@ export function extractVariantsMeta(fields: FieldSpec[]): {
       .includes('variant'),
   );
   const variants: VariantMetaItem[] = variantFields
-    .filter((f) =>
-      ['select', 'multiselect', 'VariantList'].includes(String(normalizeUi(f.uiType))),
-    )
+    .filter((f) => ['select', 'multiselect', 'VariantList'].includes(String(normalizeUi(f.uiType))))
     .map((f) => {
       const ui = normalizeUi(f.uiType) as 'select' | 'multiselect' | 'VariantList';
       const kind = detectVariantKind(f) ?? 'other';

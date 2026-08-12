@@ -18,10 +18,8 @@ import {
 } from '@celebs/shared-utils';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
-import { comparePassword,hashValue } from '@/common/utils/bcrypt';
-import {
-  fortyFiveMinutesFromNow,
-} from '@/common/utils/date-time';
+import { comparePassword, hashValue } from '@/common/utils/bcrypt';
+import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import {
   AccessTPayload,
   refreshTokenSignOptions,

@@ -1,4 +1,4 @@
-import { Dimensions,StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 

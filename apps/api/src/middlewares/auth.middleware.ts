@@ -1,4 +1,4 @@
-import { NextFunction,Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 import { ErrorCode, ForbiddenException, UnauthorizedException } from '@celebs/shared-utils';
 
@@ -7,7 +7,9 @@ export { authenticateJWT, optionalAuthenticateJWT } from '@/common/strategies/jw
 export const requireApprovedVendor = (req: Request, _res: Response, next: NextFunction) => {
   const user = req.user;
   if (!user) {
-    return next(new UnauthorizedException('Authentication required', ErrorCode.UNAUTHORIZED_ACCESS));
+    return next(
+      new UnauthorizedException('Authentication required', ErrorCode.UNAUTHORIZED_ACCESS),
+    );
   }
 
   // Superadmin and Admin bypass vendor status check

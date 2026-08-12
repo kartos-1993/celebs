@@ -16,7 +16,7 @@ import { AppHeader } from '@/components/app-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { resolveImageUrl } from '@/constants/config';
-import { Colors,Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { useCategories } from '@/features/categories/hooks/use-categories';
 

@@ -163,12 +163,7 @@ export class AdminService {
     });
   }
 
-  public async createUser(data: {
-    name: string;
-    email: string;
-    password: string;
-    role?: Role;
-  }) {
+  public async createUser(data: { name: string; email: string; password: string; role?: Role }) {
     const hashedPassword = await hashValue(data.password);
     const user = await prisma.user.create({
       data: {

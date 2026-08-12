@@ -2,7 +2,7 @@ import { ErrorRequestHandler, Response } from 'express';
 import { z } from 'zod';
 
 import { IApiResponse } from '@celebs/shared-types';
-import { AppError, ErrorCode,HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
 

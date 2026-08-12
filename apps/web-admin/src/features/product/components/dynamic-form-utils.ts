@@ -18,12 +18,12 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     let colorFieldKey = merged.find((f) =>
       Boolean(
         f.group === 'variant' &&
-        (f.name.toLowerCase() === 'color' || f.name.toLowerCase().includes('color')),
+          (f.name.toLowerCase() === 'color' || f.name.toLowerCase().includes('color')),
       ),
     )?.name;
 
     const toField = (attribute: CategoryAttribute): FieldSpec | null => {
-      const attrRec = (attribute as unknown) as Record<string, unknown>;
+      const attrRec = attribute as unknown as Record<string, unknown>;
       const attrName = (attrRec.code as string | undefined) || attribute.name;
       if (!attrName) return null;
 
@@ -42,17 +42,17 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
               ? { label: value, value }
               : typeof value === 'object' && value !== null
                 ? {
-                  label: String(
-                    (value as Record<string, unknown>).label ??
-                    (value as Record<string, unknown>).name ??
-                    (value as Record<string, unknown>).value ??
-                    value,
-                  ),
-                  value:
-                    (value as Record<string, unknown>).value ??
-                    (value as Record<string, unknown>).label ??
-                    (value as Record<string, unknown>).name,
-                }
+                    label: String(
+                      (value as Record<string, unknown>).label ??
+                        (value as Record<string, unknown>).name ??
+                        (value as Record<string, unknown>).value ??
+                        value,
+                    ),
+                    value:
+                      (value as Record<string, unknown>).value ??
+                      (value as Record<string, unknown>).label ??
+                      (value as Record<string, unknown>).name,
+                  }
                 : { label: String(value), value: String(value) },
           );
         } else {
@@ -66,7 +66,9 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
         label: String(attribute.label || attribute.name || attrName),
         group: attribute.isVariant ? 'variant' : 'details',
         required: !!attribute.isRequired,
-        dataSource: (Array.isArray(dataSource) ? { items: dataSource } : dataSource) as Record<string, unknown> | undefined,
+        dataSource: (Array.isArray(dataSource) ? { items: dataSource } : dataSource) as
+          | Record<string, unknown>
+          | undefined,
         visible: true,
       };
     };
@@ -91,7 +93,9 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     }
 
     if (colorFieldKey) {
-      const existingColorMeta = merged.find((f) => f.uiType === 'ColorMeta' || f.uiType === 'ColorInline');
+      const existingColorMeta = merged.find(
+        (f) => f.uiType === 'ColorMeta' || f.uiType === 'ColorInline',
+      );
       if (!existingColorMeta) {
         merged.push({
           name: 'colorMeta',
@@ -134,7 +138,10 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
         (v) => v.key.toLowerCase() === 'color' || v.key.toLowerCase().includes('color'),
       );
 
-      if (colorVariant && !merged.some((f) => f.uiType === 'ColorMeta' || f.uiType === 'ColorInline')) {
+      if (
+        colorVariant &&
+        !merged.some((f) => f.uiType === 'ColorMeta' || f.uiType === 'ColorInline')
+      ) {
         merged.push({
           name: 'colorMeta',
           uiType: 'ColorMeta',

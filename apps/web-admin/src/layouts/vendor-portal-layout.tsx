@@ -18,11 +18,7 @@ export const VendorPortalLayout = () => {
       <header className="h-14 border-b bg-card flex items-center px-6 gap-3 shrink-0">
         <PanelsTopLeft className="w-5 h-5 text-primary" />
         <span className="font-bold text-base">Celebs Seller Center</span>
-        {user?.name && (
-          <span className="ml-auto text-sm text-muted-foreground">
-            {user.name}
-          </span>
-        )}
+        {user?.name && <span className="ml-auto text-sm text-muted-foreground">{user.name}</span>}
       </header>
 
       {/* Main content area */}

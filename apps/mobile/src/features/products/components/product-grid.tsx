@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 
-import { Product,useProducts } from '../hooks/use-products';
+import { Product, useProducts } from '../hooks/use-products';
 
 import { ProductCard } from './product-card';
 

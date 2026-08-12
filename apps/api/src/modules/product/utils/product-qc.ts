@@ -49,7 +49,10 @@ export function calculateProductQCScore(
   // 1. Main Images Check (25 pts max)
   const imageCount = ((product.mainImages || product.images) as unknown[])?.length || 0;
   const hasVariantImages = Boolean(
-    (product.colorVariants as Record<string, unknown>[])?.some((variant: Record<string, unknown>) => variant.images && (variant.images as unknown[]).length > 0),
+    (product.colorVariants as Record<string, unknown>[])?.some(
+      (variant: Record<string, unknown>) =>
+        variant.images && (variant.images as unknown[]).length > 0,
+    ),
   );
 
   let imageScore = 0;
@@ -164,10 +167,17 @@ export function calculateProductQCScore(
   const variants = (product.colorVariants as Record<string, unknown>[]) || [];
   const skus = (product.skus as Record<string, unknown>[]) || [];
   const legacyStock = variants.reduce((acc: number, v: Record<string, unknown>) => {
-    const vStock = (v.stocks as Record<string, unknown>[])?.reduce((sAcc: number, s: Record<string, unknown>) => sAcc + ((s.quantity as number) || 0), 0) || 0;
+    const vStock =
+      (v.stocks as Record<string, unknown>[])?.reduce(
+        (sAcc: number, s: Record<string, unknown>) => sAcc + ((s.quantity as number) || 0),
+        0,
+      ) || 0;
     return acc + vStock;
   }, 0);
-  const matrixStock = skus.reduce((acc: number, s: Record<string, unknown>) => acc + ((s.stock as number) || 0), 0);
+  const matrixStock = skus.reduce(
+    (acc: number, s: Record<string, unknown>) => acc + ((s.stock as number) || 0),
+    0,
+  );
   const totalStock = legacyStock + matrixStock;
 
   const variantScore = totalStock > 0 ? 5 : 0;

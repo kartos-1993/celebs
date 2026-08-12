@@ -610,14 +610,20 @@ export class ProductService {
             : {}),
           categoryId: resolvedCategoryId,
           subcategoryId: resolvedSubcategoryId,
-          ...(updateData.sizes ? { sizes: updateData.sizes as unknown as Prisma.InputJsonValue } : {}),
-          ...(updateData.colorVariants ? { colorVariants: updateData.colorVariants as unknown as Prisma.InputJsonValue } : {}),
+          ...(updateData.sizes
+            ? { sizes: updateData.sizes as unknown as Prisma.InputJsonValue }
+            : {}),
+          ...(updateData.colorVariants
+            ? { colorVariants: updateData.colorVariants as unknown as Prisma.InputJsonValue }
+            : {}),
           ...(updateData.skus ? { skus: updateData.skus as unknown as Prisma.InputJsonValue } : {}),
           ...(updateData.variantOptions
             ? { variantOptions: updateData.variantOptions as unknown as Prisma.InputJsonValue }
             : {}),
           ...(updateData.mainImages ? { mainImages: updateData.mainImages } : {}),
-          ...(updateData.dynamicData ? { dynamicData: updateData.dynamicData as unknown as Prisma.InputJsonValue } : {}),
+          ...(updateData.dynamicData
+            ? { dynamicData: updateData.dynamicData as unknown as Prisma.InputJsonValue }
+            : {}),
           ...(updateData.tags ? { tags: updateData.tags } : {}),
           ...(updateData.featured !== undefined ? { featured: updateData.featured } : {}),
           ...(updateData.status ? { status: updateData.status } : {}),

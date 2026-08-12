@@ -275,9 +275,7 @@ export function ColorMetaItem({
               </Button>
             ) : null}
           </div>
-          {swatchErr ? (
-            <div className="text-xs text-red-500">{String(swatchErr)}</div>
-          ) : null}
+          {swatchErr ? <div className="text-xs text-red-500">{String(swatchErr)}</div> : null}
         </div>
 
         {/* Gallery Images */}
@@ -335,9 +333,7 @@ export function ColorMetaItem({
               )}
             </label>
           </div>
-          {imagesErr ? (
-            <div className="text-xs text-red-500">{String(imagesErr)}</div>
-          ) : null}
+          {imagesErr ? <div className="text-xs text-red-500">{String(imagesErr)}</div> : null}
         </div>
       </div>
     </div>
@@ -349,10 +345,14 @@ export function ColorMetaInputField({ field }: UiProps) {
   const dsVariants = Array.isArray(field.dataSource?.variants) ? field.dataSource.variants : [];
   const colorField: string =
     (field.dataSource?.colorField as string | undefined) ??
-    (dsVariants as Array<{ label?: string; key?: string }>).find((v) => /color/i.test(v?.label ?? v?.key ?? ''))?.key ??
+    (dsVariants as Array<{ label?: string; key?: string }>).find((v) =>
+      /color/i.test(v?.label ?? v?.key ?? ''),
+    )?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> =
-    (field.dataSource?.labels as Record<string, Record<string, string>>) ?? {};
+  const labelsMap: Record<string, Record<string, string>> = (field.dataSource?.labels as Record<
+    string,
+    Record<string, string>
+  >) ?? {};
   const labelOf = (value: string) => labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = Array.isArray(field.rule?.accept)
     ? (field.rule.accept as string[])
@@ -362,7 +362,11 @@ export function ColorMetaInputField({ field }: UiProps) {
     maxSize: typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
   const selected = useWatch({ name: colorField });
-  const colors: string[] = Array.isArray(selected) ? (selected as string[]) : selected ? [String(selected)] : [];
+  const colors: string[] = Array.isArray(selected)
+    ? (selected as string[])
+    : selected
+      ? [String(selected)]
+      : [];
 
   return (
     <div className="space-y-2 col-span-full">

@@ -1,4 +1,4 @@
-import { CodStatus, DispatchMode,OrderStatus } from '@prisma/client';
+import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
 

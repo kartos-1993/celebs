@@ -48,7 +48,7 @@ const Banners: React.FC = () => {
       if (fetchedBanners.length > 0) {
         setBanners(fetchedBanners);
       }
-      setCategories(((fetchedCategories || []) as unknown) as Array<Record<string, unknown>>);
+      setCategories((fetchedCategories || []) as unknown as Array<Record<string, unknown>>);
 
       const productsList =
         fetchedProductsData?.data?.products ||
@@ -265,11 +265,13 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {(Array.isArray(categories) ? categories : []).map((c: Record<string, unknown>) => (
-                                  <SelectItem key={String(c.id)} value={String(c.id)}>
-                                    {String(c.name ?? '')}
-                                  </SelectItem>
-                                ))}
+                                {(Array.isArray(categories) ? categories : []).map(
+                                  (c: Record<string, unknown>) => (
+                                    <SelectItem key={String(c.id)} value={String(c.id)}>
+                                      {String(c.name ?? '')}
+                                    </SelectItem>
+                                  ),
+                                )}
                               </SelectContent>
                             </Select>
                           ) : banner.linkType === 'PRODUCT' ? (
@@ -281,11 +283,13 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Product" />
                               </SelectTrigger>
                               <SelectContent>
-                                {(Array.isArray(products) ? products : []).map((p: Record<string, unknown>) => (
-                                  <SelectItem key={String(p.id)} value={String(p.id)}>
-                                    {String(p.name ?? '')}
-                                  </SelectItem>
-                                ))}
+                                {(Array.isArray(products) ? products : []).map(
+                                  (p: Record<string, unknown>) => (
+                                    <SelectItem key={String(p.id)} value={String(p.id)}>
+                                      {String(p.name ?? '')}
+                                    </SelectItem>
+                                  ),
+                                )}
                               </SelectContent>
                             </Select>
                           ) : (

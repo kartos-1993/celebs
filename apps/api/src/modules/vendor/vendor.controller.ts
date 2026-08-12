@@ -26,16 +26,18 @@ export class VendorController {
     return userId;
   }
 
-  public getOnboardingStatus = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    const userId = this.getUserId(req);
-    const profile = await this.vendorService.getOnboardingStatus(userId);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Onboarding status retrieved successfully',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
-  });
+  public getOnboardingStatus = asyncHandler(
+    async (req: Request, res: Response): Promise<Response> => {
+      const userId = this.getUserId(req);
+      const profile = await this.vendorService.getOnboardingStatus(userId);
+      const response: IApiResponse<typeof profile> = {
+        success: true,
+        message: 'Onboarding status retrieved successfully',
+        data: profile,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    },
+  );
 
   public updateProfile = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
@@ -73,17 +75,19 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public updateBusinessInfo = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    const userId = this.getUserId(req);
-    const body = vendorBusinessInfoSchema.parse(req.body);
-    const profile = await this.vendorService.updateBusinessInfo(userId, body);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Vendor business info updated successfully',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
-  });
+  public updateBusinessInfo = asyncHandler(
+    async (req: Request, res: Response): Promise<Response> => {
+      const userId = this.getUserId(req);
+      const body = vendorBusinessInfoSchema.parse(req.body);
+      const profile = await this.vendorService.updateBusinessInfo(userId, body);
+      const response: IApiResponse<typeof profile> = {
+        success: true,
+        message: 'Vendor business info updated successfully',
+        data: profile,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    },
+  );
 
   public submitForReview = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
@@ -96,25 +100,29 @@ export class VendorController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public resubmitForReview = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    const userId = this.getUserId(req);
-    const profile = await this.vendorService.resubmitForReview(userId);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Application resubmitted for review',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
-  });
+  public resubmitForReview = asyncHandler(
+    async (req: Request, res: Response): Promise<Response> => {
+      const userId = this.getUserId(req);
+      const profile = await this.vendorService.resubmitForReview(userId);
+      const response: IApiResponse<typeof profile> = {
+        success: true,
+        message: 'Application resubmitted for review',
+        data: profile,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    },
+  );
 
-  public toggleHolidayMode = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    const userId = this.getUserId(req);
-    const profile = await this.vendorService.toggleHolidayMode(userId);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Holiday mode toggled successfully',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
-  });
+  public toggleHolidayMode = asyncHandler(
+    async (req: Request, res: Response): Promise<Response> => {
+      const userId = this.getUserId(req);
+      const profile = await this.vendorService.toggleHolidayMode(userId);
+      const response: IApiResponse<typeof profile> = {
+        success: true,
+        message: 'Holiday mode toggled successfully',
+        data: profile,
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    },
+  );
 }

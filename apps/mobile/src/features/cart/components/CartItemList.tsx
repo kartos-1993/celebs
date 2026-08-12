@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator,StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 

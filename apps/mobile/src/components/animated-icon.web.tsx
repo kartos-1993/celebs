@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import Animated, { Easing,Keyframe } from 'react-native-reanimated';
+import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
 import classes from './animated-icon.module.css';

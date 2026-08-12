@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ImageBackground, StyleSheet, TouchableOpacity,View } from 'react-native';
+import { ImageBackground, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ArrowRight, Flame } from 'lucide-react-native';
 
 import { apiClient } from '@/api/client';

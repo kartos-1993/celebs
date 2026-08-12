@@ -8,19 +8,11 @@ import {
   setupSuperadminSchema,
   vendorRegisterSchema,
 } from '@celebs/shared-types';
-import {
-  asyncHandler,
-  BadRequestException,
-  ErrorCode,
-  HTTPSTATUS,
-} from '@celebs/shared-utils';
+import { asyncHandler, BadRequestException, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { AuthService } from './auth.service';
 
-import {
-  clearAuthenticationCookies,
-  setAuthenticationCookies,
-} from '@/common/utils/cookie';
+import { clearAuthenticationCookies, setAuthenticationCookies } from '@/common/utils/cookie';
 import { buildWebUrl } from '@/common/utils/url';
 
 export class AuthController {
@@ -102,27 +94,35 @@ export class AuthController {
     return res.status(HTTPSTATUS.OK).json(response);
   });
 
-  public verifyEmail = asyncHandler(async (req: Request, res: Response): Promise<Response | void> => {
-    const code = (req.body?.code || req.query?.code) as string;
-    if (!code) {
-      throw new BadRequestException('Verification code is required', ErrorCode.VERIFICATION_ERROR);
-    }
-    const { user, accessToken, refreshToken } = await this.authService.verifyEmail(code);
+  public verifyEmail = asyncHandler(
+    async (req: Request, res: Response): Promise<Response | void> => {
+      const code = (req.body?.code || req.query?.code) as string;
+      if (!code) {
+        throw new BadRequestException(
+          'Verification code is required',
+          ErrorCode.VERIFICATION_ERROR,
+        );
+      }
+      const { user, accessToken, refreshToken } = await this.authService.verifyEmail(code);
 
-    setAuthenticationCookies({ res, accessToken, refreshToken });
+      setAuthenticationCookies({ res, accessToken, refreshToken });
 
-    if (req.method === 'GET') {
-      return res.redirect(buildWebUrl('/onboarding', { verified: 'true' }));
-    }
+      if (req.method === 'GET') {
+        return res.redirect(buildWebUrl('/onboarding', { verified: 'true' }));
+      }
 
-    const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> =
-      {
+      const response: IApiResponse<{
+        user: typeof user;
+        accessToken: string;
+        refreshToken: string;
+      }> = {
         success: true,
         message: 'Email verified successfully',
         data: { user, accessToken, refreshToken },
       };
-    return res.status(HTTPSTATUS.OK).json(response);
-  });
+      return res.status(HTTPSTATUS.OK).json(response);
+    },
+  );
 
   public logout = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const sessionId = req.user?.sessionId;

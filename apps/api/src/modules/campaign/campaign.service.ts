@@ -83,7 +83,14 @@ export class CampaignService {
     });
   }
 
-  async updateCampaign(id: string, input: Record<string, unknown> & { products?: CampaignProductInput[]; startDate?: string; endDate?: string }) {
+  async updateCampaign(
+    id: string,
+    input: Record<string, unknown> & {
+      products?: CampaignProductInput[];
+      startDate?: string;
+      endDate?: string;
+    },
+  ) {
     const { products, ...campaignData } = input;
 
     const dataToUpdate: Record<string, unknown> = { ...campaignData };

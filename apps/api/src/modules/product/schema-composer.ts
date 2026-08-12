@@ -68,7 +68,10 @@ function titleCase(s: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function selectDataSource(attr: Record<string, unknown> | IAttribute, optionSetsMap: Map<string, string[]>) {
+function selectDataSource(
+  attr: Record<string, unknown> | IAttribute,
+  optionSetsMap: Map<string, string[]>,
+) {
   const vals: string[] = Array.isArray(attr.values) ? attr.values : [];
 
   const searchName = String(

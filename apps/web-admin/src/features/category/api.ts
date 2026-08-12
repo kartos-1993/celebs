@@ -80,7 +80,9 @@ export async function updateCategory(
  * Deletes a category
  */
 export async function deleteCategory(id: string): Promise<ApiResponse<{ success: boolean }>> {
-  const response = await axiosClient.delete<ApiResponse<{ success: boolean }>>(`${BASE_PATH}/${id}`);
+  const response = await axiosClient.delete<ApiResponse<{ success: boolean }>>(
+    `${BASE_PATH}/${id}`,
+  );
   return response.data;
 }
 

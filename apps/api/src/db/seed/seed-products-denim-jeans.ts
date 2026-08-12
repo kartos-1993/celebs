@@ -9,20 +9,14 @@ export async function seedProductsDenimJeans(): Promise<void> {
   // 1. Find official "Men Jeans" subcategory (nested under Men Denim)
   let denimJeansCat = await prisma.category.findFirst({
     where: {
-      OR: [
-        { slug: 'men-jeans' },
-        { name: 'Men Jeans' },
-      ],
+      OR: [{ slug: 'men-jeans' }, { name: 'Men Jeans' }],
     },
   });
 
   // Clean up legacy orphan "Men Denim Jeans" category if present
   const orphanCat = await prisma.category.findFirst({
     where: {
-      OR: [
-        { slug: 'men-denim-jeans' },
-        { name: 'Men Denim Jeans' },
-      ],
+      OR: [{ slug: 'men-denim-jeans' }, { name: 'Men Denim Jeans' }],
     },
   });
 

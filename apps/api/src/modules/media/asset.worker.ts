@@ -1,11 +1,11 @@
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { Job,Worker } from 'bullmq';
+import { Job, Worker } from 'bullmq';
 import sharp from 'sharp';
 
 import { logger } from '@celebs/shared-utils';
 
 import { redisConnection } from '@/common/services/queue.service';
-import { buildPublicObjectUrl,s3Client } from '@/common/utils/s3.client';
+import { buildPublicObjectUrl, s3Client } from '@/common/utils/s3.client';
 import { config } from '@/config/app.config';
 
 // Configure Sharp memory limits to prevent V8 heap OOM crashes during heavy multi-image operations
@@ -92,10 +92,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      logger.error(
-        { jobId: job.id, mediaId, error: errMsg },
-        'Failed to process asset job',
-      );
+      logger.error({ jobId: job.id, mediaId, error: errMsg }, 'Failed to process asset job');
       throw error;
     }
   },

@@ -52,7 +52,10 @@ export const useCategoryForm = ({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: initialData?.name || '',
-      parent: initialData?.parent ?? ((initialData as Record<string, unknown>)?.parentCategory as string | null) ?? null,
+      parent:
+        initialData?.parent ??
+        ((initialData as Record<string, unknown>)?.parentCategory as string | null) ??
+        null,
       attributes: (initialData?.attributes || []).map((attr) => ({
         id: getAttributeId(attr),
         name: attr.name || '',

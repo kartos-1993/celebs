@@ -1,4 +1,4 @@
-import { SessionData,Store } from 'express-session';
+import { SessionData, Store } from 'express-session';
 
 import { upstashRedis } from './upstash.redis';
 
@@ -12,7 +12,10 @@ export class UpstashRedisStore extends Store {
     this.ttl = ttl;
   }
 
-  public get = (sid: string, callback: (err: unknown, session?: SessionData | null) => void): void => {
+  public get = (
+    sid: string,
+    callback: (err: unknown, session?: SessionData | null) => void,
+  ): void => {
     upstashRedis
       .get<SessionData>(`${this.prefix}${sid}`)
       .then((data: SessionData | null) => callback(null, data || null))

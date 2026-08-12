@@ -39,12 +39,12 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
       ? (dataSource.charts as MeasurementChartSpec[])
       : Array.isArray(field.dataSource)
         ? [
-          {
-            key: 'product',
-            label: 'Product Measurements (Garment Flat)',
-            columns: field.dataSource as string[],
-          },
-        ]
+            {
+              key: 'product',
+              label: 'Product Measurements (Garment Flat)',
+              columns: field.dataSource as string[],
+            },
+          ]
         : [];
   }, [dataSource.charts, field.dataSource]);
 
@@ -91,7 +91,11 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
       }
       return {
         name: sizeName,
-        productMeasurements: prodCols.map((c) => ({ name: c, value: '', unit: unit.toLowerCase() })),
+        productMeasurements: prodCols.map((c) => ({
+          name: c,
+          value: '',
+          unit: unit.toLowerCase(),
+        })),
         bodyMeasurements: bodyCols.map((c) => ({ name: c, value: '', unit: unit.toLowerCase() })),
       };
     });
@@ -152,7 +156,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             {chart.columns.map((c) => (
               <TableHead key={c} className="font-semibold text-foreground">
                 {c}{' '}
-                <span className="text-xs text-muted-foreground font-normal">({unit.toLowerCase()})</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  ({unit.toLowerCase()})
+                </span>
               </TableHead>
             ))}
           </TableRow>
@@ -164,7 +170,11 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
               <TableRow key={sizeName}>
                 <TableCell className="font-bold text-foreground">
                   {sizeName}
-                  <input type="hidden" value={sizeName} {...register(`sizes.${sizeIndex}.name` as const)} />
+                  <input
+                    type="hidden"
+                    value={sizeName}
+                    {...register(`sizes.${sizeIndex}.name` as const)}
+                  />
                 </TableCell>
                 {chart.columns.map((c) => {
                   const items = sizeObj ? sizeObj[listKey] || [] : [];
@@ -206,7 +216,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                           {...register(`sizes.${sizeIndex}.${listKey}.${colIndex}.value` as const)}
                         />
                         {cellError && (
-                          <span className="text-[10px] text-destructive block font-medium">{cellError}</span>
+                          <span className="text-[10px] text-destructive block font-medium">
+                            {cellError}
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -233,20 +245,22 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
           <button
             type="button"
             onClick={() => handleUnitToggle('CM')}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${unit === 'CM'
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+              unit === 'CM'
                 ? 'bg-background text-foreground shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
-              }`}
+            }`}
           >
             CM
           </button>
           <button
             type="button"
             onClick={() => handleUnitToggle('IN')}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${unit === 'IN'
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+              unit === 'IN'
                 ? 'bg-background text-foreground shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
-              }`}
+            }`}
           >
             Inches (IN)
           </button>
@@ -261,10 +275,11 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                 key={c.key}
                 type="button"
                 onClick={() => setActiveTabKey(c.key)}
-                className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors -mb-px ${(activeTabKey || charts[0].key) === c.key
+                className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors -mb-px ${
+                  (activeTabKey || charts[0].key) === c.key
                     ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
+                }`}
               >
                 {c.label}
               </button>

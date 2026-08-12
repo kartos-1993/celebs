@@ -3,12 +3,7 @@ import { useFormContext } from 'react-hook-form';
 import { Plus, X, UploadCloud, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@celebs/shared-ui/components/button';
 import type { UiProps } from '../ui-registry';
-import {
-  imageValueKey,
-  uploadImageFiles,
-  uploadErrorMessage,
-  ImageValue,
-} from './shared';
+import { imageValueKey, uploadImageFiles, uploadErrorMessage, ImageValue } from './shared';
 
 export function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
@@ -271,7 +266,9 @@ export function MainImageInputField({ field }: UiProps) {
               </button>
             )}
             <input
-              ref={(el) => { fileInputs.current[0] = el; }}
+              ref={(el) => {
+                fileInputs.current[0] = el;
+              }}
               type="file"
               accept="image/*"
               className="hidden"
@@ -315,7 +312,9 @@ export function MainImageInputField({ field }: UiProps) {
                   </Button>
                 </div>
                 <input
-                  ref={(el) => { fileInputs.current[idx] = el; }}
+                  ref={(el) => {
+                    fileInputs.current[idx] = el;
+                  }}
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -354,12 +353,15 @@ export function MainImageInputField({ field }: UiProps) {
         {/* Specifications Footer */}
         {field.rule ? (
           <div className="text-[11px] text-muted-foreground">
-            Max size: {Math.round(((typeof field.rule.maxSize === 'number' ? field.rule.maxSize : 5242880) / 1024 / 1024))}MB.
+            Max size:{' '}
+            {Math.round(
+              (typeof field.rule.maxSize === 'number' ? field.rule.maxSize : 5242880) / 1024 / 1024,
+            )}
+            MB.
             {field.rule.minWidth || field.rule.minHeight ? (
               <>
                 {' '}
-                • Recommended minimum:{' '}
-                {field.rule.minWidth ?? 0}×{field.rule.minHeight ?? 0}px
+                • Recommended minimum: {field.rule.minWidth ?? 0}×{field.rule.minHeight ?? 0}px
               </>
             ) : null}
             {field.rule.maxWidth || field.rule.maxHeight ? (
@@ -373,9 +375,7 @@ export function MainImageInputField({ field }: UiProps) {
       </div>
 
       {formState.errors?.[field.name]?.message ? (
-        <div className="text-xs text-red-500">
-          {String(formState.errors[field.name]?.message)}
-        </div>
+        <div className="text-xs text-red-500">{String(formState.errors[field.name]?.message)}</div>
       ) : null}
     </div>
   );

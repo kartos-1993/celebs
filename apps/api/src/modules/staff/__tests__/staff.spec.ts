@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';

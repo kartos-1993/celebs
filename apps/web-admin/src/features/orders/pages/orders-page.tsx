@@ -26,15 +26,7 @@ import {
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
 import { logger } from '@celebs/shared-utils';
-import {
-  Package,
-  Truck,
-  MapPin,
-  Search,
-  RefreshCw,
-  Send,
-  DollarSign,
-} from 'lucide-react';
+import { Package, Truck, MapPin, Search, RefreshCw, Send, DollarSign } from 'lucide-react';
 import { dispatch3PLOrder, settleCodOrder } from '../api';
 
 export interface OrderItemUI {
@@ -447,7 +439,12 @@ const Orders: React.FC = () => {
               {/* Status Selector */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Update Fulfillment Stage</Label>
-                <Select value={newStatus} onValueChange={(val: string) => setNewStatus(val as 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED')}>
+                <Select
+                  value={newStatus}
+                  onValueChange={(val: string) =>
+                    setNewStatus(val as 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED')
+                  }
+                >
                   <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>

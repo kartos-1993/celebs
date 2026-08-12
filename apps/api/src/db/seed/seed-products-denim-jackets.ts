@@ -9,10 +9,7 @@ export async function seedProductsDenimJackets(): Promise<void> {
   // 1. Find "Men Denim Jackets" subcategory (Level 3 under Men Denim)
   let denimJacketCat = await prisma.category.findFirst({
     where: {
-      OR: [
-        { slug: 'men-denim-jackets' },
-        { name: 'Men Denim Jackets' },
-      ],
+      OR: [{ slug: 'men-denim-jackets' }, { name: 'Men Denim Jackets' }],
     },
   });
 
@@ -56,13 +53,15 @@ export async function seedProductsDenimJackets(): Promise<void> {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
 
-    const sizesPayload = (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
-      name: sc.size,
-      productMeasurements: [
-        { name: 'Shoulder', value: String(sc.shoulder || 45), unit: 'cm' },
-        { name: 'Chest', value: String(sc.chest || 100), unit: 'cm' },
-      ],
-    }));
+    const sizesPayload = (item.measurements?.sizeChart || []).map(
+      (sc: Record<string, unknown>) => ({
+        name: sc.size,
+        productMeasurements: [
+          { name: 'Shoulder', value: String(sc.shoulder || 45), unit: 'cm' },
+          { name: 'Chest', value: String(sc.chest || 100), unit: 'cm' },
+        ],
+      }),
+    );
 
     const colorVariants = (item.variants || []).map((v: Record<string, unknown>) => ({
       name: v.color || 'Default',

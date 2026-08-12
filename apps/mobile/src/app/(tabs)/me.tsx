@@ -42,7 +42,10 @@ export default function MeScreen() {
     try {
       await signInWithGoogle();
     } catch (err: unknown) {
-      Alert.alert('Google Sign-In Error', (err as { message?: string })?.message || 'Failed to initialize Google Sign-In');
+      Alert.alert(
+        'Google Sign-In Error',
+        (err as { message?: string })?.message || 'Failed to initialize Google Sign-In',
+      );
     }
   };
 
@@ -64,7 +67,10 @@ export default function MeScreen() {
         Alert.alert('Account Created', 'Welcome to Celebs Fashion!');
       }
     } catch (err: unknown) {
-      Alert.alert('Authentication Error', (err as { message?: string })?.message || 'Authentication failed');
+      Alert.alert(
+        'Authentication Error',
+        (err as { message?: string })?.message || 'Authentication failed',
+      );
     } finally {
       setIsSubmitting(false);
     }

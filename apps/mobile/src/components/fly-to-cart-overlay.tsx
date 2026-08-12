@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Dimensions,Modal, StyleSheet, View } from 'react-native';
+import { Dimensions, Modal, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   ReduceMotion,

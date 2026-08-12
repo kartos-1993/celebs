@@ -36,7 +36,6 @@ interface VariantDataSource {
 }
 
 export function SkuTableInputField({ field }: UiProps) {
-
   const { control: formControl, setValue, getValues } = useFormContext();
   const ds = field.dataSource as VariantDataSource | undefined;
   const labelsMap: Record<string, Record<string, string>> = ds?.labels ?? {};
@@ -62,9 +61,10 @@ export function SkuTableInputField({ field }: UiProps) {
   const fetchParamsRef = React.useRef(ds?.params);
   fetchParamsRef.current = ds?.params;
 
-  const [asyncVariantMeta, setAsyncVariantMeta] = React.useState<
-    Array<{ key: string; label: string }> | null
-  >(null);
+  const [asyncVariantMeta, setAsyncVariantMeta] = React.useState<Array<{
+    key: string;
+    label: string;
+  }> | null>(null);
 
   React.useEffect(() => {
     if (staticVariantMeta || !fetchUrl) return;
@@ -561,30 +561,30 @@ function VariantFieldInput({
     rules:
       type === 'number'
         ? {
-          validate: (value: unknown) => {
-            const raw = String(value ?? '').trim();
-            if (!raw) {
-              return required ? 'This field is required' : true;
-            }
-            const numeric = Number(raw);
-            if (!Number.isFinite(numeric)) {
-              return 'Enter a valid number';
-            }
-            if ((isPriceField || isSpecialPriceField) && numeric <= 0) {
-              return 'Must be greater than 0';
-            }
-            if (isNonNegativeField && numeric < 0) {
-              return 'Cannot be negative';
-            }
-            if (isSpecialPriceField) {
-              const basePrice = Number(getValues(name.replace(/\.specialPrice$/, '.price')));
-              if (Number.isFinite(basePrice) && numeric >= basePrice) {
-                return 'Must be lower than price';
+            validate: (value: unknown) => {
+              const raw = String(value ?? '').trim();
+              if (!raw) {
+                return required ? 'This field is required' : true;
               }
-            }
-            return true;
-          },
-        }
+              const numeric = Number(raw);
+              if (!Number.isFinite(numeric)) {
+                return 'Enter a valid number';
+              }
+              if ((isPriceField || isSpecialPriceField) && numeric <= 0) {
+                return 'Must be greater than 0';
+              }
+              if (isNonNegativeField && numeric < 0) {
+                return 'Cannot be negative';
+              }
+              if (isSpecialPriceField) {
+                const basePrice = Number(getValues(name.replace(/\.specialPrice$/, '.price')));
+                if (Number.isFinite(basePrice) && numeric >= basePrice) {
+                  return 'Must be lower than price';
+                }
+              }
+              return true;
+            },
+          }
         : required
           ? { required: 'This field is required' }
           : undefined,
@@ -604,8 +604,9 @@ function VariantFieldInput({
           required={required}
           placeholder=""
           title={String(field.value ?? '')}
-          className={`font-mono text-[11px] sm:text-xs px-1.5 h-7 sm:h-8 ${fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
-            }`}
+          className={`font-mono text-[11px] sm:text-xs px-1.5 h-7 sm:h-8 ${
+            fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
+          }`}
           {...field}
         />
       )}

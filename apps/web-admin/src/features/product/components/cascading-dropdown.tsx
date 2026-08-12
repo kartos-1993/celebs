@@ -3,11 +3,7 @@ import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { logger } from '@celebs/shared-utils';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@celebs/shared-ui/components/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 import { cn } from '@/lib/utils';
 import { CategoryApiService } from '../../category/api';
@@ -105,7 +101,8 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     let parentId: string | null = null;
     let last: DropdownCategory | undefined;
     for (const name of segments) {
-      const candidates: DropdownCategory[] = parentId === null ? getRootCategories() : getChildCategories(parentId);
+      const candidates: DropdownCategory[] =
+        parentId === null ? getRootCategories() : getChildCategories(parentId);
       const match: DropdownCategory | undefined = candidates.find(
         (c: DropdownCategory) => c.name === name || c.slug === name,
       );
@@ -257,7 +254,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
       const resolvedPath: DropdownCategory[] = [];
       for (let i = 0; i < pathSegments.length; i++) {
         const name = pathSegments[i];
-        const parentId = i === 0 ? null : resolvedPath[i - 1]?.id ?? null;
+        const parentId = i === 0 ? null : (resolvedPath[i - 1]?.id ?? null);
         const candidates: DropdownCategory[] =
           parentId === null ? getRootCategories() : getChildCategories(parentId);
         const match: DropdownCategory | undefined = candidates.find(
@@ -269,7 +266,9 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
       finalPath = resolvedPath.length > 0 ? resolvedPath : [category];
     }
 
-    const newColumns: ColumnData[] = [{ parentId: null, parentName: 'Categories', searchQuery: '' }];
+    const newColumns: ColumnData[] = [
+      { parentId: null, parentName: 'Categories', searchQuery: '' },
+    ];
     for (let i = 0; i < finalPath.length; i++) {
       const node = finalPath[i];
       const isLast = i === finalPath.length - 1;
@@ -468,9 +467,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                                   variant="ghost"
                                   className={cn(
                                     'w-full justify-between text-left h-8 px-2 text-xs font-normal',
-                                    selectedPath.some((cat) => cat.id === category.id) && 'bg-accent',
+                                    selectedPath.some((cat) => cat.id === category.id) &&
+                                      'bg-accent',
                                     tempSelectedPath.some((cat) => cat.id === category.id) &&
-                                    'bg-primary/10 text-primary font-semibold',
+                                      'bg-primary/10 text-primary font-semibold',
                                   )}
                                   ref={(el) => {
                                     const key = `${columnIndex}:${category.id}`;
@@ -511,7 +511,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             <div className="flex items-center justify-between border-t border-border pt-2.5 flex-shrink-0 bg-background">
               <span className="text-xs text-muted-foreground">
                 {tempSelectedPath.length > 0 &&
-                  !tempSelectedPath[tempSelectedPath.length - 1].hasChildren
+                !tempSelectedPath[tempSelectedPath.length - 1].hasChildren
                   ? 'Ready to confirm selection'
                   : 'Select a final subcategory'}
               </span>

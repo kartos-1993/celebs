@@ -82,9 +82,7 @@ export default function VerifyEmailPage() {
             ✓
           </div>
           <h2 className="text-2xl font-bold text-green-700">Email Verified Successfully!</h2>
-          <p className="text-sm text-muted-foreground">
-            Redirecting you to store setup portal...
-          </p>
+          <p className="text-sm text-muted-foreground">Redirecting you to store setup portal...</p>
         </div>
       )}
 

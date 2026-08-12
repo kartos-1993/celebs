@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { DefaultTheme, Stack,ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -8,7 +8,7 @@ import { FlyToCartOverlay } from '@/components/fly-to-cart-overlay';
 import { AuthProvider } from '@/features/auth/context/auth-context';
 import { CartProvider } from '@/features/cart/context/cart-context';
 import { FlyToCartProvider } from '@/features/cart/context/fly-to-cart-context';
-import { clientPersister,queryClient } from '@/lib/react-query/query-client';
+import { clientPersister, queryClient } from '@/lib/react-query/query-client';
 
 SplashScreen.preventAutoHideAsync();
 

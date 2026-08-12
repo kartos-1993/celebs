@@ -86,11 +86,19 @@ export default function CheckoutScreen() {
           streetAddress,
         },
         paymentMethod,
-        items: (cart?.items || []).map((item: { productId?: string; id?: string; quantity: number; unitPrice?: number; price?: number }) => ({
-          productId: item.productId || item.id,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice || item.price,
-        })),
+        items: (cart?.items || []).map(
+          (item: {
+            productId?: string;
+            id?: string;
+            quantity: number;
+            unitPrice?: number;
+            price?: number;
+          }) => ({
+            productId: item.productId || item.id,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || item.price,
+          }),
+        ),
       };
 
       await apiClient.post('/orders/checkout', payload).catch(async () => {
@@ -120,7 +128,8 @@ export default function CheckoutScreen() {
     } catch (err: unknown) {
       Alert.alert(
         'Order Failed',
-        (err as { message?: string })?.message || 'Something went wrong while placing your order. Please try again.',
+        (err as { message?: string })?.message ||
+          'Something went wrong while placing your order. Please try again.',
       );
     } finally {
       setLoading(false);

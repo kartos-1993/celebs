@@ -218,7 +218,11 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             </div>
           ) : (
             <div className="grid h-full w-full place-items-center bg-accent text-[10px] text-muted-foreground relative">
-              {isUploadingSwatch ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : 'Img'}
+              {isUploadingSwatch ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                'Img'
+              )}
             </div>
           )}
         </label>
@@ -287,9 +291,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             </label>
           </div>
           {imagesError ? (
-            <div className="text-xs text-red-500 mt-1">
-              {String(imagesError)}
-            </div>
+            <div className="text-xs text-red-500 mt-1">{String(imagesError)}</div>
           ) : null}
         </div>
       </div>
@@ -301,10 +303,14 @@ export function ColorInlineInputField({ field }: UiProps) {
   const dsVariants = Array.isArray(field.dataSource?.variants) ? field.dataSource.variants : [];
   const colorField: string =
     (field.dataSource?.colorField as string | undefined) ??
-    (dsVariants as Array<{ label?: string; key?: string }>).find((v) => /color/i.test(v?.label ?? v?.key ?? ''))?.key ??
+    (dsVariants as Array<{ label?: string; key?: string }>).find((v) =>
+      /color/i.test(v?.label ?? v?.key ?? ''),
+    )?.key ??
     'color';
-  const labelsMap: Record<string, Record<string, string>> =
-    (field.dataSource?.labels as Record<string, Record<string, string>>) ?? {};
+  const labelsMap: Record<string, Record<string, string>> = (field.dataSource?.labels as Record<
+    string,
+    Record<string, string>
+  >) ?? {};
   const labelOf = (value: string) => labelsMap?.[colorField]?.[String(value)] ?? String(value);
   const accept: string[] | undefined = Array.isArray(field.rule?.accept)
     ? (field.rule.accept as string[])
@@ -314,7 +320,11 @@ export function ColorInlineInputField({ field }: UiProps) {
     maxSize: typeof field.rule?.maxSize === 'number' ? field.rule.maxSize : undefined,
   } as { maxImages?: number; maxSize?: number };
   const selected = useWatch({ name: colorField });
-  const colors: string[] = Array.isArray(selected) ? (selected as string[]) : selected ? [String(selected)] : [];
+  const colors: string[] = Array.isArray(selected)
+    ? (selected as string[])
+    : selected
+      ? [String(selected)]
+      : [];
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">
