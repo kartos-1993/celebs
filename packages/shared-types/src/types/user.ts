@@ -9,6 +9,7 @@ export interface VendorProfileData {
   holidayMode: boolean;
   phoneNumber: string;
   shopDescription?: string;
+  rejectionReason?: string;
 }
 
 export interface UserData {
