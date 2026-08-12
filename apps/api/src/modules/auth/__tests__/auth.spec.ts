@@ -17,6 +17,12 @@ describe('Authentication API Integration Tests', () => {
     confirmPassword: 'Password123!',
   };
 
+  beforeEach(async () => {
+    await prisma.session.deleteMany({});
+    await prisma.verificationCode.deleteMany({});
+    await prisma.user.deleteMany({});
+  });
+
   describe('POST /api/v1/auth/register', () => {
     it('should register a new user successfully (Happy Path)', async () => {
       const res = await request(app).post('/api/v1/auth/register').send(testUser);

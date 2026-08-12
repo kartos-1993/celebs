@@ -30,7 +30,7 @@
     "seed:products-denim-jeans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-denim-jeans.ts",
     "seed:products-mock": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-mock-catalog.ts",
     "//_QUALITY": "=== Code Quality & Testing ===",
-    "test": "dotenv -e .env.test -- sh -c \"prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && vitest run\"",
+    "test": "dotenv -e .env.test -- prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && dotenv -e .env.test -- vitest run",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "lint": "eslint src"
   },
