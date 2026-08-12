@@ -271,6 +271,13 @@ export class AuthService {
     logger.info({ userId: user.id }, 'User authenticated successfully');
 
     if (user.role === 'VENDOR') {
+      if (!user.isEmailVerified) {
+        throw new ForbiddenException(
+          'Email address is not verified. Please check your inbox for the verification link.',
+          ErrorCode.VERIFICATION_ERROR,
+        );
+      }
+
       const profile = await prisma.vendorProfile.findUnique({
         where: { userId: user.id },
       });

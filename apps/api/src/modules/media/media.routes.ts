@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import cloudinary from '@/config/cloudinary.config';
-import { authenticateJWT } from '@/middlewares/auth.middleware';
+import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler, logger } from '@celebs/shared-utils';
@@ -32,8 +32,9 @@ const memoryUpload = multer({
   },
 });
 
-// All media routes require auth + product create permission
+// All media routes require auth + approved vendor + product create permission
 router.use(authenticateJWT);
+router.use(requireApprovedVendor);
 router.use(requirePermissions(Permission.PRODUCT_CREATE));
 
 // POST /api/v1/media/upload
