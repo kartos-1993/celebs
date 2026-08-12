@@ -17,7 +17,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'node',
-    include: ['src/routes/__tests__/**/*.spec.tsx'],
+    environment: 'jsdom',
+    include: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'],
   },
 });
