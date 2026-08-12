@@ -18,7 +18,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 import { setupSuperadminSchema } from '@celebs/shared-types';
-import { setupSuperadminMutationFn } from '@/lib/api';
+import { setupSuperadmin } from '../api';
 
 type SetupSuperadminFormProps = HTMLAttributes<HTMLDivElement>;
 
@@ -28,7 +28,7 @@ export function SetupSuperadminForm({ className, ...props }: SetupSuperadminForm
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: setupSuperadminMutationFn,
+    mutationFn: setupSuperadmin,
     meta: { suppressErrorToast: true },
   });
 

@@ -19,7 +19,8 @@ import {
 } from '@celebs/shared-ui/components/dropdown-menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { logoutMutationFn } from '@/lib/api';
+import { logout } from '@/features/auth/api';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
 import { useAuthContext } from '@/context/auth-provider';
 
 export function UserNav() {
@@ -27,11 +28,11 @@ export function UserNav() {
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
   const { mutate } = useMutation({
-    mutationFn: logoutMutationFn,
+    mutationFn: logout,
     onSuccess: () => {
-      queryClient.setQueryData(['authUser'], null);
+      queryClient.setQueryData(ACCOUNT_QUERY_KEYS.userSession(), null);
       queryClient.removeQueries({
-        predicate: (query) => query.queryKey[0] !== 'authUser',
+        predicate: (query) => query.queryKey[0] !== ACCOUNT_QUERY_KEYS.all[0],
       });
       const currentPath = window.location.pathname + window.location.search;
       if (currentPath && currentPath !== '/' && currentPath !== '/login') {
