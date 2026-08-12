@@ -1,38 +1,39 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getAdminVendorsQueryFn,
-  approveVendorMutationFn,
-  rejectVendorMutationFn,
-  suspendVendorMutationFn,
-} from '@/lib/api';
+  getAdminVendors,
+  approveVendor,
+  rejectVendor,
+  suspendVendor,
+} from '../api';
+import { VENDORS_QUERY_KEYS } from '../hooks/use-vendor-queries';
 import { Button } from '@celebs/shared-ui/components/button';
 
 export default function VendorList() {
   const queryClient = useQueryClient();
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ['admin-vendors'],
-    queryFn: getAdminVendorsQueryFn,
+    queryKey: VENDORS_QUERY_KEYS.list(),
+    queryFn: getAdminVendors,
   });
 
   const approveMutation = useMutation({
-    mutationFn: approveVendorMutationFn,
+    mutationFn: approveVendor,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-vendors'] });
+      queryClient.invalidateQueries({ queryKey: VENDORS_QUERY_KEYS.all });
     },
   });
 
   const rejectMutation = useMutation({
-    mutationFn: rejectVendorMutationFn,
+    mutationFn: rejectVendor,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-vendors'] });
+      queryClient.invalidateQueries({ queryKey: VENDORS_QUERY_KEYS.all });
     },
   });
 
   const suspendMutation = useMutation({
-    mutationFn: suspendVendorMutationFn,
+    mutationFn: suspendVendor,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-vendors'] });
+      queryClient.invalidateQueries({ queryKey: VENDORS_QUERY_KEYS.all });
     },
   });
 
