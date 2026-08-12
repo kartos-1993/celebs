@@ -91,6 +91,40 @@ export function assertUploadMeta(input: {
   return { originalname, mimeType, size };
 }
 
+export function validateImageMagicBytes(buffer: Buffer): boolean {
+  if (!buffer || buffer.length < 4) return false;
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return true;
+  // PNG: 89 50 4E 47
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47)
+    return true;
+  // WEBP: RIFF ... WEBP
+  if (
+    buffer.length >= 12 &&
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x41 &&
+    buffer[10] === 0x56 &&
+    buffer[11] === 0x45
+  ) {
+    return true;
+  }
+  // AVIF: ftyp (bytes 4..7)
+  if (
+    buffer.length >= 12 &&
+    buffer[4] === 0x66 &&
+    buffer[5] === 0x74 &&
+    buffer[6] === 0x79 &&
+    buffer[7] === 0x70
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Upload an image buffer to S3/MinIO and return key + public URL.
  * Kept as multipart fallback (Phase 1).
@@ -101,6 +135,11 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
     mimeType: input.mimeType,
     size: input.buffer.length || 1,
   });
+
+  // Verify magic bytes header to prevent MIME spoofing
+  if (!validateImageMagicBytes(input.buffer)) {
+    throw new Error('Invalid file type. Allowed: jpeg, png, webp, avif');
+  }
 
   // Convert the originalname extension to .webp
   const nameWithoutExt = originalname.replace(/\.[^/.]+$/, '');
@@ -171,11 +210,11 @@ export async function createPresignedPut(input: PresignFileInput): Promise<Presi
  */
 export async function confirmUploadedObject(input: ConfirmUploadInput): Promise<PutImageResult> {
   const key = (input.key || '').trim();
-  if (!key || key.includes('..') || key.startsWith('/')) {
+  if (!key || key.includes('..') || key.startsWith('/') || key.startsWith('\\')) {
     throw new Error('Invalid object key');
   }
-  // Only allow our product media prefix
-  if (!key.startsWith('celebs/products/')) {
+  // Only allow our product media and kyc prefixes
+  if (!key.startsWith('celebs/products/') && !key.startsWith('celebs/kyc/')) {
     throw new Error('Invalid object key prefix');
   }
 

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, FileText, Loader2, CheckCircle } from 'lucide-react';
+import { Upload, X, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@celebs/shared-ui/components/button';
-import { axiosClient } from '@/lib/axios/axios-client';
+import { uploadOnboardingImage } from '../api';
 
 interface DocumentUploaderProps {
   label: string;
@@ -18,7 +18,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   description,
   value,
   onChange,
-  accept = 'image/*,.pdf',
+  accept = 'image/jpeg,image/png,image/webp,image/avif',
   required = false,
   disabled = false,
 }) => {
@@ -30,9 +30,15 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate image format
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Only image files (JPEG, PNG, WEBP, AVIF) are allowed.');
+      return;
+    }
+
     // Validate size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File size exceeds maximum limit of 5MB.');
+      setUploadError('Image file size exceeds maximum limit of 5MB.');
       return;
     }
 
@@ -40,22 +46,10 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     setIsUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('files', file);
-
-      const response = await axiosClient.post('/media/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const items = response.data?.data || [];
-      if (!items.length || !items[0]?.url) {
-        throw new Error('Image upload failed to return a valid URL.');
-      }
-
-      const uploadedUrl = items[0].url;
+      const uploadedUrl = await uploadOnboardingImage(file);
       onChange(uploadedUrl);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'File upload failed. Please try again.';
+      const msg = err instanceof Error ? err.message : 'Image upload failed. Please try again.';
       setUploadError(msg);
     } finally {
       setIsUploading(false);
@@ -69,11 +63,6 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     onChange('');
     setUploadError(null);
   };
-
-  const isPdf = value?.toLowerCase().endsWith('.pdf');
-  const isImage = Boolean(
-    value && (value.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) || !isPdf),
-  );
 
   return (
     <div className="space-y-2">
@@ -102,19 +91,9 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       {value ? (
         <div className="relative group border rounded-lg p-3 bg-muted/30 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 overflow-hidden">
-            {isPdf ? (
-              <div className="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center shrink-0">
-                <FileText className="w-6 h-6" />
-              </div>
-            ) : isImage ? (
-              <div className="w-12 h-12 rounded border overflow-hidden bg-background shrink-0">
-                <img src={value} alt={label} className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5" />
-              </div>
-            )}
+            <div className="w-12 h-12 rounded border overflow-hidden bg-background shrink-0 flex items-center justify-center">
+              <img src={value} alt={label} className="w-full h-full object-cover" />
+            </div>
 
             <div className="min-w-0 flex-1">
               <a
@@ -123,9 +102,11 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 rel="noreferrer"
                 className="text-xs font-medium text-primary hover:underline truncate block"
               >
-                View Document
+                View Uploaded Image
               </a>
-              <p className="text-[11px] text-muted-foreground truncate">File uploaded successfully</p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Compressed WebP image stored
+              </p>
             </div>
           </div>
 
@@ -166,15 +147,19 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           {isUploading ? (
             <div className="flex flex-col items-center py-2 space-y-2">
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
-              <p className="text-xs text-muted-foreground font-medium">Uploading file to R2 storage...</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                Compressing & uploading image...
+              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center py-2 space-y-1">
               <Upload className="w-6 h-6 text-muted-foreground mb-1" />
               <p className="text-xs font-medium text-foreground">
-                Click to upload <span className="text-muted-foreground">(Max 5MB)</span>
+                Click to upload image <span className="text-muted-foreground">(Max 5MB)</span>
               </p>
-              <p className="text-[11px] text-muted-foreground">PNG, JPG, WEBP, or PDF</p>
+              <p className="text-[11px] text-muted-foreground">
+                JPEG, PNG, WEBP, or AVIF images only
+              </p>
             </div>
           )}
         </div>

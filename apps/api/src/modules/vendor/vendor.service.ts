@@ -1,6 +1,7 @@
 import { BadRequestException, ErrorCode, NotFoundException } from '@celebs/shared-utils';
 
 import prisma from '@/db';
+import { putImage } from '../media/storage.service';
 
 export class VendorService {
   public async getOnboardingStatus(userId: string) {
@@ -206,6 +207,28 @@ export class VendorService {
         rejectionReason: null,
       },
     });
+  }
+
+  public async uploadOnboardingImage(userId: string, file: Express.Multer.File) {
+    const profile = await prisma.vendorProfile.findUnique({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException('Vendor profile not found');
+    }
+
+    const folder = `celebs/kyc/${userId}`;
+    const result = await putImage({
+      buffer: file.buffer,
+      originalname: file.originalname || 'kyc-document',
+      mimeType: file.mimetype,
+      folder,
+    });
+
+    return {
+      url: result.url,
+      publicId: result.key,
+      bytes: result.bytes,
+      originalname: result.originalname,
+    };
   }
 
   public async toggleHolidayMode(userId: string) {

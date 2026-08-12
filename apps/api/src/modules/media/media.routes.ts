@@ -36,7 +36,23 @@ router.use(requirePermissions(Permission.PRODUCT_CREATE));
 // field name: files (can be multiple) → MinIO/S3 via AWS SDK v3
 router.post(
   '/upload',
-  memoryUpload.array('files', 12),
+  (req, res, next): void => {
+    memoryUpload.array('files', 12)(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            res.status(400).json({ success: false, message: 'Each image must be <= 5MB' });
+            return;
+          }
+          res.status(400).json({ success: false, message: err.message });
+          return;
+        }
+        res.status(400).json({ success: false, message: err.message || 'File upload failed' });
+        return;
+      }
+      next();
+    });
+  },
   asyncHandler(async (req, res) => {
     const files = (req.files as Express.Multer.File[]) || [];
     if (files.length === 0) {

@@ -113,6 +113,34 @@ export class VendorController {
     },
   );
 
+  public uploadOnboardingImage = asyncHandler(
+    async (req: Request, res: Response): Promise<Response> => {
+      const userId = this.getUserId(req);
+      const files = (req.files as Express.Multer.File[]) || [];
+      if (files.length === 0) {
+        return res.status(HTTPSTATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'No image file provided',
+        });
+      }
+
+      const file = files[0];
+      if (!file) {
+        return res.status(HTTPSTATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'No image file provided',
+        });
+      }
+
+      const result = await this.vendorService.uploadOnboardingImage(userId, file);
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Image uploaded successfully',
+        data: [result],
+      });
+    },
+  );
+
   public toggleHolidayMode = asyncHandler(
     async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);

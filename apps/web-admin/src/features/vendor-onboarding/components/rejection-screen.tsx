@@ -7,10 +7,7 @@ interface RejectionScreenProps {
   onEdit: () => void;
 }
 
-export const RejectionScreen: React.FC<RejectionScreenProps> = ({
-  rejectionReason,
-  onEdit,
-}) => {
+export const RejectionScreen: React.FC<RejectionScreenProps> = ({ rejectionReason, onEdit }) => {
   return (
     <div className="flex flex-col items-center text-center gap-6 py-8 max-w-md mx-auto">
       {/* Rejection icon */}
@@ -39,10 +36,14 @@ export const RejectionScreen: React.FC<RejectionScreenProps> = ({
       <div className="w-full border rounded-lg p-4 text-left bg-card space-y-2 text-sm">
         <h3 className="font-semibold text-foreground">What to do next:</h3>
         <ol className="text-muted-foreground space-y-1 list-decimal list-inside text-xs">
-          <li>Click <strong>"Edit Application"</strong> below to open the setup wizard</li>
+          <li>
+            Click <strong>"Edit Application"</strong> below to open the setup wizard
+          </li>
           <li>Navigate directly to the step that needs updates using the step bar</li>
           <li>Correct your information or upload new documents</li>
-          <li>Review and click <strong>"Resubmit Application"</strong> on Step 5</li>
+          <li>
+            Review and click <strong>"Resubmit Application"</strong> on Step 5
+          </li>
         </ol>
       </div>
 

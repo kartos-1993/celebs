@@ -34,3 +34,17 @@ export async function submitVendorForReview() {
 export async function resubmitForReview() {
   return await axiosClient.post('/vendor/resubmit');
 }
+
+export async function uploadOnboardingImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('files', file);
+  const response = await axiosClient.post('/vendor/onboarding/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  const items = response.data?.data || [];
+  if (!items.length || !items[0]?.url) {
+    throw new Error('Image upload failed');
+  }
+  return items[0].url;
+}
