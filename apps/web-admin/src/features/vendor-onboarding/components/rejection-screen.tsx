@@ -1,75 +1,54 @@
-import { XCircle, RefreshCw } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import React from 'react';
+import { XCircle, Edit3 } from 'lucide-react';
 import { Button } from '@celebs/shared-ui/components/button';
-import { resubmitForReview } from '../api';
-import { useAuthContext } from '@/context/auth-provider';
 
 interface RejectionScreenProps {
   rejectionReason?: string;
+  onEdit: () => void;
 }
 
-export const RejectionScreen = ({ rejectionReason }: RejectionScreenProps) => {
-  const { refetch } = useAuthContext();
-
-  const resubmitMutation = useMutation({
-    mutationFn: resubmitForReview,
-    onSuccess: () => {
-      refetch();
-    },
-  });
-
+export const RejectionScreen: React.FC<RejectionScreenProps> = ({
+  rejectionReason,
+  onEdit,
+}) => {
   return (
-    <div className="flex flex-col items-center text-center gap-6 py-8">
+    <div className="flex flex-col items-center text-center gap-6 py-8 max-w-md mx-auto">
       {/* Rejection icon */}
       <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
         <XCircle className="w-10 h-10 text-destructive" />
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Application Not Approved</h1>
-        <p className="text-muted-foreground text-sm max-w-sm">
-          Your seller application was reviewed and could not be approved at this time. Please review
-          the reason below and resubmit.
+        <h1 className="text-2xl font-bold">Application Revision Required</h1>
+        <p className="text-muted-foreground text-sm">
+          Your seller application was reviewed by platform moderation and requires updates before
+          account activation. Please review the feedback below and update your details.
         </p>
       </div>
 
       {/* Rejection reason */}
       {rejectionReason && (
-        <div className="w-full max-w-sm border border-destructive/30 rounded-lg p-4 text-left bg-destructive/5">
-          <h3 className="text-sm font-semibold text-destructive mb-1">Reason for rejection</h3>
-          <p className="text-sm text-foreground">{rejectionReason}</p>
+        <div className="w-full border border-destructive/30 rounded-lg p-4 text-left bg-destructive/5 space-y-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-destructive">
+            Moderation Feedback
+          </h3>
+          <p className="text-sm font-medium text-foreground">{rejectionReason}</p>
         </div>
       )}
 
-      <div className="w-full max-w-sm border rounded-lg p-4 text-left bg-card space-y-2">
-        <h3 className="text-sm font-semibold">What to do next</h3>
-        <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-          <li>Review the rejection reason above</li>
-          <li>Update your business documents or information</li>
-          <li>Click "Resubmit Application" when ready</li>
-        </ul>
+      <div className="w-full border rounded-lg p-4 text-left bg-card space-y-2 text-sm">
+        <h3 className="font-semibold text-foreground">What to do next:</h3>
+        <ol className="text-muted-foreground space-y-1 list-decimal list-inside text-xs">
+          <li>Click <strong>"Edit Application"</strong> below to open the setup wizard</li>
+          <li>Navigate directly to the step that needs updates using the step bar</li>
+          <li>Correct your information or upload new documents</li>
+          <li>Review and click <strong>"Resubmit Application"</strong> on Step 5</li>
+        </ol>
       </div>
 
-      {resubmitMutation.isError && (
-        <p className="text-sm text-destructive">Failed to resubmit. Please try again.</p>
-      )}
-
-      <Button
-        onClick={() => resubmitMutation.mutate()}
-        disabled={resubmitMutation.isPending}
-        className="w-full max-w-sm"
-      >
-        {resubmitMutation.isPending ? (
-          <>
-            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            Resubmitting...
-          </>
-        ) : (
-          <>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Resubmit Application
-          </>
-        )}
+      <Button onClick={onEdit} size="lg" className="w-full font-semibold gap-2">
+        <Edit3 className="w-4 h-4" />
+        Edit Application
       </Button>
     </div>
   );
