@@ -67,6 +67,7 @@ export function ThemeProvider({
   return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const context = useContext(ThemeProviderContext);
   if (!context) {

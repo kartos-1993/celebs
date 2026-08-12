@@ -14,8 +14,6 @@ import {
 } from './shared';
 import { useObjectUrl } from './use-object-url';
 
-export { useObjectUrl };
-
 export function ColorMetaItem({
   color,
   namePrefix,
@@ -54,6 +52,7 @@ export function ColorMetaItem({
       });
       if (!active) setImagePreviews([]);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagesHash]);
 
   React.useEffect(() => {

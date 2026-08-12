@@ -38,7 +38,7 @@ interface VariantDataSource {
 export function SkuTableInputField({ field }: UiProps) {
   const { control: formControl, setValue, getValues } = useFormContext();
   const ds = field.dataSource as VariantDataSource | undefined;
-  const labelsMap: Record<string, Record<string, string>> = ds?.labels ?? {};
+  const labelsMap = React.useMemo(() => (ds?.labels ?? {}) as Record<string, Record<string, string>>, [ds?.labels]);
   const labelOf = React.useCallback(
     (axisKey: string, value: string) => labelsMap?.[axisKey]?.[String(value)] ?? String(value),
     [labelsMap],

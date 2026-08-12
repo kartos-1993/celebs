@@ -5,6 +5,7 @@ import type { UiProps } from '../ui-registry';
 import { LabelWithRequired, FieldError, rulesFrom } from './shared';
 import { useOptions } from './use-options';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { useOptions };
 
 export function DropdownInputField({ field, control }: UiProps) {

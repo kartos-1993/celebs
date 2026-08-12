@@ -14,6 +14,7 @@ import type { DropdownCategory, RecentCategory } from '../types';
 export type { DropdownCategory as Category, RecentCategory } from '../types';
 export type CategoryNode = DropdownCategory & { children?: CategoryNode[] };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function formatCategoryPath(path: string[] | string | undefined | null): string {
   if (!path) return '';
   if (Array.isArray(path)) return path.join(' > ');
@@ -328,7 +329,6 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     if (!selectedCategory) {
       resetDropdownState();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   const getCategoriesForColumn = (column: ColumnData): DropdownCategory[] => {

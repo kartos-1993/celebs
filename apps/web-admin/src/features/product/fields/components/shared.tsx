@@ -1,7 +1,14 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import { Label } from '@celebs/shared-ui/components/label';
-
-export * from './shared-utils';
+export {
+  type ImageValue,
+  imageValueKey,
+  uploadImageFiles,
+  uploadErrorMessage,
+  validateFileBasics,
+  rulesFrom,
+} from './shared-utils';
 
 export function LabelWithRequired({
   children,
