@@ -1,11 +1,11 @@
 import { Router } from 'express';
 
+import { Permission } from '@celebs/rbac';
+
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
-
-import { Permission } from '@celebs/rbac';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const orderRoutes = Router();

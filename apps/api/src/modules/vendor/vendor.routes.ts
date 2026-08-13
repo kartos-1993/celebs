@@ -1,11 +1,10 @@
 import { Router } from 'express';
+import multer from 'multer';
 
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
 
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
-
-import multer from 'multer';
 
 const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 

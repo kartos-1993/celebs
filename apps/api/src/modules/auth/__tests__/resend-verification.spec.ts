@@ -1,8 +1,10 @@
-import { describe, expect, it, beforeEach } from 'vitest';
-import prisma from '@/db';
+import { beforeEach,describe, expect, it } from 'vitest';
+
 import { AuthService } from '../auth.service';
+
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';
+import prisma from '@/db';
 
 describe('AuthService - Resend Verification & Token Superseding', () => {
   let authService: AuthService;
