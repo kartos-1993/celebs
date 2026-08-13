@@ -2,13 +2,12 @@ import { CreateStaffType } from '@celebs/shared-types';
 import {
   BadRequestException,
   ForbiddenException,
-  InternalServerException,
   logger,
   NotFoundException,
 } from '@celebs/shared-utils';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
-import { comparePassword, hashValue } from '@/common/utils/bcrypt';
+import { hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import { buildWebUrl } from '@/common/utils/url';
 import prisma from '@/db';

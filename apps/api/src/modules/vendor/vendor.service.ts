@@ -1,7 +1,8 @@
 import { BadRequestException, ErrorCode, NotFoundException } from '@celebs/shared-utils';
 
-import prisma from '@/db';
 import { putImage } from '../media/storage.service';
+
+import prisma from '@/db';
 
 export class VendorService {
   public async getOnboardingStatus(userId: string) {
