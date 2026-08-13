@@ -5,6 +5,7 @@ import {
   IApiResponse,
   loginSchema,
   registerSchema,
+  resendVerificationSchema,
   setupSuperadminSchema,
   vendorRegisterSchema,
 } from '@celebs/shared-types';
@@ -119,6 +120,29 @@ export class AuthController {
         success: true,
         message: 'Email verified successfully',
         data: { user, accessToken, refreshToken },
+      };
+      return res.status(HTTPSTATUS.OK).json(response);
+    },
+  );
+
+  public resendVerification = asyncHandler(
+    async (req: Request, res: Response): Promise<Response> => {
+      let body;
+      try {
+        body = resendVerificationSchema.parse(req.body);
+      } catch (err: unknown) {
+        if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
+          const issues = (err as z.ZodError).issues;
+          const msg = issues?.[0]?.message || 'Validation failed';
+          throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
+        }
+        throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
+      }
+      const result = await this.authService.resendVerification(body);
+      const response: IApiResponse<typeof result> = {
+        success: true,
+        message: 'Verification link sent successfully',
+        data: result,
       };
       return res.status(HTTPSTATUS.OK).json(response);
     },

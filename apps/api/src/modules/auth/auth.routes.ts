@@ -18,6 +18,7 @@ authRoutes.post('/google', authRateLimiter, authController.googleSignIn);
 authRoutes.post('/refresh', authRateLimiter, authController.refreshToken);
 authRoutes.post('/verify-email', authRateLimiter, authController.verifyEmail);
 authRoutes.get('/verify-email', authRateLimiter, authController.verifyEmail);
+authRoutes.post('/resend-verification', authRateLimiter, authController.resendVerification);
 authRoutes.post('/logout', authenticateJWT, authController.logout);
 authRoutes.post('/setup-superadmin', authRateLimiter, authController.setupSuperadmin);
 authRoutes.get('/setup-status', authController.getSetupStatus);

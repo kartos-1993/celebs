@@ -74,3 +74,7 @@ export const setupSuperadminSchema = z.object({
   password: passwordSchema,
   setupSecret: z.string().min(1, 'Setup secret is required'),
 });
+
+export const resendVerificationSchema = z.object({
+  email: emailSchema,
+});

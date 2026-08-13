@@ -10,6 +10,8 @@ import { VENDORS_QUERY_KEYS } from '@/features/vendors/hooks/use-vendor-queries'
 import { useAuthContext } from '@/context/auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import type { UserData } from '@celebs/shared-types';
+import { resendVerification } from '@/features/auth/api';
+import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
@@ -33,6 +35,9 @@ import {
   Receipt,
   ShieldCheck,
   Store,
+  Send,
+  RefreshCw,
+  MailWarning,
 } from 'lucide-react';
 import { Permission } from '@celebs/rbac';
 
@@ -82,6 +87,59 @@ const STAFF_ROLE_PRESETS = [
     ],
   },
 ];
+
+function ResendStaffInviteButton({ email }: { email: string }) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const { secondsRemaining, isCoolingDown, startCooldown } = useResendCooldown(
+    `staff_resend_${email}`,
+    60,
+  );
+
+  const handleResend = async () => {
+    if (isCoolingDown || loading) return;
+    setLoading(true);
+    try {
+      await resendVerification({ email });
+      startCooldown();
+      toast({
+        title: 'Invite Sent',
+        description: `Verification & invite link sent to ${email}`,
+      });
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to resend invite';
+      toast({
+        variant: 'destructive',
+        title: 'Resend Failed',
+        description: msg,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={loading || isCoolingDown}
+      onClick={handleResend}
+      className="h-8 gap-1 text-xs"
+    >
+      {loading ? (
+        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+      ) : isCoolingDown ? (
+        <span className="font-mono text-[11px]">{secondsRemaining}s</span>
+      ) : (
+        <>
+          <Send className="w-3.5 h-3.5" /> Resend Invite
+        </>
+      )}
+    </Button>
+  );
+}
 
 export default function StaffList() {
   const queryClient = useQueryClient();
@@ -433,7 +491,15 @@ export default function StaffList() {
                       )}
                     </div>
                   </td>
-                  <td className="p-3.5 text-right">
+                  <td className="p-3.5 text-right flex items-center justify-end gap-2">
+                    {!member.isEmailVerified && (
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+                          <MailWarning className="w-3 h-3 mr-1 inline" /> Unverified
+                        </Badge>
+                        <ResendStaffInviteButton email={member.email} />
+                      </div>
+                    )}
                     <Button
                       size="sm"
                       variant="destructive"

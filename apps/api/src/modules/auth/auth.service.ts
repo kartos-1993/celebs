@@ -1,6 +1,7 @@
 import {
   loginType,
   registerType,
+  resendVerificationType,
   setupSuperadminType,
   vendorRegisterType,
   VerifyEmailResponse,
@@ -61,12 +62,19 @@ export class AuthService {
     // Log user registration
     logger.info({ email: newUser.email, id: newUser.id }, 'New user registered');
 
+    // Supersede any prior verification tokens for this user
+    await prisma.verificationCode.deleteMany({
+      where: {
+        userId: newUser.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+      },
+    });
+
     const verification = await prisma.verificationCode.create({
       data: {
         userId: newUser.id,
         type: VerificationEnum.EMAIL_VERIFICATION,
         expiresAt: fortyFiveMinutesFromNow(),
-        // code: generateCode(), // If you have a code generator
       },
     });
 
@@ -194,6 +202,14 @@ export class AuthService {
       { email: newUser.email, id: newUser.id, shopName },
       'New vendor registered, profile pending approval',
     );
+
+    // Supersede any prior verification tokens for this user
+    await prisma.verificationCode.deleteMany({
+      where: {
+        userId: newUser.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+      },
+    });
 
     const verification = await prisma.verificationCode.create({
       data: {
@@ -392,6 +408,87 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  public async resendVerification(data: resendVerificationType) {
+    const { email } = data;
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('No account found with this email address');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException(
+        'Email address is already verified',
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    // Check 60-second database throttling cooldown
+    const latestCode = await prisma.verificationCode.findFirst({
+      where: {
+        userId: user.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (latestCode) {
+      const elapsedSeconds = Math.floor((Date.now() - latestCode.createdAt.getTime()) / 1000);
+      if (elapsedSeconds < 60) {
+        const remainingSeconds = 60 - elapsedSeconds;
+        throw new BadRequestException(
+          `Please wait ${remainingSeconds} seconds before requesting another verification email`,
+          ErrorCode.VALIDATION_ERROR,
+        );
+      }
+    }
+
+    // Supersede & delete all older verification codes for this user
+    await prisma.verificationCode.deleteMany({
+      where: {
+        userId: user.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+      },
+    });
+
+    const verification = await prisma.verificationCode.create({
+      data: {
+        userId: user.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+        expiresAt: fortyFiveMinutesFromNow(),
+      },
+    });
+
+    const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
+    logger.info({ email: user.email, verificationUrl }, 'Attempting to resend verification email');
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Activate your celebs.com.np account',
+        text: `Please activate your account by clicking the following link: ${verificationUrl}`,
+        html: verifyEmailTemplate(verificationUrl).html,
+      });
+      logger.info({ email: user.email }, 'Resent verification email successfully');
+    } catch (err) {
+      logger.error({ err, email: user.email }, 'Failed to resend verification email');
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        logger.warn(
+          { verificationUrl, email: user.email },
+          '[DEV/TEST FALLBACK] Verification email failed to send. Click link in logs to verify manually.',
+        );
+      } else {
+        throw new InternalServerException('Failed to send verification email');
+      }
+    }
+
+    return { message: 'Verification link sent successfully' };
   }
 
   public async logout(sessionId: string) {

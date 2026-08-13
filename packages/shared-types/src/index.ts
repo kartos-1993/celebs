@@ -7,6 +7,7 @@ import {
   resetPasswordSchema,
   vendorRegisterSchema,
   setupSuperadminSchema,
+  resendVerificationSchema,
 } from './validators/auth.validator';
 import { verifyMfaSchema, verifyMfaForLoginSchema } from './validators/mfa.validator';
 import {
@@ -44,6 +45,7 @@ export type resetPasswordType = z.infer<typeof resetPasswordSchema>;
 export type verifyMFAType = z.infer<typeof verifyMfaSchema>;
 export type mfaLoginType = z.infer<typeof verifyMfaForLoginSchema>;
 export type setupSuperadminType = z.infer<typeof setupSuperadminSchema>;
+export type resendVerificationType = z.infer<typeof resendVerificationSchema>;
 export type vendorProfileType = z.infer<typeof vendorProfileSchema>;
 export type warehouseType = z.infer<typeof warehouseSchema>;
 export type vendorDocumentsType = z.infer<typeof vendorDocumentsSchema>;

@@ -18,11 +18,76 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Button } from '@celebs/shared-ui/components/button';
 
-import { login } from '../api';
+import { login, resendVerification } from '../api';
 import { getUserSession } from '@/features/account/api';
 import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
+import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
+import { RefreshCw, Send, CheckCircle2 } from 'lucide-react';
 
 type SignInFormProps = HTMLAttributes<HTMLDivElement>;
+
+function ResendBannerButton({ email }: { email: string }) {
+  const [status, setStatus] = useState<{ loading: boolean; message?: string; error?: string }>({
+    loading: false,
+  });
+  const { secondsRemaining, isCoolingDown, startCooldown } = useResendCooldown(
+    'login_resend_cooldown',
+    60,
+  );
+
+  const handleResend = async () => {
+    if (!email || isCoolingDown) return;
+    setStatus({ loading: true });
+    try {
+      await resendVerification({ email });
+      startCooldown();
+      setStatus({
+        loading: false,
+        message: 'Fresh activation email sent! Please check your inbox.',
+      });
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to resend email';
+      setStatus({ loading: false, error: msg });
+    }
+  };
+
+  if (status.message) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400 font-medium pt-1">
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        <span>{status.message}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-1">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={status.loading || isCoolingDown || !email}
+        onClick={handleResend}
+        className="text-xs h-8 w-full gap-1.5"
+      >
+        {status.loading ? (
+          <>
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Resending Link...
+          </>
+        ) : isCoolingDown ? (
+          <>Resend Link in {secondsRemaining}s...</>
+        ) : (
+          <>
+            <Send className="w-3.5 h-3.5" /> Resend Verification Link
+          </>
+        )}
+      </Button>
+      {status.error && <div className="text-xs text-destructive pt-1">{status.error}</div>}
+    </div>
+  );
+}
 
 const formSchema = z.object({
   email: z
@@ -108,8 +173,11 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
         </div>
       )}
       {serverError && (
-        <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md mb-2">
-          {serverError}
+        <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md mb-2 space-y-2">
+          <div>{serverError}</div>
+          {(serverError.toLowerCase().includes('verify') || serverError.toLowerCase().includes('unverified')) && (
+            <ResendBannerButton email={form.getValues('email')} />
+          )}
         </div>
       )}
       <Form {...form}>
