@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getStaff, createStaff, deleteStaff } from '../api';
+import { getStaff, createStaff, deleteStaff, updateStaff } from '../api';
 import { STAFF_QUERY_KEYS } from '../hooks/use-staff-queries';
 import { getAdminVendors } from '@/features/vendors/api';
 import { VENDORS_QUERY_KEYS } from '@/features/vendors/hooks/use-vendor-queries';
@@ -38,8 +38,21 @@ import {
   Send,
   RefreshCw,
   MailWarning,
+  Pencil,
 } from 'lucide-react';
 import { Permission } from '@celebs/rbac';
+
+const AVAILABLE_STAFF_PERMISSIONS = [
+  { perm: Permission.PRODUCT_VIEW, label: 'View Products' },
+  { perm: Permission.PRODUCT_CREATE, label: 'Create Products' },
+  { perm: Permission.PRODUCT_EDIT, label: 'Edit Products' },
+  { perm: Permission.PRODUCT_DELETE, label: 'Delete Products' },
+  { perm: Permission.CATALOG_VIEW, label: 'View Catalog Setup' },
+  { perm: Permission.ORDER_VIEW, label: 'View Orders & Reviews' },
+  { perm: Permission.ORDER_MANAGE, label: 'Manage & Fulfill Orders' },
+  { perm: Permission.FINANCE_VIEW, label: 'View Finance Reports' },
+  { perm: Permission.STAFF_VIEW, label: 'View Staff Roster' },
+];
 
 type FormValues = z.infer<typeof createStaffSchema>;
 
@@ -148,6 +161,11 @@ export default function StaffList() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('inventory');
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
+    STAFF_ROLE_PRESETS[0].permissions,
+  );
+  const [editingStaff, setEditingStaff] = useState<UserData | null>(null);
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [selectedVendorFilter, setSelectedVendorFilter] = useState<string | undefined>(undefined);
   const [targetVendorForCreate, setTargetVendorForCreate] = useState<string | undefined>(undefined);
 
@@ -170,10 +188,9 @@ export default function StaffList() {
 
   const createMutation = useMutation({
     mutationFn: (values: FormValues) => {
-      const preset = STAFF_ROLE_PRESETS.find((p) => p.id === selectedPreset);
       const payload: Record<string, unknown> = {
         ...values,
-        permissions: preset?.permissions || [],
+        permissions: selectedPermissions,
       };
       if (isAdminOrSuperAdmin && (targetVendorForCreate || selectedVendorFilter)) {
         payload.vendorId = targetVendorForCreate || selectedVendorFilter;
@@ -193,6 +210,26 @@ export default function StaffList() {
       toast({
         variant: 'destructive',
         title: 'Failed to create staff account',
+        description: error?.message || 'An unexpected error occurred',
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, permissions }: { id: string; permissions: string[] }) =>
+      updateStaff(id, { permissions }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
+      setEditingStaff(null);
+      toast({
+        title: 'Success',
+        description: 'Staff account permissions updated successfully',
+      });
+    },
+    onError: (error: { message?: string }) => {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to update staff permissions',
         description: error?.message || 'An unexpected error occurred',
       });
     },
@@ -379,7 +416,7 @@ export default function StaffList() {
                 </div>
 
                 {/* Role Preset Selector */}
-                <div className="space-y-2 border-t pt-3">
+                <div className="space-y-3 border-t pt-3">
                   <FormLabel className="text-xs font-semibold block text-foreground">
                     Select Delegated Role Preset & Permissions
                   </FormLabel>
@@ -389,7 +426,10 @@ export default function StaffList() {
                       return (
                         <div
                           key={preset.id}
-                          onClick={() => setSelectedPreset(preset.id)}
+                          onClick={() => {
+                            setSelectedPreset(preset.id);
+                            setSelectedPermissions(preset.permissions);
+                          }}
                           className={`p-3 rounded-lg border text-xs cursor-pointer transition-all flex items-start justify-between ${
                             selectedPreset === preset.id
                               ? 'border-primary bg-primary/5 shadow-2xs'
@@ -416,6 +456,37 @@ export default function StaffList() {
                       );
                     })}
                   </div>
+
+                  {/* Granular Permission Customization */}
+                  <div className="border-t pt-3 space-y-2">
+                    <span className="text-xs font-semibold block text-foreground">
+                      Granular Capability Checkboxes
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {AVAILABLE_STAFF_PERMISSIONS.map(({ perm, label }) => {
+                        const isChecked = selectedPermissions.includes(perm);
+                        return (
+                          <label
+                            key={perm}
+                            className="flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedPreset('custom');
+                                setSelectedPermissions((prev) =>
+                                  isChecked ? prev.filter((p) => p !== perm) : [...prev, perm],
+                                );
+                              }}
+                              className="rounded border-input text-primary focus:ring-primary h-3.5 w-3.5"
+                            />
+                            <span className="text-foreground">{label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 <Button
@@ -429,6 +500,66 @@ export default function StaffList() {
                 </Button>
               </form>
             </Form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Permissions Modal */}
+      {editingStaff && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Edit Staff Permissions</h3>
+                <p className="text-xs text-muted-foreground">{editingStaff.name} ({editingStaff.email})</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setEditingStaff(null)}>
+                ✕
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <span className="text-xs font-semibold block text-foreground">
+                Assigned Granular Capabilities
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {AVAILABLE_STAFF_PERMISSIONS.map(({ perm, label }) => {
+                  const isChecked = editPermissions.includes(perm);
+                  return (
+                    <label
+                      key={perm}
+                      className="flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setEditPermissions((prev) =>
+                            isChecked ? prev.filter((p) => p !== perm) : [...prev, perm],
+                          );
+                        }}
+                        className="rounded border-input text-primary focus:ring-primary h-3.5 w-3.5"
+                      />
+                      <span className="text-foreground">{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t">
+                <Button variant="outline" size="sm" onClick={() => setEditingStaff(null)} className="text-xs">
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => updateMutation.mutate({ id: editingStaff.id, permissions: editPermissions })}
+                  disabled={updateMutation.isPending}
+                  className="text-xs"
+                >
+                  {updateMutation.isPending ? 'Saving...' : 'Save Permissions'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -500,6 +631,17 @@ export default function StaffList() {
                         <ResendStaffInviteButton email={member.email} />
                       </div>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingStaff(member);
+                        setEditPermissions(Array.isArray(member.permissions) ? (member.permissions as string[]) : []);
+                      }}
+                      className="h-8 gap-1 text-xs"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </Button>
                     <Button
                       size="sm"
                       variant="destructive"

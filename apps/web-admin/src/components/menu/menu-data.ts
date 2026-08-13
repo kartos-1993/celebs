@@ -34,10 +34,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   const currentRole = (role?.toUpperCase() || 'STAFF') as Role;
 
   const hasPerm = (perm: Permission): boolean => {
-    if (Array.isArray(userPermissions) && userPermissions.length > 0) {
-      return userPermissions.includes(perm);
-    }
-    return can(currentRole, perm);
+    return can(currentRole, perm, userPermissions);
   };
 
   // 1. Products Operations Group
