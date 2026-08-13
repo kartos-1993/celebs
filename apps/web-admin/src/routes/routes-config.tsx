@@ -24,8 +24,14 @@ import { campaignRoutes } from '@/features/marketing/campaign.routes';
 import { optionSetRoutes } from '@/features/option-sets/routes';
 
 const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
+const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'));
 
 export const routesConfig: RouteObject[] = [
+  // ── Standalone Public Routes (No AuthGuard / GuestGuard) ─────────────────
+  {
+    path: '/verify-email',
+    element: <VerifyEmailPage />,
+  },
   // ── Full Admin App (approved vendors + admins only) ───────────────────────
   {
     path: PATHS.DASHBOARD,

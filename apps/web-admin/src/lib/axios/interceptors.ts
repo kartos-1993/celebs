@@ -178,7 +178,11 @@ export const setupInterceptors = (client: AxiosInstance) => {
           processQueue(err);
           _onSessionExpired?.();
 
-          if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          if (
+            typeof window !== 'undefined' &&
+            !window.location.pathname.startsWith('/login') &&
+            !window.location.pathname.startsWith('/verify-email')
+          ) {
             window.location.href = '/login';
           }
 
