@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -9,6 +8,7 @@ import { STAFF_QUERY_KEYS } from '../hooks/use-staff-queries';
 import { getAdminVendors } from '@/features/vendors/api';
 import { VENDORS_QUERY_KEYS } from '@/features/vendors/hooks/use-vendor-queries';
 import { useAuthContext } from '@/context/auth-provider';
+import { useToast } from '@/hooks/use-toast';
 import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -108,6 +108,8 @@ export default function StaffList() {
     queryFn: () => getStaff(selectedVendorFilter),
   });
 
+  const { toast } = useToast();
+
   const createMutation = useMutation({
     mutationFn: (values: FormValues) => {
       const preset = STAFF_ROLE_PRESETS.find((p) => p.id === selectedPreset);
@@ -124,13 +126,16 @@ export default function StaffList() {
       queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
       setShowCreateModal(false);
       createForm.reset();
+      toast({
+        title: 'Success',
+        description: 'Staff member account created successfully',
+      });
     },
-    onError: (error: AxiosError<{ message?: string }>) => {
-      const errorMsg =
-        error?.response?.data?.message || error?.message || 'Failed to create staff account';
-      createForm.setError('confirmPassword', {
-        type: 'server',
-        message: errorMsg,
+    onError: (error: { message?: string }) => {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to create staff account',
+        description: error?.message || 'An unexpected error occurred',
       });
     },
   });
@@ -139,6 +144,17 @@ export default function StaffList() {
     mutationFn: (id: string) => deleteStaff(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all });
+      toast({
+        title: 'Success',
+        description: 'Staff account deleted successfully',
+      });
+    },
+    onError: (error: { message?: string }) => {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to delete staff account',
+        description: error?.message || 'An unexpected error occurred',
+      });
     },
   });
 
