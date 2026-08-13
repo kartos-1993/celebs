@@ -1,8 +1,19 @@
 import { CreateStaffType } from '@celebs/shared-types';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
+import {
+  BadRequestException,
+  ForbiddenException,
+  InternalServerException,
+  logger,
+  NotFoundException,
+} from '@celebs/shared-utils';
 
-import { hashValue } from '@/common/utils/bcrypt';
+import { VerificationEnum } from '@/common/enums/verification-code.enum';
+import { comparePassword, hashValue } from '@/common/utils/bcrypt';
+import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
+import { buildWebUrl } from '@/common/utils/url';
 import prisma from '@/db';
+import { sendEmail } from '@/mailers/mailer';
+import { verifyEmailTemplate } from '@/mailers/templates/template';
 
 export interface CreateStaffInput extends CreateStaffType {
   vendorId?: string;
@@ -115,7 +126,7 @@ export class StaffService {
         password: hashedPassword,
         role: 'STAFF',
         permissions: data.permissions || [],
-        isEmailVerified: true,
+        isEmailVerified: false,
         vendorId: effectiveVendorId,
       },
       select: {
@@ -130,6 +141,39 @@ export class StaffService {
         updatedAt: true,
       },
     });
+
+    // Generate verification code and send activation/invite email
+    const verification = await prisma.verificationCode.create({
+      data: {
+        userId: staff.id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+        expiresAt: fortyFiveMinutesFromNow(),
+      },
+    });
+
+    const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
+    logger.info(
+      { email: staff.email, verificationUrl },
+      'Attempting to send activation email to sub-account staff member',
+    );
+
+    try {
+      await sendEmail({
+        to: staff.email,
+        subject: 'Activate your staff sub-account',
+        text: `You have been added as a staff sub-account member. Please activate your account by clicking the following link: ${verificationUrl}`,
+        html: verifyEmailTemplate(verificationUrl).html,
+      });
+      logger.info({ email: staff.email }, 'Activation email sent to staff member');
+    } catch (err) {
+      logger.error({ err, email: staff.email }, 'Failed to send activation email to staff member');
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        logger.warn(
+          { verificationUrl, email: staff.email },
+          '[DEV/TEST FALLBACK] Staff activation email failed to send. Click link in logs to verify manually.',
+        );
+      }
+    }
 
     return staff;
   }
