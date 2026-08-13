@@ -8,8 +8,17 @@ export class UserService {
       },
       include: {
         vendorProfile: true,
+        vendor: true,
       },
     });
-    return user || null;
+
+    if (!user) return null;
+
+    const { vendor, vendorProfile, ...userWithoutVendor } = user;
+    const effectiveVendorProfile = vendorProfile || vendor;
+    return {
+      ...userWithoutVendor,
+      vendorProfile: effectiveVendorProfile || null,
+    };
   }
 }

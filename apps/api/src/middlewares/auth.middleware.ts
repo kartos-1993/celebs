@@ -17,36 +17,23 @@ export const requireApprovedVendor = (req: Request, _res: Response, next: NextFu
     return next();
   }
 
-  if (user.role === 'VENDOR') {
-    if (!user.isEmailVerified) {
-      return next(
-        new ForbiddenException(
-          'Email address is not verified. Please check your inbox for the verification link.',
-          ErrorCode.VERIFICATION_ERROR,
-        ),
-      );
-    }
-
-    if (!user.vendorProfile || user.vendorProfile.status !== 'APPROVED') {
-      return next(
-        new ForbiddenException(
-          'Access denied: Your seller profile must be approved by platform administration before accessing catalog tools.',
-          ErrorCode.FORBIDDEN_ACCESS,
-        ),
-      );
-    }
+  if (user.role === 'VENDOR' && !user.isEmailVerified) {
+    return next(
+      new ForbiddenException(
+        'Email address is not verified. Please check your inbox for the verification link.',
+        ErrorCode.VERIFICATION_ERROR,
+      ),
+    );
   }
 
-  if (user.role === 'STAFF') {
-    const parentStatus = user.vendorProfile?.status;
-    if (!parentStatus || parentStatus !== 'APPROVED') {
-      return next(
-        new ForbiddenException(
-          'Access denied: Parent seller store must be approved by platform administration before accessing catalog tools.',
-          ErrorCode.FORBIDDEN_ACCESS,
-        ),
-      );
-    }
+  const vendorProfile = user.vendorProfile;
+  if (!vendorProfile || vendorProfile.status !== 'APPROVED') {
+    const message =
+      user.role === 'STAFF'
+        ? 'Access denied: Parent seller store must be approved by platform administration before accessing catalog tools.'
+        : 'Access denied: Your seller profile must be approved by platform administration before accessing catalog tools.';
+
+    return next(new ForbiddenException(message, ErrorCode.FORBIDDEN_ACCESS));
   }
 
   next();

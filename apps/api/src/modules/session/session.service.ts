@@ -22,11 +22,17 @@ export class SessionService {
             name: true,
             email: true,
             role: true,
+            permissions: true,
             isEmailVerified: true,
             createdAt: true,
             updatedAt: true,
             vendorId: true,
             vendorProfile: {
+              include: {
+                warehouses: true,
+              },
+            },
+            vendor: {
               include: {
                 warehouses: true,
               },
@@ -39,6 +45,15 @@ export class SessionService {
       throw new NotFoundException('Session not found');
     }
 
-    return session;
+    const { vendor, vendorProfile, ...userWithoutVendor } = session.user;
+    const effectiveVendorProfile = vendorProfile || vendor;
+
+    return {
+      ...session,
+      user: {
+        ...userWithoutVendor,
+        vendorProfile: effectiveVendorProfile || null,
+      },
+    };
   }
 }
