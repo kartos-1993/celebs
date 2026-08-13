@@ -1,5 +1,7 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
+import { RoleGuard } from '@/routes/role-guard';
+import { Permission } from '@celebs/rbac';
 
 const OrdersPage = lazy(() => import('./pages/orders-page'));
 const ReturnOrdersPage = lazy(() => import('./pages/return-orders-page'));
@@ -11,17 +13,29 @@ export const orderRoutes: RouteObject = {
   children: [
     {
       path: '',
-      element: <OrdersPage />,
+      element: (
+        <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
+          <OrdersPage />
+        </RoleGuard>
+      ),
       handle: { crumb: 'Orders' },
     },
     {
       path: 'return',
-      element: <ReturnOrdersPage />,
+      element: (
+        <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
+          <ReturnOrdersPage />
+        </RoleGuard>
+      ),
       handle: { crumb: 'Return Orders' },
     },
     {
       path: 'reviews',
-      element: <ReviewsPage />,
+      element: (
+        <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
+          <ReviewsPage />
+        </RoleGuard>
+      ),
       handle: { crumb: 'Reviews' },
     },
   ],

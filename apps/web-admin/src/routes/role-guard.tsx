@@ -28,12 +28,20 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   }
 
   const role = user.role;
+  const userPermissions = (user as { permissions?: string[] }).permissions;
 
-  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    return <Navigate to={fallbackPath} replace />;
+  // 1. If a specific requiredPermission is declared for the route, evaluate dynamic permissions array
+  if (requiredPermission) {
+    const hasPermission = can(role, requiredPermission, userPermissions);
+
+    if (!hasPermission) {
+      return <Navigate to={fallbackPath} replace />;
+    }
+    return <>{children}</>;
   }
 
-  if (requiredPermission && !can(role, requiredPermission)) {
+  // 2. Fallback to role-based array checking if no requiredPermission is specified
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return <Navigate to={fallbackPath} replace />;
   }
 

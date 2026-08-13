@@ -14,3 +14,7 @@ export async function createStaff(data: Record<string, unknown>) {
 export async function deleteStaff(id: string) {
   return await axiosClient.delete(`/staff/${id}`);
 }
+
+export async function updateStaff(id: string, data: Record<string, unknown>) {
+  return await axiosClient.patch(`/staff/${id}`, data);
+}

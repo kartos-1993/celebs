@@ -1,19 +1,13 @@
 import { lazy } from 'react';
 import { Navigate, type RouteObject } from 'react-router-dom';
 import { RoleGuard } from '@/routes/role-guard';
+import { Permission } from '@celebs/rbac';
 
 const ManageProductPage = lazy(() => import('./pages/manage-product-page'));
 const AddProductPage = lazy(() => import('./pages/add-product-page'));
 const MediaCenterPage = lazy(() => import('./pages/media-center-page'));
 const ReviewProductQueuePage = lazy(() => import('./pages/review-product-queue-page'));
 
-/**
- * Guard policy:
- *  - vendor-facing CRUD is role-gated; fine-grained permission checks
- *    (PRODUCT_EDIT etc.) are enforced server-side, and the sidebar already
- *    hides entries by permission
- *  - review queue is strictly ADMIN/SUPERADMIN
- */
 export const productRoutes: RouteObject = {
   path: 'products',
   handle: { crumb: 'Products' },
@@ -22,7 +16,7 @@ export const productRoutes: RouteObject = {
     {
       path: 'manage',
       element: (
-        <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN', 'STAFF']}>
+        <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
           <ManageProductPage />
         </RoleGuard>
       ),
@@ -31,17 +25,16 @@ export const productRoutes: RouteObject = {
     {
       path: 'new',
       element: (
-        <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN']}>
+        <RoleGuard requiredPermission={Permission.PRODUCT_CREATE}>
           <AddProductPage />
         </RoleGuard>
       ),
       handle: { crumb: 'Add Product' },
     },
     {
-      // Was missing — "Edit" links pointed to /products/edit/:id → 404
       path: 'edit/:id',
       element: (
-        <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN']}>
+        <RoleGuard requiredPermission={Permission.PRODUCT_EDIT}>
           <AddProductPage />
         </RoleGuard>
       ),
@@ -50,7 +43,7 @@ export const productRoutes: RouteObject = {
     {
       path: 'mediacenter',
       element: (
-        <RoleGuard allowedRoles={['VENDOR', 'ADMIN', 'SUPERADMIN', 'STAFF']}>
+        <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
           <MediaCenterPage />
         </RoleGuard>
       ),
@@ -59,7 +52,7 @@ export const productRoutes: RouteObject = {
     {
       path: 'review-product-queue',
       element: (
-        <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}>
+        <RoleGuard requiredPermission={Permission.PRODUCT_REVIEW}>
           <ReviewProductQueuePage />
         </RoleGuard>
       ),
