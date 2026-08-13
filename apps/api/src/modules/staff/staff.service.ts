@@ -98,6 +98,15 @@ export class StaffService {
       throw new NotFoundException('Vendor profile not found for creator');
     }
 
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email.toLowerCase() },
+    });
+    if (existingUser) {
+      throw new BadRequestException(
+        'A user account with this email address already exists. Please use a unique email address for the staff member.',
+      );
+    }
+
     const hashedPassword = await hashValue(data.password);
     const staff = await prisma.user.create({
       data: {
