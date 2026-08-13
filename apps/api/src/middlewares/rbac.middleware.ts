@@ -10,7 +10,10 @@ export const requirePermissions = (...requiredPermissions: Permission[]) => {
       return next(new UnauthorizedException('Authentication required'));
     }
 
-    const hasPermission = requiredPermissions.every((p) => can(user.role as string, p));
+    const userPermissions = (user as { permissions?: string[] }).permissions;
+    const hasPermission = requiredPermissions.every((p) =>
+      can(user.role as string, p, userPermissions),
+    );
 
     if (!hasPermission) {
       return next(new ForbiddenException('Forbidden: Insufficient permissions'));

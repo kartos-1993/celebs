@@ -32,7 +32,8 @@
     "//_QUALITY": "=== Code Quality & Testing ===",
     "test": "dotenv -e .env.test -- prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && dotenv -e .env.test -- vitest run",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1086.0",

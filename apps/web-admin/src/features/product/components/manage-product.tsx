@@ -55,7 +55,7 @@ const statusBadgeVariant = (
 };
 
 const ManageProduct = () => {
-  const { role } = useAuthContext();
+  const { user } = useAuthContext();
 
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -69,10 +69,16 @@ const ManageProduct = () => {
     () => ({
       search: appliedSearch || undefined,
       status: filterStatus === 'all' ? undefined : filterStatus,
+      vendorId:
+        user?.role === 'VENDOR'
+          ? user?.vendorProfile?.id
+          : user?.role === 'STAFF'
+            ? user?.vendorId
+            : undefined,
       page,
       limit: PAGE_SIZE,
     }),
-    [appliedSearch, filterStatus, page],
+    [appliedSearch, filterStatus, user, page],
   );
 
   const { data, isLoading, isFetching } = useProductsQuery(filters);
@@ -236,7 +242,7 @@ const ManageProduct = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {role === 'VENDOR' &&
+                            {user?.role === 'VENDOR' &&
                               (product.status === 'draft' || product.status === 'rejected') && (
                                 <Button
                                   size="sm"
@@ -246,7 +252,7 @@ const ManageProduct = () => {
                                   Submit
                                 </Button>
                               )}
-                            {role === 'VENDOR' &&
+                            {user?.role === 'VENDOR' &&
                               (product.status === 'published' ||
                                 product.status === 'deactivated') && (
                                 <Button

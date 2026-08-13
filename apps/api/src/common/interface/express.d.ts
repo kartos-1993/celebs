@@ -5,6 +5,8 @@ declare namespace Express {
     userId: string;
     sessionId: string;
     role?: string;
+    permissions?: string[];
+    vendorId?: string;
     isEmailVerified?: boolean;
     vendorProfile?: {
       id: string;
