@@ -3,6 +3,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 
+import { BadRequestException } from '@celebs/shared-utils';
+
 import {
   buildPublicObjectUrl,
   ensureDevPublicReadAccess,
@@ -76,16 +78,16 @@ export function assertUploadMeta(input: {
   const size = Number(input.size ?? 0);
 
   if (!originalname) {
-    throw new Error('originalname is required');
+    throw new BadRequestException('originalname is required');
   }
   if (!ALLOWED_IMAGE_MIME.has(mimeType)) {
-    throw new Error('Invalid file type. Allowed: jpeg, png, webp, avif');
+    throw new BadRequestException('Invalid file type. Allowed: jpeg, png, webp, avif');
   }
   if (!Number.isFinite(size) || size <= 0) {
-    throw new Error('size must be a positive number');
+    throw new BadRequestException('size must be a positive number');
   }
   if (size > MAX_UPLOAD_BYTES) {
-    throw new Error(`Each image must be <= ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
+    throw new BadRequestException(`Each image must be <= ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
   }
 
   return { originalname, mimeType, size };
@@ -106,9 +108,9 @@ export function validateImageMagicBytes(buffer: Buffer): boolean {
     buffer[2] === 0x46 &&
     buffer[3] === 0x46 &&
     buffer[8] === 0x57 &&
-    buffer[9] === 0x41 &&
-    buffer[10] === 0x56 &&
-    buffer[11] === 0x45
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
   ) {
     return true;
   }
@@ -138,7 +140,7 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
 
   // Verify magic bytes header to prevent MIME spoofing
   if (!validateImageMagicBytes(input.buffer)) {
-    throw new Error('Invalid file type. Allowed: jpeg, png, webp, avif');
+    throw new BadRequestException('Invalid file magic bytes. Allowed images: jpeg, png, webp, avif');
   }
 
   // Convert the originalname extension to .webp

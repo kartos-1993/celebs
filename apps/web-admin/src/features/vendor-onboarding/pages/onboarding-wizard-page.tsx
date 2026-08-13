@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -187,6 +188,10 @@ export default function OnboardingWizard() {
   }, [user, resetProfile, resetWarehouse, resetDocuments, resetBusiness]);
 
   // ── Status-based screen routing ─────────────────────────────────────────
+  if (vendorStatus === 'APPROVED') {
+    return <Navigate to="/" replace />;
+  }
+
   if (vendorStatus === 'UNDER_REVIEW') {
     return <PendingReviewScreen vendorName={user?.name} />;
   }
