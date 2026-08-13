@@ -193,4 +193,32 @@ export class AdminService {
     }
     return await prisma.user.delete({ where: { id } });
   }
+
+  public async updateUserRoleAndPermissions(
+    id: string,
+    data: { role?: Role; permissions?: string[] },
+  ) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return await prisma.user.update({
+      where: { id },
+      data: {
+        role: data.role !== undefined ? data.role : user.role,
+        permissions: data.permissions !== undefined ? data.permissions : user.permissions,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        permissions: true,
+        isEmailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
 }

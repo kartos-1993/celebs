@@ -86,6 +86,14 @@ export class ProductController {
         limit,
       });
 
+      // Tenant Isolation Security Rule:
+      // If the authenticated user is a Vendor or Staff, strictly scope the query to their store's vendorId.
+      if (req.user?.role === 'VENDOR' && req.user?.vendorProfile?.id) {
+        filters.vendorId = req.user.vendorProfile.id;
+      } else if (req.user?.role === 'STAFF' && req.user?.vendorId) {
+        filters.vendorId = req.user.vendorId;
+      }
+
       const result = await this.productService.getProducts(filters);
 
       res.status(HTTPSTATUS.OK).json({

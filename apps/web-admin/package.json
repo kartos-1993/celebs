@@ -10,7 +10,8 @@
     "build:staging": "vite build --mode staging",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md,css}\""
   },
   "dependencies": {
     "@celebs/rbac": "workspace:*",

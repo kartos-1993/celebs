@@ -46,6 +46,11 @@ adminRoutes.patch(
 // User Management (requires USER_MANAGE permission, typically SUPERADMIN only)
 adminRoutes.get('/users', requirePermissions(Permission.USER_MANAGE), adminController.getAllUsers);
 adminRoutes.post('/users', requirePermissions(Permission.USER_MANAGE), adminController.createUser);
+adminRoutes.put(
+  '/users/:id/role-permissions',
+  requirePermissions(Permission.USER_MANAGE),
+  adminController.updateUserRoleAndPermissions,
+);
 adminRoutes.delete(
   '/users/:id',
   requirePermissions(Permission.USER_MANAGE),

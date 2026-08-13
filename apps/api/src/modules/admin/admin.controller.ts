@@ -99,4 +99,15 @@ export class AdminController {
     };
     res.status(HTTPSTATUS.OK).json(response);
   });
+
+  public updateUserRoleAndPermissions = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id || '';
+    const updatedUser = await this.adminService.updateUserRoleAndPermissions(id, req.body);
+    const response: IApiResponse<typeof updatedUser> = {
+      success: true,
+      message: 'User role and permissions updated successfully',
+      data: updatedUser,
+    };
+    res.status(HTTPSTATUS.OK).json(response);
+  });
 }

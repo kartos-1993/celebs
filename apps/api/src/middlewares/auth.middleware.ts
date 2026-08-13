@@ -37,5 +37,17 @@ export const requireApprovedVendor = (req: Request, _res: Response, next: NextFu
     }
   }
 
+  if (user.role === 'STAFF') {
+    const parentStatus = user.vendorProfile?.status;
+    if (!parentStatus || parentStatus !== 'APPROVED') {
+      return next(
+        new ForbiddenException(
+          'Access denied: Parent seller store must be approved by platform administration before accessing catalog tools.',
+          ErrorCode.FORBIDDEN_ACCESS,
+        ),
+      );
+    }
+  }
+
   next();
 };
