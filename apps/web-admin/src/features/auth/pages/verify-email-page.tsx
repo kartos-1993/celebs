@@ -31,20 +31,19 @@ export default function VerifyEmailPage() {
   }, [user?.email, resendEmail]);
 
   useEffect(() => {
-    // If the user is already verified, skip API call and navigate
-    if (user?.isEmailVerified) {
-      setStatus('success');
-      setTimeout(() => {
-        const targetPath =
-          user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
-            ? PATHS.VENDORS.ONBOARDING
-            : PATHS.DASHBOARD;
-        navigate(targetPath, { replace: true });
-      }, 1200);
-      return;
-    }
-
     if (!initialCode) {
+      // If user is already logged in & verified, redirect to dashboard/onboarding
+      if (user?.isEmailVerified) {
+        setStatus('success');
+        setTimeout(() => {
+          const targetPath =
+            user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
+              ? PATHS.VENDORS.ONBOARDING
+              : PATHS.DASHBOARD;
+          navigate(targetPath, { replace: true });
+        }, 1200);
+        return;
+      }
       setStatus('error');
       setErrorMessage('Verification link is missing or expired. Please request a new verification email.');
       return;
@@ -60,31 +59,19 @@ export default function VerifyEmailPage() {
     }
 
     verifyEmail({ code: initialCode })
-      .then(() => {
+      .then((res: { data?: { data?: { user?: { role?: string; vendorProfile?: { status?: string } } } } }) => {
         setStatus('success');
+        const verifiedUser = res?.data?.data?.user;
         refetch();
         setTimeout(() => {
           const targetPath =
-            user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
+            verifiedUser?.role === 'VENDOR' && verifiedUser?.vendorProfile?.status !== 'APPROVED'
               ? PATHS.VENDORS.ONBOARDING
               : PATHS.DASHBOARD;
           navigate(targetPath, { replace: true });
         }, 1500);
       })
       .catch((err: { response?: { data?: { message?: string } } }) => {
-        refetch();
-        if (user?.isEmailVerified) {
-          setStatus('success');
-          setTimeout(() => {
-            const targetPath =
-              user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
-                ? PATHS.VENDORS.ONBOARDING
-                : PATHS.DASHBOARD;
-            navigate(targetPath, { replace: true });
-          }, 1200);
-          return;
-        }
-
         setStatus('error');
         setErrorMessage(
           err?.response?.data?.message || 'Verification link is invalid or has expired.',
