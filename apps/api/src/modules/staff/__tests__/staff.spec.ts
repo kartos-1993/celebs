@@ -146,6 +146,12 @@ describe('Staff Management API Integration Tests', () => {
       });
     expect(createStaffRes.status).toBe(201);
 
+    // Verify staff member's email so they can log in
+    await prisma.user.update({
+      where: { email: 'subuser1@example.com' },
+      data: { isEmailVerified: true },
+    });
+
     // Login as the STAFF sub-user
     const staffLoginRes = await request(app)
       .post('/api/v1/auth/login')
