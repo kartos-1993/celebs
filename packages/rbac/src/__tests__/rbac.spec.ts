@@ -36,11 +36,10 @@ describe('Hierarchical RBAC & Dynamic Permission System', () => {
       expect(can('VENDOR', Permission.PLATFORM_MANAGE)).toBe(false);
     });
 
-    it('STAFF default permissions', () => {
-      expect(can('STAFF', Permission.PRODUCT_CREATE)).toBe(true);
-      expect(can('STAFF', Permission.ORDER_MANAGE)).toBe(true);
-      expect(can('STAFF', Permission.STAFF_MANAGE)).toBe(false);
-      expect(can('STAFF', Permission.FINANCE_VIEW)).toBe(false);
+    it('STAFF default permissions (empty, relies on explicit sub-account delegation)', () => {
+      ALL_PERMISSIONS.forEach((perm) => {
+        expect(can('STAFF', perm)).toBe(false);
+      });
     });
 
     it('CUSTOMER default permissions (empty)', () => {
@@ -54,15 +53,15 @@ describe('Hierarchical RBAC & Dynamic Permission System', () => {
     it('STAFF with custom granted permissions', () => {
       const customPerms = [Permission.FINANCE_VIEW, Permission.CATALOG_MANAGE];
 
-      // Default STAFF cannot manage catalog or view finance
+      // Default STAFF without custom permissions cannot manage catalog or view finance
       expect(can('STAFF', Permission.FINANCE_VIEW)).toBe(false);
       expect(can('STAFF', Permission.CATALOG_MANAGE)).toBe(false);
 
       // With custom permissions assigned by Vendor Owner
       expect(can('STAFF', Permission.FINANCE_VIEW, customPerms)).toBe(true);
       expect(can('STAFF', Permission.CATALOG_MANAGE, customPerms)).toBe(true);
-      // Still retains default STAFF permissions
-      expect(can('STAFF', Permission.PRODUCT_CREATE, customPerms)).toBe(true);
+      // Unassigned permissions remain denied
+      expect(can('STAFF', Permission.PRODUCT_CREATE, customPerms)).toBe(false);
     });
 
     it('VENDOR with custom granted permissions from Superadmin', () => {
