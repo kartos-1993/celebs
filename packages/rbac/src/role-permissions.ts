@@ -4,15 +4,7 @@ export type Role = 'CUSTOMER' | 'VENDOR' | 'STAFF' | 'ADMIN' | 'SUPERADMIN';
 
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   CUSTOMER: [],
-  STAFF: [
-    Permission.PRODUCT_VIEW,
-    Permission.PRODUCT_CREATE,
-    Permission.PRODUCT_EDIT,
-    Permission.CATALOG_VIEW,
-    Permission.ORDER_VIEW,
-    Permission.ORDER_MANAGE,
-    Permission.STAFF_VIEW,
-  ],
+  STAFF: [],
   VENDOR: [
     Permission.PRODUCT_VIEW,
     Permission.PRODUCT_CREATE,
