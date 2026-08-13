@@ -5,6 +5,9 @@ import { OrderService } from './order.service';
 
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
+import { Permission } from '@celebs/rbac';
+import { requirePermissions } from '@/middlewares/rbac.middleware';
+
 const orderRoutes = Router();
 const orderService = new OrderService();
 const controller = new OrderController(orderService);
@@ -22,14 +25,25 @@ orderRoutes.get('/my-orders/:orderId', authenticateJWT, controller.getOrderById)
 orderRoutes.post('/my-orders/:orderId/cancel', authenticateJWT, controller.cancelOrder);
 
 // --- VENDOR FULFILLMENT ROUTES ---
-orderRoutes.get('/vendor/orders', authenticateJWT, controller.getVendorOrders);
+orderRoutes.get(
+  '/vendor/orders',
+  authenticateJWT,
+  requirePermissions(Permission.ORDER_VIEW),
+  controller.getVendorOrders,
+);
 orderRoutes.patch(
   '/vendor/orders/items/:orderItemId/status',
   authenticateJWT,
+  requirePermissions(Permission.ORDER_MANAGE),
   controller.updateOrderItemStatus,
 );
 
 // --- ADMIN OVERVIEW ---
-orderRoutes.get('/admin/orders', authenticateJWT, controller.adminGetOrders);
+orderRoutes.get(
+  '/admin/orders',
+  authenticateJWT,
+  requirePermissions(Permission.ORDER_VIEW),
+  controller.adminGetOrders,
+);
 
 export default orderRoutes;

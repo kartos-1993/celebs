@@ -134,7 +134,7 @@ describe('Staff Management API Integration Tests', () => {
   });
 
   it('should allow STAFF sub-user and SUPERADMIN to retrieve staff list', async () => {
-    // 1. Create a staff member under VENDOR 1
+    // 1. Create a staff member under VENDOR 1 with staff:view permission
     const createStaffRes = await request(app)
       .post('/api/v1/staff')
       .set('Cookie', vendor1Cookie)
@@ -143,6 +143,7 @@ describe('Staff Management API Integration Tests', () => {
         email: 'subuser1@example.com',
         password: 'Password123!',
         confirmPassword: 'Password123!',
+        permissions: ['staff:view'],
       });
     expect(createStaffRes.status).toBe(201);
 
@@ -192,5 +193,26 @@ describe('Staff Management API Integration Tests', () => {
 
     // Clean up admin user
     await prisma.user.delete({ where: { id: adminUser.id } });
+  });
+
+  it('should allow VENDOR 1 to update permissions for their staff member', async () => {
+    const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+      name: 'Staff Member B',
+      email: 'staff.b@example.com',
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+      permissions: ['product:view'],
+    });
+
+    const targetStaffId = createRes.body.data.id;
+
+    const patchRes = await request(app)
+      .patch(`/api/v1/staff/${targetStaffId}`)
+      .set('Cookie', vendor1Cookie)
+      .send({ permissions: ['product:view', 'finance:view'] });
+
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.success).toBe(true);
+    expect(patchRes.body.data.permissions).toEqual(['product:view', 'finance:view']);
   });
 });
