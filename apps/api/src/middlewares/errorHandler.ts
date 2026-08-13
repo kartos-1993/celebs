@@ -5,6 +5,7 @@ import { IApiResponse } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
+import { Prisma } from '@/db';
 
 const formatZodError = (res: Response, error: z.ZodError) => {
   const issues = Array.isArray(error?.issues) ? error.issues : [];
@@ -81,7 +82,51 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
       return res.status(statusCode).json(response);
     }
 
-    // Branch 4: Unknown / Unexpected Internal Errors
+    // Branch 4: Prisma Known Request Errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      switch (error.code) {
+        case 'P2002': {
+          const targetFields = error.meta?.target;
+          const fieldName = Array.isArray(targetFields) ? targetFields.join(', ') : 'field';
+          const response: IApiResponse = {
+            success: false,
+            message: `A record with this ${fieldName} already exists. Please use a unique value.`,
+            data: null,
+            errorCode: ErrorCode.VALIDATION_ERROR,
+          };
+          return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
+        }
+        case 'P2025': {
+          const response: IApiResponse = {
+            success: false,
+            message: 'The requested resource was not found',
+            data: null,
+            errorCode: ErrorCode.RESOURCE_NOT_FOUND,
+          };
+          return res.status(HTTPSTATUS.NOT_FOUND).json(response);
+        }
+        case 'P2003': {
+          const response: IApiResponse = {
+            success: false,
+            message: 'Invalid reference: The associated resource does not exist',
+            data: null,
+            errorCode: ErrorCode.INVALID_REQUEST,
+          };
+          return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
+        }
+        case 'P2014': {
+          const response: IApiResponse = {
+            success: false,
+            message: 'Cannot delete this item because it is referenced by active records',
+            data: null,
+            errorCode: ErrorCode.INVALID_REQUEST,
+          };
+          return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
+        }
+      }
+    }
+
+    // Branch 5: Unknown / Unexpected Internal Errors
     const response: IApiResponse = {
       success: false,
       message: 'Internal Server Error',
