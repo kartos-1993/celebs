@@ -254,4 +254,47 @@ export class StaffService {
 
     return { id: staffId };
   }
+
+  public async updateStaff(
+    staffId: string,
+    creatorUserId: string,
+    data: { permissions?: string[]; name?: string },
+  ) {
+    const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId);
+
+    const staffUser = await prisma.user.findUnique({
+      where: { id: staffId },
+    });
+    if (!staffUser) {
+      throw new NotFoundException('Staff user not found');
+    }
+
+    const isAdmin = user.role === 'SUPERADMIN' || user.role === 'ADMIN';
+    if (!isAdmin) {
+      if (!vendorProfile || staffUser.vendorId !== vendorProfile.id) {
+        throw new ForbiddenException('Forbidden: You do not manage this staff member');
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: staffId },
+      data: {
+        ...(Array.isArray(data.permissions) ? { permissions: data.permissions } : {}),
+        ...(data.name ? { name: data.name } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        permissions: true,
+        isEmailVerified: true,
+        vendorId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return updated;
+  }
 }

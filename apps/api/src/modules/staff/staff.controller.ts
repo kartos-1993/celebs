@@ -56,4 +56,20 @@ export class StaffController {
     };
     res.status(HTTPSTATUS.OK).json(response);
   });
+
+  public updateStaff = asyncHandler(async (req: Request, res: Response) => {
+    const userId = this.getUserId(req);
+    const id = req.params.id || '';
+    const permissions = Array.isArray(req.body.permissions)
+      ? (req.body.permissions as string[])
+      : undefined;
+    const name = typeof req.body.name === 'string' ? req.body.name : undefined;
+    const updated = await this.staffService.updateStaff(id, userId, { permissions, name });
+    const response: IApiResponse<typeof updated> = {
+      success: true,
+      message: 'Staff account updated successfully',
+      data: updated,
+    };
+    res.status(HTTPSTATUS.OK).json(response);
+  });
 }
