@@ -45,6 +45,10 @@ export async function verifyEmail(data: verifyEmailType) {
   return await axiosClient.post('/auth/verify-email', data);
 }
 
+export async function resendVerification(data: { email: string }) {
+  return await axiosClient.post('/auth/resend-verification', data);
+}
+
 export async function forgotPassword(data: ForgotPasswordPayload) {
   return await axiosClient.post('/auth/password-forgot', data);
 }
