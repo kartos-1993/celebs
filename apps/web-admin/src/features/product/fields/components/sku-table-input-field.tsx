@@ -277,6 +277,7 @@ export function SkuTableInputField({ field }: UiProps) {
           type="button"
           variant="outline"
           size="sm"
+          data-testid="sku-auto-generate-btn"
           className="gap-1.5 text-xs h-8"
           onClick={handleAutoGenerateSkus}
         >
@@ -352,6 +353,7 @@ export function SkuTableInputField({ field }: UiProps) {
               </div>
               <NumberInput
                 className="bg-background h-8 text-xs"
+                data-testid="sku-bulk-price-input"
                 value={applyAll.price ?? ''}
                 onChange={(e) => setApplyAll((p) => ({ ...p, price: e.target.value }))}
                 placeholder="0"
@@ -361,6 +363,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <div className="text-xs text-muted-foreground mb-1">Spl Price</div>
               <NumberInput
                 className="bg-background h-8 text-xs"
+                data-testid="sku-bulk-special-price-input"
                 value={applyAll.specialPrice ?? ''}
                 onChange={(e) => setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))}
                 placeholder="0"
@@ -370,6 +373,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <div className="text-xs text-muted-foreground mb-1">Stock</div>
               <NumberInput
                 className="bg-background h-8 text-xs"
+                data-testid="sku-bulk-stock-input"
                 value={applyAll.stock ?? ''}
                 onChange={(e) => setApplyAll((p) => ({ ...p, stock: e.target.value }))}
                 placeholder="0"
@@ -379,6 +383,7 @@ export function SkuTableInputField({ field }: UiProps) {
               <div className="text-xs text-muted-foreground mb-1">SellerSKU</div>
               <Input
                 className="bg-background font-mono text-xs h-8"
+                data-testid="sku-bulk-sku-input"
                 value={applyAll.sellerSku ?? ''}
                 onChange={(e) => setApplyAll((p) => ({ ...p, sellerSku: e.target.value }))}
                 placeholder="SKU"
@@ -402,7 +407,13 @@ export function SkuTableInputField({ field }: UiProps) {
               />
               <span className="text-xs font-medium">Mark as Available</span>
             </label>
-            <Button type="button" size="sm" className="h-8 text-xs px-3" onClick={applyToAll}>
+            <Button
+              type="button"
+              size="sm"
+              data-testid="sku-bulk-apply-btn"
+              className="h-8 text-xs px-3"
+              onClick={applyToAll}
+            >
               Apply to Selected
             </Button>
           </div>

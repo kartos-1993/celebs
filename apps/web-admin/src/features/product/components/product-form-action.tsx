@@ -35,6 +35,7 @@ const ProductFormActions = ({
           variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
+          data-testid="cancel-btn"
           className="rounded-full border-gray-200 px-5 dark:border-gray-700"
         >
           Cancel
@@ -44,6 +45,7 @@ const ProductFormActions = ({
           variant="outline"
           onClick={onSaveAsDraft}
           disabled={isSubmitting}
+          data-testid="save-draft-btn"
           className="rounded-full border-orange-200 bg-orange-50 px-5 text-orange-700 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/60"
         >
           <FileText className="mr-2 h-4 w-4" />
@@ -52,6 +54,7 @@ const ProductFormActions = ({
         <Button
           type="submit"
           disabled={isSubmitting}
+          data-testid="submit-product-btn"
           className="rounded-full bg-orange-500 px-5 text-white hover:bg-orange-600"
         >
           {isSubmitting ? (
@@ -59,7 +62,7 @@ const ProductFormActions = ({
           ) : (
             <Upload className="mr-2 h-4 w-4" />
           )}
-          {isSubmitting ? 'Submitting...' : 'Submit Product'}
+          {isReady ? 'Publish Product' : 'Submit for Review'}
         </Button>
       </div>
     </div>

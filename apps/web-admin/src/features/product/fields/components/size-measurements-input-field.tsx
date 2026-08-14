@@ -281,6 +281,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                         />
                         <Input
                           type="text"
+                          data-testid={`measurement-input-${sizeName}-${c}`}
                           placeholder={listKey === 'bodyMeasurements' ? 'e.g. 70 or 70-80' : 'e.g. 70'}
                           className={cn(
                             'h-8 text-xs',
@@ -317,6 +318,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         <div className="flex items-center gap-1 rounded-lg border bg-muted p-1 self-start sm:self-auto">
           <button
             type="button"
+            data-testid="measurement-unit-cm"
             onClick={() => handleUnitToggle('CM')}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
               unit === 'CM'
@@ -328,6 +330,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
           </button>
           <button
             type="button"
+            data-testid="measurement-unit-in"
             onClick={() => handleUnitToggle('IN')}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
               unit === 'IN'
@@ -349,6 +352,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                 <button
                   key={c.key}
                   type="button"
+                  data-testid={`measurement-tab-${c.key}`}
                   onClick={() => setActiveTabKey(c.key)}
                   className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors -mb-px flex items-center gap-1.5 ${
                     (activeTabKey || charts[0].key) === c.key

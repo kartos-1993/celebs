@@ -10,6 +10,11 @@
     "build:staging": "vite build --mode staging",
     "preview": "vite preview --host",
     "typecheck": "tsc -b --noEmit",
+    "test:e2e": "node ../../node_modules/@playwright/test/cli.js test",
+    "test:e2e:headed": "node ../../node_modules/@playwright/test/cli.js test --headed",
+    "test:e2e:debug": "node ../../node_modules/@playwright/test/cli.js test --debug=inspector",
+    "test:e2e:ui": "node ../../node_modules/@playwright/test/cli.js test --ui",
+    "test:e2e:report": "node ../../node_modules/@playwright/test/cli.js show-report",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md,css}\""
   },
@@ -20,6 +25,7 @@
     "@tanstack/react-table": "^8.21.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "jsdom": "^30.0.1"

@@ -270,6 +270,7 @@ export function MainImageInputField({ field }: UiProps) {
                 fileInputs.current[0] = el;
               }}
               type="file"
+              data-testid="main-image-upload-input"
               accept="image/*"
               className="hidden"
               onChange={(e) => {
@@ -339,6 +340,7 @@ export function MainImageInputField({ field }: UiProps) {
                 )}
                 <input
                   type="file"
+                  data-testid="main-image-upload-input"
                   accept="image/*"
                   multiple
                   className="hidden"

@@ -86,6 +86,7 @@ const ProductFormSidebar = ({
             <button
               key={section.key}
               type="button"
+              data-testid={`sidebar-section-${section.key}`}
               onClick={() => onSectionClick?.(section.anchorId)}
               className="flex w-full items-start gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >

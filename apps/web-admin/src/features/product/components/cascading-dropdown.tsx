@@ -359,6 +359,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
+            data-testid="category-cascading-trigger"
             className="w-full justify-between text-left h-10 px-3"
             onClick={() => setIsOpen(!isOpen)}
           >
@@ -522,6 +523,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                 <Button
                   onClick={handleConfirm}
                   size="sm"
+                  data-testid="category-confirm-btn"
                   disabled={
                     tempSelectedPath.length === 0 ||
                     (tempSelectedPath.length > 0 &&
