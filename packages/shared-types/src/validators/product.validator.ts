@@ -6,15 +6,15 @@ export const idSchema = z.string().uuid('Invalid UUID');
 // Product measurement schema
 export const productMeasurementSchema = z.object({
   name: z.string().trim().min(1, 'Measurement name is required'),
-  value: z.string().trim().min(1, 'Measurement value is required'),
-  unit: z.string().trim().min(1, 'Measurement unit is required'),
+  value: z.string().trim().optional().or(z.literal('')).default(''),
+  unit: z.string().trim().optional().default('cm'),
 });
 
 // Body measurement schema
 export const bodyMeasurementSchema = z.object({
   name: z.string().trim().min(1, 'Measurement name is required'),
-  value: z.string().trim().min(1, 'Measurement value is required'),
-  unit: z.string().trim().min(1, 'Measurement unit is required'),
+  value: z.string().trim().optional().or(z.literal('')).default(''),
+  unit: z.string().trim().optional().default('cm'),
 });
 
 // Size schema

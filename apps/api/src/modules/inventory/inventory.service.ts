@@ -1,4 +1,4 @@
-import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, generateSheinStyleSku, logger } from '@celebs/shared-utils';
 
 import prisma from '@/config/db.prisma';
 
@@ -106,9 +106,7 @@ export class InventoryService {
       // Keep default initialQty
     }
 
-    const sku = `SKU-${productId.substring(Math.max(0, productId.length - 6))}-${colorVariantName
-      .substring(0, 3)
-      .toUpperCase()}-${size.toUpperCase()}`;
+    const sku = generateSheinStyleSku({ brandPrefix: 'c' });
 
     const created = await prisma.productInventory.create({
       data: {
