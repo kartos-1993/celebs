@@ -51,15 +51,29 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
 
   const [activeTabKey, setActiveTabKey] = React.useState<string>(charts[0]?.key || 'product');
 
-  const sizeFieldNames = ['Size', 'US Size', 'Waist Size'];
-  const watchedSizes = useWatch({ name: sizeFieldNames });
-  const activeSizesIndex = sizeFieldNames.findIndex(
-    (_, idx) => watchedSizes?.[idx] && watchedSizes[idx].length > 0,
-  );
+  const sizeFieldNames = ['Size', 'size', 'US Size', 'Waist Size', 'Alpha Size', 'Standard Size'];
+  const allValues = watch();
 
   const selectedSizes = useMemo(() => {
-    return activeSizesIndex !== -1 ? (watchedSizes[activeSizesIndex] as string[]) : [];
-  }, [activeSizesIndex, watchedSizes]);
+    // 1. First check known size field names
+    for (const name of sizeFieldNames) {
+      const val = allValues[name];
+      if (Array.isArray(val) && val.length > 0) {
+        return val.map(String);
+      }
+    }
+    // 2. Check any dynamic field key matching 'size'
+    const otherSizeKeys = Object.keys(allValues).filter(
+      (k) => k.toLowerCase().includes('size') && k !== 'sizes' && !k.startsWith('sizes.'),
+    );
+    for (const key of otherSizeKeys) {
+      const val = allValues[key];
+      if (Array.isArray(val) && val.length > 0) {
+        return val.map(String);
+      }
+    }
+    return [];
+  }, [allValues]);
 
   const sizesState = (watch('sizes') || []) as SizeEntry[];
 

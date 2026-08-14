@@ -1,22 +1,15 @@
+import { generateSheinStyleSku } from '@celebs/shared-utils';
+
 /**
  * Helper utility to generate unique, non-colliding SKUs for e-commerce products.
- * Uses Brand Code + Date Stamp + Random Hash + Clean Variant Codes.
+ * Uses 18-character Shein/Retail-grade standard format: [Brand][Dept][YYMMDD][10-digit ID].
  */
 
-export function generateCollisionProofBaseSku(brand?: string): string {
-  const rawBrand = String(brand ?? '').trim();
-  const brandPrefix = rawBrand
-    ? rawBrand
-        .replace(/[^a-zA-Z0-9]/g, '')
-        .slice(0, 3)
-        .toUpperCase()
-    : 'CEL';
-
-  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
-
-  const randomHash = Math.random().toString(36).substring(2, 7).toUpperCase();
-
-  return `${brandPrefix}-${dateStr}${randomHash}`;
+export function generateCollisionProofBaseSku(brand?: string, department?: string): string {
+  return generateSheinStyleSku({
+    brandPrefix: brand ? brand.slice(0, 1) : 'c',
+    department,
+  });
 }
 
 export function cleanSkuAttributeCode(label: string): string {
@@ -27,3 +20,4 @@ export function cleanSkuAttributeCode(label: string): string {
       .slice(0, 6) || 'OPT'
   );
 }
+

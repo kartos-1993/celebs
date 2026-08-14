@@ -238,23 +238,24 @@ export function SkuTableInputField({ field }: UiProps) {
     const fill = (name: string, value: unknown) =>
       setValue(name, value, { shouldDirty: true, shouldValidate: true });
 
-    const basePrefix = generateCollisionProofBaseSku(getValues('brand'));
+    const departmentHint = String(getValues('categoryPath') || getValues('categoryId') || '');
+    const brand = getValues('brand');
 
     if (variants.length === 0) {
-      fill('sku.default.sellerSku', `${basePrefix}-DEF`);
+      fill('sku.default.sellerSku', generateCollisionProofBaseSku(brand, departmentHint));
     } else if (variants.length === 1) {
       for (const opt of variants[0].values) {
-        const code = cleanSkuAttributeCode(labelOf(variants[0].key, opt));
-        fill(pathFor(variants[0].key, opt, 'sellerSku'), `${basePrefix}-${code}`);
+        fill(
+          pathFor(variants[0].key, opt, 'sellerSku'),
+          generateCollisionProofBaseSku(brand, departmentHint),
+        );
       }
     } else if (variants.length >= 2) {
       for (const opt1 of variants[0].values) {
         for (const opt2 of variants[1].values) {
-          const code1 = cleanSkuAttributeCode(labelOf(variants[0].key, opt1));
-          const code2 = cleanSkuAttributeCode(labelOf(variants[1].key, opt2));
           fill(
             pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku'),
-            `${basePrefix}-${code1}-${code2}`,
+            generateCollisionProofBaseSku(brand, departmentHint),
           );
         }
       }

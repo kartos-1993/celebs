@@ -5,3 +5,4 @@ export * from './utils/AppError';
 export * from './utils/catch-errors';
 export * from './utils/logger';
 export * from './middlewares/asyncHandler';
+export * from './utils/sku-generator';

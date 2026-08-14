@@ -6,13 +6,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
-import { FileText, ImageIcon, Package, Palette, Ruler, type LucideIcon } from 'lucide-react';
+import { FileText, ImageIcon, Package, Palette, Ruler } from 'lucide-react';
 import type { FieldSpec } from '../types';
 import { uiTypeRegistry } from '../fields/ui-registry';
 
 export interface DynamicProductFormHandle {
-  /** Switches to the tab owning the anchor and scrolls it into view.
-   *  Returns false when the anchor is not part of the dynamic form. */
+  /** Scrolls the section owning the anchor into view.
+   *  Returns false when the anchor is not found in the DOM. */
   scrollToSection: (anchorId: string) => boolean;
 }
 
@@ -24,62 +24,12 @@ interface DynamicProductFormProps {
   onValuesChange?: (values: Record<string, unknown>, sectionKey: string) => void;
 }
 
-type TabId = 'details' | 'media' | 'sale' | 'package' | 'termcondition';
-
-interface TabConfig {
-  id: TabId;
-  label: string;
-  icon: LucideIcon;
-  groups: string[];
-  /** Matches the anchorIds produced by buildSidebarSections. */
-  anchorId: string;
-}
-
-const TAB_CONFIG: TabConfig[] = [
-  {
-    id: 'details',
-    label: 'Specifications',
-    icon: Ruler,
-    groups: ['details'],
-    anchorId: 'product-section-details',
-  },
-  {
-    id: 'media',
-    label: 'Media & Swatches',
-    icon: ImageIcon,
-    groups: ['base', 'variant', 'media'],
-    anchorId: 'product-section-base',
-  },
-  {
-    id: 'sale',
-    label: 'SKUs & Pricing',
-    icon: Palette,
-    groups: ['sale'],
-    anchorId: 'product-section-sale',
-  },
-  {
-    id: 'package',
-    label: 'Shipping & Warranty',
-    icon: Package,
-    groups: ['package'],
-    anchorId: 'product-section-package',
-  },
-  {
-    id: 'termcondition',
-    label: 'Terms & Conditions',
-    icon: FileText,
-    groups: ['termcondition'],
-    anchorId: 'product-section-termcondition',
-  },
-];
-
 export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicProductFormProps>(
   function DynamicProductForm(
     { catId, schemaFields, isSchemaLoading = false, schemaError = null, onValuesChange },
     ref,
   ) {
     const form = useFormContext();
-    const [activeTab, setActiveTab] = React.useState<TabId>('details');
     const [detailsExpanded, setDetailsExpanded] = React.useState(false);
     const appliedDefaultsRef = React.useRef<string | null>(null);
 
@@ -88,18 +38,27 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       [schemaFields],
     );
 
-    // Apply server-provided default values once per category
+    // Apply server-provided default values once per category without destructive form.reset()
     React.useEffect(() => {
       if (!catId || appliedDefaultsRef.current === catId) return;
+      const currentVals = (form.getValues() || {}) as Record<string, unknown>;
       const defaults: Record<string, unknown> = {};
+
       fields.forEach((field) => {
         if (field.value !== undefined && field.value !== null) {
-          defaults[field.name] = field.value;
+          if (
+            currentVals[field.name] === undefined ||
+            currentVals[field.name] === null ||
+            currentVals[field.name] === ''
+          ) {
+            defaults[field.name] = field.value;
+          }
         }
       });
+
       if (Object.keys(defaults).length > 0) {
-        form.reset({ ...form.getValues(), ...defaults });
         Object.entries(defaults).forEach(([key, value]) => {
+          form.setValue(key, value, { shouldDirty: false, shouldValidate: false });
           const sectionKey = fields.find((field) => field.name === key)?.group ?? '';
           onValuesChange?.({ [key]: value }, sectionKey);
         });
@@ -116,36 +75,18 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       return acc;
     }, [fields]);
 
-    const visibleTabs = React.useMemo(
-      () => TAB_CONFIG.filter((tab) => tab.groups.some((g) => (grouped[g] || []).length > 0)),
-      [grouped],
-    );
-
-    // Keep the active tab valid when the schema changes
-    React.useEffect(() => {
-      if (visibleTabs.length > 0 && !visibleTabs.some((tab) => tab.id === activeTab)) {
-        setActiveTab(visibleTabs[0].id);
-      }
-    }, [visibleTabs, activeTab]);
-
-    // ── Imperative scroll API (tab-aware) ─────────────────────────────────
+    // ── Imperative scroll API ──────────────────────────────────────────────
     useImperativeHandle(
       ref,
       () => ({
         scrollToSection: (anchorId: string) => {
-          const tab = TAB_CONFIG.find((t) => t.anchorId === anchorId);
-          if (!tab || !visibleTabs.some((t) => t.id === tab.id)) return false;
-          setActiveTab(tab.id);
-          // Wait one frame so the newly-active tab content is mounted
-          window.requestAnimationFrame(() => {
-            document
-              .getElementById(anchorId)
-              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          });
+          const element = document.getElementById(anchorId);
+          if (!element) return false;
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
           return true;
         },
       }),
-      [visibleTabs],
+      [],
     );
 
     // ── Change propagation (name/brand sync consumed by the parent) ───────
@@ -231,59 +172,148 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         );
       });
 
-    const activeConfig = visibleTabs.find((tab) => tab.id === activeTab) ?? visibleTabs[0];
+    const mediaFields = [
+      ...(grouped.base || []),
+      ...(grouped.variant || []),
+      ...(grouped.media || []),
+    ];
+    const detailsFields = grouped.details || [];
+    const saleFields = grouped.sale || [];
+    const packageFields = grouped.package || [];
+    const termFields = grouped.termcondition || [];
+
+    const hasAnyFields = fields.length > 0;
+
+    if (!hasAnyFields) {
+      return (
+        <div className="rounded-3xl border border-dashed border-gray-300 bg-white/80 px-6 py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+          This category has no additional fields configured.
+        </div>
+      );
+    }
 
     return (
-      <div className="space-y-6">
-        {/* Tab bar */}
-        <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-800">
-          {visibleTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeConfig?.id === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-                  isActive
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                }`}
-              >
-                <Icon className="h-4 w-4" /> {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Active tab content — wrapper carries the checklist anchor id */}
-        {activeConfig ? (
-          <div id={activeConfig.anchorId} className="scroll-mt-24">
-            {activeConfig.id === 'details' ? (
-              <DetailsSection
-                fields={grouped.details || []}
-                control={form.control}
-                isOpen={detailsExpanded}
-                onOpenChange={setDetailsExpanded}
-              />
-            ) : activeConfig.id === 'media' ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {renderFieldNodes([
-                  ...(grouped.base || []),
-                  ...(grouped.variant || []),
-                  ...(grouped.media || []),
-                ])}
+      <div className="space-y-8">
+        {/* Section: Media & Swatches */}
+        {mediaFields.length > 0 && (
+          <div
+            id="product-section-base"
+            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+          >
+            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ImageIcon className="h-4 w-4" />
               </div>
-            ) : (
-              <div className="space-y-6">
-                {renderFieldNodes(activeConfig.groups.flatMap((g) => grouped[g] || []))}
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Product Images & Swatches
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Upload cover images, color variants, and gallery photos
+                </p>
               </div>
-            )}
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {renderFieldNodes(mediaFields)}
+            </div>
           </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-gray-300 bg-white/80 px-6 py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
-            This category has no additional fields configured.
+        )}
+
+        {/* Section: Specifications */}
+        {detailsFields.length > 0 && (
+          <div
+            id="product-section-details"
+            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+          >
+            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Ruler className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Specifications & Attributes
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Key product features, measurements, and category details
+                </p>
+              </div>
+            </div>
+            <DetailsSection
+              fields={detailsFields}
+              control={form.control}
+              isOpen={detailsExpanded}
+              onOpenChange={setDetailsExpanded}
+            />
+          </div>
+        )}
+
+        {/* Section: Pricing, Stock & Variant Matrix */}
+        {saleFields.length > 0 && (
+          <div
+            id="product-section-sale"
+            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+          >
+            <div id="product-section-variant" className="scroll-mt-24" />
+            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Palette className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Price, Stock & Variant Matrix
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Manage retail prices, special pricing, and inventory matrix
+                </p>
+              </div>
+            </div>
+            <div className="space-y-6">{renderFieldNodes(saleFields)}</div>
+          </div>
+        )}
+
+        {/* Section: Shipping & Warranty */}
+        {packageFields.length > 0 && (
+          <div
+            id="product-section-package"
+            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+          >
+            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Package className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Shipping & Warranty
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Parcel dimensions, weight, and guarantee options
+                </p>
+              </div>
+            </div>
+            <div className="space-y-6">{renderFieldNodes(packageFields)}</div>
+          </div>
+        )}
+
+        {/* Section: Terms & Conditions */}
+        {termFields.length > 0 && (
+          <div
+            id="product-section-termcondition"
+            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+          >
+            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Terms & Conditions
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Product warranty policies and return disclaimers
+                </p>
+              </div>
+            </div>
+            <div className="space-y-6">{renderFieldNodes(termFields)}</div>
           </div>
         )}
       </div>

@@ -123,9 +123,24 @@ export const flattenObject = (obj: unknown, prefix = ''): Record<string, unknown
 };
 
 export const getNestedValue = (obj: unknown, path: string): unknown => {
-  return path.split('.').reduce<unknown>((acc, part) => {
+  if (!obj || typeof obj !== 'object') return undefined;
+  const record = obj as Record<string, unknown>;
+
+  // 1. Direct match (flat key in object, e.g. record['sku.default.price'])
+  if (path in record && record[path] !== undefined && record[path] !== null) {
+    return record[path];
+  }
+
+  // 2. Deep nested object traversal (e.g. record.sku.default.price)
+  const nested = path.split('.').reduce<unknown>((acc, part) => {
     return acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[part] : undefined;
   }, obj);
+
+  if (nested !== undefined && nested !== null) {
+    return nested;
+  }
+
+  return undefined;
 };
 
 export const getFirstPrice = (
@@ -144,10 +159,13 @@ export const getFirstPrice = (
     ...Object.keys(flat)
       .filter((key) => key.startsWith('sku.variants.') && key.endsWith(suffix))
       .sort(),
+    ...Object.keys(values)
+      .filter((key) => key.endsWith(suffix) || key.endsWith(rootKey))
+      .sort(),
   ];
 
   for (const key of preferredKeys) {
-    const numeric = toPositiveNumber(flat[key]);
+    const numeric = toPositiveNumber(flat[key] ?? values[key]);
     if (numeric !== undefined) {
       return numeric;
     }

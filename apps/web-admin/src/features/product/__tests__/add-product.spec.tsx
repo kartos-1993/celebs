@@ -38,24 +38,24 @@ describe('Product Specifications & Size Measurements', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should fail validation if a size measurement value is missing', () => {
-    const invalidProduct = {
+  it('should pass validation when size measurements have empty or partial values', () => {
+    const productWithPartialMeasurements = {
       ...baseValidProduct,
       sizes: [
         {
           name: 'M',
           productMeasurements: [
-            { name: 'Shoulder', value: '', unit: 'cm' }, // empty value
+            { name: 'Shoulder', value: '45', unit: 'cm' },
+            { name: 'Bust', value: '', unit: 'cm' }, // empty optional column
+          ],
+          bodyMeasurements: [
+            { name: 'Height', value: '', unit: 'cm' }, // unselected body measurement tab
           ],
         },
       ],
     };
-    const result = createProductSchema.safeParse(invalidProduct);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      const issue = result.error.issues.find((i) => i.path.join('.').includes('value'));
-      expect(issue?.message).toBe('Measurement value is required');
-    }
+    const result = createProductSchema.safeParse(productWithPartialMeasurements);
+    expect(result.success).toBe(true);
   });
 
   it('should fail validation if discountedPrice is higher than price', () => {

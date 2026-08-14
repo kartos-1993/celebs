@@ -10,7 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, generateSheinStyleSku } from '@celebs/shared-utils';
 
 import { calculateProductQCScore } from './utils/product-qc';
 
@@ -62,10 +62,26 @@ export class ProductService {
     tx: Prisma.TransactionClient,
     productId: string,
     colorVariants?: CreateProductInput['colorVariants'],
+    skus?: CreateProductInput['skus'],
+    departmentHint?: string,
   ): Promise<void> {
     if (!colorVariants || !Array.isArray(colorVariants)) return;
 
     const seenVariantNames = new Map<string, number>();
+
+    // Index explicit SKUs by variant option values if provided
+    const skuMap = new Map<string, string>();
+    if (Array.isArray(skus)) {
+      for (const s of skus) {
+        if (s?.skuCode && s?.selectedOptions) {
+          const optEntries = Object.entries(s.selectedOptions)
+            .map(([k, v]) => `${k.toLowerCase()}:${String(v).toLowerCase().trim()}`)
+            .sort()
+            .join('|');
+          skuMap.set(optEntries, s.skuCode.trim());
+        }
+      }
+    }
 
     for (const variant of colorVariants) {
       const baseName = variant.name?.trim() || 'Default';
@@ -75,14 +91,27 @@ export class ProductService {
 
       if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
 
+      const seenSizes = new Set<string>();
+
       for (const stockItem of variant.stocks) {
-        const size = stockItem.size;
+        const size = stockItem.size?.trim() || 'Default';
+        const sizeKey = size.toLowerCase();
+        if (seenSizes.has(sizeKey)) continue;
+        seenSizes.add(sizeKey);
+
         const quantity = stockItem.quantity ?? 0;
-        const skuPrefix = colorVariantName
-          .replace(/[^a-zA-Z0-9]/g, '')
-          .substring(0, 4)
-          .toUpperCase() || 'VAR';
-        const sku = `SKU-${productId.substring(0, 8)}-${skuPrefix}-${size.toUpperCase()}`;
+
+        // Try matching explicit SKU from SKU matrix
+        const matchKey1 = `color:${colorVariantName.toLowerCase()}|size:${sizeKey}`;
+        const matchKey2 = `color:${baseName.toLowerCase()}|size:${sizeKey}`;
+        let sku = skuMap.get(matchKey1) || skuMap.get(matchKey2);
+
+        if (!sku) {
+          sku = generateSheinStyleSku({
+            brandPrefix: 'c',
+            department: departmentHint,
+          });
+        }
 
         await tx.productInventory.upsert({
           where: {
@@ -113,7 +142,7 @@ export class ProductService {
     vendorId?: string,
     vendorName?: string,
   ): Promise<Record<string, unknown> | null> {
-    const { categoryId, subcategoryId } = await this.resolveCategoryIds(
+    const { categoryId, subcategoryId, departmentHint } = await this.resolveCategoryIds(
       input.categoryId,
       input.subcategoryId,
     );
@@ -152,7 +181,13 @@ export class ProductService {
         },
       });
 
-      await this.syncProductInventory(tx, product.id, input.colorVariants);
+      await this.syncProductInventory(
+        tx,
+        product.id,
+        input.colorVariants,
+        input.skus,
+        departmentHint,
+      );
       return product;
     });
 
@@ -659,7 +694,13 @@ export class ProductService {
       });
 
       if (updateData.colorVariants) {
-        await this.syncProductInventory(tx, p.id, updateData.colorVariants);
+        await this.syncProductInventory(
+          tx,
+          p.id,
+          updateData.colorVariants,
+          updateData.skus,
+          p.categoryId,
+        );
       }
 
       return p;
@@ -773,9 +814,13 @@ export class ProductService {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
+    const departmentHint =
+      resolvedCategory.path || resolvedCategory.name || resolvedCategory.slug || '';
+
     return {
       categoryId: resolvedCategory.id,
       subcategoryId: resolvedSubcategory ? resolvedSubcategory.id : resolvedCategory.id,
+      departmentHint,
     };
   }
 

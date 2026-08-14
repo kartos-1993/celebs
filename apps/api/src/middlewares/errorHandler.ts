@@ -87,7 +87,12 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
       switch (error.code) {
         case 'P2002': {
           const targetFields = error.meta?.target;
-          const fieldName = Array.isArray(targetFields) ? targetFields.join(', ') : 'field';
+          let fieldName = 'field';
+          if (Array.isArray(targetFields)) {
+            fieldName = targetFields.join(', ');
+          } else if (typeof targetFields === 'string') {
+            fieldName = targetFields.replace(/_key$/, '').replace(/^.*_/, '');
+          }
           const response: IApiResponse = {
             success: false,
             message: `A record with this ${fieldName} already exists. Please use a unique value.`,

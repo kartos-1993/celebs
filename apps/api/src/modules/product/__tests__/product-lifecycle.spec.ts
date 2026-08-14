@@ -332,4 +332,69 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
       ),
     ).rejects.toThrow('Forbidden: You do not own this product');
   });
+
+  it('should create a product with multiple color variants sharing prefixes without SKU collision (Shein-style SKUs)', async () => {
+    const input: CreateProductType = {
+      name: 'Prefix Collision Resilience Shirt',
+      description: 'Testing multi-variant SKU collision resistance.',
+      price: 1200,
+      categoryId: mockCategory.id,
+      subcategoryId: mockSubcategory.id,
+      colorVariants: [
+        {
+          name: 'Light Blue',
+          colorCode: '#ADD8E6',
+          stocks: [
+            { size: 'M', quantity: 5 },
+            { size: 'L', quantity: 8 },
+          ],
+        },
+        {
+          name: 'Light Gray',
+          colorCode: '#D3D3D3',
+          stocks: [
+            { size: 'M', quantity: 3 },
+            { size: 'L', quantity: 6 },
+          ],
+        },
+        {
+          name: 'Navy Blue',
+          colorCode: '#000080',
+          stocks: [{ size: 'M', quantity: 12 }],
+        },
+        {
+          name: 'Navy Dark',
+          colorCode: '#000033',
+          stocks: [{ size: 'M', quantity: 7 }],
+        },
+      ],
+    };
+
+    const product = await productService.createProduct(
+      input,
+      'vendor-test-user',
+      mockVendor.id,
+      'Test Boutique',
+    );
+
+    expect(product).not.toBeNull();
+    expect(product?.id).toBeDefined();
+
+    const inventories = await prisma.productInventory.findMany({
+      where: { productId: String(product?.id) },
+    });
+
+    expect(inventories).toHaveLength(6);
+
+    // Verify all generated SKUs are unique
+    const skuSet = new Set(inventories.map((inv) => inv.sku));
+    expect(skuSet.size).toBe(6);
+
+    // Verify each SKU follows the 18-character Shein/Retail-grade standard
+    for (const inv of inventories) {
+      expect(inv.sku).toHaveLength(18);
+      expect(inv.sku).toMatch(/^[a-z0-9]{2}\d{16}$/);
+    }
+  });
 });
+
