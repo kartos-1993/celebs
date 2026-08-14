@@ -1,10 +1,14 @@
-import { beforeEach,describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../auth.service';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/db';
+
+vi.mock('@/mailers/mailer', () => ({
+  sendEmail: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('AuthService - Resend Verification & Token Superseding', () => {
   let authService: AuthService;

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { can, Permission, Role } from '@celebs/rbac';
 import {
   createProductSchema,
   productFilterSchema,
@@ -24,12 +25,30 @@ export class ProductController {
       }
 
       const payload = createProductSchema.parse(req.body);
+      const userPermissions = (req.user as { permissions?: string[] }).permissions;
+      const isPublisher = can(
+        (req.user.role || 'STAFF') as Role,
+        Permission.PRODUCT_PUBLISH,
+        userPermissions,
+      );
+
+      // Non-publisher accounts (Vendors, Staff without explicit publish permission) cannot publish directly
+      let initialStatus = payload.status;
+      if (!isPublisher && initialStatus === 'published') {
+        initialStatus = 'pending_review';
+      }
+
+      const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
+      const effectiveVendorName = req.user.vendorProfile?.shopName;
 
       const product = await this.productService.createProduct(
-        payload,
+        {
+          ...payload,
+          status: initialStatus,
+        },
         req.user.userId,
-        req.user.vendorProfile?.id,
-        req.user.vendorProfile?.shopName,
+        effectiveVendorId,
+        effectiveVendorName,
       );
 
       res.status(HTTPSTATUS.CREATED).json({
@@ -52,8 +71,8 @@ export class ProductController {
 
       const isPublished =
         product.status === 'published' || (product.status as string) === 'PUBLISHED';
-      if (!isPublished && req.user?.role === 'VENDOR') {
-        const vendorId = req.user.vendorProfile?.id;
+      if (!isPublished && (req.user?.role === 'VENDOR' || req.user?.role === 'STAFF')) {
+        const vendorId = req.user.vendorProfile?.id || req.user.vendorId;
         if (String(product.vendorId) !== String(vendorId)) {
           throw new AppError(
             'Forbidden: You do not own this unpublished product',
@@ -108,7 +127,7 @@ export class ProductController {
 
   submitProductForReview = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user?.vendorProfile?.id;
+      const vendorId = req.user?.vendorProfile?.id || req.user?.vendorId;
       if (!vendorId) {
         throw new AppError(
           'Vendor profile not found',
@@ -174,12 +193,16 @@ export class ProductController {
 
       const id = req.params.id || '';
       const payload = updateProductSchema.parse(req.body);
+      const userPermissions = (req.user as { permissions?: string[] }).permissions;
+      const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
+
       const product = await this.productService.updateProduct(
         id,
         payload,
         req.user.userId,
         req.user.role || '',
-        req.user.vendorProfile?.id,
+        effectiveVendorId,
+        userPermissions,
       );
 
       res.status(HTTPSTATUS.OK).json({
@@ -203,11 +226,13 @@ export class ProductController {
       }
 
       const id = req.params.id || '';
+      const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
+
       const product = await this.productService.archiveProduct(
         id,
         req.user.userId,
         req.user.role || '',
-        req.user.vendorProfile?.id,
+        effectiveVendorId,
       );
 
       res.status(HTTPSTATUS.OK).json({
@@ -222,7 +247,7 @@ export class ProductController {
 
   toggleProductActivation = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user?.vendorProfile?.id;
+      const vendorId = req.user?.vendorProfile?.id || req.user?.vendorId;
       if (!vendorId) {
         throw new AppError(
           'Vendor profile not found',

@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import slugify from 'slugify';
 
+import { can, Permission, Role } from '@celebs/rbac';
 import {
   CreateProductType,
   ProductColorVariantType,
@@ -554,13 +555,16 @@ export class ProductService {
     userId: string,
     role: string,
     vendorId?: string,
+    userPermissions?: string[],
   ) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if (role === 'VENDOR') {
+    const isPublisher = can((role || 'STAFF') as Role, Permission.PRODUCT_PUBLISH, userPermissions);
+
+    if (role === 'VENDOR' || role === 'STAFF') {
       if (String(product.vendorId) !== String(vendorId)) {
         throw new AppError(
           'Forbidden: You do not own this product',
@@ -568,12 +572,15 @@ export class ProductService {
           ErrorCode.FORBIDDEN_RESOURCE,
         );
       }
-      if (product.status !== 'draft' && product.status !== 'rejected') {
+      if (!isPublisher && product.status !== 'draft' && product.status !== 'rejected') {
         throw new AppError(
           'Cannot update product unless it is draft or rejected',
           HTTPSTATUS.BAD_REQUEST,
           ErrorCode.INVALID_REQUEST,
         );
+      }
+      if (!isPublisher && updateData.status === 'published') {
+        updateData.status = 'pending_review';
       }
     }
 
@@ -682,7 +689,7 @@ export class ProductService {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if (role === 'VENDOR' && String(product.vendorId) !== String(vendorId)) {
+    if ((role === 'VENDOR' || role === 'STAFF') && String(product.vendorId) !== String(vendorId)) {
       throw new AppError(
         'Forbidden: You do not own this product',
         HTTPSTATUS.FORBIDDEN,
