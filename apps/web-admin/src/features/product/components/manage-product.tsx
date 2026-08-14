@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Info, Loader, Search, ShoppingBag, X } from 'lucide-react';
+import { can, Permission } from '@celebs/rbac';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
   Table,
@@ -56,6 +57,11 @@ const statusBadgeVariant = (
 
 const ManageProduct = () => {
   const { user } = useAuthContext();
+  const userPermissions = (user as { permissions?: string[] })?.permissions;
+  const isSellerOrStaff =
+    user?.role === 'VENDOR' || (user?.role === 'STAFF' && Boolean(user?.vendorId));
+  const canCreate = can(user?.role || 'STAFF', Permission.PRODUCT_CREATE, userPermissions);
+  const canEdit = can(user?.role || 'STAFF', Permission.PRODUCT_EDIT, userPermissions);
 
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -242,7 +248,8 @@ const ManageProduct = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {user?.role === 'VENDOR' &&
+                            {isSellerOrStaff &&
+                              canCreate &&
                               (product.status === 'draft' || product.status === 'rejected') && (
                                 <Button
                                   size="sm"
@@ -252,7 +259,8 @@ const ManageProduct = () => {
                                   Submit
                                 </Button>
                               )}
-                            {user?.role === 'VENDOR' &&
+                            {isSellerOrStaff &&
+                              canEdit &&
                               (product.status === 'published' ||
                                 product.status === 'deactivated') && (
                                 <Button
