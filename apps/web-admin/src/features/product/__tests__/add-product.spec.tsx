@@ -72,4 +72,26 @@ describe('Product Specifications & Size Measurements', () => {
       );
     }
   });
+
+  it('should pass validation for body measurement range values (e.g. 100-200, 32-34)', () => {
+    const productWithRanges = {
+      ...baseValidProduct,
+      sizes: [
+        {
+          name: 'M',
+          productMeasurements: [
+            { name: 'Shoulder', value: '45', unit: 'cm' },
+            { name: 'Bust', value: '100', unit: 'cm' },
+          ],
+          bodyMeasurements: [
+            { name: 'Height', value: '170-180', unit: 'cm' },
+            { name: 'Waist', value: '32-34', unit: 'in' },
+            { name: 'Bust', value: '95 - 105', unit: 'cm' },
+          ],
+        },
+      ],
+    };
+    const result = createProductSchema.safeParse(productWithRanges);
+    expect(result.success).toBe(true);
+  });
 });

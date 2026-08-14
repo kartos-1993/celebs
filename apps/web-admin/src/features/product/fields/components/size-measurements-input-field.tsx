@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
+import { cn } from '@/lib/utils';
 import type { UiProps } from '../ui-registry';
 
 interface MeasurementChartSpec {
@@ -61,6 +62,61 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
   }, [activeSizesIndex, watchedSizes]);
 
   const sizesState = (watch('sizes') || []) as SizeEntry[];
+
+  const hasErrorsForChartKey = (chartKey: string) => {
+    const listKey = chartKey === 'body' ? 'bodyMeasurements' : 'productMeasurements';
+    const sizesErr = formState.errors.sizes;
+    if (!sizesErr) return false;
+    if (Array.isArray(sizesErr)) {
+      return sizesErr.some((sizeEntry) => {
+        const list = sizeEntry?.[listKey];
+        if (!list) return false;
+        if (Array.isArray(list)) {
+          return list.some((item: { value?: { message?: string }; message?: string } | undefined) =>
+            Boolean(item?.value?.message || item?.message),
+          );
+        }
+        if (typeof list === 'object') {
+          return Object.values(list).some((item: unknown) => {
+            const castItem = item as { value?: { message?: string }; message?: string } | undefined;
+            return Boolean(castItem?.value?.message || castItem?.message);
+          });
+        }
+        return false;
+      });
+    }
+    if (typeof sizesErr === 'object') {
+      return Object.values(sizesErr).some((sizeEntry: unknown) => {
+        const castEntry = sizeEntry as Record<string, unknown> | undefined;
+        const list = castEntry?.[listKey];
+        if (!list) return false;
+        if (Array.isArray(list)) {
+          return list.some((item: { value?: { message?: string }; message?: string } | undefined) =>
+            Boolean(item?.value?.message || item?.message),
+          );
+        }
+        if (typeof list === 'object') {
+          return Object.values(list).some((item: unknown) => {
+            const castItem = item as { value?: { message?: string }; message?: string } | undefined;
+            return Boolean(castItem?.value?.message || castItem?.message);
+          });
+        }
+        return false;
+      });
+    }
+    return false;
+  };
+
+  const hasProductErrors = hasErrorsForChartKey('product');
+  const hasBodyErrors = hasErrorsForChartKey('body');
+
+  React.useEffect(() => {
+    if (hasBodyErrors && !hasProductErrors && activeTabKey !== 'body') {
+      setActiveTabKey('body');
+    } else if (hasProductErrors && !hasBodyErrors && activeTabKey !== 'product') {
+      setActiveTabKey('product');
+    }
+  }, [hasBodyErrors, hasProductErrors, activeTabKey]);
 
   React.useEffect(() => {
     if (charts.length === 0) return;
@@ -211,8 +267,11 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                         />
                         <Input
                           type="text"
-                          placeholder="e.g. 70"
-                          className="h-8 text-xs"
+                          placeholder={listKey === 'bodyMeasurements' ? 'e.g. 70 or 70-80' : 'e.g. 70'}
+                          className={cn(
+                            'h-8 text-xs',
+                            cellError && 'border-destructive focus-visible:ring-destructive',
+                          )}
                           {...register(`sizes.${sizeIndex}.${listKey}.${colIndex}.value` as const)}
                         />
                         {cellError && (
@@ -270,20 +329,26 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
       {charts.length > 1 ? (
         <div className="space-y-3">
           <div className="flex border-b">
-            {charts.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setActiveTabKey(c.key)}
-                className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors -mb-px ${
-                  (activeTabKey || charts[0].key) === c.key
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
+            {charts.map((c) => {
+              const hasTabErrors = c.key === 'body' ? hasBodyErrors : hasProductErrors;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setActiveTabKey(c.key)}
+                  className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors -mb-px flex items-center gap-1.5 ${
+                    (activeTabKey || charts[0].key) === c.key
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span>{c.label}</span>
+                  {hasTabErrors && (
+                    <span className="inline-block w-2 h-2 rounded-full bg-destructive shrink-0" />
+                  )}
+                </button>
+              );
+            })}
           </div>
           <div>
             {charts.map((c) =>
