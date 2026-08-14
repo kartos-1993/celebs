@@ -128,6 +128,7 @@ const BasicInfoSection = ({
                   <FormControl>
                     <Input
                       placeholder="Enter a clear, searchable product title"
+                      data-testid="product-name-input"
                       {...field}
                       onChange={(event) => {
                         field.onChange(event);
@@ -162,6 +163,7 @@ const BasicInfoSection = ({
                   <FormControl>
                     <Input
                       placeholder="Brand or collection name"
+                      data-testid="product-brand-input"
                       {...field}
                       onChange={(event) => {
                         field.onChange(event);
@@ -196,6 +198,7 @@ const BasicInfoSection = ({
                 <FormControl>
                   <Textarea
                     placeholder="Describe the material, fit, standout features, and customer-facing details."
+                    data-testid="product-desc-input"
                     {...field}
                     onChange={(event) => {
                       field.onChange(event);

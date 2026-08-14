@@ -250,6 +250,7 @@ export function ColorMetaItem({
             <label className="cursor-pointer">
               <input
                 type="file"
+                data-testid={`color-swatch-upload-${color}`}
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 onChange={(e) => {
@@ -314,6 +315,7 @@ export function ColorMetaItem({
             <label className="grid h-10 w-10 cursor-pointer place-items-center rounded border text-xs text-muted-foreground hover:bg-accent/30">
               <input
                 type="file"
+                data-testid={`color-gallery-upload-${color}`}
                 className="hidden"
                 accept={Array.isArray(accept) ? accept.join(',') : undefined}
                 multiple
