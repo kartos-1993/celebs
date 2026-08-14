@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { AlertTriangle, Check, Eye, Search, ShieldCheck, Store, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
@@ -19,7 +19,7 @@ import {
   useProductsQuery,
   useReviewQueueQuery,
 } from '../../hooks/use-product-queries';
-import type { ReviewProductRequestPayload } from '../../api';
+import type { ReviewProductRequestPayload, ProductFilterRequest } from '../../api';
 import { QualityBadge } from './quality-badge';
 import { RejectionDialog } from './rejection-dialog';
 import { PreviewModal } from './preview-modal';
@@ -44,16 +44,18 @@ export default function ReviewProductQueue() {
 
   const isPendingTab = activeTab === 'pending';
 
-  const queueQuery = useReviewQueueQuery(currentPage, PAGE_SIZE, isPendingTab);
-  const listQuery = useProductsQuery(
-    {
+  const listFilters = useMemo<ProductFilterRequest>(
+    () => ({
       status: activeTab === 'published' ? 'published' : 'rejected',
       search: debouncedSearch || undefined,
       page: currentPage,
       limit: PAGE_SIZE,
-    },
-    !isPendingTab,
+    }),
+    [activeTab, debouncedSearch, currentPage],
   );
+
+  const queueQuery = useReviewQueueQuery(currentPage, PAGE_SIZE, isPendingTab);
+  const listQuery = useProductsQuery(listFilters, !isPendingTab);
 
   const activeQuery = isPendingTab ? queueQuery : listQuery;
   const products = (activeQuery.data?.data?.products ?? []) as unknown as ProductQueueItem[];
@@ -199,7 +201,9 @@ export default function ReviewProductQueue() {
                             alt={product.name}
                             className="h-12 w-12 rounded object-cover border bg-muted"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                              const target = e.currentTarget;
+                              target.onerror = null;
+                              target.src = '/placeholder.svg';
                             }}
                           />
                           <div>

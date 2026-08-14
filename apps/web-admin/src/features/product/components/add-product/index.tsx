@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { FieldErrors } from 'react-hook-form';
+import { can, Permission } from '@celebs/rbac';
 import { logger } from '@celebs/shared-utils';
 import { Form } from '@celebs/shared-ui/components/form';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -119,6 +120,7 @@ const AddProduct = () => {
         productId={id}
         isEditMode={isEditMode}
         role={role}
+        userPermissions={(user as { permissions?: string[] })?.permissions}
         form={form}
         schemaFields={schemaFields}
         isSchemaLoading={isSchemaLoading}
@@ -143,6 +145,7 @@ interface AddProductFormBodyProps {
   productId?: string;
   isEditMode: boolean;
   role?: string;
+  userPermissions?: string[];
   form: UseFormReturn<ProductFormValues>;
   schemaFields: FieldSpec[];
   isSchemaLoading: boolean;
@@ -163,6 +166,7 @@ const AddProductFormBody = ({
   productId,
   isEditMode,
   role,
+  userPermissions,
   form,
   schemaFields,
   isSchemaLoading,
@@ -355,7 +359,12 @@ const AddProductFormBody = ({
         <div className="space-y-6">
           <form
             onSubmit={form.handleSubmit(
-              () => handleSubmitProduct(role === 'VENDOR' ? 'pending_review' : 'published'),
+              () =>
+                handleSubmitProduct(
+                  can(role || 'STAFF', Permission.PRODUCT_PUBLISH, userPermissions)
+                    ? 'published'
+                    : 'pending_review',
+                ),
               (errors) => handleFormInvalid(errors as FieldErrors<Record<string, unknown>>),
             )}
             className="space-y-6"

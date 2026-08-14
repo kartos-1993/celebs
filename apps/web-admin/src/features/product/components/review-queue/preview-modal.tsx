@@ -158,6 +158,11 @@ export function PreviewModal({
                         src={activePreviewImage || '/placeholder.svg'}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.onerror = null;
+                          target.src = '/placeholder.svg';
+                        }}
                       />
                       <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md backdrop-blur">
                         {product.mainImages?.length || 0} Main Images
@@ -178,6 +183,11 @@ export function PreviewModal({
                             src={imageUrl}
                             alt={`Thumbnail ${index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.onerror = null;
+                              target.src = '/placeholder.svg';
+                            }}
                           />
                         </button>
                       ))}
