@@ -256,4 +256,80 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
       'This product violates our safety policies on replica accessories.',
     );
   });
+
+  it('should coerce status to pending_review when vendor or staff without publish permission attempts to update status to published', async () => {
+    const input: CreateProductType = {
+      name: 'Sneakers Draft',
+      description: 'Sport shoes draft.',
+      price: 1500,
+      categoryId: mockCategory.id,
+      subcategoryId: mockSubcategory.id,
+      colorVariants: [
+        {
+          name: 'Black',
+          colorCode: '#000000',
+          stocks: [{ size: '42', quantity: 5 }],
+        },
+      ],
+    };
+
+    const vendorId = mockVendor.id;
+    const product = await productService.createProduct(
+      input,
+      'staff-user-1',
+      vendorId,
+      'Vendor Store',
+    );
+    expect(product).not.toBeNull();
+    expect(product?.status).toBe('draft');
+
+    // Attempting to update to published without publish permission
+    const updated = await productService.updateProduct(
+      String(product?.id),
+      { status: 'published' },
+      'staff-user-1',
+      'STAFF',
+      vendorId,
+      [], // no custom permissions
+    );
+
+    expect(updated?.status).toBe('pending_review');
+  });
+
+  it('should prevent staff belonging to one vendor from updating another vendor product', async () => {
+    const input: CreateProductType = {
+      name: 'Scoped Shoes',
+      description: 'Vendor A Shoes.',
+      price: 2000,
+      categoryId: mockCategory.id,
+      subcategoryId: mockSubcategory.id,
+      colorVariants: [
+        {
+          name: 'Blue',
+          colorCode: '#0000FF',
+          stocks: [{ size: '40', quantity: 10 }],
+        },
+      ],
+    };
+
+    const product = await productService.createProduct(
+      input,
+      'vendor-a-user',
+      mockVendor.id,
+      'Vendor A Store',
+    );
+    expect(product).not.toBeNull();
+
+    // Staff from a different vendor attempts to update
+    await expect(
+      productService.updateProduct(
+        String(product?.id),
+        { name: 'Hacked Title' },
+        'staff-b-user',
+        'STAFF',
+        'different-vendor-id',
+        [],
+      ),
+    ).rejects.toThrow('Forbidden: You do not own this product');
+  });
 });
