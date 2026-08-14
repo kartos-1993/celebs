@@ -24,6 +24,11 @@ export type ProductSizeInput = ProductSizeType;
 export type ProductStockInput = ProductStockType;
 export type ProductColorVariantInput = ProductColorVariantType;
 
+const toJsonInput = (value: unknown): Prisma.InputJsonValue | undefined => {
+  if (value === undefined || value === null) return undefined;
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+};
+
 export class ProductService {
   async getProducts(filters: ProductFilterType) {
     return this.getAllProducts(filters);
@@ -33,25 +38,73 @@ export class ProductService {
     product: Record<string, unknown> | null,
   ): Record<string, unknown> | null {
     if (!product) return null;
+    const categoryObj =
+      product.category && typeof product.category === 'object'
+        ? (product.category as Record<string, unknown>)
+        : null;
+    const subcategoryObj =
+      product.subcategory && typeof product.subcategory === 'object'
+        ? (product.subcategory as Record<string, unknown>)
+        : null;
+
     return {
       ...product,
       id: product.id,
       price: product.price != null ? Number(product.price) : 0,
       discountedPrice:
         product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
-      category: product.category
-        ? {
-            ...(product.category as Record<string, unknown>),
-            id: (product.category as { id?: string }).id,
-          }
-        : product.categoryId,
-      subcategory: product.subcategory
-        ? {
-            ...(product.subcategory as Record<string, unknown>),
-            id: (product.subcategory as { id?: string }).id,
-          }
-        : product.subcategoryId,
+      category: categoryObj || product.categoryId,
+      subcategory: subcategoryObj || product.subcategoryId,
     };
+  }
+
+  private async syncProductInventory(
+    tx: Prisma.TransactionClient,
+    productId: string,
+    colorVariants?: CreateProductInput['colorVariants'],
+  ): Promise<void> {
+    if (!colorVariants || !Array.isArray(colorVariants)) return;
+
+    const seenVariantNames = new Map<string, number>();
+
+    for (const variant of colorVariants) {
+      const baseName = variant.name?.trim() || 'Default';
+      const count = seenVariantNames.get(baseName) || 0;
+      seenVariantNames.set(baseName, count + 1);
+      const colorVariantName = count > 0 ? `${baseName} (${count + 1})` : baseName;
+
+      if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
+
+      for (const stockItem of variant.stocks) {
+        const size = stockItem.size;
+        const quantity = stockItem.quantity ?? 0;
+        const skuPrefix = colorVariantName
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .substring(0, 4)
+          .toUpperCase() || 'VAR';
+        const sku = `SKU-${productId.substring(0, 8)}-${skuPrefix}-${size.toUpperCase()}`;
+
+        await tx.productInventory.upsert({
+          where: {
+            productId_colorVariantName_size: {
+              productId,
+              colorVariantName,
+              size,
+            },
+          },
+          update: {
+            quantity,
+          },
+          create: {
+            productId,
+            colorVariantName,
+            size,
+            sku,
+            quantity,
+          },
+        });
+      }
+    }
   }
 
   async createProduct(
@@ -79,12 +132,12 @@ export class ProductService {
           discountedPrice: input.discountedPrice,
           categoryId,
           subcategoryId,
-          sizes: (input.sizes ?? []) as unknown as Prisma.InputJsonValue,
-          colorVariants: (input.colorVariants ?? []) as unknown as Prisma.InputJsonValue,
-          skus: (input.skus ?? []) as unknown as Prisma.InputJsonValue,
-          variantOptions: (input.variantOptions ?? []) as unknown as Prisma.InputJsonValue,
+          sizes: toJsonInput(input.sizes) ?? [],
+          colorVariants: toJsonInput(input.colorVariants) ?? [],
+          skus: toJsonInput(input.skus) ?? [],
+          variantOptions: toJsonInput(input.variantOptions) ?? [],
           mainImages: input.mainImages ?? [],
-          dynamicData: (input.dynamicData ?? {}) as unknown as Prisma.InputJsonValue,
+          dynamicData: toJsonInput(input.dynamicData) ?? {},
           tags: input.tags ?? [],
           featured: input.featured ?? false,
           status: input.status ?? 'draft',
@@ -99,42 +152,7 @@ export class ProductService {
         },
       });
 
-      // Sync inventory records in the same transaction
-      if (input.colorVariants && Array.isArray(input.colorVariants)) {
-        for (const variant of input.colorVariants) {
-          const colorVariantName = variant.name;
-          if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
-
-          for (const stockItem of variant.stocks) {
-            const size = stockItem.size;
-            const quantity = stockItem.quantity ?? 0;
-            const sku = `SKU-${product.id.substring(0, 8)}-${colorVariantName
-              .substring(0, 3)
-              .toUpperCase()}-${size.toUpperCase()}`;
-
-            await tx.productInventory.upsert({
-              where: {
-                productId_colorVariantName_size: {
-                  productId: product.id,
-                  colorVariantName,
-                  size,
-                },
-              },
-              update: {
-                quantity,
-              },
-              create: {
-                productId: product.id,
-                colorVariantName,
-                size,
-                sku,
-                quantity,
-              },
-            });
-          }
-        }
-      }
-
+      await this.syncProductInventory(tx, product.id, input.colorVariants);
       return product;
     });
 
@@ -617,21 +635,19 @@ export class ProductService {
             : {}),
           categoryId: resolvedCategoryId,
           subcategoryId: resolvedSubcategoryId,
-          ...(updateData.sizes
-            ? { sizes: updateData.sizes as unknown as Prisma.InputJsonValue }
+          ...(updateData.sizes !== undefined ? { sizes: toJsonInput(updateData.sizes) } : {}),
+          ...(updateData.colorVariants !== undefined
+            ? { colorVariants: toJsonInput(updateData.colorVariants) }
             : {}),
-          ...(updateData.colorVariants
-            ? { colorVariants: updateData.colorVariants as unknown as Prisma.InputJsonValue }
+          ...(updateData.skus !== undefined ? { skus: toJsonInput(updateData.skus) } : {}),
+          ...(updateData.variantOptions !== undefined
+            ? { variantOptions: toJsonInput(updateData.variantOptions) }
             : {}),
-          ...(updateData.skus ? { skus: updateData.skus as unknown as Prisma.InputJsonValue } : {}),
-          ...(updateData.variantOptions
-            ? { variantOptions: updateData.variantOptions as unknown as Prisma.InputJsonValue }
+          ...(updateData.mainImages !== undefined ? { mainImages: updateData.mainImages } : {}),
+          ...(updateData.dynamicData !== undefined
+            ? { dynamicData: toJsonInput(updateData.dynamicData) }
             : {}),
-          ...(updateData.mainImages ? { mainImages: updateData.mainImages } : {}),
-          ...(updateData.dynamicData
-            ? { dynamicData: updateData.dynamicData as unknown as Prisma.InputJsonValue }
-            : {}),
-          ...(updateData.tags ? { tags: updateData.tags } : {}),
+          ...(updateData.tags !== undefined ? { tags: updateData.tags } : {}),
           ...(updateData.featured !== undefined ? { featured: updateData.featured } : {}),
           ...(updateData.status ? { status: updateData.status } : {}),
           updatedBy: userId,
@@ -642,39 +658,8 @@ export class ProductService {
         },
       });
 
-      if (updateData.colorVariants && Array.isArray(updateData.colorVariants)) {
-        for (const variant of updateData.colorVariants) {
-          const colorVariantName = variant.name;
-          if (!variant.stocks || !Array.isArray(variant.stocks)) continue;
-
-          for (const stockItem of variant.stocks) {
-            const size = stockItem.size;
-            const quantity = stockItem.quantity ?? 0;
-            const sku = `SKU-${p.id.substring(0, 8)}-${colorVariantName
-              .substring(0, 3)
-              .toUpperCase()}-${size.toUpperCase()}`;
-
-            await tx.productInventory.upsert({
-              where: {
-                productId_colorVariantName_size: {
-                  productId: p.id,
-                  colorVariantName,
-                  size,
-                },
-              },
-              update: {
-                quantity,
-              },
-              create: {
-                productId: p.id,
-                colorVariantName,
-                size,
-                sku,
-                quantity,
-              },
-            });
-          }
-        }
+      if (updateData.colorVariants) {
+        await this.syncProductInventory(tx, p.id, updateData.colorVariants);
       }
 
       return p;
