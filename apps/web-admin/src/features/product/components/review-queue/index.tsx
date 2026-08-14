@@ -13,7 +13,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { useDebounce } from '@/hooks/use-debounce';
-import type { CategoryRef, ProductQueueItem } from './types';
+import type { ProductQueueItem } from './types';
 import {
   useProductMutations,
   useProductsQuery,
@@ -23,14 +23,9 @@ import type { ReviewProductRequestPayload, ProductFilterRequest } from '../../ap
 import { QualityBadge } from './quality-badge';
 import { RejectionDialog } from './rejection-dialog';
 import { PreviewModal } from './preview-modal';
+import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
 
 const PAGE_SIZE = 10;
-
-const getCategoryName = (category?: CategoryRef | string): string => {
-  if (!category) return 'Uncategorized';
-  if (typeof category === 'string') return category;
-  return category.name;
-};
 
 export default function ReviewProductQueue() {
   const [activeTab, setActiveTab] = useState<'pending' | 'published' | 'rejected'>('pending');
@@ -227,8 +222,8 @@ export default function ReviewProductQueue() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {getCategoryName(product.category)}
+                        <Badge variant="outline" className="text-xs max-w-[220px] truncate block" title={formatProductCategoryBreadcrumb(product)}>
+                          {formatProductCategoryBreadcrumb(product)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">

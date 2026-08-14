@@ -17,7 +17,9 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import { Dialog, DialogContent } from '@celebs/shared-ui/components/dialog';
-import type { CategoryRef, ProductQueueItem } from './types';
+import { isMulticolorVariant, resolveColorCode } from '../../utils/add-product-helpers';
+import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
+import type { ProductQueueItem } from './types';
 import { QualityBadge } from './quality-badge';
 
 type PreviewTab = 'overview' | 'specs' | 'sizes' | 'variants' | 'qc' | 'history';
@@ -30,12 +32,6 @@ const PREVIEW_TABS: Array<{ id: PreviewTab; label: string; icon: typeof Eye }> =
   { id: 'qc', label: 'QC Scorecard', icon: ShieldCheck },
   { id: 'history', label: 'Audit History', icon: History },
 ];
-
-const getCategoryName = (category?: CategoryRef | string): string => {
-  if (!category) return 'Uncategorized';
-  if (typeof category === 'string') return category;
-  return category.name;
-};
 
 interface PreviewModalProps {
   product: ProductQueueItem;
@@ -84,7 +80,9 @@ export function PreviewModal({
                 <span>•</span>
                 <span>
                   Category:{' '}
-                  <strong className="text-foreground">{getCategoryName(product.category)}</strong>
+                  <strong className="text-foreground">
+                    {formatProductCategoryBreadcrumb(product)}
+                  </strong>
                 </span>
                 <span>•</span>
                 <span>
@@ -243,18 +241,51 @@ export function PreviewModal({
                           Color Options ({product.colorVariants?.length})
                         </span>
                         <div className="flex gap-2 flex-wrap">
-                          {(product.colorVariants ?? []).map((variant, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center gap-2 border p-1.5 rounded-lg bg-muted/30"
-                            >
+                          {(product.colorVariants ?? []).map((variant, index) => {
+                            const swatchImg =
+                              variant.swatch ||
+                              (variant.images && variant.images.length > 0
+                                ? variant.images[0]
+                                : null);
+                            const isMulti = isMulticolorVariant(
+                              `${variant.name} ${variant.colorCode}`,
+                            );
+                            const safeBg = resolveColorCode(variant.colorCode || variant.name);
+
+                            return (
                               <div
-                                className="w-5 h-5 rounded-full border shadow-sm"
-                                style={{ backgroundColor: variant.colorCode }}
-                              />
-                              <span className="text-xs font-medium pr-1">{variant.name}</span>
-                            </div>
-                          ))}
+                                key={index}
+                                className="flex items-center gap-2 border p-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                                title={variant.name}
+                              >
+                                {swatchImg ? (
+                                  <img
+                                    src={swatchImg}
+                                    alt={variant.name}
+                                    className="w-5 h-5 rounded-full object-cover border shadow-2xs"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                ) : isMulti ? (
+                                  <div
+                                    className="w-5 h-5 rounded-full border shadow-2xs"
+                                    style={{
+                                      background:
+                                        'conic-gradient(#ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #ef4444)',
+                                    }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="w-5 h-5 rounded-full border shadow-2xs"
+                                    style={{ backgroundColor: safeBg }}
+                                  />
+                                )}
+                                <span className="text-xs font-medium pr-1">{variant.name}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -380,40 +411,68 @@ export function PreviewModal({
                 </h4>
                 {(product.colorVariants ?? []).length > 0 ? (
                   <div className="space-y-3">
-                    {(product.colorVariants ?? []).map((variant, index) => (
-                      <div key={index} className="p-4 border rounded-xl bg-card space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="h-7 w-7 rounded-full border shadow-sm"
-                            style={{ backgroundColor: variant.colorCode }}
-                          />
-                          <div>
-                            <h5 className="font-bold text-sm text-foreground">{variant.name}</h5>
-                            <span className="text-xs text-muted-foreground">
-                              Hex Code: {variant.colorCode}
-                            </span>
+                    {(product.colorVariants ?? []).map((variant, index) => {
+                      const swatchImg =
+                        variant.swatch ||
+                        (variant.images && variant.images.length > 0 ? variant.images[0] : null);
+                      const isMulti = isMulticolorVariant(`${variant.name} ${variant.colorCode}`);
+                      const safeBg = resolveColorCode(variant.colorCode || variant.name);
+
+                      return (
+                        <div key={index} className="p-4 border rounded-xl bg-card space-y-3">
+                          <div className="flex items-center gap-3">
+                            {swatchImg ? (
+                              <img
+                                src={swatchImg}
+                                alt={variant.name}
+                                className="h-7 w-7 rounded-full object-cover border shadow-xs"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : isMulti ? (
+                              <div
+                                className="h-7 w-7 rounded-full border shadow-xs"
+                                style={{
+                                  background:
+                                    'conic-gradient(#ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #ef4444)',
+                                }}
+                              />
+                            ) : (
+                              <div
+                                className="h-7 w-7 rounded-full border shadow-xs"
+                                style={{ backgroundColor: safeBg }}
+                              />
+                            )}
+                            <div>
+                              <h5 className="font-bold text-sm text-foreground">{variant.name}</h5>
+                              <span className="text-xs text-muted-foreground">
+                                {isMulti ? 'Multicolor / Fabric Pattern' : `Color Code: ${safeBg}`}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(variant.stocks ?? []).map((stock, stockIndex) => (
+                              <div
+                                key={stockIndex}
+                                className="text-xs bg-muted px-3 py-1.5 rounded-md border flex items-center gap-2"
+                              >
+                                <span className="font-medium text-foreground">
+                                  Size {stock.size}:
+                                </span>
+                                <Badge
+                                  variant={stock.quantity > 0 ? 'default' : 'destructive'}
+                                  className="text-[10px]"
+                                >
+                                  {stock.quantity} units left
+                                </Badge>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(variant.stocks ?? []).map((stock, stockIndex) => (
-                            <div
-                              key={stockIndex}
-                              className="text-xs bg-muted px-3 py-1.5 rounded-md border flex items-center gap-2"
-                            >
-                              <span className="font-medium text-foreground">
-                                Size {stock.size}:
-                              </span>
-                              <Badge
-                                variant={stock.quantity > 0 ? 'default' : 'destructive'}
-                                className="text-[10px]"
-                              >
-                                {stock.quantity} units left
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-6 text-center text-muted-foreground border rounded-lg bg-muted/10">

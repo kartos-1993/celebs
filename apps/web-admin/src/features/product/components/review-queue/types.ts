@@ -31,6 +31,7 @@ export interface StockItem {
 export interface ColorVariantItem {
   name: string;
   colorCode: string;
+  swatch?: string;
   images?: string[];
   stocks?: StockItem[];
 }

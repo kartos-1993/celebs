@@ -87,6 +87,26 @@ export const serializeDraftValue = (value: unknown): unknown => {
 export const isHexColor = (value: string): boolean =>
   /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 
+export const extractHexColor = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const match = value.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/);
+  return match ? match[0] : undefined;
+};
+
+export const resolveColorCode = (colorNameOrCode?: string): string => {
+  if (!colorNameOrCode) return '#000000';
+  const clean = colorNameOrCode.trim();
+  const hex = extractHexColor(clean);
+  if (hex) return hex;
+  if (isHexColor(clean)) return clean;
+  return clean;
+};
+
+export const isMulticolorVariant = (colorNameOrCode?: string): boolean => {
+  if (!colorNameOrCode) return false;
+  return /multi|rainbow|tie-?dye|floral|print|pattern|stripe|plaid/i.test(colorNameOrCode);
+};
+
 export const flattenObject = (obj: unknown, prefix = ''): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   if (!obj || typeof obj !== 'object') return result;
@@ -257,7 +277,7 @@ export const resolvePageSectionKey = (path: string, schemaFields: FieldSpec[]): 
     return 'images';
   }
 
-  if (path.startsWith('sku.')) {
+  if (path.startsWith('sku.') || path.startsWith('sizes') || path.startsWith('size_chart')) {
     return 'pricing';
   }
 

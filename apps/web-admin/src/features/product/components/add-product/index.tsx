@@ -26,9 +26,11 @@ import {
   MANAGE_PRODUCTS_PATH,
   normalizeText,
   uniqueMessages,
+  isFieldFilled,
+  resolvePageSectionKey,
 } from '../../utils/add-product-helpers';
-import { flattenFormErrors } from '../../utils/add-product-validation';
 import { buildProductPayload } from '../../utils/add-product-payload';
+import { focusFirstError, focusMissingField, formatFieldLabel } from '../../utils/form-focus';
 import type { UseFormReturn } from 'react-hook-form';
 
 // ─── Outer orchestrator: data hooks + provider boundary ──────────────────────
@@ -253,10 +255,36 @@ const AddProductFormBody = ({
     }
     if (firstInvalidSection) {
       logger.warn({ section: firstInvalidSection }, 'Submit blocked by section validation');
-      scrollToSection(firstInvalidSection.anchorId);
+      const focused = focusFirstError(form.formState.errors, firstInvalidSection.anchorId);
+
+      // If RHF errors is empty, pinpoint missing dynamic/schema field in the section
+      if (!focused && firstInvalidSection.anchorId) {
+        const currentValues = form.getValues() as Record<string, unknown>;
+        const sectionFields = schemaFields.filter(
+          (f) => resolvePageSectionKey(f.name, schemaFields) === firstInvalidSection.key,
+        );
+        const missingField = sectionFields.find(
+          (f) => f.required && f.visible !== false && !isFieldFilled(f, currentValues[f.name]),
+        );
+
+        if (missingField) {
+          form.setError(missingField.name as unknown as `root.${string}`, {
+            type: 'manual',
+            message: `${missingField.label} is required`,
+          });
+          focusMissingField(missingField.name, firstInvalidSection.anchorId);
+        } else {
+          document
+            .getElementById(firstInvalidSection.anchorId)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      const label = focused ? formatFieldLabel(focused.path) : firstInvalidSection.label;
+      const description = focused?.message || firstInvalidSection.errors[0] || firstInvalidSection.label;
       toast({
-        title: 'Complete the required sections',
-        description: firstInvalidSection.errors[0] || firstInvalidSection.label,
+        title: `Complete: ${label}`,
+        description,
         variant: 'destructive',
       });
       return;
@@ -292,6 +320,7 @@ const AddProductFormBody = ({
     } catch (error: unknown) {
       logger.error({ error }, 'Submit Product API Error');
       const serverMessages = applyServerErrors(error);
+      focusFirstError(form.formState.errors);
       toast({
         title: 'Unable to save product',
         description:
@@ -307,21 +336,14 @@ const AddProductFormBody = ({
 
   const handleFormInvalid = (errors: FieldErrors<Record<string, unknown>>) => {
     logger.warn({ errors }, 'Form validation failed on submit');
-    const flat = flattenFormErrors(errors);
-    if (firstInvalidSection) {
-      scrollToSection(firstInvalidSection.anchorId);
-      toast({
-        title: 'Fix the highlighted fields',
-        description: firstInvalidSection.errors[0] || firstInvalidSection.label,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Fix highlighted fields',
-        description: flat[0]?.message || 'Please verify all required fields before submitting.',
-        variant: 'destructive',
-      });
-    }
+    const focused = focusFirstError(errors, firstInvalidSection?.anchorId);
+    const label = focused ? formatFieldLabel(focused.path) : firstInvalidSection?.label || 'Required Field';
+    const message = focused?.message || firstInvalidSection?.errors[0] || 'Please complete all required fields.';
+    toast({
+      title: `Fix: ${label}`,
+      description: message,
+      variant: 'destructive',
+    });
   };
 
   return (

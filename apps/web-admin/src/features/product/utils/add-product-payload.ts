@@ -8,6 +8,7 @@ import {
   getLabelMap,
   isHexColor,
   normalizeText,
+  resolveColorCode,
   toNonNegativeInteger,
   toStringArray,
 } from './add-product-helpers';
@@ -147,16 +148,19 @@ export async function buildProductPayload({
     }
 
     const assets = uploadedColorAssets[colorValue];
+    const rawColor =
+      colorValue === 'default'
+        ? '#000000'
+        : isHexColor(colorValue)
+          ? colorValue
+          : isHexColor(label)
+            ? label
+            : colorValue || label;
+
     return {
       name: label,
-      colorCode:
-        colorValue === 'default'
-          ? '#000000'
-          : isHexColor(colorValue)
-            ? colorValue
-            : isHexColor(label)
-              ? label
-              : colorValue,
+      colorCode: resolveColorCode(rawColor),
+      swatch: assets?.swatch || undefined,
       images: assets?.images?.length ? assets.images : mainImages,
       stocks,
     };
