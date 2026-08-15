@@ -35,7 +35,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
   const { startFlyAnimation } = useFlyToCart();
   const imageRef = React.useRef<View>(null);
 
-  const productRecord = product as unknown as Record<string, unknown>;
+  const productRecord = product as Product & Record<string, unknown>;
   const dynamicDataObj = productRecord.dynamicData as Record<string, unknown> | undefined;
   const dynamicValuesObj = dynamicDataObj?.values as Record<string, unknown> | undefined;
   const uploadedAssetsObj = productRecord.uploadedAssets as Record<string, unknown> | undefined;

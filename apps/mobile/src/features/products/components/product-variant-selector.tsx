@@ -26,7 +26,7 @@ const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, 
   const [imageFailed, setImageFailed] = useState(false);
   const rawImage =
     variant.images?.[0] ||
-    ((variant as unknown as Record<string, unknown>).image as string | undefined);
+    (variant as { image?: string }).image;
   const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
 
   return (

@@ -15,8 +15,8 @@ import { ChevronLeft, Search, ShoppingCart, SlidersHorizontal } from 'lucide-rea
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { DynamicFilterDrawer } from '@/features/categories/components/DynamicFilterDrawer';
-import { QuickFilterRenderer } from '@/features/categories/components/QuickFilterRenderer';
+import { DynamicFilterDrawer } from '@/features/categories/components/dynamic-filter-drawer';
+import { QuickFilterRenderer } from '@/features/categories/components/quick-filter-renderer';
 import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
 import { QuickFilterItem } from '@/features/categories/types';
 import { ProductCard } from '@/features/products/components/product-card';
