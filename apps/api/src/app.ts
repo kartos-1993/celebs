@@ -13,7 +13,7 @@ import { logger } from '@celebs/shared-utils';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 import { config } from './config/app.config';
 import { UpstashRedisStore } from './config/session-store';
-import { errorHandler } from './middlewares/errorHandler';
+import { errorHandler } from './middlewares/error-handler';
 import passport from './middlewares/passport';
 import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
 import adminRoutes from './modules/admin/admin.routes';
