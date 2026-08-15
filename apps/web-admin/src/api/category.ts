@@ -48,9 +48,15 @@ export async function recordRecentCategory(
   return response.data;
 }
 
+export async function getCategoryById(id: string): Promise<IApiResponse<CategoryTreeNode>> {
+  const response = await axiosClient.get<IApiResponse<CategoryTreeNode>>(`${BASE_PATH}/${id}`);
+  return response.data;
+}
+
 export const SharedCategoryApi = {
   getCategoryTree,
   searchCategories,
   getRecentCategories,
   recordRecentCategory,
+  getCategoryById,
 };
