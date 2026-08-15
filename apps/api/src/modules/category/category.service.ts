@@ -454,11 +454,12 @@ export class CategoryService {
       usedAt: new Date().toISOString(),
     };
 
+    const MAX_RECENT_CATEGORIES = 5;
     const existingRecent = await this.getRecentCategories(userId, vendorId);
     const updated = [
       newEntry,
       ...existingRecent.filter((item) => String(item.id) !== String(category.id)),
-    ].slice(0, 10);
+    ].slice(0, MAX_RECENT_CATEGORIES);
 
     // Save to VendorProfile so all vendor staff share recent categories
     if (vendorId) {
