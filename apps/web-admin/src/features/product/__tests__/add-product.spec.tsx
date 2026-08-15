@@ -9,8 +9,8 @@ describe('Product Specifications & Size Measurements', () => {
       'High-quality knit polo shirt with ribbed design, long sleeves, and classic lapel collar.',
     price: 1200,
     discountedPrice: 1100,
-    categoryId: '6a4f4c5412b44bc4d15b5633',
-    subcategoryId: '6a4f4c5412b44bc4d15b5633',
+    categoryId: '6a4f4c54-12b4-4bc4-d15b-5633a0000000',
+    subcategoryId: '6a4f4c54-12b4-4bc4-d15b-5633a0000000',
     sizes: [
       {
         name: 'M',
