@@ -16,7 +16,7 @@ export const DraftBanner = memo(({ restoredDraftAt, onDiscard }: DraftBannerProp
           Saved draft auto-restored
         </p>
         <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
-          Loaded unfinished draft saved on {new Date(restoredDraftAt).toLocaleString()}.
+          Loaded unfinished draft saved on {new Date(restoredDraftAt).toLocaleString()}. Note: image files must be re-attached before submitting.
         </p>
       </div>
     </div>

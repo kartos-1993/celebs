@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import type { FieldSpec, ProductSidebarSection, VariantMetaItem } from '../types';
 import { buildSidebarSections, flattenFormErrors } from '../utils/add-product-validation';
@@ -24,7 +24,8 @@ export function useSubmissionState({
     control,
     formState: { errors },
   } = useFormContext();
-  const formValues = useWatch({ control }) as Record<string, unknown>;
+  const rawFormValues = useWatch({ control }) as Record<string, unknown>;
+  const formValues = useDeferredValue(rawFormValues);
 
   const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
 
@@ -34,7 +35,7 @@ export function useSubmissionState({
         fieldErrors,
         schemaFields,
         schemaHasName,
-        values: formValues,
+        values: formValues || {},
         variantMeta: variantMeta.map((variant) => ({
           key: variant.key,
           label: variant.label,

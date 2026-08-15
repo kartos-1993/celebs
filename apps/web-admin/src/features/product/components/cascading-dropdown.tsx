@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Search, XCircle } from 'lucide-react';
 import { logger } from '@celebs/shared-utils';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 import { cn } from '@/lib/utils';
-import { CategoryApiService } from '../../category/api';
+import { SharedCategoryApi } from '@/api/category';
 import { useCategoryTree } from '../hooks/use-category-tree';
 import type { DropdownCategory, RecentCategory } from '../types';
 
@@ -167,7 +167,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         if (onSearch) {
           results = await onSearch(query);
         } else {
-          const apiResults = await CategoryApiService.searchCategories(query);
+          const apiResults = await SharedCategoryApi.searchCategories(query);
           results = apiResults.map(
             (c: {
               id: string;
@@ -291,18 +291,21 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   };
 
   const handleRecentSelect = (recent: RecentCategory) => {
-    // FIX: path can be string[] OR string — old code assumed array
     const recentLevel = Array.isArray(recent.path)
       ? recent.path.length - 1
       : String(recent.path).split('/').length - 1;
-    applyPathSelection({
+    const item: DropdownCategory = {
       id: recent.id,
       name: recent.name,
       parentId: null,
       hasChildren: false,
       level: recentLevel,
       path: recent.path,
-    });
+    };
+    applyPathSelection(item);
+    addToRecent(item);
+    onSelect?.(item);
+    resetDropdownState();
   };
 
   const handleConfirm = () => {
@@ -354,57 +357,84 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   }, [columns, selectedPath, tempSelectedPath]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             data-testid="category-cascading-trigger"
-            className="w-full justify-between text-left h-10 px-3"
+            className="w-full justify-between text-left h-10 px-3 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50/50"
             onClick={() => setIsOpen(!isOpen)}
           >
             {selectedCategory ? (
-              <span className="truncate">{formatCategoryPath(selectedCategory.path)}</span>
+              <span className="truncate text-gray-900 dark:text-gray-100 font-normal">
+                {formatCategoryPath(selectedCategory.path)}
+              </span>
             ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
+              <span className="text-gray-400 dark:text-gray-500 font-normal">{placeholder}</span>
             )}
-            <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
           </Button>
         </PopoverTrigger>
+
+        {/* Recently used outside the dropdown (Image 2) */}
+        {recentCategories.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap pt-0.5 text-xs">
+            <span className="text-gray-500 dark:text-gray-400 font-normal">Recently used:</span>
+            <div className="flex flex-wrap gap-1.5">
+              {recentCategories.slice(0, 4).map((recent) => (
+                <button
+                  key={recent.id}
+                  type="button"
+                  className="inline-flex items-center rounded-full bg-blue-50/70 hover:bg-blue-100/90 text-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 px-3 py-0.5 text-xs font-normal border border-blue-100/60 dark:border-gray-700 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRecentSelect(recent);
+                  }}
+                >
+                  {recent.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <PopoverContent
-          className="p-0 w-[min(800px,95vw)] bg-background border shadow-xl z-50 max-h-[var(--radix-popover-content-available-height)] overflow-hidden"
+          className="p-0 w-[min(900px,96vw)] bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl z-50 max-h-[var(--radix-popover-content-available-height)] overflow-hidden"
           align="start"
           side="bottom"
-          sideOffset={4}
+          sideOffset={6}
           avoidCollisions={true}
         >
-          <div className="p-3 sm:p-4 space-y-3 max-h-[var(--radix-popover-content-available-height)] overflow-hidden flex flex-col">
-            {/* Global search */}
+          <div className="p-4 space-y-3.5 max-h-[var(--radix-popover-content-available-height)] overflow-hidden flex flex-col">
+            {/* Top Search Category Bar (Image 1) */}
             <div className="relative flex-shrink-0">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search categories globally..."
+                placeholder="Search category"
                 value={globalSearchQuery}
                 onChange={(e) => handleGlobalSearchChange(e.target.value)}
-                className="pl-10 h-9 text-xs sm:text-sm"
+                className="pl-10 h-10 text-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 rounded-lg focus-visible:ring-1 focus-visible:ring-orange-500"
               />
               {isSearching && (
-                <div className="absolute right-3 top-2.5">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                  <div className="animate-spin h-4 w-4 border-2 border-orange-500 border-t-transparent rounded-full" />
                 </div>
               )}
             </div>
 
-            {/* Global search results */}
+            {/* Global Search Results */}
             {globalSearchResults.length > 0 && (
-              <div className="border rounded-lg max-h-40 overflow-y-auto flex-shrink-0">
-                <div className="p-2 bg-muted/30 border-b text-sm font-medium">Search Results</div>
+              <div className="border border-gray-200 dark:border-gray-800 rounded-lg max-h-48 overflow-y-auto flex-shrink-0 bg-white dark:bg-gray-900">
+                <div className="p-2 bg-gray-50 dark:bg-gray-800/50 border-b text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Search Results
+                </div>
                 <div className="p-1">
                   {globalSearchResults.map((category) => (
                     <Button
                       key={category.id}
                       variant="ghost"
-                      className="w-full justify-start text-left h-8 px-2 text-xs font-normal"
+                      className="w-full justify-start text-left h-8 px-2 text-xs font-normal hover:bg-orange-50 hover:text-orange-900"
                       onClick={() => handleGlobalResultSelect(category)}
                     >
                       <span className="truncate">{formatCategoryPath(category.path)}</span>
@@ -414,80 +444,88 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               </div>
             )}
 
-            {/* Recently used */}
+            {/* Recently Used inside Popover (Image 1) */}
             {recentCategories.length > 0 && !globalSearchQuery && (
-              <div className="flex-shrink-0">
-                <div className="text-xs text-muted-foreground">
-                  Recently used:{' '}
-                  {recentCategories.slice(0, 2).map((recent, index) => (
-                    <Button
+              <div className="flex items-center gap-2 flex-wrap text-xs flex-shrink-0">
+                <span className="text-gray-500 dark:text-gray-400 font-normal">Recently used:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentCategories.slice(0, 6).map((recent) => (
+                    <button
                       key={recent.id}
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                      type="button"
+                      className="inline-flex items-center rounded-full bg-blue-50/70 hover:bg-blue-100/90 text-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 px-3 py-0.5 text-xs font-normal border border-blue-100/60 dark:border-gray-700 transition-colors"
                       onClick={() => handleRecentSelect(recent)}
                     >
                       {recent.name}
-                      {index < Math.min(recentCategories.length, 2) - 1 && (
-                        <span className="ml-1.5">•</span>
-                      )}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Category columns */}
+            {/* Cascading Multi-Column Panels (Image 1) */}
             {!globalSearchQuery && (
-              <div className="border rounded-lg overflow-hidden flex-1 min-h-0">
+              <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden flex-1 min-h-0 bg-white dark:bg-gray-950">
                 <div className="overflow-x-auto">
-                  <div className="flex h-56 w-max min-w-full">
+                  <div className="flex h-64 w-max min-w-full">
                     {columns.map((column, columnIndex) => {
                       const categoriesForColumn = getCategoriesForColumn(column);
                       return (
                         <div
                           key={columnIndex}
-                          className="w-56 sm:w-64 shrink-0 border-r border-border last:border-r-0 flex flex-col"
+                          className="w-52 sm:w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 last:border-r-0 flex flex-col bg-white dark:bg-gray-950"
                         >
-                          <div className="p-2 border-b border-border bg-muted/30 flex-shrink-0">
+                          {/* Column Filter Input (Image 1) */}
+                          <div className="p-2 border-b border-gray-100 dark:border-gray-800/80 bg-white dark:bg-gray-950 flex-shrink-0">
                             <div className="relative">
-                              <Search className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
+                              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                               <Input
                                 placeholder="Filter..."
                                 value={column.searchQuery}
                                 onChange={(e) => handleSearchChange(e.target.value, columnIndex)}
-                                className="pl-7 h-7 text-xs"
+                                className="pl-7 h-7 text-xs border-0 bg-transparent shadow-none focus-visible:ring-0 placeholder:text-gray-400"
                               />
                             </div>
                           </div>
                           <ScrollArea className="flex-1">
-                            <div className="p-1">
-                              {categoriesForColumn.map((category) => (
-                                <Button
-                                  key={category.id}
-                                  variant="ghost"
-                                  className={cn(
-                                    'w-full justify-between text-left h-8 px-2 text-xs font-normal',
-                                    selectedPath.some((cat) => cat.id === category.id) &&
-                                      'bg-accent',
-                                    tempSelectedPath.some((cat) => cat.id === category.id) &&
-                                      'bg-primary/10 text-primary font-semibold',
-                                  )}
-                                  ref={(el) => {
-                                    const key = `${columnIndex}:${category.id}`;
-                                    if (el) itemRefs.current[key] = el;
-                                    else delete itemRefs.current[key];
-                                  }}
-                                  onClick={() => handleCategoryClick(category, columnIndex)}
-                                >
-                                  <span className="whitespace-nowrap overflow-x-auto block max-w-full">
-                                    {category.name}
-                                  </span>
-                                  {category.hasChildren && (
-                                    <ChevronRight className="h-3 w-3 shrink-0 ml-1" />
-                                  )}
-                                </Button>
-                              ))}
+                            <div className="p-1 space-y-0.5">
+                              {categoriesForColumn.map((category) => {
+                                const isAncestorSelected = selectedPath.some(
+                                  (cat) => cat.id === category.id,
+                                );
+                                const isLeafSelected = tempSelectedPath.some(
+                                  (cat) => cat.id === category.id,
+                                );
+                                return (
+                                  <Button
+                                    key={category.id}
+                                    variant="ghost"
+                                    className={cn(
+                                      'w-full justify-between text-left h-8 px-2.5 text-xs font-normal rounded-md transition-colors',
+                                      isAncestorSelected &&
+                                        'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+                                      isLeafSelected &&
+                                        'bg-blue-50/80 dark:bg-blue-950/50 text-gray-900 dark:text-gray-100 font-medium',
+                                    )}
+                                    ref={(el) => {
+                                      const key = `${columnIndex}:${category.id}`;
+                                      if (el) itemRefs.current[key] = el;
+                                      else delete itemRefs.current[key];
+                                    }}
+                                    onClick={() => handleCategoryClick(category, columnIndex)}
+                                  >
+                                    <div className="flex items-center truncate min-w-0 pr-1">
+                                      {isLeafSelected && (
+                                        <Check className="h-3.5 w-3.5 text-orange-500 shrink-0 mr-1.5" />
+                                      )}
+                                      <span className="truncate">{category.name}</span>
+                                    </div>
+                                    {category.hasChildren && (
+                                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400 ml-1" />
+                                    )}
+                                  </Button>
+                                );
+                              })}
                             </div>
                           </ScrollArea>
                         </div>
@@ -498,30 +536,40 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               </div>
             )}
 
-            {/* Current selection */}
-            {currentSelectionText && (
-              <div className="p-2.5 bg-muted/50 rounded-lg border flex-shrink-0">
-                <div className="text-xs sm:text-sm">
-                  <span className="text-muted-foreground">Current selection: </span>
-                  <span className="font-semibold text-primary">{currentSelectionText}</span>
+            {/* Bottom Bar: Current selection & Action Buttons (Image 1) */}
+            <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3 flex-shrink-0">
+              {currentSelectionText ? (
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-gray-600 dark:text-gray-400">Current selection :</span>
+                  <span className="text-orange-500 dark:text-orange-400 font-normal">
+                    {currentSelectionText}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-orange-500 hover:text-orange-600 transition-colors ml-0.5 inline-flex items-center"
+                    onClick={() => {
+                      setTempSelectedPath([]);
+                    }}
+                  >
+                    <XCircle className="h-4 w-4 fill-orange-500 text-white" />
+                  </button>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div />
+              )}
 
-            {/* Footer actions */}
-            <div className="flex items-center justify-between border-t border-border pt-2.5 flex-shrink-0 bg-background">
-              <span className="text-xs text-muted-foreground">
-                {tempSelectedPath.length > 0 &&
-                !tempSelectedPath[tempSelectedPath.length - 1].hasChildren
-                  ? 'Ready to confirm selection'
-                  : 'Select a final subcategory'}
-              </span>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={resetDropdownState} size="sm">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={resetDropdownState}
+                  className="h-8 px-4 text-xs font-normal border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 rounded-md"
+                >
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleConfirm}
+                  type="button"
                   size="sm"
                   data-testid="category-confirm-btn"
                   disabled={
@@ -529,9 +577,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                     (tempSelectedPath.length > 0 &&
                       tempSelectedPath[tempSelectedPath.length - 1].hasChildren)
                   }
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-4"
+                  onClick={handleConfirm}
+                  className="h-8 px-5 text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-md disabled:opacity-50"
                 >
-                  Confirm Selection
+                  Confirm
                 </Button>
               </div>
             </div>

@@ -2,79 +2,87 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildProductPayload } from '../add-product-payload';
 import type { FieldSpec } from '../../types';
 
-/**
- * Injected directly — the previous spyOn on ProductApiService never
- * intercepted the named import used by buildProductPayload.
- */
-const fakeUpload = vi.fn(async (files: Array<File | string | null | undefined>) =>
-  files.filter((file): file is string => typeof file === 'string' && file.length > 0),
-);
-
 describe('buildProductPayload', () => {
-  it('constructs a valid payload from form values', async () => {
-    const values = {
-      name: '  Test Polo Shirt  ',
-      brand: 'Manfinity',
-      description: '  Comfortable cotton polo shirt.  ',
-      price: 1500,
-      specialPrice: 1200,
-      categoryId: '60c72b2f9b1d8b2d88a12345',
-      subcategoryId: '60c72b2f9b1d8b2d88a67890',
-      mainImage: ['https://example.com/image.jpg'],
-      Material: 'Cotton',
-    };
+  const fields: FieldSpec[] = [
+    { name: 'name', uiType: 'input', label: 'Product Name', group: 'base', required: true },
+    { name: 'Color', uiType: 'multiselect', label: 'Available Colors', group: 'variant' },
+    { name: 'Size', uiType: 'multiselect', label: 'Available Sizes', group: 'variant' },
+  ];
 
-    const fields: FieldSpec[] = [
-      { name: 'Material', uiType: 'select', label: 'Material', group: 'details' },
-    ];
-
-    const payload = await buildProductPayload({
-      fields,
-      status: 'draft',
-      values,
-      upload: fakeUpload,
-    });
-
-    expect(payload.name).toBe('Test Polo Shirt');
-    expect(payload.brand).toBe('Manfinity');
-    expect(payload.description).toBe('Comfortable cotton polo shirt.');
-    expect(payload.price).toBe(1500);
-    expect(payload.discountedPrice).toBe(1200);
-    expect(payload.categoryId).toBe('60c72b2f9b1d8b2d88a12345');
-    expect(payload.subcategoryId).toBe('60c72b2f9b1d8b2d88a67890');
-    expect(payload.status).toBe('draft');
-    expect(payload.mainImages).toEqual(['https://example.com/image.jpg']);
-    expect(payload.colorVariants).toHaveLength(1);
-    expect(payload.colorVariants?.[0]?.name).toBe('Default');
-    expect(payload.dynamicData?.values).toEqual({
-      Material: 'Cotton',
-    });
-    expect(fakeUpload).toHaveBeenCalled();
+  const mockUpload = vi.fn().mockImplementation(async (files: unknown[]) => {
+    return files.map((f, i) => (typeof f === 'string' ? f : `https://cdn.example.com/uploaded-${i}.jpg`));
   });
 
-  it('throws when the regular price is missing or invalid', async () => {
-    const values = {
-      name: 'Invalid Price Product',
-      categoryId: '60c72b2f9b1d8b2d88a12345',
-      subcategoryId: '60c72b2f9b1d8b2d88a67890',
-    };
-
+  it('should throw an error when price is missing', async () => {
     await expect(
-      buildProductPayload({ fields: [], status: 'draft', values, upload: fakeUpload }),
+      buildProductPayload({
+        fields,
+        status: 'draft',
+        values: { name: 'Test Product' },
+        upload: mockUpload,
+      }),
     ).rejects.toThrow('Add a valid price before publishing the product.');
   });
 
-  it('throws when discounted price >= regular price', async () => {
-    const values = {
-      name: 'Overpriced Discount Product',
-      price: 1000,
-      specialPrice: 1200,
-      categoryId: '60c72b2f9b1d8b2d88a12345',
-      subcategoryId: '60c72b2f9b1d8b2d88a67890',
-    };
-
+  it('should throw an error when discountedPrice is greater than or equal to regular price', async () => {
     await expect(
-      buildProductPayload({ fields: [], status: 'draft', values, upload: fakeUpload }),
+      buildProductPayload({
+        fields,
+        status: 'draft',
+        values: {
+          name: 'Test Product',
+          price: 1000,
+          specialPrice: 1200,
+          'sku.default.price': '1000',
+          'sku.default.specialPrice': '1200',
+        },
+        upload: mockUpload,
+      }),
     ).rejects.toThrow('Discounted price must be less than the regular price.');
+  });
+
+  it('should generate valid 2D matrix payload with color variants and stocks', async () => {
+    const payload = await buildProductPayload({
+      fields,
+      status: 'draft',
+      values: {
+        name: 'Chiffon Shirt',
+        brand: 'H&M',
+        description: 'Casual shirt for daily wear',
+        categoryId: 'cat-1',
+        subcategoryId: 'subcat-1',
+        Color: ['Red', 'Navy'],
+        Size: ['S', 'M'],
+        'sku.default.price': '2000',
+        'sku.default.stock': '10',
+        'sku.variants.Color.Red.Size.S.price': '2000',
+        'sku.variants.Color.Red.Size.S.stock': '15',
+        'sku.variants.Color.Red.Size.M.price': '2000',
+        'sku.variants.Color.Red.Size.M.stock': '20',
+        'sku.variants.Color.Navy.Size.S.price': '2200',
+        'sku.variants.Color.Navy.Size.S.stock': '5',
+        'sku.variants.Color.Navy.Size.M.price': '2200',
+        'sku.variants.Color.Navy.Size.M.stock': '8',
+        mainImage: ['https://example.com/main.jpg'],
+      },
+      upload: mockUpload,
+    });
+
+    expect(payload.name).toBe('Chiffon Shirt');
+    expect(payload.brand).toBe('H&M');
+    expect(payload.price).toBe(2000);
+    expect(payload.colorVariants).toBeDefined();
+    const variants = payload.colorVariants!;
+    expect(variants).toHaveLength(2);
+    expect(variants[0].name).toBe('Red');
+    expect(variants[0].stocks).toEqual([
+      { size: 'S', quantity: 15 },
+      { size: 'M', quantity: 20 },
+    ]);
+    expect(variants[1].name).toBe('Navy');
+    expect(variants[1].stocks).toEqual([
+      { size: 'S', quantity: 5 },
+      { size: 'M', quantity: 8 },
+    ]);
   });
 });

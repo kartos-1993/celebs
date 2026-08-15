@@ -16,6 +16,28 @@ export const toCategoryPath = (cat: unknown): string[] => {
 };
 
 /**
+ * Normalizes SKU option retrieval across legacy flat fields and dynamic selectedOptions.
+ */
+export function extractSkuOption(
+  sku: Record<string, unknown>,
+  optionKey: string,
+): string | undefined {
+  const directVal = sku[optionKey] ?? sku[optionKey.toLowerCase()];
+  if (typeof directVal === 'string' && directVal.trim()) return directVal.trim();
+
+  const selectedOptions = sku.selectedOptions;
+  if (selectedOptions && typeof selectedOptions === 'object') {
+    const targetKey = optionKey.toLowerCase();
+    for (const [key, val] of Object.entries(selectedOptions as Record<string, unknown>)) {
+      if (key.toLowerCase() === targetKey && val !== undefined && val !== null) {
+        return String(val).trim();
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
  * Deserializes an existing ProductRecord from the API into React Hook Form state
  * for full edit-mode population (basic info, images, dynamic attrs, swatches, measurements, and SKU matrix).
  */
@@ -163,20 +185,11 @@ export function hydrateProductForm(
   if (Array.isArray(product.skus) && product.skus.length > 0) {
     for (const skuItem of product.skus) {
       if (!skuItem) continue;
-      const sku = skuItem as {
-        color?: string;
-        colorVariantName?: string;
-        size?: string;
-        price?: number;
-        discountedPrice?: number;
-        stock?: number;
-        quantity?: number;
-        sku?: string;
-        sellerSku?: string;
-        available?: boolean;
-      };
-      const color = sku.color || sku.colorVariantName;
-      const size = sku.size;
+      const sku = skuItem as Record<string, unknown>;
+      const color =
+        extractSkuOption(sku, 'Color') ||
+        (typeof sku.colorVariantName === 'string' ? sku.colorVariantName : undefined);
+      const size = extractSkuOption(sku, 'Size');
 
       if (color && size) {
         const pathPrefixes = [

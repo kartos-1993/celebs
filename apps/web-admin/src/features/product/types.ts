@@ -8,7 +8,11 @@ import type {
 export type CreateProductRequest = CreateProductType;
 export type UpdateProductRequest = UpdateProductType;
 export type ProductFilterRequest = ProductFilterType;
-export type ProductRecord = ProductType & {
+export type ProductRecord = Partial<ProductType> & {
+  id?: string;
+  slug?: string;
+  name?: string;
+  price?: number;
   category?: { id?: string; name?: string; slug?: string; path?: string | string[]; level?: number };
   subcategory?: { id?: string; name?: string; slug?: string; path?: string | string[]; level?: number };
 };
@@ -78,16 +82,6 @@ export interface ProductDraft {
   values?: Record<string, unknown>;
 }
 
-export interface DropdownCategory {
-  id: string;
-  name: string;
-  parentId: string | null;
-  hasChildren: boolean;
-  level: number;
-  path: string[] | string;
-  slug?: string;
-}
-
 export interface ProductListItem {
   id: string;
   name: string;
@@ -99,20 +93,4 @@ export interface ProductListItem {
   createdAt?: string;
 }
 
-// ── Category dropdown ───────────────────────────────────────────────────────
-export interface DropdownCategory {
-  id: string;
-  name: string;
-  parentId: string | null;
-  hasChildren: boolean;
-  level: number;
-  path: string[] | string;
-  slug?: string;
-}
-
-export interface RecentCategory {
-  id: string;
-  name: string;
-  path: string[] | string;
-  usedAt: Date;
-}
+export type { DropdownCategory, RecentCategory } from '@celebs/shared-types';

@@ -172,19 +172,35 @@ const ManageProduct = () => {
             ))}
           </div>
 
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex gap-4 mb-6 max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search products..."
-                className="pl-10"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-            <Button type="submit">Search</Button>
-          </form>
+          {/* Search & Batch Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <form onSubmit={handleSearch} className="flex gap-3 flex-1 max-w-md">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search products..."
+                  className="pl-10"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                />
+              </div>
+              <Button type="submit">Search</Button>
+            </form>
+
+            {selectedProducts.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200">
+                <span className="font-semibold">{selectedProducts.length} selected</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => setSelectedProducts([])}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
+          </div>
 
           {/* Table */}
           <div
