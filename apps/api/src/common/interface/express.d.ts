@@ -1,8 +1,8 @@
 // Express declaration merging to add user type to Request
 declare namespace Express {
   export interface User {
-    id?: string;
-    userId: string;
+    id: string;
+    userId?: string;
     sessionId: string;
     role?: string;
     permissions?: string[];

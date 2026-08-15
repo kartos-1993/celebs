@@ -53,11 +53,19 @@ interface PaginatedCategoriesResponse {
   pages: number;
 }
 
+const toJsonInput = (value: unknown): Prisma.InputJsonValue => {
+  if (value === undefined || value === null) return [];
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+};
+
 export class CategoryService {
   private static readonly DEFAULT_PAGE = 1;
   private static readonly DEFAULT_LIMIT = 50;
+  private categoryRepository: CategoryRepository;
 
-  constructor(private categoryRepository: CategoryRepository = defaultCategoryRepo) {}
+  constructor(categoryRepository?: CategoryRepository) {
+    this.categoryRepository = categoryRepository || defaultCategoryRepo;
+  }
 
   async createCategory(categoryData: CategoryInput) {
     await this.validateCategoryUniqueness(categoryData.name, categoryData.parent || null);
@@ -427,7 +435,19 @@ export class CategoryService {
     }
 
     if (!Array.isArray(rawList)) return [];
-    return rawList as unknown as RecentCategory[];
+    return rawList.map((item) => {
+      const rec = item as Record<string, unknown>;
+      return {
+        id: String(rec.id || ''),
+        name: String(rec.name || ''),
+        path: Array.isArray(rec.path)
+          ? (rec.path as string[])
+          : typeof rec.path === 'string'
+            ? [rec.path]
+            : [],
+        usedAt: String(rec.usedAt || ''),
+      };
+    });
   }
 
   async recordRecentCategory(
@@ -467,7 +487,7 @@ export class CategoryService {
         .update({
           where: { id: vendorId },
           data: {
-            recentCategories: updated as unknown as Prisma.InputJsonValue,
+            recentCategories: toJsonInput(updated),
           },
         })
         .catch(() => null);
@@ -479,10 +499,10 @@ export class CategoryService {
         where: { userId },
         create: {
           userId,
-          recentCategories: updated as unknown as Prisma.InputJsonValue,
+          recentCategories: toJsonInput(updated),
         },
         update: {
-          recentCategories: updated as unknown as Prisma.InputJsonValue,
+          recentCategories: toJsonInput(updated),
         },
       });
     }

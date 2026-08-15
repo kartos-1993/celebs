@@ -16,7 +16,7 @@ export class ProductController {
 
   createProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.userId) {
+      if (!req.user?.id) {
         throw new AppError(
           'Authentication is required to create products',
           HTTPSTATUS.UNAUTHORIZED,
@@ -46,7 +46,7 @@ export class ProductController {
           ...payload,
           status: initialStatus,
         },
-        req.user.userId,
+        req.user.id,
         effectiveVendorId,
         effectiveVendorName,
       );
@@ -151,7 +151,7 @@ export class ProductController {
 
   reviewProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.userId) {
+      if (!req.user?.id) {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
@@ -163,7 +163,7 @@ export class ProductController {
       const parsed = productReviewActionSchema.parse(req.body);
       const product = await this.productService.reviewProduct(id, {
         action: parsed.action,
-        reviewerId: req.user.userId,
+        reviewerId: req.user.id,
         reviewerName: (req.user as { email?: string })?.email || 'Superadmin',
         note: parsed.note,
         rejectionCategory: parsed.rejectionCategory,
@@ -183,7 +183,7 @@ export class ProductController {
 
   updateProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.userId) {
+      if (!req.user?.id) {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
@@ -199,7 +199,7 @@ export class ProductController {
       const product = await this.productService.updateProduct(
         id,
         payload,
-        req.user.userId,
+        req.user.id,
         req.user.role || '',
         effectiveVendorId,
         userPermissions,
@@ -217,7 +217,7 @@ export class ProductController {
 
   archiveProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.userId) {
+      if (!req.user?.id) {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
@@ -230,7 +230,7 @@ export class ProductController {
 
       const product = await this.productService.archiveProduct(
         id,
-        req.user.userId,
+        req.user.id,
         req.user.role || '',
         effectiveVendorId,
       );

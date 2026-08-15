@@ -19,29 +19,41 @@ export interface FormattedCategory {
   [key: string]: unknown;
 }
 
+const toJsonInput = (value: unknown): Prisma.InputJsonValue => {
+  if (value === undefined || value === null) return [];
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+};
+
 export class CategoryRepository {
-  private formatCategory(category: Record<string, unknown> | null): FormattedCategory | null {
+  private formatCategory(
+    category:
+      | Prisma.Category
+      | (Prisma.CategoryGetPayload<object> & Record<string, unknown>)
+      | Record<string, unknown>
+      | null,
+  ): FormattedCategory | null {
     if (!category) return null;
+    const cat = category as Record<string, unknown>;
     return {
-      ...(category as Record<string, unknown>),
-      id: String(category.id),
-      name: String(category.name || ''),
-      slug: String(category.slug || ''),
-      path: category.path ? String(category.path) : null,
-      level: Number(category.level || 0),
-      parentCategory: category.parentCategory ? String(category.parentCategory) : null,
-      parent: category.parentCategory ? String(category.parentCategory) : null,
-      attributes: Array.isArray(category.attributes) ? (category.attributes as unknown[]) : [],
-      sizeChartColumns: Array.isArray(category.sizeChartColumns)
-        ? (category.sizeChartColumns as string[])
+      ...cat,
+      id: String(cat.id),
+      name: String(cat.name || ''),
+      slug: String(cat.slug || ''),
+      path: cat.path ? String(cat.path) : null,
+      level: Number(cat.level || 0),
+      parentCategory: cat.parentCategory ? String(cat.parentCategory) : null,
+      parent: cat.parentCategory ? String(cat.parentCategory) : null,
+      attributes: Array.isArray(cat.attributes) ? (cat.attributes as unknown[]) : [],
+      sizeChartColumns: Array.isArray(cat.sizeChartColumns)
+        ? (cat.sizeChartColumns as string[])
         : [],
-      bodyChartColumns: Array.isArray(category.bodyChartColumns)
-        ? (category.bodyChartColumns as string[])
+      bodyChartColumns: Array.isArray(cat.bodyChartColumns)
+        ? (cat.bodyChartColumns as string[])
         : [],
-      imageUrl: category.imageUrl ? String(category.imageUrl) : null,
-      isActive: category.isActive !== false,
-      createdAt: category.createdAt instanceof Date ? category.createdAt : new Date(),
-      updatedAt: category.updatedAt instanceof Date ? category.updatedAt : new Date(),
+      imageUrl: cat.imageUrl ? String(cat.imageUrl) : null,
+      isActive: cat.isActive !== false,
+      createdAt: cat.createdAt instanceof Date ? cat.createdAt : new Date(),
+      updatedAt: cat.updatedAt instanceof Date ? cat.updatedAt : new Date(),
     };
   }
 
@@ -61,7 +73,7 @@ export class CategoryRepository {
     const category = await prisma.category.findUnique({
       where: { id },
     });
-    return this.formatCategory(category as unknown as Record<string, unknown>);
+    return this.formatCategory(category);
   }
 
   async findOne(query: Record<string, unknown>): Promise<FormattedCategory | null> {
@@ -71,7 +83,7 @@ export class CategoryRepository {
     if (query.id) where.id = String(query.id);
 
     const category = await prisma.category.findFirst({ where });
-    return this.formatCategory(category as unknown as Record<string, unknown>);
+    return this.formatCategory(category);
   }
 
   async find(query: Record<string, unknown> = {}, limit?: number): Promise<FormattedCategory[]> {
@@ -90,7 +102,7 @@ export class CategoryRepository {
     });
 
     return categories
-      .map((c) => this.formatCategory(c as unknown as Record<string, unknown>))
+      .map((c) => this.formatCategory(c))
       .filter((c): c is FormattedCategory => c !== null);
   }
 
@@ -106,7 +118,7 @@ export class CategoryRepository {
           : data.parentCategory
             ? String(data.parentCategory)
             : null,
-        attributes: (data.attributes ?? []) as unknown as Prisma.InputJsonValue,
+        attributes: toJsonInput(data.attributes),
         sizeChartColumns: Array.isArray(data.sizeChartColumns)
           ? (data.sizeChartColumns as string[])
           : [],
@@ -118,7 +130,7 @@ export class CategoryRepository {
       },
     });
 
-    return this.formatCategory(category as unknown as Record<string, unknown>);
+    return this.formatCategory(category);
   }
 
   async updateById(
@@ -142,7 +154,7 @@ export class CategoryRepository {
           : null;
     }
     if (updateData.attributes !== undefined) {
-      data.attributes = (updateData.attributes ?? []) as unknown as Prisma.InputJsonValue;
+      data.attributes = toJsonInput(updateData.attributes);
     }
     if (updateData.sizeChartColumns !== undefined) {
       data.sizeChartColumns = Array.isArray(updateData.sizeChartColumns)
@@ -164,7 +176,7 @@ export class CategoryRepository {
       data,
     });
 
-    return this.formatCategory(category as unknown as Record<string, unknown>);
+    return this.formatCategory(category);
   }
 
   async deleteById(id: string): Promise<FormattedCategory | null> {
@@ -172,7 +184,7 @@ export class CategoryRepository {
       where: { id },
     });
 
-    return this.formatCategory(category as unknown as Record<string, unknown>);
+    return this.formatCategory(category);
   }
 
   async countProductsByCategory(categoryId: string): Promise<number> {
