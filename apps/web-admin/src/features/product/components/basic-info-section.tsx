@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { Control, FieldValues } from 'react-hook-form';
+import { Control, FieldValues, useFormState } from 'react-hook-form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 import {
@@ -38,6 +38,7 @@ const BasicInfoSection = ({
   hideBrand,
 }: BasicInfoSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
+  const { isDirty } = useFormState({ control });
 
   useEffect(() => {
     if (categoryPath?.length && selectedSubcategoryId) {
@@ -59,6 +60,16 @@ const BasicInfoSection = ({
     [selectedCategory, selectedSubcategoryId],
   );
 
+  const formValues = control._formValues;
+  const isFormDirty =
+    isDirty ||
+    Boolean(
+      formValues?.name ||
+      formValues?.brand ||
+      formValues?.description ||
+      (formValues?.attributes && Object.keys(formValues.attributes).length > 0),
+    );
+
   return (
     <div className="space-y-6">
       <FormField
@@ -72,6 +83,7 @@ const BasicInfoSection = ({
             <FormControl>
               <CascadingDropdown
                 selectedCategory={selectedCategory ?? undefined}
+                isDirty={isFormDirty}
                 onSelect={(category) => {
                   setSelectedCategory(category);
                   onCategoryChange(category.id);

@@ -6,6 +6,7 @@
  * SkuTableV2) → baseline safety net (media/pricing) if still empty.
  */
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@celebs/shared-utils';
 import { axiosClient } from '@/lib/axios/axios-client';
 import type { FieldSpec } from '../types';
 import {
@@ -59,15 +60,21 @@ export function useProductSchema(catId: string, productId?: string) {
   return useQuery({
     queryKey: PRODUCT_SCHEMA_QUERY_KEYS.render(catId, productId),
     queryFn: async (): Promise<FieldSpec[]> => {
-      const response = await axiosClient.get('/product-render', {
-        params: { catId, locale: 'en_US', productId },
-      });
-      const serverFields: FieldSpec[] = response.data?.data?.data ?? response.data?.data ?? [];
-      const withFallbacks = await addFallbackFields(catId, serverFields);
-      const merged = ensureVariantSupportFields(normalizeSchema(withFallbacks));
-      return merged.length > 0 ? merged : [...BASELINE_SCHEMA];
+      try {
+        const response = await axiosClient.get('/product-render', {
+          params: { catId, locale: 'en_US', productId },
+        });
+        const serverFields: FieldSpec[] = response.data?.data?.data ?? response.data?.data ?? [];
+        const withFallbacks = await addFallbackFields(catId, serverFields);
+        const merged = ensureVariantSupportFields(normalizeSchema(withFallbacks));
+        return merged.length > 0 ? merged : [...BASELINE_SCHEMA];
+      } catch (error) {
+        logger.warn({ error, catId }, 'Failed to load category schema; falling back to baseline schema');
+        return [...BASELINE_SCHEMA];
+      }
     },
     enabled: Boolean(catId),
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 }
