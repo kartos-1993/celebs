@@ -16,20 +16,20 @@ export class OrderController {
   // --- ADDRESS HANDLERS ---
 
   getUserAddresses = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const addresses = await this.orderService.getUserAddresses(userId);
     res.status(HTTPSTATUS.OK).json({ success: true, data: addresses });
   };
 
   createAddress = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const validated = addressSchema.parse(req.body);
     const address = await this.orderService.createAddress(userId, validated);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: address });
   };
 
   updateAddress = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const addressId = req.params.addressId || '';
     const validated = updateAddressSchema.parse(req.body);
     const updated = await this.orderService.updateAddress(userId, addressId, validated);
@@ -37,7 +37,7 @@ export class OrderController {
   };
 
   deleteAddress = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const addressId = req.params.addressId || '';
     await this.orderService.deleteAddress(userId, addressId);
     res.status(HTTPSTATUS.OK).json({ success: true, message: 'Address deleted successfully' });
@@ -46,14 +46,14 @@ export class OrderController {
   // --- CHECKOUT & ORDER HANDLERS ---
 
   checkout = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const validated = checkoutSchema.parse(req.body);
     const result = await this.orderService.checkout(userId, validated);
     res.status(HTTPSTATUS.CREATED).json({ success: true, data: result });
   };
 
   getMyOrders = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const result = await this.orderService.getMyOrders(userId, page, limit);
@@ -61,14 +61,14 @@ export class OrderController {
   };
 
   getOrderById = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const orderId = req.params.orderId || '';
     const order = await this.orderService.getOrderById(userId, orderId);
     res.status(HTTPSTATUS.OK).json({ success: true, data: order });
   };
 
   cancelOrder = async (req: Request, res: Response) => {
-    const userId = req.user?.id || req.user?.userId || '';
+    const userId = req.user?.id || '';
     const orderId = req.params.orderId || '';
     const cancelled = await this.orderService.cancelOrder(userId, orderId);
     res

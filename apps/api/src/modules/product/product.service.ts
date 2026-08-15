@@ -60,26 +60,31 @@ export class ProductService {
   }
 
   private formatProductResponse(
-    product: Record<string, unknown> | null,
+    product:
+      | Prisma.Product
+      | (Prisma.ProductGetPayload<object> & Record<string, unknown>)
+      | Record<string, unknown>
+      | null,
   ): Record<string, unknown> | null {
     if (!product) return null;
+    const prod = product as Record<string, unknown>;
     const categoryObj =
-      product.category && typeof product.category === 'object'
-        ? (product.category as Record<string, unknown>)
+      prod.category && typeof prod.category === 'object'
+        ? (prod.category as Record<string, unknown>)
         : null;
     const subcategoryObj =
-      product.subcategory && typeof product.subcategory === 'object'
-        ? (product.subcategory as Record<string, unknown>)
+      prod.subcategory && typeof prod.subcategory === 'object'
+        ? (prod.subcategory as Record<string, unknown>)
         : null;
 
     return {
-      ...product,
-      id: product.id,
-      price: product.price != null ? Number(product.price) : 0,
+      ...prod,
+      id: prod.id,
+      price: prod.price != null ? Number(prod.price) : 0,
       discountedPrice:
-        product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
-      category: categoryObj || product.categoryId,
-      subcategory: subcategoryObj || product.subcategoryId,
+        prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
+      category: categoryObj || prod.categoryId,
+      subcategory: subcategoryObj || prod.subcategoryId,
     };
   }
 
@@ -337,7 +342,7 @@ export class ProductService {
     ]);
 
     return {
-      products: products.map((p) => this.formatProductResponse(p as unknown as Record<string, unknown>)),
+      products: products.map((p) => this.formatProductResponse(p)),
       total,
     };
   }
@@ -478,9 +483,7 @@ export class ProductService {
     const nextCursor = hasMore && lastItem ? lastItem.id : undefined;
 
     return {
-      products: products.map((p) =>
-        this.formatProductResponse(p as unknown as Record<string, unknown>),
-      ),
+      products: products.map((p) => this.formatProductResponse(p)),
       total,
       nextCursor,
       hasMore,
@@ -609,9 +612,7 @@ export class ProductService {
       note = noteArg;
     }
 
-    const formattedProduct = this.formatProductResponse(
-      product as unknown as Record<string, unknown>,
-    );
+    const formattedProduct = this.formatProductResponse(product);
     const qcResult = calculateProductQCScore(formattedProduct);
 
     const newHistoryItem = {
@@ -628,7 +629,7 @@ export class ProductService {
     const existingHistory = Array.isArray(product.reviewHistory)
       ? (product.reviewHistory as Prisma.JsonArray)
       : [];
-    const updatedHistory = [...existingHistory, newHistoryItem] as unknown as Prisma.InputJsonValue;
+    const updatedHistory = toJsonInput([...existingHistory, newHistoryItem]);
 
     const updateData: Prisma.ProductUpdateInput = {
       qualityScore: qcResult.score,

@@ -277,7 +277,7 @@ export async function composeSchema(params: {
   if (charts.length > 0) {
     fields.push({
       name: 'sizes',
-      uiType: 'SizeMeasurementsTable' as unknown as UiType,
+      uiType: 'SizeMeasurementsTable',
       label: 'Size & Fit Measurements',
       group: 'sale',
       required: false,

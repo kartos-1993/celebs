@@ -7,6 +7,10 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
 import { Prisma } from '@/db';
 
+function isRecord(val: unknown): val is Record<string, unknown> {
+  return typeof val === 'object' && val !== null;
+}
+
 const formatZodError = (res: Response, error: z.ZodError) => {
   const issues = Array.isArray(error?.issues) ? error.issues : [];
   const errors =
@@ -15,7 +19,7 @@ const formatZodError = (res: Response, error: z.ZodError) => {
           field: Array.isArray(err?.path) ? err.path.join('.') : '',
           message: err?.message || 'Validation error',
         }))
-      : [{ message: (error as unknown as Error)?.message || 'Validation failed' }];
+      : [{ message: error instanceof Error ? error.message : 'Validation failed' }];
 
   const response: IApiResponse = {
     success: false,
@@ -60,23 +64,28 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
       error instanceof z.ZodError ||
       error?.name === 'ZodError' ||
       error?.constructor?.name === 'ZodError' ||
-      Array.isArray((error as unknown as Record<string, unknown>)?.issues)
+      (isRecord(error) && Array.isArray(error.issues))
     ) {
       return formatZodError(res, error as z.ZodError);
     }
 
     // Branch 3: AppError & Custom Domain Exceptions (BadRequest, Unauthorized, Forbidden, NotFound, Conflict)
-    if (
-      error instanceof AppError ||
-      (typeof (error as unknown as Record<string, unknown>)?.statusCode === 'number' &&
-        (error as unknown as Record<string, unknown>)?.errorCode)
-    ) {
-      const errObj = error as unknown as Record<string, unknown>;
-      const statusCode = (errObj.statusCode as number) || HTTPSTATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof AppError) {
       const response: IApiResponse = {
         success: false,
-        message: (errObj.message as string) || 'An error occurred',
-        errorCode: errObj.errorCode as ErrorCode,
+        message: error.message || 'An error occurred',
+        errorCode: error.errorCode as ErrorCode,
+        data: null,
+      };
+      return res.status(error.statusCode || HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
+    }
+
+    if (isRecord(error) && typeof error.statusCode === 'number' && error.errorCode) {
+      const statusCode = error.statusCode;
+      const response: IApiResponse = {
+        success: false,
+        message: typeof error.message === 'string' ? error.message : 'An error occurred',
+        errorCode: error.errorCode as ErrorCode,
         data: null,
       };
       return res.status(statusCode).json(response);

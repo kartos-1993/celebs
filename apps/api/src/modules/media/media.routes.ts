@@ -59,7 +59,7 @@ router.post(
       return res.status(400).json({ message: 'No files provided' });
     }
 
-    const _userId = req.user?.userId || 'unknown';
+    const _userId = req.user?.id || 'unknown';
     const payload = [];
 
     for (const file of files) {

@@ -19,7 +19,7 @@ export class VendorController {
   }
 
   private getUserId(req: Request): string {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     if (!userId) {
       throw new UnauthorizedException('Authentication required');
     }
