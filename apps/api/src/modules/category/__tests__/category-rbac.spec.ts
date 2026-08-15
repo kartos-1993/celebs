@@ -114,7 +114,7 @@ describe('Category RBAC & Tree Operations', () => {
       ? (cat!.attributes as Array<{ name: string }>)
       : [];
     expect(attributes.length).toBe(1);
-    expect(attributes[0].name).toBe('Size');
+    expect(attributes[0]?.name).toBe('Size');
   });
 
   it('should block admin from creating a category', async () => {
@@ -195,8 +195,8 @@ describe('Category RBAC & Tree Operations', () => {
     const attributes = Array.isArray(updatedCat?.attributes)
       ? (updatedCat!.attributes as Array<{ name: string; type: string; values: string[] }>)
       : [];
-    expect(attributes[0].type).toBe('select');
-    expect(attributes[0].values).toContain('Silk');
+    expect(attributes[0]?.type).toBe('select');
+    expect(attributes[0]?.values).toContain('Silk');
   });
 
   describe('Category Deletion Protection (Approach 1)', () => {
