@@ -66,9 +66,14 @@ export const baseCategorySchema = z.object(baseCategorySchemaFields);
 export const createCategorySchema = baseCategorySchema;
 export const updateCategorySchema = baseCategorySchema.partial();
 
+export const recordRecentCategorySchema = z.object({
+  categoryId: z.string().min(1, 'Category ID is required'),
+});
+
 export type AttributeType = z.infer<typeof attributeTypeSchema>;
 export type AttributeGroup = z.infer<typeof attributeGroupSchema>;
 export type CategoryAttributeType = z.infer<typeof attributeSchema>;
 export type BaseCategoryType = z.infer<typeof baseCategorySchema>;
 export type CreateCategoryType = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryType = z.infer<typeof updateCategorySchema>;
+export type RecordRecentCategoryType = z.infer<typeof recordRecentCategorySchema>;
