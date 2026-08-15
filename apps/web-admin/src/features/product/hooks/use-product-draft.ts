@@ -20,13 +20,25 @@ interface UseProductDraftOptions {
   form: UseFormReturn<ProductFormValues>;
   userId?: string;
   isEditMode: boolean;
+  initialCategoryPath?: string[];
 }
 
-export function useProductDraft({ form, userId, isEditMode }: UseProductDraftOptions) {
+export function useProductDraft({
+  form,
+  userId,
+  isEditMode,
+  initialCategoryPath,
+}: UseProductDraftOptions) {
   const [draftRestored, setDraftRestored] = useState(false);
   const [restoredDraftAt, setRestoredDraftAt] = useState<string | null>(null);
-  const [categoryPath, setCategoryPath] = useState<string[] | undefined>();
+  const [categoryPath, setCategoryPath] = useState<string[] | undefined>(initialCategoryPath);
   const draftAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (initialCategoryPath?.length && !categoryPath?.length) {
+      setCategoryPath(initialCategoryPath);
+    }
+  }, [initialCategoryPath]);
 
   const setValueLoose = form.setValue as unknown as LooseSetValue;
   const draftKey = getDraftStorageKey(userId);

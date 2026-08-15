@@ -52,18 +52,23 @@ export function Multiselect({
   const filteredOptions = React.useMemo(() => {
     if (!search.trim()) return options;
     const term = search.toLowerCase().trim();
-    return options.filter((o) => o.label.toLowerCase().includes(term));
+    return options.filter((o) => (o?.label ? o.label.toLowerCase().includes(term) : false));
   }, [options, search]);
 
   const selectAllFiltered = React.useCallback(() => {
-    const next = new Set([...selected, ...filteredOptions.map((o) => String(o.value))]);
+    const next = new Set([
+      ...selected,
+      ...filteredOptions.filter((o) => o && o.value !== undefined).map((o) => String(o.value)),
+    ]);
     onChange(Array.from(next));
   }, [selected, filteredOptions, onChange]);
 
   const optionsMap = React.useMemo(() => {
     const map = new Map<string, string>();
-    for (let i = 0; i < options.length; i++) {
-      map.set(String(options[i].value), options[i].label);
+    for (const opt of options) {
+      if (opt && opt.value !== undefined) {
+        map.set(String(opt.value), String(opt.label ?? opt.value));
+      }
     }
     return map;
   }, [options]);
@@ -72,9 +77,17 @@ export function Multiselect({
     <div>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <button
-            type="button"
-            disabled={disabled}
+          <div
+            role="combobox"
+            aria-expanded={open}
+            tabIndex={disabled ? -1 : 0}
+            onKeyDown={(e) => {
+              if (disabled) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setOpen((prev) => !prev);
+              }
+            }}
             className={`w-full rounded-lg border bg-background px-3 py-1.5 text-sm transition-colors hover:border-gray-400 dark:hover:border-gray-600 ${
               disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
             }`}
@@ -94,18 +107,26 @@ export function Multiselect({
                         className="flex items-center gap-1 px-2 py-0.5 text-xs font-normal"
                       >
                         <span className="capitalize">{label}</span>
-                        <button
-                          type="button"
+                        <span
+                          role="button"
+                          tabIndex={0}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             removeValue(stringVal);
                           }}
-                          className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 text-muted-foreground hover:text-foreground"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              removeValue(stringVal);
+                            }
+                          }}
+                          className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 text-muted-foreground hover:text-foreground inline-flex items-center justify-center cursor-pointer"
                           aria-label={`Remove ${label}`}
                         >
                           <X className="h-3 w-3" />
-                        </button>
+                        </span>
                       </Badge>
                     );
                   })
@@ -113,7 +134,7 @@ export function Multiselect({
               </div>
               <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
             </div>
-          </button>
+          </div>
         </PopoverTrigger>
         <PopoverContent
           align="start"

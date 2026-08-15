@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
 import { Label } from '@celebs/shared-ui/components/label';
@@ -263,6 +264,11 @@ export default function OptionSetsPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingSet ? 'Edit Option Set' : 'Create Option Set'}</DialogTitle>
+            <DialogDescription>
+              {editingSet
+                ? 'Update values and configuration for this option set.'
+                : 'Define reusable attribute option values for category schemas.'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
@@ -348,12 +354,12 @@ export default function OptionSetsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Option Set</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <strong className="text-foreground">{deleteTarget?.name}</strong>? This action cannot be
+              undone.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete{' '}
-            <strong className="text-foreground">{deleteTarget?.name}</strong>? This action cannot be
-            undone.
-          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
               Cancel

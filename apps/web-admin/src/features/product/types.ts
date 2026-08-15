@@ -8,7 +8,10 @@ import type {
 export type CreateProductRequest = CreateProductType;
 export type UpdateProductRequest = UpdateProductType;
 export type ProductFilterRequest = ProductFilterType;
-export type ProductRecord = ProductType;
+export type ProductRecord = ProductType & {
+  category?: { id?: string; name?: string; slug?: string; path?: string | string[]; level?: number };
+  subcategory?: { id?: string; name?: string; slug?: string; path?: string | string[]; level?: number };
+};
 
 export type ProductStatus =
   | 'draft'

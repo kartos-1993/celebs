@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Input } from '@celebs/shared-ui/components/input';
 import {
@@ -31,8 +31,8 @@ interface SizeEntry {
 }
 
 export function SizeMeasurementsInputField({ field }: UiProps) {
-  const { register, setValue, getValues, watch, formState } = useFormContext();
-  const [unit, setUnit] = React.useState<'CM' | 'IN'>('CM');
+  const { register, setValue, getValues, formState } = useFormContext();
+  const [unit, setUnit] = useState<'CM' | 'IN'>('CM');
   const dataSource = field.dataSource || {};
 
   const charts: MeasurementChartSpec[] = useMemo(() => {
@@ -49,33 +49,41 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         : [];
   }, [dataSource.charts, field.dataSource]);
 
-  const [activeTabKey, setActiveTabKey] = React.useState<string>(charts[0]?.key || 'product');
+  const [activeTabKey, setActiveTabKey] = useState<string>(charts[0]?.key || 'product');
 
-  const sizeFieldNames = ['Size', 'size', 'US Size', 'Waist Size', 'Alpha Size', 'Standard Size'];
-  const allValues = watch();
+  // Dynamically resolve the size field name from schema dataSource / variant metadata
+  const explicitSizeField =
+    (dataSource.sizeField as string | undefined) ??
+    (dataSource.variants as Array<{ key?: string; kind?: string }> | undefined)?.find(
+      (v) => v.kind === 'size' || /size/i.test(v.key ?? ''),
+    )?.key;
+
+  const sizeFieldNames = useMemo(() => {
+    const list = ['Size', 'size'];
+    if (explicitSizeField && !list.includes(explicitSizeField)) {
+      list.unshift(explicitSizeField);
+    }
+    return list;
+  }, [explicitSizeField]);
+
+  // Fast targeted subscription: ONLY re-render when the size variant changes
+  const watchedSizes = useWatch({ name: sizeFieldNames });
 
   const selectedSizes = useMemo(() => {
-    // 1. First check known size field names
-    for (const name of sizeFieldNames) {
-      const val = allValues[name];
+    if (!watchedSizes) return [];
+    for (const val of watchedSizes) {
       if (Array.isArray(val) && val.length > 0) {
         return val.map(String);
       }
-    }
-    // 2. Check any dynamic field key matching 'size'
-    const otherSizeKeys = Object.keys(allValues).filter(
-      (k) => k.toLowerCase().includes('size') && k !== 'sizes' && !k.startsWith('sizes.'),
-    );
-    for (const key of otherSizeKeys) {
-      const val = allValues[key];
-      if (Array.isArray(val) && val.length > 0) {
-        return val.map(String);
+      if (typeof val === 'string' && val.trim()) {
+        return val
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
     }
     return [];
-  }, [allValues]);
-
-  const sizesState = (watch('sizes') || []) as SizeEntry[];
+  }, [watchedSizes]);
 
   const hasErrorsForChartKey = (chartKey: string) => {
     const listKey = chartKey === 'body' ? 'bodyMeasurements' : 'productMeasurements';
@@ -86,32 +94,16 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         const list = sizeEntry?.[listKey];
         if (!list) return false;
         if (Array.isArray(list)) {
-          return list.some((item: { value?: { message?: string }; message?: string } | undefined) =>
-            Boolean(item?.value?.message || item?.message),
+          return list.some(
+            (item: { value?: { message?: string }; message?: string } | undefined) =>
+              Boolean(item?.value?.message || item?.message),
           );
         }
         if (typeof list === 'object') {
           return Object.values(list).some((item: unknown) => {
-            const castItem = item as { value?: { message?: string }; message?: string } | undefined;
-            return Boolean(castItem?.value?.message || castItem?.message);
-          });
-        }
-        return false;
-      });
-    }
-    if (typeof sizesErr === 'object') {
-      return Object.values(sizesErr).some((sizeEntry: unknown) => {
-        const castEntry = sizeEntry as Record<string, unknown> | undefined;
-        const list = castEntry?.[listKey];
-        if (!list) return false;
-        if (Array.isArray(list)) {
-          return list.some((item: { value?: { message?: string }; message?: string } | undefined) =>
-            Boolean(item?.value?.message || item?.message),
-          );
-        }
-        if (typeof list === 'object') {
-          return Object.values(list).some((item: unknown) => {
-            const castItem = item as { value?: { message?: string }; message?: string } | undefined;
+            const castItem = item as
+              | { value?: { message?: string }; message?: string }
+              | undefined;
             return Boolean(castItem?.value?.message || castItem?.message);
           });
         }
@@ -124,7 +116,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
   const hasProductErrors = hasErrorsForChartKey('product');
   const hasBodyErrors = hasErrorsForChartKey('body');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (hasBodyErrors && !hasProductErrors && activeTabKey !== 'body') {
       setActiveTabKey('body');
     } else if (hasProductErrors && !hasBodyErrors && activeTabKey !== 'product') {
@@ -132,8 +124,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
     }
   }, [hasBodyErrors, hasProductErrors, activeTabKey]);
 
-  React.useEffect(() => {
-    if (charts.length === 0) return;
+  // Synchronize sizes schema structure only when selectedSizes or charts change
+  useEffect(() => {
+    if (charts.length === 0 || selectedSizes.length === 0) return;
     const currentSizes = (getValues('sizes') || []) as SizeEntry[];
     const prodChart = charts.find((c) => c.key === 'product') || charts[0];
     const bodyChart = charts.find((c) => c.key === 'body');
@@ -155,6 +148,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         };
         return {
           ...existing,
+          name: sizeName,
           productMeasurements: syncCols(existing.productMeasurements, prodCols),
           bodyMeasurements: syncCols(existing.bodyMeasurements, bodyCols),
         };
@@ -235,7 +229,6 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         </TableHeader>
         <TableBody>
           {selectedSizes.map((sizeName, sizeIndex) => {
-            const sizeObj = sizesState.find((s) => s.name === sizeName);
             return (
               <TableRow key={sizeName}>
                 <TableCell className="font-bold text-foreground">
@@ -246,21 +239,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                     {...register(`sizes.${sizeIndex}.name` as const)}
                   />
                 </TableCell>
-                {chart.columns.map((c) => {
-                  const items = sizeObj ? sizeObj[listKey] || [] : [];
-                  const colIndex = items.findIndex((m) => m.name === c);
-
-                  // ── FIX: before the sync effect runs, colIndex is -1.
-                  // Registering `sizes.x.<list>.-1.value` corrupts RHF state,
-                  // so render a placeholder until the row is synced.
-                  if (colIndex === -1) {
-                    return (
-                      <TableCell key={c}>
-                        <div className="py-1 text-xs text-muted-foreground italic">Syncing…</div>
-                      </TableCell>
-                    );
-                  }
-
+                {chart.columns.map((c, colIndex) => {
                   const sizesErrors = formState.errors.sizes as
                     | Record<string, Record<string, Array<{ value?: { message?: string } }>>>
                     | undefined;
@@ -282,7 +261,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                         <Input
                           type="text"
                           data-testid={`measurement-input-${sizeName}-${c}`}
-                          placeholder={listKey === 'bodyMeasurements' ? 'e.g. 70 or 70-80' : 'e.g. 70'}
+                          placeholder={
+                            listKey === 'bodyMeasurements' ? 'e.g. 70 or 70-80' : 'e.g. 70'
+                          }
                           className={cn(
                             'h-8 text-xs',
                             cellError && 'border-destructive focus-visible:ring-destructive',
@@ -320,11 +301,12 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             type="button"
             data-testid="measurement-unit-cm"
             onClick={() => handleUnitToggle('CM')}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+            className={cn(
+              'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors',
               unit === 'CM'
                 ? 'bg-background text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+                : 'text-muted-foreground hover:text-foreground',
+            )}
           >
             CM
           </button>
@@ -332,53 +314,54 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             type="button"
             data-testid="measurement-unit-in"
             onClick={() => handleUnitToggle('IN')}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+            className={cn(
+              'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors',
               unit === 'IN'
                 ? 'bg-background text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+                : 'text-muted-foreground hover:text-foreground',
+            )}
           >
-            Inches (IN)
+            IN
           </button>
         </div>
       </div>
 
-      {charts.length > 1 ? (
-        <div className="space-y-3">
-          <div className="flex border-b">
-            {charts.map((c) => {
-              const hasTabErrors = c.key === 'body' ? hasBodyErrors : hasProductErrors;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  data-testid={`measurement-tab-${c.key}`}
-                  onClick={() => setActiveTabKey(c.key)}
-                  className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors -mb-px flex items-center gap-1.5 ${
-                    (activeTabKey || charts[0].key) === c.key
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <span>{c.label}</span>
-                  {hasTabErrors && (
-                    <span className="inline-block w-2 h-2 rounded-full bg-destructive shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <div>
-            {charts.map((c) =>
-              (activeTabKey || charts[0].key) === c.key ? (
-                <div key={c.key}>{renderTableForChart(c)}</div>
-              ) : null,
-            )}
-          </div>
+      {/* Tabs for Multiple Charts */}
+      {charts.length > 1 && (
+        <div className="flex gap-2 border-b">
+          {charts.map((chart) => {
+            const hasError = hasErrorsForChartKey(chart.key);
+            const isActive = activeTabKey === chart.key;
+            return (
+              <button
+                key={chart.key}
+                type="button"
+                data-testid={`measurement-tab-${chart.key}`}
+                onClick={() => setActiveTabKey(chart.key)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors cursor-pointer',
+                  isActive
+                    ? 'border-primary text-primary font-semibold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                  hasError && 'text-destructive',
+                )}
+              >
+                {chart.label}
+                {hasError && <span className="h-1.5 w-1.5 rounded-full bg-destructive" />}
+              </button>
+            );
+          })}
         </div>
-      ) : (
-        <div>{renderTableForChart(charts[0])}</div>
       )}
+
+      {/* Render Active Chart Table */}
+      {charts
+        .filter((c) => c.key === activeTabKey)
+        .map((chart) => (
+          <div key={chart.key} className="space-y-2">
+            <div className="rounded-lg border overflow-hidden">{renderTableForChart(chart)}</div>
+          </div>
+        ))}
     </div>
   );
 }
