@@ -1,12 +1,11 @@
 /**
- * Category tree data for the product form's cascading dropdown.
- * Renamed from use-categories.ts to avoid clashing with
- * features/category/hooks/use-categories.ts.
+ * Category tree and recent categories data for the product form.
+ * Decoupled from features/category using shared contracts & TanStack Query.
  */
-import { useEffect, useState } from 'react';
-import { CategoryApiService } from '../../category/api';
-import type { CategoryTreeNode } from '../../category/types';
-import type { DropdownCategory, RecentCategory } from '../types';
+import { useCallback, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CategoryTreeNode, DropdownCategory, RecentCategory } from '@celebs/shared-types';
+import { CATEGORY_QUERY_KEYS, SharedCategoryApi } from '@/api/category';
 
 /** Flatten a category tree into the lightweight dropdown shape. */
 function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
@@ -18,8 +17,12 @@ function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
       name: node.name,
       parentId: (record.parentCategory as string | null | undefined) ?? node.parent ?? null,
       hasChildren: Array.isArray(node.children) && node.children.length > 0,
-      level: node.level ?? Math.max(0, (node.path?.length ?? 1) - 1),
-      path: node.path && node.path.length > 0 ? node.path : [node.name],
+      level: node.level ?? Math.max(0, (Array.isArray(node.path) ? node.path.length : 1) - 1),
+      path:
+        node.path && (Array.isArray(node.path) ? node.path.length > 0 : Boolean(node.path))
+          ? node.path
+          : [node.name],
+      slug: node.slug,
     });
     node.children?.forEach(walk);
   };
@@ -28,63 +31,91 @@ function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
 }
 
 export const useCategoryTree = () => {
-  const [allCategories, setAllCategories] = useState<DropdownCategory[]>([]);
-  const [recentCategories, setRecentCategories] = useState<RecentCategory[]>([]);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await CategoryApiService.getCategoryTree();
-        const tree = res?.data ?? [];
-        if (active) setAllCategories(flattenTree(tree));
-      } catch (_error) {
-        if (active) setAllCategories([]);
+  const { data: treeResponse, isLoading: isLoadingTree } = useQuery({
+    queryKey: CATEGORY_QUERY_KEYS.tree(),
+    queryFn: SharedCategoryApi.getCategoryTree,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: recentResponse } = useQuery({
+    queryKey: CATEGORY_QUERY_KEYS.recent(),
+    queryFn: SharedCategoryApi.getRecentCategories,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
+  const recordRecentMutation = useMutation({
+    mutationFn: SharedCategoryApi.recordRecentCategory,
+    onSuccess: (response) => {
+      if (response?.data) {
+        queryClient.setQueryData(CATEGORY_QUERY_KEYS.recent(), response);
+      } else {
+        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.recent() });
       }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+    },
+  });
 
-  const getRootCategories = (): DropdownCategory[] =>
-    allCategories.filter((cat) => cat.parentId === null);
+  const allCategories = useMemo(() => {
+    const tree = treeResponse?.data ?? [];
+    return flattenTree(tree);
+  }, [treeResponse]);
 
-  const getChildCategories = (parentId: string): DropdownCategory[] =>
-    allCategories.filter((cat) => cat.parentId === parentId);
+  const recentCategories: RecentCategory[] = useMemo(() => {
+    const list = recentResponse?.data ?? [];
+    return list;
+  }, [recentResponse]);
 
-  const searchCategories = (query: string, parentId?: string): DropdownCategory[] => {
-    if (!query.trim()) {
-      return parentId ? getChildCategories(parentId) : getRootCategories();
-    }
-    const searchTerm = query.toLowerCase();
-    return allCategories.filter((cat) => {
-      const matchesName = cat.name.toLowerCase().includes(searchTerm);
-      const matchesParent = parentId ? cat.parentId === parentId : true;
-      return matchesName && matchesParent;
-    });
-  };
+  const getRootCategories = useCallback(
+    (): DropdownCategory[] => allCategories.filter((cat) => cat.parentId === null),
+    [allCategories],
+  );
 
-  const addToRecent = (category: DropdownCategory) => {
-    const entry: RecentCategory = {
-      id: category.id,
-      name: category.name,
-      path: category.path,
-      usedAt: new Date(),
-    };
-    setRecentCategories((prev) => {
-      const filtered = prev.filter((item) => item.id !== category.id);
-      return [entry, ...filtered].slice(0, 5);
-    });
-  };
+  const getChildCategories = useCallback(
+    (parentId: string): DropdownCategory[] =>
+      allCategories.filter((cat) => cat.parentId === parentId),
+    [allCategories],
+  );
+
+  const searchCategories = useCallback(
+    (query: string, parentId?: string): DropdownCategory[] => {
+      if (!query.trim()) {
+        return parentId ? getChildCategories(parentId) : getRootCategories();
+      }
+      const searchTerm = query.toLowerCase();
+      return allCategories.filter((cat) => {
+        const matchesName = cat.name.toLowerCase().includes(searchTerm);
+        const matchesParent = parentId ? cat.parentId === parentId : true;
+        return matchesName && matchesParent;
+      });
+    },
+    [allCategories, getChildCategories, getRootCategories],
+  );
+
+  const addToRecent = useCallback(
+    (category: DropdownCategory) => {
+      if (category.id) {
+        recordRecentMutation.mutate(category.id);
+      }
+    },
+    [recordRecentMutation],
+  );
+
+  const findCategoryById = useCallback(
+    (id: string) => allCategories.find((c) => c.id === id),
+    [allCategories],
+  );
 
   return {
+    allCategories,
+    recentCategories,
+    isLoading: isLoadingTree,
     getRootCategories,
     getChildCategories,
     searchCategories,
-    recentCategories,
     addToRecent,
-    findCategoryById: (id: string) => allCategories.find((c) => c.id === id),
+    findCategoryById,
     getAllCategories: () => allCategories,
   };
 };

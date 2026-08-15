@@ -3,6 +3,7 @@
  * Centralized API calls with proper type safety
  */
 
+import type { RecentCategory } from '@celebs/shared-types';
 import { axiosClient } from '@/lib/axios/axios-client';
 import {
   Category,
@@ -117,11 +118,27 @@ export async function deleteQuickFilter(id: string): Promise<ApiResponse<{ succe
   return response.data;
 }
 
+export async function getRecentCategories(): Promise<ApiResponse<RecentCategory[]>> {
+  const response = await axiosClient.get<ApiResponse<RecentCategory[]>>(`${BASE_PATH}/recent`);
+  return response.data;
+}
+
+export async function recordRecentCategory(
+  categoryId: string,
+): Promise<ApiResponse<RecentCategory[]>> {
+  const response = await axiosClient.post<ApiResponse<RecentCategory[]>>(`${BASE_PATH}/recent`, {
+    categoryId,
+  });
+  return response.data;
+}
+
 export const CategoryApiService = {
   createCategory,
   getCategories,
   getCategoryTree,
   searchCategories,
+  getRecentCategories,
+  recordRecentCategory,
   getCategoryById,
   updateCategory,
   deleteCategory,

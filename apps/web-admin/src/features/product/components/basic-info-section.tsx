@@ -83,7 +83,7 @@ const BasicInfoSection = ({
                       : [];
                   onCategoryPathChange?.(pathArr);
                 }}
-                placeholder="Select the product category"
+                placeholder="Please select category or search with keyword"
               />
             </FormControl>
             <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
