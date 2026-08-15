@@ -24,7 +24,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
     )?.name;
 
     const toField = (attribute: CategoryAttributeType): FieldSpec | null => {
-      const attrRec = attribute as unknown as Record<string, unknown>;
+      const attrRec = attribute as CategoryAttributeType & Record<string, unknown>;
       const attrName = (attrRec.code as string | undefined) || attribute.name;
       if (!attrName) return null;
 

@@ -53,7 +53,7 @@ export default function ReviewProductQueue() {
   const listQuery = useProductsQuery(listFilters, !isPendingTab);
 
   const activeQuery = isPendingTab ? queueQuery : listQuery;
-  const products = (activeQuery.data?.data?.products ?? []) as unknown as ProductQueueItem[];
+  const products = (activeQuery.data?.data?.products ?? []) as ProductQueueItem[];
   const total = activeQuery.data?.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
