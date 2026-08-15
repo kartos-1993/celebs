@@ -41,19 +41,30 @@ const AddProduct = () => {
   const { role, user } = useAuthContext();
   const userId = user?.id || user?.email;
 
-  const { form, isLoading, updateBasicField, handleSubcategoryChange } = useProductForm(id);
+  const {
+    form,
+    isLoading,
+    categoryPath: productCategoryPath,
+    updateBasicField,
+    handleSubcategoryChange,
+  } = useProductForm(id);
 
   const watchedCategoryId = String(form.watch('categoryId') || '');
   const watchedSubcategoryId = String(form.watch('subcategoryId') || '');
+  const effectiveCatId = watchedSubcategoryId || watchedCategoryId;
 
-  // 🔥 The server-driven schema — previously never called.
   const {
     data: schemaFields = [],
     isLoading: isSchemaLoading,
     error: schemaError,
-  } = useProductSchema(watchedSubcategoryId, id);
+  } = useProductSchema(effectiveCatId, id);
 
-  const draft = useProductDraft({ form, userId, isEditMode });
+  const draft = useProductDraft({
+    form,
+    userId,
+    isEditMode,
+    initialCategoryPath: productCategoryPath,
+  });
 
   const schemaHasName = useMemo(() => {
     const names = new Set(schemaFields.map((field) => field.name.toLowerCase()));
@@ -202,10 +213,9 @@ const AddProductFormBody = ({
   });
 
   const schemaReady = schemaFields.length > 0;
+  const effectiveCatId = watchedSubcategoryId || watchedCategoryId;
   // draftRestored gate prevents a schema fetch racing the draft restore
-  const canShowAdditionalSections = Boolean(
-    watchedCategoryId && watchedSubcategoryId && draft.draftRestored,
-  );
+  const canShowAdditionalSections = Boolean(effectiveCatId && draft.draftRestored);
 
   const scrollToSection = useCallback((anchorId: string) => {
     if (anchorId !== 'product-section-basic' && dynamicFormRef.current?.scrollToSection(anchorId)) {
@@ -420,9 +430,9 @@ const AddProductFormBody = ({
 
             {canShowAdditionalSections ? (
               <DynamicProductForm
-                key={watchedSubcategoryId}
+                key={effectiveCatId}
                 ref={dynamicFormRef}
-                catId={watchedSubcategoryId}
+                catId={effectiveCatId}
                 schemaFields={schemaFields}
                 isSchemaLoading={isSchemaLoading}
                 schemaError={schemaError}

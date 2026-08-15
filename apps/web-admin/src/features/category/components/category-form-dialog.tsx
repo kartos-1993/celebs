@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@celebs/shared-ui/components/dialog';
 import { Loader2 } from 'lucide-react';
 import CategoryForm from './category-form';
@@ -75,14 +76,14 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
               Path: {formatCategoryPath(freshCategoryData.path)}
             </p>
           )}
+          <DialogDescription className="sr-only">
+            {editingCategory
+              ? `Edit the details of category ${activeCategoryName || ''}.`
+              : parentCategoryId
+                ? 'Add a subcategory under the selected parent category.'
+                : 'Add a new category to the list.'}
+          </DialogDescription>
         </DialogHeader>
-        <div id="dialog-description" className="sr-only">
-          {editingCategory
-            ? `Edit the details of category ${activeCategoryName || ''}.`
-            : parentCategoryId
-              ? 'Add a subcategory under the selected parent category.'
-              : 'Add a new category to the list.'}
-        </div>
 
         {editingId && isLoadingDetail ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">

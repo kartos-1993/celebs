@@ -16,7 +16,13 @@ import {
 import { Button } from '@celebs/shared-ui/components/button';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
-import { Dialog, DialogContent } from '@celebs/shared-ui/components/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@celebs/shared-ui/components/dialog';
 import { isMulticolorVariant, resolveColorCode } from '../../utils/add-product-helpers';
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
 import type { ProductQueueItem } from './types';
@@ -64,6 +70,12 @@ export function PreviewModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{product.name}</DialogTitle>
+          <DialogDescription>
+            Live preview and quality inspection details for {product.name}
+          </DialogDescription>
+        </DialogHeader>
         <div className="flex flex-col h-full">
           {/* ── Header ─────────────────────────────────────────────── */}
           <div className="p-4 border-b bg-muted/20 flex flex-wrap items-center justify-between gap-3">

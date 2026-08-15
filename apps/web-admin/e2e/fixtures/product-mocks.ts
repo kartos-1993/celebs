@@ -203,8 +203,133 @@ export async function setupProductMocks(page: Page) {
     });
   });
 
-  // Mock product creation endpoint
-  await page.route('**/api/**/products**', async (route) => {
+  // Mock product creation, fetch detail, and update endpoints
+  await page.route('**/api/**/products/**', async (route) => {
+    const method = route.request().method();
+
+    if (method === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'prod_existing_101',
+            name: 'Original Heavyweight Vintage Tee',
+            brand: 'Celebs Luxury Studio',
+            description: 'Original crafted vintage tee description.',
+            categoryId: 'cat_mens_tops',
+            subcategoryId: 'cat_mens_tops',
+            price: 1800,
+            discountedPrice: 1500,
+            status: 'draft',
+            category: {
+              id: 'cat_mens_tops',
+              name: 'Tops & T-Shirts',
+              slug: 'tops-t-shirts',
+              path: "Men's Apparel > Tops & T-Shirts",
+              level: 2,
+            },
+            subcategory: {
+              id: 'cat_mens_tops',
+              name: 'Tops & T-Shirts',
+              slug: 'tops-t-shirts',
+              path: "Men's Apparel > Tops & T-Shirts",
+              level: 2,
+            },
+            mainImages: ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518'],
+            colorVariants: [
+              {
+                name: 'Vintage Black',
+                swatch: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518',
+                images: ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518'],
+              },
+            ],
+            sizes: [
+              {
+                name: 'Small',
+                productMeasurements: [
+                  { name: 'Bust', value: '100', unit: 'cm' },
+                  { name: 'Length', value: '70', unit: 'cm' },
+                ],
+              },
+            ],
+            skus: [
+              {
+                sku: 'MOCK-VINTAGE-BLK-S',
+                color: 'Vintage Black',
+                size: 'Small',
+                price: 1800,
+                stock: 30,
+                available: true,
+              },
+            ],
+            dynamicData: {
+              values: {
+                Type: 'Casual Shirts',
+                'Fit Type': 'Regular Fit',
+                sku: {
+                  variants: {
+                    Color: {
+                      'Vintage Black': {
+                        Size: {
+                          Small: {
+                            price: '1800',
+                            stock: '30',
+                            sellerSku: 'MOCK-VINTAGE-BLK-S',
+                            specialPrice: '1500',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              variantFields: [
+                { ui: 'multiselect', key: 'Color', kind: 'color', label: 'Color' },
+                { ui: 'multiselect', key: 'Size', kind: 'size', label: 'Size' },
+              ],
+              uploadedAssets: {
+                colorMeta: {
+                  'Vintage Black': {
+                    hot: false,
+                    images: ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518'],
+                    swatch: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518',
+                  },
+                },
+                mainImages: ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518'],
+              },
+            },
+            createdAt: new Date().toISOString(),
+          },
+        }),
+      });
+      return;
+    }
+
+    if (method === 'PUT') {
+      const putData = route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          message: 'Product updated successfully',
+          data: {
+            id: 'prod_existing_101',
+            ...putData,
+            updatedAt: new Date().toISOString(),
+          },
+        }),
+      });
+      return;
+    }
+
+    await route.continue();
+  });
+
+  // Mock product list / creation endpoint
+  await page.route('**/api/**/products', async (route) => {
     if (route.request().method() === 'POST') {
       const postData = route.request().postDataJSON();
       await route.fulfill({

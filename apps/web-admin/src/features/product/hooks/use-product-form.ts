@@ -1,23 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { baseProductSchema, type CreateProductType } from '@celebs/shared-types';
 import { getProductById } from '../api';
 import { PRODUCT_QUERY_KEYS } from './use-product-queries';
+import { hydrateProductForm, toCategoryPath } from '../utils/hydrate-product-form';
 
 export type ProductFormValues = Partial<CreateProductType> & Record<string, unknown>;
 
 const productFormBasicSchema = baseProductSchema.partial();
-
-/** API category refs can be plain ids or populated objects — normalize both. */
-const toId = (value: unknown): string => {
-  if (typeof value === 'string') return value;
-  if (value && typeof value === 'object') {
-    return String((value as { id?: string | number }).id ?? '');
-  }
-  return '';
-};
 
 export const useProductForm = (productId?: string) => {
   const form = useForm<ProductFormValues>({
@@ -42,19 +34,20 @@ export const useProductForm = (productId?: string) => {
     enabled: Boolean(productId),
   });
 
-  // Hydrate basic fields once the product arrives (edit mode only)
+  const categoryPath = useMemo(() => {
+    const product = productResponse?.data;
+    if (!product) return undefined;
+    const cat = product.subcategory || product.category;
+    const p = toCategoryPath(cat);
+    return p.length > 0 ? p : undefined;
+  }, [productResponse]);
+
+  // Hydrate all product fields once the product entity arrives (edit mode only)
   useEffect(() => {
     const product = productResponse?.data;
     if (!product) return;
-    form.reset({
-      ...form.getValues(),
-      name: product.name ?? '',
-      brand: product.brand ?? '',
-      description: product.description ?? '',
-      categoryId: toId(product.categoryId),
-      subcategoryId: toId(product.subcategoryId),
-      status: product.status ?? 'draft',
-    });
+    const hydrated = hydrateProductForm(product, form.getValues());
+    form.reset(hydrated);
   }, [productResponse, form]);
 
   const updateBasicField = (
@@ -79,6 +72,8 @@ export const useProductForm = (productId?: string) => {
   return {
     form,
     isLoading: isFetchingProduct,
+    categoryPath,
+    product: productResponse?.data,
     updateBasicField,
     handleSubcategoryChange,
   };

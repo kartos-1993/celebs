@@ -153,6 +153,18 @@ export const ensureVariantSupportFields = (fields: FieldSpec[]) => {
         });
       }
 
+      const sizeVariant = variants.find((v) => v.kind === 'size');
+      const sizeTableIndex = merged.findIndex((f) => f.uiType === 'SizeMeasurementsTable');
+      if (sizeVariant && sizeTableIndex !== -1) {
+        merged[sizeTableIndex] = {
+          ...merged[sizeTableIndex],
+          dataSource: {
+            ...(merged[sizeTableIndex].dataSource || {}),
+            sizeField: sizeVariant.key,
+          },
+        };
+      }
+
       if (!merged.some((f) => f.uiType === 'SkuTableV2')) {
         merged.push({
           name: 'skus',

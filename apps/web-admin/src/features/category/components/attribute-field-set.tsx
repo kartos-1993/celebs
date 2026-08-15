@@ -25,6 +25,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@celebs/shared-ui/components/dialog';
 import { X, Plus, ChevronDown, ChevronUp, Layers } from 'lucide-react';
@@ -502,10 +503,10 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle>Delete Attribute</DialogTitle>
+            <DialogDescription className="py-2 text-sm text-muted-foreground">
+              Are you sure you want to delete attribute <strong>{attributeName}</strong>?
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-2 text-sm text-muted-foreground">
-            Are you sure you want to delete attribute <strong>{attributeName}</strong>?
-          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
               Cancel
