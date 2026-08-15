@@ -344,7 +344,13 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
       level: recentLevel,
       path: recent.path,
     };
-    requestCategorySelection(item);
+
+    if (isOpen) {
+      // When dropdown is open, extend all path columns and highlight hierarchy
+      applyPathSelection(item);
+    } else {
+      requestCategorySelection(item);
+    }
   };
 
   const handleConfirm = () => {
@@ -371,6 +377,13 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     }
   }, [selectedCategory]);
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open && selectedCategory) {
+      applyPathSelection(selectedCategory);
+    }
+  };
+
   const getCategoriesForColumn = (column: ColumnData): DropdownCategory[] => {
     if (column.searchQuery) {
       return searchCategories(column.searchQuery, column.parentId || undefined);
@@ -395,7 +408,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
 
   return (
     <div className="space-y-2">
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"

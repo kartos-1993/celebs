@@ -10,12 +10,17 @@ import { CATEGORY_QUERY_KEYS, SharedCategoryApi } from '@/api/category';
 /** Flatten a category tree into the lightweight dropdown shape. */
 function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
   const out: DropdownCategory[] = [];
-  const walk = (node: CategoryTreeNode): void => {
+  const walk = (node: CategoryTreeNode, explicitParentId: string | null = null): void => {
     const record = node as unknown as Record<string, unknown>;
+    const parentId =
+      (record.parentCategory as string | null | undefined) ??
+      node.parent ??
+      explicitParentId ??
+      null;
     out.push({
       id: node.id,
       name: node.name,
-      parentId: (record.parentCategory as string | null | undefined) ?? node.parent ?? null,
+      parentId,
       hasChildren: Array.isArray(node.children) && node.children.length > 0,
       level: node.level ?? Math.max(0, (Array.isArray(node.path) ? node.path.length : 1) - 1),
       path:
@@ -24,9 +29,9 @@ function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
           : [node.name],
       slug: node.slug,
     });
-    node.children?.forEach(walk);
+    node.children?.forEach((child) => walk(child, node.id));
   };
-  nodes.forEach(walk);
+  nodes.forEach((root) => walk(root, null));
   return out;
 }
 

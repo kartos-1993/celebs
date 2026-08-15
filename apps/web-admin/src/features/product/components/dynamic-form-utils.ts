@@ -1,4 +1,4 @@
-import { axiosClient } from '@/lib/axios/axios-client';
+import { getCategoryById } from '@/api/category';
 import type { CategoryAttributeType } from '@celebs/shared-types';
 import type { FieldSpec } from '../types';
 import { extractVariantsMeta } from '../fields/variant-utils';
@@ -7,8 +7,8 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   const merged = Array.isArray(next) ? [...next] : [];
 
   try {
-    const response = await axiosClient.get(`/categories/${catId}`);
-    const cat = response.data?.data ?? response.data;
+    const res = await getCategoryById(catId);
+    const cat = res?.data;
     const attrs: CategoryAttributeType[] = Array.isArray(cat?.attributes)
       ? cat.attributes
       : [];

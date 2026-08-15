@@ -41,15 +41,25 @@ categoryRoute.get(
   '/tree-with-attributes',
   asyncHandler(categoryController.getCategoryTreeWithAttributes),
 );
+
+// Authenticated Recent Categories (must be before /:id to prevent Express routing collision)
+categoryRoute.get(
+  '/recent',
+  authenticateJWT,
+  asyncHandler(categoryController.getRecentCategories),
+);
+categoryRoute.post(
+  '/recent',
+  authenticateJWT,
+  asyncHandler(categoryController.recordRecentCategory),
+);
+
 categoryRoute.get('/:slug/storefront', asyncHandler(quickFilterController.getStorefrontConfig));
 categoryRoute.get('/:id/filters', asyncHandler(categoryController.getCategoryFilters));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 
-// Apply authentication middleware to admin / vendor category routes
+// Admin / Management Category routes (Require Auth & Permissions)
 categoryRoute.use(authenticateJWT);
-
-categoryRoute.get('/recent', asyncHandler(categoryController.getRecentCategories));
-categoryRoute.post('/recent', asyncHandler(categoryController.recordRecentCategory));
 
 categoryRoute.post(
   '/',
