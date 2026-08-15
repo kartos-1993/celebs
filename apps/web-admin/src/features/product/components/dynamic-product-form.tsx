@@ -75,11 +75,28 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       return acc;
     }, [fields]);
 
+    // ── Auto-expand specifications when an error lands in collapsed fields ──
+    const detailsFields = grouped.details || [];
+    const restDetailsFields = React.useMemo(() => detailsFields.slice(6), [detailsFields]);
+
+    React.useEffect(() => {
+      if (restDetailsFields.length === 0 || detailsExpanded) return;
+      const hasErrorInCollapsed = restDetailsFields.some(
+        (field) => Boolean(form.formState.errors[field.name]),
+      );
+      if (hasErrorInCollapsed) {
+        setDetailsExpanded(true);
+      }
+    }, [detailsExpanded, form.formState.errors, restDetailsFields]);
+
     // ── Imperative scroll API ──────────────────────────────────────────────
     useImperativeHandle(
       ref,
       () => ({
         scrollToSection: (anchorId: string) => {
+          if (anchorId === 'product-section-details') {
+            setDetailsExpanded(true);
+          }
           const element = document.getElementById(anchorId);
           if (!element) return false;
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -177,7 +194,6 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       ...(grouped.variant || []),
       ...(grouped.media || []),
     ];
-    const detailsFields = grouped.details || [];
     const saleFields = grouped.sale || [];
     const packageFields = grouped.package || [];
     const termFields = grouped.termcondition || [];

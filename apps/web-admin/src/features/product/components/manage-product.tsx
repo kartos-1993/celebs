@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Info, Loader, Search, ShoppingBag, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, Info, Loader, Send, Search, ShoppingBag, Trash2, X } from 'lucide-react';
 import { can, Permission } from '@celebs/rbac';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
@@ -31,9 +32,19 @@ import {
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
 import { useAuthContext } from '@/context/auth-provider';
-import type { ProductFilterRequest } from '../api';
+import { useToast } from '@/hooks/use-toast';
+import {
+  archiveProduct,
+  submitProductForReview,
+  toggleProductActivation,
+  type ProductFilterRequest,
+} from '../api';
 import type { ProductListItem, ProductStatus } from '../types';
-import { useProductMutations, useProductsQuery } from '../hooks/use-product-queries';
+import {
+  PRODUCT_QUERY_KEYS,
+  useProductMutations,
+  useProductsQuery,
+} from '../hooks/use-product-queries';
 
 const PAGE_SIZE = 10;
 
@@ -57,11 +68,14 @@ const statusBadgeVariant = (
 
 const ManageProduct = () => {
   const { user } = useAuthContext();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const userPermissions = (user as { permissions?: string[] })?.permissions;
   const isSellerOrStaff =
     user?.role === 'VENDOR' || (user?.role === 'STAFF' && Boolean(user?.vendorId));
   const canCreate = can(user?.role || 'STAFF', Permission.PRODUCT_CREATE, userPermissions);
   const canEdit = can(user?.role || 'STAFF', Permission.PRODUCT_EDIT, userPermissions);
+  const canDelete = can(user?.role || 'STAFF', Permission.PRODUCT_DELETE, userPermissions);
 
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -70,6 +84,8 @@ const ManageProduct = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showHelpNotification, setShowHelpNotification] = useState(true);
   const [archiveTarget, setArchiveTarget] = useState<ProductListItem | null>(null);
+  const [isBatchArchiveOpen, setIsBatchArchiveOpen] = useState(false);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
 
   const filters = useMemo<ProductFilterRequest>(
     () => ({
@@ -108,6 +124,109 @@ const ManageProduct = () => {
 
   const handleSelectAll = (checked: boolean) => {
     setSelectedProducts(checked ? products.map((product) => product.id) : []);
+  };
+
+  // Selected items analysis for batch actions
+  const selectedItems = useMemo(
+    () => products.filter((p) => selectedProducts.includes(p.id)),
+    [products, selectedProducts],
+  );
+
+  const submittableCount = useMemo(
+    () => selectedItems.filter((p) => p.status === 'draft' || p.status === 'rejected').length,
+    [selectedItems],
+  );
+
+  const activatableCount = useMemo(
+    () => selectedItems.filter((p) => p.status === 'deactivated').length,
+    [selectedItems],
+  );
+
+  const deactivatableCount = useMemo(
+    () => selectedItems.filter((p) => p.status === 'published').length,
+    [selectedItems],
+  );
+
+  const handleBatchSubmit = async () => {
+    const targets = selectedItems.filter((p) => p.status === 'draft' || p.status === 'rejected');
+    if (targets.length === 0) return;
+
+    setIsBatchProcessing(true);
+    try {
+      const results = await Promise.allSettled(
+        targets.map((product) => submitProductForReview(product.id)),
+      );
+      const successful = results.filter((r) => r.status === 'fulfilled').length;
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
+      setSelectedProducts([]);
+      toast({
+        title: 'Batch submission complete',
+        description: `Successfully submitted ${successful} of ${targets.length} product(s) for review.`,
+      });
+    } catch (_err) {
+      toast({
+        title: 'Batch submission failed',
+        description: 'Failed to submit some products for review.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  const handleBatchToggleStatus = async (type: 'activate' | 'deactivate') => {
+    const targetStatus = type === 'activate' ? 'deactivated' : 'published';
+    const targets = selectedItems.filter((p) => p.status === targetStatus);
+    if (targets.length === 0) return;
+
+    setIsBatchProcessing(true);
+    try {
+      const results = await Promise.allSettled(
+        targets.map((product) => toggleProductActivation(product.id)),
+      );
+      const successful = results.filter((r) => r.status === 'fulfilled').length;
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
+      setSelectedProducts([]);
+      toast({
+        title: `Batch ${type} complete`,
+        description: `Successfully ${type}d ${successful} of ${targets.length} product(s).`,
+      });
+    } catch (_err) {
+      toast({
+        title: `Batch ${type} failed`,
+        description: `Failed to ${type} some products.`,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  const handleBatchArchiveConfirm = async () => {
+    if (selectedProducts.length === 0) return;
+
+    setIsBatchProcessing(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedProducts.map((id) => archiveProduct(id)),
+      );
+      const successful = results.filter((r) => r.status === 'fulfilled').length;
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
+      setSelectedProducts([]);
+      setIsBatchArchiveOpen(false);
+      toast({
+        title: 'Batch archive complete',
+        description: `Successfully archived ${successful} product(s).`,
+      });
+    } catch (_err) {
+      toast({
+        title: 'Batch archive failed',
+        description: 'Failed to archive some products.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBatchProcessing(false);
+    }
   };
 
   return (
@@ -188,13 +307,73 @@ const ManageProduct = () => {
             </form>
 
             {selectedProducts.length > 0 && (
-              <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200">
-                <span className="font-semibold">{selectedProducts.length} selected</span>
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-orange-50/90 p-2 text-xs text-orange-900 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200">
+                <span className="font-semibold px-1">
+                  {selectedProducts.length} selected
+                </span>
+
+                {isSellerOrStaff && canCreate && submittableCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="h-7 gap-1 bg-orange-600 px-2.5 text-xs hover:bg-orange-700"
+                    disabled={isBatchProcessing}
+                    onClick={handleBatchSubmit}
+                  >
+                    {isBatchProcessing ? (
+                      <Loader className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                    Submit ({submittableCount})
+                  </Button>
+                )}
+
+                {isSellerOrStaff && canEdit && activatableCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 border-emerald-300 bg-emerald-50 px-2.5 text-xs text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    disabled={isBatchProcessing}
+                    onClick={() => handleBatchToggleStatus('activate')}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Activate ({activatableCount})
+                  </Button>
+                )}
+
+                {isSellerOrStaff && canEdit && deactivatableCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 border-amber-300 bg-amber-50 px-2.5 text-xs text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                    disabled={isBatchProcessing}
+                    onClick={() => handleBatchToggleStatus('deactivate')}
+                  >
+                    <EyeOff className="h-3.5 w-3.5" />
+                    Deactivate ({deactivatableCount})
+                  </Button>
+                )}
+
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 border-rose-300 bg-rose-50 px-2.5 text-xs text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                    disabled={isBatchProcessing}
+                    onClick={() => setIsBatchArchiveOpen(true)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Archive ({selectedProducts.length})
+                  </Button>
+                )}
+
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
                   onClick={() => setSelectedProducts([])}
+                  disabled={isBatchProcessing}
                 >
                   Clear
                 </Button>
@@ -370,6 +549,42 @@ const ManageProduct = () => {
             >
               {archive.isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
               Archive Product
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch archive confirmation */}
+      <Dialog
+        open={isBatchArchiveOpen}
+        onOpenChange={(open) => !open && setIsBatchArchiveOpen(false)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-rose-500" />
+              Archive {selectedProducts.length} Selected Product(s)?
+            </DialogTitle>
+            <DialogDescription>
+              These products will be soft-deleted: they will be hidden from the storefront and
+              removed from active listings. This action is tracked in the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsBatchArchiveOpen(false)}
+              disabled={isBatchProcessing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isBatchProcessing || selectedProducts.length === 0}
+              onClick={handleBatchArchiveConfirm}
+            >
+              {isBatchProcessing && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+              Archive Selected Products
             </Button>
           </DialogFooter>
         </DialogContent>

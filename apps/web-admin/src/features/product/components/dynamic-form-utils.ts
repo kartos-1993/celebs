@@ -1,5 +1,5 @@
-import { getCategoryById } from '../../category/api';
-import type { CategoryAttribute } from '../../category/types';
+import { axiosClient } from '@/lib/axios/axios-client';
+import type { CategoryAttributeType } from '@celebs/shared-types';
 import type { FieldSpec } from '../types';
 import { extractVariantsMeta } from '../fields/variant-utils';
 
@@ -7,9 +7,10 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   const merged = Array.isArray(next) ? [...next] : [];
 
   try {
-    const cat = await getCategoryById(catId);
-    const attrs: CategoryAttribute[] = Array.isArray(cat?.data?.attributes)
-      ? cat.data.attributes
+    const response = await axiosClient.get(`/categories/${catId}`);
+    const cat = response.data?.data ?? response.data;
+    const attrs: CategoryAttributeType[] = Array.isArray(cat?.attributes)
+      ? cat.attributes
       : [];
 
     const existingNames = new Set(merged.map((f) => f.name.toLowerCase()));
@@ -22,7 +23,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
       ),
     )?.name;
 
-    const toField = (attribute: CategoryAttribute): FieldSpec | null => {
+    const toField = (attribute: CategoryAttributeType): FieldSpec | null => {
       const attrRec = attribute as unknown as Record<string, unknown>;
       const attrName = (attrRec.code as string | undefined) || attribute.name;
       if (!attrName) return null;
