@@ -12,6 +12,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, generateSheinStyleSku } from '@celebs/shared-utils';
 
+import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
 import { calculateProductQCScore } from './utils/product-qc';
 
 import prisma from '@/config/db.prisma';
@@ -29,7 +30,31 @@ const toJsonInput = (value: unknown): Prisma.InputJsonValue | undefined => {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 };
 
+export const PRODUCT_LIST_SELECT: Prisma.ProductSelect = {
+  id: true,
+  name: true,
+  brand: true,
+  slug: true,
+  description: true,
+  price: true,
+  discountedPrice: true,
+  categoryId: true,
+  subcategoryId: true,
+  mainImages: true,
+  status: true,
+  featured: true,
+  tags: true,
+  vendorId: true,
+  vendorName: true,
+  createdAt: true,
+  updatedAt: true,
+  category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+  subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+};
+
 export class ProductService {
+  private readonly inventoryRepository = new PostgresInventoryRepository();
+
   async getProducts(filters: ProductFilterType) {
     return this.getAllProducts(filters);
   }
@@ -115,25 +140,16 @@ export class ProductService {
           });
         }
 
-        await tx.productInventory.upsert({
-          where: {
-            productId_colorVariantName_size: {
-              productId,
-              colorVariantName,
-              size,
-            },
-          },
-          update: {
-            quantity,
-          },
-          create: {
+        await this.inventoryRepository.upsertInventoryRecord(
+          {
             productId,
             colorVariantName,
             size,
             sku,
             quantity,
           },
-        });
+          tx,
+        );
       }
     }
 
@@ -186,49 +202,73 @@ export class ProductService {
       input.subcategoryId,
     );
 
-    const slug = await this.generateUniqueSlug(input.name);
+    const maxAttempts = 3;
+    let createdProduct = null;
+    let lastError: unknown = null;
 
-    // Atomic Prisma Transaction: Create Product & Inventory in PostgreSQL together
-    const createdProduct = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.create({
-        data: {
-          name: input.name.trim(),
-          brand: input.brand?.trim() || undefined,
-          slug,
-          description: input.description?.trim() || '',
-          price: input.price,
-          discountedPrice: input.discountedPrice,
-          categoryId,
-          subcategoryId,
-          sizes: toJsonInput(input.sizes) ?? [],
-          colorVariants: toJsonInput(input.colorVariants) ?? [],
-          skus: toJsonInput(input.skus) ?? [],
-          variantOptions: toJsonInput(input.variantOptions) ?? [],
-          mainImages: input.mainImages ?? [],
-          dynamicData: toJsonInput(input.dynamicData) ?? {},
-          tags: input.tags ?? [],
-          featured: input.featured ?? false,
-          status: input.status ?? 'draft',
-          vendorId: vendorId || undefined,
-          vendorName: vendorName || undefined,
-          createdBy: userId,
-          updatedBy: userId,
-        },
-        include: {
-          category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-          subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        },
-      });
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const slug = await this.generateUniqueSlug(input.name);
 
-      await this.syncProductInventory(
-        tx,
-        product.id,
-        input.colorVariants,
-        input.skus,
-        departmentHint,
-      );
-      return product;
-    });
+        // Atomic Prisma Transaction: Create Product & Inventory in PostgreSQL together
+        createdProduct = await prisma.$transaction(async (tx) => {
+          const product = await tx.product.create({
+            data: {
+              name: input.name.trim(),
+              brand: input.brand?.trim() || undefined,
+              slug,
+              description: input.description?.trim() || '',
+              price: input.price,
+              discountedPrice: input.discountedPrice,
+              categoryId,
+              subcategoryId,
+              sizes: toJsonInput(input.sizes) ?? [],
+              colorVariants: toJsonInput(input.colorVariants) ?? [],
+              skus: toJsonInput(input.skus) ?? [],
+              variantOptions: toJsonInput(input.variantOptions) ?? [],
+              mainImages: input.mainImages ?? [],
+              dynamicData: toJsonInput(input.dynamicData) ?? {},
+              tags: input.tags ?? [],
+              featured: input.featured ?? false,
+              status: input.status ?? 'draft',
+              vendorId: vendorId || undefined,
+              vendorName: vendorName || undefined,
+              createdBy: userId,
+              updatedBy: userId,
+            },
+            include: {
+              category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+              subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+            },
+          });
+
+          await this.syncProductInventory(
+            tx,
+            product.id,
+            input.colorVariants,
+            input.skus,
+            departmentHint,
+          );
+          return product;
+        });
+
+        break;
+      } catch (err: unknown) {
+        lastError = err;
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2002' &&
+          attempt < maxAttempts
+        ) {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!createdProduct) {
+      throw lastError || new AppError('Failed to create product', HTTPSTATUS.INTERNAL_SERVER_ERROR);
+    }
 
     return this.formatProductResponse(createdProduct);
   }
@@ -291,16 +331,13 @@ export class ProductService {
         orderBy: { [sortField]: sortOrder },
         skip,
         take: limit,
-        include: {
-          category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-          subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        },
+        select: PRODUCT_LIST_SELECT,
       }),
       prisma.product.count({ where }),
     ]);
 
     return {
-      products: products.map((p) => this.formatProductResponse(p)),
+      products: products.map((p) => this.formatProductResponse(p as unknown as Record<string, unknown>)),
       total,
     };
   }
@@ -420,10 +457,7 @@ export class ProductService {
       where,
       orderBy: { [sortField]: sortOrder },
       take: fetchLimit,
-      include: {
-        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-      },
+      select: PRODUCT_LIST_SELECT,
     };
 
     if (filters.cursor) {
