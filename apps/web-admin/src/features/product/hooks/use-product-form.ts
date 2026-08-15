@@ -13,9 +13,7 @@ const productFormBasicSchema = baseProductSchema.partial();
 
 export const useProductForm = (productId?: string) => {
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productFormBasicSchema) as unknown as ReturnType<
-      typeof zodResolver<ProductFormValues>
-    >,
+    resolver: zodResolver(productFormBasicSchema),
     defaultValues: {
       name: '',
       brand: '',

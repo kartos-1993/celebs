@@ -1,20 +1,20 @@
-import type { UseFormReturn } from 'react-hook-form';
+import type { Path, UseFormReturn } from 'react-hook-form';
 import type { FieldSpec } from '../../types';
 import type { ProductFormValues } from '../../hooks/use-product-form';
-
-type LooseSetValue = (
-  name: string,
-  value: unknown,
-  options?: { shouldDirty?: boolean; shouldValidate?: boolean },
-) => void;
 
 /** Development-only: fills the form with mock data (skips Cloudinary uploads). */
 export function autofillProductForm(
   form: UseFormReturn<ProductFormValues>,
   schemaFields: FieldSpec[],
 ): void {
-  const setValueLoose = form.setValue as unknown as LooseSetValue;
-  const getValueLoose = form.getValues as unknown as (name: string) => unknown;
+  const setFieldValue = (
+    name: string,
+    value: unknown,
+    options?: { shouldValidate?: boolean },
+  ) => {
+    form.setValue(name as Path<ProductFormValues>, value as never, options);
+  };
+  const getFieldValue = (name: string) => form.getValues(name as Path<ProductFormValues>);
 
   form.setValue(
     'name',
@@ -46,17 +46,17 @@ export function autofillProductForm(
     }
     const ui = field.uiType.toLowerCase();
     if (ui === 'input' || ui === 'text') {
-      setValueLoose(field.name, 'Premium Cotton Blend', { shouldValidate: true });
+      setFieldValue(field.name, 'Premium Cotton Blend', { shouldValidate: true });
     } else if (ui === 'number') {
-      setValueLoose(field.name, 12, { shouldValidate: true });
+      setFieldValue(field.name, 12, { shouldValidate: true });
     } else if (ui === 'switch') {
-      setValueLoose(field.name, true, { shouldValidate: true });
+      setFieldValue(field.name, true, { shouldValidate: true });
     } else if (ui === 'select') {
       const items = (field.dataSource?.items ?? field.dataSource) as
         | Array<{ value?: string }>
         | undefined;
       const firstOpt = Array.isArray(items) ? items[0]?.value : undefined;
-      if (firstOpt) setValueLoose(field.name, firstOpt, { shouldValidate: true });
+      if (firstOpt) setFieldValue(field.name, firstOpt, { shouldValidate: true });
     } else if (ui === 'multiselect' || ui === 'variantlist') {
       const items = (field.dataSource?.items ?? field.dataSource) as
         | Array<{ value?: string }>
@@ -67,31 +67,31 @@ export function autofillProductForm(
             .map((option) => option.value)
             .filter(Boolean)
         : ['Blue', 'White'];
-      setValueLoose(field.name, opts, { shouldValidate: true });
+      setFieldValue(field.name, opts, { shouldValidate: true });
     }
   });
 
-  setValueLoose('sku.default.price', '1200', { shouldValidate: true });
-  setValueLoose('sku.default.stock', '15', { shouldValidate: true });
-  setValueLoose('sku.default.sellerSku', 'POLO-SHIRT-MOCK', { shouldValidate: true });
-  setValueLoose('sku.default.available', true, { shouldValidate: true });
+  setFieldValue('sku.default.price', '1200', { shouldValidate: true });
+  setFieldValue('sku.default.stock', '15', { shouldValidate: true });
+  setFieldValue('sku.default.sellerSku', 'POLO-SHIRT-MOCK', { shouldValidate: true });
+  setFieldValue('sku.default.available', true, { shouldValidate: true });
 
-  const colors = (getValueLoose('Color') as string[] | undefined) || ['Blue', 'White'];
+  const colors = (getFieldValue('Color') as string[] | undefined) || ['Blue', 'White'];
   colors.forEach((color) => {
     const prefix = `variants.colorMeta.${color}`;
-    setValueLoose(`${prefix}.hot`, false);
-    setValueLoose(
+    setFieldValue(`${prefix}.hot`, false);
+    setFieldValue(
       `${prefix}.swatch`,
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941189/celebs/products/qrxlasu3b8wercsjciod.png',
     );
-    setValueLoose(`${prefix}.images`, [
+    setFieldValue(`${prefix}.images`, [
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941201/celebs/products/okt4fj4pzwhwqgidijnf.png',
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941232/celebs/products/t4qusgbfbeg2klkkckaf.png',
     ]);
   });
 
   const currentSizes =
-    (getValueLoose('sizes') as
+    (getFieldValue('sizes') as
       | Array<{
           name?: string;
           productMeasurements?: Array<{ name?: string; value?: string }>;
@@ -107,5 +107,5 @@ export function autofillProductForm(
       bodyMeasurements: populate(sizeObj.bodyMeasurements),
     };
   });
-  setValueLoose('sizes', updatedSizes, { shouldValidate: true });
+  setFieldValue('sizes', updatedSizes, { shouldValidate: true });
 }

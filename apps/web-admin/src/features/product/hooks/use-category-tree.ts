@@ -11,9 +11,9 @@ import { CATEGORY_QUERY_KEYS, SharedCategoryApi } from '@/api/category';
 function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
   const out: DropdownCategory[] = [];
   const walk = (node: CategoryTreeNode, explicitParentId: string | null = null): void => {
-    const record = node as unknown as Record<string, unknown>;
+    const record = node as CategoryTreeNode & { parentCategory?: string | null };
     const parentId =
-      (record.parentCategory as string | null | undefined) ??
+      record.parentCategory ??
       node.parent ??
       explicitParentId ??
       null;

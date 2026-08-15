@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { FieldErrors } from 'react-hook-form';
+import type { FieldErrors, Path, UseFormReturn } from 'react-hook-form';
 import { can, Permission } from '@celebs/rbac';
 import { logger } from '@celebs/shared-utils';
 import { Form } from '@celebs/shared-ui/components/form';
@@ -241,7 +241,7 @@ const AddProductFormBody = ({
         const message = normalizeText(item?.message);
         if (!message) return;
         if (path) {
-          form.setError(path as unknown as keyof typeof form.getValues, {
+          form.setError(path as Path<ProductFormValues>, {
             type: 'server',
             message,
           });
@@ -278,7 +278,7 @@ const AddProductFormBody = ({
         );
 
         if (missingField) {
-          form.setError(missingField.name as unknown as `root.${string}`, {
+          form.setError(missingField.name as Path<ProductFormValues>, {
             type: 'manual',
             message: `${missingField.label} is required`,
           });

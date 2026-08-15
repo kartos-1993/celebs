@@ -104,7 +104,7 @@ const ManageProduct = () => {
   );
 
   const { data, isLoading, isFetching } = useProductsQuery(filters);
-  const products = (data?.data?.products ?? []) as unknown as ProductListItem[];
+  const products = (data?.data?.products ?? []) as ProductListItem[];
   const total = data?.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 

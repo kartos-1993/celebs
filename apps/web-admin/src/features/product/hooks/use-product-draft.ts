@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
+import type { Path, UseFormReturn } from 'react-hook-form';
 import { logger } from '@celebs/shared-utils';
 import type { ProductDraft } from '../types';
 import {
@@ -8,13 +8,6 @@ import {
   serializeDraftValue,
 } from '../utils/add-product-helpers';
 import type { ProductFormValues } from './use-product-form';
-
-/** form.setValue widened for dynamic dot-path keys coming from saved drafts. */
-type LooseSetValue = (
-  name: string,
-  value: unknown,
-  options?: { shouldDirty?: boolean; shouldValidate?: boolean },
-) => void;
 
 interface UseProductDraftOptions {
   form: UseFormReturn<ProductFormValues>;
@@ -40,8 +33,18 @@ export function useProductDraft({
     }
   }, [initialCategoryPath]);
 
-  const setValueLoose = form.setValue as unknown as LooseSetValue;
   const draftKey = getDraftStorageKey(userId);
+
+  const setFormField = useCallback(
+    (
+      key: string,
+      value: unknown,
+      options?: { shouldDirty?: boolean; shouldValidate?: boolean },
+    ) => {
+      form.setValue(key as Path<ProductFormValues>, value as never, options);
+    },
+    [form],
+  );
 
   // Restore once on mount. Guarded by ref so later schema/query updates can
   // never re-apply stale draft values over the user's live edits.
@@ -70,10 +73,10 @@ export function useProductDraft({
 
         // Category ids first so schema effects key off correct values
         if (valObj.categoryId && !form.getValues('categoryId')) {
-          setValueLoose('categoryId', String(valObj.categoryId), { shouldValidate: true });
+          setFormField('categoryId', String(valObj.categoryId), { shouldValidate: true });
         }
         if (valObj.subcategoryId && !form.getValues('subcategoryId')) {
-          setValueLoose('subcategoryId', String(valObj.subcategoryId), { shouldValidate: true });
+          setFormField('subcategoryId', String(valObj.subcategoryId), { shouldValidate: true });
         }
 
         form.reset({
@@ -85,7 +88,7 @@ export function useProductDraft({
 
         Object.entries({ ...valObj, ...flatVals }).forEach(([key, val]) => {
           if (val !== undefined && val !== null) {
-            setValueLoose(key, val, { shouldDirty: true, shouldValidate: false });
+            setFormField(key, val, { shouldDirty: true, shouldValidate: false });
           }
         });
       }
@@ -95,7 +98,7 @@ export function useProductDraft({
     } finally {
       setDraftRestored(true);
     }
-  }, [draftKey, form, isEditMode, setValueLoose]);
+  }, [draftKey, form, isEditMode, setFormField]);
 
   /** Manual "Save Draft" action. Returns false if the form has no category yet. */
   const saveDraftNow = useCallback((): boolean => {

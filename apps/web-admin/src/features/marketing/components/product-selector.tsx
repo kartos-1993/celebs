@@ -37,7 +37,7 @@ export function ProductSelector({
 
   const rawProducts = data?.data?.products;
   const productsList = useMemo(
-    () => (rawProducts as unknown as CatalogProductType[]) ?? [],
+    () => (rawProducts as CatalogProductType[]) ?? [],
     [rawProducts],
   );
 
