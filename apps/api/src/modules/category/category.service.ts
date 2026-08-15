@@ -1,8 +1,10 @@
+import { Prisma } from '@prisma/client';
 import slugify from 'slugify';
 
 import type {
   CategoryAttributeType,
   CreateCategoryType,
+  RecentCategory,
   UpdateCategoryType,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
@@ -11,6 +13,8 @@ import {
   CategoryRepository,
   categoryRepository as defaultCategoryRepo,
 } from './category.repository';
+
+import prisma from '@/config/db.prisma';
 
 export type CategoryAttribute = CategoryAttributeType & {
   id?: string;
@@ -397,5 +401,91 @@ export class CategoryService {
 
       await this.updateCategoryPathsRecursively(child.id, oldSlug, newSlug);
     }
+  }
+
+  async getRecentCategories(userId?: string, vendorId?: string): Promise<RecentCategory[]> {
+    if (!userId && !vendorId) return [];
+
+    let rawList: unknown = null;
+
+    // 1. If vendor or staff, retrieve from shared VendorProfile
+    if (vendorId) {
+      const vendorProf = await prisma.vendorProfile.findUnique({
+        where: { id: vendorId },
+        select: { recentCategories: true },
+      });
+      rawList = vendorProf?.recentCategories;
+    }
+
+    // 2. Fallback to UserPreference (e.g. for Admin/Superadmin or personal user preferences)
+    if ((!rawList || !Array.isArray(rawList) || rawList.length === 0) && userId) {
+      const userPref = await prisma.userPreference.findUnique({
+        where: { userId },
+        select: { recentCategories: true },
+      });
+      rawList = userPref?.recentCategories;
+    }
+
+    if (!Array.isArray(rawList)) return [];
+    return rawList as unknown as RecentCategory[];
+  }
+
+  async recordRecentCategory(
+    userId?: string,
+    categoryId?: string,
+    vendorId?: string,
+  ): Promise<RecentCategory[]> {
+    if (!categoryId) return [];
+    if (!userId && !vendorId) return [];
+
+    const category = await this.categoryRepository.findById(categoryId);
+    if (!category) return [];
+
+    const pathArr = Array.isArray(category.path)
+      ? category.path
+      : typeof category.path === 'string'
+        ? [category.path]
+        : [category.name];
+
+    const newEntry: RecentCategory = {
+      id: category.id,
+      name: category.name,
+      path: pathArr,
+      usedAt: new Date().toISOString(),
+    };
+
+    const existingRecent = await this.getRecentCategories(userId, vendorId);
+    const updated = [
+      newEntry,
+      ...existingRecent.filter((item) => String(item.id) !== String(category.id)),
+    ].slice(0, 10);
+
+    // Save to VendorProfile so all vendor staff share recent categories
+    if (vendorId) {
+      await prisma.vendorProfile
+        .update({
+          where: { id: vendorId },
+          data: {
+            recentCategories: updated as unknown as Prisma.InputJsonValue,
+          },
+        })
+        .catch(() => null);
+    }
+
+    // Also persist to UserPreference
+    if (userId) {
+      await prisma.userPreference.upsert({
+        where: { userId },
+        create: {
+          userId,
+          recentCategories: updated as unknown as Prisma.InputJsonValue,
+        },
+        update: {
+          recentCategories: updated as unknown as Prisma.InputJsonValue,
+        },
+      });
+    }
+
+    return updated;
   }
 }

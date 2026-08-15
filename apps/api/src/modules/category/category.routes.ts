@@ -45,8 +45,11 @@ categoryRoute.get('/:slug/storefront', asyncHandler(quickFilterController.getSto
 categoryRoute.get('/:id/filters', asyncHandler(categoryController.getCategoryFilters));
 categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
 
-// Apply authentication middleware to admin category routes
+// Apply authentication middleware to admin / vendor category routes
 categoryRoute.use(authenticateJWT);
+
+categoryRoute.get('/recent', asyncHandler(categoryController.getRecentCategories));
+categoryRoute.post('/recent', asyncHandler(categoryController.recordRecentCategory));
 
 categoryRoute.post(
   '/',

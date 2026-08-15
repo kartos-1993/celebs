@@ -132,6 +132,31 @@ function attributeToField(attr: IAttribute, optionSetsMap: Map<string, string[]>
   }
 }
 
+let cachedOptionSetsMap: Map<string, string[]> | null = null;
+let cachedOptionSetsAt = 0;
+const OPTION_SETS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function getCachedOptionSetsMap(): Promise<Map<string, string[]>> {
+  const now = Date.now();
+  if (cachedOptionSetsMap && now - cachedOptionSetsAt < OPTION_SETS_CACHE_TTL_MS) {
+    return cachedOptionSetsMap;
+  }
+
+  const optionSets = await prisma.optionSet.findMany();
+  const map = new Map<string, string[]>();
+  for (const s of optionSets) {
+    if (Array.isArray(s.options)) {
+      map.set(s.name.toLowerCase(), s.options as string[]);
+      if (s.displayName) {
+        map.set(s.displayName.toLowerCase(), s.options as string[]);
+      }
+    }
+  }
+  cachedOptionSetsMap = map;
+  cachedOptionSetsAt = now;
+  return map;
+}
+
 export async function composeSchema(params: {
   category: CategoryDocLike;
   locale: string;
@@ -149,16 +174,7 @@ export async function composeSchema(params: {
     };
   };
 }) {
-  const optionSets = await prisma.optionSet.findMany();
-  const optionSetsMap = new Map<string, string[]>();
-  for (const s of optionSets) {
-    if (Array.isArray(s.options)) {
-      optionSetsMap.set(s.name.toLowerCase(), s.options as string[]);
-      if (s.displayName) {
-        optionSetsMap.set(s.displayName.toLowerCase(), s.options as string[]);
-      }
-    }
-  }
+  const optionSetsMap = await getCachedOptionSetsMap();
 
   const fields: FieldSpec[] = [];
 

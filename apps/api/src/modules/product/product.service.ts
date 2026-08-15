@@ -68,6 +68,7 @@ export class ProductService {
     if (!colorVariants || !Array.isArray(colorVariants)) return;
 
     const seenVariantNames = new Map<string, number>();
+    const activeComboKeys: Array<{ colorVariantName: string; size: string }> = [];
 
     // Index explicit SKUs by variant option values if provided
     const skuMap = new Map<string, string>();
@@ -100,6 +101,7 @@ export class ProductService {
         seenSizes.add(sizeKey);
 
         const quantity = stockItem.quantity ?? 0;
+        activeComboKeys.push({ colorVariantName, size });
 
         // Try matching explicit SKU from SKU matrix
         const matchKey1 = `color:${colorVariantName.toLowerCase()}|size:${sizeKey}`;
@@ -131,6 +133,43 @@ export class ProductService {
             sku,
             quantity,
           },
+        });
+      }
+    }
+
+    // Prune orphaned inventory rows if variants/sizes were removed from the product
+    if (activeComboKeys.length > 0) {
+      const existingInventories = await tx.productInventory.findMany({
+        where: { productId },
+        select: { id: true, colorVariantName: true, size: true },
+      });
+
+      const activeSet = new Set(
+        activeComboKeys.map((k) => `${k.colorVariantName.toLowerCase()}:::${k.size.toLowerCase()}`),
+      );
+      const toDeleteIds: string[] = [];
+
+      for (const inv of existingInventories) {
+        const key = `${inv.colorVariantName.toLowerCase()}:::${inv.size.toLowerCase()}`;
+        if (!activeSet.has(key)) {
+          toDeleteIds.push(inv.id);
+        }
+      }
+
+      if (toDeleteIds.length > 0) {
+        await tx.productInventory
+          .deleteMany({
+            where: {
+              id: { in: toDeleteIds },
+              orderItems: { none: {} },
+            },
+          })
+          .catch(() => null);
+
+        // For any records that could not be deleted (e.g. historical order items), zero out quantity
+        await tx.productInventory.updateMany({
+          where: { id: { in: toDeleteIds } },
+          data: { quantity: 0 },
         });
       }
     }
@@ -328,13 +367,17 @@ export class ProductService {
             { name: { equals: categoryParam.replace(/-/g, ' '), mode: 'insensitive' } },
           ],
         },
-        select: { id: true, slug: true, name: true, level: true, parentCategory: true },
+        select: { id: true, slug: true, name: true, path: true, level: true, parentCategory: true },
       });
 
       if (categoryDoc) {
         const descendantCategories = await prisma.category.findMany({
           where: {
-            OR: [{ parentCategory: categoryDoc.id }, { path: categoryDoc.slug }],
+            OR: [
+              { parentCategory: categoryDoc.id },
+              { path: { equals: categoryDoc.slug } },
+              { path: { startsWith: `${categoryDoc.slug}/` } },
+            ],
           },
           select: { id: true },
         });
@@ -347,12 +390,26 @@ export class ProductService {
         ];
       }
     } else if (filters.categoryId) {
-      const childCategories = await prisma.category.findMany({
-        where: { parentCategory: filters.categoryId },
-        select: { id: true },
+      const targetCat = await prisma.category.findUnique({
+        where: { id: filters.categoryId },
+        select: { id: true, slug: true },
       });
-      const catIds = [filters.categoryId, ...childCategories.map((c) => c.id)];
-      where.OR = [{ categoryId: { in: catIds } }, { subcategoryId: { in: catIds } }];
+      if (targetCat) {
+        const descendantCategories = await prisma.category.findMany({
+          where: {
+            OR: [
+              { parentCategory: targetCat.id },
+              { path: { equals: targetCat.slug } },
+              { path: { startsWith: `${targetCat.slug}/` } },
+            ],
+          },
+          select: { id: true },
+        });
+        const catIds = [targetCat.id, ...descendantCategories.map((c) => c.id)];
+        where.OR = [{ categoryId: { in: catIds } }, { subcategoryId: { in: catIds } }];
+      } else {
+        where.OR = [{ categoryId: filters.categoryId }, { subcategoryId: filters.categoryId }];
+      }
     }
 
     const sortField = filters.sortBy || 'createdAt';
@@ -826,12 +883,14 @@ export class ProductService {
 
   private async generateUniqueSlug(name: string): Promise<string> {
     const base = slugify(name, { lower: true, strict: true }) || 'product';
-    let slug = `${base}-${Date.now().toString().slice(-6)}`;
+    const randomSuffix = Math.random().toString(36).substring(2, 6);
+    let slug = `${base}-${Date.now().toString().slice(-6)}-${randomSuffix}`;
     let attempt = 0;
 
     while (await prisma.product.findUnique({ where: { slug } })) {
       attempt += 1;
-      slug = `${base}-${Date.now()}-${attempt}`;
+      const extraRandom = Math.random().toString(36).substring(2, 7);
+      slug = `${base}-${Date.now()}-${attempt}-${extraRandom}`;
     }
 
     return slug;
