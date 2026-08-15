@@ -1,6 +1,6 @@
 import { ErrorCode } from '../enums/error-code.enum';
 import { HTTPSTATUS, HttpStatusCode } from '../config/http.config';
-import { AppError } from './AppError';
+import { AppError } from './app-error';
 
 export class NotFoundException extends AppError {
   constructor(message = 'Resource not found', errorCode?: ErrorCode) {
@@ -39,20 +39,24 @@ export class TooManyRequestsException extends AppError {
 }
 
 export class HttpException extends AppError {
-  constructor(arg1: any, arg2?: any, arg3?: any) {
+  constructor(
+    arg1: string | number,
+    arg2?: string | HttpStatusCode,
+    arg3?: ErrorCode,
+  ) {
     let statusCode: HttpStatusCode;
     let message: string;
     let errorCode: ErrorCode | undefined;
 
     if (typeof arg1 === 'number') {
       // (statusCode, message, errorCode) signature
-      statusCode = arg1;
-      message = arg2 || 'Http Exception Error';
+      statusCode = arg1 as HttpStatusCode;
+      message = typeof arg2 === 'string' ? arg2 : 'Http Exception Error';
       errorCode = arg3;
     } else {
       // (message, statusCode, errorCode) signature
       message = arg1 || 'Http Exception Error';
-      statusCode = arg2 || HTTPSTATUS.INTERNAL_SERVER_ERROR;
+      statusCode = typeof arg2 === 'number' ? arg2 : HTTPSTATUS.INTERNAL_SERVER_ERROR;
       errorCode = arg3;
     }
 

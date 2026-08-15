@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { BadRequestException, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
-import { errorHandler } from '../errorHandler';
+import { errorHandler } from '../error-handler';
 
 describe('errorHandler Middleware Unit Tests', () => {
   const mockRequest = (path = '/test') =>
