@@ -6,8 +6,8 @@ import { AlertTriangle, ShoppingBag } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { CartItemList } from '@/features/cart/components/CartItemList';
-import { CartSummaryFooter } from '@/features/cart/components/CartSummaryFooter';
+import { CartItemList } from '@/features/cart/components/cart-item-list';
+import { CartSummaryFooter } from '@/features/cart/components/cart-summary-footer';
 import { useCart } from '@/features/cart/context/cart-context';
 
 export default function CartScreen() {

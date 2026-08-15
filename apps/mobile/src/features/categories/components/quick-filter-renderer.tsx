@@ -2,9 +2,9 @@ import React from 'react';
 
 import { QuickFilterConfig, QuickFilterItem } from '../types';
 
-import { AvatarScrollFilter } from './filters/AvatarScrollFilter';
-import { ChipListFilter } from './filters/ChipListFilter';
-import { ColorSwatchFilter } from './filters/ColorSwatchFilter';
+import { AvatarScrollFilter } from './filters/avatar-scroll-filter';
+import { ChipListFilter } from './filters/chip-list-filter';
+import { ColorSwatchFilter } from './filters/color-swatch-filter';
 
 interface QuickFilterRendererProps {
   config: QuickFilterConfig;

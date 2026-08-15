@@ -12,12 +12,12 @@ import { AppHeader } from '@/components/app-header';
 import { ThemedView } from '@/components/themed-view';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
-import { CampaignCountdownBanner } from '@/features/home/components/CampaignCountdownBanner';
-import { ComboBundleModal } from '@/features/home/components/ComboBundleModal';
+import { CampaignCountdownBanner } from '@/features/home/components/campaign-countdown-banner';
+import { ComboBundleModal } from '@/features/home/components/combo-bundle-modal';
 import {
   ComboBundleData,
   ComboBundleShowcase,
-} from '@/features/home/components/ComboBundleShowcase';
+} from '@/features/home/components/combo-bundle-showcase';
 import { styles } from '@/features/home/styles/home.styles';
 import { ProductGrid, ProductGridRef } from '@/features/products/components/product-grid';
 

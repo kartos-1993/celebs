@@ -31,8 +31,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
-import { ProductGallery } from '@/features/products/components/ProductGallery';
-import { ProductVariantSelector } from '@/features/products/components/ProductVariantSelector';
+import { ProductGallery } from '@/features/products/components/product-gallery';
+import { ProductVariantSelector } from '@/features/products/components/product-variant-selector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
 
