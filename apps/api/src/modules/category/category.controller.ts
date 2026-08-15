@@ -3,6 +3,7 @@ import slugify from 'slugify';
 
 import {
   createCategorySchema as categoryInputSchema,
+  recordRecentCategorySchema,
   updateCategorySchema,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
@@ -217,6 +218,36 @@ export class CategoryController {
       res.status(HTTPSTATUS.OK).json({
         success: true,
         data: filters,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getRecentCategories = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id || req.user?.userId || '';
+      const vendorId = req.user?.vendorProfile?.id || req.user?.vendorId;
+      const recent = await this.categoryService.getRecentCategories(userId, vendorId);
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        data: recent,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  recordRecentCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id || req.user?.userId || '';
+      const vendorId = req.user?.vendorProfile?.id || req.user?.vendorId;
+      const { categoryId } = recordRecentCategorySchema.parse(req.body);
+      const recent = await this.categoryService.recordRecentCategory(userId, categoryId, vendorId);
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Recent category updated',
+        data: recent,
       });
     } catch (error) {
       next(error);

@@ -82,6 +82,7 @@ model VendorProfile {
   holidayMode            Boolean  @default(false)
   onboardingStep         Int      @default(1)
   rejectionReason        String?
+  recentCategories       Json?    @default("[]")
 
   // Relations
   warehouses             Warehouse[]
@@ -107,6 +108,7 @@ model UserPreference {
   enable2FA       Boolean @default(false)
   emailNotification Boolean @default(true)
   twoFactorSecret String?
+  recentCategories Json?  @default("[]")
   userId          String  @unique
   user            User    @relation("UserToUserPreference", fields: [userId], references: [id], onDelete: Cascade)
 }
