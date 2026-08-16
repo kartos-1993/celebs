@@ -70,6 +70,49 @@ export const recordRecentCategorySchema = z.object({
   categoryId: z.string().min(1, 'Category ID is required'),
 });
 
+export const categoryIdParamSchema = z.object({
+  id: z.string().min(1, 'Category ID is required'),
+});
+
+export const categorySlugParamSchema = z.object({
+  slug: z.string().min(1, 'Category slug is required'),
+});
+
+export const categoryPaginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  search: z.string().trim().max(100).optional(),
+  activeOnly: z.coerce.boolean().optional().default(false),
+});
+
+export const updateCategoryAttributesSchema = z.object({
+  attributes: z.array(attributeSchema),
+});
+
+// Quick Filter Schemas
+export const quickFilterTypeSchema = z.enum(['subcategory', 'attribute', 'tag', 'collection']);
+export const quickFilterDisplayAsSchema = z.enum(['avatar_scroll', 'chip_list', 'color_swatch']);
+
+export const quickFilterItemSchema = z.object({
+  name: z.string().trim().min(1, 'Filter item name is required'),
+  image: z.string().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  filterValue: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional().default(0),
+});
+
+export const quickFilterSchema = z.object({
+  id: z.string().optional(),
+  categoryId: z.string().min(1, 'Category ID is required'),
+  type: quickFilterTypeSchema,
+  attributeId: z.string().nullable().optional(),
+  displayAs: quickFilterDisplayAsSchema,
+  items: z.array(quickFilterItemSchema).optional().default([]),
+  autoPopulate: z.boolean().optional().default(false),
+  displayOrder: z.number().int().optional().default(0),
+  isActive: z.boolean().optional().default(true),
+});
+
 export type AttributeType = z.infer<typeof attributeTypeSchema>;
 export type AttributeGroup = z.infer<typeof attributeGroupSchema>;
 export type CategoryAttributeType = z.infer<typeof attributeSchema>;
@@ -77,3 +120,11 @@ export type BaseCategoryType = z.infer<typeof baseCategorySchema>;
 export type CreateCategoryType = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryType = z.infer<typeof updateCategorySchema>;
 export type RecordRecentCategoryType = z.infer<typeof recordRecentCategorySchema>;
+export type CategoryIdParam = z.infer<typeof categoryIdParamSchema>;
+export type CategorySlugParam = z.infer<typeof categorySlugParamSchema>;
+export type CategoryPaginationQuery = z.infer<typeof categoryPaginationQuerySchema>;
+export type UpdateCategoryAttributesInput = z.infer<typeof updateCategoryAttributesSchema>;
+export type QuickFilterType = z.infer<typeof quickFilterTypeSchema>;
+export type QuickFilterDisplayAs = z.infer<typeof quickFilterDisplayAsSchema>;
+export type QuickFilterItem = z.infer<typeof quickFilterItemSchema>;
+export type QuickFilter = z.infer<typeof quickFilterSchema>;
