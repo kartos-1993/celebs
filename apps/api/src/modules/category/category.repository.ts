@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, type Category } from '@prisma/client';
 
 import prisma from '@/config/db.prisma';
 
@@ -27,7 +27,7 @@ const toJsonInput = (value: unknown): Prisma.InputJsonValue => {
 export class CategoryRepository {
   private formatCategory(
     category:
-      | Prisma.Category
+      | Category
       | (Prisma.CategoryGetPayload<object> & Record<string, unknown>)
       | Record<string, unknown>
       | null,

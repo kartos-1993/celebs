@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, type Product } from '@prisma/client';
 import slugify from 'slugify';
 
 import { can, Permission, Role } from '@celebs/rbac';
@@ -61,7 +61,7 @@ export class ProductService {
 
   private formatProductResponse(
     product:
-      | Prisma.Product
+      | Product
       | (Prisma.ProductGetPayload<object> & Record<string, unknown>)
       | Record<string, unknown>
       | null,
