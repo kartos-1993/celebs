@@ -35,7 +35,7 @@ export function getDevBaseUrl(): string {
   return STAGING_API_URL;
 }
 
-export const R2_PUBLIC_MEDIA_URL = 'https://pub-1b2c37e4039f4ce1982591fe7985a04c.r2.dev';
+export const R2_PUBLIC_MEDIA_URL = 'https://media.celebs.com.np';
 
 export function resolveImageUrl(url?: string | null): string {
   if (!url) return '';

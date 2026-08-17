@@ -18,7 +18,7 @@ async function main() {
   const { prisma } = await import('../apps/api/src/config/db.prisma');
   const bucket = process.env.S3_BUCKET_NAME || 'celebs-media-staging';
   const publicBase = (
-    process.env.MEDIA_PUBLIC_BASE_URL || 'https://pub-1b2c37e4039f4ce1982591fe7985a04c.r2.dev'
+    process.env.MEDIA_PUBLIC_BASE_URL || 'https://media.celebs.com.np'
   ).replace(/\/$/, '');
 
   console.log(`Fetching available image keys from R2 bucket: ${bucket}...`);
