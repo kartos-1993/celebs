@@ -35,13 +35,25 @@ export function getDevBaseUrl(): string {
   return STAGING_API_URL;
 }
 
+export const R2_PUBLIC_MEDIA_URL = 'https://pub-1b2c37e4039f4ce1982591fe7985a04c.r2.dev';
+
 export function resolveImageUrl(url?: string | null): string {
   if (!url) return '';
-  if (url.startsWith('/')) {
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/')) {
     const baseUrl = getDevBaseUrl().replace('/api/v1', '');
-    return `${baseUrl}${url}`;
+    return `${baseUrl}${trimmed}`;
   }
-  return url;
+  // Rewrite legacy local MinIO loopback URLs to Cloudflare R2 public base
+  if (trimmed.includes('127.0.0.1:9000') || trimmed.includes('localhost:9000')) {
+    const key = trimmed.replace(/^https?:\/\/[^/]+\/(celebs\/)?/, '');
+    return `${R2_PUBLIC_MEDIA_URL}/${key}`;
+  }
+  // Handle raw object keys stored in DB (e.g. celebs/products/... or products/...)
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return `${R2_PUBLIC_MEDIA_URL}/${trimmed.replace(/^\/+/, '')}`;
+  }
+  return trimmed;
 }
 
 export const GOOGLE_CLIENT_ID =
