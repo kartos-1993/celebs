@@ -16,6 +16,9 @@ export async function seedProductsMockCatalog(_isReset = false): Promise<void> {
       brand: 'Celebs',
       price: 3200,
       discountedPrice: 2890,
+      mainImages: [
+        'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop',
+      ],
       categoryId: category.id,
       status: 'published',
     },
@@ -25,6 +28,9 @@ export async function seedProductsMockCatalog(_isReset = false): Promise<void> {
       brand: 'Celebs',
       price: 1800,
       discountedPrice: 1550,
+      mainImages: [
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop',
+      ],
       categoryId: category.id,
       status: 'published',
     },
