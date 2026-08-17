@@ -1,4 +1,4 @@
-# Antigravity Dual-DB Engineering Mandate Profile Context File
+# Antigravity Engineering Mandate Profile Context File
 
 ## 1. Engine Execution Boundaries & Environment Realignment
 
@@ -14,13 +14,13 @@ Enforce all file creation logic to follow this structure precisely:
 - apps/api/src/config/ -> Initialization entrypoints for database pool wrappers and singletons.
 - apps/api/src/modules/ -> Domain-driven mini-apps split into controllers, services, repositories.
 
-## 3. Storage Separation & Component Architecture Controls
+## 3. Single Database Storage & Component Architecture Controls
 
-- Store all data models (users, transactions, catalog products, dynamic JSON attributes, option variants, ledgers, and sessions) 100% inside PostgreSQL managed via Prisma.
+- Store all data models (users, transactions, catalog products, dynamic JSON attributes, option variants, ledgers, and sessions) 100% inside a single PostgreSQL database managed via Prisma.
 - Component Layers must isolate logical boundaries cleanly:
   1. Routes: Maps structural URL endpoint properties and applies guards.
   2. Controllers: Captures request models, handles express headers. No inline DB execution blocks.
-  3. Services: Executes core business logic calculations and orchestrates cross-database data mappings.
+  3. Services: Executes core business logic calculations and orchestrates domain data flows.
   4. Repositories: Direct access to underlying data layers through ORM singletons.
 
 ## 4. Operational Protocols & Scale-Out Hardening Rules
