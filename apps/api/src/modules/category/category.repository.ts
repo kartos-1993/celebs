@@ -1,196 +1,217 @@
 import { Prisma, type Category } from '@prisma/client';
 
+import type {
+  CategoryAttributeType,
+  CategoryEntity,
+  RecentCategory,
+} from '@celebs/shared-types';
+
 import prisma from '@/config/db.prisma';
 
-export interface FormattedCategory {
-  id: string;
-  name: string;
-  slug: string;
-  path?: string | null;
-  level: number;
-  parentCategory?: string | null;
-  attributes: unknown[];
-  sizeChartColumns: string[];
-  bodyChartColumns: string[];
-  imageUrl?: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  [key: string]: unknown;
-}
-
-const toJsonInput = (value: unknown): Prisma.InputJsonValue => {
-  if (value === undefined || value === null) return [];
-  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
-};
-
 export class CategoryRepository {
-  private formatCategory(
-    category:
-      | Category
-      | (Prisma.CategoryGetPayload<object> & Record<string, unknown>)
-      | Record<string, unknown>
-      | null,
-  ): FormattedCategory | null {
-    if (!category) return null;
-    const cat = category as Record<string, unknown>;
+  private parseAttributes(raw: unknown): CategoryAttributeType[] {
+    if (!Array.isArray(raw)) return [];
+
+    return raw
+      .filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === 'object' && item !== null && !Array.isArray(item),
+      )
+      .map((item) => ({
+        id: item.id ? String(item.id) : undefined,
+        name: String(item.name || ''),
+        label: item.label ? String(item.label) : undefined,
+        type:
+          typeof item.type === 'string'
+            ? (item.type as CategoryAttributeType['type'])
+            : 'text',
+        values: Array.isArray(item.values) ? item.values.map(String) : [],
+        isRequired: Boolean(item.isRequired),
+        group:
+          typeof item.group === 'string'
+            ? (item.group as CategoryAttributeType['group'])
+            : 'basic',
+        placeholder: item.placeholder ? String(item.placeholder) : undefined,
+        info:
+          typeof item.info === 'object' && item.info !== null
+            ? (item.info as CategoryAttributeType['info'])
+            : undefined,
+        isVariant: Boolean(item.isVariant),
+        useStandardOptions: Boolean(item.useStandardOptions),
+        optionSetId: item.optionSetId ? String(item.optionSetId) : undefined,
+      }))
+      .filter((attr) => attr.name.length > 0);
+  }
+
+  private toEntity(row: Category | null): CategoryEntity | null {
+    if (!row) return null;
     return {
-      ...cat,
-      id: String(cat.id),
-      name: String(cat.name || ''),
-      slug: String(cat.slug || ''),
-      path: cat.path ? String(cat.path) : null,
-      level: Number(cat.level || 0),
-      parentCategory: cat.parentCategory ? String(cat.parentCategory) : null,
-      parent: cat.parentCategory ? String(cat.parentCategory) : null,
-      attributes: Array.isArray(cat.attributes) ? (cat.attributes as unknown[]) : [],
-      sizeChartColumns: Array.isArray(cat.sizeChartColumns)
-        ? (cat.sizeChartColumns as string[])
-        : [],
-      bodyChartColumns: Array.isArray(cat.bodyChartColumns)
-        ? (cat.bodyChartColumns as string[])
-        : [],
-      imageUrl: cat.imageUrl ? String(cat.imageUrl) : null,
-      isActive: cat.isActive !== false,
-      createdAt: cat.createdAt instanceof Date ? cat.createdAt : new Date(),
-      updatedAt: cat.updatedAt instanceof Date ? cat.updatedAt : new Date(),
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      level: row.level,
+      parentCategory: row.parentCategory,
+      path: row.path ?? '',
+      attributes: this.parseAttributes(row.attributes),
+      sizeChartColumns: row.sizeChartColumns,
+      bodyChartColumns: row.bodyChartColumns,
+      imageUrl: row.imageUrl,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
     };
   }
 
-  async countDocuments(query: Record<string, unknown> = {}): Promise<number> {
-    const where: Prisma.CategoryWhereInput = {};
-    if (query.parentCategory !== undefined) {
-      where.parentCategory = query.parentCategory as string | null;
-    }
-    if (query.isActive !== undefined) {
-      where.isActive = Boolean(query.isActive);
-    }
+  async count(where: Prisma.CategoryWhereInput = {}): Promise<number> {
     return prisma.category.count({ where });
   }
 
-  async findById(id: string): Promise<FormattedCategory | null> {
+  async countDocuments(where: Prisma.CategoryWhereInput = {}): Promise<number> {
+    return this.count(where);
+  }
+
+  async findById(id: string): Promise<CategoryEntity | null> {
     if (!id || typeof id !== 'string') return null;
-    const category = await prisma.category.findUnique({
-      where: { id },
-    });
-    return this.formatCategory(category);
+    const category = await prisma.category.findUnique({ where: { id } });
+    return this.toEntity(category);
   }
 
-  async findOne(query: Record<string, unknown>): Promise<FormattedCategory | null> {
-    const where: Prisma.CategoryWhereInput = {};
-    if (query.slug) where.slug = String(query.slug);
-    if (query.name) where.name = { equals: String(query.name), mode: 'insensitive' };
-    if (query.id) where.id = String(query.id);
-
+  async findFirst(where: Prisma.CategoryWhereInput): Promise<CategoryEntity | null> {
     const category = await prisma.category.findFirst({ where });
-    return this.formatCategory(category);
+    return this.toEntity(category);
   }
 
-  async find(query: Record<string, unknown> = {}, limit?: number): Promise<FormattedCategory[]> {
-    const where: Prisma.CategoryWhereInput = {};
-    if (query.parentCategory !== undefined)
-      where.parentCategory = query.parentCategory as string | null;
-    if (query.isActive !== undefined) where.isActive = Boolean(query.isActive);
-    if (query.name && typeof query.name === 'string') {
-      where.name = { contains: query.name, mode: 'insensitive' };
-    }
+  async findOne(where: Prisma.CategoryWhereInput): Promise<CategoryEntity | null> {
+    return this.findFirst(where);
+  }
 
+  async findMany(
+    where: Prisma.CategoryWhereInput = {},
+    limit?: number,
+  ): Promise<CategoryEntity[]> {
     const categories = await prisma.category.findMany({
       where,
       orderBy: [{ level: 'asc' }, { name: 'asc' }],
       take: limit,
     });
-
     return categories
-      .map((c) => this.formatCategory(c))
-      .filter((c): c is FormattedCategory => c !== null);
+      .map((c) => this.toEntity(c))
+      .filter((c): c is CategoryEntity => c !== null);
   }
 
-  async create(data: Record<string, unknown>): Promise<FormattedCategory | null> {
-    const category = await prisma.category.create({
-      data: {
-        name: String(data.name || ''),
-        slug: String(data.slug || ''),
-        path: Array.isArray(data.path) ? data.path.join('/') : String(data.path || ''),
-        level: Number(data.level || 0),
-        parentCategory: data.parent
-          ? String(data.parent)
-          : data.parentCategory
-            ? String(data.parentCategory)
-            : null,
-        attributes: toJsonInput(data.attributes),
-        sizeChartColumns: Array.isArray(data.sizeChartColumns)
-          ? (data.sizeChartColumns as string[])
-          : [],
-        bodyChartColumns: Array.isArray(data.bodyChartColumns)
-          ? (data.bodyChartColumns as string[])
-          : [],
-        imageUrl: data.imageUrl ? String(data.imageUrl) : null,
-        isActive: data.isActive !== false,
-      },
-    });
+  async find(
+    where: Prisma.CategoryWhereInput = {},
+    limit?: number,
+  ): Promise<CategoryEntity[]> {
+    return this.findMany(where, limit);
+  }
 
-    return this.formatCategory(category);
+  async create(data: Prisma.CategoryUncheckedCreateInput): Promise<CategoryEntity | null> {
+    const category = await prisma.category.create({ data });
+    return this.toEntity(category);
   }
 
   async updateById(
     id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<FormattedCategory | null> {
-    const data: Prisma.CategoryUncheckedUpdateInput = {};
-    if (updateData.name !== undefined) data.name = String(updateData.name);
-    if (updateData.slug !== undefined) data.slug = String(updateData.slug);
-    if (updateData.path !== undefined) {
-      data.path = Array.isArray(updateData.path)
-        ? updateData.path.join('/')
-        : String(updateData.path);
-    }
-    if (updateData.level !== undefined) data.level = Number(updateData.level);
-    if (updateData.parent !== undefined || updateData.parentCategory !== undefined) {
-      data.parentCategory = updateData.parent
-        ? String(updateData.parent)
-        : updateData.parentCategory
-          ? String(updateData.parentCategory)
-          : null;
-    }
-    if (updateData.attributes !== undefined) {
-      data.attributes = toJsonInput(updateData.attributes);
-    }
-    if (updateData.sizeChartColumns !== undefined) {
-      data.sizeChartColumns = Array.isArray(updateData.sizeChartColumns)
-        ? (updateData.sizeChartColumns as string[])
-        : [];
-    }
-    if (updateData.bodyChartColumns !== undefined) {
-      data.bodyChartColumns = Array.isArray(updateData.bodyChartColumns)
-        ? (updateData.bodyChartColumns as string[])
-        : [];
-    }
-    if (updateData.imageUrl !== undefined) {
-      data.imageUrl = updateData.imageUrl ? String(updateData.imageUrl) : null;
-    }
-    if (updateData.isActive !== undefined) data.isActive = Boolean(updateData.isActive);
-
-    const category = await prisma.category.update({
-      where: { id },
-      data,
-    });
-
-    return this.formatCategory(category);
+    data: Prisma.CategoryUncheckedUpdateInput,
+  ): Promise<CategoryEntity | null> {
+    const category = await prisma.category.update({ where: { id }, data });
+    return this.toEntity(category);
   }
 
-  async deleteById(id: string): Promise<FormattedCategory | null> {
-    const category = await prisma.category.delete({
-      where: { id },
-    });
-
-    return this.formatCategory(category);
+  async deleteById(id: string): Promise<CategoryEntity | null> {
+    const category = await prisma.category.delete({ where: { id } });
+    return this.toEntity(category);
   }
 
   async countProductsByCategory(categoryId: string): Promise<number> {
     return prisma.product.count({
       where: {
         OR: [{ categoryId }, { subcategoryId: categoryId }],
+      },
+    });
+  }
+
+  private formatRecentCategories(raw: unknown): RecentCategory[] {
+    if (!raw || !Array.isArray(raw)) return [];
+
+    return raw
+      .filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === 'object' && item !== null && !Array.isArray(item),
+      )
+      .map((item) => ({
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        path: Array.isArray(item.path)
+          ? (item.path as string[])
+          : typeof item.path === 'string'
+            ? [item.path]
+            : [],
+        usedAt:
+          typeof item.usedAt === 'string' || item.usedAt instanceof Date
+            ? item.usedAt
+            : new Date().toISOString(),
+      }))
+      .filter((cat) => cat.id.length > 0);
+  }
+
+  private toInputJson(categories: RecentCategory[]): Prisma.InputJsonValue {
+    return categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      path: c.path,
+      usedAt:
+        typeof c.usedAt === 'string'
+          ? c.usedAt
+          : c.usedAt instanceof Date
+            ? c.usedAt.toISOString()
+            : new Date().toISOString(),
+    })) as Prisma.InputJsonValue;
+  }
+
+  async getRecentCategoriesForVendor(vendorId: string): Promise<RecentCategory[]> {
+    const vendorProf = await prisma.vendorProfile.findUnique({
+      where: { id: vendorId },
+      select: { recentCategories: true },
+    });
+    return this.formatRecentCategories(vendorProf?.recentCategories);
+  }
+
+  async getRecentCategoriesForUser(userId: string): Promise<RecentCategory[]> {
+    const userPref = await prisma.userPreference.findUnique({
+      where: { userId },
+      select: { recentCategories: true },
+    });
+    return this.formatRecentCategories(userPref?.recentCategories);
+  }
+
+  async saveRecentCategoriesForVendor(
+    vendorId: string,
+    categories: RecentCategory[],
+  ): Promise<void> {
+    await prisma.vendorProfile
+      .update({
+        where: { id: vendorId },
+        data: {
+          recentCategories: this.toInputJson(categories),
+        },
+      })
+      .catch(() => null);
+  }
+
+  async saveRecentCategoriesForUser(
+    userId: string,
+    categories: RecentCategory[],
+  ): Promise<void> {
+    await prisma.userPreference.upsert({
+      where: { userId },
+      create: {
+        userId,
+        recentCategories: this.toInputJson(categories),
+      },
+      update: {
+        recentCategories: this.toInputJson(categories),
       },
     });
   }

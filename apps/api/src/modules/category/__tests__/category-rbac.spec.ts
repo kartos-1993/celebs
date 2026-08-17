@@ -84,7 +84,7 @@ describe('Category RBAC & Tree Operations', () => {
   it('should allow superadmin to create a category with attributes', async () => {
     const payload = {
       name: 'Footwear',
-      parent: null,
+      parentCategory: null,
       attributes: [
         {
           name: 'Size',
@@ -120,7 +120,7 @@ describe('Category RBAC & Tree Operations', () => {
   it('should block admin from creating a category', async () => {
     const payload = {
       name: 'Illegal Category',
-      parent: null,
+      parentCategory: null,
       attributes: [],
     };
 
@@ -135,7 +135,7 @@ describe('Category RBAC & Tree Operations', () => {
   it('should block vendor from creating a category', async () => {
     const payload = {
       name: 'Illegal Category',
-      parent: null,
+      parentCategory: null,
       attributes: [],
     };
 
@@ -279,6 +279,63 @@ describe('Category RBAC & Tree Operations', () => {
       // Verify it was removed from PostgreSQL
       const found = await prisma.category.findUnique({ where: { id: childCatId } });
       expect(found).toBeNull();
+    });
+  });
+
+  describe('Input Validation & Security Hardening', () => {
+    it('should reject invalid category ID param with 400', async () => {
+      const res = await request(app).get('/api/v1/category/%20');
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should safely handle pagination query parameters and clamp limits', async () => {
+      const res = await request(app).get('/api/v1/category?page=1&limit=20');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.limit).toBe(20);
+    });
+
+    it('should reject malformed attributes in updateCategoryAttributes with 400', async () => {
+      const cat = await prisma.category.create({
+        data: {
+          name: 'Security Test',
+          slug: 'security-test',
+          level: 1,
+          path: 'security-test',
+        },
+      });
+
+      const res = await request(app)
+        .put(`/api/v1/category/${cat.id}`)
+        .set('Cookie', [superadminToken])
+        .send({
+          attributes: [{ invalidKey: 123 }],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should search categories with case-insensitive partial substring match', async () => {
+      await prisma.category.create({
+        data: {
+          name: 'Winter Coats & Jackets',
+          slug: 'winter-coats-jackets',
+          level: 1,
+          path: 'winter-coats-jackets',
+        },
+      });
+
+      // Search with "winter", "COAT", or "jacket"
+      const res1 = await request(app).get('/api/v1/category/search?q=winter');
+      expect(res1.status).toBe(200);
+      expect(res1.body.success).toBe(true);
+      expect(res1.body.data.some((c: { name: string }) => c.name === 'Winter Coats & Jackets')).toBe(true);
+
+      const res2 = await request(app).get('/api/v1/category/search?q=COAT');
+      expect(res2.status).toBe(200);
+      expect(res2.body.data.some((c: { name: string }) => c.name === 'Winter Coats & Jackets')).toBe(true);
     });
   });
 });

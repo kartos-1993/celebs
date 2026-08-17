@@ -1,22 +1,25 @@
 import { NextFunction, Request, Response } from 'express';
-import slugify from 'slugify';
 
 import {
+  categoryIdParamSchema,
+  categoryPaginationQuerySchema,
+  categorySearchQuerySchema,
+  categorySlugParamSchema,
   createCategorySchema as categoryInputSchema,
   recordRecentCategorySchema,
+  updateCategoryAttributesSchema,
   updateCategorySchema,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { CategoryInput, CategoryService } from './category.service';
+import { CategoryService } from './category.service';
 
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
   getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const page = req.query.page ? parseInt(req.query.page as string) : 1;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const { page, limit } = categoryPaginationQuerySchema.parse(req.query);
 
       const result = await this.categoryService.getAllCategories(page, limit);
 
@@ -35,14 +38,7 @@ export class CategoryController {
       logger.debug({ body: req.body, user: req.user }, 'Create category request received');
       const validatedData = categoryInputSchema.parse(req.body);
 
-      const categoryData = {
-        name: validatedData.name,
-        slug: slugify(validatedData.name, { lower: true, strict: true }),
-        parent: validatedData.parent || null,
-        attributes: validatedData.attributes || [],
-      } as CategoryInput;
-
-      const category = await this.categoryService.createCategory(categoryData);
+      const category = await this.categoryService.createCategory(validatedData);
 
       res.status(HTTPSTATUS.CREATED).json({
         success: true,
@@ -56,7 +52,7 @@ export class CategoryController {
 
   getCategoryById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id || '';
+      const { id } = categoryIdParamSchema.parse(req.params);
       const category = await this.categoryService.getCategoryById(id);
 
       if (!category) {
@@ -79,7 +75,7 @@ export class CategoryController {
 
   getCategoryBySlug = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const slug = req.params.slug || '';
+      const { slug } = categorySlugParamSchema.parse(req.params);
       const category = await this.categoryService.getCategoryBySlug(slug);
 
       if (!category) {
@@ -128,7 +124,7 @@ export class CategoryController {
 
   deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id || '';
+      const { id } = categoryIdParamSchema.parse(req.params);
       await this.categoryService.deleteCategoryWithCascade(id);
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -141,23 +137,10 @@ export class CategoryController {
 
   updateCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id || '';
+      const { id } = categoryIdParamSchema.parse(req.params);
       const validatedData = updateCategorySchema.parse(req.body);
 
-      const updateData: Record<string, unknown> = { ...validatedData };
-
-      if (updateData.name) {
-        updateData.slug = slugify(updateData.name as string, {
-          lower: true,
-          strict: true,
-        });
-      }
-
-      if (updateData.parent !== undefined) {
-        updateData.parent = updateData.parent ? updateData.parent.toString() : null;
-      }
-
-      const updatedCategory = await this.categoryService.updateCategory(id, updateData);
+      const updatedCategory = await this.categoryService.updateCategory(id, validatedData);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -171,7 +154,7 @@ export class CategoryController {
 
   getStorefrontSchema = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const slug = req.params.slug || '';
+      const { slug } = categorySlugParamSchema.parse(req.params);
       const schema = await this.categoryService.getStorefrontSchema(slug);
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -184,8 +167,8 @@ export class CategoryController {
 
   updateCategoryAttributes = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id || '';
-      const attributes = req.body.attributes;
+      const { id } = categoryIdParamSchema.parse(req.params);
+      const { attributes } = updateCategoryAttributesSchema.parse(req.body);
       const updated = await this.categoryService.updateCategoryAttributes(id, attributes);
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -199,8 +182,7 @@ export class CategoryController {
 
   searchCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const q = String(req.query.q || '');
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const { q, limit } = categorySearchQuerySchema.parse(req.query);
       const results = await this.categoryService.searchCategories(q, limit);
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -213,7 +195,7 @@ export class CategoryController {
 
   getCategoryFilters = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id || '';
+      const { id } = categoryIdParamSchema.parse(req.params);
       const filters = await this.categoryService.getCategoryFilters(id);
       res.status(HTTPSTATUS.OK).json({
         success: true,
