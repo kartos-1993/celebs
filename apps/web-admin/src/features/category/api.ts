@@ -17,6 +17,20 @@ import {
 
 const BASE_PATH = '/category';
 
+export const CATEGORY_QUERY_KEYS = {
+  all: ['categories'] as const,
+  lists: () => [...CATEGORY_QUERY_KEYS.all, 'list'] as const,
+  list: (page?: number, limit?: number) =>
+    [...CATEGORY_QUERY_KEYS.lists(), { page, limit }] as const,
+  tree: () => [...CATEGORY_QUERY_KEYS.all, 'tree'] as const,
+  treeWithAttributes: () => [...CATEGORY_QUERY_KEYS.all, 'tree-with-attributes'] as const,
+  detail: (id: string) => [...CATEGORY_QUERY_KEYS.all, 'detail', id] as const,
+  search: (query: string) => [...CATEGORY_QUERY_KEYS.all, 'search', query] as const,
+  recent: () => [...CATEGORY_QUERY_KEYS.all, 'recent'] as const,
+  quickFilters: (categoryId: string) =>
+    [...CATEGORY_QUERY_KEYS.all, 'quick-filters', categoryId] as const,
+};
+
 /**
  * Creates a new category
  */

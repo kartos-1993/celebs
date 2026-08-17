@@ -11,16 +11,11 @@ import { CATEGORY_QUERY_KEYS, SharedCategoryApi } from '@/api/category';
 function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
   const out: DropdownCategory[] = [];
   const walk = (node: CategoryTreeNode, explicitParentId: string | null = null): void => {
-    const record = node as CategoryTreeNode & { parentCategory?: string | null };
-    const parentId =
-      record.parentCategory ??
-      node.parent ??
-      explicitParentId ??
-      null;
+    const parentCategory = node.parentCategory ?? explicitParentId ?? null;
     out.push({
       id: node.id,
       name: node.name,
-      parentId,
+      parentCategory,
       hasChildren: Array.isArray(node.children) && node.children.length > 0,
       level: node.level ?? Math.max(0, (Array.isArray(node.path) ? node.path.length : 1) - 1),
       path:
@@ -73,25 +68,25 @@ export const useCategoryTree = () => {
   }, [recentResponse]);
 
   const getRootCategories = useCallback(
-    (): DropdownCategory[] => allCategories.filter((cat) => cat.parentId === null),
+    (): DropdownCategory[] => allCategories.filter((cat) => cat.parentCategory === null),
     [allCategories],
   );
 
   const getChildCategories = useCallback(
-    (parentId: string): DropdownCategory[] =>
-      allCategories.filter((cat) => cat.parentId === parentId),
+    (parentCategoryId: string): DropdownCategory[] =>
+      allCategories.filter((cat) => cat.parentCategory === parentCategoryId),
     [allCategories],
   );
 
   const searchCategories = useCallback(
-    (query: string, parentId?: string): DropdownCategory[] => {
+    (query: string, parentCategoryId?: string): DropdownCategory[] => {
       if (!query.trim()) {
-        return parentId ? getChildCategories(parentId) : getRootCategories();
+        return parentCategoryId ? getChildCategories(parentCategoryId) : getRootCategories();
       }
       const searchTerm = query.toLowerCase();
       return allCategories.filter((cat) => {
         const matchesName = cat.name.toLowerCase().includes(searchTerm);
-        const matchesParent = parentId ? cat.parentId === parentId : true;
+        const matchesParent = parentCategoryId ? cat.parentCategory === parentCategoryId : true;
         return matchesName && matchesParent;
       });
     },

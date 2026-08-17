@@ -43,8 +43,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
 
   const availableParents = categories.filter((cat) => {
     if (cat.id === initialDataId) return false;
-    const parentCat = (cat as { parentCategory?: string | null }).parentCategory;
-    if (cat.parent === initialDataId || parentCat === initialDataId) return false;
+    if (cat.parentCategory === initialDataId) return false;
     if (editingSlug && cat.path) {
       const pathParts = Array.isArray(cat.path)
         ? (cat.path as string[])
@@ -74,7 +73,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
 
       <FormField
         control={form.control}
-        name="parent"
+        name="parentCategory"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Parent Category (Optional)</FormLabel>

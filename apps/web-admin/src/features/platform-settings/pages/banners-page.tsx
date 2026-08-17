@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye } from 'lucide-react';
 import { PlatformSettingsApiService, Banner } from '../api';
 import { CategoryApiService } from '../../category/api';
+import type { Category } from '../../category/types';
 import { ProductApiService } from '../../product/api';
 
 const Banners: React.FC = () => {
@@ -29,7 +30,7 @@ const Banners: React.FC = () => {
     { imageUrl: '', linkType: 'NONE', linkValue: '', title: 'Slide 2', order: 2, isActive: true },
     { imageUrl: '', linkType: 'NONE', linkValue: '', title: 'Slide 3', order: 3, isActive: true },
   ]);
-  const [categories, setCategories] = useState<Array<Record<string, unknown>>>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Array<Record<string, unknown>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,7 +46,8 @@ const Banners: React.FC = () => {
         ProductApiService.getProducts({ limit: 100 }),
       ]);
 
-      setCategories((fetchedCategories as Array<Record<string, unknown>>) || []);
+      const categoriesList = fetchedCategories?.data?.categories || [];
+      setCategories(categoriesList);
 
       const productsList =
         fetchedProductsData?.data?.products ||
@@ -262,13 +264,11 @@ const Banners: React.FC = () => {
                                 <SelectValue placeholder="Select Category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {(Array.isArray(categories) ? categories : []).map(
-                                  (c: Record<string, unknown>) => (
-                                    <SelectItem key={String(c.id)} value={String(c.id)}>
-                                      {String(c.name ?? '')}
-                                    </SelectItem>
-                                  ),
-                                )}
+                                {(Array.isArray(categories) ? categories : []).map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           ) : banner.linkType === 'PRODUCT' ? (

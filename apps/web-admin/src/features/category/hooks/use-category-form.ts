@@ -52,10 +52,7 @@ export const useCategoryForm = ({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: initialData?.name || '',
-      parent:
-        initialData?.parent ??
-        ((initialData as Record<string, unknown>)?.parentCategory as string | null) ??
-        null,
+      parentCategory: initialData?.parentCategory ?? null,
       attributes: (initialData?.attributes || []).map((attr) => ({
         id: getAttributeId(attr),
         name: attr.name || '',
@@ -172,7 +169,10 @@ export const useCategoryForm = ({
   const onSubmit = (values: CategoryFormData) => {
     const normalizedData: CategoryFormData = {
       ...values,
-      parent: values.parent && values.parent !== 'ROOT_CATEGORY' ? values.parent : null,
+      parentCategory:
+        values.parentCategory && values.parentCategory !== 'ROOT_CATEGORY'
+          ? values.parentCategory
+          : null,
       attributes: values.attributes.map((attr) => ({
         ...attr,
         id: attr.id || undefined,

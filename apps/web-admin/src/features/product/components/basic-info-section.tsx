@@ -45,7 +45,7 @@ const BasicInfoSection = ({
       setSelectedCategory({
         id: selectedSubcategoryId,
         name: categoryPath[categoryPath.length - 1] || 'Selected',
-        parentId: null,
+        parentCategory: null,
         hasChildren: false,
         level: Math.max(0, categoryPath.length - 1),
         path: categoryPath,
