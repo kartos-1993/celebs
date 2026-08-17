@@ -10,20 +10,20 @@ import { authenticateJWT } from '@/middlewares/auth.middleware';
 const categoryRoute = Router();
 const categoryController = new CategoryController(new CategoryService());
 
-// Debug middleware to log all requests
-categoryRoute.use((req: Request, res: Response, next: NextFunction) => {
-  logger.debug(
-    {
-      method: req.method,
-      path: req.path,
-      body: req.body,
-      headers: req.headers,
-      cookies: req.cookies,
-    },
-    'Category route request received',
-  );
-  next();
-});
+// Debug middleware to log requests in development mode only
+if (process.env.NODE_ENV === 'development') {
+  categoryRoute.use((req: Request, _res: Response, next: NextFunction) => {
+    logger.debug(
+      {
+        method: req.method,
+        path: req.path,
+        body: req.body,
+      },
+      'Category route request received',
+    );
+    next();
+  });
+}
 
 import { Permission } from '@celebs/rbac';
 

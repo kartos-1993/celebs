@@ -36,7 +36,7 @@ router.get('/product-render', async (req, res) => {
       category: {
         id: String(category.id),
         name: category.name,
-        version: (category.version as number) ?? 1,
+        version: 1,
         attributes: category.attributes || [],
         sizeChartColumns: category.sizeChartColumns || [],
         bodyChartColumns: category.bodyChartColumns || [],

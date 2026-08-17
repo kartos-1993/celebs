@@ -1,9 +1,12 @@
-import { Prisma } from '@prisma/client';
 import slugify from 'slugify';
+import type { Prisma } from '@prisma/client';
 
 import type {
   CategoryAttributeType,
+  CategoryEntity,
+  CategoryTreeNode,
   CreateCategoryType,
+  PaginatedCategoriesResponse,
   RecentCategory,
   UpdateCategoryType,
 } from '@celebs/shared-types';
@@ -13,12 +16,6 @@ import {
   CategoryRepository,
   categoryRepository as defaultCategoryRepo,
 } from './category.repository';
-
-import prisma from '@/config/db.prisma';
-
-export type CategoryAttribute = CategoryAttributeType & {
-  id?: string;
-};
 
 export type CategoryInput = CreateCategoryType & {
   slug: string;
@@ -32,32 +29,6 @@ export type CategoryUpdateInput = UpdateCategoryType & {
   path?: string[];
 };
 
-interface CategoryTreeNode {
-  id: string;
-  name: string;
-  slug: string;
-  level: number;
-  parentCategory?: string | null;
-  parent?: string | null;
-  path?: string | string[];
-  attributes?: Record<string, unknown>[];
-  imageUrl?: string | null;
-  children: CategoryTreeNode[];
-}
-
-interface PaginatedCategoriesResponse {
-  categories: Record<string, unknown>[];
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-}
-
-const toJsonInput = (value: unknown): Prisma.InputJsonValue => {
-  if (value === undefined || value === null) return [];
-  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
-};
-
 export class CategoryService {
   private static readonly DEFAULT_PAGE = 1;
   private static readonly DEFAULT_LIMIT = 50;
@@ -67,10 +38,37 @@ export class CategoryService {
     this.categoryRepository = categoryRepository || defaultCategoryRepo;
   }
 
-  async createCategory(categoryData: CategoryInput) {
-    await this.validateCategoryUniqueness(categoryData.name, categoryData.parent || null);
+  async createCategory(categoryData: CreateCategoryType) {
+    await this.validateCategoryUniqueness(categoryData.name, categoryData.parentCategory || null);
 
-    const categoryDoc = await this.createCategoryDocument(categoryData);
+    const slug = slugify(categoryData.name, { lower: true, strict: true });
+    let level = 1;
+    let path: string[] = [slug];
+
+    if (categoryData.parentCategory) {
+      const parentCat = await this.categoryRepository.findById(String(categoryData.parentCategory));
+      if (!parentCat) {
+        throw new AppError(
+          'Parent category not found',
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.CATEGORY_NOT_FOUND,
+        );
+      }
+      level = parentCat.level + 1;
+      const parentPathParts = Array.isArray(parentCat.path)
+        ? parentCat.path
+        : typeof parentCat.path === 'string' && parentCat.path.length > 0
+          ? parentCat.path.split('/')
+          : [];
+      path = [...parentPathParts, slug];
+    }
+
+    const categoryDoc = await this.createCategoryDocument({
+      ...categoryData,
+      slug,
+      level,
+      path,
+    });
     if (!categoryDoc) {
       throw new AppError(
         'Failed to create category document',
@@ -99,14 +97,29 @@ export class CategoryService {
 
   async searchCategories(query: string, limit = 20) {
     if (!query || !query.trim()) return [];
-    const results = await this.categoryRepository.find({ name: query.trim() }, limit);
-    return results.map((c: Record<string, unknown>) => ({
-      id: String(c.id),
+    const term = query.trim();
+    const results = await this.categoryRepository.find(
+      {
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { slug: { contains: term, mode: 'insensitive' } },
+          { path: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      limit,
+    );
+    return results.map((c: CategoryEntity) => ({
+      id: c.id,
       name: c.name,
-      parentId: c.parentCategory ? String(c.parentCategory) : null,
+      parentCategory: c.parentCategory,
       hasChildren: false,
-      level: (c.level as number) ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
-      path: Array.isArray(c.path) && c.path.length ? c.path : [c.name],
+      level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
+      path:
+        Array.isArray(c.path) && c.path.length
+          ? c.path
+          : typeof c.path === 'string' && c.path.length
+            ? c.path.split('/')
+            : [c.name],
     }));
   }
 
@@ -153,13 +166,16 @@ export class CategoryService {
       await this.categoryRepository.updateById(categoryId, {
         ...updateData,
         path: Array.isArray(existingCategory.path)
-          ? existingCategory.path.map((slug: string) => (slug === oldSlug ? newSlug : slug))
+          ? existingCategory.path.map((slug: string) => (slug === oldSlug ? newSlug : slug)).join('/')
           : newSlug,
       });
 
       await this.updateCategoryPathsRecursively(categoryId, oldSlug, newSlug);
     } else {
-      await this.categoryRepository.updateById(categoryId, updateData);
+      await this.categoryRepository.updateById(categoryId, {
+        ...updateData,
+        path: Array.isArray(updateData.path) ? updateData.path.join('/') : updateData.path,
+      });
     }
 
     if (updateData.attributes) {
@@ -198,7 +214,8 @@ export class CategoryService {
       );
     }
 
-    const productsCount = await this.categoryRepository.countProductsByCategory(categoryId);
+    const productsCount =
+      await this.categoryRepository.countProductsByCategory(categoryId);
 
     if (productsCount > 0) {
       throw new AppError(
@@ -211,7 +228,7 @@ export class CategoryService {
     await this.categoryRepository.deleteById(categoryId);
   }
 
-  private hasAttributes(categoryData: CategoryInput): boolean {
+  private hasAttributes(categoryData: CreateCategoryType): boolean {
     return !!(categoryData.attributes && categoryData.attributes.length > 0);
   }
 
@@ -220,17 +237,18 @@ export class CategoryService {
     return this.categoryRepository.find(query);
   }
 
-  private buildCategoryTree(categories: Record<string, unknown>[]): CategoryTreeNode[] {
+  private buildCategoryTree(categories: CategoryEntity[]): CategoryTreeNode[] {
     const categoryMap: Record<string, CategoryTreeNode> = {};
 
     categories.forEach((cat) => {
-      const idStr = String(cat.id);
+      const idStr = cat.id;
       categoryMap[idStr] = {
         ...cat,
         id: idStr,
-        name: String(cat.name || ''),
-        slug: String(cat.slug || ''),
-        level: Number(cat.level || 1),
+        name: cat.name,
+        slug: cat.slug,
+        level: cat.level || 1,
+        parentCategory: cat.parentCategory,
         children: [],
       };
     });
@@ -238,14 +256,17 @@ export class CategoryService {
     const rootCategories: CategoryTreeNode[] = [];
 
     categories.forEach((cat) => {
-      const idStr = String(cat.id);
+      const idStr = cat.id;
       const categoryNode = categoryMap[idStr];
       if (!categoryNode) return;
 
-      const parentId = cat.parentCategory || cat.parent;
+      const parentId = cat.parentCategory;
       const parentNode = parentId ? categoryMap[String(parentId)] : undefined;
 
       if (parentNode) {
+        if (!parentNode.children) {
+          parentNode.children = [];
+        }
         parentNode.children.push(categoryNode);
       } else {
         rootCategories.push(categoryNode);
@@ -272,9 +293,9 @@ export class CategoryService {
   private async validateUpdateData(
     updateData: CategoryUpdateInput,
     categoryId: string,
-    existingCategory: Record<string, unknown>,
+    existingCategory: CategoryEntity,
   ): Promise<void> {
-    if (updateData.parent !== undefined) {
+    if (updateData.parentCategory !== undefined) {
       await this.validateParentUpdate(updateData, categoryId, existingCategory);
     }
 
@@ -286,9 +307,9 @@ export class CategoryService {
   private async validateParentUpdate(
     updateData: CategoryUpdateInput,
     categoryId: string,
-    existingCategory: Record<string, unknown>,
+    existingCategory: CategoryEntity,
   ): Promise<void> {
-    if (updateData.parent === categoryId) {
+    if (updateData.parentCategory === categoryId) {
       throw new AppError(
         'Category cannot be its own parent',
         HTTPSTATUS.BAD_REQUEST,
@@ -296,8 +317,8 @@ export class CategoryService {
       );
     }
 
-    if (updateData.parent) {
-      const parentCategory = await this.categoryRepository.findById(String(updateData.parent));
+    if (updateData.parentCategory) {
+      const parentCategory = await this.categoryRepository.findById(String(updateData.parentCategory));
       if (!parentCategory) {
         throw new AppError(
           'Parent category not found',
@@ -312,20 +333,20 @@ export class CategoryService {
         : typeof parentCategory.path === 'string' && parentCategory.path.length > 0
           ? parentCategory.path.split('/')
           : [];
-      updateData.path = [...parentPathParts, existingCategory.slug as string];
+      updateData.path = [...parentPathParts, existingCategory.slug];
     } else {
       updateData.level = 1;
-      updateData.path = [existingCategory.slug as string];
+      updateData.path = [existingCategory.slug];
     }
   }
 
   private async validateNameUpdate(
     updateData: CategoryUpdateInput,
     categoryId: string,
-    existingCategory: Record<string, unknown>,
+    existingCategory: CategoryEntity,
   ): Promise<void> {
     const parentVal =
-      updateData.parent !== undefined ? updateData.parent : existingCategory.parentCategory;
+      updateData.parentCategory !== undefined ? updateData.parentCategory : existingCategory.parentCategory;
 
     const duplicateCategory = await this.categoryRepository.findOne({
       name: updateData.name,
@@ -345,28 +366,32 @@ export class CategoryService {
 
   public async updateCategoryAttributes(
     categoryId: string,
-    attributes: CategoryAttribute[],
+    attributes: CategoryAttributeType[],
   ): Promise<void> {
-    const formattedAttributes = attributes.map((attr) => ({
+    const formattedAttributes: CategoryAttributeType[] = attributes.map((attr) => ({
+      id: attr.id,
       name: attr.name,
+      label: attr.label,
       type: attr.type,
       values: Array.isArray(attr.values) ? attr.values : [],
       isRequired: !!attr.isRequired,
       group: attr.group || 'basic',
+      placeholder: attr.placeholder,
+      info: attr.info,
       isVariant: !!attr.isVariant,
-      variantType: (attr as Record<string, unknown>).variantType ?? null,
       useStandardOptions: !!attr.useStandardOptions,
+      optionSetId: attr.optionSetId,
     }));
 
     await this.categoryRepository.updateById(categoryId, {
-      attributes: formattedAttributes,
+      attributes: formattedAttributes as unknown as Prisma.InputJsonValue,
     });
   }
 
-  private async validateCategoryUniqueness(name: string, parent: string | null): Promise<void> {
+  private async validateCategoryUniqueness(name: string, parentCategory: string | null): Promise<void> {
     const existingCategory = await this.categoryRepository.findOne({
       name,
-      parentCategory: parent ? String(parent) : null,
+      parentCategory: parentCategory ? String(parentCategory) : null,
     });
 
     if (existingCategory) {
@@ -382,12 +407,14 @@ export class CategoryService {
     return await this.categoryRepository.create({
       name: categoryData.name,
       slug: categoryData.slug,
-      path: categoryData.path,
+      path: Array.isArray(categoryData.path) ? categoryData.path.join('/') : categoryData.path,
       level: categoryData.level,
-      parentCategory: categoryData.parent ? String(categoryData.parent) : null,
-      attributes: categoryData.attributes || [],
+      parentCategory: categoryData.parentCategory ? String(categoryData.parentCategory) : null,
+      attributes: (categoryData.attributes || []) as unknown as Prisma.InputJsonValue,
       imageUrl: categoryData.imageUrl || null,
       sizeChartColumns: categoryData.sizeChartColumns || [],
+      bodyChartColumns: categoryData.bodyChartColumns || [],
+      isActive: categoryData.isActive !== false,
     });
   }
 
@@ -400,8 +427,10 @@ export class CategoryService {
 
     for (const child of children) {
       const childPath = Array.isArray(child.path)
-        ? child.path.map((slug: string) => (slug === oldSlug ? newSlug : slug))
-        : child.path;
+        ? child.path.map((slug: string) => (slug === oldSlug ? newSlug : slug)).join('/')
+        : typeof child.path === 'string'
+          ? child.path.split('/').map((slug: string) => (slug === oldSlug ? newSlug : slug)).join('/')
+          : newSlug;
 
       await this.categoryRepository.updateById(child.id, {
         path: childPath,
@@ -414,40 +443,19 @@ export class CategoryService {
   async getRecentCategories(userId?: string, vendorId?: string): Promise<RecentCategory[]> {
     if (!userId && !vendorId) return [];
 
-    let rawList: unknown = null;
+    let list: RecentCategory[] = [];
 
     // 1. If vendor or staff, retrieve from shared VendorProfile
     if (vendorId) {
-      const vendorProf = await prisma.vendorProfile.findUnique({
-        where: { id: vendorId },
-        select: { recentCategories: true },
-      });
-      rawList = vendorProf?.recentCategories;
+      list = await this.categoryRepository.getRecentCategoriesForVendor(vendorId);
     }
 
     // 2. Fallback to UserPreference (e.g. for Admin/Superadmin or personal user preferences)
-    if ((!rawList || !Array.isArray(rawList) || rawList.length === 0) && userId) {
-      const userPref = await prisma.userPreference.findUnique({
-        where: { userId },
-        select: { recentCategories: true },
-      });
-      rawList = userPref?.recentCategories;
+    if (list.length === 0 && userId) {
+      list = await this.categoryRepository.getRecentCategoriesForUser(userId);
     }
 
-    if (!Array.isArray(rawList)) return [];
-    return rawList.map((item) => {
-      const rec = item as Record<string, unknown>;
-      return {
-        id: String(rec.id || ''),
-        name: String(rec.name || ''),
-        path: Array.isArray(rec.path)
-          ? (rec.path as string[])
-          : typeof rec.path === 'string'
-            ? [rec.path]
-            : [],
-        usedAt: String(rec.usedAt || ''),
-      };
-    });
+    return list;
   }
 
   async recordRecentCategory(
@@ -483,28 +491,12 @@ export class CategoryService {
 
     // Save to VendorProfile so all vendor staff share recent categories
     if (vendorId) {
-      await prisma.vendorProfile
-        .update({
-          where: { id: vendorId },
-          data: {
-            recentCategories: toJsonInput(updated),
-          },
-        })
-        .catch(() => null);
+      await this.categoryRepository.saveRecentCategoriesForVendor(vendorId, updated);
     }
 
     // Also persist to UserPreference
     if (userId) {
-      await prisma.userPreference.upsert({
-        where: { userId },
-        create: {
-          userId,
-          recentCategories: toJsonInput(updated),
-        },
-        update: {
-          recentCategories: toJsonInput(updated),
-        },
-      });
+      await this.categoryRepository.saveRecentCategoriesForUser(userId, updated);
     }
 
     return updated;
