@@ -9,7 +9,7 @@ export interface CategoryEntity {
   name: string;
   slug: string;
   level: number;
-  parent: string | null;
+  parentCategory: string | null;
   path: string[] | string;
   attributes?: CategoryAttributeType[];
   sizeChartColumns?: string[];
@@ -27,7 +27,7 @@ export interface CategoryTreeNode extends CategoryEntity {
 export interface DropdownCategory {
   id: string;
   name: string;
-  parentId: string | null;
+  parentCategory: string | null;
   hasChildren: boolean;
   level: number;
   path: string[] | string;
@@ -39,6 +39,14 @@ export interface RecentCategory {
   name: string;
   path: string[] | string;
   usedAt: Date | string;
+}
+
+export interface PaginatedCategoriesResponse {
+  categories: CategoryEntity[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 }
 
 export type CreateCategoryRequest = CreateCategoryType;

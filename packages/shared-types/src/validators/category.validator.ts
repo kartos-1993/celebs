@@ -54,7 +54,7 @@ export const attributeSchema = z.object({
 
 export const baseCategorySchemaFields = {
   name: z.string().trim().min(1, 'Category name is required').max(100),
-  parent: z.string().optional().nullable(),
+  parentCategory: z.string().optional().nullable(),
   attributes: z.array(attributeSchema).optional().default([]),
   sizeChartColumns: z.array(z.string()).optional().default([]),
   bodyChartColumns: z.array(z.string()).optional().default([]),
@@ -83,6 +83,11 @@ export const categoryPaginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   search: z.string().trim().max(100).optional(),
   activeOnly: z.coerce.boolean().optional().default(false),
+});
+
+export const categorySearchQuerySchema = z.object({
+  q: z.string().trim().default(''),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const updateCategoryAttributesSchema = z.object({
@@ -123,6 +128,7 @@ export type RecordRecentCategoryType = z.infer<typeof recordRecentCategorySchema
 export type CategoryIdParam = z.infer<typeof categoryIdParamSchema>;
 export type CategorySlugParam = z.infer<typeof categorySlugParamSchema>;
 export type CategoryPaginationQuery = z.infer<typeof categoryPaginationQuerySchema>;
+export type CategorySearchQueryType = z.infer<typeof categorySearchQuerySchema>;
 export type UpdateCategoryAttributesInput = z.infer<typeof updateCategoryAttributesSchema>;
 export type QuickFilterType = z.infer<typeof quickFilterTypeSchema>;
 export type QuickFilterDisplayAs = z.infer<typeof quickFilterDisplayAsSchema>;
