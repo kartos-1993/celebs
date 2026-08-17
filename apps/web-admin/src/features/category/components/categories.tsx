@@ -63,7 +63,7 @@ export const Categories: React.FC = () => {
       } else {
         await createCategory({
           ...formData,
-          parent: uiState.parentCategoryId,
+          parentCategory: uiState.parentCategoryId,
         });
       }
       actions.closeForm();
@@ -75,7 +75,7 @@ export const Categories: React.FC = () => {
     if (uiState.categoryToDelete) {
       try {
         const targetCategory = categories.find((c) => c.id === uiState.categoryToDelete);
-        const hasChildren = categories.some((c) => c.parent === uiState.categoryToDelete);
+        const hasChildren = categories.some((c) => c.parentCategory === uiState.categoryToDelete);
 
         toast({
           title: 'Deleting Category',
@@ -156,8 +156,8 @@ export const Categories: React.FC = () => {
           uiState.categoryToDelete
             ? {
                 name: categories.find((c) => c.id === uiState.categoryToDelete)?.name || '',
-                hasChildren: categories.some((c) => c.parent === uiState.categoryToDelete),
-                childCount: categories.filter((c) => c.parent === uiState.categoryToDelete).length,
+                hasChildren: categories.some((c) => c.parentCategory === uiState.categoryToDelete),
+                childCount: categories.filter((c) => c.parentCategory === uiState.categoryToDelete).length,
                 attributes:
                   categories.find((c) => c.id === uiState.categoryToDelete)?.attributes || [],
               }

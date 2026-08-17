@@ -2,12 +2,13 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { baseProductSchema, type CreateProductType } from '@celebs/shared-types';
+import { z } from 'zod';
+import { baseProductSchema } from '@celebs/shared-types';
 import { getProductById } from '../api';
 import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 import { hydrateProductForm, toCategoryPath } from '../utils/hydrate-product-form';
 
-export type ProductFormValues = Partial<CreateProductType> & Record<string, unknown>;
+export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> & Record<string, unknown>;
 
 const productFormBasicSchema = baseProductSchema.partial();
 

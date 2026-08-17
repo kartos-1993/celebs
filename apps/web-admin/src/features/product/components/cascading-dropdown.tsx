@@ -182,14 +182,14 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             (c: {
               id: string;
               name: string;
-              parentId?: string | null;
+              parentCategory?: string | null;
               hasChildren?: boolean;
               level?: number;
               path?: string[] | string;
             }) => ({
               id: c.id,
               name: c.name,
-              parentId: c.parentId ?? null,
+              parentCategory: c.parentCategory ?? null,
               hasChildren: !!c.hasChildren,
               level:
                 c.level ??
@@ -244,12 +244,12 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     let finalPath: DropdownCategory[] = [];
 
     if (byId) {
-      // Walk up via parentId to construct full path
+      // Walk up via parentCategory to construct full path
       const chain: DropdownCategory[] = [];
       let node: DropdownCategory | undefined = byId;
       while (node) {
         chain.unshift(node);
-        node = node.parentId ? findCategoryById?.(node.parentId) : undefined;
+        node = node.parentCategory ? findCategoryById?.(node.parentCategory) : undefined;
       }
       finalPath = chain;
     } else {
@@ -339,7 +339,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
     const item: DropdownCategory = {
       id: recent.id,
       name: recent.name,
-      parentId: null,
+      parentCategory: null,
       hasChildren: false,
       level: recentLevel,
       path: recent.path,

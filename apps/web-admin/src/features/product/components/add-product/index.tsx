@@ -31,7 +31,6 @@ import {
 } from '../../utils/add-product-helpers';
 import { buildProductPayload } from '../../utils/add-product-payload';
 import { focusFirstError, focusMissingField, formatFieldLabel } from '../../utils/form-focus';
-import type { UseFormReturn } from 'react-hook-form';
 
 // ─── Outer orchestrator: data hooks + provider boundary ──────────────────────
 const AddProduct = () => {

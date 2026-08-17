@@ -1,8 +1,14 @@
 import type {
   CategoryAttributeType,
   CreateCategoryType,
+  QuickFilter,
+  QuickFilterDisplayAs,
+  QuickFilterItem,
+  QuickFilterType,
   UpdateCategoryType,
 } from '@celebs/shared-types';
+
+export type { QuickFilter, QuickFilterDisplayAs, QuickFilterItem, QuickFilterType };
 
 export type CategoryAttribute = CategoryAttributeType & {
   categoryId?: string;
@@ -15,7 +21,7 @@ export interface Category {
   name: string;
   slug: string;
   level: number;
-  parent: string | null;
+  parentCategory: string | null;
   path: string[];
   attributes: CategoryAttribute[];
   sizeChartColumns?: string[];
@@ -24,30 +30,6 @@ export interface Category {
   isActive?: boolean;
   createdAt: string;
   updatedAt: string;
-  __v?: number;
-}
-
-export type QuickFilterType = 'subcategory' | 'attribute' | 'tag' | 'collection';
-export type QuickFilterDisplayAs = 'avatar_scroll' | 'chip_list' | 'color_swatch';
-
-export interface QuickFilterItem {
-  name: string;
-  image?: string | null;
-  slug?: string | null;
-  filterValue?: string | null;
-  displayOrder?: number;
-}
-
-export interface QuickFilter {
-  id?: string;
-  categoryId: string;
-  type: QuickFilterType;
-  attributeId?: string | null;
-  displayAs: QuickFilterDisplayAs;
-  items: QuickFilterItem[];
-  autoPopulate: boolean;
-  displayOrder: number;
-  isActive: boolean;
 }
 
 export interface CategoryTreeNode extends Category {

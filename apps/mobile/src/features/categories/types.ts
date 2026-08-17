@@ -1,13 +1,10 @@
-export type QuickFilterType = 'subcategory' | 'attribute' | 'tag' | 'collection';
-export type QuickFilterDisplayAs = 'avatar_scroll' | 'chip_list' | 'color_swatch';
+import type {
+  QuickFilterDisplayAs,
+  QuickFilterItem,
+  QuickFilterType,
+} from '@celebs/shared-types';
 
-export interface QuickFilterItem {
-  name: string;
-  image?: string | null;
-  slug?: string | null;
-  filterValue?: string | null;
-  displayOrder?: number;
-}
+export type { QuickFilterDisplayAs, QuickFilterItem, QuickFilterType };
 
 export interface QuickFilterConfig {
   id: string;
