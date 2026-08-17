@@ -94,4 +94,50 @@ describe('Media Upload Security Unit & Integration Rules', () => {
       expect(meta.mimeType).toBe('image/png');
     });
   });
+
+  describe('Presigned PUT URL Generation & Schema Validation', () => {
+    it('should create valid presigned PUT object metadata', async () => {
+      const { createPresignedPut } = await import('../storage.service');
+      const presign = await createPresignedPut({
+        originalname: 'summer_dress.webp',
+        mimeType: 'image/webp',
+        size: 204800,
+        folder: 'celebs/products',
+      });
+
+      expect(presign).toBeDefined();
+      expect(presign.key).toContain('celebs/products/');
+      expect(presign.key).toContain('summer_dress.webp');
+      expect(presign.uploadUrl).toBeDefined();
+      expect(presign.publicUrl).toBeDefined();
+      expect(presign.headers['Content-Type']).toBe('image/webp');
+      expect(presign.expiresIn).toBe(900);
+    });
+
+    it('should validate schemas from @celebs/shared-types', async () => {
+      const { presignFileSchema, confirmUploadSchema } = await import('@celebs/shared-types');
+
+      const validPresign = presignFileSchema.safeParse({
+        originalname: 'test.jpg',
+        mimeType: 'image/jpeg',
+        size: 1000,
+      });
+      expect(validPresign.success).toBe(true);
+
+      const invalidMime = presignFileSchema.safeParse({
+        originalname: 'test.exe',
+        mimeType: 'application/octet-stream',
+        size: 1000,
+      });
+      expect(invalidMime.success).toBe(false);
+
+      const validConfirm = confirmUploadSchema.safeParse({
+        key: 'celebs/products/test.webp',
+        originalname: 'test.webp',
+        mimeType: 'image/webp',
+        size: 5000,
+      });
+      expect(validConfirm.success).toBe(true);
+    });
+  });
 });

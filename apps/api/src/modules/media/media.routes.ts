@@ -1,85 +1,87 @@
 import { Router } from 'express';
-import multer from 'multer';
 
 import { Permission } from '@celebs/rbac';
-import { asyncHandler } from '@celebs/shared-utils';
+import {
+  BatchPresignInput,
+  batchPresignSchema,
+  ConfirmUploadInput,
+  confirmUploadSchema,
+  PresignFileInput,
+  presignFileSchema,
+} from '@celebs/shared-types';
+import { asyncHandler, logger } from '@celebs/shared-utils';
 
-import { putImage } from './storage.service';
+import {
+  confirmUploadedObject,
+  createPresignedPut,
+} from './storage.service';
 
+import { assetQueue } from '@/common/services/queue.service';
 import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
+import { validateBody } from '@/middlewares/validate';
 
 const router = Router();
 router.use(uploadRateLimiter);
-
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
-
-// Memory storage for S3/MinIO PutObject uploads
-const memoryUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
-  fileFilter: (_req, file, cb) => {
-    if (!ALLOWED_MIME.has(file.mimetype)) {
-      return cb(new Error('Invalid file type. Allowed: jpeg, png, webp, avif'));
-    }
-    cb(null, true);
-  },
-});
 
 // All media routes require auth + approved vendor + product create permission
 router.use(authenticateJWT);
 router.use(requireApprovedVendor);
 router.use(requirePermissions(Permission.PRODUCT_CREATE));
 
-// POST /api/v1/media/upload
-// field name: files (can be multiple) → MinIO/S3 via AWS SDK v3
+/**
+ * POST /api/v1/media/presign
+ * Generates a single presigned PUT URL for direct browser → Cloudflare R2 / S3 upload.
+ */
 router.post(
-  '/upload',
-  (req, res, next): void => {
-    memoryUpload.array('files', 12)(req, res, (err) => {
-      if (err) {
-        if (err instanceof multer.MulterError) {
-          if (err.code === 'LIMIT_FILE_SIZE') {
-            res.status(400).json({ success: false, message: 'Each image must be <= 5MB' });
-            return;
-          }
-          res.status(400).json({ success: false, message: err.message });
-          return;
-        }
-        res.status(400).json({ success: false, message: err.message || 'File upload failed' });
-        return;
-      }
-      next();
-    });
-  },
+  '/presign',
+  validateBody(presignFileSchema),
   asyncHandler(async (req, res) => {
-    const files = (req.files as Express.Multer.File[]) || [];
-    if (files.length === 0) {
-      return res.status(400).json({ message: 'No files provided' });
-    }
+    const result = await createPresignedPut(req.body as PresignFileInput);
+    return res.json({ success: true, data: result });
+  }),
+);
 
-    const _userId = req.user?.id || 'unknown';
-    const payload = [];
+/**
+ * POST /api/v1/media/batch-presign
+ * Generates multiple presigned PUT URLs for batch image uploads.
+ */
+router.post(
+  '/batch-presign',
+  validateBody(batchPresignSchema),
+  asyncHandler(async (req, res) => {
+    const { files } = req.body as BatchPresignInput;
+    const results = await Promise.all(
+      files.map((file: PresignFileInput) => createPresignedPut(file)),
+    );
+    return res.json({ success: true, data: results });
+  }),
+);
 
-    for (const file of files) {
-      const stored = await putImage({
-        buffer: file.buffer,
-        originalname: file.originalname || 'image',
-        mimeType: file.mimetype,
-        folder: 'celebs/products',
+/**
+ * POST /api/v1/media/confirm
+ * Confirms uploaded object on Cloudflare R2 / S3 and enqueues async BullMQ optimization.
+ */
+router.post(
+  '/confirm',
+  validateBody(confirmUploadSchema),
+  asyncHandler(async (req, res) => {
+    const body = req.body as ConfirmUploadInput;
+    const result = await confirmUploadedObject(body);
+
+    // Enqueue BullMQ optimization job asynchronously
+    assetQueue
+      .add('optimize', {
+        key: result.key,
+        originalname: result.originalname,
+        mimeType: req.body.mimeType,
+      })
+      .catch((err) => {
+        logger.warn({ error: err.message, key: result.key }, 'Failed to enqueue asset optimization job');
       });
 
-      payload.push({
-        url: stored.url,
-        publicId: stored.key,
-        bytes: stored.bytes,
-        format: file.mimetype || 'image',
-        originalname: stored.originalname,
-      });
-    }
-
-    return res.json({ data: payload });
+    return res.json({ success: true, data: result });
   }),
 );
 

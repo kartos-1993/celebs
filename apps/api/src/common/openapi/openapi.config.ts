@@ -22,6 +22,7 @@ registry.registerComponent('securitySchemes', 'cookieAuth', {
 
 // Import endpoints to register them in the registry
 import './auth.openapi';
+import './media.openapi';
 
 export function generateOpenAPIDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions);
