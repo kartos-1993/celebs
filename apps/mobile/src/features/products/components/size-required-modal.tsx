@@ -21,7 +21,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   availableSizes,
   productName,
   initialSize = '',
-  imageUrl,
+  imageUrl: _imageUrl,
   onClose,
   onSelectSizeAndConfirm,
 }) => {
