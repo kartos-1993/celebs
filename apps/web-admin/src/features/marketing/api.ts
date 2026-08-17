@@ -1,4 +1,5 @@
 import { axiosClient } from '@/lib/axios/axios-client';
+import { directUploadFile } from '@/lib/media-upload';
 
 export async function getCampaigns() {
   const response = await axiosClient.get('/campaigns/all');
@@ -46,14 +47,5 @@ export async function deleteCombo(id: string) {
 }
 
 export async function uploadMarketingBanner(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('files', file);
-  const response = await axiosClient.post('/media/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  const items = response.data?.data || [];
-  if (!items.length || !items[0]?.url) {
-    throw new Error('Image upload failed');
-  }
-  return items[0].url;
+  return directUploadFile(file, 'celebs/marketing');
 }

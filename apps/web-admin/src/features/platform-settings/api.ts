@@ -1,4 +1,5 @@
 import { axiosClient } from '@/lib/axios/axios-client';
+import { directUploadFile } from '@/lib/media-upload';
 
 export interface Banner {
   id?: string;
@@ -28,22 +29,9 @@ export class PlatformSettingsApiService {
   }
 
   /**
-   * Upload banner image
+   * Upload banner image directly to Cloudflare R2
    */
   static async uploadBannerImage(file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append('files', file);
-
-    const response = await axiosClient.post('/media/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    const urls = (response.data?.data ?? []).map((f: { url: string }) => f.url);
-    if (urls.length > 0) {
-      return urls[0];
-    }
-    throw new Error('Image upload failed');
+    return directUploadFile(file, 'celebs/banners');
   }
 }
