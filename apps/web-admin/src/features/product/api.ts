@@ -1,4 +1,5 @@
 import { axiosClient } from '@/lib/axios/axios-client';
+import { directUploadBatch } from '@/lib/media-upload';
 import type { IApiResponse } from '@celebs/shared-types';
 import type {
   CreateProductRequest,
@@ -31,14 +32,6 @@ export interface ReviewProductRequestPayload {
   rejectionCategory?: string;
   rejectionSubcategories?: string[];
   rejectionFields?: string[];
-}
-
-interface UploadedFileResponse {
-  url: string;
-  publicId?: string;
-  bytes?: number;
-  format?: string;
-  originalname?: string;
 }
 
 const BASE_PATH = '/products';
@@ -126,8 +119,9 @@ export async function toggleProductActivation(
 }
 
 /**
- * Uploads media files. Accepts a mix of already-uploaded URLs (passed
- * through untouched) and File instances (uploaded to /media/upload).
+ * Uploads media files directly to Cloudflare R2 via presigned URLs.
+ * Accepts a mix of already-uploaded URLs (passed through untouched)
+ * and File instances (uploaded directly to R2).
  * Returns the ordered list of public URLs.
  */
 export async function uploadFiles(
@@ -140,21 +134,7 @@ export async function uploadFiles(
 
   if (pendingFiles.length === 0) return existingUrls;
 
-  const formData = new FormData();
-  pendingFiles.forEach((file) => formData.append('files', file));
-
-  const response = await axiosClient.post<ProductApiResponse<UploadedFileResponse[]>>(
-    '/media/upload',
-    formData,
-    {
-      timeout: UPLOAD_TIMEOUT_MS,
-      headers: { 'Content-Type': 'multipart/form-data' },
-    },
-  );
-
-  const uploadedUrls = (response.data?.data ?? [])
-    .map((file) => file.url)
-    .filter((url): url is string => Boolean(url));
+  const uploadedUrls = await directUploadBatch(pendingFiles, 'celebs/products');
 
   return [...existingUrls, ...uploadedUrls];
 }
