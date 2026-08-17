@@ -64,7 +64,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
             }}
             accessible={true}
             accessibilityRole="button"
-            accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length}`}
+            accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length} for ${productName}`}
           >
             <Image
               source={{ uri: resolveImageUrl(img) }}
@@ -105,7 +105,12 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
           >
             <X size={24} color="#ffffff" />
           </TouchableOpacity>
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: zoomIndex * SCREEN_WIDTH, y: 0 }}
+          >
             {galleryImages.map((img, idx) => (
               <View key={`zoom-${idx}`} style={styles.zoomSlide}>
                 <Image

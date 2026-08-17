@@ -106,7 +106,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
         if (isMounted && response.data?.data && response.data.data.length > 0) {
           setCombos(response.data.data);
         }
-      } catch (err) {
+      } catch {
         console.log('[ComboBundleShowcase] Using fallback combo list');
       }
     }

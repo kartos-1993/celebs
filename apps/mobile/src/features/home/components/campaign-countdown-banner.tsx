@@ -74,7 +74,7 @@ export function CampaignCountdownBanner() {
           setCampaign(active);
           setTimeRemaining(calculateTimeRemaining(active.endDate));
         }
-      } catch (err) {
+      } catch {
         console.log('[CampaignCountdownBanner] Using fallback campaign');
       }
     }
