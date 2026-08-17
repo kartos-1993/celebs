@@ -1,7 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, Eye, EyeOff, Info, Loader, Send, Search, ShoppingBag, Trash2, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Info,
+  Loader,
+  Search,
+  Send,
+  ShoppingBag,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { can, Permission } from '@celebs/rbac';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
@@ -104,7 +114,10 @@ const ManageProduct = () => {
   );
 
   const { data, isLoading, isFetching } = useProductsQuery(filters);
-  const products = (data?.data?.products ?? []) as ProductListItem[];
+  const products = useMemo(
+    () => (data?.data?.products ?? []) as ProductListItem[],
+    [data?.data?.products],
+  );
   const total = data?.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 

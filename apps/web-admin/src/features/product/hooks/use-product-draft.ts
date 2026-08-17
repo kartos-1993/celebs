@@ -31,7 +31,7 @@ export function useProductDraft({
     if (initialCategoryPath?.length && !categoryPath?.length) {
       setCategoryPath(initialCategoryPath);
     }
-  }, [initialCategoryPath]);
+  }, [initialCategoryPath, categoryPath?.length]);
 
   const draftKey = getDraftStorageKey(userId);
 

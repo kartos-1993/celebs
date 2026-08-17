@@ -46,6 +46,10 @@ const Banners: React.FC = () => {
         ProductApiService.getProducts({ limit: 100 }),
       ]);
 
+      if (Array.isArray(fetchedBanners) && fetchedBanners.length > 0) {
+        setBanners(fetchedBanners);
+      }
+
       const categoriesList = fetchedCategories?.data?.categories || [];
       setCategories(categoriesList);
 

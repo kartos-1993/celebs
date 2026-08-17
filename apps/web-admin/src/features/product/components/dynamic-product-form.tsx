@@ -76,7 +76,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     }, [fields]);
 
     // ── Auto-expand specifications when an error lands in collapsed fields ──
-    const detailsFields = grouped.details || [];
+    const detailsFields = React.useMemo(() => grouped.details || [], [grouped.details]);
     const restDetailsFields = React.useMemo(() => detailsFields.slice(6), [detailsFields]);
 
     React.useEffect(() => {

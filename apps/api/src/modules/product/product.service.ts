@@ -10,7 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, HTTPSTATUS, generateSheinStyleSku } from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSheinStyleSku,HTTPSTATUS } from '@celebs/shared-utils';
 
 import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
 import { calculateProductQCScore } from './utils/product-qc';
