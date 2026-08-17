@@ -23,10 +23,7 @@ import {
 } from '@celebs/shared-ui/components/table';
 import type { UiProps } from '../ui-registry';
 import { FieldError } from './shared';
-import {
-  generateCollisionProofBaseSku,
-  cleanSkuAttributeCode,
-} from '../../utils/generate-sku-helpers';
+import { generateCollisionProofBaseSku } from '../../utils/generate-sku-helpers';
 
 interface VariantDataSource {
   labels?: Record<string, Record<string, string>>;

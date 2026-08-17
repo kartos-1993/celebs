@@ -46,7 +46,7 @@ export const useCategoryTree = () => {
     retry: false,
   });
 
-  const recordRecentMutation = useMutation({
+  const { mutate: recordRecent } = useMutation({
     mutationFn: SharedCategoryApi.recordRecentCategory,
     onSuccess: (response) => {
       if (response?.data) {
@@ -96,10 +96,10 @@ export const useCategoryTree = () => {
   const addToRecent = useCallback(
     (category: DropdownCategory) => {
       if (category.id) {
-        recordRecentMutation.mutate(category.id);
+        recordRecent(category.id);
       }
     },
-    [recordRecentMutation],
+    [recordRecent],
   );
 
   const findCategoryById = useCallback(

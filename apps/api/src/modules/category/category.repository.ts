@@ -1,4 +1,4 @@
-import { Prisma, type Category } from '@prisma/client';
+import { type Category,Prisma } from '@prisma/client';
 
 import type {
   CategoryAttributeType,

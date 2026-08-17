@@ -1,8 +1,6 @@
 import { Category, VendorProfile } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CreateProductType } from '@celebs/shared-types';
-
 import prisma from '@/config/db.prisma';
 import { ProductService } from '@/modules/product/product.service';
 

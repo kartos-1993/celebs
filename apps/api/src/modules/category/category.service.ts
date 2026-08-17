@@ -1,5 +1,5 @@
-import slugify from 'slugify';
 import type { Prisma } from '@prisma/client';
+import slugify from 'slugify';
 
 import type {
   CategoryAttributeType,
