@@ -3,6 +3,13 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 
+import {
+  ConfirmUploadInput,
+  MAX_MEDIA_FILE_BYTES,
+  MediaAsset,
+  PresignFileInput,
+  PresignFileResponse,
+} from '@celebs/shared-types';
 import { BadRequestException } from '@celebs/shared-utils';
 
 import {
@@ -12,9 +19,18 @@ import {
 } from '@/common/utils/s3.client';
 import { config } from '@/config/app.config';
 
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
+export const MAX_UPLOAD_BYTES = MAX_MEDIA_FILE_BYTES;
 export const PRESIGN_EXPIRES_IN = 15 * 60; // 15 minutes
 export const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+
+export const ALLOWED_OBJECT_PREFIXES = [
+  'celebs/products/',
+  'celebs/kyc/',
+  'celebs/banners/',
+  'celebs/categories/',
+  'celebs/marketing/',
+  'celebs/avatars/',
+];
 
 export interface PutImageInput {
   buffer: Buffer;
@@ -24,38 +40,8 @@ export interface PutImageInput {
   folder?: string;
 }
 
-export interface PutImageResult {
-  key: string;
-  url: string;
-  bytes: number;
-  contentType: string;
-  originalname: string;
-}
-
-export interface PresignFileInput {
-  originalname: string;
-  mimeType: string;
-  size: number;
-  folder?: string;
-}
-
-export interface PresignFileResult {
-  key: string;
-  uploadUrl: string;
-  publicUrl: string;
-  headers: Record<string, string>;
-  expiresIn: number;
-  originalname: string;
-  mimeType: string;
-  size: number;
-}
-
-export interface ConfirmUploadInput {
-  key: string;
-  originalname: string;
-  mimeType: string;
-  size?: number;
-}
+export type PutImageResult = MediaAsset;
+export type PresignFileResult = PresignFileResponse;
 
 function sanitizeFileName(name: string): string {
   const base = name.split(/[/\\]/).pop() || 'file';
@@ -215,8 +201,8 @@ export async function confirmUploadedObject(input: ConfirmUploadInput): Promise<
   if (!key || key.includes('..') || key.startsWith('/') || key.startsWith('\\')) {
     throw new Error('Invalid object key');
   }
-  // Only allow our product media and kyc prefixes
-  if (!key.startsWith('celebs/products/') && !key.startsWith('celebs/kyc/')) {
+  // Validate allowed object prefixes
+  if (!ALLOWED_OBJECT_PREFIXES.some((prefix) => key.startsWith(prefix))) {
     throw new Error('Invalid object key prefix');
   }
 

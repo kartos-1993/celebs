@@ -12,11 +12,11 @@ import { config } from '@/config/app.config';
 sharp.cache({ memory: 256, items: 100, files: 0 });
 sharp.concurrency(1);
 
-interface AssetJobPayload {
-  mediaId: string;
+export interface AssetJobPayload {
+  mediaId?: string;
   key: string;
-  originalname: string;
-  mimeType: string;
+  originalname?: string;
+  mimeType?: string;
 }
 
 async function getS3ObjectBuffer(key: string): Promise<Buffer> {
@@ -39,7 +39,7 @@ async function getS3ObjectBuffer(key: string): Promise<Buffer> {
 }
 
 export const assetWorker = new Worker<AssetJobPayload>(
-  'asset-optimization-queue',
+  'asset-processing',
   async (job: Job<AssetJobPayload>) => {
     const { mediaId, key } = job.data;
     logger.info({ jobId: job.id, mediaId, key }, 'Starting asset optimization job');
@@ -47,21 +47,43 @@ export const assetWorker = new Worker<AssetJobPayload>(
     try {
       const originalBuffer = await getS3ObjectBuffer(key);
 
-      const optimizedMainBuffer = await sharp(originalBuffer)
-        .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      // Base key without extension
+      const baseKey = key.replace(/\.[a-zA-Z0-9]+$/, '');
+
+      // 1. High-Res Zoom (1500x1500px)
+      const zoomKey = `${baseKey}-zoom.webp`;
+      const zoomBuffer = await sharp(originalBuffer)
+        .resize({ width: 1500, height: 1500, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer();
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: config.S3.BUCKET_NAME,
+          Key: zoomKey,
+          Body: zoomBuffer,
+          ContentType: 'image/webp',
+        }),
+      );
+
+      // 2. Main Card (750x750px)
+      const cardKey = `${baseKey}-card.webp`;
+      const cardBuffer = await sharp(originalBuffer)
+        .resize({ width: 750, height: 750, fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 82 })
         .toBuffer();
 
       await s3Client.send(
         new PutObjectCommand({
           Bucket: config.S3.BUCKET_NAME,
-          Key: key,
-          Body: optimizedMainBuffer,
+          Key: cardKey,
+          Body: cardBuffer,
           ContentType: 'image/webp',
         }),
       );
 
-      const thumbKey = key.replace(/\.([a-zA-Z0-9]+)$/, '-thumb.webp');
+      // 3. Thumbnail (350x350px)
+      const thumbKey = `${baseKey}-thumb.webp`;
       const thumbnailBuffer = await sharp(originalBuffer)
         .resize({ width: 350, height: 350, fit: 'cover' })
         .webp({ quality: 80 })
@@ -76,19 +98,39 @@ export const assetWorker = new Worker<AssetJobPayload>(
         }),
       );
 
+      // 4. Ultra-low Placeholder (30x30px)
+      const placeholderKey = `${baseKey}-placeholder.webp`;
+      const placeholderBuffer = await sharp(originalBuffer)
+        .resize({ width: 30, height: 30, fit: 'inside' })
+        .webp({ quality: 60 })
+        .toBuffer();
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: config.S3.BUCKET_NAME,
+          Key: placeholderKey,
+          Body: placeholderBuffer,
+          ContentType: 'image/webp',
+        }),
+      );
+
       const mainUrl = buildPublicObjectUrl(key);
+      const zoomUrl = buildPublicObjectUrl(zoomKey);
+      const cardUrl = buildPublicObjectUrl(cardKey);
       const thumbUrl = buildPublicObjectUrl(thumbKey);
+      const placeholderUrl = buildPublicObjectUrl(placeholderKey);
 
       logger.info(
-        { jobId: job.id, mediaId, mainUrl, thumbUrl },
-        'Asset processing completed successfully',
+        { jobId: job.id, mediaId, mainUrl, zoomUrl, cardUrl, thumbUrl, placeholderUrl },
+        'Asset multi-derivative processing completed successfully',
       );
 
       return {
         mainUrl,
+        zoomUrl,
+        cardUrl,
         thumbUrl,
-        mainSize: optimizedMainBuffer.length,
-        thumbSize: thumbnailBuffer.length,
+        placeholderUrl,
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
