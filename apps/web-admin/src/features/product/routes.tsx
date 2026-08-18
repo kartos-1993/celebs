@@ -6,6 +6,7 @@ import { Permission } from '@celebs/rbac';
 const ManageProductPage = lazy(() => import('./pages/manage-product-page'));
 const AddProductPage = lazy(() => import('./pages/add-product-page'));
 const MediaCenterPage = lazy(() => import('./pages/media-center-page'));
+const BrandAuthorizationsPage = lazy(() => import('./pages/brand-authorizations-page'));
 const ReviewProductQueuePage = lazy(() => import('./pages/review-product-queue-page'));
 
 export const productRoutes: RouteObject = {
@@ -48,6 +49,15 @@ export const productRoutes: RouteObject = {
         </RoleGuard>
       ),
       handle: { crumb: 'Media Center' },
+    },
+    {
+      path: 'brand-authorizations',
+      element: (
+        <RoleGuard requiredPermission={Permission.PRODUCT_CREATE}>
+          <BrandAuthorizationsPage />
+        </RoleGuard>
+      ),
+      handle: { crumb: 'Brand Authorizations' },
     },
     {
       path: 'review-product-queue',
