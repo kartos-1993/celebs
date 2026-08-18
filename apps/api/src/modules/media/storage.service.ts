@@ -248,6 +248,12 @@ export async function confirmUploadedObject(
     throw new BadRequestException('Invalid object key');
   }
 
+  const allowedPrefixes = ['celebs/products', 'celebs/kyc', 'vendors', 'platform'];
+  const hasValidPrefix = allowedPrefixes.some((prefix) => key.startsWith(`${prefix}/`));
+  if (!hasValidPrefix) {
+    throw new BadRequestException('Invalid object key prefix');
+  }
+
   const { originalname, mimeType } = assertUploadMeta({
     originalname: input.originalname,
     mimeType: input.mimeType,
