@@ -13,8 +13,13 @@ import {
 import { AppError, ErrorCode, generateSheinStyleSku,HTTPSTATUS } from '@celebs/shared-utils';
 
 import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
+import {
+  PRODUCT_DETAIL_SELECT,
+  PRODUCT_LIST_SELECT,
+} from './repositories/product-projections';
 import { calculateProductQCScore } from './utils/product-qc';
 
+import { brandService } from '../brand/brand.service';
 import prisma from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
@@ -30,27 +35,7 @@ const toJsonInput = (value: unknown): Prisma.InputJsonValue | undefined => {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 };
 
-export const PRODUCT_LIST_SELECT: Prisma.ProductSelect = {
-  id: true,
-  name: true,
-  brand: true,
-  slug: true,
-  description: true,
-  price: true,
-  discountedPrice: true,
-  categoryId: true,
-  subcategoryId: true,
-  mainImages: true,
-  status: true,
-  featured: true,
-  tags: true,
-  vendorId: true,
-  vendorName: true,
-  createdAt: true,
-  updatedAt: true,
-  category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-  subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-};
+export { PRODUCT_LIST_SELECT, PRODUCT_DETAIL_SELECT };
 
 export class ProductService {
   private readonly inventoryRepository = new PostgresInventoryRepository();
@@ -76,10 +61,17 @@ export class ProductService {
       prod.subcategory && typeof prod.subcategory === 'object'
         ? (prod.subcategory as Record<string, unknown>)
         : null;
+    const brandRefObj =
+      prod.brandRef && typeof prod.brandRef === 'object'
+        ? (prod.brandRef as Record<string, unknown>)
+        : null;
 
     return {
       ...prod,
       id: prod.id,
+      brandId: prod.brandId || null,
+      brand: prod.brand || (brandRefObj ? brandRefObj.name : null),
+      brandRef: brandRefObj,
       price: prod.price != null ? Number(prod.price) : 0,
       discountedPrice:
         prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
@@ -207,6 +199,37 @@ export class ProductService {
       input.subcategoryId,
     );
 
+    // Resolve Brand and apply brand protection & authorization guards
+    let resolvedBrandId = input.brandId || null;
+    let resolvedBrandName = input.brand?.trim() || null;
+
+    if (resolvedBrandId) {
+      const b = await prisma.brand.findUnique({ where: { id: resolvedBrandId } });
+      if (b) {
+        resolvedBrandName = b.name;
+      }
+    } else if (resolvedBrandName) {
+      const b = await prisma.brand.findFirst({
+        where: { name: { equals: resolvedBrandName, mode: 'insensitive' } },
+      });
+      if (b) {
+        resolvedBrandId = b.id;
+        resolvedBrandName = b.name;
+      }
+    }
+
+    await brandService.assertVendorCanUseBrand({
+      vendorId,
+      brandId: resolvedBrandId,
+    });
+
+    await brandService.screenProductForBrandHijacking({
+      title: input.name,
+      description: input.description,
+      vendorId,
+      selectedBrandId: resolvedBrandId,
+    });
+
     const maxAttempts = 3;
     let createdProduct = null;
     let lastError: unknown = null;
@@ -220,7 +243,8 @@ export class ProductService {
           const product = await tx.product.create({
             data: {
               name: input.name.trim(),
-              brand: input.brand?.trim() || undefined,
+              brand: resolvedBrandName || undefined,
+              brandId: resolvedBrandId || undefined,
               slug,
               description: input.description?.trim() || '',
               price: input.price,
@@ -244,6 +268,17 @@ export class ProductService {
             include: {
               category: { select: { id: true, name: true, slug: true, path: true, level: true } },
               subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+              brandRef: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  logoUrl: true,
+                  tier: true,
+                  isGated: true,
+                  countryOfOrigin: true,
+                },
+              },
             },
           });
 
@@ -287,6 +322,17 @@ export class ProductService {
       include: {
         category: { select: { id: true, name: true, slug: true, path: true, level: true } },
         subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+        brandRef: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoUrl: true,
+            tier: true,
+            isGated: true,
+            countryOfOrigin: true,
+          },
+        },
       },
     });
 
@@ -310,6 +356,9 @@ export class ProductService {
         { name: { contains: filters.search, mode: 'insensitive' } },
         { brand: { contains: filters.search, mode: 'insensitive' } },
       ];
+    }
+    if (filters.brandId) {
+      where.brandId = filters.brandId;
     }
     if (typeof filters.featured === 'boolean') {
       where.featured = filters.featured;
@@ -373,6 +422,12 @@ export class ProductService {
         { brand: { contains: filters.search, mode: 'insensitive' } },
         { tags: { has: filters.search } },
       ];
+    }
+
+    if (filters.brandId) {
+      where.brandId = filters.brandId;
+    } else if (filters.brand) {
+      where.brand = { contains: filters.brand, mode: 'insensitive' };
     }
 
     if (filters.vendorId) {
@@ -746,12 +801,45 @@ export class ProductService {
       slug = await this.generateUniqueSlug(updateData.name.trim());
     }
 
+    // Resolve Brand changes
+    let resolvedBrandId = updateData.brandId !== undefined ? updateData.brandId : product.brandId;
+    let resolvedBrandName = updateData.brand !== undefined ? updateData.brand?.trim() || null : product.brand;
+
+    if (updateData.brandId && updateData.brandId !== product.brandId) {
+      const b = await prisma.brand.findUnique({ where: { id: updateData.brandId } });
+      if (b) resolvedBrandName = b.name;
+    } else if (updateData.brand && updateData.brand !== product.brand) {
+      const b = await prisma.brand.findFirst({
+        where: { name: { equals: updateData.brand.trim(), mode: 'insensitive' } },
+      });
+      if (b) {
+        resolvedBrandId = b.id;
+        resolvedBrandName = b.name;
+      }
+    }
+
+    if (updateData.brandId || updateData.brand || updateData.name || updateData.description) {
+      await brandService.assertVendorCanUseBrand({
+        vendorId: product.vendorId || vendorId,
+        brandId: resolvedBrandId,
+        userRole: role,
+      });
+
+      await brandService.screenProductForBrandHijacking({
+        title: updateData.name || product.name,
+        description: updateData.description ?? product.description ?? '',
+        vendorId: product.vendorId || vendorId,
+        selectedBrandId: resolvedBrandId,
+      });
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const p = await tx.product.update({
         where: { id },
         data: {
           ...(updateData.name ? { name: updateData.name.trim() } : {}),
-          ...(updateData.brand !== undefined ? { brand: updateData.brand?.trim() || null } : {}),
+          ...(resolvedBrandName !== undefined ? { brand: resolvedBrandName } : {}),
+          ...(resolvedBrandId !== undefined ? { brandId: resolvedBrandId } : {}),
           slug,
           ...(updateData.description !== undefined
             ? { description: updateData.description?.trim() || '' }
@@ -782,6 +870,17 @@ export class ProductService {
         include: {
           category: { select: { id: true, name: true, slug: true, path: true, level: true } },
           subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+          brandRef: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logoUrl: true,
+              tier: true,
+              isGated: true,
+              countryOfOrigin: true,
+            },
+          },
         },
       });
 

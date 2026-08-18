@@ -24,6 +24,7 @@ export interface Brand {
   tier: BrandTier;
   isGated: boolean;
   ownerVendorId?: string | null;
+  productCount?: number;
   createdAt: string | Date;
   updatedAt: string | Date;
 }

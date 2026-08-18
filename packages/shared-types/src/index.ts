@@ -43,6 +43,7 @@ export * from './validators/order.validator';
 export * from './validators/category.validator';
 export * from './validators/combo.validator';
 export * from './validators/campaign.validator';
+export * from './validators/common.validator';
 export * from './validators/logistics.validator';
 export * from './validators/media.validator';
 

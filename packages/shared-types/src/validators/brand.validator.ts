@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from './common.validator';
 
 export const brandTierSchema = z.enum([
   'FIRST_PARTY',
@@ -49,7 +50,7 @@ export const brandFilterSchema = z.object({
 });
 
 export const createBrandAuthorizationSchema = z.object({
-  brandId: z.string().uuid('Invalid Brand ID'),
+  brandId: idSchema,
   documentType: z.enum(['LOA', 'TRADEMARK_CERT', 'INVOICE', 'DEALERSHIP_CONTRACT']),
   documentUrl: z.string().url('Valid document URL is required'),
   documentExpiryDate: z.string().datetime().optional().nullable().or(z.string().length(0)),
@@ -62,7 +63,7 @@ export const reviewBrandAuthorizationSchema = z.object({
 });
 
 export const createBrandProtectionRuleSchema = z.object({
-  brandId: z.string().uuid('Invalid Brand ID'),
+  brandId: idSchema,
   pattern: z.string().trim().min(2, 'Pattern is required'),
   matchField: z.enum(['TITLE', 'DESCRIPTION', 'TITLE_AND_DESCRIPTION']).default('TITLE_AND_DESCRIPTION'),
   isActive: z.boolean().optional().default(true),

@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { can, Permission, Role } from '@celebs/rbac';
 import {
   createProductSchema,
+  idParamSchema,
   productFilterSchema,
   productReviewActionSchema,
   updateProductSchema,
@@ -63,7 +64,7 @@ export class ProductController {
 
   getProductById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = req.params.id || '';
+      const { id } = idParamSchema.parse(req.params);
       const product = await this.productService.getProductById(id);
       if (!product) {
         throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
@@ -136,7 +137,7 @@ export class ProductController {
         );
       }
 
-      const id = req.params.id || '';
+      const { id } = idParamSchema.parse(req.params);
       const product = await this.productService.submitProductForReview(id, vendorId);
 
       res.status(HTTPSTATUS.OK).json({
@@ -159,7 +160,7 @@ export class ProductController {
         );
       }
 
-      const id = req.params.id || '';
+      const { id } = idParamSchema.parse(req.params);
       const parsed = productReviewActionSchema.parse(req.body);
       const product = await this.productService.reviewProduct(id, {
         action: parsed.action,
@@ -191,7 +192,7 @@ export class ProductController {
         );
       }
 
-      const id = req.params.id || '';
+      const { id } = idParamSchema.parse(req.params);
       const payload = updateProductSchema.parse(req.body);
       const userPermissions = (req.user as { permissions?: string[] }).permissions;
       const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
@@ -225,7 +226,7 @@ export class ProductController {
         );
       }
 
-      const id = req.params.id || '';
+      const { id } = idParamSchema.parse(req.params);
       const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
 
       const product = await this.productService.archiveProduct(
@@ -256,7 +257,7 @@ export class ProductController {
         );
       }
 
-      const id = req.params.id || '';
+      const { id } = idParamSchema.parse(req.params);
       const product = await this.productService.toggleProductActivation(id, vendorId);
 
       res.status(HTTPSTATUS.OK).json({
