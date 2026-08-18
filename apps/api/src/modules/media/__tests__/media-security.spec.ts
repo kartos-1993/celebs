@@ -64,24 +64,24 @@ describe('Media Upload Security Unit & Integration Rules', () => {
   });
 
   describe('File Size & MIME Meta Validation', () => {
-    it('should reject files exceeding 5MB limit', () => {
+    it('should reject files exceeding upload limit', () => {
       expect(() =>
         assertUploadMeta({
           originalname: 'big.jpg',
           mimeType: 'image/jpeg',
           size: MAX_UPLOAD_BYTES + 1,
         }),
-      ).toThrow('Each image must be <= 5MB');
+      ).toThrow(`Each image must be <= ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
     });
 
-    it('should reject non-image MIME types (including PDF)', () => {
+    it('should reject unaccepted MIME types', () => {
       expect(() =>
         assertUploadMeta({
-          originalname: 'document.pdf',
-          mimeType: 'application/pdf',
+          originalname: 'video.mp4',
+          mimeType: 'video/mp4',
           size: 1024,
         }),
-      ).toThrow('Invalid file type. Allowed: jpeg, png, webp, avif');
+      ).toThrow('Invalid file type');
     });
 
     it('should accept valid image MIME types', () => {

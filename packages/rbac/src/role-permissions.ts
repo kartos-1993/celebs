@@ -28,7 +28,6 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.PRODUCT_PUBLISH,
     Permission.PRODUCT_REVIEW,
     Permission.CATALOG_VIEW,
-    Permission.CATALOG_MANAGE,
     Permission.BRAND_VIEW,
     Permission.BRAND_MANAGE,
     Permission.MEDIA_VIEW,
@@ -42,8 +41,6 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.STAFF_VIEW,
     Permission.STAFF_MANAGE,
     Permission.USER_VIEW,
-    Permission.USER_MANAGE,
-    Permission.PLATFORM_MANAGE,
   ],
   SUPERADMIN: Object.values(Permission),
 } as const;
