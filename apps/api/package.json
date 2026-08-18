@@ -21,6 +21,7 @@
     "//_SEEDING": "=== Database Seeding ===",
     "seed": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
     "seed:reset": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
+    "seed:brands": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-brands.ts",
     "seed:staging": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
     "seed:staging:reset": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
     "seed:option-sets": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-option-sets.ts",

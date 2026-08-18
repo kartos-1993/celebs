@@ -1,4 +1,5 @@
 import { connectDb, disconnectDb } from './config';
+import { seedBrands } from './seed-brands';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
 import { seedCategoriesMen } from './seed-categories-men';
 import { seedOptionSets } from './seed-option-sets';
@@ -17,6 +18,9 @@ export async function runMasterSeed(): Promise<void> {
   await connectDb();
 
   try {
+    // Step 0: Brand Registry (1P, Gated Global & Generic)
+    await seedBrands();
+
     // Step 1: Option Sets (Colors, Sizes, Shoe Sizes)
     await seedOptionSets();
 
