@@ -3,48 +3,27 @@ import { Badge } from '@celebs/shared-ui/components/badge';
 import { Progress } from '@celebs/shared-ui/components/progress';
 import { HardDrive, Info } from 'lucide-react';
 import type { MediaQuota } from '@celebs/shared-types';
+import { computeStorageQuotaStats } from '../utils/storage-quota-utils';
 
 interface StorageQuotaBarProps {
   quota?: MediaQuota | null;
   isLoading?: boolean;
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-}
-
 export const StorageQuotaBar = memo(function StorageQuotaBar({
   quota,
   isLoading,
 }: StorageQuotaBarProps) {
-  const { usedFormatted, maxFormatted, percentage, isHighUsage, tierLabel } = useMemo(() => {
-    if (!quota) {
-      return {
-        usedFormatted: '0 MB',
-        maxFormatted: '5 GB',
-        percentage: 0,
-        isHighUsage: false,
-        tierLabel: 'Starter Store (5GB)',
-      };
-    }
-
-    const usedFormatted = formatBytes(quota.usedBytes);
-    const maxFormatted = formatBytes(quota.maxBytes);
-    const percentage = Math.min(100, Math.round((quota.usedBytes / quota.maxBytes) * 100));
-    const isHighUsage = percentage >= 80;
-    const tierLabel =
-      quota.tier === 'FLAGSHIP'
-        ? 'Flagship Brand (100GB)'
-        : quota.tier === 'MALL'
-          ? 'Mall Verified (20GB)'
-          : 'Starter Store (5GB)';
-
-    return { usedFormatted, maxFormatted, percentage, isHighUsage, tierLabel };
-  }, [quota]);
+  const {
+    usedFormatted,
+    maxFormatted,
+    percentage,
+    isHighUsage,
+    tierLabel,
+    totalCount,
+    unlinkedCount,
+    unlinkedFormatted,
+  } = useMemo(() => computeStorageQuotaStats(quota), [quota]);
 
   if (isLoading) {
     return (
@@ -85,11 +64,11 @@ export const StorageQuotaBar = memo(function StorageQuotaBar({
           }`}
         />
         <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
-          <span>{quota?.totalAssetCount ?? 0} total assets</span>
-          {quota && quota.unlinkedAssetCount > 0 && (
+          <span>{totalCount} total assets</span>
+          {unlinkedCount > 0 && (
             <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
               <Info className="h-3 w-3" />
-              {quota.unlinkedAssetCount} unlinked ({formatBytes(quota.unlinkedSizeBytes)})
+              {unlinkedCount} unlinked ({unlinkedFormatted})
             </span>
           )}
         </div>

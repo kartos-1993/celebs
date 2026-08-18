@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Plus, X, UploadCloud, RefreshCw, Loader2, HardDrive } from 'lucide-react';
 import { Button } from '@celebs/shared-ui/components/button';
-import type { UiProps } from '../ui-registry';
-import { imageValueKey, uploadImageFiles, uploadErrorMessage, ImageValue } from './shared';
+import { HardDrive, Loader2, Plus, RefreshCw, UploadCloud, X } from 'lucide-react';
 import { MediaPickerDialog } from '../../components/media-picker-dialog';
+import type { UiProps } from '../ui-registry';
+import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles } from './shared';
 
-export function MainImageInputField({ field }: UiProps) {
+export const MainImageInputField = memo(function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
-  const rawFiles = watch(field.name);
-  const files: ImageValue[] = React.useMemo(() => rawFiles ?? [], [rawFiles]);
-  const [previews, setPreviews] = React.useState<string[]>([]);
-  const [isUploading, setIsUploading] = React.useState(false);
-  const [isPickerOpen, setIsPickerOpen] = React.useState(false);
-  const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
-  const filesHash = (files || []).map((file) => imageValueKey(file)).join('|');
 
-  const getDims = React.useCallback((file: File) => {
+  const maxItems = useMemo(
+    () => (typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : 1),
+    [field.rule?.maxItems],
+  );
+  const isSingle = maxItems === 1;
+
+  const rawFiles = watch(field.name);
+  const files: ImageValue[] = useMemo(() => rawFiles ?? [], [rawFiles]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const fileInputs = useRef<Array<HTMLInputElement | null>>([]);
+  const filesHash = useMemo(
+    () => (files || []).map((file) => imageValueKey(file)).join('|'),
+    [files],
+  );
+
+  const getDims = useCallback((file: File) => {
     return new Promise<{ w: number; h: number }>((resolve, reject) => {
       const url = URL.createObjectURL(file);
       const img = new Image();
@@ -34,7 +44,7 @@ export function MainImageInputField({ field }: UiProps) {
     });
   }, []);
 
-  const prevalidateFile = React.useCallback(
+  const prevalidateFile = useCallback(
     async (file: File) => {
       const rule = field.rule || {};
       if (typeof rule.maxSize === 'number' && file.size > rule.maxSize) {
@@ -55,7 +65,7 @@ export function MainImageInputField({ field }: UiProps) {
           if (typeof minH === 'number' && dims.h < minH) return `${file.name} height < ${minH}px`;
           if (typeof maxW === 'number' && dims.w > maxW) return `${file.name} width > ${maxW}px`;
           if (typeof maxH === 'number' && dims.h > maxH) return `${file.name} height > ${maxH}px`;
-        } catch (_e) {
+        } catch {
           return `Could not inspect ${file.name} dimensions`;
         }
       }
@@ -64,7 +74,7 @@ export function MainImageInputField({ field }: UiProps) {
     [field.rule, getDims],
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     register(field.name, {
       validate: (v: unknown) => {
         const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
@@ -82,7 +92,7 @@ export function MainImageInputField({ field }: UiProps) {
     });
   }, [register, field.name, field.required, field.label, field.rule]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let active = true;
 
     const urls = (files || []).map((item) =>
@@ -101,107 +111,123 @@ export function MainImageInputField({ field }: UiProps) {
     };
   }, [filesHash, files]);
 
-  const onAddFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = Array.from(e.target.files || []);
-    if (raw.length === 0) return;
+  const onAddFiles = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = Array.from(e.target.files || []);
+      if (raw.length === 0) return;
 
-    e.target.value = '';
+      e.target.value = '';
 
-    const currentCount = (watch(field.name) ?? []).length;
-    const max = typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : 1;
-    const slots = Math.max(0, max - currentCount);
+      const currentCount = (watch(field.name) ?? []).length;
+      const slots = Math.max(0, maxItems - currentCount);
 
-    if (slots === 0) {
-      setError(field.name, {
-        type: 'validate',
-        message: `Maximum allowed is ${max} image(s)`,
-      });
-      return;
-    }
-
-    const targetFiles = raw.slice(0, slots);
-    const valids: File[] = [];
-    const errors: string[] = [];
-
-    for (const f of targetFiles) {
-      const err = await prevalidateFile(f);
-      if (err) errors.push(err);
-      else valids.push(f);
-    }
-
-    if (valids.length === 0) {
-      if (errors.length) {
+      if (slots === 0) {
         setError(field.name, {
           type: 'validate',
-          message: errors[0],
+          message: `Maximum allowed is ${maxItems} image(s)`,
         });
+        return;
       }
-      return;
-    }
 
-    setIsUploading(true);
+      const targetFiles = raw.slice(0, slots);
+      const valids: File[] = [];
+      const errors: string[] = [];
 
-    try {
-      const uploadedUrls = await uploadImageFiles(valids);
+      for (const f of targetFiles) {
+        const err = await prevalidateFile(f);
+        if (err) errors.push(err);
+        else valids.push(f);
+      }
+
+      if (valids.length === 0) {
+        if (errors.length) {
+          setError(field.name, {
+            type: 'validate',
+            message: errors[0],
+          });
+        }
+        return;
+      }
+
+      setIsUploading(true);
+
+      try {
+        const uploadedUrls = await uploadImageFiles(valids);
+        const current = (watch(field.name) ?? []) as ImageValue[];
+        const next = [...current, ...uploadedUrls];
+        setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+        clearErrors(field.name);
+        trigger(field.name);
+      } catch (error) {
+        setError(field.name, {
+          type: 'upload',
+          message: uploadErrorMessage(error),
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [watch, field.name, maxItems, prevalidateFile, setValue, clearErrors, trigger, setError],
+  );
+
+  const onReplaceFile = useCallback(
+    async (idx: number, f: File | null) => {
+      if (!f) return;
+      const err = await prevalidateFile(f);
+
+      if (err) {
+        setError(field.name, { type: 'validate', message: err });
+        return;
+      }
+
+      setIsUploading(true);
+
+      try {
+        const [uploadedUrl] = await uploadImageFiles([f]);
+        const current = (watch(field.name) ?? []) as ImageValue[];
+        const next = [...current];
+        next[idx] = uploadedUrl;
+        setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+        clearErrors(field.name);
+        trigger(field.name);
+      } catch (error) {
+        setError(field.name, {
+          type: 'upload',
+          message: uploadErrorMessage(error),
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [prevalidateFile, setError, field.name, watch, setValue, clearErrors, trigger],
+  );
+
+  const onRemoveFile = useCallback(
+    (idx: number) => {
       const current = (watch(field.name) ?? []) as ImageValue[];
-      const next = [...current, ...uploadedUrls];
+      const next = current.filter((_, i) => i !== idx);
       setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
       clearErrors(field.name);
-      trigger(field.name);
-    } catch (error) {
-      setError(field.name, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const onReplaceFile = async (idx: number, f: File | null) => {
-    if (!f) return;
-    const err = await prevalidateFile(f);
-
-    if (err) {
-      setError(field.name, { type: 'validate', message: err });
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const [uploadedUrl] = await uploadImageFiles([f]);
-      const current = (watch(field.name) ?? []) as ImageValue[];
-      const next = [...current];
-      next[idx] = uploadedUrl;
-      setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
-      clearErrors(field.name);
-      trigger(field.name);
-    } catch (error) {
-      setError(field.name, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const onRemoveFile = (idx: number) => {
-    const current = (watch(field.name) ?? []) as ImageValue[];
-    const next = current.filter((_, i) => i !== idx);
-    setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
-    clearErrors(field.name);
-    trigger(field.name);
-  };
-
-  const handlePickerSelect = React.useCallback(
-    (urls: string[]) => {
-      const merged = isSingle ? [urls[0]] : Array.from(new Set([...(files || []), ...urls])).slice(0, maxItems);
-      setValue(field.name, merged, { shouldDirty: true, shouldValidate: true });
       trigger(field.name);
     },
-    [isSingle, files, maxItems, setValue, field.name, trigger],
+    [watch, field.name, setValue, clearErrors, trigger],
+  );
+
+  const handlePickerSelect = useCallback(
+    (urls: string[]) => {
+      if (!urls.length) return;
+      let next: string[];
+      if (isSingle) {
+        next = [urls[0]];
+      } else {
+        const currentUrls = (files || []).map((f) => (typeof f === 'string' ? f : ''));
+        next = Array.from(new Set([...currentUrls.filter(Boolean), ...urls])).slice(0, maxItems);
+      }
+      setValue(field.name, next, { shouldDirty: true, shouldValidate: true });
+      clearErrors(field.name);
+      trigger(field.name);
+    },
+    [isSingle, files, maxItems, setValue, field.name, clearErrors, trigger],
   );
 
   return (
@@ -409,4 +435,4 @@ export function MainImageInputField({ field }: UiProps) {
       ) : null}
     </div>
   );
-}
+});

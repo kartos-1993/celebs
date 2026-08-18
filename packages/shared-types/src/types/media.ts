@@ -72,6 +72,7 @@ export interface MediaQuota {
   maxBytes: number;
   usedPercentage: number;
   tier: 'STARTER' | 'VERIFIED_MALL' | 'STRATEGIC_FLAGSHIP';
+  totalAssetCount?: number;
   unlinkedAssetCount: number;
   unlinkedSizeBytes: number;
 }
