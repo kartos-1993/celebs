@@ -1,0 +1,163 @@
+import { NextFunction, Request, Response } from 'express';
+import {
+  brandFilterSchema,
+  createBrandAuthorizationSchema,
+  createBrandSchema,
+  idParamSchema,
+  reviewBrandAuthorizationSchema,
+  updateBrandSchema,
+} from '@celebs/shared-types';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import { BrandService, brandService as defaultBrandService } from './brand.service';
+
+export class BrandController {
+  constructor(private brandService: BrandService = defaultBrandService) {}
+
+  getAllBrands = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = brandFilterSchema.parse(req.query);
+      const result = await this.brandService.getBrands(filters);
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Brands retrieved successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getBrandByIdOrSlug = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const idOrSlug = String(req.params.id);
+      const brand = await this.brandService.getBrandByIdOrSlug(idOrSlug);
+
+      if (!brand) {
+        throw new AppError('Brand not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      }
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Brand retrieved successfully',
+        data: brand,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  createBrand = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      logger.debug({ body: req.body, user: req.user }, 'Create brand request received');
+      const validatedData = createBrandSchema.parse(req.body);
+      const brand = await this.brandService.createBrand(validatedData);
+
+      res.status(HTTPSTATUS.CREATED).json({
+        success: true,
+        message: 'Brand created successfully',
+        data: brand,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateBrand = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const validatedData = updateBrandSchema.parse(req.body);
+      const brand = await this.brandService.updateBrand(id, validatedData);
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Brand updated successfully',
+        data: brand,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  submitAuthorization = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const vendorId = req.user?.vendorId;
+      if (!vendorId) {
+        throw new AppError(
+          'Vendor context is required for brand authorization',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.FORBIDDEN_ACCESS,
+        );
+      }
+
+      const validatedData = createBrandAuthorizationSchema.parse(req.body);
+      const auth = await this.brandService.submitAuthorization(vendorId, validatedData);
+
+      res.status(HTTPSTATUS.CREATED).json({
+        success: true,
+        message: 'Brand authorization submitted for review',
+        data: auth,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getMyAuthorizations = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const vendorId = req.user?.vendorId;
+      if (!vendorId) {
+        throw new AppError(
+          'Vendor context is required',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.FORBIDDEN_ACCESS,
+        );
+      }
+
+      const auths = await this.brandService.getVendorAuthorizations(vendorId);
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Vendor brand authorizations retrieved successfully',
+        data: auths,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getPendingAuthorizations = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const limit = parseInt(req.query.limit as string, 10) || 20;
+      const result = await this.brandService.getPendingAuthorizations(page, limit);
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: 'Pending brand authorizations retrieved successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  reviewAuthorization = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const adminUserId = req.user?.id || 'admin';
+      const validatedData = reviewBrandAuthorizationSchema.parse(req.body);
+      const auth = await this.brandService.reviewAuthorization(id, adminUserId, validatedData);
+
+      res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: `Brand authorization ${validatedData.status.toLowerCase()} successfully`,
+        data: auth,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+export const brandController = new BrandController();

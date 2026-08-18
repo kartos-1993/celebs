@@ -1,7 +1,5 @@
 import { z } from 'zod';
-
-// UUID validator for entity primary and foreign keys
-export const idSchema = z.string().uuid('Invalid UUID');
+import { idSchema } from './common.validator';
 
 // Product measurement schema
 export const productMeasurementSchema = z.object({

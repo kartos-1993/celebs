@@ -66,17 +66,14 @@ export const baseCategorySchema = z.object(baseCategorySchemaFields);
 export const createCategorySchema = baseCategorySchema;
 export const updateCategorySchema = baseCategorySchema.partial();
 
+import { idParamSchema, slugParamSchema } from './common.validator';
+
 export const recordRecentCategorySchema = z.object({
   categoryId: z.string().min(1, 'Category ID is required'),
 });
 
-export const categoryIdParamSchema = z.object({
-  id: z.string().min(1, 'Category ID is required'),
-});
-
-export const categorySlugParamSchema = z.object({
-  slug: z.string().min(1, 'Category slug is required'),
-});
+export const categoryIdParamSchema = idParamSchema;
+export const categorySlugParamSchema = slugParamSchema;
 
 export const categoryPaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
