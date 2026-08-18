@@ -25,11 +25,19 @@ import {
   productReviewActionSchema,
   productFilterSchema,
 } from './validators/product.validator';
+import {
+  createBrandSchema,
+  updateBrandSchema,
+  brandFilterSchema,
+  createBrandAuthorizationSchema,
+  reviewBrandAuthorizationSchema,
+} from './validators/brand.validator';
 
 export * from './validators/auth.validator';
 export * from './validators/mfa.validator';
 export * from './validators/vendor.validator';
 export * from './validators/product.validator';
+export * from './validators/brand.validator';
 export * from './validators/cart.validator';
 export * from './validators/order.validator';
 export * from './validators/category.validator';
@@ -59,7 +67,14 @@ export type ProductType = z.infer<typeof createProductSchema>;
 export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
 export type CreateStaffType = z.infer<typeof createStaffSchema>;
 
+export type CreateBrandType = z.infer<typeof createBrandSchema>;
+export type UpdateBrandType = z.infer<typeof updateBrandSchema>;
+export type BrandFilterType = z.infer<typeof brandFilterSchema>;
+export type CreateBrandAuthorizationType = z.infer<typeof createBrandAuthorizationSchema>;
+export type ReviewBrandAuthorizationType = z.infer<typeof reviewBrandAuthorizationSchema>;
+
 export * from './types/api';
+export * from './types/brand';
 export * from './types/cart';
 export * from './types/category';
 export * from './types/marketing';

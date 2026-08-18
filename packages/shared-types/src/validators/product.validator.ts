@@ -63,6 +63,14 @@ export const dynamicVariantMetaSchema = z.object({
   values: z.array(z.string()),
 });
 
+// Customer interactive Fit Recommender input
+export const findMySizeInputSchema = z.object({
+  heightCm: z.number().min(100).max(250),
+  weightKg: z.number().min(30).max(200),
+  preferredFit: z.enum(['SNUG', 'REGULAR', 'RELAXED']).default('REGULAR'),
+  gender: z.enum(['MEN', 'WOMEN', 'UNISEX']).default('UNISEX'),
+});
+
 export type ProductMeasurementType = z.infer<typeof productMeasurementSchema>;
 export type BodyMeasurementType = z.infer<typeof bodyMeasurementSchema>;
 export type ProductSizeType = z.infer<typeof sizeSchema>;
@@ -71,11 +79,13 @@ export type ProductColorVariantType = z.infer<typeof colorVariantSchema>;
 export type SkuItemType = z.infer<typeof skuItemSchema>;
 export type VariantOptionType = z.infer<typeof variantOptionSchema>;
 export type DynamicVariantMetaType = z.infer<typeof dynamicVariantMetaSchema>;
+export type FindMySizeInputType = z.infer<typeof findMySizeInputSchema>;
 
 // Base product schema fields
 const baseProductSchemaFields = {
   name: z.string().trim().min(2, 'Product name must be at least 2 characters').max(200),
-  brand: z.string().trim().min(1, 'Brand is required').max(100).optional().or(z.literal('')),
+  brandId: idSchema.optional().nullable(),
+  brand: z.string().trim().max(100).optional().or(z.literal('')).nullable(),
   description: z
     .string()
     .trim()
@@ -171,6 +181,8 @@ export const productFilterSchema = z.object({
   categoryId: idSchema.optional(),
   subcategoryId: idSchema.optional(),
   category: z.string().optional(),
+  brandId: idSchema.optional(),
+  brand: z.string().optional(),
   tag: z.string().optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
@@ -198,6 +210,16 @@ export const productSchema = baseProductSchema.extend({
     z.string(),
     z.object({ id: z.string(), name: z.string(), slug: z.string() }),
   ]),
+  brandRef: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      slug: z.string(),
+      logoUrl: z.string().nullable().optional(),
+      tier: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
   reviewNote: z.string().optional(),
   reviewedBy: z.string().optional(),
   reviewedAt: z.union([z.string(), z.date()]).optional(),
