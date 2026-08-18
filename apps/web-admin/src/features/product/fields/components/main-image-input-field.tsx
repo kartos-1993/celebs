@@ -1,9 +1,10 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Plus, X, UploadCloud, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, X, UploadCloud, RefreshCw, Loader2, HardDrive } from 'lucide-react';
 import { Button } from '@celebs/shared-ui/components/button';
 import type { UiProps } from '../ui-registry';
 import { imageValueKey, uploadImageFiles, uploadErrorMessage, ImageValue } from './shared';
+import { MediaPickerDialog } from '../../components/media-picker-dialog';
 
 export function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
@@ -11,6 +12,7 @@ export function MainImageInputField({ field }: UiProps) {
   const files: ImageValue[] = React.useMemo(() => rawFiles ?? [], [rawFiles]);
   const [previews, setPreviews] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const fileInputs = React.useRef<Array<HTMLInputElement | null>>([]);
   const filesHash = (files || []).map((file) => imageValueKey(file)).join('|');
 
@@ -193,20 +195,46 @@ export function MainImageInputField({ field }: UiProps) {
     trigger(field.name);
   };
 
-  const maxItems = typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : 1;
-  const isSingle = maxItems === 1;
+  const handlePickerSelect = React.useCallback(
+    (urls: string[]) => {
+      const merged = isSingle ? [urls[0]] : Array.from(new Set([...(files || []), ...urls])).slice(0, maxItems);
+      setValue(field.name, merged, { shouldDirty: true, shouldValidate: true });
+      trigger(field.name);
+    },
+    [isSingle, files, maxItems, setValue, field.name, trigger],
+  );
 
   return (
     <div className="space-y-2 col-span-full">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-foreground">
-          {field.label}
-          {field.required ? <span className="ml-1 text-red-500">*</span> : null}
-        </label>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-foreground">
+            {field.label}
+            {field.required ? <span className="ml-1 text-red-500">*</span> : null}
+          </label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPickerOpen(true)}
+            className="h-6 text-[11px] px-2 gap-1 rounded-md text-primary border-primary/30 hover:bg-primary/10"
+          >
+            <HardDrive className="h-3 w-3" /> Media Library
+          </Button>
+        </div>
         <span className="text-[11px] text-muted-foreground">
           {previews.length}/{maxItems} uploaded
         </span>
       </div>
+
+      <MediaPickerDialog
+        open={isPickerOpen}
+        onOpenChange={setIsPickerOpen}
+        onSelect={handlePickerSelect}
+        maxSelect={maxItems}
+        initialSelectedUrls={previews}
+        scope="PRODUCT"
+      />
 
       <div className="space-y-3">
         {/* Single File Mode */}
