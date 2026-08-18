@@ -13,6 +13,14 @@ export enum Permission {
   // ── Product Review/Moderation ──────────
   PRODUCT_REVIEW = 'product:review',
 
+  // ── Brands ─────────────────────────────
+  BRAND_VIEW = 'brand:view',
+  BRAND_MANAGE = 'brand:manage',
+
+  // ── Media DAM & Picture Space ─────────
+  MEDIA_VIEW = 'media:view',
+  MEDIA_MANAGE = 'media:manage',
+
   // ── Orders ────────────────────────────
   ORDER_VIEW = 'order:view',
   ORDER_MANAGE = 'order:manage',
