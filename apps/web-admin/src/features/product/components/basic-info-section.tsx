@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from '@celebs/shared-ui/components/form';
 import { CascadingDropdown } from './cascading-dropdown';
+import { BrandSelector } from './brand-selector';
 import type { DropdownCategory } from '../types';
 interface BasicInfoSectionProps {
   control: Control<FieldValues>;
@@ -161,32 +162,21 @@ const BasicInfoSection = ({
           {!hideBrand ? (
             <FormField
               control={control}
-              name="brand"
+              name="brandId"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center justify-between gap-3">
-                    <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      Brand
-                    </FormLabel>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {String(field.value || '').length}/100
-                    </span>
-                  </div>
                   <FormControl>
-                    <Input
-                      placeholder="Brand or collection name"
-                      data-testid="product-brand-input"
-                      {...field}
-                      onChange={(event) => {
-                        field.onChange(event);
-                        onFieldChange('brand', event.target.value);
+                    <BrandSelector
+                      value={field.value}
+                      onChange={(brandId, brandName) => {
+                        field.onChange(brandId);
+                        if (control._formValues) {
+                          control._formValues.brand = brandName || '';
+                        }
+                        onFieldChange('brand', brandName || '');
                       }}
-                      className="h-11 rounded-2xl border-gray-200 bg-white text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
                     />
                   </FormControl>
-                  <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
-                    Leave blank only if this product should be listed as unbranded.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
