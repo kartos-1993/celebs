@@ -31,6 +31,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { BrandStoryBadge } from '@/features/products/components/brand-story-badge';
+import { FitRecommenderWidget } from '@/features/products/components/fit-recommender-widget';
 import { ProductGallery } from '@/features/products/components/product-gallery';
 import { ProductVariantSelector } from '@/features/products/components/product-variant-selector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
@@ -239,10 +241,18 @@ export default function ProductDetailScreen() {
 
         {/* Product Information Section */}
         <View style={styles.detailsContainer}>
-          {/* Brand & Favorite */}
+          {/* Brand Story Badge & Favorite */}
           <View style={styles.brandRow}>
-            <ThemedText style={styles.brandText}>{product.brand || 'Celebs Exclusive'}</ThemedText>
-            <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
+            <View style={{ flex: 1 }}>
+              <BrandStoryBadge
+                brandName={product.brand}
+                brandRef={(product as { brandRef?: unknown })?.brandRef as never}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => setIsFavorite(!isFavorite)}
+              style={{ marginLeft: 8 }}
+            >
               <Heart
                 size={22}
                 color={isFavorite ? '#ef4444' : '#9ca3af'}
@@ -276,6 +286,17 @@ export default function ProductDetailScreen() {
           </View>
 
           <View style={styles.divider} />
+
+          {/* Fit Recommender Widget (Nepali Sizing Engine) */}
+          <FitRecommenderWidget
+            availableSizes={
+              Array.isArray(product.sizes)
+                ? product.sizes.map((s) => (typeof s === 'string' ? s : s.name))
+                : ['S', 'M', 'L', 'XL', 'XXL']
+            }
+            selectedSize={selectedSize}
+            onSelectSize={setSelectedSize}
+          />
 
           {/* Variant Selector */}
           <ProductVariantSelector
