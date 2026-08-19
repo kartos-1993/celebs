@@ -124,7 +124,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
 
   const handleDeleteAsset = useCallback(
     async (asset: MediaAsset) => {
-      if (asset.usageCount > 0) {
+      if ((asset.usageCount ?? 0) > 0) {
         toast({
           title: 'Action Blocked',
           description: `Cannot delete asset: actively used in ${asset.usageCount} products.`,
@@ -132,6 +132,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
         });
         return;
       }
+      if (!asset.id) return;
       if (!window.confirm(`Delete ${asset.originalName} permanently?`)) return;
 
       try {
@@ -157,8 +158,10 @@ const MediaCenterPage = memo(function MediaCenterPage() {
     if (!confirmPrompt) return;
 
     try {
-      const unusedAssets = assets.filter((a) => a.usageCount === 0);
-      const assetIds = unusedAssets.map((a) => a.id);
+      const unusedAssets = assets.filter((a) => (a.usageCount ?? 0) === 0);
+      const assetIds = unusedAssets
+        .map((a) => a.id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0);
       if (!assetIds.length) {
         toast({ title: 'Notice', description: 'No unlinked assets on current page' });
         return;
@@ -175,7 +178,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
         variant: 'destructive',
       });
     }
-  }, [quota, assets, cleanupUnusedMutation]);
+  }, [assets, cleanupUnusedMutation, quota]);
 
   const handleUploadFiles = useCallback(
     async (files: FileList | File[]) => {
@@ -443,7 +446,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                       </Button>
                     </div>
 
-                    {asset.usageCount > 0 ? (
+                    {(asset.usageCount ?? 0) > 0 ? (
                       <Badge className="absolute bottom-2 left-2 bg-black/80 text-[10px] font-mono text-white">
                         {asset.usageCount}x in PDP
                       </Badge>
@@ -466,7 +469,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                         {asset.originalName}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {formatBytes(asset.sizeBytes)} • {asset.scope}
+                        {formatBytes(asset.sizeBytes ?? 0)} • {asset.scope}
                       </span>
                     </div>
 
@@ -476,7 +479,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                       className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
                       onClick={() => handleDeleteAsset(asset)}
                       title={
-                        asset.usageCount > 0
+                        (asset.usageCount ?? 0) > 0
                           ? 'Cannot delete: actively linked'
                           : 'Delete asset'
                       }
@@ -539,7 +542,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                     {previewAsset.originalName}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    {formatBytes(previewAsset.sizeBytes)} • {previewAsset.mimeType} • Scope:{' '}
+                    {formatBytes(previewAsset.sizeBytes ?? 0)} • {previewAsset.mimeType} • Scope:{' '}
                     {previewAsset.scope}
                   </p>
                 </div>

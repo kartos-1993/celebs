@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { directUploadBatch } from '@/lib/media-upload';
+import { cn } from '@/lib/utils';
 import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { useMediaAssets, useMediaFolders, useMediaQuota } from '../hooks/use-media-assets';
 import { StorageQuotaBar } from './storage-quota-bar';
@@ -155,7 +156,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
 
         <Tabs
           value={activeTab}
-          onValueChange={(val) => setActiveTab(val as 'library' | 'upload')}
+          onValueChange={(val: string) => setActiveTab(val as 'library' | 'upload')}
           className="flex-1 flex flex-col min-h-0"
         >
           <div className="px-4 pt-2 border-b border-border/40 bg-muted/30">
@@ -169,45 +170,48 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
             </TabsList>
           </div>
 
-          {/* TAB 1: LIBRARY */}
           <TabsContent value="library" className="flex-1 flex min-h-0 m-0">
-            {/* Sidebar: Folders */}
             <div className="w-48 border-r border-border/40 p-3 flex flex-col gap-1 overflow-y-auto bg-muted/10">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase px-2 mb-1">
                 Folders
               </span>
               <button
                 type="button"
-                onClick={() => setSelectedFolderId(null)}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors text-left ${
+                className={cn(
+                  'flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors',
                   selectedFolderId === null
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'hover:bg-accent text-foreground'
-                }`}
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-muted',
+                )}
+                onClick={() => setSelectedFolderId(null)}
               >
-                <Folder className="h-3.5 w-3.5" />
-                All Assets
+                <span className="flex items-center gap-1.5 truncate">
+                  <Folder className="h-3.5 w-3.5" /> All Assets
+                </span>
+                <span className="text-[10px] text-muted-foreground">{assets.length}</span>
               </button>
-              {folders.map((f) => (
+              {folders.map((folder) => (
                 <button
-                  key={f.id}
+                  key={folder.id}
                   type="button"
-                  onClick={() => setSelectedFolderId(f.id)}
-                  className={`flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors text-left ${
-                    selectedFolderId === f.id
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'hover:bg-accent text-foreground'
-                  }`}
+                  className={cn(
+                    'flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors',
+                    selectedFolderId === folder.id
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:bg-muted',
+                  )}
+                  onClick={() => setSelectedFolderId(folder.id)}
                 >
-                  <div className="flex items-center gap-2 truncate">
-                    <Folder className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{f.name}</span>
-                  </div>
+                  <span className="flex items-center gap-1.5 truncate">
+                    <Folder className="h-3.5 w-3.5" /> {folder.name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {folder.assetCount ?? 0}
+                  </span>
                 </button>
               ))}
             </div>
 
-            {/* Main Library Content */}
             <div className="flex-1 flex flex-col min-h-0 p-4 gap-3">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
@@ -222,20 +226,22 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
               </div>
 
               {isLoadingAssets ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <div className="grid grid-cols-4 gap-3">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="aspect-square rounded-lg bg-muted/40 animate-pulse" />
+                  ))}
                 </div>
               ) : assets.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center p-6 border border-dashed rounded-lg">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-                  <p className="text-xs text-muted-foreground font-medium">No media assets found.</p>
+                <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
+                  <ImageIcon className="h-10 w-10 stroke-1 mb-2 opacity-40" />
+                  <p className="text-sm font-medium">No media assets found</p>
                   <Button
-                    variant="outline"
                     size="sm"
+                    variant="outline"
+                    className="mt-3 text-xs"
                     onClick={() => setActiveTab('upload')}
-                    className="text-xs"
                   >
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Upload Assets
+                    Upload Image
                   </Button>
                 </div>
               ) : (
@@ -268,7 +274,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                             <Check className="h-3 w-3 stroke-[3]" />
                           </div>
                         )}
-                        {asset.usageCount > 0 && (
+                        {(asset.usageCount ?? 0) > 0 && (
                           <span className="absolute bottom-1 left-1 bg-black/70 text-[9px] text-white px-1 py-0.2 rounded font-mono">
                             {asset.usageCount}x
                           </span>

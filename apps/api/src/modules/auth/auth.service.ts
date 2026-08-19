@@ -18,6 +18,8 @@ import {
   UnauthorizedException,
 } from '@celebs/shared-utils';
 
+import { mediaRepository } from '../media/media.repository';
+
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
@@ -179,7 +181,7 @@ export class AuthService {
         },
       });
 
-      await tx.vendorProfile.create({
+      const vendorProfile = await tx.vendorProfile.create({
         data: {
           userId: user.id,
           phoneNumber,
@@ -194,26 +196,31 @@ export class AuthService {
         },
       });
 
-      return user;
+      return { user, vendorProfileId: vendorProfile.id };
     });
+
+    // Provision default media folders for the newly registered vendor
+    await mediaRepository.ensureDefaultFolders(newUser.vendorProfileId);
+
+    const user = newUser.user;
 
     // Log vendor registration
     logger.info(
-      { email: newUser.email, id: newUser.id, shopName },
+      { email: user.email, id: user.id, shopName },
       'New vendor registered, profile pending approval',
     );
 
     // Supersede any prior verification tokens for this user
     await prisma.verificationCode.deleteMany({
       where: {
-        userId: newUser.id,
+        userId: user.id,
         type: VerificationEnum.EMAIL_VERIFICATION,
       },
     });
 
     const verification = await prisma.verificationCode.create({
       data: {
-        userId: newUser.id,
+        userId: user.id,
         type: VerificationEnum.EMAIL_VERIFICATION,
         expiresAt: fortyFiveMinutesFromNow(),
       },
@@ -221,22 +228,22 @@ export class AuthService {
 
     const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
     logger.info(
-      { email: newUser.email, verificationUrl },
+      { email: user.email, verificationUrl },
       'Attempting to send verification email to vendor',
     );
     try {
       await sendEmail({
-        to: newUser.email,
+        to: user.email,
         subject: 'Verify your email address',
         text: `Please verify your email by clicking the following link: ${verificationUrl}`,
         html: verifyEmailTemplate(verificationUrl).html,
       });
-      logger.info({ email: newUser.email }, 'Verification email sent to vendor');
+      logger.info({ email: user.email }, 'Verification email sent to vendor');
     } catch (err) {
-      logger.error({ err, email: newUser.email }, 'Failed to send verification email to vendor');
+      logger.error({ err, email: user.email }, 'Failed to send verification email to vendor');
       if (process.env.NODE_ENV === 'development') {
         logger.warn(
-          { verificationUrl, email: newUser.email },
+          { verificationUrl, email: user.email },
           '[DEV FALLBACK] Vendor verification email failed to send. Click link in logs to verify manually.',
         );
       } else {
@@ -244,7 +251,7 @@ export class AuthService {
       }
     }
 
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password: _, ...userWithoutPassword } = user;
     return {
       user: userWithoutPassword,
     };

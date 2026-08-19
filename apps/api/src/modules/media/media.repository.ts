@@ -1,9 +1,10 @@
 import { Prisma } from '@prisma/client';
+
 import prisma from '@/config/db.prisma';
 
 export class MediaRepository {
   async findAssets(params: {
-    vendorId: string;
+    vendorId?: string | null;
     folderId?: string | null;
     scope?: 'PRODUCT' | 'BRANDING' | 'KYC' | 'MARKETING';
     search?: string;
@@ -13,8 +14,11 @@ export class MediaRepository {
     limit: number;
   }) {
     const { vendorId, folderId, scope, search, unusedOnly, mimeType, page, limit } = params;
-    const where: Prisma.MediaAssetWhereInput = { vendorId };
+    const where: Prisma.MediaAssetWhereInput = {};
 
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
     if (folderId) {
       where.folderId = folderId;
     }
@@ -49,9 +53,13 @@ export class MediaRepository {
     return { items, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
-  async findAssetById(id: string, vendorId: string) {
+  async findAssetById(id: string, vendorId?: string | null) {
+    const where: Prisma.MediaAssetWhereInput = { id };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
     return prisma.mediaAsset.findFirst({
-      where: { id, vendorId },
+      where,
     });
   }
 
@@ -62,7 +70,7 @@ export class MediaRepository {
   }
 
   async createAsset(data: {
-    vendorId: string;
+    vendorId?: string | null;
     folderId?: string | null;
     originalName: string;
     key: string;
@@ -87,7 +95,7 @@ export class MediaRepository {
         aspectRatio: data.aspectRatio,
       },
       create: {
-        vendorId: data.vendorId,
+        vendorId: data.vendorId || null,
         folderId: data.folderId,
         originalName: data.originalName,
         key: data.key,
@@ -104,19 +112,26 @@ export class MediaRepository {
     });
   }
 
-  async deleteAsset(id: string, vendorId: string) {
+  async deleteAsset(id: string, vendorId?: string | null) {
+    const where: Prisma.MediaAssetWhereInput = { id };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
     return prisma.mediaAsset.deleteMany({
-      where: { id, vendorId },
+      where,
     });
   }
 
-  async deleteUnusedAssets(assetIds: string[], vendorId: string) {
+  async deleteUnusedAssets(assetIds: string[], vendorId?: string | null) {
+    const where: Prisma.MediaAssetWhereInput = {
+      id: { in: assetIds },
+      usageCount: 0,
+    };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
     return prisma.mediaAsset.deleteMany({
-      where: {
-        id: { in: assetIds },
-        vendorId,
-        usageCount: 0,
-      },
+      where,
     });
   }
 
@@ -140,42 +155,72 @@ export class MediaRepository {
     });
   }
 
-  async getQuota(vendorId: string) {
+  async getQuota(vendorId?: string | null) {
+    const whereCondition: Prisma.MediaAssetWhereInput =
+      vendorId !== undefined ? { vendorId: vendorId ?? null } : {};
     const [aggregate, unlinkedAggregate] = await Promise.all([
       prisma.mediaAsset.aggregate({
-        where: { vendorId },
+        where: whereCondition,
         _sum: { sizeBytes: true },
         _count: { id: true },
       }),
       prisma.mediaAsset.aggregate({
-        where: { vendorId, usageCount: 0 },
+        where: { ...whereCondition, usageCount: 0 },
         _sum: { sizeBytes: true },
         _count: { id: true },
       }),
     ]);
 
-    const usedBytes = aggregate._sum.sizeBytes || 0;
-    // Default Starter: 5GB (5 * 1024 * 1024 * 1024 bytes)
-    const maxBytes = 5 * 1024 * 1024 * 1024;
+    const usedBytes = aggregate._sum?.sizeBytes || 0;
+    // Platform: 100GB, Vendor Starter: 5GB
+    const maxBytes = vendorId ? 5 * 1024 * 1024 * 1024 : 100 * 1024 * 1024 * 1024;
     const usedPercentage = Math.min(100, Math.round((usedBytes / maxBytes) * 100));
 
     return {
-      vendorId,
+      vendorId: vendorId || 'PLATFORM',
       usedBytes,
       maxBytes,
       usedPercentage,
-      tier: 'STARTER' as const,
-      totalAssetCount: aggregate._count.id || 0,
-      unlinkedAssetCount: unlinkedAggregate._count.id || 0,
-      unlinkedSizeBytes: unlinkedAggregate._sum.sizeBytes || 0,
+      tier: vendorId ? ('STARTER' as const) : ('ENTERPRISE' as const),
+      totalAssetCount: aggregate._count?.id || 0,
+      unlinkedAssetCount: unlinkedAggregate._count?.id || 0,
+      unlinkedSizeBytes: unlinkedAggregate._sum?.sizeBytes || 0,
     };
   }
 
   // ── Folders ──
 
-  async findFolders(vendorId: string) {
-    return prisma.mediaFolder.findMany({
-      where: { vendorId },
+  static readonly DEFAULT_VENDOR_FOLDERS = ['Products', 'Banners', 'Marketing', 'Documents'];
+
+  async ensureDefaultFolders(vendorId?: string | null) {
+    try {
+      const existing = await prisma.mediaFolder.findMany({
+        where: { vendorId: vendorId ?? null, parentId: null },
+        select: { name: true },
+      });
+      const existingNames = new Set(existing.map((f) => f.name));
+      const toCreate = MediaRepository.DEFAULT_VENDOR_FOLDERS.filter(
+        (name) => !existingNames.has(name),
+      );
+
+      if (toCreate.length > 0) {
+        await prisma.mediaFolder.createMany({
+          data: toCreate.map((name) => ({
+            vendorId: vendorId ?? null,
+            name,
+            parentId: null,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    } catch {
+      // Gracefully handle if folder race condition occurs
+    }
+  }
+
+  async findFolders(vendorId?: string | null) {
+    const existing = await prisma.mediaFolder.findMany({
+      where: { vendorId: vendorId ?? null },
       include: {
         _count: {
           select: { assets: true },
@@ -183,28 +228,51 @@ export class MediaRepository {
       },
       orderBy: { name: 'asc' },
     });
+
+    if (existing.length === 0) {
+      await this.ensureDefaultFolders(vendorId);
+      return prisma.mediaFolder.findMany({
+        where: { vendorId: vendorId ?? null },
+        include: {
+          _count: {
+            select: { assets: true },
+          },
+        },
+        orderBy: { name: 'asc' },
+      });
+    }
+
+    return existing;
   }
 
-  async createFolder(vendorId: string, name: string, parentId?: string | null) {
+  async createFolder(vendorId: string | null | undefined, name: string, parentId?: string | null) {
     return prisma.mediaFolder.create({
       data: {
-        vendorId,
+        vendorId: vendorId ?? null,
         name,
         parentId: parentId || null,
       },
     });
   }
 
-  async updateFolder(id: string, vendorId: string, name: string) {
+  async updateFolder(id: string, vendorId: string | null | undefined, name: string) {
+    const where: Prisma.MediaFolderWhereInput = { id };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
     return prisma.mediaFolder.updateMany({
-      where: { id, vendorId },
+      where,
       data: { name },
     });
   }
 
-  async deleteFolder(id: string, vendorId: string) {
+  async deleteFolder(id: string, vendorId?: string | null) {
+    const where: Prisma.MediaFolderWhereInput = { id };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
     return prisma.mediaFolder.deleteMany({
-      where: { id, vendorId },
+      where,
     });
   }
 }

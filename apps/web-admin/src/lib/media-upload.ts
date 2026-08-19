@@ -58,6 +58,7 @@ export async function directUploadFile(
     originalname: file.name,
     mimeType,
     size: file.size,
+    scope: 'PRODUCT',
   };
 
   const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>(
@@ -120,6 +121,7 @@ export async function directUploadBatch(
         originalname: file.name,
         mimeType,
         size: file.size,
+        scope: 'PRODUCT',
       },
     );
 
