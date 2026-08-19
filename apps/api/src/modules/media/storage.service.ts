@@ -275,19 +275,17 @@ export async function confirmUploadedObject(
   const publicUrl = buildPublicObjectUrl(key);
 
   // Catalog asset into PostgreSQL DAM
-  if (input.vendorId) {
-    await mediaRepository.createAsset({
-      vendorId: input.vendorId,
-      folderId: input.folderId || null,
-      originalName: originalname,
-      key,
-      url: publicUrl,
-      mimeType: head.ContentType || mimeType,
-      sizeBytes: bytes,
-      scope: input.scope || 'PRODUCT',
-      isPrivate: input.scope === 'KYC',
-    });
-  }
+  await mediaRepository.createAsset({
+    vendorId: input.vendorId || null,
+    folderId: input.folderId || null,
+    originalName: originalname,
+    key,
+    url: publicUrl,
+    mimeType: head.ContentType || mimeType,
+    sizeBytes: bytes,
+    scope: input.scope || 'PRODUCT',
+    isPrivate: input.scope === 'KYC',
+  });
 
   return {
     key,

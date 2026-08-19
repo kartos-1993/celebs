@@ -2,6 +2,8 @@ import { Role } from '@prisma/client';
 
 import { NotFoundException } from '@celebs/shared-utils';
 
+import { mediaRepository } from '../media/media.repository';
+
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/db';
 import { sendEmail } from '@/mailers/mailer';
@@ -80,6 +82,9 @@ export class AdminService {
         },
       },
     });
+
+    // Ensure default media folders are created for the approved vendor
+    await mediaRepository.ensureDefaultFolders(id);
 
     if (vendor.user?.email) {
       const template = vendorApprovalTemplate(vendor.shopName);

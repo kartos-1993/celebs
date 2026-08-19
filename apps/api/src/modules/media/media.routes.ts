@@ -29,19 +29,23 @@ import { requirePermissions } from '@/middlewares/rbac.middleware';
 const router = Router();
 router.use(uploadRateLimiter);
 
-// All media routes require auth + approved vendor
+// All media routes require auth + approved vendor (or SuperAdmin/Admin bypass)
 router.use(authenticateJWT);
 router.use(requireApprovedVendor);
 
 /**
  * GET /api/v1/media/assets
- * Browse, search, and filter vendor's digital assets.
+ * Browse, search, and filter vendor or platform digital assets.
  */
 router.get(
   '/assets',
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
     const query = mediaAssetFilterSchema.parse(req.query);
+
+    const vendorId = isSuperOrAdmin
+      ? (req.query.vendorId as string) || null
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
 
     const result = await mediaRepository.findAssets({
       vendorId,
@@ -60,12 +64,16 @@ router.get(
 
 /**
  * GET /api/v1/media/quota
- * Returns vendor's current storage quota consumption & tier breakdown.
+ * Returns storage quota consumption & tier breakdown.
  */
 router.get(
   '/quota',
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.query.vendorId as string) || null
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const quota = await mediaRepository.getQuota(vendorId);
     return res.json({ success: true, data: quota });
   }),
@@ -73,12 +81,16 @@ router.get(
 
 /**
  * GET /api/v1/media/folders
- * List vendor's folder tree.
+ * List folder tree.
  */
 router.get(
   '/folders',
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.query.vendorId as string) || null
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const folders = await mediaRepository.findFolders(vendorId);
     return res.json({ success: true, data: folders });
   }),
@@ -92,7 +104,11 @@ router.post(
   '/folders',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.body.vendorId as string) || null
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const { name, parentId } = createMediaFolderSchema.parse(req.body);
     const folder = await mediaRepository.createFolder(vendorId, name, parentId);
     return res.status(201).json({ success: true, data: folder });
@@ -107,7 +123,11 @@ router.delete(
   '/folders/:id',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? undefined
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const { id } = idParamSchema.parse(req.params);
     await mediaRepository.deleteFolder(id, vendorId);
     return res.json({ success: true, message: 'Folder deleted successfully' });
@@ -122,7 +142,11 @@ router.delete(
   '/assets/:id',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? undefined
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const { id } = idParamSchema.parse(req.params);
 
     const asset = await mediaRepository.findAssetById(id, vendorId);
@@ -153,7 +177,11 @@ router.post(
   '/cleanup-unused',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.body.vendorId as string) || null
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const { assetIds } = deleteUnusedMediaSchema.parse(req.body);
 
     const assets = await mediaRepository.findAssets({
@@ -187,7 +215,11 @@ router.post(
   '/presign',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.body.vendorId as string) || undefined
+      : req.user!.vendorProfile?.id || req.user!.vendorId || undefined;
+
     const validatedData = presignFileSchema.parse(req.body);
     const result = await createPresignedPut({
       ...validatedData,
@@ -205,7 +237,11 @@ router.post(
   '/batch-presign',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.body.vendorId as string) || undefined
+      : req.user!.vendorProfile?.id || req.user!.vendorId || undefined;
+
     const { files } = batchPresignSchema.parse(req.body);
     const results = await Promise.all(
       files.map((file: PresignFileInput) => createPresignedPut({ ...file, vendorId })),
@@ -222,13 +258,17 @@ router.post(
   '/confirm',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const vendorId = req.user!.vendorId!;
+    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
+    const vendorId = isSuperOrAdmin
+      ? (req.body.vendorId as string) || null
+      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+
     const validatedData = confirmUploadSchema.parse(req.body);
     const rawBody = req.body as { folderId?: string; scope?: MediaScope };
 
     const result = await confirmUploadedObject({
       ...validatedData,
-      vendorId,
+      vendorId: vendorId || undefined,
       folderId: rawBody.folderId || null,
       scope: rawBody.scope || 'PRODUCT',
     });

@@ -593,49 +593,49 @@ enum MediaScope {
 }
 
 model MediaFolder {
-  id          String        @id @default(uuid())
-  vendorId    String        @map("vendor_id")
-  vendor      VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id          String         @id @default(uuid())
+  vendorId    String?        @map("vendor_id")
+  vendor      VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   name        String
-  parentId    String?       @map("parent_id")
-  parent      MediaFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  subFolders  MediaFolder[] @relation("FolderHierarchy")
+  parentId    String?        @map("parent_id")
+  parent      MediaFolder?   @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subFolders  MediaFolder[]  @relation("FolderHierarchy")
 
   assets      MediaAsset[]
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@unique([vendorId, parentId, name])
   @@index([vendorId])
 }
 
 model MediaAsset {
-  id           String        @id @default(uuid())
-  vendorId     String        @map("vendor_id")
-  vendor       VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id           String         @id @default(uuid())
+  vendorId     String?        @map("vendor_id")
+  vendor       VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  folderId     String?       @map("folder_id")
-  folder       MediaFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId     String?        @map("folder_id")
+  folder       MediaFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-  originalName String        @map("original_name")
-  key          String        @unique
+  originalName String         @map("original_name")
+  key          String         @unique
   url          String
 
-  mimeType     String        @map("mime_type")
-  sizeBytes    Int           @map("size_bytes")
+  mimeType     String         @map("mime_type")
+  sizeBytes    Int            @map("size_bytes")
   width        Int?
   height       Int?
-  aspectRatio  Float?        @map("aspect_ratio")
-  hashSha256   String?       @map("hash_sha256")
+  aspectRatio  Float?         @map("aspect_ratio")
+  hashSha256   String?        @map("hash_sha256")
 
-  scope        MediaScope    @default(PRODUCT)
-  isPrivate    Boolean       @default(false) @map("is_private")
-  usageCount   Int           @default(0) @map("usage_count")
+  scope        MediaScope     @default(PRODUCT)
+  isPrivate    Boolean        @default(false) @map("is_private")
+  usageCount   Int            @default(0) @map("usage_count")
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([vendorId, scope])
   @@index([vendorId, folderId])
