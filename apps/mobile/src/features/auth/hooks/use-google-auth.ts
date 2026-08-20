@@ -41,41 +41,15 @@ export function useGoogleAuth() {
         setIsAuthenticating(true);
         setAuthError(null);
         try {
-          const { id_token, access_token } = response.params;
-          const tokenToUse =
-            id_token ||
-            response.authentication?.idToken ||
-            access_token ||
-            response.authentication?.accessToken;
+          const idToken =
+            response.params?.id_token ||
+            response.authentication?.idToken;
 
-          let googleUser = {
-            email: '',
-            name: '',
-            picture: '',
-            googleId: '',
-          };
-
-          if (tokenToUse) {
-            const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-              headers: { Authorization: `Bearer ${tokenToUse}` },
-            }).catch(() => null);
-
-            if (userinfoRes && userinfoRes.ok) {
-              const userInfo = await userinfoRes.json();
-              googleUser = {
-                email: userInfo.email,
-                name: userInfo.name || userInfo.email.split('@')[0],
-                picture: userInfo.picture,
-                googleId: userInfo.sub,
-              };
-            }
+          if (!idToken) {
+            throw new Error('Could not retrieve Google ID token');
           }
 
-          if (!googleUser.email) {
-            throw new Error('Could not retrieve Google profile data');
-          }
-
-          await loginWithGoogle(googleUser);
+          await loginWithGoogle({ idToken });
         } catch (err: unknown) {
           const errObj = err as { message?: string };
           console.error('[useGoogleAuth] Authentication failed:', err);
@@ -104,30 +78,14 @@ export function useGoogleAuth() {
         const { GoogleSignin } = require('@react-native-google-signin/google-signin');
         await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
         const userInfo = await GoogleSignin.signIn();
+        const tokens = await GoogleSignin.getTokens();
 
-        const user =
-          userInfo.data?.user ||
-          (
-            userInfo as {
-              user?: {
-                email?: string;
-                name?: string;
-                givenName?: string;
-                photo?: string;
-                id?: string;
-              };
-            }
-          ).user;
-        if (!user?.email) {
-          throw new Error('Could not retrieve Google profile details');
+        const idToken = tokens?.idToken || userInfo.data?.idToken || (userInfo as { idToken?: string })?.idToken;
+        if (!idToken) {
+          throw new Error('Could not retrieve Google ID token from native sign-in');
         }
 
-        await loginWithGoogle({
-          email: user.email,
-          name: user.name || user.givenName || user.email.split('@')[0],
-          picture: user.photo,
-          googleId: user.id,
-        });
+        await loginWithGoogle({ idToken });
       } catch (error: unknown) {
         const errObj = error as { message?: string };
         console.error('[GoogleSignin] Native Error:', error);

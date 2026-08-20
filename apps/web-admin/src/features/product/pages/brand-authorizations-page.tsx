@@ -1,25 +1,7 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useState } from 'react';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@celebs/shared-ui/components/dialog';
-import { Input } from '@celebs/shared-ui/components/input';
-import { Label } from '@celebs/shared-ui/components/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@celebs/shared-ui/components/select';
-import { toast } from '@/hooks/use-toast';
 import {
   AlertCircle,
   Award,
@@ -30,16 +12,14 @@ import {
   Loader2,
   Plus,
   ShieldAlert,
-  ShieldCheck,
   XCircle,
 } from 'lucide-react';
-import type { VendorBrandAuthorization } from '@celebs/shared-types';
 import { BrandAuthorizationDialog } from '../components/brand-authorization-dialog';
 import { useMyBrandAuthorizations } from '../hooks/use-brands';
 
 export const BrandAuthorizationsPage = memo(function BrandAuthorizationsPage() {
   const [isApplyOpen, setIsApplyOpen] = useState(false);
-  const { data: authorizations = [], isLoading, refetch } = useMyBrandAuthorizations();
+  const { data: authorizations = [], isLoading } = useMyBrandAuthorizations();
 
   const getStatusBadge = (status: string) => {
     switch (status) {

@@ -17,12 +17,7 @@ interface AuthContextType {
   token: string | null;
   isLoggedIn: boolean;
   isLoading: boolean;
-  loginWithGoogle: (data: {
-    email: string;
-    name: string;
-    picture?: string;
-    googleId?: string;
-  }) => Promise<void>;
+  loginWithGoogle: (data: { idToken: string }) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -67,12 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Google 1-Tap Login
-  const loginWithGoogle = async (data: {
-    email: string;
-    name: string;
-    picture?: string;
-    googleId?: string;
-  }) => {
+  const loginWithGoogle = async (data: { idToken: string }) => {
     setIsLoading(true);
     try {
       const response = await apiClient.post('/auth/google', data, { skipAuth: true });
