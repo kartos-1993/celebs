@@ -1,5 +1,6 @@
+import { faker } from '@faker-js/faker';
 import request from 'supertest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 import prisma from '@/db';
@@ -10,29 +11,44 @@ vi.mock('../../../mailers/mailer', () => ({
 }));
 
 describe('Vendor Onboarding API Integration Tests', () => {
-  const vendorPayload = {
-    name: 'Test Vendor',
-    email: 'test.vendor@example.com',
-    password: 'Password123!',
-    confirmPassword: 'Password123!',
-    phoneNumber: '9841112223',
-    shopName: 'Test Seller Store',
-    panNumber: '999999999',
-    citizenshipNumber: '99-88-77-66',
+  let vendorPayload: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phoneNumber: string;
+    shopName: string;
+    panNumber: string;
+    citizenshipNumber: string;
   };
 
   let authCookie: string;
+  let currentUserId: string | null = null;
 
   beforeEach(async () => {
-    // Clean database before each test run
-    await prisma.session.deleteMany({});
-    await prisma.verificationCode.deleteMany({});
-    await prisma.vendorProfile.deleteMany({});
-    await prisma.user.deleteMany({});
+    const email = faker.internet.email().toLowerCase();
+    vendorPayload = {
+      name: faker.person.fullName(),
+      email,
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+      phoneNumber: `98${faker.string.numeric(8)}`,
+      shopName: faker.company.name(),
+      panNumber: faker.string.numeric(9),
+      citizenshipNumber: `12-${faker.string.numeric(6)}`,
+    };
 
     // Register and login to get active session/cookies
     await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload);
-    const codeRecord = await prisma.verificationCode.findFirst({});
+    const user = await prisma.user.findUnique({
+      where: { email: vendorPayload.email.toLowerCase() },
+    });
+    currentUserId = user!.id;
+
+    const codeRecord = await prisma.verificationCode.findFirst({
+      where: { userId: currentUserId },
+      orderBy: { createdAt: 'desc' },
+    });
     await request(app).post('/api/v1/auth/verify-email').send({ code: codeRecord!.code });
 
     const loginRes = await request(app).post('/api/v1/auth/login').send({
@@ -41,6 +57,16 @@ describe('Vendor Onboarding API Integration Tests', () => {
     });
     const rawCookies = loginRes.headers['set-cookie'];
     authCookie = Array.isArray(rawCookies) ? rawCookies.join('; ') : rawCookies || '';
+  });
+
+  afterEach(async () => {
+    if (currentUserId) {
+      await prisma.session.deleteMany({ where: { userId: currentUserId } });
+      await prisma.verificationCode.deleteMany({ where: { userId: currentUserId } });
+      await prisma.vendorProfile.deleteMany({ where: { userId: currentUserId } });
+      await prisma.user.deleteMany({ where: { id: currentUserId } });
+      currentUserId = null;
+    }
   });
 
   it('should return onboarding status', async () => {
