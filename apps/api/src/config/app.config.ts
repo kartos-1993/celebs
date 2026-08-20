@@ -18,13 +18,17 @@ export const appConfig = () => {
     JWT: {
       SECRET: validatedEnv.JWT_SECRET,
       EXPIRES_IN: validatedEnv.JWT_EXPIRES_IN,
-      REFRESH_SECRET: validatedEnv.JWT_REFRESH_SECRET || validatedEnv.JWT_SECRET,
+      REFRESH_SECRET: validatedEnv.JWT_REFRESH_SECRET,
       REFRESH_EXPIRES_IN: validatedEnv.JWT_REFRESH_EXPIRES_IN,
+    },
+    SESSION: {
+      EXPIRY_DAYS: validatedEnv.SESSION_EXPIRES_IN_DAYS,
+      EXPIRY_MS: validatedEnv.SESSION_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000,
     },
     MAILER_SENDER: validatedEnv.SMTP_FROM,
     MAILER_API_KEY: validatedEnv.SMTP_API_KEY,
     COOKIE: {
-      HTTPONLY: isProduction || isStaging ? true : false,
+      HTTPONLY: true,
       SECURE: isProduction || isStaging ? true : false,
       SAME_SITE: (isStaging ? 'none' : isProduction ? 'strict' : 'lax') as
         | 'strict'
@@ -45,10 +49,17 @@ export const appConfig = () => {
         validatedEnv.MEDIA_PUBLIC_BASE_URL ||
         getEnv('NEXT_PUBLIC_CLOUDFRONT_DOMAIN', 'http://127.0.0.1:9000/celebs'),
     },
-    GOOGLE_CLIENT_ID: getEnv(
-      'GOOGLE_CLIENT_ID',
-      '998383824177-n0b1v1cr5iq1pr456ik5jhfafqj7m9p6.apps.googleusercontent.com',
-    ),
+    GOOGLE: {
+      WEB_CLIENT_ID: validatedEnv.GOOGLE_WEB_CLIENT_ID,
+      ANDROID_CLIENT_ID: validatedEnv.GOOGLE_ANDROID_CLIENT_ID,
+      IOS_CLIENT_ID: validatedEnv.GOOGLE_IOS_CLIENT_ID,
+      /** All non-empty client IDs — passed as audience to verifyIdToken() */
+      ALLOWED_CLIENT_IDS: [
+        validatedEnv.GOOGLE_WEB_CLIENT_ID,
+        validatedEnv.GOOGLE_ANDROID_CLIENT_ID,
+        validatedEnv.GOOGLE_IOS_CLIENT_ID,
+      ].filter(Boolean),
+    },
     REDIS: {
       HOST: validatedEnv.REDIS_HOST,
       PORT: validatedEnv.REDIS_PORT,

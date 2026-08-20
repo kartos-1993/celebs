@@ -1,10 +1,10 @@
 import { type Brand as PrismaBrand, Prisma } from '@prisma/client';
+
 import type {
   Brand,
-  BrandSummary,
   BrandTier,
-  VendorBrandAuthorization,
 } from '@celebs/shared-types';
+
 import prisma from '@/config/db.prisma';
 
 export class BrandRepository {

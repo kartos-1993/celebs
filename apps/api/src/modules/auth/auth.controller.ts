@@ -225,12 +225,9 @@ export class AuthController {
 
   public googleSignIn = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userAgent = req.headers['user-agent'];
-    const { email, name, picture, googleId } = req.body;
+    const { idToken } = req.body;
     const { user, accessToken, refreshToken } = await this.authService.googleSignIn({
-      email,
-      name,
-      picture,
-      googleId,
+      idToken,
       userAgent,
     });
     setAuthenticationCookies({ res, accessToken, refreshToken });

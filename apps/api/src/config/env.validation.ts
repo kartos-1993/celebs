@@ -7,11 +7,8 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1, { message: 'DATABASE_URL is required' }),
   JWT_SECRET: z.string().min(32, { message: 'JWT_SECRET must be at least 32 characters long' }),
   JWT_REFRESH_SECRET: z
-    .string()
-    .optional()
-    .refine((val) => !val || val.length >= 32, {
-      message: 'JWT_REFRESH_SECRET must be at least 32 characters long if provided',
-    }),
+    .string({ required_error: 'JWT_REFRESH_SECRET is required' })
+    .min(32, { message: 'JWT_REFRESH_SECRET must be at least 32 characters long' }),
   APP_ORIGIN: z
     .string()
     .default('http://localhost:5173,http://localhost:3333')
@@ -25,6 +22,7 @@ export const envSchema = z.object({
   SETUP_SECRET: z.string().optional().default('celebs-superadmin-secret-2026'),
   JWT_EXPIRES_IN: z.string().optional().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().optional().default('30d'),
+  SESSION_EXPIRES_IN_DAYS: z.coerce.number().min(1).default(30),
   SMTP_HOST: z.string().optional().default('localhost'),
   SMTP_PORT: z.coerce.number().optional().default(1025),
   SMTP_USER: z.string().optional().default(''),
@@ -41,6 +39,9 @@ export const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional().default(''),
   AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
   MEDIA_PUBLIC_BASE_URL: z.string().optional().default(''),
+  GOOGLE_WEB_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_ANDROID_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_IOS_CLIENT_ID: z.string().optional().default(''),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

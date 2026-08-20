@@ -52,6 +52,8 @@ app.use(
       'Authorization',
       'x-session-id',
       'X-Session-Id',
+      'X-Requested-With',
+      'x-requested-with',
       'Accept',
       'Origin',
     ],

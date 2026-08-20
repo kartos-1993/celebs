@@ -43,11 +43,11 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   passport.use(
     new JwtStrategy(options, async (req, payload: JwtPayload, done) => {
       try {
-        // Validate session exists in database
+        // Validate session exists in database and has not expired
         const session = await prisma.session.findUnique({
           where: { id: payload.sessionId },
         });
-        if (!session) {
+        if (!session || (session.expiredAt && session.expiredAt <= new Date())) {
           return done(
             new UnauthorizedException(
               'Session expired or invalid',

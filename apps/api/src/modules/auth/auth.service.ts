@@ -1,3 +1,5 @@
+import { OAuth2Client } from 'google-auth-library';
+
 import {
   loginType,
   registerType,
@@ -35,6 +37,9 @@ import { config } from '@/config/app.config';
 import prisma, { Prisma } from '@/db';
 import { sendEmail } from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
+
+// Constructor arg is unused during verifyIdToken() — audience is controlled solely via options.audience
+const googleClient = new OAuth2Client();
 
 export class AuthService {
   public async register(registerData: registerType) {
@@ -551,7 +556,9 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token missing', ErrorCode.AUTH_TOKEN_NOT_FOUND);
     }
 
-    const { payload, error } = verifyJwtToken<RefreshTPayload>(token);
+    const { payload, error } = verifyJwtToken<RefreshTPayload>(token, {
+      secret: config.JWT.REFRESH_SECRET,
+    });
     if (error || !payload?.sessionId) {
       throw new UnauthorizedException(
         'Invalid or expired refresh token',
@@ -575,7 +582,7 @@ export class AuthService {
       },
     });
 
-    if (!session || !session.user) {
+    if (!session || !session.user || (session.expiredAt && session.expiredAt <= new Date())) {
       throw new UnauthorizedException(
         'Session expired or invalid',
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
@@ -591,6 +598,20 @@ export class AuthService {
           ErrorCode.FORBIDDEN_ACCESS,
         );
       }
+    }
+
+    // Sliding Session Window: Extend expiredAt forward on active refresh
+    try {
+      await prisma.session.update({
+        where: { id: session.id },
+        data: {
+          expiredAt: new Date(Date.now() + config.SESSION.EXPIRY_MS),
+        },
+      });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error({ error: errMsg, sessionId: session.id }, 'Failed to slide session window in database');
+      throw new InternalServerException('Failed to extend session lifetime');
     }
 
     // Generate new Access and Refresh tokens (Refresh Token Rotation)
@@ -623,21 +644,48 @@ export class AuthService {
   }
 
   public async googleSignIn(data: {
-    email: string;
-    name: string;
-    picture?: string;
-    googleId?: string;
+    idToken: string;
     userAgent?: string;
   }) {
-    const { email, name, userAgent } = data;
-    logger.info(`Google Sign-In request for email: ${email}`);
+    const { idToken, userAgent } = data;
 
-    if (!email) {
+    if (!idToken) {
       throw new BadRequestException(
-        'Email is required for Google Sign-In',
+        'Google ID token is required for Google Sign-In',
         ErrorCode.VALIDATION_ERROR,
       );
     }
+
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience:
+          config.GOOGLE.ALLOWED_CLIENT_IDS.length > 0
+            ? config.GOOGLE.ALLOWED_CLIENT_IDS
+            : undefined,
+      });
+      payload = ticket.getPayload();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn({ error: msg }, 'Google ID token verification failed');
+      throw new UnauthorizedException(
+        'Invalid or expired Google token',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
+    if (!payload || !payload.email || !payload.email_verified) {
+      throw new UnauthorizedException(
+        'Google account email is not verified',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
+    const email = payload.email.toLowerCase();
+    const name = payload.name || payload.email.split('@')[0] || 'User';
+
+    logger.info(`Verified Google Sign-In request for email: ${email}`);
 
     let user = await prisma.user.findUnique({
       where: { email },
@@ -651,7 +699,7 @@ export class AuthService {
       user = await prisma.user.create({
         data: {
           email,
-          name: name || email.split('@')[0] || 'User',
+          name,
           password: randomPassword,
           isEmailVerified: true,
         },
@@ -663,6 +711,15 @@ export class AuthService {
         { userId: user.id, email: user.email },
         'New user auto-registered via Google Sign-In',
       );
+    } else if (!user.isEmailVerified) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { isEmailVerified: true },
+        include: {
+          vendorProfile: true,
+        },
+      });
+      logger.info({ userId: user.id }, 'Existing user email verified via Google Sign-In');
     }
 
     if (!user) {
@@ -688,7 +745,7 @@ export class AuthService {
     const session = await prisma.session.create({
       data: {
         userId: user.id,
-        userAgent: userAgent || 'Mobile Google Sign-In',
+        userAgent: userAgent || 'Google Sign-In',
       },
     });
 

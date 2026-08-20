@@ -14,12 +14,12 @@ import {
 } from '@celebs/shared-types';
 import { asyncHandler, BadRequestException, logger, NotFoundException } from '@celebs/shared-utils';
 
+import { mediaRepository } from './media.repository';
 import {
   confirmUploadedObject,
   createPresignedPut,
   deleteS3Object,
 } from './storage.service';
-import { mediaRepository } from './media.repository';
 
 import { assetQueue } from '@/common/services/queue.service';
 import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';

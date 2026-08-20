@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+
 import {
   brandFilterSchema,
   createBrandAuthorizationSchema,
@@ -8,6 +9,7 @@ import {
   updateBrandSchema,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
+
 import { BrandService, brandService as defaultBrandService } from './brand.service';
 
 export class BrandController {

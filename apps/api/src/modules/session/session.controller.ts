@@ -13,24 +13,25 @@ export class SessionController {
     this.sessionService = sessionService;
   }
   public getSession = asyncHandler(async (req: Request, res: Response) => {
-    // Extract sessionId from JWT token in cookie
-    const accessToken = req.cookies.accessToken;
-
-    if (!accessToken) {
-      throw new NotFoundException('Access token not found, Please login');
-    }
-
-    // Use the existing verifyJwtToken utility
-    const result = verifyJwtToken(accessToken);
-
-    if (result.error) {
-      throw new NotFoundException('Invalid access token, Please login');
-    }
-
-    const sessionId = result.payload?.sessionId;
+    let sessionId = (req.user as { sessionId?: string })?.sessionId;
 
     if (!sessionId) {
-      throw new NotFoundException('Session ID not found in token, Please login');
+      const accessToken =
+        req.cookies?.accessToken ||
+        (req.headers.authorization?.startsWith('Bearer ')
+          ? req.headers.authorization.slice(7)
+          : null);
+
+      if (!accessToken) {
+        throw new NotFoundException('Access token not found, Please login');
+      }
+
+      const result = verifyJwtToken(accessToken);
+      if (result.error || !result.payload?.sessionId) {
+        throw new NotFoundException('Invalid access token, Please login');
+      }
+
+      sessionId = result.payload.sessionId;
     }
 
     const session = await this.sessionService.getSessionById(sessionId);

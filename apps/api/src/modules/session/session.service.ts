@@ -56,4 +56,15 @@ export class SessionService {
       },
     };
   }
+
+  public async purgeExpiredSessions(): Promise<number> {
+    const result = await prisma.session.deleteMany({
+      where: {
+        expiredAt: {
+          lt: new Date(),
+        },
+      },
+    });
+    return result.count;
+  }
 }

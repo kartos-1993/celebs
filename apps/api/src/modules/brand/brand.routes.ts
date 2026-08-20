@@ -1,9 +1,12 @@
 import { Router } from 'express';
+
 import { Permission } from '@celebs/rbac';
+
+import { brandController } from './brand.controller';
+
 import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
 import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
-import { brandController } from './brand.controller';
 
 const router = Router();
 

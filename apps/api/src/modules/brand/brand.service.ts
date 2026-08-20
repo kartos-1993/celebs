@@ -1,18 +1,16 @@
 import {
-  AppError,
-  BadRequestException,
-  ErrorCode,
-  ForbiddenException,
-  HTTPSTATUS,
-  NotFoundException,
-} from '@celebs/shared-utils';
-import {
   BrandFilterType,
   CreateBrandAuthorizationType,
   CreateBrandType,
   ReviewBrandAuthorizationType,
   UpdateBrandType,
 } from '@celebs/shared-types';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@celebs/shared-utils';
+
 import { BrandRepository, brandRepository as defaultBrandRepository } from './brand.repository';
 
 export class BrandService {
