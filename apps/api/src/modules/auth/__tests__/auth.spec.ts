@@ -1,5 +1,6 @@
+import { faker } from '@faker-js/faker';
 import request from 'supertest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 import prisma from '@/db';
@@ -10,24 +11,41 @@ vi.mock('@/mailers/mailer', () => ({
 }));
 
 describe('Authentication API Integration Tests', () => {
-  const testUser = {
-    name: 'Jane Doe',
-    email: 'jane.doe@example.com',
-    password: 'Password123!',
-    confirmPassword: 'Password123!',
+  let testUser: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
   };
 
-  beforeEach(async () => {
-    await prisma.session.deleteMany({});
-    await prisma.verificationCode.deleteMany({});
-    await prisma.user.deleteMany({});
+  beforeEach(() => {
+    const email = faker.internet.exampleEmail().toLowerCase();
+    testUser = {
+      name: faker.person.fullName(),
+      email,
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+    };
+  });
+
+  afterEach(async () => {
+    if (testUser?.email) {
+      const user = await prisma.user.findUnique({
+        where: { email: testUser.email.toLowerCase() },
+      });
+      if (user) {
+        await prisma.session.deleteMany({ where: { userId: user.id } });
+        await prisma.verificationCode.deleteMany({ where: { userId: user.id } });
+        await prisma.user.delete({ where: { id: user.id } });
+      }
+    }
   });
 
   describe('POST /api/v1/auth/register', () => {
     it('should register a new user successfully (Happy Path)', async () => {
       const res = await request(app).post('/api/v1/auth/register').send(testUser);
 
-      expect(res.status).toBe(201); // Wait, what is status? In app.ts it's HTTPSTATUS.CREATED. Oh, let's see. Wait, in auth.controller it was 201 (HTTPSTATUS.CREATED). Oh wait, HTTPSTATUS.CREATED is 201. Let's expect 201.
+      expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('id');
       expect(res.body.data.email).toBe(testUser.email.toLowerCase());
@@ -126,8 +144,12 @@ describe('Authentication API Integration Tests', () => {
     beforeEach(async () => {
       await request(app).post('/api/v1/auth/register').send(testUser);
 
-      // Find the generated verification code in the database
+      // Find the generated verification code in the database for THIS user
+      const user = await prisma.user.findUnique({
+        where: { email: testUser.email.toLowerCase() },
+      });
       const codeRecord = await prisma.verificationCode.findFirst({
+        where: { userId: user!.id },
         orderBy: { createdAt: 'desc' },
       });
       verificationCode = codeRecord!.code;

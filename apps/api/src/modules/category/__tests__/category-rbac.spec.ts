@@ -13,10 +13,14 @@ describe('Category RBAC & Tree Operations', () => {
   let superadminToken: string;
 
   beforeEach(async () => {
-    // Clean PostgreSQL Users
-    await prisma.user.deleteMany({});
-    await prisma.category.deleteMany({});
-    await prisma.product.deleteMany({});
+    // Clean specific test users
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          in: ['jane@celebs.com.np', 'john@celebs.com.np', 'ceo@celebs.com.np'],
+        },
+      },
+    });
 
     const hashedPassword = await hashValue('password123');
 

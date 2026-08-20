@@ -1,5 +1,6 @@
+import { faker } from '@faker-js/faker';
 import request from 'supertest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
@@ -11,31 +12,33 @@ vi.mock('../../../mailers/mailer', () => ({
 }));
 
 describe('Staff Management API Integration Tests', () => {
-  const vendorPayload1 = {
-    name: 'Vendor Owner One',
-    email: 'vendor1.test@example.com',
-    password: 'Password123!',
-    confirmPassword: 'Password123!',
-    phoneNumber: '9840000001',
-    shopName: 'Vendor Shop One',
-    panNumber: '111111111',
-    citizenshipNumber: '11-11-11-11',
+  let vendorPayload1: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phoneNumber: string;
+    shopName: string;
+    panNumber: string;
+    citizenshipNumber: string;
   };
 
-  const vendorPayload2 = {
-    name: 'Vendor Owner Two',
-    email: 'vendor2.test@example.com',
-    password: 'Password123!',
-    confirmPassword: 'Password123!',
-    phoneNumber: '9840000002',
-    shopName: 'Vendor Shop Two',
-    panNumber: '222222222',
-    citizenshipNumber: '22-22-22-22',
+  let vendorPayload2: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phoneNumber: string;
+    shopName: string;
+    panNumber: string;
+    citizenshipNumber: string;
   };
 
   let vendor1Cookie: string;
   let vendor2Cookie: string;
-  let staffId: string;
+  let vendor1UserId: string;
+  let vendor2UserId: string;
+  const createdStaffIds: string[] = [];
 
   beforeEach(async () => {
     const getCookie = (res: { headers: Record<string, string | string[] | undefined> }): string => {
@@ -43,11 +46,36 @@ describe('Staff Management API Integration Tests', () => {
       return Array.isArray(rawCookies) ? rawCookies.join('; ') : rawCookies || '';
     };
 
+    vendorPayload1 = {
+      name: faker.person.fullName(),
+      email: faker.internet.email().toLowerCase(),
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+      phoneNumber: `98${faker.string.numeric(8)}`,
+      shopName: `Store 1 ${faker.company.name()}`,
+      panNumber: faker.string.numeric(9),
+      citizenshipNumber: `11-${faker.string.numeric(6)}`,
+    };
+
+    vendorPayload2 = {
+      name: faker.person.fullName(),
+      email: faker.internet.email().toLowerCase(),
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+      phoneNumber: `98${faker.string.numeric(8)}`,
+      shopName: `Store 2 ${faker.company.name()}`,
+      panNumber: faker.string.numeric(9),
+      citizenshipNumber: `22-${faker.string.numeric(6)}`,
+    };
+
     // 1. Create and login VENDOR 1
     await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload1);
-    const vendor1Record = await prisma.user.findFirst({ where: { email: vendorPayload1.email } });
+    const vendor1Record = await prisma.user.findFirst({
+      where: { email: vendorPayload1.email.toLowerCase() },
+    });
+    vendor1UserId = vendor1Record!.id;
     await prisma.user.update({
-      where: { id: vendor1Record!.id },
+      where: { id: vendor1UserId },
       data: { isEmailVerified: true },
     });
     const vendor1Login = await request(app)
@@ -57,9 +85,12 @@ describe('Staff Management API Integration Tests', () => {
 
     // 2. Create and login VENDOR 2
     await request(app).post('/api/v1/auth/vendor/register').send(vendorPayload2);
-    const vendor2Record = await prisma.user.findFirst({ where: { email: vendorPayload2.email } });
+    const vendor2Record = await prisma.user.findFirst({
+      where: { email: vendorPayload2.email.toLowerCase() },
+    });
+    vendor2UserId = vendor2Record!.id;
     await prisma.user.update({
-      where: { id: vendor2Record!.id },
+      where: { id: vendor2UserId },
       data: { isEmailVerified: true },
     });
     const vendor2Login = await request(app)
@@ -68,10 +99,29 @@ describe('Staff Management API Integration Tests', () => {
     vendor2Cookie = getCookie(vendor2Login);
   });
 
+  afterEach(async () => {
+    if (createdStaffIds.length > 0) {
+      await prisma.session.deleteMany({ where: { userId: { in: createdStaffIds } } });
+      await prisma.user.deleteMany({ where: { id: { in: createdStaffIds } } });
+      createdStaffIds.length = 0;
+    }
+    if (vendor1UserId) {
+      await prisma.session.deleteMany({ where: { userId: vendor1UserId } });
+      await prisma.vendorProfile.deleteMany({ where: { userId: vendor1UserId } });
+      await prisma.user.deleteMany({ where: { id: vendor1UserId } });
+    }
+    if (vendor2UserId) {
+      await prisma.session.deleteMany({ where: { userId: vendor2UserId } });
+      await prisma.vendorProfile.deleteMany({ where: { userId: vendor2UserId } });
+      await prisma.user.deleteMany({ where: { id: vendor2UserId } });
+    }
+  });
+
   it('should allow VENDOR 1 to create staff linked to their own vendor profile', async () => {
+    const staffEmail = faker.internet.email().toLowerCase();
     const res = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
       name: 'Staff Member A',
-      email: 'staff.a@example.com',
+      email: staffEmail,
       password: 'Password123!',
       confirmPassword: 'Password123!',
     });
@@ -81,7 +131,8 @@ describe('Staff Management API Integration Tests', () => {
     expect(res.body.data.role).toBe('STAFF');
     expect(res.body.data.vendorId).toBeDefined();
 
-    staffId = res.body.data.id;
+    const staffId = res.body.data.id;
+    createdStaffIds.push(staffId);
 
     // Verify in database that staff links to Vendor 1's profile
     const dbStaff = await prisma.user.findUnique({
@@ -92,13 +143,15 @@ describe('Staff Management API Integration Tests', () => {
   });
 
   it('should allow VENDOR 1 to list only their own staff', async () => {
+    const staffEmail = faker.internet.email().toLowerCase();
     // VENDOR 1 creates staff
-    await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+    const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
       name: 'Staff Member A',
-      email: 'staff.a@example.com',
+      email: staffEmail,
       password: 'Password123!',
       confirmPassword: 'Password123!',
     });
+    createdStaffIds.push(createRes.body.data.id);
 
     // VENDOR 2 lists staff (should be empty)
     const list2 = await request(app).get('/api/v1/staff').set('Cookie', vendor2Cookie);
@@ -111,19 +164,21 @@ describe('Staff Management API Integration Tests', () => {
 
     expect(list1.status).toBe(200);
     expect(list1.body.data.length).toBe(1);
-    expect(list1.body.data[0].email).toBe('staff.a@example.com');
+    expect(list1.body.data[0].email).toBe(staffEmail);
   });
 
   it('should prevent VENDOR 2 from deleting VENDOR 1 staff', async () => {
+    const staffEmail = faker.internet.email().toLowerCase();
     // VENDOR 1 creates staff
     const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
       name: 'Staff Member A',
-      email: 'staff.a@example.com',
+      email: staffEmail,
       password: 'Password123!',
       confirmPassword: 'Password123!',
     });
 
     const targetStaffId = createRes.body.data.id;
+    createdStaffIds.push(targetStaffId);
 
     // VENDOR 2 attempts delete
     const deleteRes = await request(app)
@@ -134,29 +189,32 @@ describe('Staff Management API Integration Tests', () => {
   });
 
   it('should allow STAFF sub-user and SUPERADMIN to retrieve staff list', async () => {
+    const staffEmail = faker.internet.email().toLowerCase();
     // 1. Create a staff member under VENDOR 1 with staff:view permission
     const createStaffRes = await request(app)
       .post('/api/v1/staff')
       .set('Cookie', vendor1Cookie)
       .send({
         name: 'Staff Sub-User One',
-        email: 'subuser1@example.com',
+        email: staffEmail,
         password: 'Password123!',
         confirmPassword: 'Password123!',
         permissions: ['staff:view'],
       });
     expect(createStaffRes.status).toBe(201);
+    const subUserStaffId = createStaffRes.body.data.id;
+    createdStaffIds.push(subUserStaffId);
 
     // Verify staff member's email so they can log in
     await prisma.user.update({
-      where: { email: 'subuser1@example.com' },
+      where: { id: subUserStaffId },
       data: { isEmailVerified: true },
     });
 
     // Login as the STAFF sub-user
     const staffLoginRes = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'subuser1@example.com', password: 'Password123!' });
+      .send({ email: staffEmail, password: 'Password123!' });
     const rawStaffCookies = staffLoginRes.headers['set-cookie'];
     const staffCookie = Array.isArray(rawStaffCookies)
       ? rawStaffCookies.join('; ')
@@ -169,10 +227,11 @@ describe('Staff Management API Integration Tests', () => {
 
     // 2. Superadmin user listing staff
     const hashedPassword = await hashValue('Password123!');
+    const adminEmail = faker.internet.email().toLowerCase();
     const adminUser = await prisma.user.create({
       data: {
         name: 'Super Admin User',
-        email: 'superadmin.stafftest@example.com',
+        email: adminEmail,
         password: hashedPassword,
         role: 'SUPERADMIN',
         isEmailVerified: true,
@@ -180,7 +239,7 @@ describe('Staff Management API Integration Tests', () => {
     });
     const adminLoginRes = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'superadmin.stafftest@example.com', password: 'Password123!' });
+      .send({ email: adminEmail, password: 'Password123!' });
     const rawAdminCookies = adminLoginRes.headers['set-cookie'];
     const adminCookie = Array.isArray(rawAdminCookies)
       ? rawAdminCookies.join('; ')
@@ -192,19 +251,22 @@ describe('Staff Management API Integration Tests', () => {
     expect(adminListRes.body.data.length).toBeGreaterThanOrEqual(1);
 
     // Clean up admin user
+    await prisma.session.deleteMany({ where: { userId: adminUser.id } });
     await prisma.user.delete({ where: { id: adminUser.id } });
   });
 
   it('should allow VENDOR 1 to update permissions for their staff member', async () => {
+    const staffEmail = faker.internet.email().toLowerCase();
     const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
       name: 'Staff Member B',
-      email: 'staff.b@example.com',
+      email: staffEmail,
       password: 'Password123!',
       confirmPassword: 'Password123!',
       permissions: ['product:view'],
     });
 
     const targetStaffId = createRes.body.data.id;
+    createdStaffIds.push(targetStaffId);
 
     const patchRes = await request(app)
       .patch(`/api/v1/staff/${targetStaffId}`)
