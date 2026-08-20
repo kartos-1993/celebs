@@ -20,7 +20,7 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { toast } from '@/hooks/use-toast';
 import { directUploadFile } from '@/lib/media-upload';
-import { CheckCircle2, FileText, Loader2, ShieldAlert, UploadCloud } from 'lucide-react';
+import { CheckCircle2, Loader2, ShieldAlert, UploadCloud } from 'lucide-react';
 import { useBrands, useSubmitBrandAuthorization } from '../hooks/use-brands';
 
 interface BrandAuthorizationDialogProps {

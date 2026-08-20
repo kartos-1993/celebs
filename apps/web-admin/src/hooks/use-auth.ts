@@ -6,9 +6,10 @@ const useAuth = () => {
   const query = useQuery({
     queryKey: ACCOUNT_QUERY_KEYS.userSession(),
     queryFn: getUserSession,
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
     retry: false,
-    refetchOnWindowFocus: false,
     meta: {
       suppressErrorToast: true,
     },

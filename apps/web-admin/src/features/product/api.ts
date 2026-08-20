@@ -36,7 +36,7 @@ export interface ReviewProductRequestPayload {
 
 const BASE_PATH = '/products';
 /** Uploads ride the shared client but with an extended timeout. */
-const UPLOAD_TIMEOUT_MS = 120_000;
+const _UPLOAD_TIMEOUT_MS = 120_000;
 
 export async function createProduct(
   data: CreateProductRequest,

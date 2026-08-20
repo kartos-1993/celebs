@@ -63,9 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [refetch]);
 
   // ── Idle logout ───────────────────────────────────────────────────────────
+  // Platform admins get 30-minute idle window; vendors/staff get 15-minute window
+  const idleTimeoutMs = isSuperAdmin || isAdmin ? 30 * 60 * 1000 : 15 * 60 * 1000;
+
   const handleIdle = useCallback(async () => {
     if (user) {
-      logger.warn('User idle for 15 minutes. Logging out for security.');
+      const minutes = idleTimeoutMs / (60 * 1000);
+      logger.warn(`User idle for ${minutes} minutes. Logging out for security.`);
       try {
         broadcastLogout();
         await axiosClient.post('/auth/logout');
@@ -77,10 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     }
-  }, [user]);
+  }, [user, idleTimeoutMs]);
 
-  // 15-minute idle timer
-  useIdleTimer(handleIdle, 15 * 60 * 1000);
+  useIdleTimer(handleIdle, idleTimeoutMs);
 
   return (
     <AuthContext.Provider

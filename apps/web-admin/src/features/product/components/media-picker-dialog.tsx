@@ -16,7 +16,6 @@ import {
   Folder,
   Image as ImageIcon,
   Loader2,
-  Plus,
   Search,
   UploadCloud,
 } from 'lucide-react';
@@ -47,7 +46,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
   const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
-  const [selectedScope, setSelectedScope] = useState<MediaScope | undefined>(scope);
+  const [selectedScope] = useState<MediaScope | undefined>(scope);
   const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
   const [selectedUrls, setSelectedUrls] = useState<string[]>(initialSelectedUrls);
   const [isUploading, setIsUploading] = useState(false);
