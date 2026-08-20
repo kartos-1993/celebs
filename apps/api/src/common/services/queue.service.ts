@@ -71,3 +71,16 @@ export const assetQueue = new Queue('asset-processing', {
     removeOnFail: false,
   },
 });
+
+export const sessionQueue = new Queue('session-maintenance', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: 100,
+    removeOnFail: 100,
+  },
+});

@@ -11,9 +11,10 @@ if (fs.existsSync(envPath)) {
 
 import { logger } from '@celebs/shared-utils';
 
-import { verifyRedisConnection } from './common/services/queue.service';
+import { assetQueue, sessionQueue, verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import { assetWorker } from './modules/media/asset.worker';
+import { sessionWorker } from './modules/session/session.worker';
 import prisma from './db';
 
 const startWorker = async () => {
@@ -27,11 +28,27 @@ const startWorker = async () => {
     await verifyRedisConnection();
     await verifyS3Connection();
 
-    logger.info('BullMQ Worker is active and listening to queue: asset-processing');
+    logger.info('BullMQ Worker is active and listening to queues: asset-processing, session-maintenance');
+
+    // Register daily repeatable session maintenance job (runs at midnight 00:00)
+    await sessionQueue.add(
+      'purge-expired-sessions',
+      {},
+      {
+        repeat: {
+          pattern: '0 0 * * *',
+        },
+        jobId: 'daily-expired-session-purge',
+      },
+    );
+    logger.info('Scheduled daily session maintenance job (pattern: 0 0 * * *)');
 
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}, shutting down worker gracefully...`);
       await assetWorker.close();
+      await sessionWorker.close();
+      await assetQueue.close();
+      await sessionQueue.close();
       await prisma.$disconnect();
       logger.info('Worker shutdown complete. Exiting.');
       process.exit(0);

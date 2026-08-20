@@ -23,14 +23,12 @@ const defaults: SignOptions = {
 const isDev = config.NODE_ENV === 'development';
 
 export const accessTokenSignOptions: SignOptsAndSecret = {
-  // In development, omit the exp claim for a truly non-expiring token
-  ...(isDev ? {} : { expiresIn: config.JWT.EXPIRES_IN as StringValue | number }),
+  expiresIn: (isDev ? '1h' : (config.JWT.EXPIRES_IN || '15m')) as StringValue | number,
   secret: config.JWT.SECRET,
 };
 
 export const refreshTokenSignOptions: SignOptsAndSecret = {
-  // In development, omit the exp claim for a truly non-expiring refresh token
-  ...(isDev ? {} : { expiresIn: config.JWT.REFRESH_EXPIRES_IN as StringValue | number }),
+  expiresIn: (isDev ? '7d' : (config.JWT.REFRESH_EXPIRES_IN || '30d')) as StringValue | number,
   secret: config.JWT.REFRESH_SECRET,
 };
 

@@ -13,13 +13,14 @@ import {
 } from '@celebs/shared-types';
 import { BadRequestException } from '@celebs/shared-utils';
 
+import { mediaRepository } from './media.repository';
+
 import {
   buildPublicObjectUrl,
   ensureDevPublicReadAccess,
   s3Client,
 } from '@/common/utils/s3.client';
 import { config } from '@/config/app.config';
-import { mediaRepository } from './media.repository';
 
 export const MAX_UPLOAD_BYTES = MAX_MEDIA_FILE_BYTES;
 export const PRESIGN_EXPIRES_IN = 15 * 60; // 15 minutes

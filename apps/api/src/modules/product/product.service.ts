@@ -12,6 +12,8 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, generateSheinStyleSku,HTTPSTATUS } from '@celebs/shared-utils';
 
+import { brandService } from '../brand/brand.service';
+
 import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
 import {
   PRODUCT_DETAIL_SELECT,
@@ -19,7 +21,6 @@ import {
 } from './repositories/product-projections';
 import { calculateProductQCScore } from './utils/product-qc';
 
-import { brandService } from '../brand/brand.service';
 import prisma from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
@@ -35,7 +36,7 @@ const toJsonInput = (value: unknown): Prisma.InputJsonValue | undefined => {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 };
 
-export { PRODUCT_LIST_SELECT, PRODUCT_DETAIL_SELECT };
+export { PRODUCT_DETAIL_SELECT,PRODUCT_LIST_SELECT };
 
 export class ProductService {
   private readonly inventoryRepository = new PostgresInventoryRepository();

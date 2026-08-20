@@ -15,6 +15,7 @@ model Session {
   expiredAt DateTime @default(dbgenerated("NOW() + interval '30 days'"))
 
   @@index([userId])
+  @@index([expiredAt])
 }
 
 enum Role {
