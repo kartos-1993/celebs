@@ -6,3 +6,4 @@ export * from './utils/catch-errors';
 export * from './utils/logger';
 export * from './middlewares/async-handler';
 export * from './utils/sku-generator';
+export * from './utils/image-url';
