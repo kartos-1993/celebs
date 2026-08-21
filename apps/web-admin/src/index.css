@@ -47,6 +47,19 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Brand accent scale — used for fashion-forward highlights (icons, links, CTAs) */
+  --color-fashion-50: #fdf2f8;
+  --color-fashion-100: #fce7f3;
+  --color-fashion-200: #fbcfe8;
+  --color-fashion-300: #f9a8d4;
+  --color-fashion-400: #f472b6;
+  --color-fashion-500: #ec4899;
+  --color-fashion-600: #db2777;
+  --color-fashion-700: #be185d;
+  --color-fashion-800: #9d174d;
+  --color-fashion-900: #831843;
+  --color-fashion-950: #500724;
 }
 
 @utility container {

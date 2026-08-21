@@ -1,12 +1,6 @@
-import { LoaderFunction } from 'react-router-dom';
-import {
-  IApiResponse as ApiResponse,
-  Role,
-  UserData,
-  VendorProfileData,
-} from '@celebs/shared-types';
+import { IApiResponse as ApiResponse, UserData } from '@celebs/shared-types';
 
-export type { Role, UserData, VendorProfileData };
+export type { UserData };
 
 export interface SessionData {
   id: string;
@@ -18,9 +12,3 @@ export interface SessionData {
 }
 
 export type SessionResponse = ApiResponse<SessionData>;
-
-export interface ProtectedLoaderData {
-  user: UserData;
-}
-
-export type ProtectedLoader = LoaderFunction;
