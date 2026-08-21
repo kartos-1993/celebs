@@ -19,7 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye } from 'lucide-react';
 import { PlatformSettingsApiService, Banner } from '../api';
-import { CategoryApiService } from '../../category/api';
+import { CategoryApiService } from '@/features/category/api';
 import type { Category } from '../../category/types';
 import { ProductApiService } from '../../product/api';
 

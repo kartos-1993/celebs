@@ -14,7 +14,7 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { ArrowLeft, Save, Flame } from 'lucide-react';
 import { createCampaign, updateCampaign, getCampaignById } from '../api';
-import { MARKETING_QUERY_KEYS } from '../hooks/use-marketing-queries';
+import { MARKETING_QUERY_KEYS } from '../api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 

@@ -1,5 +1,10 @@
 import { axiosClient } from '@/lib/axios/axios-client';
 
+export const USERS_QUERY_KEYS = {
+  all: ['users'] as const,
+  list: () => [...USERS_QUERY_KEYS.all, 'list'] as const,
+};
+
 export async function getUsers() {
   const response = await axiosClient.get('/admin/users');
   return response.data;

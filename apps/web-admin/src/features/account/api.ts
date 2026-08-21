@@ -1,6 +1,12 @@
 import { axiosClient } from '@/lib/axios/axios-client';
 import type { SessionResponse } from '@/types';
 
+export const ACCOUNT_QUERY_KEYS = {
+  all: ['account'] as const,
+  userSession: () => [...ACCOUNT_QUERY_KEYS.all, 'user-session'] as const,
+  sessions: () => [...ACCOUNT_QUERY_KEYS.all, 'sessions'] as const,
+};
+
 export interface SessionType {
   id: string;
   userId: string;

@@ -20,7 +20,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 
 import { login, resendVerification } from '../api';
 import { getUserSession } from '@/features/account/api';
-import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
 import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
 import { RefreshCw, Send, CheckCircle2 } from 'lucide-react';
 

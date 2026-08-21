@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/error-utils';
 import { PRODUCT_SCHEMA_QUERY_KEYS } from '@/features/product/hooks/use-product-schema';
 import {
+  CATEGORY_QUERY_KEYS,
   getCategories,
   getCategoryTree,
   getCategoryById,
@@ -16,16 +17,6 @@ import {
   deleteCategory,
 } from '../api';
 import type { UseCategoriesReturn, UpdateCategoryRequest } from '../types';
-
-/**
- * Query keys for React Query caching
- */
-export const CATEGORY_QUERY_KEYS = {
-  all: ['categories'] as const,
-  list: () => [...CATEGORY_QUERY_KEYS.all, 'list'] as const,
-  tree: () => [...CATEGORY_QUERY_KEYS.all, 'tree'] as const,
-  detail: (id: string) => [...CATEGORY_QUERY_KEYS.all, 'detail', id] as const,
-};
 
 /**
  * Hook for category list management

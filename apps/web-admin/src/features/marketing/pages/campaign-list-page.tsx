@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getCampaigns } from '../api';
-import { MARKETING_QUERY_KEYS } from '../hooks/use-marketing-queries';
+import { MARKETING_QUERY_KEYS } from '../api';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import {

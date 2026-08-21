@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getUserSession } from '@/features/account/api';
-import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
 
 const useAuth = () => {
   const query = useQuery({

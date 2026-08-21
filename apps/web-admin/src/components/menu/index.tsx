@@ -23,7 +23,7 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { logout as logoutApi } from '@/features/auth/api';
-import { ACCOUNT_QUERY_KEYS } from '@/features/account/hooks/use-account-queries';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
 import { useAuthContext } from '@/context/auth-provider';
 import { useTheme } from '@/context/theme-context';
 
