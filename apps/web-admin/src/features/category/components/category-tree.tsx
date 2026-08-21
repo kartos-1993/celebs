@@ -301,7 +301,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
   });
 
   return (
-    <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-950 shadow-sm">
+    <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden bg-card shadow-sm">
       <Table>
         <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
           {table.getHeaderGroups().map((headerGroup) => (

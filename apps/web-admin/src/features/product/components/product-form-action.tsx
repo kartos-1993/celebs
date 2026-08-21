@@ -17,12 +17,12 @@ const ProductFormActions = ({
   onSaveAsDraft,
 }: ProductFormActionsProps) => {
   return (
-    <div className="flex flex-col gap-4 rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 rounded-[28px] border border-border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <p className="text-sm font-semibold text-foreground">
           {isReady ? 'Ready to publish' : 'More details are still required'}
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           {isDirty
             ? 'You have unsaved changes in this product draft.'
             : 'Current changes are already saved locally.'}
@@ -36,7 +36,7 @@ const ProductFormActions = ({
           onClick={onCancel}
           disabled={isSubmitting}
           data-testid="cancel-btn"
-          className="rounded-full border-gray-200 px-5 dark:border-gray-700"
+          className="rounded-full border-border px-5"
         >
           Cancel
         </Button>

@@ -78,7 +78,7 @@ const BasicInfoSection = ({
         name="subcategoryId"
         render={() => (
           <FormItem className="space-y-3">
-            <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <FormLabel className="text-sm font-semibold text-foreground">
               Category <span className="text-orange-500">*</span>
             </FormLabel>
             <FormControl>
@@ -99,7 +99,7 @@ const BasicInfoSection = ({
                 placeholder="Please select category or search with keyword"
               />
             </FormControl>
-            <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+            <FormDescription className="text-xs text-muted-foreground">
               Pick the most specific category. The rest of the product form is generated from this
               selection.
             </FormDescription>
@@ -131,10 +131,10 @@ const BasicInfoSection = ({
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between gap-3">
-                    <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <FormLabel className="text-sm font-semibold text-foreground">
                       Product Name <span className="text-orange-500">*</span>
                     </FormLabel>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {String(field.value || '').length}/200
                     </span>
                   </div>
@@ -147,10 +147,10 @@ const BasicInfoSection = ({
                         field.onChange(event);
                         onFieldChange('name', event.target.value);
                       }}
-                      className="h-11 rounded-2xl border-gray-200 bg-white text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
+                      className="h-11 rounded-2xl border-border bg-card text-foreground"
                     />
                   </FormControl>
-                  <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+                  <FormDescription className="text-xs text-muted-foreground">
                     Include the key identifier, style, or collection name buyers would search for.
                   </FormDescription>
                   <FormMessage />
@@ -189,11 +189,11 @@ const BasicInfoSection = ({
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between gap-3">
-                  <FormLabel className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <FormLabel className="text-sm font-semibold text-foreground">
                     Product Description{' '}
                     <span className="font-normal text-xs text-gray-500">(Optional)</span>
                   </FormLabel>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {String(field.value || '').length}/4000
                   </span>
                 </div>
@@ -206,10 +206,10 @@ const BasicInfoSection = ({
                       field.onChange(event);
                       onFieldChange('description', event.target.value);
                     }}
-                    className="min-h-36 rounded-3xl border-gray-200 bg-white px-4 py-3 text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100"
+                    className="min-h-36 rounded-3xl border-border bg-card px-4 py-3 text-foreground"
                   />
                 </FormControl>
-                <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+                <FormDescription className="text-xs text-muted-foreground">
                   This description is used for the published product page and should be specific
                   enough for customers to understand the item.
                 </FormDescription>

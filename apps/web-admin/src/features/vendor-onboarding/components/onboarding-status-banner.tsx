@@ -81,7 +81,7 @@ export const OnboardingStatusBanner: React.FC = () => {
         <AlertDescription className="mt-2 flex flex-col gap-2">
           <span>Your vendor application requires updates before activation.</span>
           {rejectionReason && (
-            <div className="bg-white p-3 rounded border border-red-200 text-red-800 font-mono text-xs">
+            <div className="bg-card p-3 rounded border border-destructive/30 text-destructive font-mono text-xs">
               <strong>Reason:</strong> {rejectionReason}
             </div>
           )}
