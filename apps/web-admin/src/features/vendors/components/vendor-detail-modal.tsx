@@ -10,6 +10,7 @@ import {
 import { Button } from '@celebs/shared-ui/components/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@celebs/shared-ui/components/tabs';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
+import { VendorStatusBadge } from './vendor-status-badge';
 
 interface Warehouse {
   id: string;
@@ -108,19 +109,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                  vendor.status === 'APPROVED'
-                    ? 'bg-green-100 text-green-800 border border-green-300'
-                    : vendor.status === 'UNDER_REVIEW' || vendor.status === 'SUBMITTED'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                      : vendor.status === 'PENDING'
-                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                        : 'bg-red-100 text-red-800 border border-red-300'
-                }`}
-              >
-                {vendor.status}
-              </span>
+              <VendorStatusBadge status={vendor.status} />
               <span
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   vendor.user?.isEmailVerified

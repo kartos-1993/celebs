@@ -12,6 +12,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { VendorDetailModal } from '../components/vendor-detail-modal';
 import { VendorRejectionDialog } from '../components/vendor-rejection-dialog';
+import { VendorStatusBadge } from '../components/vendor-status-badge';
 
 interface VendorListItem {
   id: string;
@@ -191,19 +192,7 @@ export default function VendorList() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        vendor.status === 'APPROVED'
-                          ? 'bg-green-100 text-green-800'
-                          : vendor.status === 'UNDER_REVIEW' || vendor.status === 'SUBMITTED'
-                            ? 'bg-blue-100 text-blue-800'
-                            : vendor.status === 'PENDING'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {vendor.status}
-                    </span>
+                    <VendorStatusBadge status={vendor.status} />
                   </td>
                   <td className="p-4 text-right space-x-2">
                     <Button size="sm" variant="outline" onClick={() => handleInspect(vendor.id)}>
@@ -213,7 +202,7 @@ export default function VendorList() {
                     {vendor.status !== 'APPROVED' && (
                       <Button
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        
                         onClick={() => approveMutation.mutate(vendor.id)}
                         disabled={approveMutation.isPending}
                       >

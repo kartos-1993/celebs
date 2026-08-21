@@ -60,7 +60,7 @@ export function ComboListPage() {
         </div>
         <Button
           asChild
-          className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2"
+          className="flex items-center gap-2"
         >
           <Link to="/marketing/combos/new">
             <Plus className="w-4 h-4" />
