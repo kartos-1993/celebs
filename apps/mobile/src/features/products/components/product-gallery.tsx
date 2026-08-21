@@ -4,6 +4,7 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  PixelRatio,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { X } from 'lucide-react-native';
+import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
 import { resolveImageUrl } from '@/constants/config';
 
@@ -41,6 +43,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
     }
   };
 
+  const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
   const galleryImages = images.length > 0 ? images : ['https://via.placeholder.com/600x800'];
 
   return (
@@ -54,26 +57,32 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        {galleryImages.map((img, idx) => (
-          <TouchableOpacity
-            key={`${img}-${idx}`}
-            activeOpacity={0.95}
-            onPress={() => {
-              setZoomIndex(idx);
-              setIsZoomModalOpen(true);
-            }}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length} for ${productName}`}
-          >
-            <Image
-              source={{ uri: resolveImageUrl(img) }}
-              style={styles.mainImage}
-              contentFit="cover"
-              transition={200}
-            />
-          </TouchableOpacity>
-        ))}
+        {galleryImages.map((img, idx) => {
+          const resolvedUrl = resolveImageUrl(img);
+          const heroUrl = getOptimizedImageUrl(resolvedUrl, { preset: 'pdp-hero', dpr });
+
+          return (
+            <TouchableOpacity
+              key={`${img}-${idx}`}
+              activeOpacity={0.95}
+              onPress={() => {
+                setZoomIndex(idx);
+                setIsZoomModalOpen(true);
+              }}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length} for ${productName}`}
+            >
+              <Image
+                source={{ uri: heroUrl || resolvedUrl }}
+                style={styles.mainImage}
+                contentFit="cover"
+                transition={150}
+                cachePolicy="memory-disk"
+              />
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
       {/* Pagination Indicator Dots */}
@@ -111,15 +120,21 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
             showsHorizontalScrollIndicator={false}
             contentOffset={{ x: zoomIndex * SCREEN_WIDTH, y: 0 }}
           >
-            {galleryImages.map((img, idx) => (
-              <View key={`zoom-${idx}`} style={styles.zoomSlide}>
-                <Image
-                  source={{ uri: resolveImageUrl(img) }}
-                  style={styles.zoomImage}
-                  contentFit="contain"
-                />
-              </View>
-            ))}
+            {galleryImages.map((img, idx) => {
+              const resolvedUrl = resolveImageUrl(img);
+              const zoomUrl = getOptimizedImageUrl(resolvedUrl, { preset: 'zoom' });
+
+              return (
+                <View key={`zoom-${idx}`} style={styles.zoomSlide}>
+                  <Image
+                    source={{ uri: zoomUrl || resolvedUrl }}
+                    style={styles.zoomImage}
+                    contentFit="contain"
+                    cachePolicy="memory-disk"
+                  />
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
       </Modal>

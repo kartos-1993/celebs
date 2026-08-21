@@ -2,6 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@celebs/shared-ui/components/button';
 import { HardDrive, Loader2, Plus, RefreshCw, UploadCloud, X } from 'lucide-react';
+import { MediaCropDialog } from '../../components/media-crop-dialog';
 import { MediaPickerDialog } from '../../components/media-picker-dialog';
 import type { UiProps } from '../ui-registry';
 import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles } from './shared';
@@ -20,6 +21,9 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
   const [previews, setPreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [croppingFile, setCroppingFile] = useState<{ file: File; replaceIndex?: number } | null>(
+    null,
+  );
   const fileInputs = useRef<Array<HTMLInputElement | null>>([]);
   const filesHash = useMemo(
     () => (files || []).map((file) => imageValueKey(file)).join('|'),
@@ -43,6 +47,20 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
       img.src = url;
     });
   }, []);
+
+  const checkAspectRatio = useCallback(
+    async (file: File): Promise<{ needsCrop: boolean }> => {
+      try {
+        const dims = await getDims(file);
+        const ratio = dims.w / dims.h;
+        // Standard 3:4 is 0.75; accept reasonable tolerance between 0.70 and 0.80
+        return { needsCrop: ratio < 0.70 || ratio > 0.80 };
+      } catch {
+        return { needsCrop: false };
+      }
+    },
+    [getDims],
+  );
 
   const prevalidateFile = useCallback(
     async (file: File) => {
@@ -149,6 +167,15 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         return;
       }
 
+      // Check if any valid image needs 3:4 cropping
+      for (const f of valids) {
+        const { needsCrop } = await checkAspectRatio(f);
+        if (needsCrop) {
+          setCroppingFile({ file: f });
+          return;
+        }
+      }
+
       setIsUploading(true);
 
       try {
@@ -167,7 +194,17 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         setIsUploading(false);
       }
     },
-    [watch, field.name, maxItems, prevalidateFile, setValue, clearErrors, trigger, setError],
+    [
+      watch,
+      field.name,
+      maxItems,
+      prevalidateFile,
+      checkAspectRatio,
+      setValue,
+      clearErrors,
+      trigger,
+      setError,
+    ],
   );
 
   const onReplaceFile = useCallback(
@@ -177,6 +214,12 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
 
       if (err) {
         setError(field.name, { type: 'validate', message: err });
+        return;
+      }
+
+      const { needsCrop } = await checkAspectRatio(f);
+      if (needsCrop) {
+        setCroppingFile({ file: f, replaceIndex: idx });
         return;
       }
 
@@ -199,7 +242,49 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         setIsUploading(false);
       }
     },
-    [prevalidateFile, setError, field.name, watch, setValue, clearErrors, trigger],
+    [
+      prevalidateFile,
+      checkAspectRatio,
+      setError,
+      field.name,
+      watch,
+      setValue,
+      clearErrors,
+      trigger,
+    ],
+  );
+
+  const handleCropComplete = useCallback(
+    async (croppedFile: File) => {
+      const replaceIdx = croppingFile?.replaceIndex;
+      setCroppingFile(null);
+      setIsUploading(true);
+
+      try {
+        const [uploadedUrl] = await uploadImageFiles([croppedFile]);
+        const current = (watch(field.name) ?? []) as ImageValue[];
+        let next: ImageValue[];
+
+        if (typeof replaceIdx === 'number') {
+          next = [...current];
+          next[replaceIdx] = uploadedUrl;
+        } else {
+          next = [...current, uploadedUrl];
+        }
+
+        setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
+        clearErrors(field.name);
+        trigger(field.name);
+      } catch (error) {
+        setError(field.name, {
+          type: 'upload',
+          message: uploadErrorMessage(error),
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [croppingFile, watch, field.name, setValue, clearErrors, trigger, setError],
   );
 
   const onRemoveFile = useCallback(
@@ -252,6 +337,13 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
           {previews.length}/{maxItems} uploaded
         </span>
       </div>
+
+      <MediaCropDialog
+        open={croppingFile !== null}
+        file={croppingFile?.file ?? null}
+        onCropComplete={handleCropComplete}
+        onCancel={() => setCroppingFile(null)}
+      />
 
       <MediaPickerDialog
         open={isPickerOpen}

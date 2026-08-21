@@ -6,7 +6,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@celebs/shared-utils": ["../shared-utils/src/index.ts"]
     },
     "types": ["node"]
   },

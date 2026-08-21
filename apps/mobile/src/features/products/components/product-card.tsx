@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
   GestureResponderEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  PixelRatio,
+  Pressable,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Heart, ShoppingBag } from 'lucide-react-native';
+import { ChevronRight, Flame, Heart, ShoppingBag } from 'lucide-react-native';
+import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
 import { Product, resolveImageUrl } from '../hooks/use-products';
 
@@ -20,89 +27,107 @@ import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 6;
 const COLUMN_GAP = 6;
-// Calculate width for 2-column grid with minimal 6px padding
 const CARD_WIDTH = (SCREEN_WIDTH - GRID_PADDING * 2 - COLUMN_GAP) / 2;
 
 interface ProductCardProps {
   product: Product;
   onPress?: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
+  isFirstCard?: boolean;
 }
 
-export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps) {
+export function ProductCard({
+  product,
+  onPress,
+  onAddToCart,
+  isFirstCard = false,
+}: ProductCardProps) {
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { startFlyAnimation } = useFlyToCart();
-  const imageRef = React.useRef<View>(null);
+
+  const imageRef = useRef<View>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const hintAnim = useRef(new Animated.Value(0)).current;
+
+  const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
 
   const productRecord = product as Product & Record<string, unknown>;
   const dynamicDataObj = productRecord.dynamicData as Record<string, unknown> | undefined;
   const dynamicValuesObj = dynamicDataObj?.values as Record<string, unknown> | undefined;
   const uploadedAssetsObj = productRecord.uploadedAssets as Record<string, unknown> | undefined;
 
-  const primaryImage =
-    product.mainImages?.[0] ||
-    (Array.isArray(dynamicValuesObj?.mainImage)
-      ? (dynamicValuesObj?.mainImage[0] as string)
-      : undefined) ||
-    (Array.isArray(dynamicDataObj?.mainImage)
-      ? (dynamicDataObj?.mainImage[0] as string)
-      : undefined) ||
-    (Array.isArray(uploadedAssetsObj?.mainImages)
-      ? (uploadedAssetsObj?.mainImages[0] as string)
-      : undefined) ||
-    product.colorVariants?.[0]?.images?.[0] ||
-    '';
-  const imageUrl = resolveImageUrl(primaryImage);
+  // Resolve dynamic image list: strictly sanitize and filter out empty strings
+  const activeColorImages = product.colorVariants?.[selectedColorIndex]?.images;
 
-  const handleAddToCart = (evt?: GestureResponderEvent) => {
-    evt?.stopPropagation?.();
-    const touchX = evt?.nativeEvent?.pageX;
-    const touchY = evt?.nativeEvent?.pageY;
-
-    if (imageRef.current && imageUrl) {
-      imageRef.current.measureInWindow((x, y, width, height) => {
-        const startX =
-          typeof x === 'number' && !isNaN(x) && x !== 0
-            ? x + width / 2
-            : touchX || SCREEN_WIDTH / 2;
-        const startY =
-          typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : touchY || 300;
-        startFlyAnimation({
-          imageUrl,
-          startX,
-          startY,
-          startWidth: width || 80,
-          startHeight: height || 80,
-        });
-      });
-    } else if (imageUrl && touchX && touchY) {
-      startFlyAnimation({
-        imageUrl,
-        startX: touchX,
-        startY: touchY,
-        startWidth: 80,
-        startHeight: 80,
-      });
+  const cardImages: string[] = useMemo(() => {
+    let rawList: unknown[] = [];
+    if (Array.isArray(activeColorImages) && activeColorImages.length > 0) {
+      rawList = activeColorImages;
+    } else if (Array.isArray(product.mainImages) && product.mainImages.length > 0) {
+      rawList = product.mainImages;
+    } else if (Array.isArray(dynamicValuesObj?.mainImage) && dynamicValuesObj.mainImage.length > 0) {
+      rawList = dynamicValuesObj.mainImage;
+    } else if (Array.isArray(dynamicDataObj?.mainImage) && dynamicDataObj.mainImage.length > 0) {
+      rawList = dynamicDataObj.mainImage;
+    } else if (Array.isArray(uploadedAssetsObj?.mainImages) && uploadedAssetsObj.mainImages.length > 0) {
+      rawList = uploadedAssetsObj.mainImages;
+    } else if (Array.isArray(product.colorVariants?.[0]?.images) && product.colorVariants[0].images.length > 0) {
+      rawList = product.colorVariants[0].images;
     }
-    onAddToCart?.(product);
+
+    return rawList
+      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      .map((item) => item.trim());
+  }, [activeColorImages, product.mainImages, dynamicValuesObj, dynamicDataObj, uploadedAssetsObj, product.colorVariants]);
+
+  // First-time discovery hint animation for the first card on mount
+  useEffect(() => {
+    let isMounted = true;
+    if (isFirstCard && cardImages.length > 1) {
+      const timer = setTimeout(() => {
+        if (!isMounted) return;
+        Animated.sequence([
+          Animated.timing(hintAnim, {
+            toValue: -28,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.spring(hintAnim, {
+            toValue: 0,
+            friction: 7,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, 700);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+        hintAnim.stopAnimation();
+      };
+    }
+  }, [isFirstCard, cardImages.length, hintAnim]);
+
+  const handleSelectColor = (idx: number, e?: GestureResponderEvent) => {
+    e?.stopPropagation?.();
+    setSelectedColorIndex(idx);
+    setActiveImageIndex(0);
+    scrollViewRef.current?.scrollTo({ x: 0, animated: true });
   };
 
-  // Price calculations
-  const currentPrice = product.discountedPrice || product.price;
-  const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
-  const discountPercent = hasDiscount
-    ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
-    : (productRecord.discountPercent as number | undefined) || 15;
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const slide = Math.round(event.nativeEvent.contentOffset.x / CARD_WIDTH);
+    if (slide !== activeImageIndex && slide >= 0 && slide < cardImages.length) {
+      setActiveImageIndex(slide);
+    }
+  };
 
-  const priceColor = hasDiscount ? '#FF5000' : '#000000';
-
-  // Format Price
-  const integerPart = Math.floor(currentPrice);
-  const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
-
-  // Brand / Store Name
-  const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
+  const primaryImage = cardImages[activeImageIndex] || cardImages[0] || '';
+  const resolvedPrimaryUrl = resolveImageUrl(primaryImage);
 
   const handlePress = () => {
     if (onPress) {
@@ -115,38 +140,143 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
     }
   };
 
+  const handleAddToCart = (evt?: GestureResponderEvent) => {
+    evt?.stopPropagation?.();
+    const touchX = evt?.nativeEvent?.pageX;
+    const touchY = evt?.nativeEvent?.pageY;
+
+    if (imageRef.current && resolvedPrimaryUrl) {
+      imageRef.current.measureInWindow((x, y, width, height) => {
+        const startX =
+          typeof x === 'number' && !isNaN(x) && x !== 0
+            ? x + width / 2
+            : touchX || SCREEN_WIDTH / 2;
+        const startY =
+          typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : touchY || 300;
+        startFlyAnimation({
+          imageUrl: resolvedPrimaryUrl,
+          startX,
+          startY,
+          startWidth: width || 80,
+          startHeight: height || 80,
+        });
+      });
+    } else if (resolvedPrimaryUrl && touchX && touchY) {
+      startFlyAnimation({
+        imageUrl: resolvedPrimaryUrl,
+        startX: touchX,
+        startY: touchY,
+        startWidth: 80,
+        startHeight: 80,
+      });
+    }
+    onAddToCart?.(product);
+  };
+
+  // Price & Savings calculations
+  const currentPrice = product.discountedPrice || product.price;
+  const hasDiscount = Boolean(product.discountedPrice && product.discountedPrice < product.price);
+  const discountPercent = hasDiscount
+    ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
+    : (productRecord.discountPercent as number | undefined) || 0;
+
+  const savingsAmount = hasDiscount
+    ? Math.round(product.price - (product.discountedPrice || product.price))
+    : 0;
+
+  const priceColor = hasDiscount ? '#FF5000' : '#000000';
+  const integerPart = Math.floor(currentPrice);
+  const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
+
+  // Store & Brand
+  const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: '#ffffff' }]}
-      onPress={handlePress}
-    >
-      {/* 3:4 Aspect Ratio Image Container */}
+    <View style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: '#ffffff' }]}>
+      {/* 3:4 Aspect Ratio Image Gallery Viewport */}
       <View
         ref={imageRef}
         collapsable={false}
         style={[styles.imageContainer, { backgroundColor: '#f4f4f5' }]}
       >
-        {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.productImage}
-            contentFit="cover"
-            transition={200}
-          />
+        {cardImages.length > 0 ? (
+          <Animated.View style={{ flex: 1, transform: [{ translateX: hintAnim }] }}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={handleScroll}
+              scrollEventThrottle={32}
+              style={styles.imageScrollView}
+            >
+              {cardImages.map((imgSrc, idx) => {
+                const resolvedUrl = resolveImageUrl(imgSrc);
+                const optimizedUrl = getOptimizedImageUrl(resolvedUrl, {
+                  preset: 'grid-card',
+                  dpr,
+                });
+                const finalUri = optimizedUrl || resolvedUrl;
+
+                return (
+                  <Pressable
+                    key={`${imgSrc}-${idx}`}
+                    onPress={handlePress}
+                    style={{ width: CARD_WIDTH, height: '100%' }}
+                  >
+                    {finalUri ? (
+                      <Image
+                        source={{ uri: finalUri }}
+                        style={styles.productImage}
+                        contentFit="cover"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
+                    ) : (
+                      <View style={styles.placeholderImage}>
+                        <ThemedText type="small" style={{ opacity: 0.4 }}>
+                          No Image
+                        </ThemedText>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
         ) : (
-          <View style={[styles.placeholderImage, { backgroundColor: '#f2f2f7' }]}>
+          <Pressable onPress={handlePress} style={styles.placeholderImage}>
             <ThemedText type="small" style={{ opacity: 0.4 }}>
               No Image
             </ThemedText>
+          </Pressable>
+        )}
+
+        {/* Swipe Pagination Dot Indicators */}
+        {cardImages.length > 1 && (
+          <View style={styles.paginationDotsContainer} pointerEvents="none">
+            {cardImages.map((_, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.paginationDot,
+                  activeImageIndex === idx
+                    ? styles.paginationDotActive
+                    : styles.paginationDotInactive,
+                ]}
+              />
+            ))}
           </View>
         )}
 
-        {/* Wishlist Heart Button Top-Right */}
+        {/* Wishlist Heart Button */}
         <TouchableOpacity
           activeOpacity={0.8}
           style={[styles.heartButton, { backgroundColor: 'rgba(255, 255, 255, 0.85)' }]}
-          onPress={() => setIsFavorite(!isFavorite)}
+          onPress={(e) => {
+            e.stopPropagation();
+            setIsFavorite(!isFavorite);
+          }}
         >
           <Heart
             size={14}
@@ -155,52 +285,69 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
           />
         </TouchableOpacity>
 
-        {/* Vertical Color Swatch Capsule Overlay (Bottom-Right of Image) */}
+        {/* Interactive Vertical Color Swatch Capsule Overlay */}
         {product.colorVariants && product.colorVariants.length > 0 && (
           <View style={styles.imageColorCapsule}>
-            {product.colorVariants.slice(0, 3).map((variant, idx) => (
-              <View
+            {product.colorVariants.slice(0, 4).map((variant, idx) => (
+              <TouchableOpacity
                 key={idx}
+                activeOpacity={0.8}
+                onPress={(e) => handleSelectColor(idx, e)}
                 style={[
                   styles.capsuleColorDot,
                   { backgroundColor: variant.colorCode || '#8e8e93' },
+                  selectedColorIndex === idx && styles.capsuleColorDotActive,
                 ]}
               />
             ))}
-            <ThemedText style={styles.capsuleCountText}>{product.colorVariants.length}</ThemedText>
+            {product.colorVariants.length > 4 && (
+              <ThemedText style={styles.capsuleCountText}>
+                +{product.colorVariants.length - 4}
+              </ThemedText>
+            )}
           </View>
         )}
       </View>
 
-      {/* Content Details */}
-      <View style={styles.detailsContainer}>
-        {/* Brand Badge Line (e.g. Trends | BODI >) */}
+      {/* Flush-Mount Dual-Tone "HOT SELLER | Save Rs. X" Banner Bar */}
+      {hasDiscount && savingsAmount > 0 ? (
+        <View style={styles.hotSellerBanner}>
+          <View style={styles.hotSellerLeft}>
+            <Flame size={10} color="#FEF08A" strokeWidth={2.5} />
+            <ThemedText style={styles.hotSellerText}>HOT SELLER</ThemedText>
+          </View>
+          <View style={styles.hotSellerRight}>
+            <ThemedText style={styles.saveAmountText}>Save Rs. {savingsAmount}</ThemedText>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Content Details Area */}
+      <Pressable onPress={handlePress} style={styles.detailsContainer}>
+        {/* Brand Badge Line */}
         <View style={styles.brandBadgeRow}>
           <View style={styles.trendsBadge}>
             <ThemedText style={styles.trendsText}>Trends</ThemedText>
           </View>
-          <TouchableOpacity
-            style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]}
-            activeOpacity={0.7}
-          >
+          <View style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]}>
             <ThemedText style={[styles.storeText, { color: '#6b21a8' }]}>{storeName}</ThemedText>
             <ChevronRight size={9} color="#7c3aed" />
-          </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Product Title (Truncated to Single Line) */}
+        {/* Product Title */}
         <ThemedText numberOfLines={1} style={[styles.productName, { color: '#27272a' }]}>
           {product.name}
         </ThemedText>
 
-        {/* Bestseller / Ranking Tag (Orange/Gold) */}
+        {/* Bestseller / Ranking Tag */}
         {product.featured ? (
-          <TouchableOpacity activeOpacity={0.8} style={styles.bestsellerRow}>
+          <View style={styles.bestsellerRow}>
             <ThemedText numberOfLines={1} style={styles.bestsellerText}>
-              #1 Bestseller <ThemedText style={styles.bestsellerSub}>in Men Collection</ThemedText>
+              #1 Bestseller <ThemedText style={styles.bestsellerSub}>in Apparel</ThemedText>
             </ThemedText>
             <ChevronRight size={10} color="#d97706" />
-          </TouchableOpacity>
+          </View>
         ) : null}
 
         {/* Sales / New Arrival Row */}
@@ -215,7 +362,6 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
 
         {/* Bottom 2-Column Price & Quick Add Row */}
         <View style={styles.bottomPriceRow}>
-          {/* Column 1: Single Current Price + -xx% Discount Tag */}
           <View style={styles.priceLeftCol}>
             <View style={styles.mainPriceGroup}>
               <ThemedText style={[styles.currencySymbol, { color: priceColor }]}>Rs.</ThemedText>
@@ -234,7 +380,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
             )}
           </View>
 
-          {/* Column 2: Add to Cart Action Button */}
+          {/* Quick Add Button */}
           <TouchableOpacity
             activeOpacity={0.85}
             style={[
@@ -246,8 +392,8 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
             <ShoppingBag size={14} color="#1c1c1e" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
-      </View>
-    </TouchableOpacity>
+      </Pressable>
+    </View>
   );
 }
 
@@ -261,6 +407,11 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 3 / 4,
     position: 'relative',
+    overflow: 'hidden',
+  },
+  imageScrollView: {
+    width: '100%',
+    height: '100%',
   },
   productImage: {
     width: '100%',
@@ -271,7 +422,38 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f2f2f7',
   },
+
+  /* Horizontal Paging Indicator Dots */
+  paginationDotsContainer: {
+    position: 'absolute',
+    bottom: 6,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 3.5,
+    zIndex: 4,
+  },
+  paginationDot: {
+    height: 3.5,
+    borderRadius: 2,
+  },
+  paginationDotActive: {
+    width: 10,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 1,
+  },
+  paginationDotInactive: {
+    width: 3.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+
   heartButton: {
     position: 'absolute',
     top: 6,
@@ -284,17 +466,17 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
 
-  /* Vertical Color Swatch Capsule Overlay (Tighter gap & larger dots) */
+  /* Vertical Color Swatch Capsule Overlay */
   imageColorCapsule: {
     position: 'absolute',
     bottom: 6,
     right: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 10,
     paddingHorizontal: 3.5,
     paddingVertical: 4,
     alignItems: 'center',
-    gap: 2.5,
+    gap: 3,
     zIndex: 5,
   },
   capsuleColorDot: {
@@ -302,15 +484,53 @@ const styles = StyleSheet.create({
     height: 9,
     borderRadius: 4.5,
     borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  capsuleColorDotActive: {
     borderColor: '#ffffff',
+    borderWidth: 1.5,
+    transform: [{ scale: 1.2 }],
   },
   capsuleCountText: {
-    fontSize: 8,
-    lineHeight: 9,
+    fontSize: 7.5,
+    lineHeight: 8.5,
     fontWeight: '800',
     color: '#ffffff',
-    marginTop: 1,
+    marginTop: 0.5,
     textAlign: 'center',
+  },
+
+  /* Dual-Tone Hot Seller / Save Rs. Banner */
+  hotSellerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#DC2626',
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+  },
+  hotSellerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  hotSellerText: {
+    color: '#FEF08A',
+    fontSize: responsiveFontSize(8),
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: 0.2,
+  },
+  hotSellerRight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  saveAmountText: {
+    color: '#FFFFFF',
+    fontSize: responsiveFontSize(8),
+    fontWeight: '800',
   },
 
   /* Details Area */
@@ -435,7 +655,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  /* Compact Discount Percent Badge Pill Next to Price */
   discountTagPill: {
     backgroundColor: '#fff0ed',
     paddingHorizontal: 2.5,
@@ -450,7 +669,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  /* Cart Quick Add Button */
   cartActionButton: {
     width: moderateScale(28),
     height: moderateScale(28),

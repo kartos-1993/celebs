@@ -50,11 +50,11 @@ export const assetWorker = new Worker<AssetJobPayload>(
       // Base key without extension
       const baseKey = key.replace(/\.[a-zA-Z0-9]+$/, '');
 
-      // 1. High-Res Zoom (1500x1500px)
+      // 1. High-Res Zoom (1500x2000px 3:4 Portrait)
       const zoomKey = `${baseKey}-zoom.webp`;
       const zoomBuffer = await sharp(originalBuffer)
-        .resize({ width: 1500, height: 1500, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 85 })
+        .resize({ width: 1500, height: 2000, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 88 })
         .toBuffer();
 
       await s3Client.send(
@@ -66,10 +66,10 @@ export const assetWorker = new Worker<AssetJobPayload>(
         }),
       );
 
-      // 2. Main Card (750x750px)
+      // 2. Main Card (750x1000px 3:4 Portrait)
       const cardKey = `${baseKey}-card.webp`;
       const cardBuffer = await sharp(originalBuffer)
-        .resize({ width: 750, height: 750, fit: 'inside', withoutEnlargement: true })
+        .resize({ width: 750, height: 1000, fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 82 })
         .toBuffer();
 
@@ -82,10 +82,10 @@ export const assetWorker = new Worker<AssetJobPayload>(
         }),
       );
 
-      // 3. Thumbnail (350x350px)
+      // 3. Thumbnail (360x480px 3:4 Portrait)
       const thumbKey = `${baseKey}-thumb.webp`;
       const thumbnailBuffer = await sharp(originalBuffer)
-        .resize({ width: 350, height: 350, fit: 'cover' })
+        .resize({ width: 360, height: 480, fit: 'cover' })
         .webp({ quality: 80 })
         .toBuffer();
 
@@ -98,10 +98,10 @@ export const assetWorker = new Worker<AssetJobPayload>(
         }),
       );
 
-      // 4. Ultra-low Placeholder (30x30px)
+      // 4. Ultra-low Placeholder (30x40px 3:4 Portrait)
       const placeholderKey = `${baseKey}-placeholder.webp`;
       const placeholderBuffer = await sharp(originalBuffer)
-        .resize({ width: 30, height: 30, fit: 'inside' })
+        .resize({ width: 30, height: 40, fit: 'inside' })
         .webp({ quality: 60 })
         .toBuffer();
 
