@@ -36,6 +36,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cropError, setCropError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -161,7 +162,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
 
       onCropComplete(croppedFile);
     } catch (err) {
-      console.error('Crop processing failed:', err);
+      setCropError(err instanceof Error ? err.message : 'Crop processing failed');
     } finally {
       setIsProcessing(false);
     }
@@ -275,6 +276,14 @@ export const MediaCropDialog = memo(function MediaCropDialog({
                 Original is {naturalDims.width}x{naturalDims.height}px. High-res zoom may look
                 soft. (Recommended 1200x1600px+).
               </span>
+            </div>
+          )}
+
+          {/* Crop Error */}
+          {cropError && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs w-full">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span>{cropError}</span>
             </div>
           )}
         </div>
