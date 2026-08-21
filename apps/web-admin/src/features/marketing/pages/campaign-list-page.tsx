@@ -16,7 +16,7 @@ import {
 import { Plus, Search, Calendar, Flame } from 'lucide-react';
 import type { CampaignItemType } from '@celebs/shared-types';
 
-export function CampaignListPage() {
+export default function CampaignListPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: response, isLoading } = useQuery({

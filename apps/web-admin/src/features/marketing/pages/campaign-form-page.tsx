@@ -18,7 +18,7 @@ import { MARKETING_QUERY_KEYS } from '../api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
-export function CampaignFormPage() {
+export default function CampaignFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const queryClient = useQueryClient();

@@ -16,7 +16,7 @@ import {
 import { Plus, Search, Tag, Sparkles, Plane, Percent, DollarSign } from 'lucide-react';
 import type { ComboBundleType } from '@celebs/shared-types';
 
-export function ComboListPage() {
+export default function ComboListPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: response, isLoading } = useQuery({

@@ -19,8 +19,7 @@ import { orderRoutes } from '@/features/orders/routes';
 import { accountRoutes } from '@/features/account/routes';
 import { financeRoutes } from '@/features/finance/routes';
 import { platformSettingsRoutes } from '@/features/platform-settings/routes';
-import { comboRoutes } from '@/features/marketing/combo.routes';
-import { campaignRoutes } from '@/features/marketing/campaign.routes';
+import { marketingRoutes } from '@/features/marketing/routes';
 import { optionSetRoutes } from '@/features/option-sets/routes';
 
 const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
@@ -52,8 +51,7 @@ export const routesConfig: RouteObject[] = [
       accountRoutes,
       financeRoutes,
       platformSettingsRoutes,
-      comboRoutes,
-      campaignRoutes,
+      ...marketingRoutes,
     ],
   },
   // ── Vendor Portal (onboarding / under-review / rejected) ──────────────────

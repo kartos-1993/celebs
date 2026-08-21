@@ -1,7 +1,7 @@
 import { useEffect, Suspense } from 'react';
 import { Outlet, useMatches, useNavigation } from 'react-router-dom';
-import SideBar from '@/components/sidebar';
-import SideBarProvider from '@/context/sidebar-provider';
+import Sidebar from '@/components/sidebar';
+import SidebarProvider from '@/context/sidebar-provider';
 import Main from '@/components/main';
 import { Navbar } from '@/components/nav-bar';
 import PageLoader from '@/components/page-loader';
@@ -25,9 +25,9 @@ export const AdminLayout = () => {
           <div className="h-full bg-primary animate-pulse w-full origin-left transition-all duration-300" />
         </div>
       )}
-      <SideBarProvider>
+      <SidebarProvider>
         <div>
-          <SideBar />
+          <Sidebar />
         </div>
         <div className="bg-zinc-50 dark:bg-zinc-950 min-h-screen">
           <Navbar />
@@ -37,7 +37,7 @@ export const AdminLayout = () => {
             </Suspense>
           </Main>
         </div>
-      </SideBarProvider>
+      </SidebarProvider>
     </div>
   );
 };
