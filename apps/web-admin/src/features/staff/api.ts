@@ -1,5 +1,10 @@
 import { axiosClient } from '@/lib/axios/axios-client';
 
+export const STAFF_QUERY_KEYS = {
+  all: ['staff'] as const,
+  list: (vendorId?: string) => [...STAFF_QUERY_KEYS.all, 'list', { vendorId }] as const,
+};
+
 export async function getStaff(vendorId?: string) {
   const response = await axiosClient.get('/staff', {
     params: vendorId ? { vendorId } : undefined,

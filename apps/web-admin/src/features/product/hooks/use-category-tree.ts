@@ -5,7 +5,7 @@
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CategoryTreeNode, DropdownCategory, RecentCategory } from '@celebs/shared-types';
-import { CATEGORY_QUERY_KEYS, SharedCategoryApi } from '@/api/category';
+import { CATEGORY_QUERY_KEYS, CategoryApiService } from '@/features/category/api';
 
 /** Flatten a category tree into the lightweight dropdown shape. */
 function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
@@ -35,19 +35,19 @@ export const useCategoryTree = () => {
 
   const { data: treeResponse, isLoading: isLoadingTree } = useQuery({
     queryKey: CATEGORY_QUERY_KEYS.tree(),
-    queryFn: SharedCategoryApi.getCategoryTree,
+    queryFn: CategoryApiService.getCategoryTree,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: recentResponse } = useQuery({
     queryKey: CATEGORY_QUERY_KEYS.recent(),
-    queryFn: SharedCategoryApi.getRecentCategories,
+    queryFn: CategoryApiService.getRecentCategories,
     staleTime: 60 * 1000,
     retry: false,
   });
 
   const { mutate: recordRecent } = useMutation({
-    mutationFn: SharedCategoryApi.recordRecentCategory,
+    mutationFn: CategoryApiService.recordRecentCategory,
     onSuccess: (response) => {
       if (response?.data) {
         queryClient.setQueryData(CATEGORY_QUERY_KEYS.recent(), response);

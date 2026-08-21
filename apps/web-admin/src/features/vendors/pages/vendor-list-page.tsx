@@ -7,7 +7,7 @@ import {
   rejectVendor,
   suspendVendor,
 } from '../api';
-import { VENDORS_QUERY_KEYS } from '../hooks/use-vendor-queries';
+import { VENDORS_QUERY_KEYS } from '../api';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { VendorDetailModal } from '../components/vendor-detail-modal';

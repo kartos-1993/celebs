@@ -14,7 +14,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 import { cn } from '@/lib/utils';
-import { SharedCategoryApi } from '@/api/category';
+import { CategoryApiService } from '@/features/category/api';
 import { useCategoryTree } from '../hooks/use-category-tree';
 import type { DropdownCategory, RecentCategory } from '../types';
 
@@ -177,7 +177,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
         if (onSearch) {
           results = await onSearch(query);
         } else {
-          const apiResults = await SharedCategoryApi.searchCategories(query);
+          const apiResults = await CategoryApiService.searchCategories(query);
           results = apiResults.map(
             (c: {
               id: string;

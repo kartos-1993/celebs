@@ -14,7 +14,7 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { ArrowLeft, Save, Sparkles } from 'lucide-react';
 import { createCombo, updateCombo, getComboById } from '../api';
-import { MARKETING_QUERY_KEYS } from '../hooks/use-marketing-queries';
+import { MARKETING_QUERY_KEYS } from '../api';
 import type { ComboDiscountType } from '@celebs/shared-types';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';

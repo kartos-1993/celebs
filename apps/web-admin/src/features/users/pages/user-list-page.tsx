@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { getUsers, createUser, deleteUser } from '../api';
-import { USERS_QUERY_KEYS } from '../hooks/use-user-queries';
+import { USERS_QUERY_KEYS } from '../api';
 import type { UserData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
