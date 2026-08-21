@@ -1,26 +1,26 @@
 import React, { createContext } from 'react';
 
-type SideBarContextProps = {
+type SidebarContextProps = {
   isHover: boolean;
-  isSideBarOpen: boolean;
-  setIsSideBarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsHover: React.Dispatch<React.SetStateAction<boolean>>;
 };
-const SideBarContext = createContext<SideBarContextProps | null>(null);
-export const SideBarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isSideBarOpen, setIsSideBarOpen] = React.useState(true);
+const SidebarContext = createContext<SidebarContextProps | null>(null);
+export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isHover, setIsHover] = React.useState(false);
-  const value = { isSideBarOpen, setIsSideBarOpen, isHover, setIsHover };
-  return <SideBarContext.Provider value={value}>{children}</SideBarContext.Provider>;
+  const value = { isSidebarOpen, setIsSidebarOpen, isHover, setIsHover };
+  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 };
 
-export default SideBarProvider;
+export default SidebarProvider;
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useSideBarContext = () => {
-  const context = React.useContext(SideBarContext);
+export const useSidebarContext = () => {
+  const context = React.useContext(SidebarContext);
   if (!context) {
-    throw new Error('useSideBarContext must be used inside a SideBarProvider');
+    throw new Error('useSidebarContext must be used inside a SidebarProvider');
   }
 
   return context;

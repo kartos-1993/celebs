@@ -3,20 +3,20 @@ import { PanelsTopLeft } from 'lucide-react';
 
 import SidebarToggle from '@/components/sidebar/sidebar-toggle';
 import { cn } from '@/lib/utils';
-import { useSideBarContext } from '@/context/sidebar-provider';
+import { useSidebarContext } from '@/context/sidebar-provider';
 import { Menu } from '../menu';
 import { Button } from '@celebs/shared-ui/components/button';
 
-const SideBar = () => {
-  const { isSideBarOpen, setIsSideBarOpen, setIsHover } = useSideBarContext();
+const Sidebar = () => {
+  const { isSidebarOpen, setIsSidebarOpen, setIsHover } = useSidebarContext();
   return (
     <aside
       className={cn(
         'fixed top-0 left-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-[width] ease-in-out duration-200',
-        isSideBarOpen ? 'w-64' : 'w-[80px]',
+        isSidebarOpen ? 'w-64' : 'w-[80px]',
       )}
     >
-      <SidebarToggle isOpen={isSideBarOpen} setIsOpen={setIsSideBarOpen} />
+      <SidebarToggle isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
@@ -25,7 +25,7 @@ const SideBar = () => {
         <Button
           className={cn(
             'transition-transform ease-in-out duration-300 mb-1',
-            !isSideBarOpen ? 'translate-x-1' : 'translate-x-0',
+            !isSidebarOpen ? 'translate-x-1' : 'translate-x-0',
           )}
           variant="link"
           asChild
@@ -35,7 +35,7 @@ const SideBar = () => {
             <h1
               className={cn(
                 'font-bold text-lg whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300',
-                !isSideBarOpen ? '-translate-x-96 opacity-0 hidden' : 'translate-x-0 opacity-100',
+                !isSidebarOpen ? '-translate-x-96 opacity-0 hidden' : 'translate-x-0 opacity-100',
               )}
             >
               Celebs Seller Center
@@ -43,10 +43,10 @@ const SideBar = () => {
           </Link>
         </Button>
 
-        <Menu isSideBarOpen={isSideBarOpen} />
+        <Menu isSidebarOpen={isSidebarOpen} />
       </div>
     </aside>
   );
 };
 
-export default SideBar;
+export default Sidebar;

@@ -10,7 +10,7 @@ import {
 } from '@celebs/shared-ui/components/breadcrumbs';
 import { useMatches, Link } from 'react-router-dom';
 import { SheetMenu } from './sheet-menu';
-import { useSideBarContext } from '@/context/sidebar-provider';
+import { useSidebarContext } from '@/context/sidebar-provider';
 import { cn } from '@/lib/utils';
 
 interface RouteHandle {
@@ -18,7 +18,7 @@ interface RouteHandle {
 }
 
 export function Navbar() {
-  const { isSideBarOpen } = useSideBarContext();
+  const { isSidebarOpen } = useSidebarContext();
   const matches = useMatches();
 
   const breadcrumbs = matches
@@ -42,7 +42,7 @@ export function Navbar() {
     <header
       className={cn(
         'px-4 lg:px-6 z-10 transition-[margin-left] ease-in-out duration-300',
-        isSideBarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
+        isSidebarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
       )}
     >
       <div className="flex h-12 items-center gap-4">

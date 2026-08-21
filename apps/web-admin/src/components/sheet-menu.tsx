@@ -32,7 +32,7 @@ export function SheetMenu() {
             </Link>
           </Button>
         </SheetHeader>
-        <Menu isSideBarOpen={true} />
+        <Menu isSidebarOpen={true} />
       </SheetContent>
     </Sheet>
   );

@@ -25,13 +25,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { logout as logoutApi } from '@/features/auth/api';
 import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
 import { useAuthContext } from '@/context/auth-provider';
-import { useTheme } from '@/context/theme-context';
+import { useTheme } from '@/context/theme-provider';
 
 interface MenuProps {
-  isSideBarOpen: boolean | undefined;
+  isSidebarOpen: boolean | undefined;
 }
 
-export function Menu({ isSideBarOpen }: MenuProps) {
+export function Menu({ isSidebarOpen }: MenuProps) {
   const { role, user } = useAuthContext();
   const { theme, setTheme } = useTheme();
   const menuList = getMenuList(role, user?.permissions);
@@ -57,7 +57,7 @@ export function Menu({ isSideBarOpen }: MenuProps) {
     },
   });
 
-  const isCollapsed = isSideBarOpen === false;
+  const isCollapsed = isSidebarOpen === false;
 
   const initials = user?.name
     ? user.name
@@ -121,7 +121,7 @@ export function Menu({ isSideBarOpen }: MenuProps) {
                       label={label}
                       active={active === undefined ? pathname.startsWith(href) : active}
                       submenus={submenus}
-                      isOpen={isSideBarOpen}
+                      isOpen={isSidebarOpen}
                     />
                   </div>
                 ),

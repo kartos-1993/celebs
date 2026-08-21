@@ -19,7 +19,7 @@ import type { ComboDiscountType } from '@celebs/shared-types';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
-export function ComboFormPage() {
+export default function ComboFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const queryClient = useQueryClient();
