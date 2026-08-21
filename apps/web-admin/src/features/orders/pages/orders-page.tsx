@@ -270,7 +270,7 @@ const Orders: React.FC = () => {
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
             { id: 'ALL', label: 'All Orders' },
@@ -305,7 +305,7 @@ const Orders: React.FC = () => {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50/50">

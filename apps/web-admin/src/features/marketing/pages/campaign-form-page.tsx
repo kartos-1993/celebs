@@ -123,7 +123,7 @@ export function CampaignFormPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+      <div className="bg-card rounded-xl border border-border p-6 shadow-sm space-y-6">
         {/* Title & Slug */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">

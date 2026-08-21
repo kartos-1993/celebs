@@ -109,7 +109,7 @@ const AddProduct = () => {
   if (isLoading) {
     return (
       <div className="grid min-h-[60vh] place-items-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="rounded-3xl border border-gray-200 bg-white px-6 py-5 text-sm text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+        <div className="rounded-3xl border border-border bg-card px-6 py-5 text-sm text-muted-foreground shadow-sm">
           Loading product form...
         </div>
       </div>
@@ -360,7 +360,7 @@ const AddProductFormBody = ({
       <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
               {isEditMode ? 'Update Product' : 'Create a new product listing'}
             </h1>
             {process.env.NODE_ENV === 'development' && (
@@ -375,7 +375,7 @@ const AddProductFormBody = ({
               </Button>
             )}
           </div>
-          <p className="mt-1 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
             Complete the required catalog information, upload compliant media, and verify pricing
             before submitting the product.
           </p>
@@ -402,13 +402,13 @@ const AddProductFormBody = ({
           >
             <section
               id="product-section-basic"
-              className="scroll-mt-24 rounded-[32px] border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-8"
+              className="scroll-mt-24 rounded-[32px] border border-border bg-card p-6 shadow-sm sm:p-8"
             >
               <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-2xl font-semibold text-foreground">
                   Basic Information
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                   Start with the category, name, brand, and description.The remaining sections adapt
                   to the chosen category.
                 </p>
@@ -449,7 +449,7 @@ const AddProductFormBody = ({
                 onCancel={() => navigate(MANAGE_PRODUCTS_PATH)}
               />
             ) : (
-              <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+              <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
                 Select a category to unlock specifications, pricing, and shipping.
               </div>
             )}
@@ -465,9 +465,9 @@ const AddProductFormBody = ({
             />
           </div>
         ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-xs text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+          <div className="rounded-2xl border border-border bg-card p-4 text-xs text-muted-foreground shadow-sm">
             <div className="flex items-start gap-2.5">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <p>Checklist appears once a category is chosen.</p>
             </div>
           </div>

@@ -157,14 +157,14 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     // ── Guards ─────────────────────────────────────────────────────────────
     if (!catId) {
       return (
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-white/80 px-6 py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+        <div className="rounded-3xl border border-dashed border-gray-300 bg-card/80 px-6 py-8 text-sm text-muted-foreground border-border">
           Select a category to continue.
         </div>
       );
     }
     if (isSchemaLoading) {
       return (
-        <div className="rounded-3xl border border-gray-200 bg-white/80 p-6 text-sm text-gray-500 shadow-xs dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-400">
+        <div className="rounded-3xl border border-gray-200 bg-card/80 p-6 text-sm text-muted-foreground shadow-xs border-border">
           Loading category specifications...
         </div>
       );
@@ -202,7 +202,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
 
     if (!hasAnyFields) {
       return (
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-white/80 px-6 py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400">
+        <div className="rounded-3xl border border-dashed border-gray-300 bg-card/80 px-6 py-8 text-sm text-muted-foreground border-border">
           This category has no additional fields configured.
         </div>
       );
@@ -214,17 +214,17 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         {mediaFields.length > 0 && (
           <div
             id="product-section-base"
-            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+            className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
           >
-            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <ImageIcon className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-foreground">
                   Product Images & Swatches
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Upload cover images, color variants, and gallery photos
                 </p>
               </div>
@@ -239,17 +239,17 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         {detailsFields.length > 0 && (
           <div
             id="product-section-details"
-            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+            className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
           >
-            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Ruler className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-foreground">
                   Specifications & Attributes
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Key product features, measurements, and category details
                 </p>
               </div>
@@ -267,18 +267,18 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         {saleFields.length > 0 && (
           <div
             id="product-section-sale"
-            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+            className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
           >
             <div id="product-section-variant" className="scroll-mt-24" />
-            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Palette className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-foreground">
                   Price, Stock & Variant Matrix
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Manage retail prices, special pricing, and inventory matrix
                 </p>
               </div>
@@ -291,17 +291,17 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         {packageFields.length > 0 && (
           <div
             id="product-section-package"
-            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+            className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
           >
-            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Package className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-foreground">
                   Shipping & Warranty
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Parcel dimensions, weight, and guarantee options
                 </p>
               </div>
@@ -314,17 +314,17 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         {termFields.length > 0 && (
           <div
             id="product-section-termcondition"
-            className="scroll-mt-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900"
+            className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
           >
-            <div className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-foreground">
                   Terms & Conditions
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Product warranty policies and return disclaimers
                 </p>
               </div>

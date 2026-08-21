@@ -67,7 +67,7 @@ export function CampaignListPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
         <Search className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
         <Input
           placeholder="Search campaigns (e.g. Dashain, Tihar)..."
@@ -78,7 +78,7 @@ export function CampaignListPage() {
       </div>
 
       {/* Campaigns Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>

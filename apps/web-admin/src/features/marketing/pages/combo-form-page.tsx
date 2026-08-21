@@ -120,7 +120,7 @@ export function ComboFormPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+      <div className="bg-card rounded-xl border border-border p-6 shadow-sm space-y-6">
         {/* Title & Slug */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -180,7 +180,7 @@ export function ComboFormPage() {
               value={discountType}
               onValueChange={(val: ComboDiscountType) => setDiscountType(val)}
             >
-              <SelectTrigger className="text-xs h-9 bg-white">
+              <SelectTrigger className="text-xs h-9 bg-card">
                 <SelectValue placeholder="Discount Type" />
               </SelectTrigger>
               <SelectContent>
@@ -199,7 +199,7 @@ export function ComboFormPage() {
               placeholder={discountType === 'PERCENTAGE' ? '15' : '2000'}
               value={discountValue}
               onChange={(e) => setDiscountValue(Number(e.target.value))}
-              className="text-xs h-9 bg-white font-mono"
+              className="text-xs h-9 bg-card font-mono"
             />
           </div>
         </div>

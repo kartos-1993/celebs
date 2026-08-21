@@ -90,7 +90,7 @@ export function ProductSelector({
               return (
                 <div
                   key={id}
-                  className="flex items-center gap-2.5 bg-white border border-slate-200 p-2 rounded-lg shadow-2xs group relative hover:border-slate-300 transition-all"
+                  className="flex items-center gap-2.5 bg-card border border-border p-2 rounded-lg shadow-2xs group relative hover:border-border transition-all"
                 >
                   {imgUrl ? (
                     <img
@@ -148,7 +148,7 @@ export function ProductSelector({
       </div>
 
       {/* Available Products List */}
-      <div className="border border-slate-200 rounded-xl max-h-60 overflow-y-auto divide-y divide-slate-100 bg-white">
+      <div className="border border-slate-200 rounded-xl max-h-60 overflow-y-auto divide-y divide-border bg-card">
         {productsList.length === 0 ? (
           <div className="p-4 text-center text-xs text-slate-400">
             {isLoading ? 'Loading catalog products...' : 'No products found matching search.'}

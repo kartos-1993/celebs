@@ -169,7 +169,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-gray-700">Filter Data Source</Label>
             <Select value={type} onValueChange={(val) => setType(val as QuickFilterType)}>
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="bg-card">
                 <SelectValue placeholder="Select filter source" />
               </SelectTrigger>
               <SelectContent>
@@ -191,7 +191,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
               value={displayAs}
               onValueChange={(val) => setDisplayAs(val as QuickFilterDisplayAs)}
             >
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="bg-card">
                 <SelectValue placeholder="Select display style" />
               </SelectTrigger>
               <SelectContent>
@@ -251,7 +251,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
             {items.map((item, idx) => (
               <div
                 key={idx}
-                className="flex flex-col gap-3 p-3 border rounded-lg bg-white shadow-sm"
+                className="flex flex-col gap-3 p-3 border rounded-lg bg-card shadow-sm"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
