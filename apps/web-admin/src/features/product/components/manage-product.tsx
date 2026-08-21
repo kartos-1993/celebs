@@ -251,7 +251,7 @@ const ManageProduct = () => {
           <h1 className="text-3xl font-bold text-fashion-700">Manage Products</h1>
           <p className="text-gray-500 mt-1">Manage your product inventory and track performance</p>
         </div>
-        <Button asChild className="bg-orange-500 hover:bg-orange-600">
+        <Button asChild>
           <Link to="/products/new">+ New Product</Link>
         </Button>
       </div>
