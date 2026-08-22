@@ -164,7 +164,7 @@ describe('Staff Management API Integration Tests', () => {
 
     expect(list1.status).toBe(200);
     expect(list1.body.data.length).toBe(1);
-    expect(list1.body.data[0].email).toBe(staffEmail);
+    expect(list1.body.data[0]?.email).toBe(staffEmail);
   });
 
   it('should prevent VENDOR 2 from deleting VENDOR 1 staff', async () => {

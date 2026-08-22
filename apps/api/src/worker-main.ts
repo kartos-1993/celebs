@@ -15,7 +15,7 @@ import { assetQueue, sessionQueue, verifyRedisConnection } from './common/servic
 import { verifyS3Connection } from './common/utils/s3.client';
 import { assetWorker } from './modules/media/asset.worker';
 import { sessionWorker } from './modules/session/session.worker';
-import prisma from './db';
+import prisma from './config/db.prisma';
 
 const startWorker = async () => {
   try {
