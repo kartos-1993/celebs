@@ -65,20 +65,11 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
           );
         }
 
-        // Check if user is a vendor and status is suspended
-        if (user.role === 'VENDOR' && user.vendorProfile) {
-          const status = user.vendorProfile.status;
-          if (status === 'SUSPENDED') {
-            return done(
-              new UnauthorizedException(
-                'Access denied: Seller account is suspended.',
-                ErrorCode.FORBIDDEN_ACCESS,
-              ),
-              false,
-            );
-          }
-        }
-
+        // Identity layer ONLY: validates the session and resolves the principal.
+        // Store lifecycle (suspension, KYC state, email verification) is enforced
+        // by Layer-2 guards (requireStoreState / requireSellerContext), so every
+        // surface returns a precise 403 with a distinct ErrorCode instead of a
+        // generic auth failure here.
         req.sessionId = payload.sessionId;
         // Map userId and sessionId for compatibility with product modules
         const mappedUser = {

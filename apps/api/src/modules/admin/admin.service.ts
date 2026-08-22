@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { NotFoundException } from '@celebs/shared-utils';
 
 import { mediaRepository } from '../media/media.repository';
+import { storeLifecycle } from '../store/store-lifecycle.service';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/db';
@@ -56,40 +57,22 @@ export class AdminService {
     return vendor;
   }
 
-  public async approveVendor(id: string) {
-    const vendor = await prisma.vendorProfile.findUnique({
-      where: { id },
-      include: { user: { select: { email: true } } },
+  public async approveVendor(id: string, actorUserId?: string) {
+    const updated = await storeLifecycle.transition(id, 'APPROVED', {
+      actorUserId,
+      extraData: { rejectionReason: null },
     });
-    if (!vendor) {
+    if (!updated) {
       throw new NotFoundException('Vendor profile not found');
     }
-
-    const updated = await prisma.vendorProfile.update({
-      where: { id },
-      data: {
-        status: 'APPROVED',
-        rejectionReason: null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isEmailVerified: true,
-          },
-        },
-      },
-    });
 
     // Ensure default media folders are created for the approved vendor
     await mediaRepository.ensureDefaultFolders(id);
 
-    if (vendor.user?.email) {
-      const template = vendorApprovalTemplate(vendor.shopName);
+    if (updated.user?.email) {
+      const template = vendorApprovalTemplate(updated.shopName);
       await sendEmail({
-        to: vendor.user.email,
+        to: updated.user.email,
         subject: template.subject,
         text: template.text,
         html: template.html,
@@ -99,40 +82,22 @@ export class AdminService {
     return updated;
   }
 
-  public async rejectVendor(id: string, reason?: string) {
-    const vendor = await prisma.vendorProfile.findUnique({
-      where: { id },
-      include: { user: { select: { email: true } } },
-    });
-    if (!vendor) {
-      throw new NotFoundException('Vendor profile not found');
-    }
-
+  public async rejectVendor(id: string, reason?: string, actorUserId?: string) {
     const rejectionReasonText =
       reason?.trim() || 'Your seller profile details require updates before account activation.';
 
-    const updated = await prisma.vendorProfile.update({
-      where: { id },
-      data: {
-        status: 'REJECTED',
-        rejectionReason: rejectionReasonText,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isEmailVerified: true,
-          },
-        },
-      },
+    const updated = await storeLifecycle.transition(id, 'REJECTED', {
+      actorUserId,
+      extraData: { rejectionReason: rejectionReasonText },
     });
+    if (!updated) {
+      throw new NotFoundException('Vendor profile not found');
+    }
 
-    if (vendor.user?.email) {
-      const template = vendorRejectionTemplate(vendor.shopName, rejectionReasonText);
+    if (updated.user?.email) {
+      const template = vendorRejectionTemplate(updated.shopName, rejectionReasonText);
       await sendEmail({
-        to: vendor.user.email,
+        to: updated.user.email,
         subject: template.subject,
         text: template.text,
         html: template.html,
@@ -142,15 +107,8 @@ export class AdminService {
     return updated;
   }
 
-  public async suspendVendor(id: string) {
-    const vendor = await prisma.vendorProfile.findUnique({ where: { id } });
-    if (!vendor) {
-      throw new NotFoundException('Vendor profile not found');
-    }
-    return await prisma.vendorProfile.update({
-      where: { id },
-      data: { status: 'SUSPENDED' },
-    });
+  public async suspendVendor(id: string, actorUserId?: string) {
+    return storeLifecycle.transition(id, 'SUSPENDED', { actorUserId });
   }
 
   // User Management (Superadmin only)

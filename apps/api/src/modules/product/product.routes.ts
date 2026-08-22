@@ -1,5 +1,4 @@
-import { NextFunction, Request, Response, Router } from 'express';
-import passport from 'passport';
+import { Router } from 'express';
 
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
@@ -7,46 +6,21 @@ import { asyncHandler } from '@celebs/shared-utils';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 
-import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
+import { actorContext, optionalActorContext } from '@/common/context/actor-context.middleware';
+import { requireStoreState } from '@/common/guards/store.guards';
+import { authenticateJWT, optionalAuthenticateJWT } from '@/middlewares/auth.middleware';
 import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const productRoutes = Router();
 const productController = new ProductController(new ProductService());
 
-// Optional JWT authentication: populates req.user if token is present, but doesn't block unauthenticated storefront users
-const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  const hasAuthHeader =
-    !!authHeader &&
-    authHeader.startsWith('Bearer ') &&
-    authHeader !== 'Bearer null' &&
-    authHeader !== 'Bearer undefined';
-  const hasCookieToken = !!req.cookies?.accessToken;
-  if (!hasAuthHeader && !hasCookieToken) {
-    return next();
-  }
-  try {
-    passport.authenticate(
-      'jwt',
-      { session: false },
-      (_err: unknown, user: Express.User | false) => {
-        if (user) {
-          req.user = user;
-        }
-        next();
-      },
-    )(req, res, next);
-  } catch {
-    next();
-  }
-};
-
-// Public / Storefront Product Routes (Optional Auth)
+// Public / Storefront Product Routes (Optional Auth + optional context enrichment)
 productRoutes.get(
   '/',
   searchRateLimiter,
   optionalAuthenticateJWT,
+  optionalActorContext,
   asyncHandler(productController.getProducts),
 );
 productRoutes.get(
@@ -59,28 +33,33 @@ productRoutes.get(
   '/:id',
   searchRateLimiter,
   optionalAuthenticateJWT,
+  optionalActorContext,
   asyncHandler(productController.getProductById),
 );
 
-// Protected Admin / Vendor Routes (Require Auth & Permissions)
+// Protected Admin / Seller Routes: identity → context → lifecycle → permission
 productRoutes.use(authenticateJWT);
+productRoutes.use(asyncHandler(actorContext));
+
+// Lifecycle gate: sellers must be APPROVED; platform actors bypass (1P instant path)
+const approvedStore = requireStoreState(['APPROVED']);
 
 productRoutes.post(
   '/',
-  requireApprovedVendor,
+  approvedStore,
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(productController.createProduct),
 );
 productRoutes.put(
   '/:id',
-  requireApprovedVendor,
+  approvedStore,
   requirePermissions(Permission.PRODUCT_EDIT),
   asyncHandler(productController.updateProduct),
 );
 
 productRoutes.post(
   '/:id/submit-for-review',
-  requireApprovedVendor,
+  approvedStore,
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(productController.submitProductForReview),
 );
@@ -89,13 +68,16 @@ productRoutes.post(
   requirePermissions(Permission.PRODUCT_PUBLISH),
   asyncHandler(productController.reviewProduct),
 );
+// Destructive operations were previously unguarded for suspended stores — fixed.
 productRoutes.post(
   '/:id/archive',
+  approvedStore,
   requirePermissions(Permission.PRODUCT_DELETE),
   asyncHandler(productController.archiveProduct),
 );
 productRoutes.post(
   '/:id/toggle-activation',
+  approvedStore,
   requirePermissions(Permission.PRODUCT_EDIT),
   asyncHandler(productController.toggleProductActivation),
 );

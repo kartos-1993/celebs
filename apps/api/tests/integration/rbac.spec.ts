@@ -111,16 +111,18 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
 
       const authCookie = verifyRes.headers['set-cookie'];
 
-      // Suspend vendor in database
+      // Suspend via the lifecycle service (the only sanctioned mutation path):
+      // flips status AND revokes every session of the store owner + staff.
       const user = await prisma.user.findFirst({
         where: { email: vendorPayload.email.toLowerCase() },
       });
-      await prisma.vendorProfile.update({
+      const profile = await prisma.vendorProfile.findUniqueOrThrow({
         where: { userId: user!.id },
-        data: { status: 'SUSPENDED' },
       });
+      const { storeLifecycle } = await import('@/modules/store/store-lifecycle.service');
+      await storeLifecycle.transition(profile.id, 'SUSPENDED');
 
-      // Attempt authorized request
+      // The previously-valid JWT is dead on next use.
       const res = await request(app).post('/api/v1/auth/logout').set('Cookie', authCookie);
 
       expect(res.status).toBe(401); // Unauthorized/Forbidden access

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { can, Permission, Role } from '@celebs/rbac';
+import { can, Permission } from '@celebs/rbac';
 import {
   createProductSchema,
   idParamSchema,
@@ -8,7 +8,9 @@ import {
   productReviewActionSchema,
   updateProductSchema,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
+
+import { isPlatformActor } from '@/common/context/actor-context';
 
 import { ProductService } from './product.service';
 
@@ -17,7 +19,8 @@ export class ProductController {
 
   createProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.id) {
+      const actor = req.actor;
+      if (!actor) {
         throw new AppError(
           'Authentication is required to create products',
           HTTPSTATUS.UNAUTHORIZED,
@@ -26,11 +29,10 @@ export class ProductController {
       }
 
       const payload = createProductSchema.parse(req.body);
-      const userPermissions = (req.user as { permissions?: string[] }).permissions;
       const isPublisher = can(
-        (req.user.role || 'STAFF') as Role,
+        actor.role as Parameters<typeof can>[0],
         Permission.PRODUCT_PUBLISH,
-        userPermissions,
+        actor.permissions,
       );
 
       // Non-publisher accounts (Vendors, Staff without explicit publish permission) cannot publish directly
@@ -39,15 +41,17 @@ export class ProductController {
         initialStatus = 'pending_review';
       }
 
-      const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
-      const effectiveVendorName = req.user.vendorProfile?.shopName;
+      // Sellers are pre-validated by requireStoreState(['APPROVED']).
+      // Platform actors act under Celebs 1P: storeId stays null.
+      const effectiveVendorId = req.store?.id ?? null;
+      const effectiveVendorName = req.store?.shopName;
 
       const product = await this.productService.createProduct(
         {
           ...payload,
           status: initialStatus,
         },
-        req.user.id,
+        actor.userId,
         effectiveVendorId,
         effectiveVendorName,
       );
@@ -72,13 +76,19 @@ export class ProductController {
 
       const isPublished =
         product.status === 'published' || (product.status as string) === 'PUBLISHED';
-      if (!isPublished && (req.user?.role === 'VENDOR' || req.user?.role === 'STAFF')) {
-        const vendorId = req.user.vendorProfile?.id || req.user.vendorId;
-        if (String(product.vendorId) !== String(vendorId)) {
+      if (!isPublished) {
+        // Default-deny: only platform reviewers and the owning store may read
+        // unpublished products. Anonymous/customers get 404 (no existence leak).
+        const actor = req.actor;
+        const isReviewer =
+          !!actor && can(actor.role as Parameters<typeof can>[0], Permission.PRODUCT_REVIEW, actor.permissions);
+        const ownsIt =
+          !!req.store?.id && String(product.vendorId) === String(req.store.id);
+        if (!isReviewer && !ownsIt) {
           throw new AppError(
-            'Forbidden: You do not own this unpublished product',
-            HTTPSTATUS.FORBIDDEN,
-            ErrorCode.FORBIDDEN_RESOURCE,
+            'Product not found',
+            HTTPSTATUS.NOT_FOUND,
+            ErrorCode.PRODUCT_NOT_FOUND,
           );
         }
       }
@@ -106,12 +116,11 @@ export class ProductController {
         limit,
       });
 
-      // Tenant Isolation Security Rule:
-      // If the authenticated user is a Vendor or Staff, strictly scope the query to their store's vendorId.
-      if (req.user?.role === 'VENDOR' && req.user?.vendorProfile?.id) {
-        filters.vendorId = req.user.vendorProfile.id;
-      } else if (req.user?.role === 'STAFF' && req.user?.vendorId) {
-        filters.vendorId = req.user.vendorId;
+      // Tenant isolation: any request carrying a store context is strictly
+      // scoped to that store — regardless of query params supplied by the client.
+      // Platform actors (store = null) browse the whole catalog.
+      if (req.store) {
+        filters.vendorId = req.store.id;
       }
 
       const result = await this.productService.getProducts(filters);
@@ -128,17 +137,17 @@ export class ProductController {
 
   submitProductForReview = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user?.vendorProfile?.id || req.user?.vendorId;
-      if (!vendorId) {
+      const storeId = req.store?.id;
+      if (!storeId) {
         throw new AppError(
-          'Vendor profile not found',
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST,
+          'This operation requires a seller store context',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.SELLER_CONTEXT_REQUIRED,
         );
       }
 
       const { id } = idParamSchema.parse(req.params);
-      const product = await this.productService.submitProductForReview(id, vendorId);
+      const product = await this.productService.submitProductForReview(id, storeId);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -152,7 +161,8 @@ export class ProductController {
 
   reviewProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.id) {
+      const actor = req.actor;
+      if (!actor) {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
@@ -164,8 +174,8 @@ export class ProductController {
       const parsed = productReviewActionSchema.parse(req.body);
       const product = await this.productService.reviewProduct(id, {
         action: parsed.action,
-        reviewerId: req.user.id,
-        reviewerName: (req.user as { email?: string })?.email || 'Superadmin',
+        reviewerId: actor.userId,
+        reviewerName: actor.email || 'Superadmin',
         note: parsed.note,
         rejectionCategory: parsed.rejectionCategory,
         rejectionSubcategories: parsed.rejectionSubcategories,
@@ -184,7 +194,8 @@ export class ProductController {
 
   updateProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.id) {
+      const actor = req.actor;
+      if (!actor) {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
@@ -194,16 +205,15 @@ export class ProductController {
 
       const { id } = idParamSchema.parse(req.params);
       const payload = updateProductSchema.parse(req.body);
-      const userPermissions = (req.user as { permissions?: string[] }).permissions;
-      const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
+      const effectiveVendorId = req.store?.id;
 
       const product = await this.productService.updateProduct(
         id,
         payload,
-        req.user.id,
-        req.user.role || '',
+        actor.userId,
+        actor.role,
         effectiveVendorId,
-        userPermissions,
+        actor.permissions,
       );
 
       res.status(HTTPSTATUS.OK).json({
@@ -218,7 +228,8 @@ export class ProductController {
 
   archiveProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.id) {
+      const actor = req.actor;
+      if (!actor) {
         throw new AppError(
           'Authentication required',
           HTTPSTATUS.UNAUTHORIZED,
@@ -227,12 +238,12 @@ export class ProductController {
       }
 
       const { id } = idParamSchema.parse(req.params);
-      const effectiveVendorId = req.user.vendorProfile?.id || req.user.vendorId;
+      const effectiveVendorId = req.store?.id;
 
       const product = await this.productService.archiveProduct(
         id,
-        req.user.id,
-        req.user.role || '',
+        actor.userId,
+        actor.role,
         effectiveVendorId,
       );
 
@@ -248,8 +259,15 @@ export class ProductController {
 
   toggleProductActivation = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user?.vendorProfile?.id || req.user?.vendorId;
-      if (!vendorId) {
+      const storeId = req.store?.id;
+      if (!storeId && !isPlatformActor(req.actor)) {
+        throw new AppError(
+          'This operation requires a seller store context',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.SELLER_CONTEXT_REQUIRED,
+        );
+      }
+      if (!storeId) {
         throw new AppError(
           'Vendor profile not found',
           HTTPSTATUS.BAD_REQUEST,
@@ -258,7 +276,7 @@ export class ProductController {
       }
 
       const { id } = idParamSchema.parse(req.params);
-      const product = await this.productService.toggleProductActivation(id, vendorId);
+      const product = await this.productService.toggleProductActivation(id, storeId);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,

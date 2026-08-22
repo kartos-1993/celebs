@@ -192,7 +192,7 @@ export class ProductService {
   async createProduct(
     input: CreateProductInput,
     userId: string,
-    vendorId?: string,
+    vendorId?: string | null,
     vendorName?: string,
   ): Promise<Record<string, unknown> | null> {
     const { categoryId, subcategoryId, departmentHint } = await this.resolveCategoryIds(

@@ -1,10 +1,13 @@
 import { CreateStaffType } from '@celebs/shared-types';
 import {
   BadRequestException,
+  ErrorCode,
   ForbiddenException,
   logger,
   NotFoundException,
 } from '@celebs/shared-utils';
+
+import { getUserPermissions, Permission } from '@celebs/rbac';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';
@@ -19,6 +22,45 @@ export interface CreateStaffInput extends CreateStaffType {
   permissions?: string[];
 }
 
+/**
+ * E3 hardening: staff sub-accounts can never hold platform or management
+ * permissions — no exceptions for custom grants. Jurisdictional permissions
+ * (STAFF_MANAGE, VENDOR_MANAGE, USER_MANAGE, PRODUCT_PUBLISH/REVIEW,
+ * FINANCE_MANAGE, BRAND_MANAGE, CATALOG_MANAGE, PLATFORM_MANAGE) are excluded.
+ */
+const GRANTABLE_TO_STAFF: ReadonlySet<string> = new Set<string>([
+  Permission.PRODUCT_VIEW,
+  Permission.PRODUCT_CREATE,
+  Permission.PRODUCT_EDIT,
+  Permission.CATALOG_VIEW,
+  Permission.BRAND_VIEW,
+  Permission.MEDIA_VIEW,
+  Permission.MEDIA_MANAGE,
+  Permission.ORDER_VIEW,
+  Permission.FINANCE_VIEW,
+  Permission.STAFF_VIEW, // read-only roster visibility for senior staff
+]);
+
+/** Grantor ceiling: sellers may only grant permissions they themselves hold. */
+function assertGrantablePermissions(requested: string[], grantor: { role: string; permissions: string[] }) {
+  const illegal = requested.filter((p) => !GRANTABLE_TO_STAFF.has(p));
+  if (illegal.length > 0) {
+    throw new ForbiddenException(
+      `The following permissions cannot be granted to store staff: ${illegal.join(', ')}`,
+      ErrorCode.ACCESS_FORBIDDEN,
+    );
+  }
+
+  const grantorEffective = getUserPermissions(grantor.role as Parameters<typeof getUserPermissions>[0], grantor.permissions);
+  const exceeded = requested.filter((p) => !grantorEffective.includes(p as Permission));
+  if (exceeded.length > 0) {
+    throw new ForbiddenException(
+      `You cannot grant permissions you do not hold yourself: ${exceeded.join(', ')}`,
+      ErrorCode.ACCESS_FORBIDDEN,
+    );
+  }
+}
+
 export class StaffService {
   /**
    * Resolves vendorProfile and user info for a given userId.
@@ -31,6 +73,7 @@ export class StaffService {
         id: true,
         role: true,
         vendorId: true,
+        permissions: true,
         vendorProfile: {
           select: { id: true, shopName: true },
         },
@@ -115,6 +158,13 @@ export class StaffService {
       throw new BadRequestException(
         'A user account with this email address already exists. Please use a unique email address for the staff member.',
       );
+    }
+
+    if (Array.isArray(data.permissions)) {
+      assertGrantablePermissions(data.permissions, {
+        role: user.role,
+        permissions: user.permissions ?? [],
+      });
     }
 
     const hashedPassword = await hashValue(data.password);
@@ -230,6 +280,10 @@ export class StaffService {
   }
 
   public async deleteStaff(staffId: string, creatorUserId: string) {
+    if (staffId === creatorUserId) {
+      throw new ForbiddenException('You cannot delete your own account', ErrorCode.ACCESS_FORBIDDEN);
+    }
+
     const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId);
 
     const staffUser = await prisma.user.findUnique({
@@ -259,6 +313,14 @@ export class StaffService {
     creatorUserId: string,
     data: { permissions?: string[]; name?: string },
   ) {
+    // E3 hardening: no actor may rewrite their own permission array.
+    if (staffId === creatorUserId && Array.isArray(data.permissions)) {
+      throw new ForbiddenException(
+        'You cannot modify your own permissions',
+        ErrorCode.ACCESS_FORBIDDEN,
+      );
+    }
+
     const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId);
 
     const staffUser = await prisma.user.findUnique({
@@ -273,6 +335,13 @@ export class StaffService {
       if (!vendorProfile || staffUser.vendorId !== vendorProfile.id) {
         throw new ForbiddenException('Forbidden: You do not manage this staff member');
       }
+    }
+
+    if (Array.isArray(data.permissions)) {
+      assertGrantablePermissions(data.permissions, {
+        role: user.role,
+        permissions: user.permissions ?? [],
+      });
     }
 
     const updated = await prisma.user.update({

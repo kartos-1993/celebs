@@ -22,16 +22,20 @@ import {
 } from './storage.service';
 
 import { assetQueue } from '@/common/services/queue.service';
-import { authenticateJWT, requireApprovedVendor } from '@/middlewares/auth.middleware';
+import { actorContext } from '@/common/context/actor-context.middleware';
+import { requireStoreState, resolveTargetStoreId } from '@/common/guards/store.guards';
+import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
 router.use(uploadRateLimiter);
 
-// All media routes require auth + approved vendor (or SuperAdmin/Admin bypass)
+// identity → context → lifecycle → permission
+// Sellers must be APPROVED; platform actors bypass (Celebs 1P media library).
 router.use(authenticateJWT);
-router.use(requireApprovedVendor);
+router.use(asyncHandler(actorContext));
+router.use(requireStoreState(['APPROVED']));
 
 /**
  * GET /api/v1/media/assets
@@ -40,12 +44,8 @@ router.use(requireApprovedVendor);
 router.get(
   '/assets',
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
     const query = mediaAssetFilterSchema.parse(req.query);
-
-    const vendorId = isSuperOrAdmin
-      ? (req.query.vendorId as string) || null
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
+    const vendorId = resolveTargetStoreId(req, 'query');
 
     const result = await mediaRepository.findAssets({
       vendorId,
@@ -69,11 +69,7 @@ router.get(
 router.get(
   '/quota',
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.query.vendorId as string) || null
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'query');
     const quota = await mediaRepository.getQuota(vendorId);
     return res.json({ success: true, data: quota });
   }),
@@ -86,11 +82,7 @@ router.get(
 router.get(
   '/folders',
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.query.vendorId as string) || null
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'query');
     const folders = await mediaRepository.findFolders(vendorId);
     return res.json({ success: true, data: folders });
   }),
@@ -104,11 +96,7 @@ router.post(
   '/folders',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.body.vendorId as string) || null
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'body');
     const { name, parentId } = createMediaFolderSchema.parse(req.body);
     const folder = await mediaRepository.createFolder(vendorId, name, parentId);
     return res.status(201).json({ success: true, data: folder });
@@ -123,11 +111,7 @@ router.delete(
   '/folders/:id',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? undefined
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'query');
     const { id } = idParamSchema.parse(req.params);
     await mediaRepository.deleteFolder(id, vendorId);
     return res.json({ success: true, message: 'Folder deleted successfully' });
@@ -142,11 +126,7 @@ router.delete(
   '/assets/:id',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? undefined
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'query');
     const { id } = idParamSchema.parse(req.params);
 
     const asset = await mediaRepository.findAssetById(id, vendorId);
@@ -172,37 +152,38 @@ router.delete(
 /**
  * POST /api/v1/media/cleanup-unused
  * Bulk delete unlinked draft assets (strictly manual seller opt-in).
+ * Atomic contract: every requested ID must resolve to an unused asset inside
+ * the caller's scope — otherwise nothing is deleted (no partial S3 orphans).
  */
 router.post(
   '/cleanup-unused',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.body.vendorId as string) || null
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'body');
     const { assetIds } = deleteUnusedMediaSchema.parse(req.body);
 
-    const assets = await mediaRepository.findAssets({
-      vendorId,
-      unusedOnly: true,
-      page: 1,
-      limit: 100,
-    });
+    const doomed = await mediaRepository.findUnusedByIds(assetIds, vendorId);
+    if (doomed.length !== assetIds.length) {
+      throw new NotFoundException(
+        'Some assets were not found, are still in use, or belong to another store. Nothing was deleted.',
+      );
+    }
 
-    const matchingAssets = assets.items.filter((a) => assetIds.includes(a.id));
-    const keysToDelete = matchingAssets.map((a) => a.key);
+    await mediaRepository.deleteUnusedAssets(doomed.map((a) => a.id), vendorId);
 
-    await Promise.all([
-      mediaRepository.deleteUnusedAssets(assetIds, vendorId),
-      ...keysToDelete.map((k) => deleteS3Object(k)),
-    ]);
+    const results = await Promise.allSettled(doomed.map((a) => deleteS3Object(a.key)));
+    const s3Failures = results.filter((r) => r.status === 'rejected');
+    if (s3Failures.length > 0) {
+      logger.error(
+        { count: s3Failures.length, keys: doomed.map((a) => a.key) },
+        'S3 deletion failures during cleanup-unused — objects require reaper reconciliation',
+      );
+    }
 
     return res.json({
       success: true,
-      data: { deletedCount: matchingAssets.length },
-      message: `Cleaned up ${matchingAssets.length} unused assets.`,
+      data: { deletedCount: doomed.length, storageDeleteFailures: s3Failures.length },
+      message: `Cleaned up ${doomed.length} unused assets.`,
     });
   }),
 );
@@ -215,11 +196,7 @@ router.post(
   '/presign',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.body.vendorId as string) || undefined
-      : req.user!.vendorProfile?.id || req.user!.vendorId || undefined;
-
+    const vendorId = resolveTargetStoreId(req, 'body') ?? undefined;
     const validatedData = presignFileSchema.parse(req.body);
     const result = await createPresignedPut({
       ...validatedData,
@@ -237,11 +214,7 @@ router.post(
   '/batch-presign',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.body.vendorId as string) || undefined
-      : req.user!.vendorProfile?.id || req.user!.vendorId || undefined;
-
+    const vendorId = resolveTargetStoreId(req, 'body') ?? undefined;
     const { files } = batchPresignSchema.parse(req.body);
     const results = await Promise.all(
       files.map((file: PresignFileInput) => createPresignedPut({ ...file, vendorId })),
@@ -258,11 +231,7 @@ router.post(
   '/confirm',
   requirePermissions(Permission.PRODUCT_CREATE),
   asyncHandler(async (req, res) => {
-    const isSuperOrAdmin = req.user?.role === 'SUPERADMIN' || req.user?.role === 'ADMIN';
-    const vendorId = isSuperOrAdmin
-      ? (req.body.vendorId as string) || null
-      : req.user!.vendorProfile?.id || req.user!.vendorId || null;
-
+    const vendorId = resolveTargetStoreId(req, 'body');
     const validatedData = confirmUploadSchema.parse(req.body);
     const rawBody = req.body as { folderId?: string; scope?: MediaScope };
 
