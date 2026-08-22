@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import prisma from '../../src/db/index.js';
-import { logisticsService } from '../../src/modules/logistics/logistics.service.js';
+import prisma from '@/config/db.prisma';
+import { hashValue } from '@/common/utils/bcrypt';
+import { logisticsService } from '@/modules/logistics/logistics.service';
 import { OrderStatus, PaymentMethod, CodStatus } from '@prisma/client';
 
 describe('Logistics & 3PL Settlement Integration Tests', () => {
@@ -14,7 +15,7 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
       data: {
         name: 'Test Logistics User',
         email: `logistics_${Date.now()}_${Math.random()}@test.com`,
-        password: 'password123',
+        password: await hashValue('password123'),
       },
     });
     testUserId = user.id;
@@ -48,17 +49,17 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
     testOrderId = order.id;
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     // Cleanup
     if (testOrderId) {
       await prisma.orderTrackingEvent.deleteMany({ where: { orderId: testOrderId } });
-      await prisma.order.delete({ where: { id: testOrderId } });
+      await prisma.order.deleteMany({ where: { id: testOrderId } });
     }
     if (testAddressId) {
-      await prisma.address.delete({ where: { id: testAddressId } });
+      await prisma.address.deleteMany({ where: { id: testAddressId } });
     }
     if (testUserId) {
-      await prisma.user.delete({ where: { id: testUserId } });
+      await prisma.user.deleteMany({ where: { id: testUserId } });
     }
   });
 
@@ -74,7 +75,7 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
     expect(result.status).toBe(OrderStatus.HANDED_OVER);
     expect(result.codStatus).toBe(CodStatus.PENDING_COLLECTION);
     expect(result.trackingEvents.length).toBeGreaterThan(0);
-    expect(result.trackingEvents[0].title).toContain('Nepal Can Move');
+    expect(result.trackingEvents[0]?.title).toContain('Nepal Can Move');
   });
 
   it('settles COD payment with 3PL bank statement reference', async () => {

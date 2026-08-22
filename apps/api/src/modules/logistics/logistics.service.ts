@@ -2,7 +2,7 @@ import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
 
-import prisma from '../../db/index';
+import prisma from '@/config/db.prisma';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 
