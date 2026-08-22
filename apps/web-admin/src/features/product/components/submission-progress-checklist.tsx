@@ -1,5 +1,7 @@
 import { memo } from 'react';
+
 import type { ProductSidebarSection } from '../types';
+
 import ProductFormSidebar from './product-form-sidebar';
 
 interface SubmissionProgressChecklistProps {

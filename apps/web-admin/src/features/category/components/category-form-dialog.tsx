@@ -4,18 +4,21 @@
  */
 
 import React from 'react';
+
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@celebs/shared-ui/components/dialog';
-import { Loader2 } from 'lucide-react';
-import CategoryForm from './category-form';
-import { Category } from '../types';
-import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { useCategory } from '../hooks/use-categories';
+import { Category } from '../types';
+
+import CategoryForm from './category-form';
 
 interface CategoryFormDialogProps {
   open: boolean;
@@ -70,9 +73,9 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
         aria-describedby="dialog-description"
       >
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-gray-900">{getDialogTitle()}</DialogTitle>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
           {editingCategory && freshCategoryData?.path && (
-            <p className="text-xs text-fashion-600 font-medium pt-0.5">
+            <p className="text-xs text-muted-foreground font-medium pt-0.5">
               Path: {formatCategoryPath(freshCategoryData.path)}
             </p>
           )}
@@ -87,7 +90,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
 
         {editingId && isLoadingDetail ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Spinner size="xl" className="text-primary" />
             <span className="text-sm font-medium">Fetching fresh category specifications...</span>
           </div>
         ) : (

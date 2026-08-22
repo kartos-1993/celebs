@@ -1,14 +1,18 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { ImagePlus, Trash2, Upload, Loader2 } from 'lucide-react';
+import { ImagePlus, Trash2, Upload } from 'lucide-react';
+
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import type { UiProps } from '../ui-registry';
+
 import {
-  LabelWithRequired,
-  imageValueKey,
-  uploadImageFiles,
-  uploadErrorMessage,
-  validateFileBasics,
   ImageValue,
+  imageValueKey,
+  LabelWithRequired,
+  uploadErrorMessage,
+  uploadImageFiles,
+  validateFileBasics,
 } from './shared';
 
 interface ColorInlineRowProps {
@@ -213,14 +217,14 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
               <img src={swatchPreview} alt={color} className="h-full w-full object-cover" />
               {isUploadingSwatch && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  <Spinner size="sm" className="text-white" />
                 </div>
               )}
             </div>
           ) : (
-            <div className="grid h-full w-full place-items-center bg-accent text-[10px] text-muted-foreground relative">
+            <div className="grid h-full w-full place-items-center bg-accent text-xs text-muted-foreground relative">
               {isUploadingSwatch ? (
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <Spinner size="sm" className="text-primary" />
               ) : (
                 'Img'
               )}
@@ -259,7 +263,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
                   </label>
                   <button
                     type="button"
-                    className="h-6 w-6 rounded bg-white/90 grid place-items-center text-red-600"
+                    className="h-6 w-6 rounded bg-white/90 grid place-items-center text-destructive"
                     onClick={() => removeAt(idx)}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -283,8 +287,8 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
               />
               {isUploadingGallery ? (
                 <div className="flex flex-col items-center justify-center text-primary gap-0.5">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-[9px] font-medium">Uploading</span>
+                  <Spinner size="sm" />
+                  <span className="text-xs font-medium">Uploading</span>
                 </div>
               ) : (
                 <ImagePlus className="h-4 w-4" />
@@ -292,7 +296,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             </label>
           </div>
           {imagesError ? (
-            <div className="text-xs text-red-500 mt-1">{String(imagesError)}</div>
+            <div className="text-xs text-destructive mt-1">{String(imagesError)}</div>
           ) : null}
         </div>
       </div>

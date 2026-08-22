@@ -6,34 +6,19 @@ import {
   Eye,
   EyeOff,
   Info,
-  Loader,
   Search,
   Send,
   ShoppingBag,
   Trash2,
   X,
 } from 'lucide-react';
+
 import { can, Permission } from '@celebs/rbac';
-import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@celebs/shared-ui/components/table';
-import { Button } from '@celebs/shared-ui/components/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@celebs/shared-ui/components/dropdown-menu';
-import { Input } from '@celebs/shared-ui/components/input';
-import { Checkbox } from '@celebs/shared-ui/components/checkbox';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Alert, AlertDescription } from '@celebs/shared-ui/components/alert';
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -42,20 +27,40 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { useAuthContext } from '@/context/auth-provider';
-import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@celebs/shared-ui/components/dropdown-menu';
+import { Input } from '@celebs/shared-ui/components/input';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@celebs/shared-ui/components/table';
+import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
+
 import {
   archiveProduct,
+  type ProductFilterRequest,
   submitProductForReview,
   toggleProductActivation,
-  type ProductFilterRequest,
 } from '../api';
-import type { ProductListItem, ProductStatus } from '../types';
 import {
   PRODUCT_QUERY_KEYS,
   useProductMutations,
   useProductsQuery,
 } from '../hooks/use-product-queries';
+import type { ProductListItem, ProductStatus } from '../types';
+
+import { useAuthContext } from '@/context/auth-provider';
+import { useToast } from '@/hooks/use-toast';
 
 const PAGE_SIZE = 10;
 
@@ -246,21 +251,21 @@ const ManageProduct = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-fashion-700">Manage Products</h1>
-          <p className="text-gray-500 mt-1">Manage your product inventory and track performance</p>
-        </div>
-        <Button asChild>
-          <Link to="/products/new">+ New Product</Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Manage Products"
+        description="Manage your product inventory and track performance"
+        actions={
+          <Button asChild>
+            <Link to="/products/new">+ New Product</Link>
+          </Button>
+        }
+      />
 
       {/* Help Notification */}
       {showHelpNotification && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700 flex items-center justify-between">
+        <Alert className="border-info/30 bg-info/10">
+          <Info className="h-4 w-4 text-info" />
+          <AlertDescription className="text-info flex items-center justify-between">
             <div>
               <span className="font-medium">Welcome to Product Management.</span> Sellers can view
               status and submit drafts for review. Admins can approve items.
@@ -286,30 +291,27 @@ const ManageProduct = () => {
         </CardHeader>
         <CardContent>
           {/* Status Tabs */}
-          <div className="flex gap-6 mb-6 border-b">
-            {productStatusTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setFilterStatus(tab.id);
-                  setPage(1);
-                }}
-                className={`pb-3 px-1 border-b-2 transition-colors ${
-                  filterStatus === tab.id
-                    ? 'border-orange-500 text-orange-600 font-medium'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            value={filterStatus}
+            onValueChange={(v: string) => {
+              setFilterStatus(v as ProductStatus | 'all');
+              setPage(1);
+            }}
+          >
+            <TabsList className="mb-6">
+              {productStatusTabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           {/* Search & Batch Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <form onSubmit={handleSearch} className="flex gap-3 flex-1 max-w-md">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search products..."
                   className="pl-10"
@@ -321,7 +323,7 @@ const ManageProduct = () => {
             </form>
 
             {selectedProducts.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-orange-50/90 p-2 text-xs text-orange-900 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200">
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/50 p-2 text-xs text-foreground shadow-sm">
                 <span className="font-semibold px-1">
                   {selectedProducts.length} selected
                 </span>
@@ -330,12 +332,12 @@ const ManageProduct = () => {
                   <Button
                     size="sm"
                     variant="default"
-                    className="h-7 gap-1 bg-orange-600 px-2.5 text-xs hover:bg-orange-700"
+                    className="h-7 gap-1 px-2.5 text-xs"
                     disabled={isBatchProcessing}
                     onClick={handleBatchSubmit}
                   >
                     {isBatchProcessing ? (
-                      <Loader className="h-3.5 w-3.5 animate-spin" />
+                      <Spinner size="sm" />
                     ) : (
                       <Send className="h-3.5 w-3.5" />
                     )}
@@ -347,7 +349,7 @@ const ManageProduct = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 gap-1 border-emerald-300 bg-emerald-50 px-2.5 text-xs text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    className="h-7 gap-1 border-success/30 bg-success/10 px-2.5 text-xs text-success hover:bg-success/20"
                     disabled={isBatchProcessing}
                     onClick={() => handleBatchToggleStatus('activate')}
                   >
@@ -360,7 +362,7 @@ const ManageProduct = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 gap-1 border-amber-300 bg-amber-50 px-2.5 text-xs text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                    className="h-7 gap-1 border-warning/30 bg-warning/10 px-2.5 text-xs text-warning hover:bg-warning/20"
                     disabled={isBatchProcessing}
                     onClick={() => handleBatchToggleStatus('deactivate')}
                   >
@@ -373,7 +375,7 @@ const ManageProduct = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 gap-1 border-rose-300 bg-rose-50 px-2.5 text-xs text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                    className="h-7 gap-1 border-destructive/30 bg-destructive/10 px-2.5 text-xs text-destructive hover:bg-destructive/20"
                     disabled={isBatchProcessing}
                     onClick={() => setIsBatchArchiveOpen(true)}
                   >
@@ -385,7 +387,7 @@ const ManageProduct = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2 text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => setSelectedProducts([])}
                   disabled={isBatchProcessing}
                 >
@@ -402,11 +404,11 @@ const ManageProduct = () => {
             }
           >
             {isLoading ? (
-              <div className="py-8 text-center text-sm text-gray-500">Loading products...</div>
+              <div className="py-8 text-center text-sm text-muted-foreground">Loading products...</div>
             ) : products.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">No products found.</div>
+              <div className="py-8 text-center text-sm text-muted-foreground">No products found.</div>
             ) : (
-              <div className="rounded-md border">
+              <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -440,7 +442,7 @@ const ManageProduct = () => {
                           <div>
                             <div className="font-medium">{product.name}</div>
                             {product.brand && (
-                              <div className="text-xs text-gray-500">Brand: {product.brand}</div>
+                              <div className="text-xs text-muted-foreground">Brand: {product.brand}</div>
                             )}
                           </div>
                         </TableCell>
@@ -512,7 +514,7 @@ const ManageProduct = () => {
               <Button disabled={page === 1} onClick={() => setPage(page - 1)} variant="outline">
                 Previous
               </Button>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 Page {page} of {totalPages}
               </span>
               <Button
@@ -535,7 +537,7 @@ const ManageProduct = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
               Archive “{archiveTarget?.name}”?
             </DialogTitle>
             <DialogDescription>
@@ -561,7 +563,7 @@ const ManageProduct = () => {
                 });
               }}
             >
-              {archive.isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+              {archive.isPending && <Spinner size="sm" className="mr-2" />}
               Archive Product
             </Button>
           </DialogFooter>
@@ -576,7 +578,7 @@ const ManageProduct = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-rose-500" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               Archive {selectedProducts.length} Selected Product(s)?
             </DialogTitle>
             <DialogDescription>
@@ -597,7 +599,7 @@ const ManageProduct = () => {
               disabled={isBatchProcessing || selectedProducts.length === 0}
               onClick={handleBatchArchiveConfirm}
             >
-              {isBatchProcessing && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+              {isBatchProcessing && <Spinner size="sm" className="mr-2" />}
               Archive Selected Products
             </Button>
           </DialogFooter>

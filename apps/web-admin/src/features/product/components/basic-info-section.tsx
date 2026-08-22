@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { Control, FieldValues, useFormState } from 'react-hook-form';
-import { Input } from '@celebs/shared-ui/components/input';
-import { Textarea } from '@celebs/shared-ui/components/textarea';
+
 import {
   FormControl,
   FormDescription,
@@ -10,9 +9,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { CascadingDropdown } from './cascading-dropdown';
-import { BrandSelector } from './brand-selector';
+import { Input } from '@celebs/shared-ui/components/input';
+import { Textarea } from '@celebs/shared-ui/components/textarea';
+
 import type { DropdownCategory } from '../types';
+
+import { BrandSelector } from './brand-selector';
+import { CascadingDropdown } from './cascading-dropdown';
 interface BasicInfoSectionProps {
   control: Control<FieldValues>;
   selectedCategoryId: string;
@@ -78,8 +81,8 @@ const BasicInfoSection = ({
         name="subcategoryId"
         render={() => (
           <FormItem className="space-y-3">
-            <FormLabel className="text-sm font-semibold text-foreground">
-              Category <span className="text-orange-500">*</span>
+            <FormLabel>
+              Category <span className="text-destructive">*</span>
             </FormLabel>
             <FormControl>
               <CascadingDropdown
@@ -104,7 +107,7 @@ const BasicInfoSection = ({
               selection.
             </FormDescription>
             {hasCategory ? (
-              <div className="rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+              <div className="rounded-2xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-foreground">
                 Current selection:{' '}
                 <span className="font-semibold">
                   {(() => {
@@ -131,8 +134,8 @@ const BasicInfoSection = ({
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between gap-3">
-                    <FormLabel className="text-sm font-semibold text-foreground">
-                      Product Name <span className="text-orange-500">*</span>
+                    <FormLabel>
+                      Product Name <span className="text-destructive">*</span>
                     </FormLabel>
                     <span className="text-xs text-muted-foreground">
                       {String(field.value || '').length}/200
@@ -189,9 +192,9 @@ const BasicInfoSection = ({
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between gap-3">
-                  <FormLabel className="text-sm font-semibold text-foreground">
+                  <FormLabel>
                     Product Description{' '}
-                    <span className="font-normal text-xs text-gray-500">(Optional)</span>
+                    <span className="font-normal text-xs text-muted-foreground">(Optional)</span>
                   </FormLabel>
                   <span className="text-xs text-muted-foreground">
                     {String(field.value || '').length}/4000

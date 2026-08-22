@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
+import { DollarSign,MapPin, Package, RefreshCw, Search, Send, Truck } from 'lucide-react';
+
+import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@celebs/shared-ui/components/dialog';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Select,
   SelectContent,
@@ -9,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
   Table,
   TableBody,
@@ -17,16 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@celebs/shared-ui/components/dialog';
 import { logger } from '@celebs/shared-utils';
-import { Package, Truck, MapPin, Search, RefreshCw, Send, DollarSign } from 'lucide-react';
+
 import { dispatch3PLOrder, settleCodOrder } from '../api';
 
 export interface OrderItemUI {
@@ -125,6 +131,8 @@ const Orders: React.FC = () => {
   const [newStatus, setNewStatus] = useState<OrderItemUI['itemStatus']>('PACKED');
   const [courier, setCourier] = useState<string>('Upaya Logistics');
   const [trackingNo, setTrackingNo] = useState<string>('');
+  const [isDispatching, setIsDispatching] = useState(false);
+  const [isSettlingCod, setIsSettlingCod] = useState(false);
 
   const filteredOrders = orders.filter((ord) => {
     const matchesTab = activeTab === 'ALL' || ord.itemStatus === activeTab;
@@ -162,7 +170,8 @@ const Orders: React.FC = () => {
   };
 
   const handleDispatch3PL = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || isDispatching) return;
+    setIsDispatching(true);
     try {
       const res = await dispatch3PLOrder({
         orderId: selectedItem.id,
@@ -187,11 +196,14 @@ const Orders: React.FC = () => {
       );
     } catch (err) {
       logger.error({ error: err }, '3PL Dispatch error');
+    } finally {
+      setIsDispatching(false);
     }
   };
 
   const handleSettleCOD = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || isSettlingCod) return;
+    setIsSettlingCod(true);
     try {
       await settleCodOrder({
         orderId: selectedItem.id,
@@ -205,69 +217,40 @@ const Orders: React.FC = () => {
       setIsDialogOpen(false);
     } catch (err) {
       logger.error({ error: err }, 'COD settlement error');
+    } finally {
+      setIsSettlingCod(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30">
-            📥 Needs Packing
-          </span>
-        );
+        return <Badge variant="warning">📥 Needs Packing</Badge>;
       case 'PACKED':
-        return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30">
-            📦 Packed & Ready
-          </span>
-        );
+        return <Badge variant="info">📦 Packed &amp; Ready</Badge>;
       case 'HANDED_OVER':
-        return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30">
-            🚚 In Transit
-          </span>
-        );
+        return <Badge variant="info">🚚 In Transit</Badge>;
       case 'DELIVERED':
-        return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
-            ✅ Delivered
-          </span>
-        );
+        return <Badge variant="success">✅ Delivered</Badge>;
       case 'CANCELLED':
-        return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30">
-            ❌ Cancelled
-          </span>
-        );
+        return <Badge variant="destructive">❌ Cancelled</Badge>;
       default:
-        return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-muted text-muted-foreground">
-            {status}
-          </span>
-        );
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Vendor Order Fulfillment
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Pick, pack, attach tracking codes, and dispatch incoming orders across Nepal.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Vendor Order Fulfillment"
+        description="Pick, pack, attach tracking codes, and dispatch incoming orders across Nepal."
+        actions={
           <Button variant="outline" size="sm" onClick={() => setOrders([...INITIAL_ORDERS])}>
             <RefreshCw className="w-4 h-4 mr-1.5" /> Reset Demo
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
@@ -279,17 +262,15 @@ const Orders: React.FC = () => {
             { id: 'HANDED_OVER', label: '🚚 In Transit' },
             { id: 'DELIVERED', label: '✅ Delivered' },
           ].map((tab) => (
-            <button
+            <Button
               key={tab.id}
+              size="sm"
+              variant={activeTab === tab.id ? 'default' : 'ghost'}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted'
-              }`}
+              className="text-xs"
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -305,31 +286,23 @@ const Orders: React.FC = () => {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="text-xs font-semibold text-muted-foreground">Order #</TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground">
-                Customer & Address
-              </TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground">
-                Product & Variant
-              </TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground">
-                Amount & Payment
-              </TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground">Status</TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground text-right">
-                Actions
-              </TableHead>
+              <TableHead>Order #</TableHead>
+              <TableHead>Customer &amp; Address</TableHead>
+              <TableHead>Product &amp; Variant</TableHead>
+              <TableHead>Amount &amp; Payment</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                  No orders found in this status category.
+                <TableCell colSpan={6}>
+                  <EmptyState title="No orders found in this status category." />
                 </TableCell>
               </TableRow>
             ) : (
@@ -337,23 +310,23 @@ const Orders: React.FC = () => {
                 <TableRow key={ord.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono text-xs font-semibold text-foreground">
                     {ord.orderNumber}
-                    <div className="text-[10px] text-muted-foreground font-sans mt-0.5">
+                    <div className="text-xs text-muted-foreground font-sans mt-0.5">
                       {new Date(ord.createdAt).toLocaleDateString()}
                     </div>
                   </TableCell>
 
                   <TableCell>
                     <div className="text-xs font-medium text-foreground">{ord.customerName}</div>
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3 text-red-500 shrink-0" />
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3 h-3 text-destructive shrink-0" />
                       {ord.cityArea}, {ord.provinceDistrict}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">{ord.customerPhone}</div>
+                    <div className="text-xs text-muted-foreground">{ord.customerPhone}</div>
                   </TableCell>
 
                   <TableCell>
                     <div className="text-xs font-medium text-foreground">{ord.productName}</div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       Color:{' '}
                       <span className="font-medium text-foreground">{ord.colorVariantName}</span> |
                       Size: <span className="font-medium text-foreground">{ord.size}</span> | Qty:{' '}
@@ -366,11 +339,11 @@ const Orders: React.FC = () => {
                       NPR {ord.totalAmount.toLocaleString()}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-muted rounded text-muted-foreground font-semibold">
+                      <span className="text-xs font-mono px-1.5 py-0.5 bg-muted rounded text-muted-foreground font-semibold">
                         {ord.paymentMethod}
                       </span>
                       <span
-                        className={`text-[10px] font-medium ${ord.paymentStatus === 'COMPLETED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}
+                        className={`text-xs font-medium ${ord.paymentStatus === 'COMPLETED' ? 'text-success' : 'text-warning'}`}
                       >
                         {ord.paymentStatus}
                       </span>
@@ -380,8 +353,8 @@ const Orders: React.FC = () => {
                   <TableCell>
                     {getStatusBadge(ord.itemStatus)}
                     {ord.trackingNumber && (
-                      <div className="text-[10px] text-muted-foreground font-mono mt-1 flex items-center gap-1">
-                        <Truck className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <div className="text-xs text-muted-foreground font-mono mt-1 flex items-center gap-1">
+                        <Truck className="w-3 h-3 text-info" />
                         {ord.courierPartner}: {ord.trackingNumber}
                       </div>
                     )}
@@ -430,7 +403,7 @@ const Orders: React.FC = () => {
                   | Size: <span className="font-medium text-foreground">{selectedItem.size}</span> |
                   Qty: {selectedItem.quantity}
                 </div>
-                <div className="text-muted-foreground text-[11px]">
+                <div className="text-muted-foreground text-xs">
                   Shipping to: {selectedItem.customerName} ({selectedItem.cityArea},{' '}
                   {selectedItem.provinceDistrict})
                 </div>
@@ -438,7 +411,7 @@ const Orders: React.FC = () => {
 
               {/* Status Selector */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Update Fulfillment Stage</Label>
+                <Label>Update Fulfillment Stage</Label>
                 <Select
                   value={newStatus}
                   onValueChange={(val: string) =>
@@ -461,7 +434,7 @@ const Orders: React.FC = () => {
 
               {/* Courier Partner Selection */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Courier / Logistics Partner</Label>
+                <Label>Courier / Logistics Partner</Label>
                 <Select value={courier} onValueChange={setCourier}>
                   <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Select courier" />
@@ -480,7 +453,7 @@ const Orders: React.FC = () => {
 
               {/* Tracking Number Input */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Tracking Number / Airway Bill</Label>
+                <Label>Tracking Number / Airway Bill</Label>
                 <div className="flex gap-2">
                   <Input
                     value={trackingNo}
@@ -493,20 +466,25 @@ const Orders: React.FC = () => {
                     size="sm"
                     variant="outline"
                     onClick={handleDispatch3PL}
+                    disabled={isDispatching}
                     className="text-xs h-9 gap-1.5"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    3PL Dispatch
+                    {isDispatching ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                    {isDispatching ? 'Dispatching...' : '3PL Dispatch'}
                   </Button>
                 </div>
               </div>
 
               {/* COD Settlement Option */}
               {selectedItem.paymentMethod === 'COD' && selectedItem.paymentStatus === 'PENDING' && (
-                <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 flex items-center justify-between">
+                <div className="p-3 bg-warning/10 rounded-lg border border-warning/20 flex items-center justify-between">
                   <div>
-                    <div className="font-semibold text-amber-700 dark:text-amber-300">Cash on Delivery Pending</div>
-                    <div className="text-[11px] text-amber-700/90 dark:text-amber-300/90">
+                    <div className="font-semibold text-warning">Cash on Delivery Pending</div>
+                    <div className="text-xs text-warning/90">
                       Reconcile 3PL courier bank deposit.
                     </div>
                   </div>
@@ -514,10 +492,15 @@ const Orders: React.FC = () => {
                     type="button"
                     size="sm"
                     onClick={handleSettleCOD}
+                    disabled={isSettlingCod}
                     className="text-xs h-8 gap-1"
                   >
-                    <DollarSign className="w-3.5 h-3.5" />
-                    Settle COD
+                    {isSettlingCod ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <DollarSign className="w-3.5 h-3.5" />
+                    )}
+                    {isSettlingCod ? 'Settling...' : 'Settle COD'}
                   </Button>
                 </div>
               )}

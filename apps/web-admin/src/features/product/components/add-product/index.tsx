@@ -1,36 +1,41 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import type { FieldErrors, Path, UseFormReturn } from 'react-hook-form';
-import { can, Permission } from '@celebs/rbac';
-import { logger } from '@celebs/shared-utils';
-import { Form } from '@celebs/shared-ui/components/form';
-import { Button } from '@celebs/shared-ui/components/button';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Info } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuthContext } from '@/context/auth-provider';
-import { createProduct, updateProduct, type CreateProductRequest } from '../../api';
-import { useProductForm, type ProductFormValues } from '../../hooks/use-product-form';
-import { useProductSchema } from '../../hooks/use-product-schema';
-import { useProductDraft } from '../../hooks/use-product-draft';
-import { useSubmissionState } from '../../hooks/use-submission-state';
+
+import { can, Permission } from '@celebs/rbac';
+import { Button } from '@celebs/shared-ui/components/button';
+import { Form } from '@celebs/shared-ui/components/form';
+import { logger } from '@celebs/shared-utils';
+
+import { createProduct, type CreateProductRequest,updateProduct } from '../../api';
 import { extractVariantsMeta } from '../../fields/variant-utils';
+import { useProductDraft } from '../../hooks/use-product-draft';
+import { type ProductFormValues,useProductForm } from '../../hooks/use-product-form';
+import { useProductSchema } from '../../hooks/use-product-schema';
+import { useSubmissionState } from '../../hooks/use-submission-state';
 import type { FieldSpec } from '../../types';
-import BasicInfoSection from '../basic-info-section';
-import { DynamicProductForm, type DynamicProductFormHandle } from '../dynamic-product-form';
-import { SubmissionProgressChecklist } from '../submission-progress-checklist';
-import { DraftAutoSaver } from './draft-autosaver';
-import { DraftBanner } from './draft-banner';
-import { ProductFormActionsContainer } from './form-actions-container';
-import { autofillProductForm } from './dev-autofill';
 import {
+  isFieldFilled,
   MANAGE_PRODUCTS_PATH,
   normalizeText,
-  uniqueMessages,
-  isFieldFilled,
   resolvePageSectionKey,
+  uniqueMessages,
 } from '../../utils/add-product-helpers';
 import { buildProductPayload } from '../../utils/add-product-payload';
 import { focusFirstError, focusMissingField, formatFieldLabel } from '../../utils/form-focus';
+import BasicInfoSection from '../basic-info-section';
+import { DynamicProductForm, type DynamicProductFormHandle } from '../dynamic-product-form';
+import { SubmissionProgressChecklist } from '../submission-progress-checklist';
+
+import { autofillProductForm } from './dev-autofill';
+import { DraftAutoSaver } from './draft-autosaver';
+import { DraftBanner } from './draft-banner';
+import { ProductFormActionsContainer } from './form-actions-container';
+
+import { PageLoader } from '@/components/page-loader';
+import { useAuthContext } from '@/context/auth-provider';
+import { useToast } from '@/hooks/use-toast';
 
 // ─── Outer orchestrator: data hooks + provider boundary ──────────────────────
 const AddProduct = () => {
@@ -108,10 +113,8 @@ const AddProduct = () => {
 
   if (isLoading) {
     return (
-      <div className="grid min-h-[60vh] place-items-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="rounded-3xl border border-border bg-card px-6 py-5 text-sm text-muted-foreground shadow-sm">
-          Loading product form...
-        </div>
+      <div className="grid min-h-[60vh] place-items-center">
+        <PageLoader />
       </div>
     );
   }
@@ -360,7 +363,7 @@ const AddProductFormBody = ({
       <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {isEditMode ? 'Update Product' : 'Create a new product listing'}
             </h1>
             {process.env.NODE_ENV === 'development' && (
@@ -369,7 +372,7 @@ const AddProductFormBody = ({
                 variant="outline"
                 size="sm"
                 onClick={onAutofill}
-                className="h-8 rounded-full border-orange-200 bg-orange-50/50 px-3 text-xs font-semibold text-orange-700 hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                className="h-8 rounded-full border-warning/30 bg-warning/10 px-3 text-xs font-semibold text-warning hover:bg-warning/20"
               >
                 Autofill Form
               </Button>
@@ -402,7 +405,7 @@ const AddProductFormBody = ({
           >
             <section
               id="product-section-basic"
-              className="scroll-mt-24 rounded-[32px] border border-border bg-card p-6 shadow-sm sm:p-8"
+              className="scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8"
             >
               <div className="mb-6">
                 <h2 className="text-2xl font-semibold text-foreground">

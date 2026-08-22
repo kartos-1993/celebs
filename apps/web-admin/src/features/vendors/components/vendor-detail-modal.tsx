@@ -1,15 +1,18 @@
 import React from 'react';
+
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@celebs/shared-ui/components/tabs';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
+import { Tabs, TabsContent,TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
+
 import { VendorStatusBadge } from './vendor-status-badge';
 
 interface Warehouse {
@@ -110,15 +113,9 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <VendorStatusBadge status={vendor.status} />
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  vendor.user?.isEmailVerified
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                }`}
-              >
+              <Badge variant={vendor.user?.isEmailVerified ? 'success' : 'warning'}>
                 {vendor.user?.isEmailVerified ? 'Email Verified' : 'Email Unverified'}
-              </span>
+              </Badge>
             </div>
           </div>
         </DialogHeader>
@@ -163,8 +160,8 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
               )}
 
               {vendor.rejectionReason && (
-                <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-900 rounded-r-lg">
-                  <span className="font-semibold text-xs uppercase block text-red-700">
+                <div className="p-4 bg-destructive/10 border-l-4 border-destructive rounded-r-lg">
+                  <span className="font-semibold text-xs uppercase block text-destructive">
                     Previous Rejection Reason
                   </span>
                   <p className="text-sm mt-1">{vendor.rejectionReason}</p>
@@ -278,7 +275,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
           {vendor.status !== 'APPROVED' && (
             <Button
               variant="default"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-success hover:bg-success/90 text-success-foreground"
               onClick={() => onApprove(vendor.id)}
               disabled={isActionPending}
             >
@@ -299,7 +296,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
           {vendor.status === 'APPROVED' && (
             <Button
               variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50"
+              className="text-destructive border-destructive/30 hover:bg-destructive/10"
               onClick={() => onSuspend(vendor.id)}
               disabled={isActionPending}
             >

@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback,useEffect, useState } from 'react';
+import { ExternalLink, Eye,Link2, Smartphone, Upload } from 'lucide-react';
+
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Card,
   CardContent,
@@ -6,9 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@celebs/shared-ui/components/card';
-import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Select,
   SelectContent,
@@ -16,12 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { useToast } from '@/hooks/use-toast';
-import { Loader, Upload, ExternalLink, Link2, Smartphone, Eye } from 'lucide-react';
-import { PlatformSettingsApiService, Banner } from '../api';
-import { CategoryApiService } from '@/features/category/api';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import type { Category } from '../../category/types';
 import { ProductApiService } from '../../product/api';
+import { Banner,PlatformSettingsApiService } from '../api';
+
+import { PageLoader } from '@/components/page-loader';
+import { CategoryApiService } from '@/features/category/api';
+import { useToast } from '@/hooks/use-toast';
 
 const Banners: React.FC = () => {
   const { toast } = useToast();
@@ -133,48 +139,42 @@ const Banners: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <Loader className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-gray-500 font-medium">Loading banner settings...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-fashion-700">Mobile Banner Slider</h1>
-          <p className="text-gray-500 mt-1">
-            Manage the hero banner carousel displayed at the top of the mobile home screen.
-          </p>
-        </div>
-
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-          Save Configuration
-        </Button>
-      </div>
+      <PageHeader
+        title="Mobile Banner Slider"
+        description={
+          'Manage the hero banner carousel displayed at the top of the mobile home screen.'
+        }
+        actions={
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Spinner size="sm" />}
+            Save Configuration
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Banner Configuration Editor */}
         <div className="lg:col-span-2 space-y-6">
           {banners.map((banner, index) => (
-            <Card key={index} className="shadow-sm border-zinc-200 dark:border-zinc-800">
+            <Card key={index} className="shadow-sm">
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">Banner Slide {index + 1}</CardTitle>
                   <CardDescription>Configure image and action link</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 font-medium">Active:</span>
+                  <span className="text-xs text-muted-foreground font-medium">Active:</span>
                   <input
                     type="checkbox"
                     checked={banner.isActive}
                     onChange={(e) => handleFieldChange(index, 'isActive', e.target.checked)}
-                    className="w-4 h-4 rounded text-fashion-600 focus:ring-fashion-500"
+                    className="w-4 h-4 rounded accent-primary"
                   />
                 </div>
               </CardHeader>
@@ -183,7 +183,7 @@ const Banners: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1">
                     <div
-                      className="relative border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg h-32 flex flex-col items-center justify-center overflow-hidden bg-zinc-50 dark:bg-zinc-900 group cursor-pointer hover:border-fashion-500 transition-colors"
+                      className="relative border-2 border-dashed border-border rounded-lg h-32 flex flex-col items-center justify-center overflow-hidden bg-muted/50 group cursor-pointer hover:border-primary transition-colors"
                       onClick={() => document.getElementById(`file-input-${index}`)?.click()}
                     >
                       {banner.imageUrl ? (
@@ -200,11 +200,13 @@ const Banners: React.FC = () => {
                       ) : (
                         <div className="text-center p-3">
                           {uploadingIndex === index ? (
-                            <Loader className="w-6 h-6 animate-spin text-primary mx-auto" />
+                            <div className="flex items-center justify-center py-4">
+                              <Spinner size="xl" className="text-primary" />
+                            </div>
                           ) : (
-                            <Upload className="w-6 h-6 text-zinc-400 mx-auto mb-1" />
+                            <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
                           )}
-                          <span className="text-xs text-zinc-500 font-medium">
+                          <span className="text-xs text-muted-foreground font-medium">
                             16:9 Banner Image
                           </span>
                         </div>
@@ -214,6 +216,7 @@ const Banners: React.FC = () => {
                         type="file"
                         accept="image/*"
                         className="hidden"
+                        disabled={uploadingIndex !== null}
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
                             handleImageUpload(index, e.target.files[0]);
@@ -317,22 +320,23 @@ const Banners: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="sticky top-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+              <span className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
                 <Smartphone className="w-4 h-4" /> Live Mobile Simulator
               </span>
               <div className="flex gap-1">
                 {banners.map((_, i) => (
-                  <button
+                  <Button
                     key={i}
+                    type="button"
+                    size="icon"
                     onClick={() => setActivePreviewIndex(i)}
-                    className={`w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
-                      activePreviewIndex === i
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                    aria-label={`Show slide ${i + 1}`}
+                    className={`w-5 h-5 rounded-full p-0 text-xs font-bold ${
+                      activePreviewIndex === i ? '' : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     {i + 1}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -358,7 +362,7 @@ const Banners: React.FC = () => {
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-zinc-500 p-4 text-center">
                       <Eye className="w-8 h-8 opacity-40 mb-2" />
                       <span className="text-xs font-semibold">No Image Uploaded</span>
-                      <span className="text-[10px] opacity-75">
+                      <span className="text-xs opacity-75">
                         Upload a banner in Slot {activePreviewIndex + 1} to preview
                       </span>
                     </div>
@@ -366,7 +370,7 @@ const Banners: React.FC = () => {
 
                   {/* Transparent Overlay Status Bar Mockup */}
                   <div className="absolute top-0 inset-x-0 h-11 bg-gradient-to-b from-black/50 to-transparent z-20 px-5 flex items-center justify-between">
-                    <span className="text-[10px] text-white/95 font-semibold">9:41</span>
+                    <span className="text-xs text-white/95 font-semibold">9:41</span>
                     <div className="flex items-center gap-1">
                       <div className="w-3.5 h-2 border border-white/90 rounded-[3px] p-[1px] flex items-center">
                         <div className="w-full h-full bg-white/90 rounded-[1px]"></div>
@@ -417,11 +421,11 @@ const Banners: React.FC = () => {
                   </div>
                   {banners[activePreviewIndex]?.linkType !== 'NONE' && (
                     <div className="bg-zinc-800/40 border border-zinc-800 rounded-lg p-2 flex items-center justify-between">
-                      <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1">
-                        <Link2 className="w-3 h-3 text-fashion-500" />
+                      <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
+                        <Link2 className="w-3 h-3 text-primary" />
                         Target: {banners[activePreviewIndex].linkType}
                       </span>
-                      <ExternalLink className="w-3 h-3 text-zinc-500" />
+                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
                     </div>
                   )}
                 </div>

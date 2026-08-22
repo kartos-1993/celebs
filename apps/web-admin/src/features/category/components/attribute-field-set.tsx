@@ -1,18 +1,20 @@
-import React, { useState, KeyboardEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { KeyboardEvent,useState } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
-import { Label } from '@celebs/shared-ui/components/label';
-import { Checkbox } from '@celebs/shared-ui/components/checkbox';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronDown, ChevronUp, Layers,Plus, X } from 'lucide-react';
+
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@celebs/shared-ui/components/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@celebs/shared-ui/components/dialog';
 import {
   FormControl,
   FormField,
@@ -20,17 +22,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
+import { Input } from '@celebs/shared-ui/components/input';
+import { Label } from '@celebs/shared-ui/components/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@celebs/shared-ui/components/dialog';
-import { X, Plus, ChevronDown, ChevronUp, Layers } from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@celebs/shared-ui/components/select';
+
 import { axiosClient } from '@/lib/axios/axios-client';
-import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface AttributeFieldSetProps {
   index: number;
@@ -176,24 +178,18 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
           <span className="text-xs font-mono text-muted-foreground w-6">#{index + 1}</span>
           <span className="font-bold text-sm text-foreground">{attributeName}</span>
 
-          <Badge variant="outline" className="text-[11px] font-normal uppercase tracking-wider">
+          <Badge variant="outline" className="text-xs font-normal uppercase tracking-wider">
             {attributeType}
           </Badge>
 
           {isVariant && (
-            <Badge
-              variant="secondary"
-              className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
-            >
+            <Badge variant="info" className="text-xs">
               Variant Option
             </Badge>
           )}
 
           {useStandardOptions && (
-            <Badge
-              variant="outline"
-              className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200"
-            >
+            <Badge variant="info" className="text-xs">
               <Layers className="w-3 h-3 mr-1" />
               {matchedSetName || 'Linked Option Set'}
             </Badge>
@@ -205,7 +201,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-8 text-rose-500 hover:text-rose-600"
+            className="h-8 w-8 text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               setDeleteOpen(true);
@@ -332,7 +328,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                       }}
                     />
                   </FormControl>
-                  <FormLabel className="cursor-pointer text-xs font-semibold">
+                  <FormLabel className="cursor-pointer">
                     Use as Product Variation (SKU Axis)
                   </FormLabel>
                 </FormItem>
@@ -354,8 +350,8 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
           </div>
 
           {isVariant && (
-            <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-md border border-purple-100 dark:border-purple-900/50 space-y-3">
-              <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
+            <div className="p-3 bg-info/10 rounded-md border border-info/30 space-y-3">
+              <p className="text-xs text-info font-medium">
                 ✨ Product Variant Option: Sellers will choose values for this attribute to generate
                 product SKUs.
               </p>
@@ -423,18 +419,16 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
 
           {(attributeType === 'select' || attributeType === 'multiselect' || isVariant) && (
             <div className="space-y-2 pt-2 border-t">
-              <Label className="text-xs font-semibold text-foreground">
-                Attribute Option Values
-              </Label>
+              <Label>Attribute Option Values</Label>
 
               {useStandardOptions && effectiveOptionSetId ? (
                 <div className="space-y-1">
-                  <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                  <p className="text-xs text-info font-medium">
                     Values linked to Option Set ({optionSetValues.length} options):
                   </p>
                   <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto p-2 bg-muted/20 rounded border text-xs">
                     {optionSetValues.map((v, i) => (
-                      <Badge key={i} variant="outline" className="text-[11px] font-normal">
+                      <Badge key={i} variant="outline" className="text-xs font-normal">
                         {v}
                       </Badge>
                     ))}
@@ -480,7 +474,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                       >
                         <span>{val}</span>
                         <X
-                          className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-rose-500"
+                          className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-destructive"
                           onClick={() => handleRemoveManualValue(val)}
                         />
                       </Badge>

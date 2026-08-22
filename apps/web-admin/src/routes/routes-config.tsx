@@ -1,26 +1,27 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import AdminLayout from '@/layouts/admin-layout';
-import AuthLayout from '@/layouts/auth-layout';
-import VendorPortalLayout from '@/layouts/vendor-portal-layout';
+
 import AuthGuard from './auth-guard';
 import GuestGuard from './guest-guard';
 import { PATHS } from './paths';
 
+import { accountRoutes } from '@/features/account/routes';
 // Feature Routes
 import { authRoutes } from '@/features/auth/routes';
-import { productRoutes } from '@/features/product/routes';
 import { categoryRoutes } from '@/features/category/routes';
-import { vendorRoutes } from '@/features/vendors/routes';
-import { vendorOnboardingRoutes } from '@/features/vendor-onboarding/routes';
-import { userRoutes } from '@/features/users/routes';
-import { staffRoutes } from '@/features/staff/routes';
-import { orderRoutes } from '@/features/orders/routes';
-import { accountRoutes } from '@/features/account/routes';
 import { financeRoutes } from '@/features/finance/routes';
-import { platformSettingsRoutes } from '@/features/platform-settings/routes';
 import { marketingRoutes } from '@/features/marketing/routes';
 import { optionSetRoutes } from '@/features/option-sets/routes';
+import { orderRoutes } from '@/features/orders/routes';
+import { platformSettingsRoutes } from '@/features/platform-settings/routes';
+import { productRoutes } from '@/features/product/routes';
+import { staffRoutes } from '@/features/staff/routes';
+import { userRoutes } from '@/features/users/routes';
+import { vendorOnboardingRoutes } from '@/features/vendor-onboarding/routes';
+import { vendorRoutes } from '@/features/vendors/routes';
+import AdminLayout from '@/layouts/admin-layout';
+import AuthLayout from '@/layouts/auth-layout';
+import VendorPortalLayout from '@/layouts/vendor-portal-layout';
 
 const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
 const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'));

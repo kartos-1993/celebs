@@ -1,16 +1,16 @@
 import React from 'react';
 import { useController, useFormContext, useWatch } from 'react-hook-form';
-import { axiosClient } from '@/lib/axios/axios-client';
-import { Checkbox } from '@celebs/shared-ui/components/checkbox';
-import { Button } from '@celebs/shared-ui/components/button';
 import { Sparkles } from 'lucide-react';
+
+import { Button } from '@celebs/shared-ui/components/button';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Input } from '@celebs/shared-ui/components/input';
 import { NumberInput } from '@celebs/shared-ui/components/number-input';
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
 import {
@@ -21,9 +21,13 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import type { UiProps } from '../ui-registry';
-import { FieldError } from './shared';
+
 import { generateCollisionProofBaseSku } from '../../utils/generate-sku-helpers';
+import type { UiProps } from '../ui-registry';
+
+import { FieldError } from './shared';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 interface VariantDataSource {
   labels?: Record<string, Record<string, string>>;
@@ -278,17 +282,17 @@ export function SkuTableInputField({ field }: UiProps) {
           className="gap-1.5 text-xs h-8"
           onClick={handleAutoGenerateSkus}
         >
-          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+          <Sparkles className="h-3.5 w-3.5 text-warning" />
           Auto-Generate SKUs
         </Button>
       </div>
       {variants.length === 0 && (
         <div className="border rounded-md overflow-x-auto mb-4">
-          <Table className="w-full min-w-[650px] table-fixed text-[11px] sm:text-xs">
+          <Table className="w-full min-w-[650px] table-fixed text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[15%] px-1.5 py-2">
-                  Price <span className="text-red-500 ml-0.5">*</span>
+                  Price <span className="text-destructive ml-0.5">*</span>
                 </TableHead>
                 <TableHead className="w-[18%] px-1.5 py-2">Special Price</TableHead>
                 <TableHead className="w-[12%] px-1.5 py-2">Stock</TableHead>
@@ -324,7 +328,7 @@ export function SkuTableInputField({ field }: UiProps) {
       )}
 
       {variants.length > 0 && (
-        <div className="mb-4 p-3 border rounded-lg bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
+        <div className="mb-4 p-3 border rounded-lg bg-muted/50 space-y-3">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Batch Edit Variants
           </div>
@@ -346,7 +350,7 @@ export function SkuTableInputField({ field }: UiProps) {
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1">
-                Price <span className="text-red-500 ml-0.5">*</span>
+                Price <span className="text-destructive ml-0.5">*</span>
               </div>
               <NumberInput
                 className="bg-background h-8 text-xs"
@@ -419,12 +423,12 @@ export function SkuTableInputField({ field }: UiProps) {
 
       {variants.length === 1 && (
         <div className="border rounded-md overflow-x-auto">
-          <Table className="w-full min-w-[700px] table-fixed text-[11px] sm:text-xs">
+          <Table className="w-full min-w-[700px] table-fixed text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[12%] px-1.5 py-2">{variants[0].label}</TableHead>
                 <TableHead className="w-[14%] px-1.5 py-2">
-                  Price <span className="text-red-500 ml-0.5">*</span>
+                  Price <span className="text-destructive ml-0.5">*</span>
                 </TableHead>
                 <TableHead className="w-[16%] px-1.5 py-2">Special Price</TableHead>
                 <TableHead className="w-[11%] px-1.5 py-2">Stock</TableHead>
@@ -479,7 +483,7 @@ export function SkuTableInputField({ field }: UiProps) {
 
       {variants.length >= 2 && (
         <div className="border rounded-md overflow-x-auto">
-          <Table className="w-full min-w-[750px] table-fixed text-[11px] sm:text-xs">
+          <Table className="w-full min-w-[750px] table-fixed text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[10%] px-1.5 py-2">{variants[0].label}</TableHead>
@@ -487,7 +491,7 @@ export function SkuTableInputField({ field }: UiProps) {
                   {variants[1].label}
                 </TableHead>
                 <TableHead className="w-[13%] px-1.5 py-2">
-                  Price <span className="text-red-500 ml-0.5">*</span>
+                  Price <span className="text-destructive ml-0.5">*</span>
                 </TableHead>
                 <TableHead className="w-[15%] px-1.5 py-2">Special Price</TableHead>
                 <TableHead className="w-[10%] px-1.5 py-2">Stock</TableHead>
@@ -502,10 +506,10 @@ export function SkuTableInputField({ field }: UiProps) {
               {variants[0].values.flatMap((opt1) =>
                 variants[1].values.map((opt2) => (
                   <TableRow key={`${opt1}-${opt2}`}>
-                    <TableCell className="capitalize font-medium text-[11px] sm:text-xs px-1.5 py-1.5 truncate">
+                    <TableCell className="capitalize font-medium text-xs px-1.5 py-1.5 truncate">
                       {labelOf(variants[0].key, opt1)}
                     </TableCell>
-                    <TableCell className="capitalize font-medium text-[11px] sm:text-xs px-0.5 py-1.5 text-center truncate">
+                    <TableCell className="capitalize font-medium text-xs px-0.5 py-1.5 text-center truncate">
                       {labelOf(variants[1].key, opt2)}
                     </TableCell>
                     <TableCell className="p-1.5">
@@ -608,7 +612,7 @@ function VariantFieldInput({
           required={required}
           placeholder="0"
           invalid={!!fieldState.error}
-          className="text-[11px] sm:text-xs px-1 h-7 sm:h-8"
+          className="text-xs px-1 h-7 sm:h-8"
           {...field}
         />
       ) : (
@@ -616,8 +620,8 @@ function VariantFieldInput({
           required={required}
           placeholder=""
           title={String(field.value ?? '')}
-          className={`font-mono text-[11px] sm:text-xs px-1.5 h-7 sm:h-8 ${
-            fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''
+          className={`font-mono text-xs px-1.5 h-7 sm:h-8 ${
+            fieldState.error ? 'border-destructive focus-visible:ring-destructive' : ''
           }`}
           {...field}
         />

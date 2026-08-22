@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useEffect,useState } from 'react';
+import { Link,useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { logger } from '@celebs/shared-utils';
+import { ArrowLeft, Save, Sparkles } from 'lucide-react';
+
+import type { ComboDiscountType } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Select,
   SelectContent,
@@ -12,10 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { ArrowLeft, Save, Sparkles } from 'lucide-react';
-import { createCombo, updateCombo, getComboById } from '../api';
+import { logger } from '@celebs/shared-utils';
+
+import { createCombo, getComboById,updateCombo } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
-import type { ComboDiscountType } from '@celebs/shared-types';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
 
@@ -101,30 +104,31 @@ export default function ComboFormPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
-          <Link to="/marketing/combos" aria-label="Back to combos">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <PageHeader
+        title={
+          <>
+            <Sparkles className="mr-2 inline h-5 w-5 text-info" />
             {id ? 'Edit Combo Bundle' : 'Create Generic Combo Bundle'}
-          </h1>
-          <p className="text-xs text-slate-500">
-            Configure multi-product kits, festive bundles, and travel packs with customer savings
-            rules.
-          </p>
-        </div>
-      </div>
+          </>
+        }
+        description="Configure multi-product kits, festive bundles, and travel packs with customer savings rules."
+        actions={
+          <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
+            <Link to="/marketing/combos" aria-label="Back to combos">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="bg-card rounded-xl border border-border p-6 shadow-sm space-y-6">
         {/* Title & Slug */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Bundle Title *</Label>
+            <Label>
+              Bundle Title <span className="text-destructive">*</span>
+            </Label>
             <Input
               placeholder="e.g. Australia Winter Survival Kit"
               value={title}
@@ -134,7 +138,9 @@ export default function ComboFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">URL Slug *</Label>
+            <Label>
+              URL Slug <span className="text-destructive">*</span>
+            </Label>
             <Input
               placeholder="australia-winter-survival-kit"
               value={slug}
@@ -147,7 +153,7 @@ export default function ComboFormPage() {
         {/* Subtitle & Tag */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Subtitle / Catchphrase</Label>
+            <Label>Subtitle / Catchphrase</Label>
             <Input
               placeholder="e.g. Complete thermal & heavy coat pack for Aussie winters"
               value={subtitle}
@@ -157,7 +163,7 @@ export default function ComboFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Category Tag</Label>
+            <Label>Category Tag</Label>
             <Select value={tag} onValueChange={setTag}>
               <SelectTrigger className="text-xs h-9">
                 <SelectValue placeholder="Select Tag" />
@@ -173,9 +179,9 @@ export default function ComboFormPage() {
         </div>
 
         {/* Discount Type & Value */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg border border-border">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Discount Calculation Type</Label>
+            <Label>Discount Calculation Type</Label>
             <Select
               value={discountType}
               onValueChange={(val: ComboDiscountType) => setDiscountType(val)}
@@ -191,8 +197,9 @@ export default function ComboFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
-              Discount Amount {discountType === 'PERCENTAGE' ? '(%)' : '(NPR)'} *
+            <Label>
+              Discount Amount {discountType === 'PERCENTAGE' ? '(%)' : '(NPR)'}{' '}
+              <span className="text-destructive">*</span>
             </Label>
             <Input
               type="number"
@@ -221,11 +228,11 @@ export default function ComboFormPage() {
         />
 
         {/* Save Button */}
-        <div className="flex justify-end pt-4 border-t border-slate-200">
+        <div className="flex justify-end pt-4 border-t border-border">
           <Button
             onClick={handleSaveCombo}
             disabled={isSubmitting || !title || !slug}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-6 flex items-center gap-2"
+            className="h-9 px-6 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {isSubmitting

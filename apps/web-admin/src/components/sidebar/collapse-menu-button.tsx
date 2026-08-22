@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
-import { ChevronDown, LucideIcon } from 'lucide-react';
+import { useCallback,useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
+import { ChevronDown, LucideIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Collapsible,
@@ -10,7 +10,7 @@ import {
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
 
-import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 type Submenu = {
   href: string;
@@ -72,20 +72,30 @@ export function CollapseMenuButton({
         </CollapsibleTrigger>
 
         <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-          {submenus.map(({ href, label, active }, index) => (
-            <Button
-              key={index}
-              variant={
-                (active === undefined && pathname === href) || active ? 'secondary' : 'ghost'
-              }
-              className="w-full justify-start h-8 mb-1 pl-9 pr-3"
-              asChild
-            >
-              <Link to={href} className="flex items-center w-full">
-                <p className="max-w-[170px] truncate text-sm font-light py-0.5">{label}</p>
-              </Link>
-            </Button>
-          ))}
+          {submenus.map(({ href, label, active }, index) => {
+            const isActive = (active === undefined && pathname === href) || active;
+            return (
+              <Button
+                key={index}
+                variant={isActive ? 'secondary' : 'ghost'}
+                className="w-full justify-start h-8 mb-1 pl-9 pr-3"
+                asChild
+              >
+                <Link to={href} className="flex items-center w-full">
+                  <p
+                    className={cn(
+                      'max-w-[170px] truncate text-sm py-0.5',
+                      isActive
+                        ? 'font-medium text-foreground'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {label}
+                  </p>
+                </Link>
+              </Button>
+            );
+          })}
         </CollapsibleContent>
       </Collapsible>
     );
@@ -133,10 +143,10 @@ export function CollapseMenuButton({
                 to={href}
                 onClick={closeFlyout}
                 className={cn(
-                  'flex items-center px-3 py-2 text-sm font-light transition-colors hover:bg-accent hover:text-accent-foreground',
+                  'flex items-center px-3 py-2 text-sm transition-colors',
                   (active === undefined && pathname === href) || active
-                    ? 'bg-secondary text-secondary-foreground'
-                    : 'text-foreground',
+                    ? 'bg-secondary text-secondary-foreground font-medium text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
                 {label}

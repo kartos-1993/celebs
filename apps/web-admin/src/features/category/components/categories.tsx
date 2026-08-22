@@ -4,21 +4,24 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { FolderPlus,FolderTree } from 'lucide-react';
+
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
-import { FolderTree, FolderPlus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
+
+import { useCategories } from '../hooks/use-categories';
+import { useCategoryState } from '../hooks/use-category-state';
 
 import { CategoryFormDialog } from './category-form-dialog';
 import { CategoryTree } from './category-tree';
 import { DeleteCategoryDialog } from './delete-category-dialog';
-import { EmptyState } from './empty-state';
 import { ErrorState } from './error-state';
 import { LoadingState } from './loading-state';
 
-import { useCategories } from '../hooks/use-categories';
-import { useCategoryState } from '../hooks/use-category-state';
-import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Main Categories Page Component
@@ -30,6 +33,9 @@ export const Categories: React.FC = () => {
     categoryTree,
     isLoading,
     error,
+    isCreating,
+    isUpdating,
+    isDeleting,
     createCategory,
     updateCategory,
     deleteCategory,
@@ -99,17 +105,16 @@ export const Categories: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-fashion-700">Categories</h1>
-          <p className="text-gray-500 mt-1">Manage product categories and attributes</p>
-        </div>
-
-        <Button onClick={actions.openAddCategoryForm}>
-          <FolderPlus className="mr-2 h-4 w-4" />
-          Add Category
-        </Button>
-      </div>
+      <PageHeader
+        title="Categories"
+        description="Manage product categories and attributes"
+        actions={
+          <Button onClick={actions.openAddCategoryForm}>
+            <FolderPlus className="mr-2 h-4 w-4" />
+            Add Category
+          </Button>
+        }
+      />
       {/* Main Content */}
       <Card>
         <CardHeader>
@@ -122,7 +127,16 @@ export const Categories: React.FC = () => {
           {isLoading ? (
             <LoadingState />
           ) : categoryTree.length === 0 ? (
-            <EmptyState onAddCategory={actions.openAddCategoryForm} />
+            <EmptyState
+              icon={<FolderPlus className="h-10 w-10" />}
+              title="No categories found"
+              action={
+                <Button onClick={actions.openAddCategoryForm}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  Add Your First Category
+                </Button>
+              }
+            />
           ) : (
             <CategoryTree
               categoryTree={categoryTree}
@@ -143,7 +157,7 @@ export const Categories: React.FC = () => {
         categories={categories}
         onSave={handleSaveCategory}
         onCancel={actions.closeForm}
-        isLoading={uiState.isLoading}
+        isLoading={isCreating || isUpdating}
       />
 
       <DeleteCategoryDialog
@@ -151,7 +165,7 @@ export const Categories: React.FC = () => {
         onOpenChange={actions.setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         onCancel={actions.closeDeleteDialog}
-        isLoading={uiState.isLoading}
+        isLoading={isDeleting}
         category={
           uiState.categoryToDelete
             ? {

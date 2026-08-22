@@ -1,18 +1,33 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
+import { Input } from '@celebs/shared-ui/components/input';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
-  getAdminVendors,
-  getAdminVendorById,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@celebs/shared-ui/components/table';
+
+import {
   approveVendor,
+  getAdminVendorById,
+  getAdminVendors,
   rejectVendor,
   suspendVendor,
 } from '../api';
 import { VENDORS_QUERY_KEYS } from '../api';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
 import { VendorDetailModal } from '../components/vendor-detail-modal';
 import { VendorRejectionDialog } from '../components/vendor-rejection-dialog';
 import { VendorStatusBadge } from '../components/vendor-status-badge';
+
+import { PageLoader } from '@/components/page-loader';
 
 interface VendorListItem {
   id: string;
@@ -79,7 +94,7 @@ export default function VendorList() {
   });
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading vendors list...</div>;
+    return <PageLoader />;
   }
 
   const vendors: VendorListItem[] = response?.data || [];
@@ -116,15 +131,11 @@ export default function VendorList() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Vendor Management</h1>
-          <p className="text-sm text-muted-foreground">
-            Review vendor onboarding submissions, legal documents, and approve seller accounts.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Vendor Management"
+        description="Review vendor onboarding submissions, legal documents, and approve seller accounts."
+      />
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border">
@@ -152,49 +163,43 @@ export default function VendorList() {
       </div>
 
       {/* Vendors Table */}
-      <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <th className="p-4">Shop & Owner</th>
-              <th className="p-4">Contact Phone</th>
-              <th className="p-4">Email Status</th>
-              <th className="p-4">Vendor Status</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm divide-y">
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Shop &amp; Owner</TableHead>
+              <TableHead>Contact Phone</TableHead>
+              <TableHead>Email Status</TableHead>
+              <TableHead>Vendor Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredVendors.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                  No vendors found matching your filter criteria.
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <EmptyState title="No vendors found matching your filter criteria." />
+                </TableCell>
+              </TableRow>
             ) : (
               filteredVendors.map((vendor) => (
-                <tr key={vendor.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-4">
+                <TableRow key={vendor.id} className="hover:bg-muted/30">
+                  <TableCell>
                     <div className="font-semibold text-foreground">{vendor.shopName}</div>
                     <div className="text-xs text-muted-foreground">
                       {vendor.user?.name} ({vendor.user?.email})
                     </div>
-                  </td>
-                  <td className="p-4 font-mono text-xs">{vendor.phoneNumber}</td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        vendor.user?.isEmailVerified
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-amber-50 text-amber-700'
-                      }`}
-                    >
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{vendor.phoneNumber}</TableCell>
+                  <TableCell>
+                    <Badge variant={vendor.user?.isEmailVerified ? 'success' : 'warning'}>
                       {vendor.user?.isEmailVerified ? 'Verified' : 'Unverified'}
-                    </span>
-                  </td>
-                  <td className="p-4">
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <VendorStatusBadge status={vendor.status} />
-                  </td>
-                  <td className="p-4 text-right space-x-2">
+                  </TableCell>
+                  <TableCell className="text-right space-x-2">
                     <Button size="sm" variant="outline" onClick={() => handleInspect(vendor.id)}>
                       Inspect Documents
                     </Button>
@@ -220,12 +225,12 @@ export default function VendorList() {
                         Reject
                       </Button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Vendor Detail & Document Inspection Modal */}

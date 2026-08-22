@@ -3,16 +3,18 @@
  */
 
 import React from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from '@celebs/shared-ui/components/dialog';
-import { Button } from '@celebs/shared-ui/components/button';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 interface DeleteCategoryDialogProps {
   open: boolean;
@@ -43,22 +45,22 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <AlertTriangle className="h-5 w-5 text-warning" />
             Delete {category.name}?
           </DialogTitle>
-          <DialogDescription className="text-red-600 dark:text-red-400">
+          <DialogDescription className="text-destructive">
             {category.name}
           </DialogDescription>
         </DialogHeader>
         <div className="py-3 space-y-4">
           <div className="space-y-2">
             {category.hasChildren ? (
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-md border border-amber-200 dark:border-amber-900/50 space-y-1">
-                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+              <div className="p-3 bg-warning/10 rounded-md border border-warning/30 space-y-1">
+                <p className="text-sm font-semibold text-warning flex items-center gap-1.5">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
                   Cannot delete category with subcategories
                 </p>
-                <p className="text-xs text-amber-700 dark:text-amber-400">
+                <p className="text-xs text-warning">
                   This category has {category.childCount} subcategory(ies). Please delete or move
                   the subcategories before deleting this parent category.
                 </p>
@@ -70,7 +72,7 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
                   <span className="font-medium">{category.name}</span>?
                 </p>
                 {category.attributes && category.attributes.length > 0 && (
-                  <ul className="list-disc list-inside pl-2 space-y-1 text-xs text-gray-500">
+                  <ul className="list-disc list-inside pl-2 space-y-1 text-xs text-muted-foreground">
                     <li>
                       Associated attributes (
                       {category.attributes.map((attr) => attr.name).join(', ')}) will be removed.
@@ -82,8 +84,8 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
           </div>
 
           {!category.hasChildren && (
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-md border border-amber-200 dark:border-amber-900/50">
-              <p className="text-xs text-amber-800 dark:text-amber-400 flex items-center gap-2">
+            <div className="p-3 bg-warning/10 rounded-md border border-warning/30">
+              <p className="text-xs text-warning flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 This action cannot be undone
               </p>
@@ -103,7 +105,7 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner size="sm" className="mr-2" />
                   Deleting...
                 </>
               ) : (

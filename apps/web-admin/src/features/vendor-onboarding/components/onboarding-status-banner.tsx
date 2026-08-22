@@ -1,8 +1,10 @@
 import React from 'react';
-import { useAuthContext } from '@/context/auth-provider';
-import { Alert, AlertTitle, AlertDescription } from '@celebs/shared-ui/components/alert';
-import { Button } from '@celebs/shared-ui/components/button';
 import { useNavigate } from 'react-router-dom';
+
+import { Alert, AlertDescription,AlertTitle } from '@celebs/shared-ui/components/alert';
+import { Button } from '@celebs/shared-ui/components/button';
+
+import { useAuthContext } from '@/context/auth-provider';
 import { PATHS } from '@/routes/paths';
 
 export const OnboardingStatusBanner: React.FC = () => {
@@ -18,7 +20,7 @@ export const OnboardingStatusBanner: React.FC = () => {
   // Unverified Email Alert
   if (!user.isEmailVerified) {
     return (
-      <Alert className="bg-amber-50 border-amber-300 text-amber-900 mb-6">
+      <Alert className="bg-warning/10 border-warning/30 text-warning mb-6">
         <AlertTitle className="font-bold flex items-center gap-2">
           Email Verification Required
         </AlertTitle>
@@ -35,7 +37,7 @@ export const OnboardingStatusBanner: React.FC = () => {
   // Incomplete Onboarding Wizard
   if (onboardingStep < 5) {
     return (
-      <Alert className="bg-blue-50 border-blue-300 text-blue-900 mb-6">
+      <Alert className="bg-info/10 border-info/30 text-info mb-6">
         <AlertTitle className="font-bold flex items-center gap-2">
           Complete Your Vendor Onboarding (Step {onboardingStep} of 5)
         </AlertTitle>
@@ -44,11 +46,7 @@ export const OnboardingStatusBanner: React.FC = () => {
             Your store setup is incomplete. Complete all 5 steps to submit your documents for admin
             verification.
           </span>
-          <Button
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium shrink-0"
-            onClick={() => navigate(PATHS.VENDORS.ONBOARDING)}
-          >
+          <Button size="sm" className="shrink-0" onClick={() => navigate(PATHS.VENDORS.ONBOARDING)}>
             Continue Setup →
           </Button>
         </AlertDescription>
@@ -59,7 +57,7 @@ export const OnboardingStatusBanner: React.FC = () => {
   // Application Under Review
   if (status === 'UNDER_REVIEW' || status === 'PENDING') {
     return (
-      <Alert className="bg-indigo-50 border-indigo-300 text-indigo-900 mb-6">
+      <Alert className="bg-info/10 border-info/30 text-info mb-6">
         <AlertTitle className="font-bold flex items-center gap-2">
           Application Submitted & Under Review
         </AlertTitle>
@@ -74,7 +72,7 @@ export const OnboardingStatusBanner: React.FC = () => {
   // Application Rejected
   if (status === 'REJECTED') {
     return (
-      <Alert className="bg-red-50 border-red-300 text-red-900 mb-6">
+      <Alert className="bg-destructive/10 border-destructive/30 text-destructive mb-6">
         <AlertTitle className="font-bold flex items-center gap-2">
           Application Revision Required
         </AlertTitle>

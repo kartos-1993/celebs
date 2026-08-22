@@ -1,4 +1,17 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import {
+  Copy,
+  ExternalLink,
+  Folder,
+  FolderPlus,
+  Image as ImageIcon,
+  RefreshCw,
+  Search,
+  Trash2,
+  UploadCloud,
+} from 'lucide-react';
+
+import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
@@ -11,6 +24,7 @@ import {
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
 import { Input } from '@celebs/shared-ui/components/input';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Select,
   SelectContent,
@@ -18,22 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import {
-  Copy,
-  ExternalLink,
-  Folder,
-  FolderPlus,
-  Image as ImageIcon,
-  Loader2,
-  RefreshCw,
-  Search,
-  Trash2,
-  UploadCloud,
-} from 'lucide-react';
-import { useDebounce } from '@/hooks/use-debounce';
-import { toast } from '@/hooks/use-toast';
-import { directUploadBatch } from '@/lib/media-upload';
-import type { MediaAsset, MediaScope } from '@celebs/shared-types';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { StorageQuotaBar } from '../components/storage-quota-bar';
 import {
   useCleanupUnusedMedia,
@@ -44,6 +44,10 @@ import {
   useMediaFolders,
   useMediaQuota,
 } from '../hooks/use-media-assets';
+
+import { useDebounce } from '@/hooks/use-debounce';
+import { toast } from '@/hooks/use-toast';
+import { directUploadBatch } from '@/lib/media-upload';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -213,19 +217,12 @@ const MediaCenterPage = memo(function MediaCenterPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Digital Asset Management (DAM)
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Multi-tenant media storage powered by Cloudflare R2 presigned streaming pipeline.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Digital Asset Management (DAM)"
+        description="Multi-tenant media storage powered by Cloudflare R2 presigned streaming pipeline."
+        actions={
           <label>
             <input
               type="file"
@@ -240,7 +237,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
             <Button size="sm" disabled={isUploading} className="pointer-events-none cursor-pointer">
               {isUploading ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Uploading...
+                  <Spinner size="sm" className="mr-1.5" /> Uploading...
                 </>
               ) : (
                 <>
@@ -249,8 +246,8 @@ const MediaCenterPage = memo(function MediaCenterPage() {
               )}
             </Button>
           </label>
-        </div>
-      </div>
+        }
+      />
 
       {/* Quota Bar */}
       <StorageQuotaBar quota={quota} isLoading={isLoadingQuota} />
@@ -273,25 +270,26 @@ const MediaCenterPage = memo(function MediaCenterPage() {
             </Button>
           </CardHeader>
           <CardContent className="p-2 flex flex-col gap-1">
-            <button
+            <Button
               type="button"
-              onClick={() => setSelectedFolderId(null)}
-              className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+              variant="ghost"
+              className={`flex w-full items-center justify-between px-3 py-2 h-auto rounded-lg text-xs font-medium ${
                 selectedFolderId === null
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent text-foreground'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary'
+                  : 'text-foreground hover:bg-accent'
               }`}
+              onClick={() => setSelectedFolderId(null)}
             >
               <div className="flex items-center gap-2">
                 <Folder className="h-4 w-4" />
                 All Assets
               </div>
-              <span className="text-[11px] opacity-80">{quota?.totalAssetCount ?? 0}</span>
-            </button>
+              <span className="text-xs opacity-80">{quota?.totalAssetCount ?? 0}</span>
+            </Button>
 
             {isLoadingFolders ? (
               <div className="py-4 flex justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Spinner size="sm" className="text-muted-foreground" />
               </div>
             ) : (
               folders.map((f) => (
@@ -313,8 +311,13 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                     size="icon"
                     className="h-5 w-5 opacity-0 group-hover:opacity-100 hover:text-destructive"
                     onClick={(e) => handleDeleteFolder(f.id, e)}
+                    disabled={deleteFolderMutation.isPending}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    {deleteFolderMutation.isPending ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
                   </Button>
                 </div>
               ))
@@ -371,10 +374,17 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleCleanupUnused}
-                  className="text-xs h-9 border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                  disabled={cleanupUnusedMutation.isPending}
+                  className="text-xs h-9 border-warning/40 text-warning hover:bg-warning/10"
                 >
-                  <Trash2 className="mr-1 h-3.5 w-3.5" />
-                  Clean Unused ({quota.unlinkedAssetCount})
+                  {cleanupUnusedMutation.isPending ? (
+                    <Spinner size="sm" className="mr-1" />
+                  ) : (
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  {cleanupUnusedMutation.isPending
+                    ? 'Cleaning...'
+                    : `Clean Unused (${quota.unlinkedAssetCount})`}
                 </Button>
               )}
 
@@ -392,7 +402,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
           {/* Grid */}
           {isLoadingAssets ? (
             <div className="h-64 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Spinner size="xl" className="text-primary" />
             </div>
           ) : assets.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 p-12 border border-dashed rounded-2xl bg-card/30 text-center">
@@ -447,13 +457,13 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                     </div>
 
                     {(asset.usageCount ?? 0) > 0 ? (
-                      <Badge className="absolute bottom-2 left-2 bg-black/80 text-[10px] font-mono text-white">
+                      <Badge className="absolute bottom-2 left-2 bg-black/80 text-xs font-mono text-white">
                         {asset.usageCount}x in PDP
                       </Badge>
                     ) : (
                       <Badge
                         variant="outline"
-                        className="absolute bottom-2 left-2 bg-amber-500/10 border-amber-500/40 text-[10px] text-amber-600 dark:text-amber-400"
+                        className="absolute bottom-2 left-2 bg-warning/10 border-warning/40 text-xs text-warning"
                       >
                         Unlinked
                       </Badge>
@@ -468,7 +478,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                       >
                         {asset.originalName}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {formatBytes(asset.sizeBytes ?? 0)} • {asset.scope}
                       </span>
                     </div>
@@ -478,13 +488,18 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
                       onClick={() => handleDeleteAsset(asset)}
+                      disabled={deleteAssetMutation.isPending}
                       title={
                         (asset.usageCount ?? 0) > 0
                           ? 'Cannot delete: actively linked'
                           : 'Delete asset'
                       }
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      {deleteAssetMutation.isPending ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -517,8 +532,18 @@ const MediaCenterPage = memo(function MediaCenterPage() {
             <Button variant="outline" onClick={() => setIsFolderDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}>
-              Create
+            <Button
+              onClick={handleCreateFolder}
+              disabled={!newFolderName.trim() || createFolderMutation.isPending}
+            >
+              {createFolderMutation.isPending ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Create'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

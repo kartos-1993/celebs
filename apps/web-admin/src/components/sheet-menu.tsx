@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom';
 import { MenuIcon, PanelsTopLeft } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
-import { Menu } from '@/components/menu';
 import {
   Sheet,
-  SheetHeader,
   SheetContent,
-  SheetTrigger,
+  SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from '@celebs/shared-ui/components/sheet';
+
+import { Menu } from '@/components/menu';
 
 export function SheetMenu() {
   return (

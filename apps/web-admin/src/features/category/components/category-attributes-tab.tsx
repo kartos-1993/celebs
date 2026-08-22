@@ -1,13 +1,15 @@
 import React, { KeyboardEvent } from 'react';
-import { UseFormReturn, UseFieldArrayRemove } from 'react-hook-form';
+import { UseFieldArrayRemove,UseFormReturn } from 'react-hook-form';
+import { Plus, Shirt, SlidersHorizontal,UserCheck, X } from 'lucide-react';
+
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
+import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
+import { FormLabel } from '@celebs/shared-ui/components/form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
-import { Badge } from '@celebs/shared-ui/components/badge';
-import { FormLabel } from '@celebs/shared-ui/components/form';
-import { Plus, Shirt, UserCheck, X, SlidersHorizontal } from 'lucide-react';
+
 import { AttributeFieldSet } from './attribute-field-set';
-import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface CategoryAttributesTabProps {
   form: UseFormReturn<CategoryFormData>;
@@ -46,7 +48,7 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
       {/* Top Header */}
       <div className="flex items-center justify-between border-b pb-3">
         <div>
-          <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+          <Label className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-primary" /> Category Attributes & Variations
             ({attributeFields.length})
           </Label>
@@ -107,8 +109,8 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
         {/* Product Size Chart Columns (Garment Flat) */}
         <div className="space-y-2.5 p-4 rounded-xl border bg-muted/10 space-y-3">
           <div className="flex items-center gap-2">
-            <Shirt className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            <FormLabel className="text-xs font-semibold text-foreground">
+            <Shirt className="h-4 w-4 text-info" />
+            <FormLabel>
               Product Size Chart Columns (Garment Flat Dimensions)
             </FormLabel>
           </div>
@@ -141,14 +143,14 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
             {sizeChartColumns.map((col) => (
               <Badge
                 key={col}
-                variant="secondary"
-                className="flex items-center gap-1 text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                variant="info"
+                className="flex items-center gap-1 text-xs px-2.5 py-1"
               >
                 {col}
                 <button
                   type="button"
                   onClick={() => handleRemoveSizeColumn?.(col)}
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-destructive transition-colors"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -165,8 +167,8 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
         {/* Body Size Chart Columns (Wearer Fit Guide) */}
         <div className="space-y-2.5 p-4 rounded-xl border bg-muted/10 space-y-3">
           <div className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <FormLabel className="text-xs font-semibold text-foreground">
+            <UserCheck className="h-4 w-4 text-info" />
+            <FormLabel>
               Body Size Chart Columns (Wearer Recommended Dimensions)
             </FormLabel>
           </div>
@@ -199,14 +201,14 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
             {bodyChartColumns.map((col) => (
               <Badge
                 key={col}
-                variant="secondary"
-                className="flex items-center gap-1 text-xs px-2.5 py-1 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
+                variant="info"
+                className="flex items-center gap-1 text-xs px-2.5 py-1"
               >
                 {col}
                 <button
                   type="button"
                   onClick={() => handleRemoveBodyColumn?.(col)}
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-destructive transition-colors"
                 >
                   <X className="h-3 w-3" />
                 </button>

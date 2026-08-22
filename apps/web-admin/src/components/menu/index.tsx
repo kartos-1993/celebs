@@ -1,16 +1,8 @@
-import { LogOut, Sun, Moon, User, LayoutGrid } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getMenuList } from './menu-data';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { LayoutGrid,LogOut, Moon, Sun, User } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
-import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
-import { CollapseMenuButton } from '@/components/sidebar/collapse-menu-button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from '@celebs/shared-ui/components/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,12 +12,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { logout as logoutApi } from '@/features/auth/api';
-import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
+import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@celebs/shared-ui/components/tooltip';
+
+import { getMenuList } from './menu-data';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
+import { CollapseMenuButton } from '@/components/sidebar/collapse-menu-button';
 import { useAuthContext } from '@/context/auth-provider';
 import { useTheme } from '@/context/theme-provider';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
+import { logout as logoutApi } from '@/features/auth/api';
+import { cn } from '@/lib/utils';
 
 interface MenuProps {
   isSidebarOpen: boolean | undefined;
@@ -40,7 +44,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { mutate: logout } = useMutation({
+  const { mutate: logout, isPending: isLoggingOut } = useMutation({
     mutationFn: logoutApi,
     onSuccess: () => {
       queryClient.setQueryData(ACCOUNT_QUERY_KEYS.userSession(), null);
@@ -177,7 +181,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
                       {user?.role && (
-                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
                           {user.role}
                         </span>
                       )}
@@ -224,9 +228,14 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                 <DropdownMenuItem
                   className="cursor-pointer text-destructive focus:text-destructive"
                   onClick={() => logout()}
+                  disabled={isLoggingOut}
                 >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Sign out
+                  {isLoggingOut ? (
+                    <Spinner size="sm" className="w-4 h-4 mr-3" />
+                  ) : (
+                    <LogOut className="w-4 h-4 mr-3" />
+                  )}
+                  {isLoggingOut ? 'Signing out...' : 'Sign out'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -13,20 +13,23 @@ import {
   Tag,
   X,
 } from 'lucide-react';
-import { Button } from '@celebs/shared-ui/components/button';
+
 import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@celebs/shared-ui/components/dialog';
+
 import { isMulticolorVariant, resolveColorCode } from '../../utils/add-product-helpers';
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
-import type { ProductQueueItem } from './types';
+
 import { QualityBadge } from './quality-badge';
+import type { ProductQueueItem } from './types';
 
 type PreviewTab = 'overview' | 'specs' | 'sizes' | 'variants' | 'qc' | 'history';
 
@@ -105,26 +108,32 @@ export function PreviewModal({
 
             {/* Device toggle */}
             <div className="flex items-center bg-muted rounded-lg p-1 border">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setPreviewDevice('desktop')}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                className={`gap-1.5 px-3 py-1 text-xs font-medium ${
                   previewDevice === 'desktop'
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-background text-foreground shadow-sm hover:bg-background'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Monitor className="w-3.5 h-3.5" /> Desktop View
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setPreviewDevice('mobile')}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                className={`gap-1.5 px-3 py-1 text-xs font-medium ${
                   previewDevice === 'mobile'
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-background text-foreground shadow-sm hover:bg-background'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5" /> Mobile Frame
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -134,17 +143,20 @@ export function PreviewModal({
               const Icon = tab.icon;
               const isActive = previewTab === tab.id;
               return (
-                <button
+                <Button
                   key={tab.id}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setPreviewTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
+                  className={`gap-1.5 rounded-none px-4 py-3 border-b-2 whitespace-nowrap ${
                     isActive
-                      ? 'border-primary text-primary font-semibold'
+                      ? 'border-primary text-primary font-semibold hover:bg-transparent'
                       : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" /> {tab.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -180,10 +192,13 @@ export function PreviewModal({
                     </div>
                     <div className="flex gap-2 overflow-x-auto py-1">
                       {(product.mainImages ?? []).map((imageUrl, index) => (
-                        <button
+                        <Button
                           key={index}
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setActivePreviewImage(imageUrl)}
-                          className={`h-16 w-16 rounded-md overflow-hidden border-2 transition-all ${
+                          className={`h-16 w-16 p-0 rounded-md overflow-hidden border-2 ${
                             activePreviewImage === imageUrl
                               ? 'border-primary scale-95'
                               : 'border-transparent opacity-70 hover:opacity-100'
@@ -199,7 +214,7 @@ export function PreviewModal({
                               target.src = '/placeholder.svg';
                             }}
                           />
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>
@@ -475,7 +490,7 @@ export function PreviewModal({
                                 </span>
                                 <Badge
                                   variant={stock.quantity > 0 ? 'default' : 'destructive'}
-                                  className="text-[10px]"
+                                  className="text-xs"
                                 >
                                   {stock.quantity} units left
                                 </Badge>
@@ -500,7 +515,7 @@ export function PreviewModal({
                 <div className="flex items-center justify-between p-4 bg-muted/30 border rounded-xl">
                   <div>
                     <h4 className="font-bold text-lg flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-emerald-600" /> Automated QC Quality
+                      <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality
                       Score
                     </h4>
                     <p className="text-xs text-muted-foreground">
@@ -511,7 +526,7 @@ export function PreviewModal({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-success mt-0.5" />
                     <div>
                       <span className="font-semibold block text-foreground">
                         Main Product Images
@@ -522,7 +537,7 @@ export function PreviewModal({
                     </div>
                   </div>
                   <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-success mt-0.5" />
                     <div>
                       <span className="font-semibold block text-foreground">
                         Title & Description
@@ -533,7 +548,7 @@ export function PreviewModal({
                     </div>
                   </div>
                   <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
-                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <Info className="w-4 h-4 text-info mt-0.5" />
                     <div>
                       <span className="font-semibold block text-foreground">
                         Size Chart & Measurements
@@ -544,7 +559,7 @@ export function PreviewModal({
                     </div>
                   </div>
                   <div className="p-3 border rounded-lg flex items-start gap-3 bg-card">
-                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <Info className="w-4 h-4 text-info mt-0.5" />
                     <div>
                       <span className="font-semibold block text-foreground">
                         Pricing & Discount Logic
@@ -614,7 +629,7 @@ export function PreviewModal({
                 </Button>
                 <Button
                   variant="default"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                  className="bg-success hover:bg-success/90 text-success-foreground gap-1"
                   onClick={() => onApprove(product.id)}
                   disabled={isSubmitting}
                 >

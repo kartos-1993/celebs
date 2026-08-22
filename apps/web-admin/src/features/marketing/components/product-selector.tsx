@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo,useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Input } from '@celebs/shared-ui/components/input';
+import { Package,Search, X } from 'lucide-react';
+
+import type { CatalogProductType,ProductSelectorPropsType } from '@celebs/shared-types';
+import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
+import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
-import { Search, X, Loader2, Package } from 'lucide-react';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { getProducts } from '@/features/product/api';
 import { useDebounce } from '@/hooks/use-debounce';
-import type { ProductSelectorPropsType, CatalogProductType } from '@celebs/shared-types';
 
 const getProductImage = (p: CatalogProductType): string | null => {
   if (p.mainImages && p.mainImages.length > 0) return p.mainImages[0];
@@ -65,20 +69,20 @@ export function ProductSelector({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label className="text-xs font-semibold text-slate-800">
-          {label} {minRequired > 0 && <span className="text-rose-500">*</span>}
+        <Label>
+          {label} {minRequired > 0 && <span className="text-destructive">*</span>}
         </Label>
-        <span className="text-xs text-slate-500 font-mono">
+        <span className="text-xs text-muted-foreground font-mono">
           {selectedProductIds.length} product{selectedProductIds.length !== 1 ? 's' : ''} selected
         </span>
       </div>
 
       {/* Selected Products Grid View with Images */}
       {selectedProductIds.length > 0 && (
-        <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-2">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+        <div className="p-3 bg-muted/50 border border-border rounded-xl space-y-2">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-between">
             <span>Selected Bundle Items ({selectedProductIds.length})</span>
-            <span className="text-[10px] text-slate-400 font-normal">Click ✕ to remove</span>
+            <span className="text-xs text-muted-foreground font-normal">Click ✕ to remove</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {selectedProductIds.map((id) => {
@@ -96,20 +100,20 @@ export function ProductSelector({
                     <img
                       src={imgUrl}
                       alt={name}
-                      className="w-10 h-10 object-cover rounded-md border border-slate-100 shrink-0 bg-slate-100"
+                      className="w-10 h-10 object-cover rounded-md border border-border shrink-0 bg-muted"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                    <div className="w-10 h-10 rounded-md bg-muted border border-border flex items-center justify-center text-muted-foreground shrink-0">
                       <Package className="w-5 h-5" />
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-slate-900 truncate leading-snug">
+                    <div className="text-xs font-semibold text-foreground truncate leading-snug">
                       {name}
                     </div>
                     {price > 0 && (
-                      <div className="text-[11px] font-mono text-emerald-600 font-medium">
+                      <div className="text-xs font-mono text-success font-medium">
                         NPR {price.toLocaleString()}
                       </div>
                     )}
@@ -121,7 +125,7 @@ export function ProductSelector({
                       e.stopPropagation();
                       toggleSelect(id);
                     }}
-                    className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
+                    className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                     title="Remove from bundle"
                   >
                     <X className="w-4 h-4" />
@@ -135,7 +139,7 @@ export function ProductSelector({
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+        <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
         <Input
           placeholder="Search products by name or SKU to add..."
           value={searchTerm}
@@ -143,14 +147,14 @@ export function ProductSelector({
           className="text-xs h-9 pl-9 pr-8"
         />
         {isLoading && (
-          <Loader2 className="w-4 h-4 text-slate-400 animate-spin absolute right-3 top-2.5" />
+          <Spinner size="sm" className="text-muted-foreground absolute right-3 top-2.5" />
         )}
       </div>
 
       {/* Available Products List */}
-      <div className="border border-slate-200 rounded-xl max-h-60 overflow-y-auto divide-y divide-border bg-card">
+      <div className="border border-border rounded-xl max-h-60 overflow-y-auto divide-y divide-border bg-card">
         {productsList.length === 0 ? (
-          <div className="p-4 text-center text-xs text-slate-400">
+          <div className="p-4 text-center text-sm text-muted-foreground">
             {isLoading ? 'Loading catalog products...' : 'No products found matching search.'}
           </div>
         ) : (
@@ -162,8 +166,8 @@ export function ProductSelector({
               <div
                 key={product.id}
                 onClick={() => toggleSelect(product.id)}
-                className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors hover:bg-slate-50 ${
-                  isSelected ? 'bg-indigo-50/50' : ''
+                className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors hover:bg-muted/50 ${
+                  isSelected ? 'bg-info/10' : ''
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -172,18 +176,18 @@ export function ProductSelector({
                     <img
                       src={imgUrl}
                       alt={product.name}
-                      className="w-10 h-10 object-cover rounded-md border border-slate-100 shrink-0 bg-slate-100"
+                      className="w-10 h-10 object-cover rounded-md border border-border shrink-0 bg-muted"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                    <div className="w-10 h-10 rounded-md bg-muted border border-border flex items-center justify-center text-muted-foreground shrink-0">
                       <Package className="w-5 h-5" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-slate-900 truncate">
+                    <div className="text-xs font-semibold text-foreground truncate">
                       {product.name}
                     </div>
-                    <div className="text-[11px] text-slate-500 font-mono">
+                    <div className="text-xs text-muted-foreground font-mono">
                       {product.price > 0
                         ? `NPR ${product.price.toLocaleString()}`
                         : 'Price not set'}
@@ -191,15 +195,15 @@ export function ProductSelector({
                   </div>
                 </div>
                 {isSelected ? (
-                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full shrink-0">
+                  <Badge variant="info" className="shrink-0">
                     Added
-                  </span>
+                  </Badge>
                 ) : (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-slate-600 pointer-events-none"
+                    className="h-7 text-xs text-muted-foreground pointer-events-none"
                   >
                     Select
                   </Button>

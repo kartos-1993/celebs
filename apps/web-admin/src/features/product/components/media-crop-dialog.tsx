@@ -1,4 +1,6 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Check, Crop, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -9,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { AlertTriangle, Check, Crop, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface MediaCropDialogProps {
   open: boolean;
@@ -270,7 +271,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
 
           {/* Low Resolution Warning */}
           {isLowRes && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs w-full">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-warning/10 border border-warning/30 text-warning text-xs w-full">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               <span>
                 Original is {naturalDims.width}x{naturalDims.height}px. High-res zoom may look

@@ -1,13 +1,8 @@
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LayoutGrid, LogOut, User } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from '@celebs/shared-ui/components/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,17 +12,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import { Link, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { logout } from '@/features/auth/api';
-import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@celebs/shared-ui/components/tooltip';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
 import { useAuthContext } from '@/context/auth-provider';
+import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
+import { logout } from '@/features/auth/api';
 
 export function UserNav() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
-  const { mutate } = useMutation({
+  const { mutate, isPending: isLoggingOut } = useMutation({
     mutationFn: logout,
     onSuccess: () => {
       queryClient.setQueryData(ACCOUNT_QUERY_KEYS.userSession(), null);
@@ -77,7 +79,7 @@ export function UserNav() {
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
               {user?.role && (
-                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
+                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
                   {user.role}
                 </span>
               )}
@@ -103,9 +105,17 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => mutate()}>
-          <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
-          Sign out
+        <DropdownMenuItem
+          className="hover:cursor-pointer"
+          onClick={() => mutate()}
+          disabled={isLoggingOut}
+        >
+          {isLoggingOut ? (
+            <Spinner size="sm" className="w-4 h-4 mr-3 text-muted-foreground" />
+          ) : (
+            <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
+          )}
+          {isLoggingOut ? 'Signing out...' : 'Sign out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

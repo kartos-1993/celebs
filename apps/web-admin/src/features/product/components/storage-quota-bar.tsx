@@ -1,8 +1,10 @@
 import React, { memo, useMemo } from 'react';
+import { HardDrive, Info } from 'lucide-react';
+
+import type { MediaQuota } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Progress } from '@celebs/shared-ui/components/progress';
-import { HardDrive, Info } from 'lucide-react';
-import type { MediaQuota } from '@celebs/shared-types';
+
 import { computeStorageQuotaStats } from '../utils/storage-quota-utils';
 
 interface StorageQuotaBarProps {
@@ -42,7 +44,7 @@ export const StorageQuotaBar = memo(function StorageQuotaBar({
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Storage Space (Cloudflare R2 DAM)
             </span>
-            <Badge variant="outline" className="text-[10px] font-normal">
+            <Badge variant="outline" className="text-xs font-normal">
               {tierLabel}
             </Badge>
           </div>
@@ -60,13 +62,13 @@ export const StorageQuotaBar = memo(function StorageQuotaBar({
         <Progress
           value={percentage}
           className={`h-2.5 w-full bg-secondary/80 ${
-            isHighUsage ? '[&>div]:bg-amber-500' : '[&>div]:bg-primary'
+            isHighUsage ? '[&>div]:bg-warning' : '[&>div]:bg-primary'
           }`}
         />
-        <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
+        <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
           <span>{totalCount} total assets</span>
           {unlinkedCount > 0 && (
-            <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+            <span className="flex items-center gap-1 font-medium text-warning">
               <Info className="h-3 w-3" />
               {unlinkedCount} unlinked ({unlinkedFormatted})
             </span>

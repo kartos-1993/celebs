@@ -1,6 +1,11 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo,useState } from 'react';
 import { AlertTriangle, Check, Eye, Search, ShieldCheck, Store, X } from 'lucide-react';
+
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { Input } from '@celebs/shared-ui/components/input';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Table,
   TableBody,
@@ -9,21 +14,22 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
-import { Badge } from '@celebs/shared-ui/components/badge';
-import { useDebounce } from '@/hooks/use-debounce';
-import type { ProductQueueItem } from './types';
+import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
+
+import type { ProductFilterRequest,ReviewProductRequestPayload } from '../../api';
 import {
   useProductMutations,
   useProductsQuery,
   useReviewQueueQuery,
 } from '../../hooks/use-product-queries';
-import type { ReviewProductRequestPayload, ProductFilterRequest } from '../../api';
+import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
+
+import { PreviewModal } from './preview-modal';
 import { QualityBadge } from './quality-badge';
 import { RejectionDialog } from './rejection-dialog';
-import { PreviewModal } from './preview-modal';
-import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
+import type { ProductQueueItem } from './types';
+
+import { useDebounce } from '@/hooks/use-debounce';
 
 const PAGE_SIZE = 10;
 
@@ -95,36 +101,28 @@ export default function ReviewProductQueue() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Superadmin Review Queue</h1>
-          <p className="text-muted-foreground">
-            Daraz & SHEIN quality control station with live customer PDP simulation and structured
-            feedback.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Superadmin Review Queue"
+        description="Daraz & SHEIN quality control station with live customer PDP simulation and structured feedback."
+      />
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
-        {(['pending', 'published', 'rejected'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              setCurrentPage(1);
-              setSearchInput('');
-            }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab
-                ? 'border-primary text-primary font-semibold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            } capitalize`}
-          >
-            {tab === 'pending' ? 'Pending Review' : tab}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v: string) => {
+          setActiveTab(v as 'pending' | 'published' | 'rejected');
+          setCurrentPage(1);
+          setSearchInput('');
+        }}
+      >
+        <TabsList>
+          {(['pending', 'published', 'rejected'] as const).map((tab) => (
+            <TabsTrigger key={tab} value={tab} className="capitalize">
+              {tab === 'pending' ? 'Pending Review' : tab}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Filters */}
       <Card>
@@ -145,7 +143,7 @@ export default function ReviewProductQueue() {
               </div>
             )}
             <div className="text-sm text-muted-foreground ml-auto flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               Total listings found: <span className="font-semibold text-foreground">{total}</span>
             </div>
           </div>
@@ -166,7 +164,7 @@ export default function ReviewProductQueue() {
             </div>
           ) : products.length === 0 ? (
             <div className="flex h-32 flex-col items-center justify-center gap-2">
-              <AlertTriangle className="h-8 w-8 text-amber-500" />
+              <AlertTriangle className="h-8 w-8 text-warning" />
               <span className="text-muted-foreground">No product listings in this queue</span>
             </div>
           ) : (
@@ -229,7 +227,7 @@ export default function ReviewProductQueue() {
                       <TableCell className="font-medium">
                         <div>Rs. {product.price.toLocaleString()}</div>
                         {product.discountedPrice && (
-                          <div className="text-xs text-emerald-600 font-normal">
+                          <div className="text-xs text-success font-normal">
                             Disc: Rs. {product.discountedPrice.toLocaleString()}
                           </div>
                         )}
@@ -264,7 +262,7 @@ export default function ReviewProductQueue() {
                               <Button
                                 variant="default"
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                                className="bg-success hover:bg-success/90 text-success-foreground gap-1"
                                 onClick={() => handleApprove(product.id)}
                                 disabled={review.isPending}
                               >

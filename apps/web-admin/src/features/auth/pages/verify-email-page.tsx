@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { verifyEmail, resendVerification } from '../api';
+import { useNavigate,useSearchParams } from 'react-router-dom';
+import { AlertCircle,CheckCircle2, Send } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
-import { PATHS } from '@/routes/paths';
-import { useAuthContext } from '@/context/auth-provider';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
+import { resendVerification,verifyEmail } from '../api';
+
 import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
-import { RefreshCw, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useAuthContext } from '@/context/auth-provider';
+import { PATHS } from '@/routes/paths';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -103,8 +107,10 @@ export default function VerifyEmailPage() {
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-6">
       {status === 'verifying' && (
         <div className="space-y-3">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <h2 className="text-xl font-bold">Verifying Email Address...</h2>
+          <div className="flex justify-center">
+            <Spinner size="xl" className="text-primary" />
+          </div>
+          <h2 className="text-xl font-semibold tracking-tight">Verifying Email Address...</h2>
           <p className="text-sm text-muted-foreground">
             Please wait while we confirm your account token.
           </p>
@@ -113,10 +119,12 @@ export default function VerifyEmailPage() {
 
       {status === 'success' && (
         <div className="space-y-3">
-          <div className="w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-2xl mx-auto font-bold">
-            <CheckCircle2 className="w-8 h-8 text-green-600" />
+          <div className="w-12 h-12 bg-success/10 text-success rounded-full flex items-center justify-center text-2xl mx-auto font-bold">
+            <CheckCircle2 className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-green-700">Email Verified Successfully!</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-success">
+            Email Verified Successfully!
+          </h2>
           <p className="text-sm text-muted-foreground">Redirecting you to portal...</p>
         </div>
       )}
@@ -127,19 +135,21 @@ export default function VerifyEmailPage() {
             <div className="w-12 h-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-foreground">Verification Failed or Expired</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Verification Failed or Expired
+            </h2>
             <p className="text-xs text-muted-foreground">{errorMessage}</p>
           </div>
 
           {resendStatus.message && (
-            <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-700 text-xs rounded-md flex items-center gap-2">
+            <div className="p-3 bg-success/10 border border-success/30 text-success text-xs rounded-md flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{resendStatus.message}</span>
             </div>
           )}
 
           {resendStatus.error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-md flex items-center gap-2">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-xs rounded-md flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{resendStatus.error}</span>
             </div>
@@ -164,7 +174,7 @@ export default function VerifyEmailPage() {
             >
               {resendStatus.loading ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Resending Link...
+                  <Spinner size="sm" /> Resending Link...
                 </>
               ) : isCoolingDown ? (
                 <>Resend Link in {secondsRemaining}s...</>

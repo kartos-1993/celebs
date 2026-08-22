@@ -74,6 +74,9 @@ export interface UseCategoriesReturn {
   categoryTree: CategoryTreeNode[];
   isLoading: boolean;
   error: Error | null;
+  isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
   createCategory: (data: CreateCategoryRequest) => Promise<ApiResponse<Category>>;
   updateCategory: (id: string, data: UpdateCategoryRequest) => Promise<ApiResponse<Category>>;
   deleteCategory: (id: string) => Promise<ApiResponse<{ success: boolean }>>;

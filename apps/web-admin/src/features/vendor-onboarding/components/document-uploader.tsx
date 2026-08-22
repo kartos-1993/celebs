@@ -1,6 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, Loader2, CheckCircle } from 'lucide-react';
+import { CheckCircle,Upload, X } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { uploadOnboardingImage } from '../api';
 
 interface DocumentUploaderProps {
@@ -71,7 +74,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           {label} {required && <span className="text-destructive">*</span>}
         </label>
         {value && (
-          <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+          <span className="inline-flex items-center gap-1 text-xs text-success font-medium">
             <CheckCircle className="w-3.5 h-3.5" /> Uploaded
           </span>
         )}
@@ -104,7 +107,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               >
                 View Uploaded Image
               </a>
-              <p className="text-[11px] text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 Compressed WebP image stored
               </p>
             </div>
@@ -141,12 +144,12 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
             disabled
               ? 'bg-muted/50 cursor-not-allowed border-muted'
-              : 'hover:border-primary/50 hover:bg-muted/20 border-muted-foreground/25'
+              : 'border-border bg-muted/50 hover:border-primary hover:bg-muted'
           }`}
         >
           {isUploading ? (
             <div className="flex flex-col items-center py-2 space-y-2">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <Spinner size="lg" className="text-primary" />
               <p className="text-xs text-muted-foreground font-medium">
                 Compressing & uploading image...
               </p>
@@ -157,7 +160,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               <p className="text-xs font-medium text-foreground">
                 Click to upload image <span className="text-muted-foreground">(Max 5MB)</span>
               </p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 JPEG, PNG, WEBP, or AVIF images only
               </p>
             </div>

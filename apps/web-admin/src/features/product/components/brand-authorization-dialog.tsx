@@ -1,4 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import { CheckCircle2, ShieldAlert, UploadCloud } from 'lucide-react';
+
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -18,10 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
+import { useBrands, useSubmitBrandAuthorization } from '../hooks/use-brands';
+
 import { toast } from '@/hooks/use-toast';
 import { directUploadFile } from '@/lib/media-upload';
-import { CheckCircle2, Loader2, ShieldAlert, UploadCloud } from 'lucide-react';
-import { useBrands, useSubmitBrandAuthorization } from '../hooks/use-brands';
 
 interface BrandAuthorizationDialogProps {
   open: boolean;
@@ -108,7 +112,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
+            <div className="p-2 rounded-lg bg-warning/10 text-warning">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
@@ -123,7 +127,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
         <div className="space-y-4 py-2">
           {/* Brand Selector */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Select Gated Brand *</Label>
+            <Label>Select Gated Brand *</Label>
             <Select value={brandId} onValueChange={setBrandId} disabled={isLoadingBrands}>
               <SelectTrigger>
                 <SelectValue placeholder={isLoadingBrands ? 'Loading...' : 'Select Brand'} />
@@ -133,7 +137,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
                   <SelectItem key={b.id} value={b.id}>
                     <div className="flex items-center justify-between gap-2 w-full">
                       <span>{b.name}</span>
-                      <Badge variant="outline" className="text-[9px]">Gated</Badge>
+                      <Badge variant="outline" className="text-xs">Gated</Badge>
                     </div>
                   </SelectItem>
                 ))}
@@ -143,7 +147,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
 
           {/* Document Type */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Document Type *</Label>
+            <Label>Document Type *</Label>
             <Select
               value={documentType}
               onValueChange={(v) => setDocumentType(v as typeof documentType)}
@@ -162,7 +166,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
 
           {/* Expiry Date */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Document Expiry Date (Optional)</Label>
+            <Label>Document Expiry Date (Optional)</Label>
             <Input
               type="date"
               value={documentExpiryDate}
@@ -173,11 +177,11 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
 
           {/* Document Uploader */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Upload Certificate / PDF / Image *</Label>
+            <Label>Upload Certificate / PDF / Image *</Label>
             {documentUrl ? (
-              <div className="flex items-center justify-between p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-success/30 bg-success/10 text-success">
                 <div className="flex items-center gap-2 truncate">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                   <span className="text-xs font-medium truncate">Document Attached</span>
                 </div>
                 <Button
@@ -194,14 +198,14 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
               <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl border-border/80 hover:border-primary cursor-pointer transition-colors bg-card/40">
                 {isUploadingDoc ? (
                   <div className="flex items-center gap-2 text-primary">
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Spinner size="default" />
                     <span className="text-xs font-medium">Uploading Document to R2...</span>
                   </div>
                 ) : (
                   <>
                     <UploadCloud className="h-6 w-6 text-muted-foreground mb-1" />
                     <span className="text-xs font-bold text-foreground">Click to upload document</span>
-                    <span className="text-[10px] text-muted-foreground mt-0.5">PDF, PNG, JPG up to 10MB</span>
+                    <span className="text-xs text-muted-foreground mt-0.5">PDF, PNG, JPG up to 10MB</span>
                   </>
                 )}
                 <input
