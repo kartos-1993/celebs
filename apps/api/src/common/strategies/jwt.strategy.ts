@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy as JwtStrategy, StrategyOptionsWithRequest } from 
 import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
 
 import { config } from '@/config/app.config';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 import { UserService } from '@/modules/user/user.service';
 
 const userService = new UserService();

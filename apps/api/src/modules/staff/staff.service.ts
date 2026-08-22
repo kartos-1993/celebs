@@ -13,7 +13,7 @@ import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import { buildWebUrl } from '@/common/utils/url';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 

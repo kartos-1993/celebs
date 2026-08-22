@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 describe('Multi-Device Session Isolation & Selective Logout Suite', () => {
   let createdUserId: string | null = null;

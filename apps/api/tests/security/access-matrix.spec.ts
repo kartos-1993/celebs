@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 
 import app from '@/app';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 import { hashValue } from '@/common/utils/bcrypt';
 import { signJwtToken } from '@/common/utils/jwt';
 

@@ -35,7 +35,7 @@ import {
 } from '@/common/utils/jwt';
 import { buildWebUrl } from '@/common/utils/url';
 import { config } from '@/config/app.config';
-import prisma, { Prisma } from '@/db';
+import prisma, { Prisma } from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 

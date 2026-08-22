@@ -6,7 +6,7 @@ import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
 import { signJwtToken } from '@/common/utils/jwt';
 import { config } from '@/config/app.config';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
   let createdUserId: string | null = null;

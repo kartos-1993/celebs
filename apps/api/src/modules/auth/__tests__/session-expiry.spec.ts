@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
 import { refreshTokenSignOptions, signJwtToken } from '@/common/utils/jwt';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 import { SessionService } from '@/modules/session/session.service';
 
 const sessionService = new SessionService();

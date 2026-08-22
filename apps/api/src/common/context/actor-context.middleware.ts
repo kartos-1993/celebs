@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { getUserPermissions } from '@celebs/rbac';
 import { UnauthorizedException } from '@celebs/shared-utils';
 
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 import { isStoreStatus, type Actor, type StoreContext } from './actor-context';
 
 /**

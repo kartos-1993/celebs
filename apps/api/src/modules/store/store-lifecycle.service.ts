@@ -8,7 +8,7 @@ import {
 } from '@celebs/shared-utils';
 
 import type { StoreStatus } from '@/common/context/actor-context';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 /**
  * Legal store lifecycle transitions.
