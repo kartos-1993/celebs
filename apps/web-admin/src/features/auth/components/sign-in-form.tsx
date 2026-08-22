@@ -1,11 +1,12 @@
-import { HTMLAttributes, useState, useEffect } from 'react';
-import { z } from 'zod';
+import { HTMLAttributes, useEffect,useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation,useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2,Send } from 'lucide-react';
+import { z } from 'zod';
+
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Form,
   FormControl,
@@ -16,13 +17,14 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
-import { Button } from '@celebs/shared-ui/components/button';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { login, resendVerification } from '../api';
+
+import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
 import { getUserSession } from '@/features/account/api';
 import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
-import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
-import { RefreshCw, Send, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type SignInFormProps = HTMLAttributes<HTMLDivElement>;
 
@@ -55,7 +57,7 @@ function ResendBannerButton({ email }: { email: string }) {
 
   if (status.message) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400 font-medium pt-1">
+      <div className="flex items-center gap-1.5 text-xs text-success font-medium pt-1">
         <CheckCircle2 className="w-3.5 h-3.5" />
         <span>{status.message}</span>
       </div>
@@ -74,7 +76,7 @@ function ResendBannerButton({ email }: { email: string }) {
       >
         {status.loading ? (
           <>
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Resending Link...
+            <Spinner size="sm" /> Resending Link...
           </>
         ) : isCoolingDown ? (
           <>Resend Link in {secondsRemaining}s...</>
@@ -168,7 +170,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       {successMessage && (
-        <div className="bg-green-500/15 border border-green-500/30 text-green-700 dark:text-green-400 p-3 rounded-md text-sm mb-2">
+        <div className="bg-success/10 border border-success/30 text-success p-3 rounded-md text-sm mb-2">
           {successMessage}
         </div>
       )}
@@ -218,7 +220,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
               )}
             />
             <Button className="mt-2" disabled={isPending}>
-              {isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Spinner size="sm" className="mr-2" />}
               Login
             </Button>
           </div>

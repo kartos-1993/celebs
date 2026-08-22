@@ -1,5 +1,7 @@
+import { FileText, Upload } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
-import { FileText, Loader, Upload } from 'lucide-react';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 interface ProductFormActionsProps {
   isDirty: boolean;
@@ -17,7 +19,7 @@ const ProductFormActions = ({
   onSaveAsDraft,
 }: ProductFormActionsProps) => {
   return (
-    <div className="flex flex-col gap-4 rounded-[28px] border border-border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">
           {isReady ? 'Ready to publish' : 'More details are still required'}
@@ -46,7 +48,7 @@ const ProductFormActions = ({
           onClick={onSaveAsDraft}
           disabled={isSubmitting}
           data-testid="save-draft-btn"
-          className="rounded-full border-orange-200 bg-orange-50 px-5 text-orange-700 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/60"
+          className="rounded-full px-5"
         >
           <FileText className="mr-2 h-4 w-4" />
           Save Draft
@@ -55,10 +57,10 @@ const ProductFormActions = ({
           type="submit"
           disabled={isSubmitting}
           data-testid="submit-product-btn"
-          className="rounded-full bg-orange-500 px-5 text-white hover:bg-orange-600"
+          className="rounded-full px-5"
         >
           {isSubmitting ? (
-            <Loader className="mr-2 h-4 w-4 animate-spin" />
+            <Spinner size="sm" className="mr-2" />
           ) : (
             <Upload className="mr-2 h-4 w-4" />
           )}

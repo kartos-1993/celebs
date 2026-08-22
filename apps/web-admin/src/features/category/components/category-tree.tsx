@@ -3,25 +3,27 @@
  * Uses TanStack Table to display hierarchical category structures with visual guidelines
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback,useState } from 'react';
 import {
-  useReactTable,
+  ColumnDef,
+  ExpandedState,
+  flexRender,
   getCoreRowModel,
   getExpandedRowModel,
-  ColumnDef,
-  flexRender,
-  ExpandedState,
+  useReactTable,
 } from '@tanstack/react-table';
+import { ChevronDown, ChevronRight, Edit, Folder, FolderOpen, Plus,Trash2 } from 'lucide-react';
+
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Table,
-  TableHeader,
-  TableRow,
-  TableHead,
   TableBody,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@celebs/shared-ui/components/table';
-import { Button } from '@celebs/shared-ui/components/button';
-import { ChevronRight, ChevronDown, Edit, Trash2, Folder, FolderOpen, Plus } from 'lucide-react';
+
 import { CategoryTreeNode } from '../types';
 
 interface CategoryTreeProps {
@@ -47,11 +49,11 @@ const ToggleSwitch = ({
     onClick={() => onChange(!checked)}
     disabled={disabled}
     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-      checked ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-800'
+      checked ? 'bg-primary' : 'bg-muted'
     } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
   >
     <span
-      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-950 shadow transition duration-200 ease-in-out ${
+      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-background shadow transition duration-200 ease-in-out ${
         checked ? 'translate-x-4' : 'translate-x-0'
       }`}
     />
@@ -103,13 +105,13 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                   {Array.from({ length: depth }).map((_, i) => (
                     <div
                       key={i}
-                      className="absolute top-0 bottom-0 border-l border-dashed border-gray-300 dark:border-gray-800/80"
+                      className="absolute top-0 bottom-0 border-l border-dashed border-border"
                       style={{ left: `${i * 28 + 12}px` }}
                     />
                   ))}
                   {/* Horizontal L-joint joint connector to current row */}
                   <div
-                    className="absolute border-b border-dashed border-gray-300 dark:border-gray-800/80"
+                    className="absolute border-b border-dashed border-border"
                     style={{
                       left: `${(depth - 1) * 28 + 12}px`,
                       width: '16px',
@@ -125,13 +127,13 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 w-6 p-0 hover:bg-gray-150 dark:hover:bg-gray-800/80 rounded"
+                    className="h-6 w-6 p-0 hover:bg-muted rounded"
                     onClick={() => row.toggleExpanded()}
                   >
                     {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Button>
                 ) : (
@@ -141,12 +143,12 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                 {/* Node Type Folders */}
                 {hasChildren ? (
                   isExpanded ? (
-                    <FolderOpen className="h-4 w-4 text-fashion-600 dark:text-fashion-400 shrink-0" />
+                    <FolderOpen className="h-4 w-4 text-primary shrink-0" />
                   ) : (
-                    <Folder className="h-4 w-4 text-fashion-600 dark:text-fashion-400 shrink-0" />
+                    <Folder className="h-4 w-4 text-primary shrink-0" />
                   )
                 ) : (
-                  <Folder className="h-4 w-4 text-gray-400 shrink-0" />
+                  <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
 
                 {/* Category Thumbnail Image */}
@@ -154,20 +156,20 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
                   <img
                     src={category.imageUrl}
                     alt={category.name}
-                    className="w-7 h-7 rounded-md object-cover border border-gray-200 dark:border-gray-800 shrink-0 ml-1"
+                    className="w-7 h-7 rounded-md object-cover border border-border shrink-0 ml-1"
                   />
                 ) : (
-                  <div className="w-7 h-7 bg-gray-100 dark:bg-gray-900 rounded-md border border-dashed border-gray-200 dark:border-gray-800 shrink-0 ml-1 flex items-center justify-center text-[10px] text-gray-400">
+                  <div className="w-7 h-7 bg-muted rounded-md border border-dashed border-border shrink-0 ml-1 flex items-center justify-center text-xs text-muted-foreground">
                     N/A
                   </div>
                 )}
 
                 {/* Category Name & Meta Info */}
                 <div className="flex items-baseline gap-2 ml-1">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-medium text-foreground">
                     {category.name}
                   </span>
-                  <span className="text-[10px] tracking-wider text-gray-400 dark:text-gray-500 font-mono">
+                  <span className="text-xs tracking-wider text-muted-foreground font-mono">
                     L{category.level}
                   </span>
                 </div>
@@ -194,8 +196,8 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               <span
                 className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                   isActive
-                    ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {isActive ? 'Active' : 'Inactive'}
@@ -210,7 +212,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
         cell: ({ row }) => {
           const attrs = row.original.attributes || [];
           if (attrs.length === 0) {
-            return <span className="text-gray-400 text-xs italic">No attributes</span>;
+            return <span className="text-muted-foreground text-xs italic">No attributes</span>;
           }
 
           const visibleAttrs = attrs.slice(0, 3);
@@ -221,16 +223,16 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               {visibleAttrs.map((attr, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center rounded-full bg-fashion-50 dark:bg-fashion-950/30 px-2 py-0.5 text-xs font-medium text-fashion-700 dark:text-fashion-400 border border-fashion-100 dark:border-fashion-900/50"
+                  className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border"
                   title={attr.name}
                 >
                   {attr.label || attr.name}
-                  {attr.isRequired && <span className="text-red-500 ml-0.5 font-bold">*</span>}
+                  {attr.isRequired && <span className="text-destructive ml-0.5 font-bold">*</span>}
                 </span>
               ))}
               {hiddenCount > 0 && (
                 <span
-                  className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 cursor-default"
+                  className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground border border-border cursor-default"
                   title={attrs
                     .slice(3)
                     .map((a) => a.label || a.name)
@@ -254,7 +256,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-600 dark:text-gray-400 dark:hover:text-fashion-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                 onClick={() => onEdit(category)}
                 title="Edit Category"
               >
@@ -264,7 +266,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-8 w-8 p-0 text-gray-500 hover:text-fashion-600 dark:text-gray-400 dark:hover:text-fashion-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                 onClick={() => onAddSubcategory(category.id)}
                 title="Add Subcategory"
               >
@@ -274,7 +276,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={() => onDelete(category.id)}
                 title="Delete Category"
               >
@@ -301,18 +303,18 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
   });
 
   return (
-    <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden bg-card shadow-sm">
+    <div className="rounded-md border border-border overflow-hidden bg-card shadow-sm">
       <Table>
-        <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
+        <TableHeader className="bg-muted/50">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow
               key={headerGroup.id}
-              className="hover:bg-transparent border-b border-gray-200 dark:border-gray-800"
+              className="hover:bg-transparent border-b border-border"
             >
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
-                  className="text-gray-700 dark:text-gray-300 font-semibold text-xs py-3"
+                  className="text-muted-foreground font-semibold text-xs py-3"
                 >
                   {header.isPlaceholder
                     ? null
@@ -328,7 +330,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && 'selected'}
-                className="border-b border-gray-100 dark:border-gray-900/60 hover:bg-gray-50/40 dark:hover:bg-gray-900/20"
+                className="border-b border-border hover:bg-muted/40"
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="py-2.5">
@@ -341,7 +343,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="h-32 text-center text-gray-500 dark:text-gray-400 text-sm"
+                className="h-32 text-center text-muted-foreground text-sm"
               >
                 No categories found.
               </TableCell>

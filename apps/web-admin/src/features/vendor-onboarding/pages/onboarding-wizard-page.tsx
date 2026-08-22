@@ -1,10 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useEffect,useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, CheckCircle2, ArrowRight, RefreshCw, Send } from 'lucide-react';
-import { useAuthContext } from '@/context/auth-provider';
+import { useMutation } from '@tanstack/react-query';
+import { AlertTriangle, ArrowRight, CheckCircle2, RefreshCw, Send } from 'lucide-react';
+
+import {
+  vendorBusinessInfoSchema,
+  vendorDocumentsSchema,
+  vendorProfileSchema,
+  warehouseSchema,
+} from '@celebs/shared-types';
+import { Alert, AlertDescription,AlertTitle } from '@celebs/shared-ui/components/alert';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Form,
   FormControl,
@@ -14,25 +22,21 @@ import {
   FormMessage,
 } from '@celebs/shared-ui/components/form';
 import { Input } from '@celebs/shared-ui/components/input';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Alert, AlertTitle, AlertDescription } from '@celebs/shared-ui/components/alert';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import {
-  vendorProfileSchema,
-  warehouseSchema,
-  vendorDocumentsSchema,
-  vendorBusinessInfoSchema,
-} from '@celebs/shared-types';
-import {
+  resubmitForReview,
+  submitVendorForReview,
+  updateVendorBusinessInfo,
+  updateVendorDocuments,
   updateVendorProfile,
   updateVendorWarehouse,
-  updateVendorDocuments,
-  updateVendorBusinessInfo,
-  submitVendorForReview,
-  resubmitForReview,
 } from '../api';
+import { DocumentUploader } from '../components/document-uploader';
 import { PendingReviewScreen } from '../components/pending-review-screen';
 import { RejectionScreen } from '../components/rejection-screen';
-import { DocumentUploader } from '../components/document-uploader';
+
+import { useAuthContext } from '@/context/auth-provider';
 
 export default function OnboardingWizard() {
   const { user, refetch } = useAuthContext();
@@ -234,10 +238,10 @@ export default function OnboardingWizard() {
       <div className="bg-card p-4 rounded-lg border shadow-sm space-y-4">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
               Seller Setup Wizard
               {isRejectedMode && (
-                <span className="ml-2 text-xs bg-amber-100 text-amber-900 font-semibold px-2 py-0.5 rounded border border-amber-300">
+                <span className="ml-2 text-xs bg-warning/10 text-warning font-semibold px-2 py-0.5 rounded border border-warning/30">
                   Editing Revision
                 </span>
               )}
@@ -250,19 +254,20 @@ export default function OnboardingWizard() {
         </div>
 
         {/* Step Indicator Tabs (Always clickable in rejection mode or completed steps) */}
-        <div className="grid grid-cols-5 gap-2 pt-2 border-t">
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t sm:grid-cols-3 md:grid-cols-5">
           {stepsList.map((s) => {
             const isCurrent = step === s.num;
             const isCompleted = s.num < initialStep || isRejectedMode;
             const canClick = isCompleted || isCurrent || isRejectedMode;
 
             return (
-              <button
+              <Button
                 key={s.num}
                 type="button"
+                variant="ghost"
                 onClick={() => canClick && setStep(s.num)}
                 disabled={!canClick}
-                className={`flex flex-col items-center p-2 rounded-md transition-all text-xs font-medium ${
+                className={`w-full h-auto flex-col p-2 rounded-md text-xs font-medium ${
                   isCurrent
                     ? 'bg-primary text-primary-foreground font-bold shadow-sm'
                     : canClick
@@ -272,13 +277,13 @@ export default function OnboardingWizard() {
               >
                 <div className="flex items-center gap-1">
                   {s.num < step ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
                   ) : (
                     <span>{s.num}.</span>
                   )}
                   <span className="truncate">{s.label}</span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -360,7 +365,7 @@ export default function OnboardingWizard() {
               >
                 {profileMutation.isPending ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" /> Saving Profile...
+                    <Spinner size="sm" /> Saving Profile...
                   </>
                 ) : (
                   <>
@@ -519,7 +524,7 @@ export default function OnboardingWizard() {
                 >
                   {warehouseMutation.isPending ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" /> Saving Warehouse...
+                      <Spinner size="sm" /> Saving Warehouse...
                     </>
                   ) : (
                     <>
@@ -631,7 +636,7 @@ export default function OnboardingWizard() {
                 >
                   {documentsMutation.isPending ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" /> Saving Documents...
+                      <Spinner size="sm" /> Saving Documents...
                     </>
                   ) : (
                     <>
@@ -723,7 +728,7 @@ export default function OnboardingWizard() {
                 >
                   {businessMutation.isPending ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" /> Saving Business Info...
+                      <Spinner size="sm" /> Saving Business Info...
                     </>
                   ) : (
                     <>
@@ -774,7 +779,7 @@ export default function OnboardingWizard() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs font-medium">KYC Documents</span>
-                <span className="font-semibold text-green-600 text-xs flex items-center gap-1">
+                <span className="font-semibold text-success text-xs flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> PAN & Citizenship Uploaded
                 </span>
               </div>
@@ -794,7 +799,7 @@ export default function OnboardingWizard() {
                 >
                   {resubmitMutation.isPending ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" /> Resubmitting Revision...
+                      <Spinner size="sm" /> Resubmitting Revision...
                     </>
                   ) : (
                     <>
@@ -811,7 +816,7 @@ export default function OnboardingWizard() {
                 >
                   {submitMutation.isPending ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" /> Submitting...
+                      <Spinner size="sm" /> Submitting...
                     </>
                   ) : (
                     <>

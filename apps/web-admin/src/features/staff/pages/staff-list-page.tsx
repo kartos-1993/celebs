@@ -1,21 +1,29 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  CheckCircle2,
+  MailWarning,
+  Package,
+  Pencil,
+  Receipt,
+  Send,
+  Shield,
+  ShieldCheck,
+  Store,
+  Trash2,
+  Truck,
+  UserPlus,
+} from 'lucide-react';
 import { z } from 'zod';
-import { getStaff, createStaff, deleteStaff, updateStaff } from '../api';
-import { STAFF_QUERY_KEYS } from '../api';
-import { getAdminVendors } from '@/features/vendors/api';
-import { VENDORS_QUERY_KEYS } from '@/features/vendors/api';
-import { useAuthContext } from '@/context/auth-provider';
-import { useToast } from '@/hooks/use-toast';
+
+import { Permission } from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
-import { resendVerification } from '@/features/auth/api';
-import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
-import { PasswordInput } from '@celebs/shared-ui/components/password-input';
+import { createStaffSchema } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
   FormControl,
@@ -24,23 +32,30 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { createStaffSchema } from '@celebs/shared-types';
+import { Input } from '@celebs/shared-ui/components/input';
+import { Label } from '@celebs/shared-ui/components/label';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
+import { PasswordInput } from '@celebs/shared-ui/components/password-input';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
-  Shield,
-  UserPlus,
-  Trash2,
-  CheckCircle2,
-  Package,
-  Truck,
-  Receipt,
-  ShieldCheck,
-  Store,
-  Send,
-  RefreshCw,
-  MailWarning,
-  Pencil,
-} from 'lucide-react';
-import { Permission } from '@celebs/rbac';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@celebs/shared-ui/components/table';
+
+import { createStaff, deleteStaff, getStaff, updateStaff } from '../api';
+import { STAFF_QUERY_KEYS } from '../api';
+
+import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
+import { PageLoader } from '@/components/page-loader';
+import { useAuthContext } from '@/context/auth-provider';
+import { resendVerification } from '@/features/auth/api';
+import { getAdminVendors } from '@/features/vendors/api';
+import { VENDORS_QUERY_KEYS } from '@/features/vendors/api';
+import { useToast } from '@/hooks/use-toast';
 
 const AVAILABLE_STAFF_PERMISSIONS = [
   { perm: Permission.PRODUCT_VIEW, label: 'View Products' },
@@ -139,12 +154,12 @@ function ResendStaffInviteButton({ email }: { email: string }) {
       variant="outline"
       disabled={loading || isCoolingDown}
       onClick={handleResend}
-      className="h-8 gap-1 text-xs"
+      className="h-8 gap-1"
     >
       {loading ? (
-        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+        <Spinner size="sm" />
       ) : isCoolingDown ? (
-        <span className="font-mono text-[11px]">{secondsRemaining}s</span>
+        <span className="font-mono text-xs">{secondsRemaining}s</span>
       ) : (
         <>
           <Send className="w-3.5 h-3.5" /> Resend Invite
@@ -264,59 +279,60 @@ export default function StaffList() {
   });
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading staff sub-accounts...</div>;
+    return <PageLoader />;
   }
 
   const staff = response?.data || [];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" /> Vendor Staff & Sub-Accounts
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Delegate specialized store permissions to employee accounts (Daraz Seller Sub-Account
-            Model).
-          </p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary" />
+            Vendor Staff &amp; Sub-Accounts
+          </span>
+        }
+        description={
+          'Delegate specialized store permissions to employee accounts (Daraz Seller Sub-Account Model).'
+        }
+        actions={
+          <>
+            {isAdminOrSuperAdmin && vendorsList.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-muted-foreground shrink-0" />
+                <select
+                  value={selectedVendorFilter || ''}
+                  onChange={(e) => {
+                    const val = e.target.value || undefined;
+                    setSelectedVendorFilter(val);
+                    setTargetVendorForCreate(val);
+                  }}
+                  className="h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-sm focus:outline-hidden focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">All Vendor Shops</option>
+                  {vendorsList.map((v: { id: string; shopName: string }) => (
+                    <option key={v.id} value={v.id}>
+                      {v.shopName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-        <div className="flex items-center gap-3">
-          {isAdminOrSuperAdmin && vendorsList.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Store className="w-4 h-4 text-muted-foreground shrink-0" />
-              <select
-                value={selectedVendorFilter || ''}
-                onChange={(e) => {
-                  const val = e.target.value || undefined;
-                  setSelectedVendorFilter(val);
-                  setTargetVendorForCreate(val);
-                }}
-                className="h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-ring"
-              >
-                <option value="">All Vendor Shops</option>
-                {vendorsList.map((v: { id: string; shopName: string }) => (
-                  <option key={v.id} value={v.id}>
-                    {v.shopName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <Button onClick={() => setShowCreateModal(true)} className="gap-2 text-xs">
-            <UserPlus className="h-4 w-4" /> Add Sub-Account
-          </Button>
-        </div>
-      </div>
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <UserPlus className="h-4 w-4" /> Add Sub-Account
+            </Button>
+          </>
+        }
+      />
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-xl shadow-lg max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-base font-bold text-foreground">Add Vendor Staff Account</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+              <h3 className="text-lg font-semibold text-foreground">Add Vendor Staff Account</h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
                 ✕
               </Button>
             </div>
@@ -328,13 +344,11 @@ export default function StaffList() {
               >
                 {isAdminOrSuperAdmin && (
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">
-                      Target Vendor Shop
-                    </label>
+                    <Label>Target Vendor Shop</Label>
                     <select
                       value={targetVendorForCreate || selectedVendorFilter || ''}
                       onChange={(e) => setTargetVendorForCreate(e.target.value)}
-                      className="w-full h-9 px-3 py-1 rounded-md border border-input bg-background text-xs focus:outline-hidden focus:ring-1 focus:ring-ring"
+                      className="w-full h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-sm focus:outline-hidden focus:ring-1 focus:ring-ring"
                       required
                     >
                       <option value="" disabled>
@@ -356,7 +370,7 @@ export default function StaffList() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Full Name</FormLabel>
+                      <FormLabel>Full Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter staff name" {...field} className="text-sm" />
                       </FormControl>
@@ -369,7 +383,7 @@ export default function StaffList() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Email Address</FormLabel>
+                      <FormLabel>Email Address</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -382,13 +396,13 @@ export default function StaffList() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormField
                     control={createForm.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs">Password</FormLabel>
+                        <FormLabel>Password</FormLabel>
                         <FormControl>
                           <PasswordInput placeholder="••••••••" {...field} className="text-sm" />
                         </FormControl>
@@ -401,7 +415,7 @@ export default function StaffList() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs">Confirm Password</FormLabel>
+                        <FormLabel>Confirm Password</FormLabel>
                         <FormControl>
                           <PasswordInput
                             placeholder="Repeat password"
@@ -417,9 +431,7 @@ export default function StaffList() {
 
                 {/* Role Preset Selector */}
                 <div className="space-y-3 border-t pt-3">
-                  <FormLabel className="text-xs font-semibold block text-foreground">
-                    Select Delegated Role Preset & Permissions
-                  </FormLabel>
+                  <FormLabel className="block">Select Delegated Role Preset &amp; Permissions</FormLabel>
                   <div className="grid grid-cols-1 gap-2">
                     {STAFF_ROLE_PRESETS.map((preset) => {
                       const PresetIcon = preset.icon;
@@ -432,8 +444,8 @@ export default function StaffList() {
                           }}
                           className={`p-3 rounded-lg border text-xs cursor-pointer transition-all flex items-start justify-between ${
                             selectedPreset === preset.id
-                              ? 'border-primary bg-primary/5 shadow-2xs'
-                              : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900'
+                              ? 'border-primary bg-primary/5 shadow-sm'
+                              : 'border-border hover:bg-muted'
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -444,7 +456,7 @@ export default function StaffList() {
                               <span className="font-bold text-foreground block">
                                 {preset.label}
                               </span>
-                              <span className="text-[11px] text-muted-foreground leading-tight block">
+                              <span className="text-xs text-muted-foreground leading-tight block">
                                 {preset.description}
                               </span>
                             </div>
@@ -459,10 +471,8 @@ export default function StaffList() {
 
                   {/* Granular Permission Customization */}
                   <div className="border-t pt-3 space-y-2">
-                    <span className="text-xs font-semibold block text-foreground">
-                      Granular Capability Checkboxes
-                    </span>
-                    <div className="grid grid-cols-2 gap-2">
+                    <Label className="block">Granular Capability Checkboxes</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {AVAILABLE_STAFF_PERMISSIONS.map(({ perm, label }) => {
                         const isChecked = selectedPermissions.includes(perm);
                         return (
@@ -506,23 +516,21 @@ export default function StaffList() {
 
       {/* Edit Staff Permissions Modal */}
       {editingStaff && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-xl shadow-lg max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
-                <h3 className="text-base font-bold text-foreground">Edit Staff Permissions</h3>
+                <h3 className="text-lg font-semibold text-foreground">Edit Staff Permissions</h3>
                 <p className="text-xs text-muted-foreground">{editingStaff.name} ({editingStaff.email})</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setEditingStaff(null)}>
+              <Button variant="ghost" size="icon" onClick={() => setEditingStaff(null)}>
                 ✕
               </Button>
             </div>
 
             <div className="space-y-3">
-              <span className="text-xs font-semibold block text-foreground">
-                Assigned Granular Capabilities
-              </span>
-              <div className="grid grid-cols-2 gap-2">
+              <Label className="block">Assigned Granular Capabilities</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {AVAILABLE_STAFF_PERMISSIONS.map(({ perm, label }) => {
                   const isChecked = editPermissions.includes(perm);
                   return (
@@ -547,14 +555,13 @@ export default function StaffList() {
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
-                <Button variant="outline" size="sm" onClick={() => setEditingStaff(null)} className="text-xs">
+                <Button variant="outline" size="sm" onClick={() => setEditingStaff(null)}>
                   Cancel
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => updateMutation.mutate({ id: editingStaff.id, permissions: editPermissions })}
                   disabled={updateMutation.isPending}
-                  className="text-xs"
                 >
                   {updateMutation.isPending ? 'Saving...' : 'Save Permissions'}
                 </Button>
@@ -564,68 +571,66 @@ export default function StaffList() {
         </div>
       )}
 
-      <div className="border rounded-xl overflow-hidden bg-card shadow-2xs">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b bg-muted/50 text-xs font-semibold text-muted-foreground">
-              <th className="p-3.5">Staff Name</th>
-              <th className="p-3.5">Email Address</th>
-              {isAdminOrSuperAdmin && <th className="p-3.5">Associated Shop</th>}
-              <th className="p-3.5">Assigned Permissions</th>
-              <th className="p-3.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Staff Name</TableHead>
+              <TableHead>Email Address</TableHead>
+              {isAdminOrSuperAdmin && <TableHead>Associated Shop</TableHead>}
+              <TableHead>Assigned Permissions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {staff.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={isAdminOrSuperAdmin ? 5 : 4}
-                  className="p-8 text-center text-xs text-muted-foreground"
-                >
-                  No staff sub-accounts found. Click "Add Sub-Account" to delegate employee access.
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={isAdminOrSuperAdmin ? 5 : 4}>
+                  <EmptyState
+                    title="No staff sub-accounts found."
+                    description={'Click "Add Sub-Account" to delegate employee access.'}
+                  />
+                </TableCell>
+              </TableRow>
             ) : (
               staff.map((member: UserData) => (
-                <tr
-                  key={member.id}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="p-3.5 font-bold text-sm text-foreground">{member.name}</td>
-                  <td className="p-3.5 text-xs text-muted-foreground font-mono">{member.email}</td>
+                <TableRow key={member.id} className="hover:bg-muted/30">
+                  <TableCell className="font-semibold text-foreground">{member.name}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground">{member.email}</TableCell>
                   {isAdminOrSuperAdmin && (
-                    <td className="p-3.5 text-xs font-medium text-foreground">
+                    <TableCell className="font-medium text-foreground">
                       {member.vendorProfile?.shopName || 'Vendor Shop'}
-                    </td>
+                    </TableCell>
                   )}
-                  <td className="p-3.5">
+                  <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
                         member.permissions.slice(0, 4).map((perm: string) => (
                           <Badge
                             key={perm}
                             variant="outline"
-                            className="text-[10px] py-0 px-1.5 font-mono"
+                            className="py-0 px-1.5 font-mono"
                           >
                             {perm}
                           </Badge>
                         ))
                       ) : (
-                        <Badge variant="secondary" className="text-[10px] font-normal">
+                        <Badge variant="secondary" className="font-normal">
                           Staff Sub-User
                         </Badge>
                       )}
                       {Array.isArray(member.permissions) && member.permissions.length > 4 && (
-                        <Badge variant="secondary" className="text-[10px] py-0 px-1 font-mono">
+                        <Badge variant="secondary" className="py-0 px-1 font-mono">
                           +{member.permissions.length - 4} more
                         </Badge>
                       )}
                     </div>
-                  </td>
-                  <td className="p-3.5 text-right flex items-center justify-end gap-2">
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
                     {!member.isEmailVerified && (
                       <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+                        <Badge variant="warning">
                           <MailWarning className="w-3 h-3 mr-1 inline" /> Unverified
                         </Badge>
                         <ResendStaffInviteButton email={member.email} />
@@ -638,7 +643,7 @@ export default function StaffList() {
                         setEditingStaff(member);
                         setEditPermissions(Array.isArray(member.permissions) ? (member.permissions as string[]) : []);
                       }}
-                      className="h-8 gap-1 text-xs"
+                      className="h-8 gap-1"
                     >
                       <Pencil className="w-3.5 h-3.5" /> Edit
                     </Button>
@@ -651,16 +656,17 @@ export default function StaffList() {
                         }
                       }}
                       disabled={deleteMutation.isPending}
-                      className="h-8 gap-1 text-xs"
+                      className="h-8 gap-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </Button>
-                  </td>
-                </tr>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

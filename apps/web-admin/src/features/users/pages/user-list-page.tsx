@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { getUsers, createUser, deleteUser } from '../api';
-import { USERS_QUERY_KEYS } from '../api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import type { UserData } from '@celebs/shared-types';
+import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
   FormControl,
@@ -14,6 +14,21 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
+import { Input } from '@celebs/shared-ui/components/input';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@celebs/shared-ui/components/table';
+
+import { createUser, deleteUser,getUsers } from '../api';
+import { USERS_QUERY_KEYS } from '../api';
+
+import { PageLoader } from '@/components/page-loader';
 
 export default function UserList() {
   const queryClient = useQueryClient();
@@ -50,24 +65,24 @@ export default function UserList() {
   });
 
   if (isLoading) {
-    return <div className="p-6">Loading users...</div>;
+    return <PageLoader />;
   }
 
   const users = response?.data || [];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">User Accounts</h1>
-        <Button onClick={() => setShowCreateModal(true)}>Create User</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="User Accounts"
+        actions={<Button onClick={() => setShowCreateModal(true)}>Create User</Button>}
+      />
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold">Create New Account</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+              <h3 className="text-lg font-semibold text-foreground">Create New Account</h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
                 ✕
               </Button>
             </div>
@@ -145,36 +160,34 @@ export default function UserList() {
         </div>
       )}
 
-      <div className="border rounded-lg overflow-hidden bg-card">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b bg-muted/50 text-sm font-medium">
-              <th className="p-4">Name</th>
-              <th className="p-4">Email</th>
-              <th className="p-4">Role</th>
-              <th className="p-4">Verified</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Verified</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {users.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                  No user accounts found.
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <EmptyState title="No user accounts found." />
+                </TableCell>
+              </TableRow>
             ) : (
               users.map((account: UserData) => (
-                <tr key={account.id} className="border-b last:border-0 hover:bg-muted/30">
-                  <td className="p-4 font-medium">{account.name}</td>
-                  <td className="p-4">{account.email}</td>
-                  <td className="p-4">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                      {account.role}
-                    </span>
-                  </td>
-                  <td className="p-4">{account.isEmailVerified ? 'Yes' : 'No'}</td>
-                  <td className="p-4 text-right">
+                <TableRow key={account.id} className="hover:bg-muted/30">
+                  <TableCell className="font-medium">{account.name}</TableCell>
+                  <TableCell>{account.email}</TableCell>
+                  <TableCell>
+                    <Badge className="bg-primary/10 text-primary">{account.role}</Badge>
+                  </TableCell>
+                  <TableCell>{account.isEmailVerified ? 'Yes' : 'No'}</TableCell>
+                  <TableCell className="text-right">
                     <Button
                       size="sm"
                       variant="destructive"
@@ -187,12 +200,12 @@ export default function UserList() {
                     >
                       Delete
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

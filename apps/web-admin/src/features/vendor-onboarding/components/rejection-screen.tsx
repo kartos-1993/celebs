@@ -1,5 +1,6 @@
 import React from 'react';
-import { XCircle, Edit3 } from 'lucide-react';
+import { Edit3,XCircle } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
 
 interface RejectionScreenProps {
@@ -16,7 +17,9 @@ export const RejectionScreen: React.FC<RejectionScreenProps> = ({ rejectionReaso
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Application Revision Required</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Application Revision Required
+        </h1>
         <p className="text-muted-foreground text-sm">
           Your seller application was reviewed by platform moderation and requires updates before
           account activation. Please review the feedback below and update your details.

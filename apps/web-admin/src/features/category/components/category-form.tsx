@@ -1,16 +1,21 @@
-import React, { useRef, useCallback } from 'react';
-import { logger } from '@celebs/shared-utils';
+import React, { useCallback,useRef } from 'react';
+import { FolderTree, SlidersHorizontal, Store } from 'lucide-react';
+
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
-import { SlidersHorizontal, FolderTree, Store, Loader2 } from 'lucide-react';
-import { useAuthContext } from '@/context/auth-provider';
-import { Category } from '../types';
-import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
+import { logger } from '@celebs/shared-utils';
+
 import { useCategoryForm } from '../hooks/use-category-form';
-import { CategoryBasicInfoTab } from './category-basic-info-tab';
+import { Category } from '../types';
+
 import { CategoryAttributesTab } from './category-attributes-tab';
+import { CategoryBasicInfoTab } from './category-basic-info-tab';
 import { CategoryStorefrontTab } from './category-storefront-tab';
+
+import { useAuthContext } from '@/context/auth-provider';
 
 export interface CategoryFormProps {
   initialData?: Partial<Category> | null;
@@ -38,7 +43,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   }, []);
 
   const handleSaveWithStorefront = async (data: CategoryFormData) => {
-    onSave(data);
+    await onSave(data);
     if (storefrontSaveHandlerRef.current) {
       try {
         await storefrontSaveHandlerRef.current();
@@ -83,7 +88,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             </TabsTrigger>
             {isSuperadmin && (
               <TabsTrigger value="storefront" className="flex items-center gap-2">
-                <Store className="h-4 w-4 text-fashion-600" />
+                <Store className="h-4 w-4 text-primary" />
                 Storefront Display
               </TabsTrigger>
             )}
@@ -134,7 +139,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           <Button type="submit" disabled={isSubmitting} className="min-w-[130px]">
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="sm" className="mr-2" />
                 {isEditing ? 'Saving...' : 'Creating...'}
               </>
             ) : isEditing ? (

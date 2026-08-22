@@ -1,10 +1,11 @@
-import { useEffect, Suspense } from 'react';
+import { Suspense,useEffect } from 'react';
 import { Outlet, useMatches, useNavigation } from 'react-router-dom';
-import Sidebar from '@/components/sidebar';
-import SidebarProvider from '@/context/sidebar-provider';
+
 import Main from '@/components/main';
 import { Navbar } from '@/components/nav-bar';
 import PageLoader from '@/components/page-loader';
+import Sidebar from '@/components/sidebar';
+import SidebarProvider from '@/context/sidebar-provider';
 
 export const AdminLayout = () => {
   const matches = useMatches();
@@ -29,7 +30,7 @@ export const AdminLayout = () => {
         <div>
           <Sidebar />
         </div>
-        <div className="bg-zinc-50 dark:bg-zinc-950 min-h-screen">
+        <div className="bg-muted/40 min-h-screen">
           <Navbar />
           <Main>
             <Suspense fallback={<PageLoader />}>

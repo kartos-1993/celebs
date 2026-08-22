@@ -1,4 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
+import { AlertCircle, CheckCircle2, ShieldAlert, Sparkles } from 'lucide-react';
+
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Label } from '@celebs/shared-ui/components/label';
 import {
@@ -8,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { AlertCircle, CheckCircle2, ShieldAlert, Sparkles } from 'lucide-react';
+
 import { useBrands, useMyBrandAuthorizations } from '../hooks/use-brands';
 
 interface BrandSelectorProps {
@@ -67,7 +69,7 @@ export const BrandSelector = memo(function BrandSelector({
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold text-foreground">Brand Association</Label>
         {selectedBrand && selectedBrand.tier === 'FIRST_PARTY' && (
-          <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px]">
+          <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
             <Sparkles className="mr-1 h-3 w-3" />
             1P Private Label
           </Badge>
@@ -98,21 +100,21 @@ export const BrandSelector = memo(function BrandSelector({
                   <span className="font-medium text-foreground">{b.name}</span>
                   <div className="flex items-center gap-1.5">
                     {b.tier === 'FIRST_PARTY' ? (
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                         Celebs In-House
                       </span>
                     ) : b.isGated ? (
                       isAuthorized ? (
-                        <span className="flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-xs font-semibold text-success">
                           <CheckCircle2 className="h-2.5 w-2.5" /> Authorized
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                        <span className="flex items-center gap-1 rounded bg-warning/10 px-1.5 py-0.5 text-xs font-semibold text-warning">
                           <ShieldAlert className="h-2.5 w-2.5" /> LOA Required
                         </span>
                       )
                     ) : (
-                      <span className="text-[9px] text-muted-foreground">Open</span>
+                      <span className="text-xs text-muted-foreground">Open</span>
                     )}
                   </div>
                 </div>
@@ -123,8 +125,8 @@ export const BrandSelector = memo(function BrandSelector({
       </Select>
 
       {isGatedAndUnauthorized && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-2.5 text-xs text-warning">
+          <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
           <div>
             <span className="font-semibold">Brand Authorization Required: </span>
             <span>

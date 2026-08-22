@@ -1,8 +1,11 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
+
 import { Input } from '@celebs/shared-ui/components/input';
+
 import type { UiProps } from '../ui-registry';
-import { LabelWithRequired, FieldError, rulesFrom } from './shared';
+
+import { FieldError, LabelWithRequired, rulesFrom } from './shared';
 
 export function NumberInputField({ field, control }: UiProps) {
   const { field: f, fieldState } = useController({
@@ -17,7 +20,7 @@ export function NumberInputField({ field, control }: UiProps) {
         type="number"
         {...f}
         placeholder={field.label}
-        className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
+        className={fieldState.error ? 'border-destructive focus-visible:ring-destructive' : ''}
       />
       <FieldError message={fieldState.error?.message} />
     </div>

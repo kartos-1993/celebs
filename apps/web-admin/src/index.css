@@ -48,18 +48,12 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  /* Brand accent scale — used for fashion-forward highlights (icons, links, CTAs) */
-  --color-fashion-50: #fdf2f8;
-  --color-fashion-100: #fce7f3;
-  --color-fashion-200: #fbcfe8;
-  --color-fashion-300: #f9a8d4;
-  --color-fashion-400: #f472b6;
-  --color-fashion-500: #ec4899;
-  --color-fashion-600: #db2777;
-  --color-fashion-700: #be185d;
-  --color-fashion-800: #9d174d;
-  --color-fashion-900: #831843;
-  --color-fashion-950: #500724;
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
 }
 
 @utility container {
@@ -105,6 +99,12 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 210 40% 98%;
+    --warning: 32.1 94.6% 43.7%;
+    --warning-foreground: 210 40% 98%;
+    --info: 217.2 91.2% 59.8%;
+    --info-foreground: 210 40% 98%;
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -144,6 +144,12 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 222.2 47.4% 11.2%;
+    --warning: 43.3 96.4% 56.5%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+    --info: 217.2 91.2% 70%;
+    --info-foreground: 222.2 47.4% 11.2%;
     --sidebar-background: var(--background);
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);

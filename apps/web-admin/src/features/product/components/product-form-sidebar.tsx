@@ -1,7 +1,9 @@
-import { Badge } from '@celebs/shared-ui/components/badge';
-import type { ProductSidebarSection } from '../types';
-import { Progress } from '@celebs/shared-ui/components/progress';
 import { CheckCircle2, Circle, Sparkles } from 'lucide-react';
+
+import { Badge } from '@celebs/shared-ui/components/badge';
+import { Progress } from '@celebs/shared-ui/components/progress';
+
+import type { ProductSidebarSection } from '../types';
 
 export type { ProductSidebarSection };
 
@@ -16,17 +18,17 @@ const scoreMeta = (score: number) => {
   if (score >= 90) {
     return {
       label: 'Excellent',
-      tone: 'text-emerald-600',
-      bar: 'bg-emerald-500',
+      tone: 'text-success',
+      bar: 'bg-success',
     };
   }
   if (score >= 70) {
-    return { label: 'Good', tone: 'text-sky-600', bar: 'bg-sky-500' };
+    return { label: 'Good', tone: 'text-info', bar: 'bg-info' };
   }
   if (score >= 40) {
-    return { label: 'Fair', tone: 'text-amber-600', bar: 'bg-amber-500' };
+    return { label: 'Fair', tone: 'text-warning', bar: 'bg-warning' };
   }
-  return { label: 'Needs Info', tone: 'text-orange-600', bar: 'bg-orange-500' };
+  return { label: 'Needs Info', tone: 'text-warning', bar: 'bg-warning' };
 };
 
 const ProductFormSidebar = ({
@@ -41,7 +43,7 @@ const ProductFormSidebar = ({
   return (
     <div className="space-y-3">
       <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Submission State
         </p>
         <p className="mt-1 text-sm font-semibold text-foreground">
@@ -55,7 +57,7 @@ const ProductFormSidebar = ({
       <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               Content Score
             </p>
             <div className="mt-1 flex items-baseline gap-2">
@@ -64,13 +66,13 @@ const ProductFormSidebar = ({
               </span>
               <Badge
                 variant="outline"
-                className={`rounded-full border-border px-2 py-0 text-[10px] bg-card ${score.tone}`}
+                className={`rounded-full border-border px-2 py-0 text-xs bg-card ${score.tone}`}
               >
                 {score.label}
               </Badge>
             </div>
           </div>
-          <Sparkles className="h-4 w-4 text-orange-400" />
+          <Sparkles className="h-4 w-4 text-primary" />
         </div>
 
         <Progress
@@ -88,11 +90,11 @@ const ProductFormSidebar = ({
               type="button"
               data-testid={`sidebar-section-${section.key}`}
               onClick={() => onSectionClick?.(section.anchorId)}
-              className="flex w-full items-start gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className="flex w-full items-start gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-muted"
             >
               <span className="mt-0.5 shrink-0">
                 {section.status ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 ) : (
                   <Circle className="h-3.5 w-3.5 text-muted-foreground/60" />
                 )}
@@ -104,7 +106,7 @@ const ProductFormSidebar = ({
                   {section.label}
                 </span>
                 {!section.status && section.errors[0] ? (
-                  <span className="block text-[11px] text-red-500 dark:text-red-400 leading-tight truncate">
+                  <span className="block text-xs text-destructive leading-tight truncate">
                     {section.errors[0]}
                   </span>
                 ) : null}
@@ -115,9 +117,9 @@ const ProductFormSidebar = ({
       </div>
 
       {tips.length > 0 && (
-        <div className="rounded-2xl border border-border bg-gradient-to-br from-orange-50/60 via-white to-amber-50/60 p-3 shadow-sm dark:from-orange-950/20 dark:via-gray-900 dark:to-amber-950/10">
+        <div className="rounded-2xl border border-border bg-muted/50 p-3 shadow-sm">
           <p className="text-xs font-semibold text-foreground">Tips</p>
-          <div className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+          <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
             {tips.map((tip) => (
               <p key={tip} className="leading-snug">
                 {tip}

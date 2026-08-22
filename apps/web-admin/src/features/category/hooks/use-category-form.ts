@@ -166,7 +166,7 @@ export const useCategoryForm = ({
     }
   };
 
-  const onSubmit = (values: CategoryFormData) => {
+  const onSubmit = async (values: CategoryFormData) => {
     const normalizedData: CategoryFormData = {
       ...values,
       parentCategory:
@@ -187,7 +187,7 @@ export const useCategoryForm = ({
       })),
     };
 
-    onSave(normalizedData);
+    await onSave(normalizedData);
   };
 
   return {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, XCircle } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
-import { Textarea } from '@celebs/shared-ui/components/textarea';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@celebs/shared-ui/components/textarea';
+
 import type { ReviewProductRequestPayload } from '../../api';
+
 import { FLAGGED_FIELDS_OPTIONS, REJECTION_CATEGORIES } from './constants';
+
+import { useToast } from '@/hooks/use-toast';
 
 interface RejectionDialogProps {
   open: boolean;
@@ -153,18 +157,20 @@ export function RejectionDialog({
               {FLAGGED_FIELDS_OPTIONS.map((field) => {
                 const isSelected = flaggedFields.includes(field.id);
                 return (
-                  <button
+                  <Button
                     key={field.id}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => toggleFlaggedField(field.id)}
-                    className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                    className={`h-auto rounded-full border px-3 py-1 text-xs ${
                       isSelected
-                        ? 'bg-destructive text-destructive-foreground border-destructive font-medium'
+                        ? 'bg-destructive text-destructive-foreground border-destructive font-medium hover:bg-destructive'
                         : 'bg-background hover:bg-muted text-muted-foreground border-border'
                     }`}
                   >
                     {field.label} {isSelected ? '✓' : ''}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

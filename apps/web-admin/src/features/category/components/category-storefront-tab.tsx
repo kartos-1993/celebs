@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import React, { ChangeEvent,useCallback, useEffect, useState } from 'react';
+import { Image as ImageIcon, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
-import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import {
   Select,
   SelectContent,
@@ -10,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { Plus, Trash2, Save, Loader, Image as ImageIcon, Upload, X } from 'lucide-react';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { useQuickFilters } from '../hooks/use-quick-filters';
-import { QuickFilter, QuickFilterItem, QuickFilterType, QuickFilterDisplayAs } from '../types';
+import { QuickFilter, QuickFilterDisplayAs,QuickFilterItem, QuickFilterType } from '../types';
+
 import { uploadFiles } from '@/features/product/api';
 
 interface CategoryStorefrontTabProps {
@@ -82,7 +86,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
 
   if (!categoryId) {
     return (
-      <div className="p-4 text-center text-sm text-gray-500">
+      <div className="p-4 text-center text-sm text-muted-foreground">
         Please save the category basic info first before configuring storefront display settings.
       </div>
     );
@@ -90,8 +94,8 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8 text-sm text-gray-500 gap-2">
-        <Loader className="h-4 w-4 animate-spin text-fashion-500" />
+      <div className="flex items-center justify-center p-8 text-sm text-muted-foreground gap-2">
+        <Spinner size="sm" className="text-primary" />
         Loading storefront display settings...
       </div>
     );
@@ -149,8 +153,8 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
         <div
           className={`p-3 rounded-md text-sm font-medium ${
             statusMessage.includes('Failed') || statusMessage.includes('failed')
-              ? 'bg-red-50 text-red-700 border border-red-200'
-              : 'bg-green-50 text-green-700 border border-green-200'
+              ? 'bg-destructive/10 text-destructive border border-destructive/30'
+              : 'bg-success/10 text-success border border-success/30'
           }`}
         >
           {statusMessage}
@@ -158,16 +162,16 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
       )}
 
       {/* Quick Filter Configuration Section */}
-      <div className="space-y-4 border p-4 rounded-lg bg-gray-50/50">
-        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-          <ImageIcon className="h-4 w-4 text-fashion-600" />
+      <div className="space-y-4 border p-4 rounded-lg bg-muted/50">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <ImageIcon className="h-4 w-4 text-primary" />
           Hero Quick Filter Configuration
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Data Source Type */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-gray-700">Filter Data Source</Label>
+            <Label>Filter Data Source</Label>
             <Select value={type} onValueChange={(val) => setType(val as QuickFilterType)}>
               <SelectTrigger className="bg-card">
                 <SelectValue placeholder="Select filter source" />
@@ -179,14 +183,14 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
                 <SelectItem value="collection">Curated Collection</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Determines where items for the hero filter bar are pulled from.
             </p>
           </div>
 
           {/* Display Style */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold text-gray-700">Display Component Style</Label>
+            <Label>Display Component Style</Label>
             <Select
               value={displayAs}
               onValueChange={(val) => setDisplayAs(val as QuickFilterDisplayAs)}
@@ -200,7 +204,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
                 <SelectItem value="color_swatch">Color Swatches</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Determines how the quick filter renders on the mobile application.
             </p>
           </div>
@@ -215,7 +219,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
           />
           <Label
             htmlFor="autoPopulate"
-            className="text-xs font-medium text-gray-700 cursor-pointer"
+            className="cursor-pointer"
           >
             Auto-populate items from child categories (uses each child category's thumbnail image)
           </Label>
@@ -225,7 +229,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
       {/* Custom Items List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold text-gray-800">
+          <Label>
             Custom / Overridden Filter Items
           </Label>
           <Button
@@ -241,7 +245,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
         </div>
 
         {items.length === 0 ? (
-          <div className="p-4 text-center border-2 border-dashed rounded-lg text-xs text-gray-400 bg-gray-50">
+          <div className="p-4 text-center border-2 border-dashed rounded-lg text-xs text-muted-foreground bg-muted/50">
             {autoPopulate
               ? 'Auto-populate is active. Child category names & images will be dynamically fetched at runtime.'
               : 'No custom items added. Click "Add Item" to define custom filter cards.'}
@@ -277,15 +281,15 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleRemoveItem(idx)}
-                    className="text-red-500 hover:bg-red-50 h-9 w-9 shrink-0"
+                    className="text-destructive hover:bg-destructive/10 h-9 w-9 shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
 
                 {/* Avatar Image Picker: Dual File Upload + Text URL */}
-                <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
-                  <Label className="text-xs text-gray-600 font-medium shrink-0">
+                <div className="flex items-center gap-3 pt-1 border-t border-border">
+                  <Label className="shrink-0">
                     Avatar Image:
                   </Label>
 
@@ -307,13 +311,13 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
                       </Button>
                     </div>
                   ) : (
-                    <label className="h-9 px-3 rounded border border-dashed border-gray-300 flex items-center gap-1.5 cursor-pointer hover:border-fashion-500 transition-colors bg-gray-50 shrink-0">
+                    <label className="h-9 px-3 rounded border border-dashed border-border flex items-center gap-1.5 cursor-pointer hover:border-primary transition-colors bg-muted/50 shrink-0">
                       {uploadingIndex === idx ? (
-                        <Loader className="h-3.5 w-3.5 animate-spin text-fashion-600" />
+                        <Spinner size="sm" className="text-primary" />
                       ) : (
-                        <Upload className="h-3.5 w-3.5 text-gray-500" />
+                        <Upload className="h-3.5 w-3.5 text-muted-foreground" />
                       )}
-                      <span className="text-xs text-gray-600 font-medium">
+                      <span className="text-xs text-muted-foreground font-medium">
                         {uploadingIndex === idx ? 'Uploading...' : 'Upload Image File'}
                       </span>
                       <input
@@ -346,9 +350,9 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
           type="button"
           onClick={handleSave}
           disabled={isSaving || uploadingIndex !== null}
-          className="bg-fashion-600 hover:bg-fashion-700 text-white flex items-center gap-2"
+          className="flex items-center gap-2"
         >
-          {isSaving ? <Loader className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {isSaving ? <Spinner size="sm" /> : <Save className="h-4 w-4" />}
           Save Storefront Display Configuration
         </Button>
       </div>

@@ -1,16 +1,20 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { Pencil, Trash2, ImagePlus, Upload } from 'lucide-react';
+import { ImagePlus, Pencil, Trash2, Upload } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import type { UiProps } from '../ui-registry';
+
 import {
-  LabelWithRequired,
+  ImageValue,
   imageValueKey,
+  LabelWithRequired,
+  uploadErrorMessage,
   uploadImageFiles,
   validateFileBasics,
-  uploadErrorMessage,
-  ImageValue,
 } from './shared';
 import { useObjectUrl } from './use-object-url';
 
@@ -244,7 +248,7 @@ export function ColorMetaItem({
               {swatchUrl ? (
                 <img src={swatchUrl} alt={color} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-[10px] text-muted-foreground font-medium">None</span>
+                <span className="text-xs text-muted-foreground font-medium">None</span>
               )}
             </div>
             <label className="cursor-pointer">
@@ -268,14 +272,14 @@ export function ColorMetaItem({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs text-red-600"
+                className="h-7 px-2 text-xs text-destructive"
                 onClick={() => setValue(`${namePrefix}.swatch`, undefined, { shouldDirty: true })}
               >
                 Clear
               </Button>
             ) : null}
           </div>
-          {swatchErr ? <div className="text-xs text-red-500">{String(swatchErr)}</div> : null}
+          {swatchErr ? <div className="text-xs text-destructive">{String(swatchErr)}</div> : null}
         </div>
 
         {/* Gallery Images */}
@@ -304,7 +308,7 @@ export function ColorMetaItem({
                   </label>
                   <button
                     type="button"
-                    className="h-5 w-5 rounded bg-white/90 grid place-items-center text-red-600"
+                    className="h-5 w-5 rounded bg-white/90 grid place-items-center text-destructive"
                     onClick={() => onRemoveImage(idx)}
                   >
                     <Trash2 className="h-2.5 w-2.5" />
@@ -328,13 +332,13 @@ export function ColorMetaItem({
                 }}
               />
               {isUploading ? (
-                <Upload className="h-3.5 w-3.5 animate-pulse" />
+                <Spinner size="sm" className="text-primary" />
               ) : (
                 <ImagePlus className="h-3.5 w-3.5" />
               )}
             </label>
           </div>
-          {imagesErr ? <div className="text-xs text-red-500">{String(imagesErr)}</div> : null}
+          {imagesErr ? <div className="text-xs text-destructive">{String(imagesErr)}</div> : null}
         </div>
       </div>
     </div>
@@ -391,7 +395,7 @@ export function ColorMetaInputField({ field }: UiProps) {
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
-                    className="text-xs text-red-600"
+                    className="text-xs text-destructive"
                     onClick={() => {
                       const updated = colors.filter((x) => x !== c);
                       setValue(colorField, updated, {

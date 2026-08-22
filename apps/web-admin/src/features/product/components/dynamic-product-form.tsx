@@ -1,14 +1,16 @@
 import React, { forwardRef, useCallback, useImperativeHandle } from 'react';
-import { useFormContext, type Control, type FieldValues } from 'react-hook-form';
+import { type Control, type FieldValues,useFormContext } from 'react-hook-form';
+import { FileText, ImageIcon, Package, Palette, Ruler } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@celebs/shared-ui/components/collapsible';
-import { FileText, ImageIcon, Package, Palette, Ruler } from 'lucide-react';
-import type { FieldSpec } from '../types';
+
 import { uiTypeRegistry } from '../fields/ui-registry';
+import type { FieldSpec } from '../types';
 
 export interface DynamicProductFormHandle {
   /** Scrolls the section owning the anchor into view.
@@ -157,21 +159,21 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     // ── Guards ─────────────────────────────────────────────────────────────
     if (!catId) {
       return (
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-card/80 px-6 py-8 text-sm text-muted-foreground border-border">
+        <div className="rounded-3xl border border-dashed border-border bg-card/80 px-6 py-8 text-sm text-muted-foreground">
           Select a category to continue.
         </div>
       );
     }
     if (isSchemaLoading) {
       return (
-        <div className="rounded-3xl border border-gray-200 bg-card/80 p-6 text-sm text-muted-foreground shadow-xs border-border">
+        <div className="rounded-3xl border border-border bg-card/80 p-6 text-sm text-muted-foreground shadow-xs">
           Loading category specifications...
         </div>
       );
     }
     if (schemaError) {
       return (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
+        <div className="rounded-3xl border border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive">
           Failed to load category specifications. {schemaError.message}
         </div>
       );
@@ -202,7 +204,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
 
     if (!hasAnyFields) {
       return (
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-card/80 px-6 py-8 text-sm text-muted-foreground border-border">
+        <div className="rounded-3xl border border-dashed border-border bg-card/80 px-6 py-8 text-sm text-muted-foreground">
           This category has no additional fields configured.
         </div>
       );

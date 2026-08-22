@@ -1,10 +1,17 @@
-import React from 'react';
+import { UserCog } from 'lucide-react';
+
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 
 const AccountSettings = () => {
   return (
-    <div>
-      <h1>Account Settings</h1>
-      <p>Manage your account details here.</p>
+    <div className="space-y-6">
+      <PageHeader title="Account Settings" description="Manage your account details here." />
+      <EmptyState
+        icon={<UserCog className="h-10 w-10" />}
+        title="Nothing here yet"
+        description="This section is under construction."
+      />
     </div>
   );
 };

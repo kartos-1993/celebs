@@ -1,20 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
+import React, { useCallback,useEffect, useState } from 'react';
+import { Edit, Layers, Plus, Search, Trash2, X } from 'lucide-react';
+
 import { Badge } from '@celebs/shared-ui/components/badge';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
+import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
-import { Plus, Search, Trash2, Edit, Layers, Loader2, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { fetchOptionSets, createOptionSet, updateOptionSet, deleteOptionSet } from '../api';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
+import { createOptionSet, deleteOptionSet,fetchOptionSets, updateOptionSet } from '../api';
 import type { OptionSet } from '../types';
+
+import { PageLoader } from '@/components/page-loader';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OptionSetsPage() {
   const { toast } = useToast();
@@ -159,21 +165,22 @@ export default function OptionSetsPage() {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Layers className="h-6 w-6 text-primary" /> Option Sets Manager
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage global color, size, and variant option sets dynamically in production.
-          </p>
-        </div>
-        <Button onClick={handleOpenCreate} className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" /> Create Option Set
-        </Button>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Layers className="h-6 w-6 text-primary" />
+            Option Sets Manager
+          </span>
+        }
+        description="Manage global color, size, and variant option sets dynamically in production."
+        actions={
+          <Button onClick={handleOpenCreate} className="gap-2 shrink-0">
+            <Plus className="h-4 w-4" /> Create Option Set
+          </Button>
+        }
+      />
 
       {/* Search & Filter */}
       <div className="relative max-w-md">
@@ -188,9 +195,7 @@ export default function OptionSetsPage() {
 
       {/* Loading & Content */}
       {loading ? (
-        <div className="flex items-center justify-center p-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <PageLoader />
       ) : filteredSets.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground space-y-2">
           <p className="text-base font-semibold">No option sets found</p>
@@ -203,7 +208,7 @@ export default function OptionSetsPage() {
           {filteredSets.map((set) => (
             <div
               key={set.id}
-              className="rounded-xl border bg-card text-card-foreground p-5 shadow-2xs space-y-4 hover:shadow-xs transition-shadow"
+              className="rounded-xl border bg-card text-card-foreground p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between gap-2 border-b pb-3">
                 <div>
@@ -230,7 +235,7 @@ export default function OptionSetsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteTarget(set)}
-                      className="h-8 w-8 text-rose-500 hover:text-rose-600"
+                      className="h-8 w-8 text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -244,11 +249,7 @@ export default function OptionSetsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
                   {(set.values || []).map((val) => (
-                    <Badge
-                      key={val}
-                      variant="outline"
-                      className="text-xs font-normal bg-muted/30 border-muted"
-                    >
+                    <Badge key={val} variant="secondary">
                       {val}
                     </Badge>
                   ))}
@@ -272,7 +273,7 @@ export default function OptionSetsPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs">Option Set Name (Key)</Label>
+              <Label>Option Set Name (Key)</Label>
               <Input
                 placeholder="e.g. Basic Colors or Gemstone Cuts"
                 value={nameInput}
@@ -281,7 +282,7 @@ export default function OptionSetsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Display Title</Label>
+              <Label>Display Title</Label>
               <Input
                 placeholder="e.g. Basic Colors"
                 value={displayNameInput}
@@ -290,7 +291,7 @@ export default function OptionSetsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Values ({valuesInput.length})</Label>
+              <Label>Values ({valuesInput.length})</Label>
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Type new value (e.g. Cyber Lime #DFFF00) and press Enter"
@@ -317,13 +318,15 @@ export default function OptionSetsPage() {
                 {valuesInput.map((val) => (
                   <Badge key={val} variant="secondary" className="text-xs gap-1 py-1">
                     {val}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleRemoveValue(val)}
-                      className="hover:text-rose-500"
+                      className="h-3.5 w-3.5 p-0 hover:text-destructive"
                     >
                       <X className="h-3 w-3" />
-                    </button>
+                    </Button>
                   </Badge>
                 ))}
                 {valuesInput.length === 0 && (
@@ -338,7 +341,7 @@ export default function OptionSetsPage() {
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner size="sm" />
               ) : editingSet ? (
                 'Save Changes'
               ) : (
@@ -365,7 +368,7 @@ export default function OptionSetsPage() {
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
+              {isDeleting ? <Spinner size="sm" /> : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

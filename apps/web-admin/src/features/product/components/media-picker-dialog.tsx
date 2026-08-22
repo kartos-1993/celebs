@@ -1,4 +1,13 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import {
+  Check,
+  Folder,
+  Image as ImageIcon,
+  Search,
+  UploadCloud,
+} from 'lucide-react';
+
+import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -10,21 +19,16 @@ import {
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
 import { Input } from '@celebs/shared-ui/components/input';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
-import {
-  Check,
-  Folder,
-  Image as ImageIcon,
-  Loader2,
-  Search,
-  UploadCloud,
-} from 'lucide-react';
+
+import { useMediaAssets, useMediaFolders, useMediaQuota } from '../hooks/use-media-assets';
+
+import { StorageQuotaBar } from './storage-quota-bar';
+
 import { useDebounce } from '@/hooks/use-debounce';
 import { directUploadBatch } from '@/lib/media-upload';
 import { cn } from '@/lib/utils';
-import type { MediaAsset, MediaScope } from '@celebs/shared-types';
-import { useMediaAssets, useMediaFolders, useMediaQuota } from '../hooks/use-media-assets';
-import { StorageQuotaBar } from './storage-quota-bar';
 
 interface MediaPickerDialogProps {
   open: boolean;
@@ -171,15 +175,16 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
 
           <TabsContent value="library" className="flex-1 flex min-h-0 m-0">
             <div className="w-48 border-r border-border/40 p-3 flex flex-col gap-1 overflow-y-auto bg-muted/10">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase px-2 mb-1">
+              <span className="text-xs font-semibold text-muted-foreground uppercase px-2 mb-1">
                 Folders
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 className={cn(
-                  'flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors',
+                  'flex w-full items-center justify-between px-2 py-1.5 h-auto text-xs',
                   selectedFolderId === null
-                    ? 'bg-primary/10 text-primary font-medium'
+                    ? 'bg-primary/10 text-primary font-medium hover:bg-primary/10'
                     : 'text-muted-foreground hover:bg-muted',
                 )}
                 onClick={() => setSelectedFolderId(null)}
@@ -187,16 +192,17 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                 <span className="flex items-center gap-1.5 truncate">
                   <Folder className="h-3.5 w-3.5" /> All Assets
                 </span>
-                <span className="text-[10px] text-muted-foreground">{assets.length}</span>
-              </button>
+                <span className="text-xs text-muted-foreground">{assets.length}</span>
+              </Button>
               {folders.map((folder) => (
-                <button
+                <Button
                   key={folder.id}
                   type="button"
+                  variant="ghost"
                   className={cn(
-                    'flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors',
+                    'flex w-full items-center justify-between px-2 py-1.5 h-auto text-xs',
                     selectedFolderId === folder.id
-                      ? 'bg-primary/10 text-primary font-medium'
+                      ? 'bg-primary/10 text-primary font-medium hover:bg-primary/10'
                       : 'text-muted-foreground hover:bg-muted',
                   )}
                   onClick={() => setSelectedFolderId(folder.id)}
@@ -204,10 +210,10 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                   <span className="flex items-center gap-1.5 truncate">
                     <Folder className="h-3.5 w-3.5" /> {folder.name}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {folder.assetCount ?? 0}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -264,7 +270,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                           loading="lazy"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-[10px] text-white font-medium px-1 text-center truncate max-w-[90%]">
+                          <span className="text-xs text-white font-medium px-1 text-center truncate max-w-[90%]">
                             {asset.originalName}
                           </span>
                         </div>
@@ -274,7 +280,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                           </div>
                         )}
                         {(asset.usageCount ?? 0) > 0 && (
-                          <span className="absolute bottom-1 left-1 bg-black/70 text-[9px] text-white px-1 py-0.2 rounded font-mono">
+                          <span className="absolute bottom-1 left-1 bg-black/70 text-xs text-white px-1 py-0.2 rounded font-mono">
                             {asset.usageCount}x
                           </span>
                         )}
@@ -295,7 +301,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
             >
               <div className="p-3 rounded-full bg-primary/10 text-primary">
                 {isUploading ? (
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <Spinner size="xl" />
                 ) : (
                   <UploadCloud className="h-8 w-8" />
                 )}

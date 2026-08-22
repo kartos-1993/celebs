@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { PanelsTopLeft } from 'lucide-react';
 
-import SidebarToggle from '@/components/sidebar/sidebar-toggle';
-import { cn } from '@/lib/utils';
-import { useSidebarContext } from '@/context/sidebar-provider';
-import { Menu } from '../menu';
 import { Button } from '@celebs/shared-ui/components/button';
+
+import { Menu } from '../menu';
+
+import SidebarToggle from '@/components/sidebar/sidebar-toggle';
+import { useSidebarContext } from '@/context/sidebar-provider';
+import { cn } from '@/lib/utils';
 
 const Sidebar = () => {
   const { isSidebarOpen, setIsSidebarOpen, setIsHover } = useSidebarContext();
@@ -20,7 +22,7 @@ const Sidebar = () => {
       <div
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
-        className="relative h-full flex flex-col px-3 py-4 overflow-y-auto overflow-x-hidden shadow-md dark:shadow-zinc-800"
+        className="relative h-full flex flex-col px-3 py-4 overflow-y-auto overflow-x-hidden shadow-md"
       >
         <Button
           className={cn(

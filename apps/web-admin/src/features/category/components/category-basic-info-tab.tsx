@@ -1,15 +1,10 @@
 import React, { ChangeEvent } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { Upload,X } from 'lucide-react';
+
+import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@celebs/shared-ui/components/select';
 import {
   FormControl,
   FormField,
@@ -17,9 +12,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { X, Upload, Loader } from 'lucide-react';
+import { Input } from '@celebs/shared-ui/components/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@celebs/shared-ui/components/select';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { Category } from '../types';
-import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 
 export interface CategoryBasicInfoTabProps {
   form: UseFormReturn<CategoryFormData>;
@@ -100,9 +103,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
 
       {role === 'SUPERADMIN' && (
         <div className="space-y-2 border-t pt-4">
-          <FormLabel className="text-base font-semibold">
-            Category Image (Superadmin Only)
-          </FormLabel>
+          <FormLabel>Category Image (Superadmin Only)</FormLabel>
           <div className="flex items-center space-x-4">
             {imageUrl ? (
               <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
@@ -118,13 +119,13 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
                 </Button>
               </div>
             ) : (
-              <label className="w-16 h-16 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-fashion-500 transition-colors">
+              <label className="w-16 h-16 rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
                 {isUploadingImage ? (
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner size="sm" className="text-muted-foreground" />
                 ) : (
                   <>
-                    <Upload className="h-6 w-6 text-gray-400" />
-                    <span className="text-[10px] text-gray-500 mt-1">Upload</span>
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground mt-1">Upload</span>
                   </>
                 )}
                 <input
@@ -136,7 +137,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
                 />
               </label>
             )}
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-xs text-muted-foreground space-y-1">
               <p>Category thumbnail image for storefront navigation.</p>
               <p>Upload square image (JPEG, PNG, WebP, AVIF) up to 5MB.</p>
             </div>
@@ -156,7 +157,7 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
               </FormControl>
               <div className="space-y-0.5">
                 <FormLabel>Active Status</FormLabel>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   Enable or disable category visibility across storefront catalog
                 </div>
               </div>

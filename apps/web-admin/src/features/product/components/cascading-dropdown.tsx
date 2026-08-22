@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
-import { logger } from '@celebs/shared-utils';
+
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
@@ -13,10 +13,14 @@ import {
 import { Input } from '@celebs/shared-ui/components/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@celebs/shared-ui/components/popover';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
-import { cn } from '@/lib/utils';
-import { CategoryApiService } from '@/features/category/api';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+import { logger } from '@celebs/shared-utils';
+
 import { useCategoryTree } from '../hooks/use-category-tree';
 import type { DropdownCategory, RecentCategory } from '../types';
+
+import { CategoryApiService } from '@/features/category/api';
+import { cn } from '@/lib/utils';
 
 // Canonical types live in ../types — aliases kept for backwards compatibility
 export type { DropdownCategory as Category, RecentCategory } from '../types';
@@ -431,17 +435,19 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             <span className="text-muted-foreground font-normal">Recently used:</span>
             <div className="flex flex-wrap gap-1.5">
               {recentCategories.slice(0, 5).map((recent) => (
-                <button
+                <Button
                   key={recent.id}
                   type="button"
-                  className="inline-flex items-center rounded-full bg-secondary/80 hover:bg-secondary text-secondary-foreground px-2.5 py-0.5 text-xs font-normal border border-border transition-colors cursor-pointer"
+                  variant="secondary"
+                  size="sm"
+                  className="h-auto rounded-full px-2.5 py-0.5 text-xs font-normal border border-border"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRecentSelect(recent);
                   }}
                 >
                   {recent.name}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -466,7 +472,7 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               />
               {isSearching && (
                 <div className="absolute right-3 top-2.5">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                  <Spinner size="default" />
                 </div>
               )}
             </div>
@@ -496,14 +502,16 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                 <span className="font-medium text-foreground">Recently used:</span>
                 <div className="flex flex-wrap gap-1.5">
                   {recentCategories.slice(0, 5).map((recent) => (
-                    <button
+                    <Button
                       key={recent.id}
                       type="button"
-                      className="inline-flex items-center rounded-full bg-secondary/80 hover:bg-secondary text-secondary-foreground px-2.5 py-0.5 text-xs font-normal border border-border transition-colors cursor-pointer"
+                      variant="secondary"
+                      size="sm"
+                      className="h-auto rounded-full px-2.5 py-0.5 text-xs font-normal border border-border"
                       onClick={() => handleRecentSelect(recent)}
                     >
                       {recent.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -601,7 +609,6 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
                     (tempSelectedPath.length > 0 &&
                       tempSelectedPath[tempSelectedPath.length - 1].hasChildren)
                   }
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-4"
                 >
                   Confirm Selection
                 </Button>
@@ -641,7 +648,6 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
               type="button"
               size="sm"
               onClick={handleConfirmModalProceed}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
             >
               Change Category
             </Button>

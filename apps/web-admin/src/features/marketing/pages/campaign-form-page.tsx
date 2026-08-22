@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { logger } from '@celebs/shared-utils';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useEffect,useState } from 'react';
+import { Link,useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Flame,Save } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
+import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Select,
   SelectContent,
@@ -12,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { ArrowLeft, Save, Flame } from 'lucide-react';
-import { createCampaign, updateCampaign, getCampaignById } from '../api';
+import { logger } from '@celebs/shared-utils';
+
+import { createCampaign, getCampaignById,updateCampaign } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';
@@ -104,30 +107,31 @@ export default function CampaignFormPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
-          <Link to="/marketing/campaigns" aria-label="Back to campaigns">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Flame className="w-5 h-5 text-rose-600" />
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <PageHeader
+        title={
+          <>
+            <Flame className="mr-2 inline h-5 w-5 text-destructive" />
             {id ? 'Edit Festival Campaign' : 'Create Festival Campaign'}
-          </h1>
-          <p className="text-xs text-slate-500">
-            Schedule festival sales (Dashain, Tihar, New Year) with hero banners and countdown
-            timers.
-          </p>
-        </div>
-      </div>
+          </>
+        }
+        description="Schedule festival sales (Dashain, Tihar, New Year) with hero banners and countdown timers."
+        actions={
+          <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0">
+            <Link to="/marketing/campaigns" aria-label="Back to campaigns">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="bg-card rounded-xl border border-border p-6 shadow-sm space-y-6">
         {/* Title & Slug */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Campaign Title *</Label>
+            <Label>
+              Campaign Title <span className="text-destructive">*</span>
+            </Label>
             <Input
               placeholder="e.g. Dashain Dhamaka 2026"
               value={title}
@@ -137,7 +141,9 @@ export default function CampaignFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">URL Slug *</Label>
+            <Label>
+              URL Slug <span className="text-destructive">*</span>
+            </Label>
             <Input
               placeholder="dashain-dhamaka-2026"
               value={slug}
@@ -150,7 +156,7 @@ export default function CampaignFormPage() {
         {/* Tagline & Type */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Tagline</Label>
+            <Label>Tagline</Label>
             <Input
               placeholder="e.g. Nepal's Biggest Festival Sale — Flat 40% Off Storewide"
               value={tagline}
@@ -160,7 +166,7 @@ export default function CampaignFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Campaign Type</Label>
+            <Label>Campaign Type</Label>
             <Select value={campaignType} onValueChange={setCampaignType}>
               <SelectTrigger className="text-xs h-9">
                 <SelectValue placeholder="Select Type" />
@@ -178,7 +184,9 @@ export default function CampaignFormPage() {
         {/* Dates & Theme Color */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Start Date & Time *</Label>
+            <Label>
+              Start Date & Time <span className="text-destructive">*</span>
+            </Label>
             <Input
               type="datetime-local"
               value={startDate}
@@ -188,7 +196,9 @@ export default function CampaignFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">End Date & Time *</Label>
+            <Label>
+              End Date & Time <span className="text-destructive">*</span>
+            </Label>
             <Input
               type="datetime-local"
               value={endDate}
@@ -198,13 +208,13 @@ export default function CampaignFormPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Theme Color Hex</Label>
+            <Label>Theme Color Hex</Label>
             <div className="flex items-center gap-2">
               <Input
                 type="color"
                 value={themeColor}
                 onChange={(e) => setThemeColor(e.target.value)}
-                className="w-10 h-9 p-1 cursor-pointer border border-slate-300 rounded"
+                className="w-10 h-9 p-1 cursor-pointer border border-border rounded"
               />
               <Input
                 value={themeColor}
@@ -232,11 +242,11 @@ export default function CampaignFormPage() {
         />
 
         {/* Save Button */}
-        <div className="flex justify-end pt-4 border-t border-slate-200">
+        <div className="flex justify-end pt-4 border-t border-border">
           <Button
             onClick={handleSaveCampaign}
             disabled={isSubmitting || !title || !slug}
-            className="bg-rose-600 hover:bg-rose-700 text-white text-xs h-9 px-6 flex items-center gap-2"
+            className="h-9 px-6 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {isSubmitting ? 'Saving Campaign...' : id ? 'Update Campaign' : 'Publish Campaign'}

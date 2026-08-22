@@ -12,13 +12,15 @@ export const PendingReviewScreen = ({ vendorName }: PendingReviewScreenProps) =>
         <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
           <CheckCircle2 className="w-10 h-10 text-primary" />
         </div>
-        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
-          <Clock className="w-3.5 h-3.5 text-white" />
+        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-warning flex items-center justify-center">
+          <Clock className="w-3.5 h-3.5 text-warning-foreground" />
         </div>
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Application Submitted!</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Application Submitted!
+        </h1>
         {vendorName && (
           <p className="text-muted-foreground text-sm">
             Hi {vendorName}, your seller application is now under review.

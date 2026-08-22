@@ -1,13 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from 'react';
+
 import { Label } from '@celebs/shared-ui/components/label';
 export {
   type ImageValue,
   imageValueKey,
-  uploadImageFiles,
-  uploadErrorMessage,
-  validateFileBasics,
   rulesFrom,
+  uploadErrorMessage,
+  uploadImageFiles,
+  validateFileBasics,
 } from './shared-utils';
 
 export function LabelWithRequired({
@@ -20,12 +21,12 @@ export function LabelWithRequired({
   return (
     <Label className="font-medium">
       <span>{children}</span>
-      {required ? <span className="ml-1 text-red-500">*</span> : null}
+      {required ? <span className="ml-1 text-destructive">*</span> : null}
     </Label>
   );
 }
 
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <div className="text-xs text-red-500 mt-1">{message}</div>;
+  return <div className="text-xs text-destructive mt-1">{message}</div>;
 }

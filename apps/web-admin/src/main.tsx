@@ -6,14 +6,16 @@
 // });
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
-import { router } from '@/routes/router';
 import { RouterProvider } from 'react-router-dom';
-import { ThemeProvider } from '@/context/theme-provider';
-import { QueryClientProvider, QueryClient, MutationCache, QueryCache } from '@tanstack/react-query';
-import { AuthProvider } from '@/context/auth-provider';
-import { showErrorToast } from '@/lib/error-utils';
+import { MutationCache, QueryCache,QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import './index.css';
+
 import { Toaster } from '@/components/toaster';
+import { AuthProvider } from '@/context/auth-provider';
+import { ThemeProvider } from '@/context/theme-provider';
+import { showErrorToast } from '@/lib/error-utils';
+import { router } from '@/routes/router';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({

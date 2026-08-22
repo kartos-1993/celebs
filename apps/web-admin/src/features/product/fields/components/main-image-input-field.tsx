@@ -1,10 +1,14 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { HardDrive, Plus, RefreshCw, UploadCloud, X } from 'lucide-react';
+
 import { Button } from '@celebs/shared-ui/components/button';
-import { HardDrive, Loader2, Plus, RefreshCw, UploadCloud, X } from 'lucide-react';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+
 import { MediaCropDialog } from '../../components/media-crop-dialog';
 import { MediaPickerDialog } from '../../components/media-picker-dialog';
 import type { UiProps } from '../ui-registry';
+
 import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles } from './shared';
 
 export const MainImageInputField = memo(function MainImageInputField({ field }: UiProps) {
@@ -321,19 +325,19 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-foreground">
             {field.label}
-            {field.required ? <span className="ml-1 text-red-500">*</span> : null}
+            {field.required ? <span className="ml-1 text-destructive">*</span> : null}
           </label>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setIsPickerOpen(true)}
-            className="h-6 text-[11px] px-2 gap-1 rounded-md text-primary border-primary/30 hover:bg-primary/10"
+            className="h-6 px-2 gap-1 rounded-md text-xs text-primary border-primary/30 hover:bg-primary/10"
           >
             <HardDrive className="h-3 w-3" /> Media Library
           </Button>
         </div>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {previews.length}/{maxItems} uploaded
         </span>
       </div>
@@ -389,27 +393,28 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
                 </div>
               </div>
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => fileInputs.current[0]?.click()}
                 disabled={isUploading}
-                className="w-full h-36 rounded-xl border border-dashed bg-muted/10 hover:bg-muted/30 transition-colors flex flex-col items-center justify-center p-4 text-center cursor-pointer border-muted-foreground/30 hover:border-primary/50"
+                className="h-auto w-full flex-col rounded-xl border border-dashed bg-muted/10 hover:bg-muted/30 p-4 text-center cursor-pointer border-muted-foreground/30 hover:border-primary/50"
               >
                 {isUploading ? (
                   <div className="flex flex-col items-center gap-2 text-primary">
-                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <Spinner size="lg" />
                     <span className="text-xs font-semibold">Uploading Image...</span>
                   </div>
                 ) : (
                   <>
                     <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
                     <span className="text-xs font-bold text-foreground">Click to upload image</span>
-                    <span className="text-[11px] text-muted-foreground mt-0.5">
+                    <span className="text-xs text-muted-foreground mt-0.5">
                       JPG, PNG, WEBP supported
                     </span>
                   </>
                 )}
-              </button>
+              </Button>
             )}
             <input
               ref={(el) => {
@@ -477,7 +482,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
             {previews.length < maxItems && (
               <label className="h-28 rounded-xl border border-dashed bg-muted/10 hover:bg-muted/30 transition-colors flex flex-col items-center justify-center cursor-pointer border-muted-foreground/30 hover:border-primary/50 text-center p-2">
                 {isUploading ? (
-                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <Spinner size="lg" className="text-primary" />
                 ) : (
                   <>
                     <Plus className="h-5 w-5 text-muted-foreground mb-1" />
@@ -500,7 +505,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
 
         {/* Specifications Footer */}
         {field.rule ? (
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             Max size:{' '}
             {Math.round(
               (typeof field.rule.maxSize === 'number' ? field.rule.maxSize : 5242880) / 1024 / 1024,
@@ -523,7 +528,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
       </div>
 
       {formState.errors?.[field.name]?.message ? (
-        <div className="text-xs text-red-500">{String(formState.errors[field.name]?.message)}</div>
+        <div className="text-xs text-destructive">{String(formState.errors[field.name]?.message)}</div>
       ) : null}
     </div>
   );

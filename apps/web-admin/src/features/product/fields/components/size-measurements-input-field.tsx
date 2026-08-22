@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useEffect,useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+
+import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import {
   Table,
@@ -9,8 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import { cn } from '@/lib/utils';
+
 import type { UiProps } from '../ui-registry';
+
+import { cn } from '@/lib/utils';
 
 interface MeasurementChartSpec {
   key: string;
@@ -216,9 +220,9 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/40">
-            <TableHead className="w-24 font-bold text-foreground">Size</TableHead>
+            <TableHead className="w-24">Size</TableHead>
             {chart.columns.map((c) => (
-              <TableHead key={c} className="font-semibold text-foreground">
+              <TableHead key={c}>
                 {c}{' '}
                 <span className="text-xs text-muted-foreground font-normal">
                   ({unit.toLowerCase()})
@@ -271,7 +275,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
                           {...register(`sizes.${sizeIndex}.${listKey}.${colIndex}.value` as const)}
                         />
                         {cellError && (
-                          <span className="text-[10px] text-destructive block font-medium">
+                          <span className="text-xs text-destructive block font-medium">
                             {cellError}
                           </span>
                         )}
@@ -291,38 +295,42 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
     <div className="col-span-full space-y-4 rounded-xl border bg-card p-4 shadow-2xs">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
         <div>
-          <h4 className="text-sm font-bold text-foreground">Size Chart & Measurements</h4>
+          <h4 className="text-sm font-medium text-foreground">Size Chart & Measurements</h4>
           <p className="text-xs text-muted-foreground">
             Provide measurements for each active size to help buyers choose the right fit.
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-lg border bg-muted p-1 self-start sm:self-auto">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             data-testid="measurement-unit-cm"
             onClick={() => handleUnitToggle('CM')}
             className={cn(
-              'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors',
+              'h-auto rounded-md px-2.5 py-1 text-xs font-semibold',
               unit === 'CM'
-                ? 'bg-background text-foreground shadow-2xs'
+                ? 'bg-background text-foreground shadow-2xs hover:bg-background hover:text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
             CM
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             data-testid="measurement-unit-in"
             onClick={() => handleUnitToggle('IN')}
             className={cn(
-              'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors',
+              'h-auto rounded-md px-2.5 py-1 text-xs font-semibold',
               unit === 'IN'
-                ? 'bg-background text-foreground shadow-2xs'
+                ? 'bg-background text-foreground shadow-2xs hover:bg-background hover:text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
             IN
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -333,13 +341,15 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
             const hasError = hasErrorsForChartKey(chart.key);
             const isActive = activeTabKey === chart.key;
             return (
-              <button
+              <Button
                 key={chart.key}
                 type="button"
+                variant="ghost"
+                size="sm"
                 data-testid={`measurement-tab-${chart.key}`}
                 onClick={() => setActiveTabKey(chart.key)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors cursor-pointer',
+                  'h-auto -mb-px gap-1.5 rounded-none border-b-2 px-3 py-2 text-xs font-medium',
                   isActive
                     ? 'border-primary text-primary font-semibold'
                     : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -348,7 +358,7 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
               >
                 {chart.label}
                 {hasError && <span className="h-1.5 w-1.5 rounded-full bg-destructive" />}
-              </button>
+              </Button>
             );
           })}
         </div>

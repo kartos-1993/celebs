@@ -1,15 +1,18 @@
 import React from 'react';
+import { Link,useMatches } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { Button } from '@celebs/shared-ui/components/button';
+
 import {
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@celebs/shared-ui/components/breadcrumbs';
-import { useMatches, Link } from 'react-router-dom';
+import { Button } from '@celebs/shared-ui/components/button';
+
 import { SheetMenu } from './sheet-menu';
+
 import { useSidebarContext } from '@/context/sidebar-provider';
 import { cn } from '@/lib/utils';
 
