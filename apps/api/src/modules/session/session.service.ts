@@ -1,6 +1,6 @@
 import { NotFoundException } from '@celebs/shared-utils';
 
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 export class SessionService {
   public async getSessionById(sessionId: string) {

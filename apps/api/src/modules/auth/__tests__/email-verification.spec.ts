@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import app from '@/app';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 describe('Email Verification End-to-End Suite', () => {
   let createdUserId: string | null = null;

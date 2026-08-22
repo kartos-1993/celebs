@@ -3,7 +3,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 // Hoist mock functions so they are available inside vi.mock()
 const { mockVerifyIdToken } = vi.hoisted(() => ({

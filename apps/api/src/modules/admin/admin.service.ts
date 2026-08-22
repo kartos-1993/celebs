@@ -6,7 +6,7 @@ import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
 import { hashValue } from '@/common/utils/bcrypt';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
 import {
   vendorApprovalTemplate,

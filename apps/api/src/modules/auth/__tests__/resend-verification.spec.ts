@@ -4,7 +4,7 @@ import { AuthService } from '../auth.service';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';
-import prisma from '@/db';
+import prisma from '@/config/db.prisma';
 
 vi.mock('@/mailers/mailer', () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),

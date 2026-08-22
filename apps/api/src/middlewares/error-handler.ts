@@ -5,7 +5,7 @@ import { IApiResponse } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
-import { Prisma } from '@/db';
+import { Prisma } from '@/config/db.prisma';
 
 function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === 'object' && val !== null;
