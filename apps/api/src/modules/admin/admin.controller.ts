@@ -36,7 +36,7 @@ export class AdminController {
 
   public approveVendor = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
-    const vendor = await this.adminService.approveVendor(id);
+    const vendor = await this.adminService.approveVendor(id, req.actor?.userId);
     const response: IApiResponse<typeof vendor> = {
       success: true,
       message: 'Vendor approved successfully',
@@ -48,7 +48,7 @@ export class AdminController {
   public rejectVendor = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const { reason } = req.body;
-    const vendor = await this.adminService.rejectVendor(id, reason);
+    const vendor = await this.adminService.rejectVendor(id, reason, req.actor?.userId);
     const response: IApiResponse<typeof vendor> = {
       success: true,
       message: 'Vendor rejected successfully',
@@ -59,7 +59,7 @@ export class AdminController {
 
   public suspendVendor = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
-    const vendor = await this.adminService.suspendVendor(id);
+    const vendor = await this.adminService.suspendVendor(id, req.actor?.userId);
     const response: IApiResponse<typeof vendor> = {
       success: true,
       message: 'Vendor suspended successfully',

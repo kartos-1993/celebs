@@ -21,6 +21,7 @@ import {
 } from '@celebs/shared-utils';
 
 import { mediaRepository } from '../media/media.repository';
+import { storeLifecycle } from '../store/store-lifecycle.service';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
@@ -295,25 +296,8 @@ export class AuthService {
 
     logger.info({ userId: user.id }, 'User authenticated successfully');
 
-    if (user.role === 'VENDOR') {
-      if (!user.isEmailVerified) {
-        throw new ForbiddenException(
-          'Email address is not verified. Please check your inbox for the verification link.',
-          ErrorCode.VERIFICATION_ERROR,
-        );
-      }
-
-      const profile = await prisma.vendorProfile.findUnique({
-        where: { userId: user.id },
-      });
-
-      if (!profile || profile.status === 'SUSPENDED') {
-        throw new ForbiddenException(
-          'Your seller account has been suspended. Please contact support.',
-          ErrorCode.FORBIDDEN_ACCESS,
-        );
-      }
-    }
+    // Single lifecycle chokepoint: blocks suspended owners AND suspended-store staff.
+    await storeLifecycle.assertSellerLoginAllowed(user);
 
     // Create session
     logger.info({ userId: user.id }, 'Creating session');
@@ -590,15 +574,8 @@ export class AuthService {
     }
 
     const user = session.user;
-    if (user.role === 'VENDOR' && user.vendorProfile) {
-      const status = user.vendorProfile.status;
-      if (status === 'SUSPENDED') {
-        throw new ForbiddenException(
-          'Access denied: Seller account is suspended.',
-          ErrorCode.FORBIDDEN_ACCESS,
-        );
-      }
-    }
+    // Single lifecycle chokepoint (covers owner + staff of the parent store).
+    await storeLifecycle.assertSellerLoginAllowed(user);
 
     // Sliding Session Window: Extend expiredAt forward on active refresh
     try {
@@ -729,18 +706,8 @@ export class AuthService {
       );
     }
 
-    if (user.role === 'VENDOR') {
-      const profile = await prisma.vendorProfile.findUnique({
-        where: { userId: user.id },
-      });
-
-      if (!profile || profile.status === 'SUSPENDED') {
-        throw new ForbiddenException(
-          'Access denied: Seller account is suspended.',
-          ErrorCode.FORBIDDEN_ACCESS,
-        );
-      }
-    }
+    // Single lifecycle chokepoint (covers owner + staff of the parent store).
+    await storeLifecycle.assertSellerLoginAllowed(user);
 
     const session = await prisma.session.create({
       data: {

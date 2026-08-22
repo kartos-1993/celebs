@@ -83,17 +83,19 @@ export class BrandController {
 
   submitAuthorization = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user?.vendorId;
-      if (!vendorId) {
+      // Store context is pre-validated by requireStoreState(['APPROVED']);
+      // owners resolve via their own profile, staff via the parent store FK.
+      const storeId = req.store?.id;
+      if (!storeId) {
         throw new AppError(
-          'Vendor context is required for brand authorization',
+          'This operation requires a seller store context',
           HTTPSTATUS.FORBIDDEN,
-          ErrorCode.FORBIDDEN_ACCESS,
+          ErrorCode.SELLER_CONTEXT_REQUIRED,
         );
       }
 
       const validatedData = createBrandAuthorizationSchema.parse(req.body);
-      const auth = await this.brandService.submitAuthorization(vendorId, validatedData);
+      const auth = await this.brandService.submitAuthorization(storeId, validatedData);
 
       res.status(HTTPSTATUS.CREATED).json({
         success: true,
@@ -107,20 +109,20 @@ export class BrandController {
 
   getMyAuthorizations = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user?.vendorId;
-      if (!vendorId) {
+      const storeId = req.store?.id;
+      if (!storeId) {
         throw new AppError(
-          'Vendor context is required',
+          'This operation requires a seller store context',
           HTTPSTATUS.FORBIDDEN,
-          ErrorCode.FORBIDDEN_ACCESS,
+          ErrorCode.SELLER_CONTEXT_REQUIRED,
         );
       }
 
-      const auths = await this.brandService.getVendorAuthorizations(vendorId);
+      const auths = await this.brandService.getVendorAuthorizations(storeId);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: 'Vendor brand authorizations retrieved successfully',
+        message: 'Seller brand authorizations retrieved successfully',
         data: auths,
       });
     } catch (error) {
@@ -147,7 +149,15 @@ export class BrandController {
   reviewAuthorization = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = idParamSchema.parse(req.params);
-      const adminUserId = req.user?.id || 'admin';
+      // Platform actor identity is guaranteed by requirePlatformActor upstream.
+      const adminUserId = req.actor?.userId;
+      if (!adminUserId) {
+        throw new AppError(
+          'Authentication required',
+          HTTPSTATUS.UNAUTHORIZED,
+          ErrorCode.AUTH_TOKEN_MISSING,
+        );
+      }
       const validatedData = reviewBrandAuthorizationSchema.parse(req.body);
       const auth = await this.brandService.reviewAuthorization(id, adminUserId, validatedData);
 

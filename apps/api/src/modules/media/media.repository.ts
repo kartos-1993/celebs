@@ -122,6 +122,24 @@ export class MediaRepository {
     });
   }
 
+  /**
+   * Scoped bulk fetch of unused assets by ID — unpaginated by design so
+   * cleanup operations never orphan S3 objects beyond page 1.
+   */
+  async findUnusedByIds(assetIds: string[], vendorId?: string | null) {
+    const where: Prisma.MediaAssetWhereInput = {
+      id: { in: assetIds },
+      usageCount: 0,
+    };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId;
+    }
+    return prisma.mediaAsset.findMany({
+      where,
+      select: { id: true, key: true },
+    });
+  }
+
   async deleteUnusedAssets(assetIds: string[], vendorId?: string | null) {
     const where: Prisma.MediaAssetWhereInput = {
       id: { in: assetIds },

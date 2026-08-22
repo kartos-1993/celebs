@@ -5,15 +5,20 @@ import { ForbiddenException, UnauthorizedException } from '@celebs/shared-utils'
 
 export const requirePermissions = (...requiredPermissions: Permission[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user;
-    if (!user) {
+
+
+    // Prefer the normalized actor context (Layer 1); fall back to the raw
+    // user record for routers that have not been migrated to actorContext yet.
+    const actor = req.actor;
+    const role = actor?.role ?? req.user?.role;
+    const permissions =
+      actor?.permissions ?? (req.user as { permissions?: string[] } | undefined)?.permissions;
+
+    if (!role) {
       return next(new UnauthorizedException('Authentication required'));
     }
 
-    const userPermissions = (user as { permissions?: string[] }).permissions;
-    const hasPermission = requiredPermissions.every((p) =>
-      can(user.role as string, p, userPermissions),
-    );
+    const hasPermission = requiredPermissions.every((p) => can(role as string, p, permissions));
 
     if (!hasPermission) {
       return next(new ForbiddenException('Forbidden: Insufficient permissions'));
