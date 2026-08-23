@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 
 import { styles } from '../styles/home.styles';
@@ -26,36 +27,6 @@ interface Banner {
   order: number;
 }
 
-const MOCK_BANNERS: Banner[] = [
-  {
-    id: 'mock1',
-    imageUrl:
-      'https://img.ltwebstatic.com/v4/j/ccc/2026/07/15/36/178408260513f918788ef714d8289a721c85311b29_thumbnail_912x.avif',
-    linkType: 'EXTERNAL',
-    linkValue: 'https://shein.com',
-    title: 'Summer Collection',
-    order: 1,
-  },
-  {
-    id: 'mock2',
-    imageUrl:
-      'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/09/1784183215a8bf204c5653289029a73f2cf89ca0a1_thumbnail_912x.avif',
-    linkType: 'NONE',
-    title: 'New Trends',
-    order: 2,
-  },
-  {
-    id: 'mock3',
-    imageUrl:
-      'https://img.ltwebstatic.com/v4/j/ccc/2026/07/16/96/1784186176ae704306a1eda661d8361a93b90d1a3b_thumbnail_912x.avif',
-    linkType: 'NONE',
-    title: 'Street Style',
-    order: 3,
-  },
-];
-
-import { useQuery } from '@tanstack/react-query';
-
 export function BannerCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -63,25 +34,25 @@ export function BannerCarousel() {
   const autoPlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchBanners = async (): Promise<Banner[]> => {
-    try {
-      const response = await apiClient.get('/banners', { skipAuth: true });
-      const resData = response.data;
-      if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
-        return resData.data;
-      }
-    } catch {
-      // Fall back to mock banners if server call fails
+    const response = await apiClient.get('/banners', { skipAuth: true });
+    const resData = response.data;
+    if (resData.success && Array.isArray(resData.data)) {
+      return resData.data;
     }
-    return MOCK_BANNERS;
+    return [];
   };
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['banners'],
     queryFn: fetchBanners,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    // Marketing surface: revalidate on every mount so published banners go
+    // live immediately instead of being served from the persisted cache.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const banners = useMemo(() => data || [], [data]);
+  const hasBanners = banners.length > 0;
 
   useEffect(() => {
     return () => stopAutoPlay();
@@ -145,7 +116,7 @@ export function BannerCarousel() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Palette.white} />
         </View>
-      ) : (
+      ) : !hasBanners ? null : (
         <>
           <FlatList
             ref={flatListRef}

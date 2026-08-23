@@ -68,6 +68,10 @@ export function useSDUILayout(pageId: string = 'home') {
       return DEFAULT_HOME_LAYOUT;
     },
     initialData: DEFAULT_HOME_LAYOUT,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    // Merchandised layout must revalidate on every mount: the persisted
+    // react-query cache (AsyncStorage) would otherwise serve a stale layout
+    // for up to staleTime after an app restart.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
