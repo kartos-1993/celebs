@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -11,16 +11,11 @@ import {
 import { AppHeader } from '@/components/app-header';
 import { ThemedView } from '@/components/themed-view';
 import { Palette } from '@/constants/theme';
-import { CategoryGrid } from '@/features/categories/components/category-grid';
-import { BannerCarousel } from '@/features/home/components/banner-carousel';
-import { CampaignCountdownBanner } from '@/features/home/components/campaign-countdown-banner';
 import { ComboBundleModal } from '@/features/home/components/combo-bundle-modal';
-import {
-  ComboBundleData,
-  ComboBundleShowcase,
-} from '@/features/home/components/combo-bundle-showcase';
+import { ComboBundleData } from '@/features/home/components/combo-bundle-showcase';
 import { styles } from '@/features/home/styles/home.styles';
-import { ProductGrid, ProductGridRef } from '@/features/products/components/product-grid';
+import { DynamicLayout } from '@/features/sdui/components/dynamic-layout';
+import { useSDUILayout } from '@/features/sdui/hooks/use-sdui-layout';
 
 export default function HomeScreen() {
   const scheme = useColorScheme();
@@ -28,17 +23,19 @@ export default function HomeScreen() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedCombo, setSelectedCombo] = useState<ComboBundleData | null>(null);
   const [isComboModalOpen, setIsComboModalOpen] = useState(false);
-  const productGridRef = useRef<ProductGridRef>(null);
+  const { data: sduiLayout, refetch: refetchLayout } = useSDUILayout('home');
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    refetchLayout();
     setTimeout(() => {
       setRefreshKey((prev) => prev + 1);
       setRefreshing(false);
     }, 1000);
-  }, []);
+  }, [refetchLayout]);
 
   const [scrollY, setScrollY] = useState(0);
+  const [loadMoreSignal, setLoadMoreSignal] = useState(0);
   const lastScrollY = useRef(0);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -51,7 +48,7 @@ export default function HomeScreen() {
 
     const isNearEnd = layoutMeasurement.height + currentY >= contentSize.height - 400;
     if (isNearEnd && isScrollingDown) {
-      productGridRef.current?.loadMore();
+      setLoadMoreSignal((prev) => prev + 1);
     }
   }, []);
 
@@ -59,6 +56,14 @@ export default function HomeScreen() {
     setSelectedCombo(combo);
     setIsComboModalOpen(true);
   }, []);
+
+  const sduiHandlers = useMemo(
+    () => ({
+      onSelectCombo: handleSelectCombo,
+      loadMoreSignal,
+    }),
+    [handleSelectCombo, loadMoreSignal]
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -84,23 +89,12 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Banner Carousel */}
-        <BannerCarousel key={`banner-${refreshKey}`} />
-
-        {/* Content Section */}
-        <ThemedView type="backgroundElement" style={styles.contentCard}>
-          {/* Festival Campaign Banner with Live Countdown */}
-          <CampaignCountdownBanner key={`camp-${refreshKey}`} />
-
-          {/* Curated Travel & Festive Combo Showcase */}
-          <ComboBundleShowcase key={`combo-${refreshKey}`} onSelectCombo={handleSelectCombo} />
-
-          {/* Categories Grid */}
-          <CategoryGrid key={`cat-${refreshKey}`} />
-
-          {/* Dynamic SHEIN-Style Product Feed */}
-          <ProductGrid ref={productGridRef} key={`prod-${refreshKey}`} />
-        </ThemedView>
+        {/* Dynamic Server-Driven Layout */}
+        <DynamicLayout
+          widgets={sduiLayout?.widgets}
+          handlers={sduiHandlers}
+          refreshKey={refreshKey}
+        />
       </ScrollView>
 
       {/* Combo Bundle Modal */}
