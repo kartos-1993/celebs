@@ -24,6 +24,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import VendorPortalLayout from '@/layouts/vendor-portal-layout';
 
 const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
+const ForbiddenError = lazy(() => import('@/features/errors/forbidden-error'));
 const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'));
 
 export const routesConfig: RouteObject[] = [
@@ -53,6 +54,11 @@ export const routesConfig: RouteObject[] = [
       financeRoutes,
       platformSettingsRoutes,
       ...marketingRoutes,
+      {
+        path: '403',
+        element: <ForbiddenError />,
+        handle: { crumb: 'Access Denied' },
+      },
     ],
   },
   // ── Vendor Portal (onboarding / under-review / rejected) ──────────────────
@@ -74,8 +80,14 @@ export const routesConfig: RouteObject[] = [
     ),
     children: authRoutes,
   },
+  // ── Standalone Error Routes ───────────────────────────────────────────────
+  {
+    path: PATHS.ERRORS.FORBIDDEN,
+    element: <ForbiddenError />,
+  },
   {
     path: '*',
     element: <NotFoundError />,
   },
 ];
+

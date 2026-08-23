@@ -10,6 +10,7 @@
     "build:staging": "vite build --mode staging",
     "preview": "vite preview --host",
     "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
     "test:e2e": "node ../../node_modules/@playwright/test/cli.js test",
     "test:e2e:headed": "node ../../node_modules/@playwright/test/cli.js test --headed",
     "test:e2e:debug": "node ../../node_modules/@playwright/test/cli.js test --debug=inspector",

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
+  Layers,
   MailWarning,
   Package,
   Pencil,
@@ -11,6 +12,7 @@ import {
   Send,
   Shield,
   ShieldCheck,
+  ShoppingCart,
   Store,
   Trash2,
   Truck,
@@ -18,7 +20,11 @@ import {
 } from 'lucide-react';
 import { z } from 'zod';
 
-import { Permission } from '@celebs/rbac';
+import {
+  Permission,
+  STAFF_ROLE_PRESETS,
+  getGroupedPermissions,
+} from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
 import { createStaffSchema } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -57,64 +63,117 @@ import { getAdminVendors } from '@/features/vendors/api';
 import { VENDORS_QUERY_KEYS } from '@/features/vendors/api';
 import { useToast } from '@/hooks/use-toast';
 
-const AVAILABLE_STAFF_PERMISSIONS = [
-  { perm: Permission.PRODUCT_VIEW, label: 'View Products' },
-  { perm: Permission.PRODUCT_CREATE, label: 'Create Products' },
-  { perm: Permission.PRODUCT_EDIT, label: 'Edit Products' },
-  { perm: Permission.PRODUCT_DELETE, label: 'Delete Products' },
-  { perm: Permission.CATALOG_VIEW, label: 'View Catalog Setup' },
-  { perm: Permission.ORDER_VIEW, label: 'View Orders & Reviews' },
-  { perm: Permission.ORDER_MANAGE, label: 'Manage & Fulfill Orders' },
-  { perm: Permission.FINANCE_VIEW, label: 'View Finance Reports' },
-  { perm: Permission.STAFF_VIEW, label: 'View Staff Roster' },
-];
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  package: Package,
+  layers: Layers,
+  'shopping-cart': ShoppingCart,
+  receipt: Receipt,
+  'shield-check': ShieldCheck,
+  truck: Truck,
+  settings: Shield,
+};
 
 type FormValues = z.infer<typeof createStaffSchema>;
 
-const STAFF_ROLE_PRESETS = [
-  {
-    id: 'inventory',
-    label: 'Product & Inventory Lead',
-    description: 'Can manage products, add new items, and update media center.',
-    icon: Package,
-    permissions: [
-      Permission.PRODUCT_VIEW,
-      Permission.PRODUCT_CREATE,
-      Permission.PRODUCT_EDIT,
-      Permission.PRODUCT_DELETE,
-    ],
-  },
-  {
-    id: 'fulfillment',
-    label: 'Order Fulfillment Agent',
-    description: 'Can view and update order status, manage returns and customer reviews.',
-    icon: Truck,
-    permissions: [Permission.ORDER_VIEW, Permission.ORDER_MANAGE, Permission.PRODUCT_VIEW],
-  },
-  {
-    id: 'accountant',
-    label: 'Finance Accountant',
-    description: 'Can view shop earnings, payout reports, and financial statements.',
-    icon: Receipt,
-    permissions: [Permission.FINANCE_VIEW, Permission.ORDER_VIEW],
-  },
-  {
-    id: 'full_manager',
-    label: 'Full Shop Manager',
-    description: 'Has full operational access to products, orders, reviews, and finance.',
-    icon: ShieldCheck,
-    permissions: [
-      Permission.PRODUCT_VIEW,
-      Permission.PRODUCT_CREATE,
-      Permission.PRODUCT_EDIT,
-      Permission.PRODUCT_DELETE,
-      Permission.ORDER_VIEW,
-      Permission.ORDER_MANAGE,
-      Permission.FINANCE_VIEW,
-      Permission.CATALOG_VIEW,
-    ],
-  },
-];
+function GroupedPermissionSelector({
+  selected,
+  onChange,
+  isAdmin = false,
+}: {
+  selected: string[];
+  onChange: (permissions: string[]) => void;
+  isAdmin?: boolean;
+}) {
+  const allGroups = getGroupedPermissions();
+
+  const togglePermission = (perm: string) => {
+    if (selected.includes(perm)) {
+      onChange(selected.filter((p) => p !== perm));
+    } else {
+      onChange([...selected, perm]);
+    }
+  };
+
+  const toggleGroup = (groupPerms: Permission[]) => {
+    const allSelected = groupPerms.every((p) => selected.includes(p));
+    if (allSelected) {
+      onChange(selected.filter((p) => !groupPerms.includes(p as Permission)));
+    } else {
+      const merged = new Set([...selected, ...groupPerms]);
+      onChange(Array.from(merged));
+    }
+  };
+
+  const visibleGroups = allGroups.filter(
+    (g) => isAdmin || g.module.key !== 'PLATFORM',
+  );
+
+  return (
+    <div className="space-y-3">
+      {visibleGroups.map((group) => {
+        const GroupIcon = ICON_MAP[group.module.iconKey] || Shield;
+        const groupPerms = group.permissions.map((p) => p.perm);
+        const allGroupSelected =
+          groupPerms.length > 0 && groupPerms.every((p) => selected.includes(p));
+
+        return (
+          <div
+            key={group.module.key}
+            className="rounded-lg border border-border/70 bg-muted/20 p-3 space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-md bg-muted text-foreground">
+                  <GroupIcon className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-foreground">{group.module.label}</h4>
+                  <p className="text-[10px] text-muted-foreground">{group.module.description}</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleGroup(groupPerms)}
+                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                {allGroupSelected ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-border/40">
+              {group.permissions.map(({ perm, label, description }) => {
+                const isChecked = selected.includes(perm);
+                return (
+                  <label
+                    key={perm}
+                    className={`flex items-start gap-2 p-2 rounded-md border text-xs cursor-pointer transition-colors ${
+                      isChecked ? 'border-primary/50 bg-primary/5' : 'border-border/60 hover:bg-muted/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => togglePermission(perm)}
+                      className="rounded border-input text-primary focus:ring-primary h-3.5 w-3.5 mt-0.5"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="font-medium text-foreground block leading-none">{label}</span>
+                      <span className="text-[10px] text-muted-foreground block leading-tight">
+                        {description}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function ResendStaffInviteButton({ email }: { email: string }) {
   const { toast } = useToast();
@@ -329,7 +388,7 @@ export default function StaffList() {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-lg max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card border rounded-xl shadow-lg max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-lg font-semibold text-foreground">Add Vendor Staff Account</h3>
               <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
@@ -432,9 +491,9 @@ export default function StaffList() {
                 {/* Role Preset Selector */}
                 <div className="space-y-3 border-t pt-3">
                   <FormLabel className="block">Select Delegated Role Preset &amp; Permissions</FormLabel>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {STAFF_ROLE_PRESETS.map((preset) => {
-                      const PresetIcon = preset.icon;
+                      const PresetIcon = ICON_MAP[preset.iconKey] || Shield;
                       return (
                         <div
                           key={preset.id}
@@ -444,11 +503,11 @@ export default function StaffList() {
                           }}
                           className={`p-3 rounded-lg border text-xs cursor-pointer transition-all flex items-start justify-between ${
                             selectedPreset === preset.id
-                              ? 'border-primary bg-primary/5 shadow-sm'
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
                               : 'border-border hover:bg-muted'
                           }`}
                         >
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-2.5">
                             <div className="p-1.5 rounded-md bg-muted text-foreground shrink-0 mt-0.5">
                               <PresetIcon className="w-4 h-4" />
                             </div>
@@ -456,52 +515,41 @@ export default function StaffList() {
                               <span className="font-bold text-foreground block">
                                 {preset.label}
                               </span>
-                              <span className="text-xs text-muted-foreground leading-tight block">
+                              <span className="text-[11px] text-muted-foreground leading-tight block">
                                 {preset.description}
                               </span>
                             </div>
                           </div>
                           {selectedPreset === preset.id && (
-                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5 ml-1" />
                           )}
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Granular Permission Customization */}
+                  {/* Granular Grouped Permission Customization */}
                   <div className="border-t pt-3 space-y-2">
-                    <Label className="block">Granular Capability Checkboxes</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {AVAILABLE_STAFF_PERMISSIONS.map(({ perm, label }) => {
-                        const isChecked = selectedPermissions.includes(perm);
-                        return (
-                          <label
-                            key={perm}
-                            className="flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                setSelectedPreset('custom');
-                                setSelectedPermissions((prev) =>
-                                  isChecked ? prev.filter((p) => p !== perm) : [...prev, perm],
-                                );
-                              }}
-                              className="rounded border-input text-primary focus:ring-primary h-3.5 w-3.5"
-                            />
-                            <span className="text-foreground">{label}</span>
-                          </label>
-                        );
-                      })}
+                    <div className="flex items-center justify-between">
+                      <Label className="block font-semibold">Granular Capability Selection</Label>
+                      <span className="text-[11px] text-muted-foreground">
+                        {selectedPermissions.length} capabilities selected
+                      </span>
                     </div>
+                    <GroupedPermissionSelector
+                      selected={selectedPermissions}
+                      onChange={(perms) => {
+                        setSelectedPreset('custom');
+                        setSelectedPermissions(perms);
+                      }}
+                      isAdmin={isAdminOrSuperAdmin}
+                    />
                   </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full text-xs"
+                  className="w-full text-xs mt-4"
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending
@@ -517,7 +565,7 @@ export default function StaffList() {
       {/* Edit Staff Permissions Modal */}
       {editingStaff && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-lg max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card border rounded-xl shadow-lg max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Edit Staff Permissions</h3>
@@ -529,30 +577,18 @@ export default function StaffList() {
             </div>
 
             <div className="space-y-3">
-              <Label className="block">Assigned Granular Capabilities</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {AVAILABLE_STAFF_PERMISSIONS.map(({ perm, label }) => {
-                  const isChecked = editPermissions.includes(perm);
-                  return (
-                    <label
-                      key={perm}
-                      className="flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          setEditPermissions((prev) =>
-                            isChecked ? prev.filter((p) => p !== perm) : [...prev, perm],
-                          );
-                        }}
-                        className="rounded border-input text-primary focus:ring-primary h-3.5 w-3.5"
-                      />
-                      <span className="text-foreground">{label}</span>
-                    </label>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <Label className="block font-semibold">Assigned Granular Capabilities</Label>
+                <span className="text-[11px] text-muted-foreground">
+                  {editPermissions.length} capabilities active
+                </span>
               </div>
+
+              <GroupedPermissionSelector
+                selected={editPermissions}
+                onChange={setEditPermissions}
+                isAdmin={isAdminOrSuperAdmin}
+              />
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={() => setEditingStaff(null)}>

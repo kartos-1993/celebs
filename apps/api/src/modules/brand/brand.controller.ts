@@ -4,15 +4,20 @@ import {
   brandFilterSchema,
   createBrandAuthorizationSchema,
   createBrandSchema,
+  getBrandAuthorizationsQuerySchema,
+  getBrandParamSchema,
   idParamSchema,
+  paginationQuerySchema,
   reviewBrandAuthorizationSchema,
   updateBrandSchema,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { isPlatformActor } from '@/common/context/actor-context';
 import { BrandService, brandService as defaultBrandService } from './brand.service';
 
 export class BrandController {
+
   constructor(private brandService: BrandService = defaultBrandService) {}
 
   getAllBrands = async (req: Request, res: Response, next: NextFunction) => {
@@ -32,7 +37,7 @@ export class BrandController {
 
   getBrandByIdOrSlug = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const idOrSlug = String(req.params.id);
+      const { id: idOrSlug } = getBrandParamSchema.parse(req.params);
       const brand = await this.brandService.getBrandByIdOrSlug(idOrSlug);
 
       if (!brand) {
@@ -83,8 +88,6 @@ export class BrandController {
 
   submitAuthorization = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Store context is pre-validated by requireStoreState(['APPROVED']);
-      // owners resolve via their own profile, staff via the parent store FK.
       const storeId = req.store?.id;
       if (!storeId) {
         throw new AppError(
@@ -111,6 +114,21 @@ export class BrandController {
     try {
       const storeId = req.store?.id;
       if (!storeId) {
+        if (req.actor && isPlatformActor(req.actor)) {
+          const { vendorId } = getBrandAuthorizationsQuerySchema.parse(req.query);
+          const auths = vendorId
+            ? await this.brandService.getVendorAuthorizations(vendorId)
+            : [];
+
+
+          res.status(HTTPSTATUS.OK).json({
+            success: true,
+            message: 'Brand authorizations retrieved successfully',
+            data: auths,
+          });
+          return;
+        }
+
         throw new AppError(
           'This operation requires a seller store context',
           HTTPSTATUS.FORBIDDEN,
@@ -132,8 +150,7 @@ export class BrandController {
 
   getPendingAuthorizations = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const page = parseInt(req.query.page as string, 10) || 1;
-      const limit = parseInt(req.query.limit as string, 10) || 20;
+      const { page, limit } = paginationQuerySchema.parse(req.query);
       const result = await this.brandService.getPendingAuthorizations(page, limit);
 
       res.status(HTTPSTATUS.OK).json({
@@ -149,7 +166,6 @@ export class BrandController {
   reviewAuthorization = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = idParamSchema.parse(req.params);
-      // Platform actor identity is guaranteed by requirePlatformActor upstream.
       const adminUserId = req.actor?.userId;
       if (!adminUserId) {
         throw new AppError(

@@ -43,8 +43,27 @@ export const bulkUpdatePlatformSettingsSchema = z.object({
   reason: z.string().max(255).optional(),
 });
 
+export const settingKeyParamSchema = z.object({
+  key: z.string().trim().min(1, 'Setting key is required'),
+});
+
+export const getPlatformSettingsQuerySchema = z.object({
+  group: z.string().trim().optional(),
+});
+
+export const getPlatformSettingAuditLogsQuerySchema = z.object({
+  key: z.string().trim().optional(),
+  limit: z
+    .string()
+    .optional()
+    .default('50')
+    .transform((val) => Math.min(100, Math.max(1, parseInt(val, 10) || 50))),
+});
+
 export type PlatformSettingType = z.infer<typeof platformSettingSchema>;
 export type UpdatePlatformSettingType = z.infer<typeof updatePlatformSettingSchema>;
 export type UpsertPlatformSettingType = z.infer<typeof upsertPlatformSettingSchema>;
 export type BulkUpdatePlatformSettingsType = z.infer<typeof bulkUpdatePlatformSettingsSchema>;
-
+export type SettingKeyParamType = z.infer<typeof settingKeyParamSchema>;
+export type GetPlatformSettingsQueryType = z.infer<typeof getPlatformSettingsQuerySchema>;
+export type GetPlatformSettingAuditLogsQueryType = z.infer<typeof getPlatformSettingAuditLogsQuerySchema>;
