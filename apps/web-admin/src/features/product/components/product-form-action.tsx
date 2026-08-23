@@ -19,7 +19,7 @@ const ProductFormActions = ({
   onSaveAsDraft,
 }: ProductFormActionsProps) => {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 shadow-xs md:flex-row md:items-center md:justify-between">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">
           {isReady ? 'Ready to publish' : 'More details are still required'}

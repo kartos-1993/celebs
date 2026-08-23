@@ -42,7 +42,7 @@ const ProductFormSidebar = ({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-xs">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Submission State
         </p>
@@ -54,7 +54,7 @@ const ProductFormSidebar = ({
         </p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-xs">
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -81,8 +81,10 @@ const ProductFormSidebar = ({
         />
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
-        <p className="text-xs font-semibold text-foreground">Checklist</p>
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-xs">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          Checklist
+        </p>
         <div className="mt-2 space-y-0.5">
           {sections.map((section) => (
             <button
@@ -117,8 +119,10 @@ const ProductFormSidebar = ({
       </div>
 
       {tips.length > 0 && (
-        <div className="rounded-2xl border border-border bg-muted/50 p-3 shadow-sm">
-          <p className="text-xs font-semibold text-foreground">Tips</p>
+        <div className="rounded-2xl border border-border bg-muted/50 p-3 shadow-xs">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Tips
+          </p>
           <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
             {tips.map((tip) => (
               <p key={tip} className="leading-snug">
