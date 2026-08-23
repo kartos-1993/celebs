@@ -21,9 +21,9 @@ import {
   deleteS3Object,
 } from './storage.service';
 
-import { assetQueue } from '@/common/services/queue.service';
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requireStoreState, resolveTargetStoreId } from '@/common/guards/store.guards';
+import { assetQueue } from '@/common/services/queue.service';
 import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';

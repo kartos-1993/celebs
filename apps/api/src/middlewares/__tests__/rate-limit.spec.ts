@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import request from 'supertest';
+import { describe, expect,it } from 'vitest';
+
 import app from '@/app';
 
 describe('Rate Limiting System', () => {
@@ -15,7 +16,7 @@ describe('Rate Limiting System', () => {
     });
 
     it('should return 429 Too Many Requests when auth limit (10) is exceeded', async () => {
-      let lastRes: any;
+      let lastRes: request.Response | undefined;
       for (let i = 0; i < 11; i++) {
         lastRes = await request(app)
           .post('/api/v1/auth/login')
@@ -23,25 +24,26 @@ describe('Rate Limiting System', () => {
           .send({ email: `test${i}@example.com`, password: 'password123' });
       }
 
-      expect(lastRes.status).toBe(429);
-      expect(lastRes.body.success).toBe(false);
-      expect(lastRes.body.errorCode).toBe('TOO_MANY_REQUESTS');
-      expect(lastRes.body.message).toContain('Too many requests');
+      expect(lastRes?.status).toBe(429);
+      expect(lastRes?.body.success).toBe(false);
+      expect(lastRes?.body.errorCode).toBe('TOO_MANY_REQUESTS');
+      expect(lastRes?.body.message).toContain('Too many requests');
     });
   });
 
   describe('Media Upload Rate Limiter (/api/v1/media/*)', () => {
     it('should return 429 Too Many Requests when upload limit (30) is exceeded', async () => {
-      let lastRes: any;
+      let lastRes: request.Response | undefined;
       for (let i = 0; i < 31; i++) {
         lastRes = await request(app).post('/api/v1/media/upload').set('x-test-rate-limit', 'true');
       }
 
-      expect(lastRes.status).toBe(429);
-      expect(lastRes.body.success).toBe(false);
-      expect(lastRes.body.errorCode).toBe('TOO_MANY_REQUESTS');
+      expect(lastRes?.status).toBe(429);
+      expect(lastRes?.body.success).toBe(false);
+      expect(lastRes?.body.errorCode).toBe('TOO_MANY_REQUESTS');
     });
   });
+
 
   describe('Product Search Rate Limiter (/api/v1/products)', () => {
     it('should process unauthenticated search queries normally under limit', async () => {

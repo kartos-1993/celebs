@@ -29,6 +29,7 @@ import logisticsRoutes from './modules/logistics/logistics.routes';
 import mediaRoutes from './modules/media/media.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
 import orderRoutes from './modules/order/order.routes';
+import platformSettingsRoutes from './modules/platform-settings/platform-settings.routes';
 import productRoutes from './modules/product/product.routes';
 import renderRoutes from './modules/product/product-render.routes';
 import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
@@ -144,7 +145,9 @@ app.use(`${config.BASE_PATH}/orders`, orderRoutes);
 app.use(`${config.BASE_PATH}/campaigns`, campaignRoutes);
 app.use(`${config.BASE_PATH}/combos`, comboRoutes);
 app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
+app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
+
 
 if (config.NODE_ENV !== 'production') {
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));

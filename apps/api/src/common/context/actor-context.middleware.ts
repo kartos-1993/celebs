@@ -3,8 +3,9 @@ import type { NextFunction, Request, Response } from 'express';
 import { getUserPermissions } from '@celebs/rbac';
 import { UnauthorizedException } from '@celebs/shared-utils';
 
+import { type Actor, isStoreStatus, type StoreContext } from './actor-context';
+
 import prisma from '@/config/db.prisma';
-import { isStoreStatus, type Actor, type StoreContext } from './actor-context';
 
 /**
  * Resolves the acting store for a user:
@@ -73,8 +74,10 @@ export const optionalActorContext = async (req: Request, _res: Response, next: N
     req.actor = buildActor(u);
     req.store = await resolveStore(u.id, u.role ?? 'CUSTOMER', u.vendorProfile?.id ?? u.vendorId ?? null);
     next();
-  } catch (error) {
+  } catch {
     // Never block storefront reads on context failures.
     next();
   }
 };
+
+

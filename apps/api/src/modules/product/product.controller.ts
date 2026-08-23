@@ -8,11 +8,11 @@ import {
   productReviewActionSchema,
   updateProductSchema,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
-
-import { isPlatformActor } from '@/common/context/actor-context';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { ProductService } from './product.service';
+
+import { isPlatformActor } from '@/common/context/actor-context';
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}

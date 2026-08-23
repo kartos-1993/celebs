@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { OrderStatus } from '@prisma/client';
+import { describe, expect,it } from 'vitest';
+
 import { canTransition, validateTransition } from '@/modules/order/order.state-machine';
 
 describe('OrderStateMachine Unit Tests', () => {

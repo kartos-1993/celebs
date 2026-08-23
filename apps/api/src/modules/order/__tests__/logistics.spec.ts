@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import prisma from '@/config/db.prisma';
+import { CodStatus,OrderStatus, PaymentMethod } from '@prisma/client';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+
 import { hashValue } from '@/common/utils/bcrypt';
+import prisma from '@/config/db.prisma';
 import { logisticsService } from '@/modules/logistics/logistics.service';
-import { OrderStatus, PaymentMethod, CodStatus } from '@prisma/client';
 
 describe('Logistics & 3PL Settlement Integration Tests', () => {
   let testUserId: string;
