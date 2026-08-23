@@ -8,7 +8,10 @@ type SidebarContextProps = {
 };
 const SidebarContext = createContext<SidebarContextProps | null>(null);
 export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  // Tablets (md–lg) get the collapsed icon rail by default; desktop starts expanded.
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(
+    () => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true),
+  );
   const [isHover, setIsHover] = React.useState(false);
   const value = { isSidebarOpen, setIsSidebarOpen, isHover, setIsHover };
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;

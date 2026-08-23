@@ -14,33 +14,35 @@ const Sidebar = () => {
   return (
     <aside
       className={cn(
-        'fixed top-0 left-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-[width] ease-in-out duration-200',
-        isSidebarOpen ? 'w-64' : 'w-[80px]',
+        'fixed top-0 left-0 z-20 h-screen -translate-x-full border-r border-border/70 bg-card transition-[width,transform] ease-in-out duration-200 md:translate-x-0',
+        isSidebarOpen ? 'w-64' : 'w-[76px]',
       )}
     >
       <SidebarToggle isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
-        className="relative h-full flex flex-col px-3 py-4 overflow-y-auto overflow-x-hidden shadow-md"
+        className="relative flex h-full flex-col overflow-y-auto overflow-x-hidden px-3 py-4"
       >
         <Button
           className={cn(
-            'transition-transform ease-in-out duration-300 mb-1',
+            'mb-2 h-auto justify-start px-1 py-1 transition-transform ease-in-out duration-300',
             !isSidebarOpen ? 'translate-x-1' : 'translate-x-0',
           )}
           variant="link"
           asChild
         >
-          <Link to="/" className="flex items-center gap-2">
-            <PanelsTopLeft className="w-6 h-6 mr-1" />
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <PanelsTopLeft className="h-4 w-4" />
+            </span>
             <h1
               className={cn(
-                'font-bold text-lg whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300',
-                !isSidebarOpen ? '-translate-x-96 opacity-0 hidden' : 'translate-x-0 opacity-100',
+                'whitespace-nowrap text-[15px] font-semibold tracking-tight text-foreground transition-[transform,opacity,display] ease-in-out duration-300',
+                !isSidebarOpen ? 'hidden -translate-x-96 opacity-0' : 'translate-x-0 opacity-100',
               )}
             >
-              Celebs Seller Center
+              Seller Center
             </h1>
           </Link>
         </Button>
