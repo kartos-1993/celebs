@@ -20,6 +20,7 @@ interface ApiResponse<T> {
 export async function directUploadFile(
   file: File,
   folder = 'celebs/products',
+  scope: PresignFileInput['scope'] = 'PRODUCT',
 ): Promise<string> {
   const mimeType = (file.type || 'image/jpeg') as PresignFileInput['mimeType'];
 
@@ -31,6 +32,7 @@ export async function directUploadFile(
       mimeType,
       size: file.size,
       folder,
+      scope,
     },
   );
 
@@ -58,7 +60,7 @@ export async function directUploadFile(
     originalname: file.name,
     mimeType,
     size: file.size,
-    scope: 'PRODUCT',
+    scope,
   };
 
   const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>(
@@ -75,6 +77,7 @@ export async function directUploadFile(
 export async function directUploadBatch(
   files: File[],
   folder = 'celebs/products',
+  scope: PresignFileInput['scope'] = 'PRODUCT',
 ): Promise<string[]> {
   if (!files.length) return [];
 
@@ -84,6 +87,7 @@ export async function directUploadBatch(
       mimeType: (file.type || 'image/jpeg') as PresignFileInput['mimeType'],
       size: file.size,
       folder,
+      scope,
     })),
   };
 
@@ -121,7 +125,7 @@ export async function directUploadBatch(
         originalname: file.name,
         mimeType,
         size: file.size,
-        scope: 'PRODUCT',
+        scope,
       },
     );
 

@@ -55,5 +55,5 @@ export async function deleteCombo(id: string) {
 }
 
 export async function uploadMarketingBanner(file: File): Promise<string> {
-  return directUploadFile(file, 'celebs/marketing');
+  return directUploadFile(file, 'platform', 'MARKETING');
 }

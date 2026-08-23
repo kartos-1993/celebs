@@ -37,5 +37,5 @@ export async function resubmitForReview() {
 }
 
 export async function uploadOnboardingImage(file: File): Promise<string> {
-  return directUploadFile(file, 'celebs/kyc');
+  return directUploadFile(file, 'celebs/kyc', 'KYC');
 }

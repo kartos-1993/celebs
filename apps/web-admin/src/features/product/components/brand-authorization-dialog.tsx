@@ -56,7 +56,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
   const handleFileUpload = useCallback(async (file: File) => {
     setIsUploadingDoc(true);
     try {
-      const url = await directUploadFile(file, 'celebs/kyc/brand-auth');
+      const url = await directUploadFile(file, 'celebs/kyc/brand-auth', 'KYC');
       setDocumentUrl(url);
       toast({
         title: 'Document Uploaded',

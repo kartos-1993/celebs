@@ -46,10 +46,12 @@ export class PlatformSettingsApiService {
   }
 
   /**
-   * Upload banner image directly to Cloudflare R2
+   * Upload banner image directly to Cloudflare R2.
+   * Uses the 'platform' key prefix (API allowlist) with MARKETING scope,
+   * producing keys like platform/marketing/<uuid>-<name>.webp
    */
   static async uploadBannerImage(file: File): Promise<string> {
-    return directUploadFile(file, 'celebs/banners');
+    return directUploadFile(file, 'platform', 'MARKETING');
   }
 
   /**
