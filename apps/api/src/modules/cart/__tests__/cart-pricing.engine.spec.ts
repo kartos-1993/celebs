@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
-import { CartPricingEngine, PricingItem, DiscountRule } from '@/modules/cart/cart-pricing.engine';
+import { describe, expect,it } from 'vitest';
+
+import { CartPricingEngine, DiscountRule,PricingItem } from '@/modules/cart/cart-pricing.engine';
 
 describe('CartPricingEngine Unit Tests', () => {
   it('should calculate exact decimal totals avoiding JS floating point inaccuracy', () => {

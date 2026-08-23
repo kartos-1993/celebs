@@ -1,3 +1,4 @@
+import { getUserPermissions, Permission } from '@celebs/rbac';
 import { CreateStaffType } from '@celebs/shared-types';
 import {
   BadRequestException,
@@ -6,8 +7,6 @@ import {
   logger,
   NotFoundException,
 } from '@celebs/shared-utils';
-
-import { getUserPermissions, Permission } from '@celebs/rbac';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { hashValue } from '@/common/utils/bcrypt';

@@ -2,9 +2,9 @@ import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
 
-import prisma from '@/config/db.prisma';
-
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
+
+import prisma from '@/config/db.prisma';
 
 export class LogisticsService {
   async dispatchOrder(payload: DispatchOrderType) {

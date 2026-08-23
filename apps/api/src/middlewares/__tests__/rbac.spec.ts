@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Role } from '@prisma/client';
 import request from 'supertest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
 import app from '@/app';
 import prisma from '@/config/db.prisma';
-import { Role } from '@prisma/client';
 
 // Mock the mailer to avoid making external HTTP calls
 vi.mock('@/mailers/mailer', () => ({

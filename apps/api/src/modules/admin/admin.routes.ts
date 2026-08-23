@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
-
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
+
+import { AdminController } from './admin.controller';
+import { AdminService } from './admin.service';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requirePlatformActor } from '@/common/guards/store.guards';

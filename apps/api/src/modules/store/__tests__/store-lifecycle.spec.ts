@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import prisma from '@/config/db.prisma';
 import { hashValue } from '@/common/utils/bcrypt';
+import prisma from '@/config/db.prisma';
 import {
   assertLegalTransition,
   storeLifecycle,

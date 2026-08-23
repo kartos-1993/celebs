@@ -13,9 +13,9 @@ import { logger } from '@celebs/shared-utils';
 
 import { assetQueue, sessionQueue, verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
+import prisma from './config/db.prisma';
 import { assetWorker } from './modules/media/asset.worker';
 import { sessionWorker } from './modules/session/session.worker';
-import prisma from './config/db.prisma';
 
 const startWorker = async () => {
   try {

@@ -786,3 +786,49 @@ model Banner {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ==========================================
+// DYNAMIC PLATFORM CONFIGURATION & FEATURE FLAGS
+// ==========================================
+
+enum SettingType {
+  BOOLEAN
+  NUMBER
+  STRING
+  JSON
+}
+
+model PlatformSetting {
+  key          String      @id
+  value        String
+  type         SettingType @default(BOOLEAN)
+  group        String      @default("GENERAL")
+  label        String
+  description  String?
+  isPublic     Boolean     @default(false) @map("is_public")
+
+  updatedBy    String?     @map("updated_by")
+  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime    @default(now())
+
+  auditLogs    PlatformSettingAudit[]
+
+  @@index([group])
+  @@index([isPublic])
+}
+
+model PlatformSettingAudit {
+  id           String          @id @default(uuid())
+  settingKey   String          @map("setting_key")
+  setting      PlatformSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
+
+  oldValue     String?         @map("old_value")
+  newValue     String          @map("new_value")
+  changedBy    String          @map("changed_by")
+  reason       String?
+
+  createdAt    DateTime        @default(now())
+
+  @@index([settingKey, createdAt])
+}
+

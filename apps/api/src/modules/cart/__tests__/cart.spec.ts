@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
+import { AppError } from '@celebs/shared-utils';
+
 import prisma from '@/config/db.prisma';
 import { CartService } from '@/modules/cart/cart.service';
-import { AppError } from '@celebs/shared-utils';
 
 describe('Cart Integration Test Suite', () => {
   it('should execute full cart lifecycle: create, add, update, remove, clear', async () => {

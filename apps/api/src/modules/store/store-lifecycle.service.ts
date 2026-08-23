@@ -1,8 +1,8 @@
 import {
   ErrorCode,
   ForbiddenException,
-  HTTPSTATUS,
   HttpException,
+  HTTPSTATUS,
   logger,
   NotFoundException,
 } from '@celebs/shared-utils';
