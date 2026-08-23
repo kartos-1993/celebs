@@ -15,6 +15,7 @@ import { styles } from '../styles/home.styles';
 
 import { apiClient } from '@/api/client';
 import { resolveImageUrl } from '@/constants/config';
+import { Palette } from '@/constants/theme';
 
 interface Banner {
   id: string;
@@ -142,7 +143,7 @@ export function BannerCarousel() {
     <View style={styles.carouselContainer}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffffff" />
+          <ActivityIndicator size="large" color={Palette.white} />
         </View>
       ) : (
         <>

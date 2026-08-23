@@ -1,22 +1,27 @@
 import { StyleSheet } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import {
+  FontSize,
+  Palette,
+  Radius,
+  Spacing,
+} from '@/constants/theme';
 import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 export const styles = StyleSheet.create({
   categoriesSection: {
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.xl,
   },
   categoriesScrollContent: {
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.xl,
   },
   categoriesRowWrapper: {
     flexDirection: 'row',
-    gap: moderateScale(10),
+    gap: moderateScale(Spacing.md),
   },
   categoryColumn: {
     flexDirection: 'column',
-    gap: moderateScale(10),
+    gap: moderateScale(Spacing.md),
   },
   categoryItem: {
     width: moderateScale(66),
@@ -25,21 +30,21 @@ export const styles = StyleSheet.create({
   categoryImageContainer: {
     width: moderateScale(56),
     height: moderateScale(56),
-    borderRadius: moderateScale(28),
-    backgroundColor: '#f5f5f5',
+    borderRadius: Radius.pill,
+    backgroundColor: Palette.gray100,
     overflow: 'hidden',
-    marginBottom: moderateScale(4),
+    marginBottom: moderateScale(Spacing.xs),
   },
   categoryImage: {
     width: '100%',
     height: '100%',
   },
   categoryName: {
-    fontSize: responsiveFontSize(10.5),
-    lineHeight: responsiveFontSize(13),
+    fontSize: responsiveFontSize(FontSize.footnote),
+    lineHeight: responsiveFontSize(FontSize.small),
     textAlign: 'center',
     fontWeight: '500',
-    color: '#374151',
+    color: Palette.gray700,
     minHeight: responsiveFontSize(26),
   },
 });

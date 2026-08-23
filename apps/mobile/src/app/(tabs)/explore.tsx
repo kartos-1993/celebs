@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   ScrollView,
   StatusBar,
-  StyleSheet,
   TouchableOpacity,
   useColorScheme,
   View,
@@ -16,9 +15,10 @@ import { AppHeader } from '@/components/app-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { resolveImageUrl } from '@/constants/config';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Palette } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { useCategories } from '@/features/categories/hooks/use-categories';
+import { styles } from '@/features/categories/styles/explore.styles';
 
 export default function CategoryExploreScreen() {
   const scheme = useColorScheme();
@@ -68,7 +68,7 @@ export default function CategoryExploreScreen() {
                 <TouchableOpacity
                   key={cat.id}
                   activeOpacity={0.8}
-                  style={[styles.categoryCard, { backgroundColor: '#ffffff' }]}
+                  style={[styles.categoryCard, { backgroundColor: Palette.white }]}
                   onPress={() => handleCategoryClick(catSlug, catTitle)}
                 >
                   <Image
@@ -80,7 +80,7 @@ export default function CategoryExploreScreen() {
                   <View style={styles.cardContent}>
                     <View style={styles.cardHeaderRow}>
                       <ThemedText style={styles.cardTitle}>{catTitle}</ThemedText>
-                      <ChevronRight size={18} color="#8e8e93" />
+                      <ChevronRight size={18} color={Palette.gray400} />
                     </View>
                     <ThemedText style={styles.cardPathText}>
                       Explore {catTitle} styles & collections
@@ -95,65 +95,3 @@ export default function CategoryExploreScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 110,
-    paddingTop: Spacing.two,
-  },
-  sectionHeader: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  loadingContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  categoryList: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
-  categoryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-    padding: Spacing.three,
-  },
-  cardImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-  },
-  cardContent: {
-    flex: 1,
-    marginLeft: Spacing.three,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  cardPathText: {
-    fontSize: 12,
-    color: '#8e8e93',
-    marginTop: 2,
-  },
-});

@@ -1,8 +1,10 @@
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { QuickFilterItem } from '../../types';
+
+import { styles } from './avatar-scroll-filter.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
@@ -64,44 +66,3 @@ export const AvatarScrollFilter: React.FC<AvatarScrollFilterProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 16,
-  },
-  avatarItem: {
-    alignItems: 'center',
-    width: 64,
-  },
-  avatarRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarRingSelected: {
-    borderColor: '#208AEF',
-    borderWidth: 2.5,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 28,
-  },
-  avatarLabel: {
-    marginTop: 6,
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  avatarLabelSelected: {
-    color: '#208AEF',
-    fontWeight: '700',
-  },
-});

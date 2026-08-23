@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { QuickFilterItem } from '../../types';
+
+import { styles } from './color-swatch-filter.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
@@ -92,48 +94,3 @@ export const ColorSwatchFilter: React.FC<ColorSwatchFilterProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  colorChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    gap: 6,
-  },
-  colorChipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#208AEF',
-  },
-  colorDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.15)',
-  },
-  colorThumbnail: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.15)',
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#4b5563',
-  },
-  chipTextSelected: {
-    color: '#208AEF',
-    fontWeight: '700',
-  },
-});

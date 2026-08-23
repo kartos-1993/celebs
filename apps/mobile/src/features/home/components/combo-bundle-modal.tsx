@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { ShoppingBag, Sparkles, Tag, X } from 'lucide-react-native';
 
+import { styles } from './combo-bundle-modal.styles';
 import { ComboBundleData } from './combo-bundle-showcase';
 
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
 
 interface ComboBundleModalProps {
   visible: boolean;
@@ -143,20 +145,20 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
           {/* Modal Header */}
           <View style={styles.header}>
             <View style={styles.headerTitleBox}>
-              <Sparkles size={18} color="#7c3aed" />
+              <Sparkles size={18} color={Palette.accent} />
               <ThemedText style={styles.headerTitle} numberOfLines={1}>
                 {combo.title}
               </ThemedText>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={20} color="#71717a" />
+              <X size={20} color={Palette.gray500} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {/* Banner & Savings Callout */}
             <View style={styles.savingsBanner}>
-              <Tag size={16} color="#ffffff" />
+              <Tag size={16} color={Palette.white} />
               <ThemedText style={styles.savingsBannerText}>
                 Instant Savings: NPR {savingsAmount.toLocaleString()} ({combo.discountValue}
                 {combo.discountType === 'PERCENTAGE' ? '% OFF' : ' Rs OFF'})
@@ -172,7 +174,7 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
               <View key={item.id} style={styles.itemCard}>
                 <View style={styles.itemRow}>
                   <Image source={{ uri: item.image }} style={styles.itemImage} />
-                  <View style={{ flex: 1 }}>
+                  <View style={styles.itemInfo}>
                     <ThemedText style={styles.itemName}>{item.name}</ThemedText>
                     <ThemedText style={styles.itemOriginalPrice}>
                       Single Price: NPR {item.originalPrice.toLocaleString()}
@@ -247,7 +249,7 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
               onPress={handleAddToCart}
               activeOpacity={0.85}
             >
-              <ShoppingBag size={16} color="#ffffff" />
+              <ShoppingBag size={16} color={Palette.white} />
               <ThemedText style={styles.addCartBtnText}>Add Combo to Cart</ThemedText>
             </TouchableOpacity>
           </View>
@@ -256,166 +258,3 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '85%',
-    paddingBottom: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f4f4f5',
-  },
-  headerTitleBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#18181b',
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  scrollBody: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  savingsBanner: {
-    backgroundColor: '#16a34a',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  savingsBannerText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: '#71717a',
-    marginBottom: 12,
-    fontWeight: '600',
-  },
-  itemCard: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
-  },
-  itemImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-  },
-  itemName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  itemOriginalPrice: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  selectorGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-  },
-  selectorLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-    width: 42,
-  },
-  optionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-  },
-  chipSelected: {
-    backgroundColor: '#7c3aed',
-    borderColor: '#7c3aed',
-  },
-  chipText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  chipTextSelected: {
-    color: '#ffffff',
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-    backgroundColor: '#ffffff',
-  },
-  originalTotalStrike: {
-    fontSize: 12,
-    color: '#94a3b8',
-    textDecorationLine: 'line-through',
-  },
-  finalTotal: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#16a34a',
-  },
-  addCartBtn: {
-    backgroundColor: '#7c3aed',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  addCartBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-});

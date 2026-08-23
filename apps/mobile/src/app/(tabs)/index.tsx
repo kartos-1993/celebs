@@ -10,6 +10,7 @@ import {
 
 import { AppHeader } from '@/components/app-header';
 import { ThemedView } from '@/components/themed-view';
+import { Palette } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CampaignCountdownBanner } from '@/features/home/components/campaign-countdown-banner';
@@ -78,7 +79,7 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={scheme === 'dark' ? '#ffffff' : '#000000'}
+            tintColor={scheme === 'dark' ? Palette.white : Palette.black}
             progressViewOffset={90}
           />
         }

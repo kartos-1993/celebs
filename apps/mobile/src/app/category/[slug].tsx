@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   StatusBar,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   useColorScheme,
@@ -15,9 +14,11 @@ import { ChevronLeft, Search, ShoppingCart, SlidersHorizontal } from 'lucide-rea
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Palette, Spacing } from '@/constants/theme';
 import { DynamicFilterDrawer } from '@/features/categories/components/dynamic-filter-drawer';
 import { QuickFilterRenderer } from '@/features/categories/components/quick-filter-renderer';
 import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
+import { styles } from '@/features/categories/styles/category.styles';
 import { QuickFilterItem } from '@/features/categories/types';
 import { ProductCard } from '@/features/products/components/product-card';
 import { useProducts } from '@/features/products/hooks/use-products';
@@ -137,7 +138,7 @@ export default function CategoryProductsScreen() {
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
 
       {/* Header Bar */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.headerBtn}
@@ -145,15 +146,15 @@ export default function CategoryProductsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ChevronLeft size={24} color="#18181b" />
+          <ChevronLeft size={24} color={Palette.gray900} />
         </TouchableOpacity>
 
         {/* Search Bar Input */}
         <View style={styles.searchBar}>
-          <Search size={16} color="#9ca3af" />
+          <Search size={16} color={Palette.gray400} />
           <TextInput
             placeholder={`Search in ${categoryTitle}...`}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={Palette.gray400}
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -167,7 +168,7 @@ export default function CategoryProductsScreen() {
           accessibilityRole="button"
           accessibilityLabel="View Cart"
         >
-          <ShoppingCart size={22} color="#18181b" />
+          <ShoppingCart size={22} color={Palette.gray900} />
         </TouchableOpacity>
       </View>
 
@@ -193,7 +194,10 @@ export default function CategoryProductsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open Filters"
         >
-          <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#ffffff' : '#18181b'} />
+          <SlidersHorizontal
+            size={16}
+            color={activeFilterCount > 0 ? Palette.white : Palette.gray900}
+          />
           <ThemedText
             style={[styles.filterBtnText, activeFilterCount > 0 && styles.filterBtnTextActive]}
           >
@@ -205,7 +209,7 @@ export default function CategoryProductsScreen() {
       {/* Main Product Grid Feed */}
       {loading && products.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#208AEF" />
+          <ActivityIndicator size="large" color={Palette.brand} />
           <ThemedText style={styles.loadingText}>Loading collection...</ThemedText>
         </View>
       ) : (
@@ -224,7 +228,7 @@ export default function CategoryProductsScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.footerLoading}>
-                <ActivityIndicator size="small" color="#208AEF" />
+                <ActivityIndicator size="small" color={Palette.brand} />
               </View>
             ) : null
           }
@@ -250,93 +254,3 @@ export default function CategoryProductsScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    gap: 10,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  headerBtn: {
-    padding: 6,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    height: 38,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: '#18181b',
-  },
-  actionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  itemCountText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  filterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f3f4f6',
-    gap: 6,
-  },
-  filterBtnActive: {
-    backgroundColor: '#208AEF',
-  },
-  filterBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#18181b',
-  },
-  filterBtnTextActive: {
-    color: '#ffffff',
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  listContent: {
-    paddingVertical: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#6b7280',
-  },
-  footerLoading: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-});

@@ -1,7 +1,9 @@
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
 
 import { QuickFilterItem } from '../../types';
+
+import { styles } from './chip-list-filter.styles';
 
 import { ThemedText } from '@/components/themed-text';
 
@@ -45,31 +47,3 @@ export const ChipListFilter: React.FC<ChipListFilterProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  chipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#208AEF',
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#4b5563',
-  },
-  chipTextSelected: {
-    color: '#208AEF',
-    fontWeight: '700',
-  },
-});

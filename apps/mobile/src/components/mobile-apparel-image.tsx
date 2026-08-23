@@ -1,7 +1,11 @@
 import React from 'react';
-import { PixelRatio, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { PixelRatio, StyleProp, View, ViewStyle } from 'react-native';
 import { Image, ImageStyle } from 'expo-image';
+
 import { getOptimizedImageUrl, type ImagePreset } from '@celebs/shared-utils';
+
+import { styles } from './mobile-apparel-image.styles';
+
 import { resolveImageUrl } from '@/constants/config';
 
 export interface MobileApparelImageProps {
@@ -45,14 +49,3 @@ export const MobileApparelImage: React.FC<MobileApparelImageProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    aspectRatio: 3 / 4,
-    backgroundColor: '#f4f4f5',
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-});
