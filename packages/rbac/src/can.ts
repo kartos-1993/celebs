@@ -1,5 +1,6 @@
 import { Role, ROLE_PERMISSIONS } from './role-permissions';
 import { Permission } from './permissions';
+import type { PermissionRequirement, PermissionMode } from './types';
 
 /**
  * Returns all effective permissions for a given user, merging static role defaults
@@ -37,3 +38,27 @@ export function can(
   const effectivePermissions = getUserPermissions(role, userCustomPermissions);
   return effectivePermissions.includes(permission);
 }
+
+/**
+ * Evaluates whether a user satisfies a permission requirement (single permission or array)
+ * under the specified mode ('ANY' or 'ALL'). SUPERADMIN always evaluates to true.
+ */
+export function hasPermissionAccess(
+  role: Role | string,
+  userCustomPermissions: string[] | undefined,
+  required: PermissionRequirement | undefined,
+  mode: PermissionMode = 'ANY',
+): boolean {
+  if (!required) return true;
+  if (role === 'SUPERADMIN') return true;
+
+  const perms = Array.isArray(required) ? required : [required];
+  if (perms.length === 0) return true;
+
+  if (mode === 'ALL') {
+    return perms.every((perm) => can(role, perm, userCustomPermissions));
+  }
+
+  return perms.some((perm) => can(role, perm, userCustomPermissions));
+}
+
