@@ -65,6 +65,29 @@ export function buildVendorObjectKey(params: {
   return `${customFolder}/${scopeFolder}/${uuidv4()}-${safeName}`;
 }
 
+const ALLOWED_KEY_PREFIXES = ['celebs/products', 'celebs/kyc', 'vendors', 'platform'] as const;
+
+/**
+ * Single source of truth for which object keys the upload pipeline accepts.
+ * Enforced at presign time (fail fast before any bytes leave the browser)
+ * and again at confirm time (defense in depth against direct confirm calls).
+ */
+export function validateObjectKey(rawKey: string): string {
+  const key = (rawKey || '').trim();
+  if (!key || key.includes('..') || key.startsWith('/') || key.startsWith('\\')) {
+    throw new BadRequestException('Invalid object key');
+  }
+
+  const hasValidPrefix = ALLOWED_KEY_PREFIXES.some((prefix) => key.startsWith(`${prefix}/`));
+  if (!hasValidPrefix) {
+    throw new BadRequestException(
+      `Invalid object key prefix. Allowed prefixes: ${ALLOWED_KEY_PREFIXES.join(', ')}`,
+    );
+  }
+
+  return key;
+}
+
 export function assertUploadMeta(input: {
   originalname?: string;
   mimeType?: string;
@@ -212,6 +235,10 @@ export async function createPresignedPut(
     folder: input.folder,
   });
 
+  // Fail fast: reject disallowed prefixes/traversal BEFORE the browser
+  // uploads bytes, so bad requests never produce orphaned R2 objects.
+  validateObjectKey(key);
+
   await ensureDevPublicReadAccess();
 
   const command = new PutObjectCommand({
@@ -244,16 +271,8 @@ export async function createPresignedPut(
 export async function confirmUploadedObject(
   input: ConfirmUploadInput & { vendorId?: string; folderId?: string | null; scope?: MediaScope },
 ): Promise<PutImageResult> {
-  const key = (input.key || '').trim();
-  if (!key || key.includes('..') || key.startsWith('/') || key.startsWith('\\')) {
-    throw new BadRequestException('Invalid object key');
-  }
-
-  const allowedPrefixes = ['celebs/products', 'celebs/kyc', 'vendors', 'platform'];
-  const hasValidPrefix = allowedPrefixes.some((prefix) => key.startsWith(`${prefix}/`));
-  if (!hasValidPrefix) {
-    throw new BadRequestException('Invalid object key prefix');
-  }
+  // Defense in depth: clients could bypass presign and confirm arbitrary keys.
+  const key = validateObjectKey(input.key);
 
   const { originalname, mimeType } = assertUploadMeta({
     originalname: input.originalname,
