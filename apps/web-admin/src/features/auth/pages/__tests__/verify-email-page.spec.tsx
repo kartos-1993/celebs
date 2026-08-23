@@ -20,6 +20,7 @@ vi.mock('@/context/auth-provider', () => ({
 
 vi.mock('../../api', () => ({
   verifyEmail: vi.fn(),
+  resendVerification: vi.fn(),
 }));
 
 describe('VerifyEmailPage Component', () => {
@@ -30,13 +31,16 @@ describe('VerifyEmailPage Component', () => {
       user: null,
       refetch: mockRefetch,
     });
+    vi.mocked(authApi.verifyEmail).mockResolvedValue({
+      data: { success: true, message: 'Verified' },
+    } as never);
   });
 
   it('should display error if verification code is missing from search params', async () => {
     render(<VerifyEmailPage />);
 
     expect(screen.getByText(/Verification Failed/i)).toBeTruthy();
-    expect(screen.getByText(/Verification code is missing from the link/i)).toBeTruthy();
+    expect(screen.getByText(/Verification link is missing or expired/i)).toBeTruthy();
     expect(authApi.verifyEmail).not.toHaveBeenCalled();
   });
 
@@ -44,7 +48,7 @@ describe('VerifyEmailPage Component', () => {
     mockSearchParams.set('code', 'valid-code-123');
     vi.mocked(authApi.verifyEmail).mockResolvedValueOnce({
       data: { success: true, message: 'Verified' },
-    } as unknown as Awaited<ReturnType<typeof authApi.verifyEmail>>);
+    } as never);
 
     render(<VerifyEmailPage />);
 

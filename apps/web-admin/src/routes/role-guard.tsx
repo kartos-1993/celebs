@@ -1,48 +1,75 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/context/auth-provider';
-import { can, Permission } from '@celebs/rbac';
+import { hasPermissionAccess, type PermissionRequirement, type PermissionMode, type Permission } from '@celebs/rbac';
 import PageLoader from '@/components/page-loader';
+import { PATHS } from './paths';
+
 
 interface RoleGuardProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  permissions?: PermissionRequirement;
+  permissionMode?: PermissionMode;
   requiredPermission?: Permission;
+  allowedRoles?: string[];
   fallbackPath?: string;
 }
 
 export const RoleGuard: React.FC<RoleGuardProps> = ({
   children,
-  allowedRoles,
+  permissions,
+  permissionMode = 'ANY',
   requiredPermission,
-  fallbackPath = '/403',
+  allowedRoles,
+  fallbackPath = PATHS.ERRORS.FORBIDDEN,
 }) => {
   const { user, isLoading } = useAuthContext();
+  const location = useLocation();
 
   if (isLoading) {
     return <PageLoader />;
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={PATHS.AUTH.LOGIN} state={{ from: location }} replace />;
   }
 
   const role = user.role;
-  const userPermissions = (user as { permissions?: string[] }).permissions;
+  const userPermissions = user.permissions;
 
-  // 1. If a specific requiredPermission is declared for the route, evaluate dynamic permissions array
-  if (requiredPermission) {
-    const hasPermission = can(role, requiredPermission, userPermissions);
-
-    if (!hasPermission) {
-      return <Navigate to={fallbackPath} replace />;
+  // 1. Evaluate polymorphic permission requirement
+  const effectiveRequirement = permissions ?? requiredPermission;
+  if (effectiveRequirement) {
+    const isAllowed = hasPermissionAccess(role, userPermissions, effectiveRequirement, permissionMode);
+    if (!isAllowed) {
+      return (
+        <Navigate
+          to={fallbackPath}
+          replace
+          state={{
+            from: location.pathname,
+            requiredPermissions: effectiveRequirement,
+            userRole: role,
+          }}
+        />
+      );
     }
-    return <>{children}</>;
   }
 
-  // 2. Fallback to role-based array checking if no requiredPermission is specified
+
+  // 2. Evaluate allowedRoles fallback
   if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    return <Navigate to={fallbackPath} replace />;
+    return (
+      <Navigate
+        to={fallbackPath}
+        replace
+        state={{
+          from: location.pathname,
+          allowedRoles,
+          userRole: role,
+        }}
+      />
+    );
   }
 
   return <>{children}</>;

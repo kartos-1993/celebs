@@ -69,9 +69,20 @@ export const createBrandProtectionRuleSchema = z.object({
   isActive: z.boolean().optional().default(true),
 });
 
+export const getBrandParamSchema = z.object({
+  id: z.string().trim().min(1, 'Brand id or slug is required'),
+});
+
+export const getBrandAuthorizationsQuerySchema = z.object({
+  vendorId: idSchema.optional(),
+});
+
 export type CreateBrandType = z.infer<typeof createBrandSchema>;
 export type UpdateBrandType = z.infer<typeof updateBrandSchema>;
 export type BrandFilterType = z.infer<typeof brandFilterSchema>;
 export type CreateBrandAuthorizationType = z.infer<typeof createBrandAuthorizationSchema>;
 export type ReviewBrandAuthorizationType = z.infer<typeof reviewBrandAuthorizationSchema>;
 export type CreateBrandProtectionRuleType = z.infer<typeof createBrandProtectionRuleSchema>;
+export type GetBrandParamType = z.infer<typeof getBrandParamSchema>;
+export type GetBrandAuthorizationsQueryType = z.infer<typeof getBrandAuthorizationsQuerySchema>;
+

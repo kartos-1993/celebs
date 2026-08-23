@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     root: __dirname,
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), !process.env.VITEST && tailwindcss()].filter(Boolean),
     optimizeDeps: {
       include: ['lucide-react', 'react', 'react-dom'],
     },

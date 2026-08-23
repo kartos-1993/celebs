@@ -35,23 +35,25 @@ export default function VerifyEmailPage() {
   }, [user?.email, resendEmail]);
 
   useEffect(() => {
+    // If user is already logged in & verified, skip API call and redirect
+    if (user?.isEmailVerified) {
+      setStatus('success');
+      setTimeout(() => {
+        const targetPath =
+          user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
+            ? PATHS.VENDORS.ONBOARDING
+            : PATHS.DASHBOARD;
+        navigate(targetPath, { replace: true });
+      }, 1200);
+      return;
+    }
+
     if (!initialCode) {
-      // If user is already logged in & verified, redirect to dashboard/onboarding
-      if (user?.isEmailVerified) {
-        setStatus('success');
-        setTimeout(() => {
-          const targetPath =
-            user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
-              ? PATHS.VENDORS.ONBOARDING
-              : PATHS.DASHBOARD;
-          navigate(targetPath, { replace: true });
-        }, 1200);
-        return;
-      }
       setStatus('error');
       setErrorMessage('Verification link is missing or expired. Please request a new verification email.');
       return;
     }
+
 
     // Prevent duplicate API calls from React 18 StrictMode double-invocation
     if (hasAttemptedRef.current) return;
