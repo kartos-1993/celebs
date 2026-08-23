@@ -1,3 +1,22 @@
 {
-  "nxConsole.generateAiAgentRules": true
+  "nxConsole.generateAiAgentRules": true,
+  "java.server.launchMode": "off",
+  "java.autobuild.enabled": false,
+  "java.import.gradle.enabled": false,
+  "java.import.maven.enabled": false,
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype/**",
+    "**/META-INF/maven/**",
+    "**/apps/mobile/**",
+    "**/android/**",
+    "**"
+  ],
+  "gradle.autoDetect": "off",
+  "gradle.nestedProjects": false,
+  "gradle.enableBuildServer": false,
+  "gradle.autoActivate": false,
+  "gradle.projectOpenBehaviour": "NotOpen"
 }
