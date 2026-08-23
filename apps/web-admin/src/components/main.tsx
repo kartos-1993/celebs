@@ -12,8 +12,8 @@ const Main = ({ children }: MainProps) => {
   return (
     <main
       className={cn(
-        'px-6 py-6 min-h-[calc(100vh-48px)] bg-muted/40 transition-[margin-left] ease-in-out duration-300',
-        isSidebarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
+        'min-h-[calc(100vh-48px)] bg-muted/40 px-4 py-6 transition-[margin-left] ease-in-out duration-300 md:px-6',
+        isSidebarOpen ? 'md:ml-[76px] lg:ml-64' : 'md:ml-[76px]',
       )}
     >
       {children}

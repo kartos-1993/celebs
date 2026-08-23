@@ -1,15 +1,15 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { HardDrive, Plus, RefreshCw, UploadCloud, X } from 'lucide-react';
+import { Plus, RefreshCw, UploadCloud, X } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { MediaCropDialog } from '../../components/media-crop-dialog';
-import { MediaPickerDialog } from '../../components/media-picker-dialog';
+import { MediaLibraryButton } from '../../components/media-library-button';
 import type { UiProps } from '../ui-registry';
 
-import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles } from './shared';
+import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles, FieldError, LabelWithRequired } from './shared';
 
 export const MainImageInputField = memo(function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
@@ -24,7 +24,6 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
   const files: ImageValue[] = useMemo(() => rawFiles ?? [], [rawFiles]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [croppingFile, setCroppingFile] = useState<{ file: File; replaceIndex?: number } | null>(
     null,
   );
@@ -100,7 +99,8 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
     register(field.name, {
       validate: (v: unknown) => {
         const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
-        if (field.required && arr.length === 0) return `${field.label} is required`;
+        // Main product image is always mandatory regardless of schema flags
+        if (arr.length === 0) return `${field.label} is required`;
         if (typeof field.rule?.maxItems === 'number' && arr.length > field.rule.maxItems)
           return `Max ${field.rule.maxItems} images`;
         if (
@@ -320,48 +320,35 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
   );
 
   return (
-    <div className="space-y-2 col-span-full">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-foreground">
-            {field.label}
-            {field.required ? <span className="ml-1 text-destructive">*</span> : null}
-          </label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsPickerOpen(true)}
-            className="h-6 px-2 gap-1 rounded-md text-xs text-primary border-primary/30 hover:bg-primary/10"
-          >
-            <HardDrive className="h-3 w-3" /> Media Library
-          </Button>
+      <div className="space-y-2 col-span-full" data-error-path={field.name}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
+            <MediaLibraryButton
+              maxSelect={maxItems}
+              scope="PRODUCT"
+              initialSelectedUrls={previews.filter((v): v is string => typeof v === 'string')}
+              disabled={isUploading}
+              onSelect={handlePickerSelect}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {previews.length}/{maxItems} uploaded
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {previews.length}/{maxItems} uploaded
-        </span>
-      </div>
 
-      <MediaCropDialog
-        open={croppingFile !== null}
-        file={croppingFile?.file ?? null}
-        onCropComplete={handleCropComplete}
-        onCancel={() => setCroppingFile(null)}
-      />
+        <MediaCropDialog
+          open={croppingFile !== null}
+          file={croppingFile?.file ?? null}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setCroppingFile(null)}
+        />
 
-      <MediaPickerDialog
-        open={isPickerOpen}
-        onOpenChange={setIsPickerOpen}
-        onSelect={handlePickerSelect}
-        maxSelect={maxItems}
-        initialSelectedUrls={previews}
-        scope="PRODUCT"
-      />
 
       <div className="space-y-3">
         {/* Single File Mode */}
         {isSingle ? (
-          <div className="relative">
+          <div className="space-y-2">
             {previews[0] ? (
               <div className="group relative w-full h-44 rounded-xl border bg-muted/20 overflow-hidden">
                 <img
@@ -393,28 +380,41 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
                 </div>
               </div>
             ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => fileInputs.current[0]?.click()}
-                disabled={isUploading}
-                className="h-auto w-full flex-col rounded-xl border border-dashed bg-muted/10 hover:bg-muted/30 p-4 text-center cursor-pointer border-muted-foreground/30 hover:border-primary/50"
-              >
-                {isUploading ? (
-                  <div className="flex flex-col items-center gap-2 text-primary">
-                    <Spinner size="lg" />
-                    <span className="text-xs font-semibold">Uploading Image...</span>
-                  </div>
-                ) : (
-                  <>
-                    <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-xs font-bold text-foreground">Click to upload image</span>
-                    <span className="text-xs text-muted-foreground mt-0.5">
-                      JPG, PNG, WEBP supported
-                    </span>
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => fileInputs.current[0]?.click()}
+                  disabled={isUploading}
+                  className="h-auto w-full flex-row items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/10 hover:bg-muted/30 px-4 py-3 text-center cursor-pointer border-muted-foreground/30 hover:border-primary/50"
+                >
+                  {isUploading ? (
+                    <>
+                      <Spinner size="sm" className="text-primary" />
+                      <span className="text-xs font-semibold text-primary">Uploading…</span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                      <span className="text-sm font-medium text-foreground">Click to upload</span>
+                      <span className="text-xs text-muted-foreground">· PNG, JPG or WEBP</span>
+                    </>
+                  )}
+                </Button>
+                {!isUploading ? (
+                  <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                    Already have assets?
+                    <MediaLibraryButton
+                      maxSelect={1}
+                      scope="PRODUCT"
+                      initialSelectedUrls={previews.filter(
+                        (v): v is string => typeof v === 'string',
+                      )}
+                      onSelect={handlePickerSelect}
+                    />
+                  </p>
+                ) : null}
+              </>
             )}
             <input
               ref={(el) => {
@@ -527,9 +527,13 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         ) : null}
       </div>
 
-      {formState.errors?.[field.name]?.message ? (
-        <div className="text-xs text-destructive">{String(formState.errors[field.name]?.message)}</div>
-      ) : null}
+      <FieldError
+        message={
+          formState.errors?.[field.name]?.message
+            ? String(formState.errors[field.name]?.message)
+            : undefined
+        }
+      />
     </div>
   );
 });

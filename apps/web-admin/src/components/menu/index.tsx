@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LayoutGrid,LogOut, Moon, Sun, User } from 'lucide-react';
+import { ChevronUp, LayoutGrid, LogOut, Moon, Sun, User } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
   Tooltip,
@@ -23,7 +22,6 @@ import {
 
 import { getMenuList } from './menu-data';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/avatar';
 import { CollapseMenuButton } from '@/components/sidebar/collapse-menu-button';
 import { useAuthContext } from '@/context/auth-provider';
 import { useTheme } from '@/context/theme-provider';
@@ -73,9 +71,9 @@ export function Menu({ isSidebarOpen }: MenuProps) {
     : 'ME';
 
   return (
-    <ScrollArea className="[&>div>div[style]]:!block">
-      <nav className="mt-8 h-full w-full">
-        <ul className="flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-2">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <nav className="mt-6 w-full flex-1">
+        <ul className="flex h-full flex-col items-start space-y-1 px-2">
           {menuList.map(({ menus }, index) => (
             <li className={cn('w-full')} key={index}>
               {menus.map(({ href, label, icon: Icon, active, submenus }, index) =>
@@ -91,25 +89,39 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                                 : 'ghost'
                             }
                             className={cn(
-                              'w-full h-10 mb-1 px-3',
-                              isCollapsed ? 'justify-center' : 'justify-start',
+                              'mb-1 h-9 w-full rounded-lg',
+                              isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
                             )}
                             asChild
                           >
                             <Link
                               to={href}
                               className={cn(
-                                'flex items-center w-full',
+                                'flex w-full items-center',
                                 isCollapsed ? 'justify-center' : 'gap-3',
                               )}
                             >
-                              <span className="flex items-center justify-center shrink-0">
+                              <span
+                                className={cn(
+                                  'flex shrink-0 items-center justify-center',
+                                  ((active === undefined && pathname.startsWith(href)) || active)
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground',
+                                )}
+                              >
                                 <Icon size={18} />
                               </span>
                               {!isCollapsed && (
-                                <p className="max-w-[200px] truncate text-sm font-medium py-0.5">
+                                <span
+                                  className={cn(
+                                    'max-w-[200px] truncate py-0.5 text-sm',
+                                    (active === undefined && pathname.startsWith(href)) || active
+                                      ? 'font-medium text-foreground'
+                                      : 'text-foreground/80',
+                                  )}
+                                >
                                   {label}
-                                </p>
+                                </span>
                               )}
                             </Link>
                           </Button>
@@ -133,8 +145,8 @@ export function Menu({ isSidebarOpen }: MenuProps) {
             </li>
           ))}
 
-          {/* ── Bottom: profile / menu ──────────────────────────────────── */}
-          <li className="w-full grow flex items-end pb-1">
+          {/* ── Bottom: account row (text-only, Apple-minimal) ─────────── */}
+          <li className="mt-auto w-full pt-3">
             <DropdownMenu>
               <TooltipProvider disableHoverableContent>
                 <Tooltip delayDuration={100}>
@@ -143,25 +155,26 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                       <Button
                         variant="ghost"
                         className={cn(
-                          'w-full h-10 mt-5',
-                          isCollapsed ? 'justify-center px-0' : 'justify-start px-3 gap-3',
+                          'h-10 mt-5 w-full',
+                          isCollapsed ? 'justify-center px-0' : 'justify-between px-3',
                         )}
                       >
-                        <Avatar className="h-7 w-7 shrink-0">
-                          <AvatarImage src="#" alt="Avatar" />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                        {isCollapsed ? (
+                          <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
                             {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        {!isCollapsed && (
-                          <div className="flex flex-col items-start leading-none">
-                            <p className="text-sm font-medium truncate max-w-[120px]">
-                              {user?.name || 'My Account'}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate max-w-[120px]">
-                              {user?.role || ''}
-                            </p>
-                          </div>
+                          </span>
+                        ) : (
+                          <>
+                            <span className="flex min-w-0 flex-col items-start leading-tight">
+                              <span className="max-w-[140px] truncate text-sm font-medium">
+                                {user?.name || 'My Account'}
+                              </span>
+                              <span className="max-w-[140px] truncate text-xs text-muted-foreground">
+                                {user?.role || ''}
+                              </span>
+                            </span>
+                            <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          </>
                         )}
                       </Button>
                     </DropdownMenuTrigger>
@@ -242,6 +255,6 @@ export function Menu({ isSidebarOpen }: MenuProps) {
           </li>
         </ul>
       </nav>
-    </ScrollArea>
+    </div>
   );
 }

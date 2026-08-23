@@ -173,6 +173,29 @@ export class MediaRepository {
     });
   }
 
+  /**
+   * Adjusts usageCount for assets matched by their public CDN URL.
+   * Products store full URLs (not keys), so linkage bookkeeping from the
+   * product lifecycle uses this instead of incrementUsage/decrementUsage.
+   * Decrements never push a counter below zero.
+   */
+  async adjustUsageByUrls(urls: string[], delta: 1 | -1) {
+    const uniqueUrls = Array.from(
+      new Set(urls.filter((url): url is string => typeof url === 'string' && url.length > 0)),
+    );
+    if (!uniqueUrls.length) return;
+
+    const where: Prisma.MediaAssetWhereInput = { url: { in: uniqueUrls } };
+    if (delta === -1) {
+      where.usageCount = { gt: 0 };
+    }
+
+    return prisma.mediaAsset.updateMany({
+      where,
+      data: { usageCount: delta === 1 ? { increment: 1 } : { decrement: 1 } },
+    });
+  }
+
   async getQuota(vendorId?: string | null) {
     const whereCondition: Prisma.MediaAssetWhereInput =
       vendorId !== undefined ? { vendorId: vendorId ?? null } : {};

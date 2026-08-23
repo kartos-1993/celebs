@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { FieldErrors, Path, UseFormReturn } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Info } from 'lucide-react';
+import { ClipboardList, Info } from 'lucide-react';
 
 import { can, Permission } from '@celebs/rbac';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -23,7 +23,7 @@ import {
   uniqueMessages,
 } from '../../utils/add-product-helpers';
 import { buildProductPayload } from '../../utils/add-product-payload';
-import { focusFirstError, focusMissingField, formatFieldLabel } from '../../utils/form-focus';
+import { focusFirstError, focusMissingField } from '../../utils/form-focus';
 import BasicInfoSection from '../basic-info-section';
 import { DynamicProductForm, type DynamicProductFormHandle } from '../dynamic-product-form';
 import { SubmissionProgressChecklist } from '../submission-progress-checklist';
@@ -227,7 +227,7 @@ const AddProductFormBody = ({
   }, []);
 
   const applyServerErrors = useCallback(
-    (error: unknown): string[] => {
+    (error: unknown): { messages: string[]; firstPath?: string } => {
       const errObj = error as
         | { data?: unknown; response?: { data?: { data?: unknown } } }
         | undefined;
@@ -237,6 +237,7 @@ const AddProductFormBody = ({
           ? errObj.response.data.data
           : [];
       const unmappedMessages: string[] = [];
+      let firstPath: string | undefined;
       apiErrors.forEach((entry: unknown) => {
         const item = entry as { field?: string; path?: string; message?: string } | undefined;
         const path = normalizeText(item?.field || item?.path);
@@ -247,11 +248,12 @@ const AddProductFormBody = ({
             type: 'server',
             message,
           });
+          if (!firstPath) firstPath = path;
         } else {
           unmappedMessages.push(message);
         }
       });
-      return uniqueMessages(unmappedMessages);
+      return { messages: uniqueMessages(unmappedMessages), firstPath };
     },
     [form],
   );
@@ -292,13 +294,8 @@ const AddProductFormBody = ({
         }
       }
 
-      const label = focused ? formatFieldLabel(focused.path) : firstInvalidSection.label;
-      const description = focused?.message || firstInvalidSection.errors[0] || firstInvalidSection.label;
-      toast({
-        title: `Complete: ${label}`,
-        description,
-        variant: 'destructive',
-      });
+      // Field errors are surfaced inline under each field and via the
+      // sidebar checklist — no blocking toast here.
       return;
     }
 
@@ -331,7 +328,15 @@ const AddProductFormBody = ({
       navigate(MANAGE_PRODUCTS_PATH);
     } catch (error: unknown) {
       logger.error({ error }, 'Submit Product API Error');
-      const serverMessages = applyServerErrors(error);
+      const { messages: serverMessages, firstPath } = applyServerErrors(error);
+
+      if (firstPath) {
+        // Field-level server errors are now rendered inline under their
+        // fields — scroll to the first offending field instead of toasting.
+        focusMissingField(firstPath);
+        return;
+      }
+
       focusFirstError(form.formState.errors);
       toast({
         title: 'Unable to save product',
@@ -348,14 +353,9 @@ const AddProductFormBody = ({
 
   const handleFormInvalid = (errors: FieldErrors<Record<string, unknown>>) => {
     logger.warn({ errors }, 'Form validation failed on submit');
-    const focused = focusFirstError(errors, firstInvalidSection?.anchorId);
-    const label = focused ? formatFieldLabel(focused.path) : firstInvalidSection?.label || 'Required Field';
-    const message = focused?.message || firstInvalidSection?.errors[0] || 'Please complete all required fields.';
-    toast({
-      title: `Fix: ${label}`,
-      description: message,
-      variant: 'destructive',
-    });
+    // Errors are displayed inline under each field and sections are marked
+    // in the sidebar checklist — just bring the first error into view.
+    focusFirstError(errors, firstInvalidSection?.anchorId);
   };
 
   return (
@@ -392,6 +392,7 @@ const AddProductFormBody = ({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="space-y-6">
           <form
+            noValidate
             onSubmit={form.handleSubmit(
               () =>
                 handleSubmitProduct(
@@ -405,16 +406,21 @@ const AddProductFormBody = ({
           >
             <section
               id="product-section-basic"
-              className="scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8"
+              className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
             >
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Basic Information
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Start with the category, name, brand, and description.The remaining sections adapt
-                  to the chosen category.
-                </p>
+              <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <ClipboardList className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    Basic Information
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Start with the category, name, brand, and description. The remaining sections
+                    adapt to the chosen category.
+                  </p>
+                </div>
               </div>
               <BasicInfoSection
                 control={form.control}
@@ -452,7 +458,7 @@ const AddProductFormBody = ({
                 onCancel={() => navigate(MANAGE_PRODUCTS_PATH)}
               />
             ) : (
-              <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+              <div className="rounded-3xl border border-dashed border-border bg-card/80 px-6 py-5 text-sm text-muted-foreground">
                 Select a category to unlock specifications, pricing, and shipping.
               </div>
             )}
@@ -468,7 +474,7 @@ const AddProductFormBody = ({
             />
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card p-4 text-xs text-muted-foreground shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-3.5 shadow-xs">
             <div className="flex items-start gap-2.5">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <p>Checklist appears once a category is chosen.</p>

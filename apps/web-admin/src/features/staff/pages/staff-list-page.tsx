@@ -29,6 +29,7 @@ import type { UserData } from '@celebs/shared-types';
 import { createStaffSchema } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
+import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
@@ -240,6 +241,7 @@ export default function StaffList() {
   );
   const [editingStaff, setEditingStaff] = useState<UserData | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [staffToDelete, setStaffToDelete] = useState<UserData | null>(null);
   const [selectedVendorFilter, setSelectedVendorFilter] = useState<string | undefined>(undefined);
   const [targetVendorForCreate, setTargetVendorForCreate] = useState<string | undefined>(undefined);
 
@@ -686,11 +688,7 @@ export default function StaffList() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this staff member?')) {
-                          deleteMutation.mutate(member.id);
-                        }
-                      }}
+                      onClick={() => setStaffToDelete(member)}
                       disabled={deleteMutation.isPending}
                       className="h-8 gap-1"
                     >
@@ -704,6 +702,26 @@ export default function StaffList() {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={staffToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setStaffToDelete(null);
+        }}
+        destructive
+        confirmLabel="Delete staff"
+        title={`Delete ${staffToDelete?.name || 'this staff member'}?`}
+        description="The account will lose access immediately. This action cannot be undone."
+        onConfirm={() =>
+          new Promise<void>((resolve, reject) => {
+            if (!staffToDelete) return reject(new Error('Nothing to delete'));
+            deleteMutation.mutate(staffToDelete.id, {
+              onSuccess: () => resolve(),
+              onError: (error) => reject(error),
+            });
+          })
+        }
+      />
     </div>
   );
 }

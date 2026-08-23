@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { baseProductSchema } from '@celebs/shared-types';
 import { getProductById } from '../api';
@@ -10,11 +9,15 @@ import { hydrateProductForm, toCategoryPath } from '../utils/hydrate-product-for
 
 export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> & Record<string, unknown>;
 
-const productFormBasicSchema = baseProductSchema.partial();
-
+/**
+ * NOTE: intentionally no `resolver` here. React Hook Form skips ALL
+ * register/useController validation rules when a resolver is configured,
+ * which silently hid every dynamic-field error (images, swatches, SKU
+ * matrix...) at submit time. Field rules declared in the field components
+ * are now the single source of truth for inline validation.
+ */
 export const useProductForm = (productId?: string) => {
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productFormBasicSchema),
     defaultValues: {
       name: '',
       brand: '',

@@ -13,6 +13,7 @@ import {
 import { AppError, ErrorCode, generateSheinStyleSku,HTTPSTATUS } from '@celebs/shared-utils';
 
 import { brandService } from '../brand/brand.service';
+import { mediaRepository } from '../media/media.repository';
 
 import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
 import {
@@ -37,6 +38,46 @@ const toJsonInput = (value: unknown): Prisma.InputJsonValue | undefined => {
 };
 
 export { PRODUCT_DETAIL_SELECT,PRODUCT_LIST_SELECT };
+
+/**
+ * Collects every media CDN URL referenced by a product (main images,
+ * per-color variant galleries, and dynamic per-color swatches) so media
+ * usage counters can be kept in sync with the product lifecycle.
+ */
+const collectProductAssetUrls = (source: {
+  mainImages?: unknown;
+  colorVariants?: unknown;
+  dynamicData?: unknown;
+}): string[] => {
+  const urls: string[] = [];
+
+  if (Array.isArray(source.mainImages)) {
+    urls.push(...(source.mainImages as unknown[]).filter((u): u is string => typeof u === 'string'));
+  }
+
+  if (Array.isArray(source.colorVariants)) {
+    for (const variant of source.colorVariants as Array<Record<string, unknown>>) {
+      if (typeof variant?.swatch === 'string') urls.push(variant.swatch);
+      if (Array.isArray(variant?.images)) {
+        urls.push(...(variant.images as unknown[]).filter((u): u is string => typeof u === 'string'));
+      }
+    }
+  }
+
+  const colorMeta = (
+    source.dynamicData as Record<string, unknown> | undefined
+  )?.variants as Record<string, Record<string, unknown>> | undefined;
+  if (colorMeta && typeof colorMeta === 'object') {
+    for (const meta of Object.values(colorMeta)) {
+      if (typeof meta?.swatch === 'string') urls.push(meta.swatch);
+      if (Array.isArray(meta?.images)) {
+        urls.push(...(meta.images as unknown[]).filter((u): u is string => typeof u === 'string'));
+      }
+    }
+  }
+
+  return urls;
+};
 
 export class ProductService {
   private readonly inventoryRepository = new PostgresInventoryRepository();
@@ -310,6 +351,11 @@ export class ProductService {
     if (!createdProduct) {
       throw lastError || new AppError('Failed to create product', HTTPSTATUS.INTERNAL_SERVER_ERROR);
     }
+
+    // Link media usage so DAM badges / delete guards reflect reality
+    await mediaRepository
+      .adjustUsageByUrls(collectProductAssetUrls(createdProduct), 1)
+      .catch(() => undefined);
 
     return this.formatProductResponse(createdProduct);
   }
@@ -898,6 +944,27 @@ export class ProductService {
       return p;
     });
 
+    // Reconcile media usage: increment newly added URLs, decrement removed ones
+    const previousUrls = new Set(collectProductAssetUrls(product));
+    const nextSource = {
+      ...product,
+      ...(updateData.mainImages !== undefined ? { mainImages: updateData.mainImages } : {}),
+      ...(updateData.colorVariants !== undefined
+        ? { colorVariants: updateData.colorVariants }
+        : {}),
+      ...(updateData.dynamicData !== undefined
+        ? { dynamicData: toJsonInput(updateData.dynamicData) }
+        : {}),
+    };
+    const nextUrls = collectProductAssetUrls(nextSource);
+    const addedUrls = nextUrls.filter((url) => !previousUrls.has(url));
+    const removedUrls = Array.from(previousUrls).filter((url) => !nextUrls.includes(url));
+
+    await Promise.all([
+      addedUrls.length ? mediaRepository.adjustUsageByUrls(addedUrls, 1) : null,
+      removedUrls.length ? mediaRepository.adjustUsageByUrls(removedUrls, -1) : null,
+    ].filter(Boolean)).catch(() => undefined);
+
     return this.formatProductResponse(updated);
   }
 
@@ -926,6 +993,12 @@ export class ProductService {
         subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
       },
     });
+
+    if (product.status !== 'archived') {
+      await mediaRepository
+        .adjustUsageByUrls(collectProductAssetUrls(updated), -1)
+        .catch(() => undefined);
+    }
 
     return this.formatProductResponse(updated);
   }

@@ -79,6 +79,7 @@ const BasicInfoSection = ({
       <FormField
         control={control}
         name="subcategoryId"
+        rules={{ required: 'Please select a product category' }}
         render={() => (
           <FormItem className="space-y-3">
             <FormLabel>
@@ -131,20 +132,39 @@ const BasicInfoSection = ({
             <FormField
               control={control}
               name="name"
+              rules={{
+                required: 'Product name is required',
+                minLength: {
+                  value: 30,
+                  message: 'Product name must be at least 30 characters',
+                },
+                maxLength: {
+                  value: 200,
+                  message: 'Product name must be less than 200 characters',
+                },
+              }}
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between gap-3">
                     <FormLabel>
                       Product Name <span className="text-destructive">*</span>
                     </FormLabel>
-                    <span className="text-xs text-muted-foreground">
+                    <span
+                      className={
+                        String(field.value || '').length > 0 &&
+                        String(field.value || '').length < 30
+                          ? 'text-xs font-medium text-warning'
+                          : 'text-xs text-muted-foreground'
+                      }
+                    >
                       {String(field.value || '').length}/200
                     </span>
                   </div>
                   <FormControl>
                     <Input
-                      placeholder="Enter a clear, searchable product title"
+                      placeholder="Enter a clear, searchable product title (min. 30 characters)"
                       data-testid="product-name-input"
+                      maxLength={200}
                       {...field}
                       onChange={(event) => {
                         field.onChange(event);
@@ -189,6 +209,12 @@ const BasicInfoSection = ({
           <FormField
             control={control}
             name="description"
+            rules={{
+              maxLength: {
+                value: 4000,
+                message: 'Description must be less than 4000 characters',
+              },
+            }}
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between gap-3">

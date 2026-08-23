@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useImperativeHandle } from 'react';
-import { type Control, type FieldValues,useFormContext } from 'react-hook-form';
+import { type Control, type FieldValues, useFormContext, useWatch } from 'react-hook-form';
 import { FileText, ImageIcon, Package, Palette, Ruler } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
@@ -183,7 +183,10 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       list.map((field) => {
         const Comp = uiTypeRegistry[field.uiType];
         if (!Comp) return null;
-        const wide = field.uiType === 'ColorMeta' || field.uiType === 'SizeMeasurementsTable';
+        const wide =
+          field.uiType === 'ColorMeta' ||
+          field.uiType === 'ColorInline' ||
+          field.uiType === 'SizeMeasurementsTable';
         return (
           <div key={field.name} className={wide ? 'col-span-full' : undefined}>
             <Comp field={field} control={form.control} />
@@ -191,11 +194,22 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         );
       });
 
-    const mediaFields = [
+    // Consistent order across categories: color → size → other variants
+    const kindRank = (field: FieldSpec) => {
+      const name = field.name?.toLowerCase() ?? '';
+      const label = field.label?.toLowerCase() ?? '';
+      if (name.includes('color') || label.includes('color')) return 0;
+      if (name.includes('size') || label.includes('size')) return 1;
+      return 2;
+    };
+    const variantFields = [...(grouped.variant || [])].sort((a, b) => kindRank(a) - kindRank(b));
+
+    const otherMediaFields = [
       ...(grouped.base || []),
-      ...(grouped.variant || []),
       ...(grouped.media || []),
     ];
+    const imageFields = otherMediaFields.filter((field) => field.uiType === 'MainImage');
+    const swatchMediaFields = otherMediaFields.filter((field) => field.uiType !== 'MainImage');
     const saleFields = grouped.sale || [];
     const packageFields = grouped.package || [];
     const termFields = grouped.termcondition || [];
@@ -213,7 +227,9 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     return (
       <div className="space-y-8">
         {/* Section: Media & Swatches */}
-        {mediaFields.length > 0 && (
+        {variantFields.length > 0 ||
+        imageFields.length > 0 ||
+        swatchMediaFields.length > 0 ? (
           <div
             id="product-section-base"
             className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
@@ -227,15 +243,31 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
                   Product Images & Swatches
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Upload cover images, color variants, and gallery photos
+                  Cover image, variants, and per-color swatches
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              {renderFieldNodes(mediaFields)}
+
+            <div className="space-y-6">
+              {/* Main product image always comes first */}
+              {imageFields.length > 0 ? (
+                <div>{renderFieldNodes(imageFields)}</div>
+              ) : null}
+
+              {/* Variants — color/size selectors stacked in one column */}
+              {variantFields.length > 0 ? (
+                <VariantSelectorCard fields={variantFields} control={form.control} />
+              ) : null}
+
+              {/* Color swatches & remaining media fields */}
+              {swatchMediaFields.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  {renderFieldNodes(swatchMediaFields)}
+                </div>
+              ) : null}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Section: Specifications */}
         {detailsFields.length > 0 && (
@@ -338,6 +370,62 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     );
   },
 );
+
+/**
+ * Dedicated block for variant definition selects (Color, Size, ...).
+ * Stacked in a single narrow column so the pickers read top-to-bottom
+ * in a fixed order (color → size → others) and visually drive the
+ * swatch rows + SKU matrix rendered after them.
+ */
+function VariantSelectorCard({
+  fields,
+  control,
+}: {
+  fields: FieldSpec[];
+  control: Control<FieldValues>;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 sm:p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Variants
+      </p>
+      <div className="mt-3 grid grid-cols-1 gap-y-4 lg:max-w-xl">
+        {fields.map((field) => {
+          const Comp = uiTypeRegistry[field.uiType];
+          if (!Comp) return null;
+          return <VariantFieldSlot key={field.name} field={field} control={control} />;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function VariantFieldSlot({
+  field,
+  control,
+}: {
+  field: FieldSpec;
+  control: Control<FieldValues>;
+}) {
+  const value = useWatch({ name: field.name, control });
+  const count = Array.isArray(value)
+    ? value.length
+    : value !== undefined && value !== null && value !== ''
+      ? 1
+      : 0;
+  const Comp = uiTypeRegistry[field.uiType];
+  if (!Comp) return null;
+  return (
+    <div className="relative">
+      <Comp field={field} control={control} />
+      {count > 0 ? (
+        <span className="absolute right-0 top-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
+          {count} selected
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 function DetailsSection({
   fields,

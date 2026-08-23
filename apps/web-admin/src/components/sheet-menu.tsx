@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { MenuIcon, PanelsTopLeft } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -13,27 +15,40 @@ import {
 import { Menu } from '@/components/menu';
 
 export function SheetMenu() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  // Collapse the drawer whenever navigation happens
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
   return (
-    <Sheet>
-      <SheetTrigger className="lg:hidden" asChild>
-        <Button className="h-8" variant="outline" size="icon">
-          <MenuIcon size={20} />
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button className="h-8 lg:hidden" variant="ghost" size="icon" title="Open menu">
+          <MenuIcon size={18} />
         </Button>
       </SheetTrigger>
       <SheetContent
-        className="w-56 px-3 h-full flex flex-col"
+        className="w-72 gap-0 overflow-y-auto p-0"
         aria-describedby="sheet-menu-description"
         side="left"
       >
-        <SheetHeader>
-          <Button className="flex justify-center items-center pb-2 pt-1" variant="link" asChild>
-            <Link to="/" className="flex items-center gap-2">
-              <PanelsTopLeft className="w-6 h-6 mr-1" />
-              <SheetTitle className="font-bold text-lg">Celebs Seller Center</SheetTitle>
-            </Link>
-          </Button>
+        <SheetHeader className="border-b border-border/60 px-4 pb-3 pt-4 text-left">
+          <Link to="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <PanelsTopLeft className="h-4 w-4" />
+            </span>
+            <SheetTitle className="text-[15px] font-semibold tracking-tight">
+              Seller Center
+            </SheetTitle>
+          </Link>
+          <SheetDescription className="sr-only">Main navigation</SheetDescription>
         </SheetHeader>
-        <Menu isSidebarOpen={true} />
+        <div className="px-2 py-3">
+          <Menu isSidebarOpen={true} />
+        </div>
       </SheetContent>
     </Sheet>
   );

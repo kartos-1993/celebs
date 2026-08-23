@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { ImagePlus, Pencil, Trash2, Upload } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -15,31 +15,48 @@ import {
   uploadErrorMessage,
   uploadImageFiles,
   validateFileBasics,
+  AddFromFileTile,
+  FieldError,
+  VariantThumb,
+  getPathError,
 } from './shared';
 import { useObjectUrl } from './use-object-url';
+
+import { MediaLibraryButton } from '../../components/media-library-button';
+
+function joinAccept(accept?: string[]) {
+  return Array.isArray(accept) ? accept.join(',') : undefined;
+}
 
 export function ColorMetaItem({
   color,
   namePrefix,
   accept,
   limits,
+  onRemove,
 }: {
   color: string;
   namePrefix: string;
   accept?: string[];
   limits?: { maxImages?: number; maxSize?: number };
+  onRemove?: () => void;
 }) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
   const swatchVal: ImageValue | undefined = watch(`${namePrefix}.swatch`);
   const imagesVal: ImageValue[] = watch(`${namePrefix}.images`) || [];
-  const [isUploading, setIsUploading] = React.useState(false);
+  const [isUploadingSwatch, setIsUploadingSwatch] = React.useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = React.useState(false);
   const [isEditingColor, setIsEditingColor] = React.useState(false);
 
   const swatchUrl = useObjectUrl(swatchVal);
+  const safeLimits = React.useMemo(() => limits || {}, [limits]);
+  const maxImages = typeof safeLimits.maxImages === 'number' ? safeLimits.maxImages : undefined;
+  const remainingSlots =
+    typeof maxImages === 'number' ? Math.max(0, maxImages - imagesVal.length) : undefined;
+  const canAddMore = typeof remainingSlots !== 'number' || remainingSlots > 0;
 
   const imagesHash = (imagesVal || []).map((file) => imageValueKey(file)).join('|');
   const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
-  const safeLimits = React.useMemo(() => limits || {}, [limits]);
 
   React.useEffect(() => {
     let active = true;
@@ -72,8 +89,9 @@ export function ColorMetaItem({
     register(`${namePrefix}.images`, {
       validate: (v: unknown) => {
         const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
-        if (typeof safeLimits?.maxImages === 'number' && arr.length > safeLimits.maxImages)
-          return `Max ${safeLimits.maxImages} images`;
+        if (arr.length === 0) return `Upload at least one product image for ${color}`;
+        if (typeof maxImages === 'number' && arr.length > maxImages)
+          return `Max ${maxImages} images`;
         const ms = typeof safeLimits?.maxSize === 'number' ? safeLimits.maxSize : undefined;
         if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms)) {
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
@@ -81,266 +99,264 @@ export function ColorMetaItem({
         return true;
       },
     });
-  }, [register, namePrefix, safeLimits]);
+  }, [register, namePrefix, safeLimits, maxImages, color]);
+
+  const appendImages = (urls: string[]) => {
+    const next = [...((watch(`${namePrefix}.images`) ?? []) as ImageValue[]), ...urls];
+    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    clearErrors(`${namePrefix}.images`);
+    trigger(`${namePrefix}.images`);
+  };
 
   const onSwatch = async (file: File | null) => {
     if (!file) return;
-    const err = validateFileBasics(file, {
-      accept,
-      maxSize: safeLimits.maxSize,
-    });
+    const err = validateFileBasics(file, { accept, maxSize: safeLimits.maxSize });
     if (err) {
-      setError(`${namePrefix}.swatch`, {
-        type: 'validate',
-        message: err,
-      });
+      setError(`${namePrefix}.swatch`, { type: 'validate', message: err });
       return;
     }
-    setIsUploading(true);
+    setIsUploadingSwatch(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
-      setValue(`${namePrefix}.swatch`, uploadedUrl, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(`${namePrefix}.swatch`, uploadedUrl, { shouldDirty: true, shouldValidate: true });
       clearErrors(`${namePrefix}.swatch`);
       trigger(`${namePrefix}.swatch`);
     } catch (error) {
-      setError(`${namePrefix}.swatch`, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
+      setError(`${namePrefix}.swatch`, { type: 'upload', message: uploadErrorMessage(error) });
     } finally {
-      setIsUploading(false);
+      setIsUploadingSwatch(false);
     }
   };
 
   const onAddImages = async (list: FileList | null) => {
-    if (!list) return;
+    if (!list || list.length === 0) return;
     const incoming = Array.from(list);
+    const slots = typeof remainingSlots === 'number' ? remainingSlots : incoming.length;
+    const target = incoming.slice(0, slots);
+
+    if (target.length === 0) {
+      setError(`${namePrefix}.images`, {
+        type: 'validate',
+        message: `Max ${maxImages} images`,
+      });
+      return;
+    }
+
     const errors: string[] = [];
     const valids: File[] = [];
-    incoming.forEach((file) => {
-      const err = validateFileBasics(file, {
-        accept,
-        maxSize: safeLimits.maxSize,
-      });
+    target.forEach((file) => {
+      const err = validateFileBasics(file, { accept, maxSize: safeLimits.maxSize });
       if (err) errors.push(err);
       else valids.push(file);
     });
     if (valids.length === 0) {
       if (errors.length) {
-        setError(`${namePrefix}.images`, {
-          type: 'validate',
-          message: errors[0],
-        });
+        setError(`${namePrefix}.images`, { type: 'validate', message: errors[0] });
       }
       return;
     }
-    setIsUploading(true);
+    setIsUploadingGallery(true);
     try {
       const uploadedUrls = await uploadImageFiles(valids);
-      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
-      const next = [...current, ...uploadedUrls];
-      setValue(`${namePrefix}.images`, next, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      clearErrors(`${namePrefix}.images`);
-      trigger(`${namePrefix}.images`);
+      appendImages(uploadedUrls);
     } catch (error) {
-      setError(`${namePrefix}.images`, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
+      setError(`${namePrefix}.images`, { type: 'upload', message: uploadErrorMessage(error) });
     } finally {
-      setIsUploading(false);
+      setIsUploadingGallery(false);
     }
   };
 
   const onReplaceImage = async (idx: number, file: File | null) => {
     if (!file) return;
-    const err = validateFileBasics(file, {
-      accept,
-      maxSize: safeLimits.maxSize,
-    });
+    const err = validateFileBasics(file, { accept, maxSize: safeLimits.maxSize });
     if (err) {
-      setError(`${namePrefix}.images`, {
-        type: 'validate',
-        message: err,
-      });
+      setError(`${namePrefix}.images`, { type: 'validate', message: err });
       return;
     }
-    setIsUploading(true);
+    setIsUploadingGallery(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
       const next = [...current];
       next[idx] = uploadedUrl;
-      setValue(`${namePrefix}.images`, next, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
       clearErrors(`${namePrefix}.images`);
       trigger(`${namePrefix}.images`);
     } catch (error) {
-      setError(`${namePrefix}.images`, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
+      setError(`${namePrefix}.images`, { type: 'upload', message: uploadErrorMessage(error) });
     } finally {
-      setIsUploading(false);
+      setIsUploadingGallery(false);
     }
   };
 
   const onRemoveImage = (idx: number) => {
     const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
     const next = current.filter((_, i) => i !== idx);
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
     trigger(`${namePrefix}.images`);
   };
 
-  const fieldErrors = formState.errors as Record<string, { message?: string }> | undefined;
-  const swatchErr = fieldErrors?.[`${namePrefix}.swatch`]?.message;
-  const imagesErr = fieldErrors?.[`${namePrefix}.images`]?.message;
+  const handleSwatchFromLibrary = (urls: string[]) => {
+    const [url] = urls;
+    if (!url) return;
+    setValue(`${namePrefix}.swatch`, url, { shouldDirty: true, shouldValidate: true });
+    clearErrors(`${namePrefix}.swatch`);
+    trigger(`${namePrefix}.swatch`);
+  };
+
+  const handleGalleryFromLibrary = (urls: string[]) => {
+    const capped = typeof remainingSlots === 'number' ? urls.slice(0, remainingSlots) : urls;
+    if (!capped.length) return;
+    appendImages(capped);
+  };
+
+  const fieldErrors = formState.errors;
+  const swatchErr = getPathError(fieldErrors, `${namePrefix}.swatch`)?.message;
+  const imagesErr = getPathError(fieldErrors, `${namePrefix}.images`)?.message;
+  const acceptStr = joinAccept(accept);
+  const rowError = imagesErr ?? swatchErr;
 
   return (
-    <div className="space-y-2 rounded border p-3 bg-background">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isEditingColor ? (
-            <Input
-              type="text"
-              defaultValue={color}
-              className="h-7 w-32 text-xs"
-              onBlur={(e) => {
-                const val = e.target.value.trim();
-                setIsEditingColor(false);
-                if (val && val !== color) {
-                  setValue(`${namePrefix}.name`, val, { shouldDirty: true });
-                }
-              }}
-            />
+    <div className="px-3 py-2.5" data-error-path={`${namePrefix}.images`}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {/* Swatch — click to upload */}
+        <label
+          className="relative block h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-accent/20 transition-colors hover:border-primary/50"
+          title={swatchUrl ? 'Replace swatch image' : 'Upload swatch image'}
+        >
+          <input
+            type="file"
+            data-testid={`color-swatch-upload-${color}`}
+            className="hidden"
+            accept={acceptStr}
+            disabled={isUploadingSwatch}
+            onChange={(e) => {
+              const f = e.target.files?.[0] || null;
+              e.target.value = '';
+              void onSwatch(f);
+            }}
+          />
+          {swatchUrl ? (
+            <img src={swatchUrl} alt={`${color} swatch`} className="h-full w-full object-cover" />
           ) : (
-            <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
+            <span className="grid h-full w-full place-items-center text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+              Swatch
+            </span>
+          )}
+          {isUploadingSwatch ? (
+            <span className="absolute inset-0 grid place-items-center bg-black/60">
+              <Spinner size="sm" className="text-white" />
+            </span>
+          ) : null}
+        </label>
+
+        {/* Name */}
+        {isEditingColor ? (
+          <Input
+            type="text"
+            defaultValue={color}
+            autoFocus
+            className="h-8 w-32 text-xs"
+            onBlur={(e) => {
+              const val = e.target.value.trim();
+              setIsEditingColor(false);
+              if (val && val !== color) {
+                setValue(`${namePrefix}.name`, val, { shouldDirty: true });
+              }
+            }}
+          />
+        ) : (
+          <>
+            <span className="flex items-center gap-1 text-sm font-medium text-foreground">
               {color}
               <button
                 type="button"
-                className="text-muted-foreground hover:text-foreground"
+                title="Rename color"
+                className="text-muted-foreground transition-colors hover:text-foreground"
                 onClick={() => setIsEditingColor(true)}
               >
                 <Pencil className="h-3 w-3" />
               </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Swatch Image */}
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Color Swatch Image</label>
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded border overflow-hidden bg-accent/20 flex items-center justify-center shrink-0">
-              {swatchUrl ? (
-                <img src={swatchUrl} alt={color} className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-xs text-muted-foreground font-medium">None</span>
-              )}
-            </div>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                data-testid={`color-swatch-upload-${color}`}
-                className="hidden"
-                accept={Array.isArray(accept) ? accept.join(',') : undefined}
-                onChange={(e) => {
-                  const f = e.target.files?.[0] || null;
-                  e.target.value = '';
-                  void onSwatch(f);
-                }}
+            </span>
+            {!swatchUrl ? (
+              <MediaLibraryButton
+                label="Set swatch"
+                maxSelect={1}
+                scope="PRODUCT"
+                initialSelectedUrls={[]}
+                disabled={isUploadingSwatch}
+                onSelect={handleSwatchFromLibrary}
               />
-              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" asChild>
-                <span>Upload</span>
-              </Button>
-            </label>
-            {swatchVal ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs text-destructive"
-                onClick={() => setValue(`${namePrefix}.swatch`, undefined, { shouldDirty: true })}
-              >
-                Clear
-              </Button>
             ) : null}
-          </div>
-          {swatchErr ? <div className="text-xs text-destructive">{String(swatchErr)}</div> : null}
+          </>
+        )}
+
+        {/* Product images */}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          {imagePreviews.map((src, idx) => (
+            <VariantThumb
+              key={idx}
+              src={src}
+              alt={`${color} ${idx + 1}`}
+              accept={acceptStr}
+              disabled={isUploadingGallery}
+              onReplace={(file) => void onReplaceImage(idx, file)}
+              onRemove={() => onRemoveImage(idx)}
+            />
+          ))}
+          {isUploadingGallery ? (
+            <span className="grid h-12 w-12 place-items-center rounded-md border border-dashed border-border">
+              <Spinner size="sm" className="text-primary" />
+            </span>
+          ) : (
+            canAddMore && (
+              <AddFromFileTile
+                testId={`color-gallery-upload-${color}`}
+                accept={acceptStr}
+                multiple
+                onFiles={(files) => void onAddImages(files)}
+              />
+            )
+          )}
+          {canAddMore ? (
+            <MediaLibraryButton
+              maxSelect={typeof remainingSlots === 'number' ? Math.max(1, remainingSlots) : 8}
+              scope="PRODUCT"
+              initialSelectedUrls={imagesVal.filter((v): v is string => typeof v === 'string')}
+              onSelect={handleGalleryFromLibrary}
+            />
+          ) : null}
+          {!canAddMore ? (
+            <span className="text-[11px] text-muted-foreground">Max {maxImages} reached</span>
+          ) : null}
         </div>
 
-        {/* Gallery Images */}
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Gallery Images</label>
-          <div className="flex flex-wrap items-center gap-2">
-            {imagePreviews.map((src, idx) => (
-              <div
-                key={idx}
-                className="group relative h-10 w-10 rounded border overflow-hidden bg-accent/20"
-              >
-                <img src={src} alt={`${color} ${idx + 1}`} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                  <label className="grid h-5 w-5 cursor-pointer place-items-center rounded bg-white/90 text-black">
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept={Array.isArray(accept) ? accept.join(',') : undefined}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0] || null;
-                        e.target.value = '';
-                        void onReplaceImage(idx, f);
-                      }}
-                    />
-                    <Upload className="h-2.5 w-2.5" />
-                  </label>
-                  <button
-                    type="button"
-                    className="h-5 w-5 rounded bg-white/90 grid place-items-center text-destructive"
-                    onClick={() => onRemoveImage(idx)}
-                  >
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-            <label className="grid h-10 w-10 cursor-pointer place-items-center rounded border text-xs text-muted-foreground hover:bg-accent/30">
-              <input
-                type="file"
-                data-testid={`color-gallery-upload-${color}`}
-                className="hidden"
-                accept={Array.isArray(accept) ? accept.join(',') : undefined}
-                multiple
-                disabled={isUploading}
-                onChange={(e) => {
-                  const input = e.currentTarget;
-                  void onAddImages(input.files).finally(() => {
-                    input.value = '';
-                  });
-                }}
-              />
-              {isUploading ? (
-                <Spinner size="sm" className="text-primary" />
-              ) : (
-                <ImagePlus className="h-3.5 w-3.5" />
-              )}
-            </label>
-          </div>
-          {imagesErr ? <div className="text-xs text-destructive">{String(imagesErr)}</div> : null}
+        {/* Meta */}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {imagesVal.length}
+            {maxImages != null ? ` / ${maxImages}` : ''}
+          </span>
+          {onRemove ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              title={`Remove ${color}`}
+              onClick={onRemove}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          ) : null}
         </div>
       </div>
+
+      {rowError ? (
+        <div className="pt-1.5">
+          <FieldError message={rowError} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -385,43 +401,30 @@ export function ColorMetaInputField({ field }: UiProps) {
       </div>
 
       {colors.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Select one or more colors first.</div>
+        <div className="rounded-xl border border-dashed border-border/70 px-4 py-5 text-center text-xs text-muted-foreground">
+          Select one or more colors first — each color gets its own swatch and product images.
+        </div>
       ) : (
-        <div className="space-y-2">
-          {colors.map((c) => (
-            <div key={c} className="rounded border p-2">
-              <div className="flex items-center justify-between border-b pb-2">
-                <div className="font-semibold text-xs text-foreground">{labelOf(c)}</div>
-                <div className="ml-auto flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="text-xs text-destructive"
-                    onClick={() => {
-                      const updated = colors.filter((x) => x !== c);
-                      setValue(colorField, updated, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
-                      setValue(`variants.colorMeta.${c}`, undefined, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-              <div className="mt-2">
-                <ColorMetaItem
-                  color={labelOf(c)}
-                  namePrefix={`variants.colorMeta.${c}`}
-                  accept={accept}
-                  limits={limits}
-                />
-              </div>
-            </div>
-          ))}
+        <div className="overflow-hidden rounded-2xl border border-border/70 bg-background">
+          <div className="divide-y divide-border/60">
+            {colors.map((c) => (
+              <ColorMetaItem
+                key={c}
+                color={labelOf(c)}
+                namePrefix={`variants.colorMeta.${c}`}
+                accept={accept}
+                limits={limits}
+                onRemove={() => {
+                  const updated = colors.filter((x) => x !== c);
+                  setValue(colorField, updated, { shouldDirty: true, shouldValidate: true });
+                  setValue(`variants.colorMeta.${c}`, undefined, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

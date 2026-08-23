@@ -44,13 +44,13 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'px-4 lg:px-6 z-10 transition-[margin-left] ease-in-out duration-300',
-        isSidebarOpen ? 'lg:ml-64' : 'lg:ml-[81px]',
+        'sticky top-0 z-30 border-b border-border/60 bg-background/85 px-4 backdrop-blur-md transition-[margin-left] ease-in-out duration-300 md:px-6',
+        isSidebarOpen ? 'md:ml-[76px] lg:ml-64' : 'md:ml-[76px]',
       )}
     >
       <div className="flex h-12 items-center gap-4">
         {/* Mobile hamburger */}
-        <div className="flex items-center gap-3 lg:hidden">
+        <div className="flex items-center gap-3 md:hidden">
           <SheetMenu />
         </div>
 

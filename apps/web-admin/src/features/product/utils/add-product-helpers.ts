@@ -295,12 +295,29 @@ export const resolvePageSectionKey = (path: string, schemaFields: FieldSpec[]): 
     return 'images';
   }
 
+  // Per-color swatch/gallery rows render inside the
+  // "Product Images & Swatches" section — never in pricing.
+  if (path.startsWith('variants.colorMeta') || path.startsWith('colorMeta')) {
+    return 'images';
+  }
+
   if (path.startsWith('sku.') || path.startsWith('sizes') || path.startsWith('size_chart')) {
     return 'pricing';
   }
 
   const matchedField = resolveSchemaFieldForPath(schemaFields, path);
   const group = mapSchemaGroup(matchedField?.group);
+
+  // Variant definition selects (color/size pickers) render in the
+  // Variants card inside the base section — not in the SKU matrix.
+  if (
+    group === 'variant' &&
+    ['multiselect', 'variantlist', 'select'].includes(
+      String(matchedField?.uiType ?? '').toLowerCase(),
+    )
+  ) {
+    return 'images';
+  }
 
   switch (group) {
     case 'base':

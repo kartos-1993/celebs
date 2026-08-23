@@ -2,9 +2,13 @@ import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   Copy,
   ExternalLink,
+  FileText,
   Folder,
   FolderPlus,
   Image as ImageIcon,
+  Images,
+  LayoutGrid,
+  Megaphone,
   RefreshCw,
   Search,
   Trash2,
@@ -14,7 +18,7 @@ import {
 import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
+import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
 import {
   Dialog,
   DialogContent,
@@ -25,13 +29,6 @@ import {
 } from '@celebs/shared-ui/components/dialog';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@celebs/shared-ui/components/select';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { StorageQuotaBar } from '../components/storage-quota-bar';
@@ -47,7 +44,8 @@ import {
 
 import { useDebounce } from '@/hooks/use-debounce';
 import { toast } from '@/hooks/use-toast';
-import { directUploadBatch } from '@/lib/media-upload';
+import { directUploadBatch, extractApiErrorMessage } from '@/lib/media-upload';
+import { cn } from '@/lib/utils';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -57,17 +55,37 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
+/** Library sections — scope-driven, Daraz-style top-level navigation. */
+const LIBRARY_SECTIONS: Array<{
+  value: MediaScope | 'ALL';
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { value: 'ALL', label: 'All', icon: LayoutGrid },
+  { value: 'PRODUCT', label: 'Products', icon: Images },
+  { value: 'KYC', label: 'Documents', icon: FileText },
+  { value: 'BRANDING', label: 'Branding', icon: Folder },
+  { value: 'MARKETING', label: 'Marketing', icon: Megaphone },
+];
+
 const MediaCenterPage = memo(function MediaCenterPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
-  const [selectedScope, setSelectedScope] = useState<MediaScope | undefined>(undefined);
+  const [selectedScope, setSelectedScope] = useState<MediaScope | 'ALL'>('ALL');
   const [unusedOnly, setUnusedOnly] = useState<boolean>(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  type PendingConfirm =
+    | { kind: 'delete-folder'; folderId: string }
+    | { kind: 'delete-asset'; asset: MediaAsset }
+    | { kind: 'cleanup-unused' };
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+
   const debouncedSearch = useDebounce(searchTerm, 350);
+  const activeScope = selectedScope === 'ALL' ? undefined : selectedScope;
 
   const {
     data: assetsData,
@@ -76,7 +94,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
   } = useMediaAssets({
     search: debouncedSearch || undefined,
     folderId: selectedFolderId || undefined,
-    scope: selectedScope,
+    scope: activeScope,
     unusedOnly: unusedOnly || undefined,
     limit: 48,
   });
@@ -90,6 +108,8 @@ const MediaCenterPage = memo(function MediaCenterPage() {
   const cleanupUnusedMutation = useCleanupUnusedMedia();
 
   const assets = useMemo(() => assetsData?.items || [], [assetsData]);
+  // Only show the skeleton on first load — never when data already exists
+  const showInitialSkeleton = isLoadingAssets && assets.length === 0;
 
   const handleCreateFolder = useCallback(async () => {
     if (!newFolderName.trim()) return;
@@ -98,36 +118,22 @@ const MediaCenterPage = memo(function MediaCenterPage() {
       setNewFolderName('');
       setIsFolderDialogOpen(false);
       toast({ title: 'Success', description: 'Folder created successfully' });
-    } catch {
+    } catch (err: unknown) {
       toast({
         title: 'Error',
-        description: 'Failed to create folder',
+        description: extractApiErrorMessage(err, 'Failed to create folder'),
         variant: 'destructive',
       });
     }
   }, [newFolderName, createFolderMutation]);
 
-  const handleDeleteFolder = useCallback(
-    async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!window.confirm('Delete this folder? Assets inside will remain in root library.')) return;
-      try {
-        await deleteFolderMutation.mutateAsync(id);
-        if (selectedFolderId === id) setSelectedFolderId(null);
-        toast({ title: 'Success', description: 'Folder deleted' });
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'Failed to delete folder',
-          variant: 'destructive',
-        });
-      }
-    },
-    [deleteFolderMutation, selectedFolderId],
-  );
+  const handleDeleteFolder = useCallback((id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPendingConfirm({ kind: 'delete-folder', folderId: id });
+  }, []);
 
   const handleDeleteAsset = useCallback(
-    async (asset: MediaAsset) => {
+    (asset: MediaAsset) => {
       if ((asset.usageCount ?? 0) > 0) {
         toast({
           title: 'Action Blocked',
@@ -137,52 +143,87 @@ const MediaCenterPage = memo(function MediaCenterPage() {
         return;
       }
       if (!asset.id) return;
-      if (!window.confirm(`Delete ${asset.originalName} permanently?`)) return;
-
-      try {
-        await deleteAssetMutation.mutateAsync(asset.id);
-        toast({ title: 'Success', description: 'Asset deleted permanently' });
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Failed to delete asset';
-        toast({
-          title: 'Error',
-          description: msg,
-          variant: 'destructive',
-        });
-      }
+      setPendingConfirm({ kind: 'delete-asset', asset });
     },
-    [deleteAssetMutation],
+    [],
   );
 
-  const handleCleanupUnused = useCallback(async () => {
+  const handleCleanupUnused = useCallback(() => {
     if (!quota?.unlinkedAssetCount) return;
-    const confirmPrompt = window.confirm(
-      `Clean up ${quota.unlinkedAssetCount} unused draft assets (${formatBytes(quota.unlinkedSizeBytes)})? This action cannot be undone.`,
-    );
-    if (!confirmPrompt) return;
+    const unusedAssets = assets.filter((a) => (a.usageCount ?? 0) === 0);
+    const assetIds = unusedAssets
+      .map((a) => a.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    if (!assetIds.length) {
+      toast({ title: 'Notice', description: 'No unlinked assets on current page' });
+      return;
+    }
+    setPendingConfirm({ kind: 'cleanup-unused' });
+  }, [assets, quota]);
 
-    try {
-      const unusedAssets = assets.filter((a) => (a.usageCount ?? 0) === 0);
-      const assetIds = unusedAssets
-        .map((a) => a.id)
-        .filter((id): id is string => typeof id === 'string' && id.length > 0);
-      if (!assetIds.length) {
-        toast({ title: 'Notice', description: 'No unlinked assets on current page' });
-        return;
+  /** Executes the pending destructive action; throws keep the dialog open. */
+  const runConfirmedAction = useCallback(async () => {
+    if (!pendingConfirm) return;
+
+    if (pendingConfirm.kind === 'delete-folder') {
+      try {
+        await deleteFolderMutation.mutateAsync(pendingConfirm.folderId);
+        if (selectedFolderId === pendingConfirm.folderId) setSelectedFolderId(null);
+        toast({ title: 'Success', description: 'Folder deleted' });
+      } catch (err: unknown) {
+        toast({
+          title: 'Error',
+          description: extractApiErrorMessage(err, 'Failed to delete folder'),
+          variant: 'destructive',
+        });
+        throw err;
       }
+      return;
+    }
+
+    if (pendingConfirm.kind === 'delete-asset') {
+      const { asset } = pendingConfirm;
+      try {
+        await deleteAssetMutation.mutateAsync(asset.id as string);
+        toast({ title: 'Deleted', description: asset.originalName });
+      } catch (err: unknown) {
+        toast({
+          title: 'Error',
+          description: extractApiErrorMessage(err, 'Failed to delete asset'),
+          variant: 'destructive',
+        });
+        throw err;
+      }
+      return;
+    }
+
+    // cleanup-unused
+    const unusedAssets = assets.filter((a) => (a.usageCount ?? 0) === 0);
+    const assetIds = unusedAssets
+      .map((a) => a.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    try {
       await cleanupUnusedMutation.mutateAsync({ assetIds });
       toast({
         title: 'Success',
         description: `Cleaned up ${assetIds.length} unused assets`,
       });
-    } catch {
+    } catch (err: unknown) {
       toast({
         title: 'Error',
-        description: 'Failed to clean up unused assets',
+        description: extractApiErrorMessage(err, 'Failed to clean up unused assets'),
         variant: 'destructive',
       });
+      throw err;
     }
-  }, [assets, cleanupUnusedMutation, quota]);
+  }, [
+    pendingConfirm,
+    deleteFolderMutation,
+    selectedFolderId,
+    deleteAssetMutation,
+    cleanupUnusedMutation,
+    assets,
+  ]);
 
   const handleUploadFiles = useCallback(
     async (files: FileList | File[]) => {
@@ -191,24 +232,23 @@ const MediaCenterPage = memo(function MediaCenterPage() {
 
       setIsUploading(true);
       try {
-        await directUploadBatch(fileArray, 'celebs/products');
+        await directUploadBatch(fileArray, 'celebs/products', activeScope ?? 'PRODUCT');
         refetchAssets();
         toast({
-          title: 'Upload Successful',
-          description: `Uploaded ${fileArray.length} assets to Cloudflare R2`,
+          title: 'Uploaded',
+          description: `${fileArray.length} file${fileArray.length !== 1 ? 's' : ''} added to your library`,
         });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Upload failed';
         toast({
-          title: 'Upload Failed',
-          description: msg,
+          title: 'Upload failed',
+          description: extractApiErrorMessage(err, 'Files could not be uploaded. Try again.'),
           variant: 'destructive',
         });
       } finally {
         setIsUploading(false);
       }
     },
-    [refetchAssets],
+    [activeScope, refetchAssets],
   );
 
   const copyUrlToClipboard = useCallback((url: string) => {
@@ -216,12 +256,18 @@ const MediaCenterPage = memo(function MediaCenterPage() {
     toast({ title: 'Copied', description: 'CDN URL copied to clipboard' });
   }, []);
 
+  const isDeletingAsset = useCallback(
+    (id?: string) =>
+      Boolean(id) && deleteAssetMutation.isPending && deleteAssetMutation.variables === id,
+    [deleteAssetMutation.isPending, deleteAssetMutation.variables],
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Digital Asset Management (DAM)"
-        description="Multi-tenant media storage powered by Cloudflare R2 presigned streaming pipeline."
+        title="Media Center"
+        description="Your cloud library — product images and documents, powered by Cloudflare R2."
         actions={
           <label>
             <input
@@ -237,11 +283,11 @@ const MediaCenterPage = memo(function MediaCenterPage() {
             <Button size="sm" disabled={isUploading} className="pointer-events-none cursor-pointer">
               {isUploading ? (
                 <>
-                  <Spinner size="sm" className="mr-1.5" /> Uploading...
+                  <Spinner size="sm" className="mr-1.5" /> Uploading…
                 </>
               ) : (
                 <>
-                  <UploadCloud className="mr-1.5 h-4 w-4" /> Upload Media
+                  <UploadCloud className="mr-1.5 h-4 w-4" /> Upload
                 </>
               )}
             </Button>
@@ -252,43 +298,69 @@ const MediaCenterPage = memo(function MediaCenterPage() {
       {/* Quota Bar */}
       <StorageQuotaBar quota={quota} isLoading={isLoadingQuota} />
 
+      {/* Library sections */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {LIBRARY_SECTIONS.map(({ value, label, icon: Icon }) => {
+          const isActive = selectedScope === value;
+          return (
+            <Button
+              key={value}
+              type="button"
+              variant={isActive ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedScope(value)}
+              className={cn(
+                'h-8 rounded-full px-3.5 text-xs',
+                isActive
+                  ? ''
+                  : 'border-border/70 text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="mr-1.5 h-3.5 w-3.5" />
+              {label}
+            </Button>
+          );
+        })}
+      </div>
+
       {/* Main Workspace Layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Left Sidebar: Folders */}
-        <Card className="lg:col-span-1 border-border/60 bg-card/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <aside className="lg:col-span-1 rounded-2xl border border-border/70 bg-card shadow-xs">
+          <div className="flex items-center justify-between border-b border-border/60 px-3.5 py-2.5">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               Folders
-            </CardTitle>
+            </span>
             <Button
               variant="ghost"
               size="icon"
               className="h-6 w-6"
+              title="New folder"
               onClick={() => setIsFolderDialogOpen(true)}
             >
               <FolderPlus className="h-4 w-4 text-muted-foreground" />
             </Button>
-          </CardHeader>
-          <CardContent className="p-2 flex flex-col gap-1">
-            <Button
+          </div>
+          <div className="p-2">
+            <button
               type="button"
-              variant="ghost"
-              className={`flex w-full items-center justify-between px-3 py-2 h-auto rounded-lg text-xs font-medium ${
+              className={cn(
+                'flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors',
                 selectedFolderId === null
-                  ? 'bg-primary text-primary-foreground hover:bg-primary'
-                  : 'text-foreground hover:bg-accent'
-              }`}
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-accent',
+              )}
               onClick={() => setSelectedFolderId(null)}
             >
-              <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2">
                 <Folder className="h-4 w-4" />
-                All Assets
-              </div>
+                All Folders
+              </span>
               <span className="text-xs opacity-80">{quota?.totalAssetCount ?? 0}</span>
-            </Button>
+            </button>
 
             {isLoadingFolders ? (
-              <div className="py-4 flex justify-center">
+              <div className="flex justify-center py-4">
                 <Spinner size="sm" className="text-muted-foreground" />
               </div>
             ) : (
@@ -296,16 +368,17 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                 <div
                   key={f.id}
                   onClick={() => setSelectedFolderId(f.id)}
-                  className={`group flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                  className={cn(
+                    'group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors',
                     selectedFolderId === f.id
                       ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-accent text-foreground'
-                  }`}
+                      : 'text-foreground hover:bg-accent',
+                  )}
                 >
-                  <div className="flex items-center gap-2 truncate">
+                  <span className="flex min-w-0 items-center gap-2 truncate">
                     <Folder className="h-4 w-4 shrink-0" />
                     <span className="truncate">{f.name}</span>
-                  </div>
+                  </span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -322,49 +395,29 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                 </div>
               ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </aside>
 
         {/* Right Area: Assets Grid & Filter Toolbar */}
         <div className="flex flex-col gap-4 lg:col-span-4">
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/60 p-3 shadow-sm">
-            <div className="flex flex-1 items-center gap-2 min-w-[200px] max-w-sm">
-              <div className="relative w-full">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search assets by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-9 pl-9 text-xs"
-                />
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-xs">
+            <div className="relative min-w-[200px] max-w-sm flex-1">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-9 pl-9 text-xs"
+              />
             </div>
 
             <div className="flex items-center gap-2">
-              <Select
-                value={selectedScope || 'ALL'}
-                onValueChange={(val) =>
-                  setSelectedScope(val === 'ALL' ? undefined : (val as MediaScope))
-                }
-              >
-                <SelectTrigger className="h-9 w-32 text-xs">
-                  <SelectValue placeholder="All Scopes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Scopes</SelectItem>
-                  <SelectItem value="PRODUCT">Product</SelectItem>
-                  <SelectItem value="BRANDING">Branding</SelectItem>
-                  <SelectItem value="KYC">KYC</SelectItem>
-                  <SelectItem value="MARKETING">Marketing</SelectItem>
-                </SelectContent>
-              </Select>
-
               <Button
                 variant={unusedOnly ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setUnusedOnly(!unusedOnly)}
-                className="text-xs h-9"
+                className="h-9 text-xs"
               >
                 {unusedOnly ? 'Showing Unused' : 'Filter Unused'}
               </Button>
@@ -375,7 +428,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                   size="sm"
                   onClick={handleCleanupUnused}
                   disabled={cleanupUnusedMutation.isPending}
-                  className="text-xs h-9 border-warning/40 text-warning hover:bg-warning/10"
+                  className="h-9 border-warning/40 text-xs text-warning hover:bg-warning/10"
                 >
                   {cleanupUnusedMutation.isPending ? (
                     <Spinner size="sm" className="mr-1" />
@@ -383,7 +436,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                     <Trash2 className="mr-1 h-3.5 w-3.5" />
                   )}
                   {cleanupUnusedMutation.isPending
-                    ? 'Cleaning...'
+                    ? 'Cleaning…'
                     : `Clean Unused (${quota.unlinkedAssetCount})`}
                 </Button>
               )}
@@ -392,6 +445,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => refetchAssets()}
+                title="Refresh"
                 className="h-9 w-9 text-muted-foreground"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -400,110 +454,126 @@ const MediaCenterPage = memo(function MediaCenterPage() {
           </div>
 
           {/* Grid */}
-          {isLoadingAssets ? (
-            <div className="h-64 flex items-center justify-center">
-              <Spinner size="xl" className="text-primary" />
-            </div>
-          ) : assets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 p-12 border border-dashed rounded-2xl bg-card/30 text-center">
-              <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">No media assets found</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Upload images or clear active search filters to view your library.
-                </p>
-              </div>
-            </div>
-          ) : (
+          {showInitialSkeleton ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-              {assets.map((asset) => (
-                <div
-                  key={asset.id}
-                  className="group relative flex flex-col rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm hover:shadow-md hover:border-primary/40 transition-all"
-                >
-                  <div
-                    className="relative aspect-square w-full bg-muted/20 overflow-hidden cursor-pointer"
-                    onClick={() => setPreviewAsset(asset)}
-                  >
-                    <img
-                      src={asset.url}
-                      alt={asset.originalName}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8 rounded-full shadow-md"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyUrlToClipboard(asset.url);
-                        }}
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8 rounded-full shadow-md"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(asset.url, '_blank');
-                        }}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-
-                    {(asset.usageCount ?? 0) > 0 ? (
-                      <Badge className="absolute bottom-2 left-2 bg-black/80 text-xs font-mono text-white">
-                        {asset.usageCount}x in PDP
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="absolute bottom-2 left-2 bg-warning/10 border-warning/40 text-xs text-warning"
-                      >
-                        Unlinked
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="p-2.5 flex items-center justify-between gap-1 border-t border-border/40">
-                    <div className="truncate flex flex-col">
-                      <span
-                        className="text-xs font-medium text-foreground truncate"
-                        title={asset.originalName}
-                      >
-                        {asset.originalName}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatBytes(asset.sizeBytes ?? 0)} • {asset.scope}
-                      </span>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={() => handleDeleteAsset(asset)}
-                      disabled={deleteAssetMutation.isPending}
-                      title={
-                        (asset.usageCount ?? 0) > 0
-                          ? 'Cannot delete: actively linked'
-                          : 'Delete asset'
-                      }
-                    >
-                      {deleteAssetMutation.isPending ? (
-                        <Spinner size="sm" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-xl border border-border/50">
+                  <div className="aspect-square animate-pulse bg-muted/40" />
+                  <div className="space-y-1.5 p-2.5">
+                    <div className="h-3 w-3/4 animate-pulse rounded bg-muted/40" />
+                    <div className="h-2.5 w-1/2 animate-pulse rounded bg-muted/30" />
                   </div>
                 </div>
               ))}
+            </div>
+          ) : assets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-border/70 bg-card/40 p-12 text-center">
+              <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
+              <h3 className="text-sm font-semibold text-foreground">Nothing here yet</h3>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                {debouncedSearch || unusedOnly || selectedFolderId
+                  ? 'No assets match the current filters.'
+                  : `Upload files to fill your ${
+                      LIBRARY_SECTIONS.find((s) => s.value === selectedScope)?.label ?? ''
+                    } library.`}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
+              {assets.map((asset) => {
+                const deleting = isDeletingAsset(asset.id);
+                return (
+                  <div
+                    key={asset.id}
+                    className={cn(
+                      'group relative flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs transition-all hover:border-primary/40 hover:shadow-sm',
+                      deleting && 'opacity-50',
+                    )}
+                  >
+                    <div
+                      className="relative aspect-square w-full cursor-pointer overflow-hidden bg-muted/20"
+                      onClick={() => setPreviewAsset(asset)}
+                    >
+                      <img
+                        src={asset.url}
+                        alt={asset.originalName}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8 rounded-full shadow-md"
+                          title="Copy CDN URL"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyUrlToClipboard(asset.url);
+                          }}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8 rounded-full shadow-md"
+                          title="Open in new tab"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(asset.url, '_blank');
+                          }}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+
+                      {typeof asset.usageCount === 'number' && asset.usageCount > 0 ? (
+                        <Badge className="absolute bottom-2 left-2 bg-black/80 font-mono text-xs text-white">
+                          {asset.usageCount}× used
+                        </Badge>
+                      ) : asset.usageCount === 0 ? (
+                        <Badge
+                          variant="outline"
+                          className="absolute bottom-2 left-2 border-warning/40 bg-warning/10 text-xs text-warning"
+                        >
+                          Unlinked
+                        </Badge>
+                      ) : null}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1 border-t border-border/40 p-2.5">
+                      <div className="flex min-w-0 flex-col truncate">
+                        <span
+                          className="truncate text-xs font-medium text-foreground"
+                          title={asset.originalName}
+                        >
+                          {asset.originalName}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatBytes(asset.sizeBytes ?? 0)} •{' '}
+                          {LIBRARY_SECTIONS.find((s) => s.value === asset.scope)?.label ??
+                            asset.scope}
+                        </span>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDeleteAsset(asset)}
+                        disabled={(asset.usageCount ?? 0) > 0 || deleting}
+                        title={
+                          (asset.usageCount ?? 0) > 0
+                            ? 'Cannot delete: actively linked'
+                            : 'Delete asset'
+                        }
+                      >
+                        {deleting ? <Spinner size="sm" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -520,7 +590,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="Folder Name (e.g., Summer 2026 Lookbook)"
+              placeholder="Folder name (e.g., Summer 2026 Lookbook)"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => {
@@ -539,7 +609,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
               {createFolderMutation.isPending ? (
                 <>
                   <Spinner size="sm" className="mr-2" />
-                  Creating...
+                  Creating…
                 </>
               ) : (
                 'Create'
@@ -551,34 +621,61 @@ const MediaCenterPage = memo(function MediaCenterPage() {
 
       {/* Dialog: Image Preview */}
       <Dialog open={Boolean(previewAsset)} onOpenChange={() => setPreviewAsset(null)}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black/90 border-0">
+        <DialogContent className="max-w-3xl overflow-hidden border-0 bg-black/90 p-0">
           {previewAsset && (
             <div className="flex flex-col">
-              <div className="relative max-h-[75vh] flex items-center justify-center p-4">
+              <div className="relative flex max-h-[75vh] items-center justify-center p-4">
                 <img
                   src={previewAsset.url}
                   alt={previewAsset.originalName}
-                  className="max-h-[70vh] w-auto object-contain rounded-lg shadow-2xl"
+                  className="max-h-[70vh] w-auto rounded-lg object-contain shadow-2xl"
                 />
               </div>
-              <div className="p-4 bg-card border-t border-border flex items-center justify-between">
+              <div className="flex items-center justify-between border-t border-border bg-card p-4">
                 <div>
                   <h4 className="text-sm font-semibold text-foreground">
                     {previewAsset.originalName}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    {formatBytes(previewAsset.sizeBytes ?? 0)} • {previewAsset.mimeType} • Scope:{' '}
-                    {previewAsset.scope}
+                    {formatBytes(previewAsset.sizeBytes ?? 0)} • {previewAsset.mimeType} •{' '}
+                    {LIBRARY_SECTIONS.find((s) => s.value === previewAsset.scope)?.label ??
+                      previewAsset.scope}
                   </p>
                 </div>
                 <Button size="sm" onClick={() => copyUrlToClipboard(previewAsset.url)}>
-                  <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy CDN URL
+                  <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy CDN URL
                 </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+      {/* Standard confirmation for destructive actions */}
+      <ConfirmDialog
+        open={pendingConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingConfirm(null);
+        }}
+        destructive
+        confirmLabel={
+          pendingConfirm?.kind === 'cleanup-unused' ? 'Clean up' : 'Delete'
+        }
+        title={
+          pendingConfirm?.kind === 'delete-folder'
+            ? 'Delete this folder?'
+            : pendingConfirm?.kind === 'delete-asset'
+              ? `Delete "${pendingConfirm.asset.originalName}"?`
+              : `Clean up ${quota?.unlinkedAssetCount ?? 0} unused assets?`
+        }
+        description={
+          pendingConfirm?.kind === 'delete-folder'
+            ? 'Assets inside will remain in your library and move to the root view.'
+            : pendingConfirm?.kind === 'delete-asset'
+              ? 'This permanently removes the file from cloud storage. This action cannot be undone.'
+              : `${formatBytes(quota?.unlinkedSizeBytes ?? 0)} of unlinked files will be permanently deleted. This action cannot be undone.`
+        }
+        onConfirm={runConfirmedAction}
+      />
     </div>
   );
 });

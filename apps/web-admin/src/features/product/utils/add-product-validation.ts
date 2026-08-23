@@ -211,8 +211,8 @@ export const buildSidebarSections = ({
 
   const basicErrors = uniqueMessages([
     ...groupedErrors.basic,
-    ...(!schemaHasName && normalizeText(values.name).length < 2
-      ? ['Product name must be at least 2 characters.']
+    ...(!schemaHasName && normalizeText(values.name).length < 30
+      ? ['Product name must be at least 30 characters.']
       : []),
     ...(!normalizeText(values.categoryId) || !normalizeText(values.subcategoryId)
       ? ['Select a product category before publishing.']

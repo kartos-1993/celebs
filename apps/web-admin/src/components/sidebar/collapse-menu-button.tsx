@@ -1,4 +1,4 @@
-import { useCallback,useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { ChevronDown, LucideIcon } from 'lucide-react';
@@ -26,6 +26,10 @@ interface CollapseMenuButtonProps {
   isOpen: boolean | undefined;
 }
 
+/** Grace period before the flyout closes so crossing the gap to the
+ *  panel (or briefly leaving the row) never makes it flicker shut. */
+const FLYOUT_CLOSE_DELAY_MS = 150;
+
 export function CollapseMenuButton({
   icon: Icon,
   label,
@@ -41,9 +45,23 @@ export function CollapseMenuButton({
   );
   const [isExpanded, setIsExpanded] = useState<boolean>(isSubmenuActive);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const openFlyout = useCallback(() => setFlyoutOpen(true), []);
-  const closeFlyout = useCallback(() => setFlyoutOpen(false), []);
+  const openFlyout = useCallback(() => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setFlyoutOpen(true);
+  }, []);
+
+  const closeFlyout = useCallback(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
+      setFlyoutOpen(false);
+      closeTimer.current = null;
+    }, FLYOUT_CLOSE_DELAY_MS);
+  }, []);
 
   // ── Expanded sidebar: collapsible tree ──────────────────────────────────
   if (!isCollapsed) {
@@ -55,18 +73,23 @@ export function CollapseMenuButton({
         >
           <Button
             variant={isSubmenuActive ? 'secondary' : 'ghost'}
-            className="w-full justify-start h-10 px-3"
+            className="h-9 w-full justify-start rounded-lg px-3"
           >
-            <div className="w-full items-center flex justify-between">
+            <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center shrink-0">
+                <span
+                  className={cn(
+                    'flex shrink-0 items-center justify-center',
+                    isSubmenuActive ? 'text-primary' : 'text-muted-foreground',
+                  )}
+                >
                   <Icon size={18} />
                 </span>
-                <p className="max-w-[150px] truncate text-sm font-medium py-0.5">{label}</p>
+                <span className="max-w-[150px] truncate py-0.5 text-sm font-medium text-foreground/90">
+                  {label}
+                </span>
               </div>
-              <div className="flex items-center justify-center shrink-0 ml-2">
-                <ChevronDown size={16} className="transition-transform duration-200" />
-              </div>
+              <ChevronDown size={15} className="ml-2 shrink-0 text-muted-foreground transition-transform duration-200" />
             </div>
           </Button>
         </CollapsibleTrigger>
@@ -78,20 +101,13 @@ export function CollapseMenuButton({
               <Button
                 key={index}
                 variant={isActive ? 'secondary' : 'ghost'}
-                className="w-full justify-start h-8 mb-1 pl-9 pr-3"
+                className="mb-0.5 h-8 w-full justify-start rounded-lg pl-[38px] pr-3"
                 asChild
               >
-                <Link to={href} className="flex items-center w-full">
-                  <p
-                    className={cn(
-                      'max-w-[170px] truncate text-sm py-0.5',
-                      isActive
-                        ? 'font-medium text-foreground'
-                        : 'text-muted-foreground',
-                    )}
-                  >
+                <Link to={href} className="flex w-full items-center">
+                  <span className={cn('truncate py-0.5 text-sm', isActive ? 'font-medium text-foreground' : 'text-muted-foreground')}>
                     {label}
-                  </p>
+                  </span>
                 </Link>
               </Button>
             );
@@ -124,12 +140,12 @@ export function CollapseMenuButton({
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           side="right"
-          sideOffset={8}
+          sideOffset={4}
           align="start"
           onMouseEnter={openFlyout}
           onMouseLeave={closeFlyout}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-50 w-48 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2 p-0"
+          className="z-50 w-48 rounded-xl border border-border/70 bg-popover p-0 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2"
         >
           {/* Section label */}
           <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b">
