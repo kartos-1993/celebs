@@ -47,6 +47,7 @@ export * from './validators/common.validator';
 export * from './validators/logistics.validator';
 export * from './validators/media.validator';
 export * from './validators/platform-settings.validator';
+export * from './validators/layout.validator';
 
 export type loginType = z.infer<typeof loginSchema>;
 export type registerType = z.infer<typeof registerSchema>;

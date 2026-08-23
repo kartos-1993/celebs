@@ -19,6 +19,7 @@ export interface DynamicWidget<TData = Record<string, unknown>> {
   data: TData;
   styling?: WidgetStyling;
   analytics?: WidgetAnalytics;
+  isActive?: boolean;
 }
 
 export interface WidgetProps<TData = Record<string, unknown>> {
