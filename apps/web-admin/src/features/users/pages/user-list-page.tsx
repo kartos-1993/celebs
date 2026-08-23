@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UserData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
+import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
@@ -33,6 +34,7 @@ import { PageLoader } from '@/components/page-loader';
 export default function UserList() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name?: string } | null>(null);
 
   const { data: response, isLoading } = useQuery({
     queryKey: USERS_QUERY_KEYS.list(),
@@ -191,11 +193,7 @@ export default function UserList() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this user?')) {
-                          deleteMutation.mutate(account.id);
-                        }
-                      }}
+                      onClick={() => setUserToDelete({ id: account.id, name: account.name })}
                       disabled={deleteMutation.isPending}
                     >
                       Delete
@@ -207,6 +205,26 @@ export default function UserList() {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={userToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setUserToDelete(null);
+        }}
+        destructive
+        confirmLabel="Delete user"
+        title={`Delete ${userToDelete?.name || 'this user'}?`}
+        description="The account will be permanently removed. This action cannot be undone."
+        onConfirm={() =>
+          new Promise<void>((resolve, reject) => {
+            if (!userToDelete) return reject(new Error('Nothing to delete'));
+            deleteMutation.mutate(userToDelete.id, {
+              onSuccess: () => resolve(),
+              onError: (error) => reject(error),
+            });
+          })
+        }
+      />
     </div>
   );
 }
