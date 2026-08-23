@@ -39,7 +39,9 @@ export const PATHS = {
   MARKETING: {
     COMBOS: '/marketing/combos',
     CAMPAIGNS: '/marketing/campaigns',
+    PREVIEW: '/marketing/preview',
   },
+
   ACCOUNT: {
     PROFILE: '/account/profile',
     SECURITY: '/account/security',

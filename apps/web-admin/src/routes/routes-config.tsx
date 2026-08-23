@@ -52,8 +52,8 @@ export const routesConfig: RouteObject[] = [
       orderRoutes,
       accountRoutes,
       financeRoutes,
-      platformSettingsRoutes,
-      ...marketingRoutes,
+      ...platformSettingsRoutes,
+      marketingRoutes,
       {
         path: '403',
         element: <ForbiddenError />,

@@ -1,13 +1,15 @@
 import {
-  Users,
-  ListOrdered,
-  ShoppingBag,
   FolderTree,
   IndianRupee,
+  LayoutTemplate,
+  ListOrdered,
+  LucideIcon,
+  Megaphone,
+  ShoppingBag,
   Store,
   UserCog,
   UserPen,
-  LucideIcon,
+  Users,
 } from 'lucide-react';
 import { Permission, can, type Role } from '@celebs/rbac';
 
@@ -99,7 +101,34 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 4. Vendor Management (Admin & SuperAdmin)
+  // 4. Marketing & Promotions Group
+  const marketingSubmenus: Submenu[] = [
+    { href: '/marketing/campaigns', label: 'Festival Campaigns' },
+    { href: '/marketing/combos', label: 'Combo Bundles' },
+    { href: '/marketing/preview', label: 'SDUI Storefront Preview' },
+  ];
+
+  if (
+    hasPerm(Permission.PRODUCT_CREATE) ||
+    hasPerm(Permission.PRODUCT_EDIT) ||
+    hasPerm(Permission.PLATFORM_MANAGE) ||
+    currentRole === 'VENDOR' ||
+    currentRole === 'ADMIN' ||
+    currentRole === 'SUPERADMIN'
+  ) {
+    list.push({
+      menus: [
+        {
+          href: '',
+          label: 'Marketing & SDUI',
+          icon: Megaphone,
+          submenus: marketingSubmenus,
+        },
+      ],
+    });
+  }
+
+  // 5. Vendor Management (Admin & SuperAdmin)
   if (hasPerm(Permission.VENDOR_MANAGE) || hasPerm(Permission.VENDOR_VIEW)) {
     list.push({
       menus: [
@@ -112,7 +141,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 5. User Management (SuperAdmin only)
+  // 6. User Management (SuperAdmin only)
   if (hasPerm(Permission.USER_MANAGE) || hasPerm(Permission.USER_VIEW)) {
     list.push({
       menus: [
@@ -125,7 +154,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 6. Staff & Team Management (Vendor Owners, Vendor Staff & SuperAdmin)
+  // 7. Staff & Team Management (Vendor Owners, Vendor Staff & SuperAdmin)
   if (hasPerm(Permission.STAFF_MANAGE) || hasPerm(Permission.STAFF_VIEW)) {
     list.push({
       menus: [
@@ -138,7 +167,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 7. Finance Group
+  // 8. Finance Group
   if (hasPerm(Permission.FINANCE_VIEW)) {
     list.push({
       menus: [
@@ -152,7 +181,24 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 8. My Account Group (All roles)
+  // 9. Platform Settings & Mobile Banners (Platform Admins only)
+  if (hasPerm(Permission.PLATFORM_MANAGE)) {
+    list.push({
+      menus: [
+        {
+          href: '',
+          label: 'Platform Layout',
+          icon: LayoutTemplate,
+          submenus: [
+            { href: '/platform-settings/banners', label: 'Mobile Banner Slider' },
+            { href: '/platform-settings/layout', label: 'Home Layout Editor' },
+          ],
+        },
+      ],
+    });
+  }
+
+  // 10. My Account Group (All roles)
   list.push({
     menus: [
       {
