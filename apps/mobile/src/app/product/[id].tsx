@@ -4,7 +4,6 @@ import {
   ScrollView,
   Share,
   StatusBar,
-  StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -29,6 +28,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Palette, Spacing } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { BrandStoryBadge } from '@/features/products/components/brand-story-badge';
@@ -37,6 +37,7 @@ import { ProductGallery } from '@/features/products/components/product-gallery';
 import { ProductVariantSelector } from '@/features/products/components/product-variant-selector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
+import { styles } from '@/features/products/styles/product.styles';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -148,7 +149,7 @@ export default function ProductDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centerBox}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color={Palette.brand} />
         <ThemedText style={styles.loadingText}>Loading product details...</ThemedText>
       </View>
     );
@@ -198,7 +199,7 @@ export default function ProductDetailScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* Floating Header */}
-      <View style={[styles.headerOverlay, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.headerOverlay, { paddingTop: insets.top + Spacing.sm }]}>
         <TouchableOpacity
           style={styles.headerIconButton}
           onPress={() => router.back()}
@@ -206,12 +207,12 @@ export default function ProductDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ChevronLeft size={22} color="#18181b" />
+          <ChevronLeft size={22} color={Palette.gray900} />
         </TouchableOpacity>
 
         <View style={styles.headerRightActions}>
           <TouchableOpacity style={styles.headerIconButton} onPress={handleShare}>
-            <Share2 size={20} color="#18181b" />
+            <Share2 size={20} color={Palette.gray900} />
           </TouchableOpacity>
 
           <Animated.View style={animatedTopCartStyle}>
@@ -223,7 +224,7 @@ export default function ProductDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="View cart"
               >
-                <ShoppingCart size={20} color="#18181b" />
+                <ShoppingCart size={20} color={Palette.gray900} />
                 {itemCount > 0 && (
                   <View style={styles.cartBadge}>
                     <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
@@ -251,12 +252,12 @@ export default function ProductDetailScreen() {
             </View>
             <TouchableOpacity
               onPress={() => setIsFavorite(!isFavorite)}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: Spacing.sm }}
             >
               <Heart
                 size={22}
-                color={isFavorite ? '#ef4444' : '#9ca3af'}
-                fill={isFavorite ? '#ef4444' : 'transparent'}
+                color={isFavorite ? Palette.danger : Palette.gray400}
+                fill={isFavorite ? Palette.danger : 'transparent'}
               />
             </TouchableOpacity>
           </View>
@@ -281,7 +282,7 @@ export default function ProductDetailScreen() {
 
           {/* Rating */}
           <View style={styles.ratingRow}>
-            <Star size={14} color="#eab308" fill="#eab308" />
+            <Star size={14} color={Palette.gold} fill={Palette.gold} />
             <ThemedText style={styles.ratingText}>4.8 (124 reviews)</ThemedText>
           </View>
 
@@ -321,17 +322,17 @@ export default function ProductDetailScreen() {
           {/* Value Props */}
           <View style={styles.valuePropsRow}>
             <View style={styles.propBox}>
-              <Truck size={20} color="#208AEF" />
+              <Truck size={20} color={Palette.brand} />
               <ThemedText style={styles.propTitle}>Fast Delivery</ThemedText>
               <ThemedText style={styles.propSub}>2-4 business days</ThemedText>
             </View>
             <View style={styles.propBox}>
-              <RotateCcw size={20} color="#208AEF" />
+              <RotateCcw size={20} color={Palette.brand} />
               <ThemedText style={styles.propTitle}>Easy Returns</ThemedText>
               <ThemedText style={styles.propSub}>7-day return policy</ThemedText>
             </View>
             <View style={styles.propBox}>
-              <ShieldCheck size={20} color="#208AEF" />
+              <ShieldCheck size={20} color={Palette.brand} />
               <ThemedText style={styles.propTitle}>100% Genuine</ThemedText>
               <ThemedText style={styles.propSub}>Authentic products</ThemedText>
             </View>
@@ -340,7 +341,7 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Bottom Sticky Action Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.md }]}>
         <TouchableOpacity
           style={styles.addToCartBtn}
           onPress={() => handleAddToCart()}
@@ -351,10 +352,10 @@ export default function ProductDetailScreen() {
           accessibilityLabel="Add product to cart"
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color="#ffffff" />
+            <ActivityIndicator size="small" color={Palette.white} />
           ) : (
             <>
-              <ShoppingCart size={20} color="#ffffff" />
+              <ShoppingCart size={20} color={Palette.white} />
               <ThemedText style={styles.addToCartText}>Add to Cart</ThemedText>
             </>
           )}
@@ -378,202 +379,3 @@ export default function ProductDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  centerBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#6b7280',
-  },
-  errorText: {
-    fontSize: 15,
-    color: '#dc2626',
-    marginBottom: 16,
-  },
-  backBtn: {
-    backgroundColor: '#208AEF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  backBtnText: {
-    color: '#ffffff',
-    fontWeight: '600',
-  },
-  headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerRightActions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#ef4444',
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  cartBadgeText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  detailsContainer: {
-    padding: 16,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  brandText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#208AEF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  productTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#18181b',
-    marginBottom: 8,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  currentPrice: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#18181b',
-  },
-  originalPrice: {
-    fontSize: 16,
-    color: '#9ca3af',
-    textDecorationLine: 'line-through',
-  },
-  discountBadge: {
-    backgroundColor: '#fef2f2',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  discountText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#ef4444',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 16,
-  },
-  ratingText: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#f3f4f6',
-    marginVertical: 16,
-  },
-  descriptionSection: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#18181b',
-    marginBottom: 8,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: '#4b5563',
-    lineHeight: 22,
-  },
-  valuePropsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-  },
-  propBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  propTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#18181b',
-    marginTop: 6,
-  },
-  propSub: {
-    fontSize: 10,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  addToCartBtn: {
-    backgroundColor: '#208AEF',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 8,
-  },
-  addToCartText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-});

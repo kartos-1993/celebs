@@ -1,16 +1,19 @@
 import React from 'react';
-import { ColorValue, Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import { ColorValue, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withSpring,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import { Home, Search, ShoppingCart, TrendingUp, User } from 'lucide-react-native';
 
-import { Colors } from '@/constants/theme';
+import { Colors, FontSize, FontWeight, Spacing } from '@/constants/theme';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+
+const TAB_BAR_CONTENT_HEIGHT = 56;
 
 function CategoryIcon({ color, size }: { color: ColorValue; size: number }) {
   return (
@@ -54,30 +57,31 @@ function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }
 export default function TabLayout() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: '#555555',
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.background,
           borderTopWidth: 0,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
+          height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom + Spacing.sm,
+          paddingTop: Spacing.sm,
           elevation: 0,
           shadowOpacity: 0,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 2,
+          fontSize: FontSize.footnote,
+          fontWeight: FontWeight.semibold,
+          marginTop: Spacing.xxs,
         },
       }}
     >

@@ -1,10 +1,13 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { X } from 'lucide-react-native';
 
 import { DrawerFilterConfig } from '../types';
 
+import { styles } from './dynamic-filter-drawer.styles';
+
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
 
 export const FALLBACK_COLOR_OPTIONS = [
   { name: 'Blue', code: '#2563eb' },
@@ -95,7 +98,7 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Close filters"
             >
-              <X size={20} color="#18181b" />
+              <X size={20} color={Palette.gray900} />
             </TouchableOpacity>
           </View>
 
@@ -258,144 +261,3 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    flex: 1,
-  },
-  drawerContainer: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingBottom: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#18181b',
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  scrollBody: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 10,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  chipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#208AEF',
-  },
-  chipText: {
-    fontSize: 13,
-    color: '#4b5563',
-  },
-  chipTextSelected: {
-    color: '#208AEF',
-    fontWeight: '600',
-  },
-  colorChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    gap: 6,
-  },
-  colorChipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#208AEF',
-  },
-  colorDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  sizeChip: {
-    width: 44,
-    height: 38,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  sizeChipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#208AEF',
-  },
-  footer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-  },
-  resetBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    alignItems: 'center',
-  },
-  resetBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  applyBtn: {
-    flex: 2,
-    backgroundColor: '#208AEF',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  applyBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-});

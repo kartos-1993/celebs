@@ -14,7 +14,7 @@ import { styles } from '../styles/categories.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
-import { Colors } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 
 export function CategoryGrid() {
   const scheme = useColorScheme();
@@ -42,7 +42,7 @@ export function CategoryGrid() {
 
   if (loading) {
     return (
-      <View style={{ paddingVertical: 20, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ paddingVertical: Spacing.xl, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="small" color={colors.text} />
       </View>
     );

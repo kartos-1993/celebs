@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { ProductColorVariant, ProductSize } from '../hooks/use-products';
+
+import { styles } from './product-variant-selector.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
@@ -167,128 +169,3 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 12,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#18181b',
-    marginBottom: 10,
-  },
-  valueText: {
-    fontWeight: '400',
-    color: '#4b5563',
-  },
-  sizeHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  sizeNoticeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ef4444',
-  },
-  variantRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  colorChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    gap: 6,
-  },
-  colorChipSelected: {
-    backgroundColor: '#ffffff',
-    borderColor: '#18181b',
-  },
-  colorDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-  },
-  colorThumbnail: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  chipTextSelected: {
-    fontWeight: '700',
-    color: '#18181b',
-  },
-  sizeBox: {
-    minWidth: 44,
-    height: 40,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  sizeBoxSelected: {
-    backgroundColor: '#18181b',
-    borderColor: '#18181b',
-  },
-  sizeBoxDisabled: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#e5e7eb',
-    opacity: 0.4,
-  },
-  sizeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  sizeTextSelected: {
-    color: '#ffffff',
-  },
-  sizeTextDisabled: {
-    color: '#9ca3af',
-    textDecorationLine: 'line-through',
-  },
-  stockNoticeBox: {
-    marginTop: 10,
-  },
-  outOfStockText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#ef4444',
-  },
-  lowStockText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#f59e0b',
-  },
-  inStockText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#10b981',
-  },
-});
-
-export default ProductVariantSelector;

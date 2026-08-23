@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
@@ -22,9 +21,11 @@ import {
 import { apiClient } from '@/api/client';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
 import { useCart } from '@/features/cart/context/cart-context';
+import { styles } from '@/features/checkout/styles/checkout.styles';
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -141,14 +142,14 @@ export default function CheckoutScreen() {
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <ChevronLeft size={24} color="#18181b" />
+            <ChevronLeft size={24} color={Palette.gray900} />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>Sign In to Checkout</ThemedText>
           <View style={{ width: 24 }} />
         </View>
 
         <View style={styles.authNoticeContainer}>
-          <Lock size={48} color="#208AEF" />
+          <Lock size={48} color={Palette.brand} />
           <ThemedText style={styles.authNoticeTitle}>Sign In to Proceed to Checkout</ThemedText>
           <ThemedText style={styles.authNoticeDesc}>
             Your items are saved safely in your cart. Sign in with Google to enter your Kathmandu
@@ -162,7 +163,7 @@ export default function CheckoutScreen() {
             disabled={loading || isAuthenticating}
           >
             {loading || isAuthenticating ? (
-              <ActivityIndicator color="#000000" />
+              <ActivityIndicator color={Palette.black} />
             ) : (
               <>
                 <View style={styles.googleGLogo}>
@@ -186,7 +187,7 @@ export default function CheckoutScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ChevronLeft size={24} color="#18181b" />
+          <ChevronLeft size={24} color={Palette.gray900} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>Checkout</ThemedText>
         <View style={{ width: 24 }} />
@@ -196,7 +197,7 @@ export default function CheckoutScreen() {
         {/* Shipping Address Section */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <MapPin size={20} color="#208AEF" />
+            <MapPin size={20} color={Palette.brand} />
             <ThemedText style={styles.sectionTitle}>Nepal Shipping Address</ThemedText>
           </View>
 
@@ -256,7 +257,7 @@ export default function CheckoutScreen() {
         {/* Payment Method Selector */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <CreditCard size={20} color="#208AEF" />
+            <CreditCard size={20} color={Palette.brand} />
             <ThemedText style={styles.sectionTitle}>Payment Method</ThemedText>
           </View>
 
@@ -286,7 +287,7 @@ export default function CheckoutScreen() {
 
             {isCodDisabled && (
               <View style={styles.codWarningBadge}>
-                <AlertCircle size={14} color="#b45309" />
+                <AlertCircle size={14} color={Palette.warning} />
                 <ThemedText style={styles.codWarningText}>
                   COD limited to max NPR 5,000. Total is NPR {grandTotal.toLocaleString()}.
                 </ThemedText>
@@ -369,7 +370,7 @@ export default function CheckoutScreen() {
 
         {/* Security badge */}
         <View style={styles.securityRow}>
-          <ShieldCheck size={16} color="#16a34a" />
+          <ShieldCheck size={16} color={Palette.success} />
           <ThemedText style={styles.securityText}>
             100% Encrypted & Authenticated Order Processing
           </ThemedText>
@@ -377,7 +378,7 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       {/* Fixed Bottom Submit Button */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.md }]}>
         <TouchableOpacity
           style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
           onPress={handlePlaceOrder}
@@ -385,7 +386,7 @@ export default function CheckoutScreen() {
           activeOpacity={0.85}
         >
           {loading ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color={Palette.white} />
           ) : (
             <ThemedText style={styles.submitBtnText}>
               Place Order • Rs. {grandTotal.toLocaleString()}
@@ -396,260 +397,3 @@ export default function CheckoutScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 16,
-    paddingBottom: 100,
-  },
-  sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  formGroup: {
-    gap: 4,
-  },
-  rowGroup: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  input: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#0f172a',
-  },
-  paymentOption: {
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-  },
-  paymentOptionSelected: {
-    borderColor: '#208AEF',
-    backgroundColor: '#f0f7ff',
-  },
-  paymentOptionDisabled: {
-    backgroundColor: '#f1f5f9',
-    borderColor: '#e2e8f0',
-    opacity: 0.7,
-  },
-  paymentRadioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#cbd5e1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: '#208AEF',
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#208AEF',
-  },
-  paymentName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  paymentDesc: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  codWarningBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#fef3c7',
-    padding: 8,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  codWarningText: {
-    fontSize: 11,
-    color: '#92400e',
-    fontWeight: '600',
-    flex: 1,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: 13,
-    color: '#64748b',
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e2e8f0',
-    marginVertical: 4,
-  },
-  totalLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#208AEF',
-  },
-  securityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  securityText: {
-    fontSize: 11,
-    color: '#475569',
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  submitBtn: {
-    backgroundColor: '#208AEF',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitBtnDisabled: {
-    opacity: 0.7,
-  },
-  submitBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  authNoticeContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 16,
-  },
-  authNoticeTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
-    textAlign: 'center',
-  },
-  authNoticeDesc: {
-    fontSize: 13,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingVertical: 14,
-    width: '100%',
-    gap: 10,
-    elevation: 1,
-  },
-  googleGLogo: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#ea4335',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleGText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  googleBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  secondaryBtn: {
-    paddingVertical: 12,
-  },
-  secondaryBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2563eb',
-  },
-});

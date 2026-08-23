@@ -1,8 +1,11 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { ArrowRight, ShieldCheck } from 'lucide-react-native';
 
+import { styles } from './cart-summary-footer.styles';
+
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
 
 interface CartSummaryFooterProps {
   subtotal: number;
@@ -43,7 +46,7 @@ export const CartSummaryFooter: React.FC<CartSummaryFooterProps> = ({
 
       {/* Trust Badge */}
       <View style={styles.trustBadge}>
-        <ShieldCheck size={16} color="#16a34a" />
+        <ShieldCheck size={16} color={Palette.success} />
         <ThemedText style={styles.trustText}>Secure 256-bit SSL Checkout & Free Returns</ThemedText>
       </View>
 
@@ -57,74 +60,8 @@ export const CartSummaryFooter: React.FC<CartSummaryFooterProps> = ({
         accessibilityLabel="Proceed to checkout"
       >
         <ThemedText style={styles.checkoutBtnText}>Proceed to Checkout</ThemedText>
-        <ArrowRight size={18} color="#ffffff" />
+        <ArrowRight size={18} color={Palette.white} />
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 16,
-    gap: 12,
-  },
-  summaryCard: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#18181b',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 4,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#18181b',
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#208AEF',
-  },
-  trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  trustText: {
-    fontSize: 12,
-    color: '#4b5563',
-  },
-  checkoutBtn: {
-    backgroundColor: '#208AEF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 8,
-  },
-  checkoutBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-});

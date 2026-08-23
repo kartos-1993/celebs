@@ -1,6 +1,6 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = SCREEN_WIDTH * 0.75; // Shorter aspect ratio to fit the screen better
@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
   },
   dotContainer: {
     position: 'absolute',
-    bottom: Spacing.four,
+    bottom: Spacing.xl,
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -54,12 +54,12 @@ export const styles = StyleSheet.create({
   },
   activeDot: {
     width: 14,
-    backgroundColor: '#ffffff',
+    backgroundColor: Palette.white,
   },
   floatingHeader: {
     position: 'absolute',
-    left: Spacing.four,
-    right: Spacing.four,
+    left: Spacing.xl,
+    right: Spacing.xl,
     height: 48,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -77,16 +77,16 @@ export const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   headerLogo: {
-    color: '#ffffff',
+    color: Palette.white,
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: 2,
   },
   contentCard: {
-    marginTop: -Spacing.two,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: Spacing.five,
+    marginTop: -Spacing.sm,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    paddingTop: Spacing.xxl,
     minHeight: 300,
     zIndex: 15,
   },

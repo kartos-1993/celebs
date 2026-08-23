@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Mail, Menu, Search, ShoppingCart } from 'lucide-react-native';
 
+import { styles } from './app-header.styles';
+
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Palette } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
 
 interface AppHeaderProps {
@@ -49,9 +51,9 @@ export function AppHeader({
     ? `rgba(${scheme === 'dark' ? '0, 0, 0' : '255, 255, 255'}, ${scrollProgress})`
     : colors.background;
 
-  const textColor = isSolid ? colors.text : '#ffffff';
+  const textColor = isSolid ? colors.text : Palette.white;
   const secondaryTextColor = isSolid ? colors.textSecondary : 'rgba(255, 255, 255, 0.65)';
-  const borderBottomColor = isSolid ? 'rgba(0, 0, 0, 0.05)' : 'transparent';
+  const borderBottomColor = isSolid ? Palette.overlaySoft : 'transparent';
 
   return (
     <View
@@ -59,7 +61,7 @@ export function AppHeader({
         styles.headerContainer,
         {
           backgroundColor: headerBgColor,
-          paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 6,
+          paddingTop: insets.top,
           borderBottomColor: borderBottomColor,
           borderBottomWidth: isSolid ? 1 : 0,
         },
@@ -153,80 +155,3 @@ export function AppHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  headerContainer: {
-    width: '100%',
-    zIndex: 100,
-  },
-  absoluteHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-  },
-  topBar: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-  },
-  iconGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  iconButton: {
-    padding: 6,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '900',
-    letterSpacing: 4,
-    fontFamily: Platform.OS === 'ios' ? 'HelveticaNeue-CondensedBold' : 'sans-serif-condensed',
-  },
-  subHeaderContainer: {
-    height: 38,
-    width: '100%',
-  },
-  subScrollContent: {
-    paddingHorizontal: Spacing.three,
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  subTabButton: {
-    paddingHorizontal: Spacing.three,
-    height: '100%',
-    justifyContent: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  subTabText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  subTabActiveText: {
-    fontWeight: '700',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: '#ff3b30',
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    paddingHorizontal: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartBadgeText: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-});

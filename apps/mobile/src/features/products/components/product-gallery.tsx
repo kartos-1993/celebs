@@ -6,18 +6,20 @@ import {
   NativeSyntheticEvent,
   PixelRatio,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { X } from 'lucide-react-native';
+
 import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
+import { styles } from './product-gallery.styles';
+
 import { resolveImageUrl } from '@/constants/config';
+import { Palette } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_HEIGHT = SCREEN_WIDTH * 1.33; // 3:4 aspect ratio
 
 interface ProductGalleryProps {
   images: string[];
@@ -112,7 +114,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
             accessibilityRole="button"
             accessibilityLabel="Close gallery"
           >
-            <X size={24} color="#ffffff" />
+            <X size={24} color={Palette.white} />
           </TouchableOpacity>
           <ScrollView
             horizontal
@@ -141,59 +143,3 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
-    backgroundColor: '#f3f4f6',
-    position: 'relative',
-  },
-  mainImage: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
-  },
-  indicatorContainer: {
-    position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-  },
-  indicatorDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  indicatorDotActive: {
-    width: 18,
-    backgroundColor: '#ffffff',
-    borderRadius: 3,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-  },
-  closeBtn: {
-    position: 'absolute',
-    top: 48,
-    right: 20,
-    zIndex: 10,
-    padding: 8,
-  },
-  zoomSlide: {
-    width: SCREEN_WIDTH,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  zoomImage: {
-    width: SCREEN_WIDTH,
-    height: '80%',
-  },
-});

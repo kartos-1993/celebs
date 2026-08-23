@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import { ArrowRight, Plane, Sparkles, Tag } from 'lucide-react-native';
+
+import { styles } from './combo-bundle-showcase.styles';
 
 import { apiClient } from '@/api/client';
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
 
 export interface HydratedProduct {
   id?: string;
@@ -124,7 +127,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
       <View style={styles.headerRow}>
         <View style={styles.headerContent}>
           <View style={styles.iconCircle}>
-            <Sparkles size={16} color="#7c3aed" />
+            <Sparkles size={16} color={Palette.accent} />
           </View>
           <View>
             <ThemedText style={styles.sectionTitle}>Curated Combo Bundles</ThemedText>
@@ -163,9 +166,9 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
                 {/* Category Badge */}
                 <View style={styles.tagBadge}>
                   {isTravel ? (
-                    <Plane size={11} color="#ffffff" />
+                    <Plane size={11} color={Palette.white} />
                   ) : (
-                    <Tag size={11} color="#ffffff" />
+                    <Tag size={11} color={Palette.white} />
                   )}
                   <ThemedText style={styles.tagBadgeText}>
                     {isTravel ? 'ABROAD TRAVEL PACK' : item.tag?.toUpperCase() || 'COMBO'}
@@ -200,7 +203,7 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
                   </ThemedText>
                   <View style={styles.viewBtn}>
                     <ThemedText style={styles.viewBtnText}>View Bundle</ThemedText>
-                    <ArrowRight size={12} color="#7c3aed" />
+                    <ArrowRight size={12} color={Palette.accent} />
                   </View>
                 </View>
               </View>
@@ -211,132 +214,3 @@ export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps)
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 14,
-  },
-  headerRow: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f3e8ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#18181b',
-  },
-  sectionSubtitle: {
-    fontSize: 11,
-    color: '#71717a',
-    marginTop: 1,
-  },
-  scrollPadding: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  card: {
-    width: 260,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e4e4e7',
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  imageBox: {
-    width: '100%',
-    height: 130,
-    position: 'relative',
-    backgroundColor: '#f4f4f5',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  tagBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(24, 24, 27, 0.75)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  tagBadgeText: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  savingsPill: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: '#16a34a',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  savingsPillText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  cardBody: {
-    padding: 12,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#18181b',
-  },
-  cardSubtitle: {
-    fontSize: 11,
-    color: '#71717a',
-    marginTop: 2,
-    height: 30,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f4f4f5',
-  },
-  itemsCount: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#71717a',
-  },
-  viewBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  viewBtnText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#7c3aed',
-  },
-});

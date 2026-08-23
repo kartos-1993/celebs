@@ -1,7 +1,9 @@
 import Constants from 'expo-constants';
 
-export const STAGING_API_URL = 'https://celebs-api-staging.onrender.com/api/v1';
-export const STAGING_HOST = 'https://celebs-api-staging.onrender.com';
+export const STAGING_API_URL =
+  process.env.EXPO_PUBLIC_STAGING_API_URL || 'https://celebs-api-staging.onrender.com/api/v1';
+export const STAGING_HOST =
+  process.env.EXPO_PUBLIC_STAGING_HOST || 'https://celebs-api-staging.onrender.com';
 
 /**
  * Dynamically resolves the backend API base URL for Expo.
@@ -35,7 +37,10 @@ export function getDevBaseUrl(): string {
   return STAGING_API_URL;
 }
 
-export const R2_PUBLIC_MEDIA_URL = 'https://media.celebs.com.np';
+export const R2_PUBLIC_MEDIA_URL =
+  process.env.EXPO_PUBLIC_MEDIA_URL ||
+  process.env.EXPO_PUBLIC_R2_MEDIA_URL ||
+  'https://media.celebs.com.np';
 
 export function resolveImageUrl(url?: string | null): string {
   if (!url) return '';
@@ -57,7 +62,7 @@ export function resolveImageUrl(url?: string | null): string {
 }
 
 export const GOOGLE_CLIENT_ID =
-  '998383824177-mvfgjhqjqeq2dc1ecmunajarlgbjlo4m.apps.googleusercontent.com';
+  process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),

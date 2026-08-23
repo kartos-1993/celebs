@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ImageBackground, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, TouchableOpacity, View } from 'react-native';
 import { ArrowRight, Flame } from 'lucide-react-native';
+
+import { styles } from './campaign-countdown-banner.styles';
 
 import { apiClient } from '@/api/client';
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
 
 export interface CampaignData {
   id: string;
@@ -46,7 +49,7 @@ const FALLBACK_CAMPAIGN: CampaignData = {
   slug: 'dashain-dhamaka-2026',
   campaignType: 'FESTIVAL',
   tagline: "Nepal's Biggest Festive Shopping Season — Flat 40% Off",
-  themeColor: '#D92525',
+  themeColor: Palette.danger,
   startDate: '2026-08-01T00:00:00Z',
   endDate: '2026-10-15T23:59:59Z',
   isActive: true,
@@ -107,7 +110,7 @@ export function CampaignCountdownBanner() {
       >
         {/* Color Overlay */}
         <View
-          style={[styles.colorOverlay, { backgroundColor: campaign.themeColor || '#D92525' }]}
+          style={[styles.colorOverlay, { backgroundColor: campaign.themeColor || Palette.danger }]}
         />
 
         {/* Content Box */}
@@ -115,7 +118,7 @@ export function CampaignCountdownBanner() {
           {/* Badge */}
           <View style={styles.badgeRow}>
             <View style={styles.tagBadge}>
-              <Flame size={12} color="#ffffff" />
+              <Flame size={12} color={Palette.white} />
               <ThemedText style={styles.badgeText}>{campaign.campaignType} SALE</ThemedText>
             </View>
           </View>
@@ -168,117 +171,10 @@ export function CampaignCountdownBanner() {
           {/* Action Button */}
           <TouchableOpacity style={styles.shopBtn} activeOpacity={0.85}>
             <ThemedText style={styles.shopBtnText}>Shop Festival Dhamaka</ThemedText>
-            <ArrowRight size={14} color="#D92525" />
+            <ArrowRight size={14} color={Palette.danger} />
           </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-  bannerBackground: {
-    width: '100%',
-    minHeight: 180,
-    justifyContent: 'center',
-  },
-  backgroundImageStyle: {
-    borderRadius: 16,
-  },
-  colorOverlay: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0.88,
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  tagBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  titleText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 0.2,
-  },
-  taglineText: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 2,
-    marginBottom: 12,
-  },
-  countdownRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  countdownBox: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    alignItems: 'center',
-    minWidth: 42,
-  },
-  countdownNum: {
-    color: '#18181b',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  countdownLabel: {
-    color: '#71717a',
-    fontSize: 8,
-    fontWeight: '700',
-  },
-  colonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '900',
-    marginHorizontal: 4,
-  },
-  shopBtn: {
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  shopBtnText: {
-    color: '#D92525',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-});

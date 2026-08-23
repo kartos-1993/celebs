@@ -8,21 +8,22 @@ import {
   PixelRatio,
   Pressable,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ChevronRight, Flame, Heart, ShoppingBag } from 'lucide-react-native';
+
 import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
 import { Product, resolveImageUrl } from '../hooks/use-products';
 
+import { styles } from './product-card.styles';
+
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
-import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 6;
@@ -184,7 +185,7 @@ export function ProductCard({
     ? Math.round(product.price - (product.discountedPrice || product.price))
     : 0;
 
-  const priceColor = hasDiscount ? '#FF5000' : '#000000';
+  const priceColor = hasDiscount ? Palette.warning : Palette.black;
   const integerPart = Math.floor(currentPrice);
   const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
 
@@ -192,12 +193,12 @@ export function ProductCard({
   const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
 
   return (
-    <View style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: '#ffffff' }]}>
+    <View style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: Palette.white }]}>
       {/* 3:4 Aspect Ratio Image Gallery Viewport */}
       <View
         ref={imageRef}
         collapsable={false}
-        style={[styles.imageContainer, { backgroundColor: '#f4f4f5' }]}
+        style={[styles.imageContainer, { backgroundColor: Palette.gray100 }]}
       >
         {cardImages.length > 0 ? (
           <Animated.View style={{ flex: 1, transform: [{ translateX: hintAnim }] }}>
@@ -280,8 +281,8 @@ export function ProductCard({
         >
           <Heart
             size={14}
-            color={isFavorite ? '#ff3b30' : '#1c1c1e'}
-            fill={isFavorite ? '#ff3b30' : 'transparent'}
+            color={isFavorite ? Palette.danger : Palette.gray900}
+            fill={isFavorite ? Palette.danger : 'transparent'}
           />
         </TouchableOpacity>
 
@@ -313,7 +314,7 @@ export function ProductCard({
       {hasDiscount && savingsAmount > 0 ? (
         <View style={styles.hotSellerBanner}>
           <View style={styles.hotSellerLeft}>
-            <Flame size={10} color="#FEF08A" strokeWidth={2.5} />
+            <Flame size={10} color={Palette.gold} strokeWidth={2.5} />
             <ThemedText style={styles.hotSellerText}>HOT SELLER</ThemedText>
           </View>
           <View style={styles.hotSellerRight}>
@@ -329,14 +330,14 @@ export function ProductCard({
           <View style={styles.trendsBadge}>
             <ThemedText style={styles.trendsText}>Trends</ThemedText>
           </View>
-          <View style={[styles.storeBadge, { backgroundColor: '#faf5ff' }]}>
-            <ThemedText style={[styles.storeText, { color: '#6b21a8' }]}>{storeName}</ThemedText>
-            <ChevronRight size={9} color="#7c3aed" />
+          <View style={[styles.storeBadge, { backgroundColor: Palette.accentTint }]}>
+            <ThemedText style={[styles.storeText, { color: Palette.accent }]}>{storeName}</ThemedText>
+            <ChevronRight size={9} color={Palette.accent} />
           </View>
         </View>
 
         {/* Product Title */}
-        <ThemedText numberOfLines={1} style={[styles.productName, { color: '#27272a' }]}>
+        <ThemedText numberOfLines={1} style={[styles.productName, { color: Palette.gray900 }]}>
           {product.name}
         </ThemedText>
 
@@ -346,18 +347,18 @@ export function ProductCard({
             <ThemedText numberOfLines={1} style={styles.bestsellerText}>
               #1 Bestseller <ThemedText style={styles.bestsellerSub}>in Apparel</ThemedText>
             </ThemedText>
-            <ChevronRight size={10} color="#d97706" />
+            <ChevronRight size={10} color={Palette.warning} />
           </View>
         ) : null}
 
         {/* Sales / New Arrival Row */}
         <View style={styles.salesRow}>
-          <View style={[styles.newArrivalBadge, { backgroundColor: '#ecfdf5' }]}>
-            <ThemedText style={[styles.newArrivalText, { color: '#047857' }]}>
+          <View style={[styles.newArrivalBadge, { backgroundColor: Palette.successTint }]}>
+            <ThemedText style={[styles.newArrivalText, { color: Palette.success }]}>
               NEW ARRIVAL
             </ThemedText>
           </View>
-          <ThemedText style={[styles.soldText, { color: '#71717a' }]}>80+ sold</ThemedText>
+          <ThemedText style={[styles.soldText, { color: Palette.gray500 }]}>80+ sold</ThemedText>
         </View>
 
         {/* Bottom 2-Column Price & Quick Add Row */}
@@ -385,296 +386,14 @@ export function ProductCard({
             activeOpacity={0.85}
             style={[
               styles.cartActionButton,
-              { backgroundColor: '#f4f4f5', borderColor: '#e4e4e7' },
+              { backgroundColor: Palette.gray100, borderColor: Palette.gray200 },
             ]}
             onPress={handleAddToCart}
           >
-            <ShoppingBag size={14} color="#1c1c1e" strokeWidth={2.2} />
+            <ShoppingBag size={14} color={Palette.gray900} strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
       </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  cardContainer: {
-    borderRadius: 8,
-    marginBottom: Spacing.three,
-    overflow: 'hidden',
-  },
-  imageContainer: {
-    width: '100%',
-    aspectRatio: 3 / 4,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  imageScrollView: {
-    width: '100%',
-    height: '100%',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-  },
-  placeholderImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f2f2f7',
-  },
-
-  /* Horizontal Paging Indicator Dots */
-  paginationDotsContainer: {
-    position: 'absolute',
-    bottom: 6,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 3.5,
-    zIndex: 4,
-  },
-  paginationDot: {
-    height: 3.5,
-    borderRadius: 2,
-  },
-  paginationDotActive: {
-    width: 10,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.4,
-    shadowRadius: 1,
-  },
-  paginationDotInactive: {
-    width: 3.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-
-  heartButton: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 25,
-    height: 25,
-    borderRadius: 12.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-
-  /* Vertical Color Swatch Capsule Overlay */
-  imageColorCapsule: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 10,
-    paddingHorizontal: 3.5,
-    paddingVertical: 4,
-    alignItems: 'center',
-    gap: 3,
-    zIndex: 5,
-  },
-  capsuleColorDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
-  },
-  capsuleColorDotActive: {
-    borderColor: '#ffffff',
-    borderWidth: 1.5,
-    transform: [{ scale: 1.2 }],
-  },
-  capsuleCountText: {
-    fontSize: 7.5,
-    lineHeight: 8.5,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginTop: 0.5,
-    textAlign: 'center',
-  },
-
-  /* Dual-Tone Hot Seller / Save Rs. Banner */
-  hotSellerBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#DC2626',
-    paddingVertical: 2,
-    paddingHorizontal: 5,
-  },
-  hotSellerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  hotSellerText: {
-    color: '#FEF08A',
-    fontSize: responsiveFontSize(8),
-    fontWeight: '900',
-    fontStyle: 'italic',
-    letterSpacing: 0.2,
-  },
-  hotSellerRight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  saveAmountText: {
-    color: '#FFFFFF',
-    fontSize: responsiveFontSize(8),
-    fontWeight: '800',
-  },
-
-  /* Details Area */
-  detailsContainer: {
-    padding: 6,
-    paddingTop: 4,
-  },
-
-  /* Brand Badge Row */
-  brandBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-  },
-  trendsBadge: {
-    backgroundColor: '#f3e8ff',
-    paddingHorizontal: 2,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  trendsText: {
-    color: '#7e22ce',
-    fontSize: responsiveFontSize(8.5),
-    fontWeight: '800',
-    fontStyle: 'italic',
-    lineHeight: responsiveFontSize(10),
-  },
-  storeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 1,
-    paddingHorizontal: 2,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  storeText: {
-    fontSize: responsiveFontSize(8.5),
-    fontWeight: '700',
-    lineHeight: responsiveFontSize(10),
-  },
-
-  /* Product Title */
-  productName: {
-    fontSize: responsiveFontSize(11.5),
-    fontWeight: '400',
-    lineHeight: responsiveFontSize(15),
-    marginBottom: 2,
-  },
-
-  /* Bestseller Row */
-  bestsellerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    marginBottom: 2,
-  },
-  bestsellerText: {
-    fontSize: responsiveFontSize(9),
-    fontWeight: '800',
-    color: '#d97706',
-  },
-  bestsellerSub: {
-    fontSize: responsiveFontSize(9),
-    fontWeight: '500',
-    color: '#b45309',
-  },
-
-  /* Sales / New Arrival Row */
-  salesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 3,
-  },
-  newArrivalBadge: {
-    paddingHorizontal: 2,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  newArrivalText: {
-    fontSize: responsiveFontSize(8),
-    fontWeight: '800',
-    lineHeight: responsiveFontSize(9.5),
-  },
-  soldText: {
-    fontSize: responsiveFontSize(9.5),
-    fontWeight: '500',
-  },
-
-  /* 2-Column Bottom Price & Add to Cart Row */
-  bottomPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  priceLeftCol: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 2,
-    flexWrap: 'nowrap',
-    flex: 1,
-    marginRight: 4,
-  },
-  mainPriceGroup: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  currencySymbol: {
-    fontSize: responsiveFontSize(9.5),
-    fontWeight: '800',
-    marginRight: 1,
-  },
-  integerPrice: {
-    fontSize: responsiveFontSize(14.5),
-    fontWeight: '900',
-    lineHeight: responsiveFontSize(16.5),
-  },
-  decimalPrice: {
-    fontSize: responsiveFontSize(9.5),
-    fontWeight: '800',
-  },
-
-  discountTagPill: {
-    backgroundColor: '#fff0ed',
-    paddingHorizontal: 2.5,
-    paddingVertical: 0.5,
-    borderRadius: 2,
-    marginLeft: 2,
-  },
-  discountTagText: {
-    color: '#FF5000',
-    fontSize: responsiveFontSize(8),
-    lineHeight: responsiveFontSize(9.5),
-    fontWeight: '800',
-  },
-
-  cartActionButton: {
-    width: moderateScale(28),
-    height: moderateScale(28),
-    borderRadius: moderateScale(6),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-});

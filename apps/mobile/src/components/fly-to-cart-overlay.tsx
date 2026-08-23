@@ -11,6 +11,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 
+import { styles } from './fly-to-cart-overlay.styles';
+
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -131,20 +133,3 @@ function FlyItem({
   );
 }
 
-const styles = StyleSheet.create({
-  flyingCard: {
-    position: 'absolute',
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-  },
-});

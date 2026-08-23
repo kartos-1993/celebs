@@ -2,10 +2,12 @@ import React from 'react';
 import { View } from 'react-native';
 import { Bell, Search, ShoppingBag } from 'lucide-react-native';
 
-import { styles } from '../styles/home.styles';
+import { styles as homeStyles } from '../styles/home.styles';
+
+import { styles } from './home-header.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 
 interface HomeHeaderProps {
   topOffset: number;
@@ -13,17 +15,17 @@ interface HomeHeaderProps {
 
 export function HomeHeader({ topOffset }: HomeHeaderProps) {
   return (
-    <View style={[styles.floatingHeader, { top: topOffset }]}>
-      <View style={styles.headerGlassButton}>
-        <Search size={18} color="#ffffff" />
+    <View style={[homeStyles.floatingHeader, { top: topOffset }]}>
+      <View style={homeStyles.headerGlassButton}>
+        <Search size={18} color={Palette.white} />
       </View>
-      <ThemedText style={styles.headerLogo}>CELEBS</ThemedText>
-      <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-        <View style={styles.headerGlassButton}>
-          <Bell size={18} color="#ffffff" />
+      <ThemedText style={homeStyles.headerLogo}>CELEBS</ThemedText>
+      <View style={styles.actionsRow}>
+        <View style={homeStyles.headerGlassButton}>
+          <Bell size={18} color={Palette.white} />
         </View>
-        <View style={styles.headerGlassButton}>
-          <ShoppingBag size={18} color="#ffffff" />
+        <View style={homeStyles.headerGlassButton}>
+          <ShoppingBag size={18} color={Palette.white} />
         </View>
       </View>
     </View>

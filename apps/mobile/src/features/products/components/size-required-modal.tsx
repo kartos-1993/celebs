@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, TouchableOpacity, View } from 'react-native';
 import { Check, X } from 'lucide-react-native';
 
+import { styles } from './size-required-modal.styles';
+
 import { ThemedText } from '@/components/themed-text';
+import { Palette, Spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -53,7 +56,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: '#ffffff' }]}>
+        <View style={[styles.sheetContainer, { backgroundColor: Palette.white }]}>
           {/* Header Bar */}
           <View style={styles.headerRow}>
             <View>
@@ -63,11 +66,11 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
               </ThemedText>
             </View>
             <TouchableOpacity
-              style={[styles.closeBtn, { backgroundColor: '#f4f4f5' }]}
+              style={[styles.closeBtn, { backgroundColor: Palette.gray100 }]}
               onPress={onClose}
               activeOpacity={0.7}
             >
-              <X size={18} color="#1c1c1e" />
+              <X size={18} color={Palette.gray900} />
             </TouchableOpacity>
           </View>
 
@@ -83,18 +86,20 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
                   onPress={() => setSelectedSize(size)}
                   style={[
                     styles.sizePill,
-                    isSelected ? { backgroundColor: '#000000' } : { backgroundColor: '#f4f4f5' },
+                    isSelected ? styles.sizePillSelected : styles.sizePillUnselected,
                   ]}
                 >
                   <ThemedText
                     style={[
                       styles.sizeText,
-                      isSelected ? { color: '#ffffff', fontWeight: '800' } : { color: '#1c1c1e' },
+                      isSelected ? styles.sizeTextSelected : styles.sizeTextUnselected,
                     ]}
                   >
                     {size}
                   </ThemedText>
-                  {isSelected && <Check size={14} color="#ffffff" style={{ marginLeft: 4 }} />}
+                  {isSelected && (
+                    <Check size={14} color={Palette.white} style={{ marginLeft: Spacing.xs }} />
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -118,78 +123,3 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 34,
-    width: SCREEN_WIDTH,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  subTitleText: {
-    fontSize: 13,
-    opacity: 0.6,
-    marginTop: 2,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  labelSection: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 10,
-    opacity: 0.8,
-  },
-  sizePillsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 24,
-  },
-  sizePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
-    minWidth: 54,
-  },
-  sizeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  confirmBtn: {
-    backgroundColor: '#ff3b30',
-    borderRadius: 30,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-});

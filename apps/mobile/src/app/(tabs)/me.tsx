@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
@@ -23,9 +22,10 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
+import { styles } from '@/features/auth/styles/profile.styles';
 
 export default function MeScreen() {
   const { user, isLoggedIn, isLoading, loginWithEmail, register, logout } = useAuth();
@@ -87,7 +87,7 @@ export default function MeScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000000" />
+        <ActivityIndicator size="large" color={Palette.black} />
       </ThemedView>
     );
   }
@@ -113,7 +113,7 @@ export default function MeScreen() {
                 {user.email}
               </ThemedText>
               <View style={styles.verifiedBadge}>
-                <ShieldCheck size={14} color="#16a34a" />
+                <ShieldCheck size={14} color={Palette.success} />
                 <ThemedText style={styles.verifiedText}>Verified Customer</ThemedText>
               </View>
             </View>
@@ -125,8 +125,8 @@ export default function MeScreen() {
 
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/orders')}>
               <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: '#f0fdf4' }]}>
-                  <ShoppingBag size={20} color="#16a34a" />
+                <View style={[styles.menuIconBox, { backgroundColor: Palette.successTint }]}>
+                  <ShoppingBag size={20} color={Palette.success} />
                 </View>
                 <View>
                   <ThemedText style={styles.menuItemTitle}>My Orders</ThemedText>
@@ -135,13 +135,13 @@ export default function MeScreen() {
                   </ThemedText>
                 </View>
               </View>
-              <ChevronRight size={18} color="#999999" />
+              <ChevronRight size={18} color={Palette.gray400} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/checkout')}>
               <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: '#eff6ff' }]}>
-                  <MapPin size={20} color="#2563eb" />
+                <View style={[styles.menuIconBox, { backgroundColor: Palette.brandTint }]}>
+                  <MapPin size={20} color={Palette.brand} />
                 </View>
                 <View>
                   <ThemedText style={styles.menuItemTitle}>Shipping Addresses</ThemedText>
@@ -150,13 +150,13 @@ export default function MeScreen() {
                   </ThemedText>
                 </View>
               </View>
-              <ChevronRight size={18} color="#999999" />
+              <ChevronRight size={18} color={Palette.gray400} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem}>
               <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: '#fef2f2' }]}>
-                  <Heart size={20} color="#dc2626" />
+                <View style={[styles.menuIconBox, { backgroundColor: Palette.dangerTint }]}>
+                  <Heart size={20} color={Palette.danger} />
                 </View>
                 <View>
                   <ThemedText style={styles.menuItemTitle}>Saved Wishlist</ThemedText>
@@ -165,13 +165,13 @@ export default function MeScreen() {
                   </ThemedText>
                 </View>
               </View>
-              <ChevronRight size={18} color="#999999" />
+              <ChevronRight size={18} color={Palette.gray400} />
             </TouchableOpacity>
           </View>
 
           {/* Logout Button */}
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <LogOut size={18} color="#dc2626" />
+            <LogOut size={18} color={Palette.danger} />
             <ThemedText style={styles.logoutText}>Log Out</ThemedText>
           </TouchableOpacity>
         </ScrollView>
@@ -184,7 +184,7 @@ export default function MeScreen() {
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.authBanner}>
-          <User size={42} color="#000000" strokeWidth={1.8} />
+          <User size={42} color={Palette.black} strokeWidth={1.8} />
           <ThemedText type="subtitle" style={styles.authTitle}>
             Welcome to Celebs
           </ThemedText>
@@ -200,7 +200,7 @@ export default function MeScreen() {
           disabled={isAuthenticating || isSubmitting}
         >
           {isAuthenticating ? (
-            <ActivityIndicator color="#000000" />
+            <ActivityIndicator color={Palette.black} />
           ) : (
             <>
               <View style={styles.googleGLogo}>
@@ -246,11 +246,11 @@ export default function MeScreen() {
         <View style={styles.formContainer}>
           {authMode === 'register' && (
             <View style={styles.inputWrapper}>
-              <User size={18} color="#888888" style={styles.inputIcon} />
+              <User size={18} color={Palette.gray400} style={styles.inputIcon} />
               <TextInput
                 style={styles.textInput}
                 placeholder="Full Name"
-                placeholderTextColor="#999999"
+                placeholderTextColor={Palette.gray400}
                 value={name}
                 onChangeText={setName}
               />
@@ -258,11 +258,11 @@ export default function MeScreen() {
           )}
 
           <View style={styles.inputWrapper}>
-            <Mail size={18} color="#888888" style={styles.inputIcon} />
+            <Mail size={18} color={Palette.gray400} style={styles.inputIcon} />
             <TextInput
               style={styles.textInput}
               placeholder="Email Address"
-              placeholderTextColor="#999999"
+              placeholderTextColor={Palette.gray400}
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -271,11 +271,11 @@ export default function MeScreen() {
           </View>
 
           <View style={styles.inputWrapper}>
-            <Lock size={18} color="#888888" style={styles.inputIcon} />
+            <Lock size={18} color={Palette.gray400} style={styles.inputIcon} />
             <TextInput
               style={styles.textInput}
               placeholder="Password"
-              placeholderTextColor="#999999"
+              placeholderTextColor={Palette.gray400}
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -288,7 +288,7 @@ export default function MeScreen() {
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color={Palette.white} />
             ) : (
               <ThemedText style={styles.submitBtnText}>
                 {authMode === 'login' ? 'Sign In' : 'Create Account'}
@@ -300,243 +300,3 @@ export default function MeScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    padding: Spacing.four,
-    paddingBottom: 100,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: Spacing.four,
-    borderRadius: 16,
-    marginBottom: Spacing.four,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  avatarBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.three,
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  userEmail: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  verifiedText: {
-    fontSize: 12,
-    color: '#16a34a',
-    fontWeight: '600',
-  },
-  sectionContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: Spacing.four,
-    marginBottom: Spacing.four,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94a3b8',
-    letterSpacing: 0.8,
-    marginBottom: Spacing.three,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.three,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-  },
-  menuIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuItemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  menuItemSub: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#fef2f2',
-    paddingVertical: Spacing.three,
-    borderRadius: 12,
-  },
-  logoutText: {
-    color: '#dc2626',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  authBanner: {
-    alignItems: 'center',
-    marginTop: Spacing.four,
-    marginBottom: Spacing.four,
-  },
-  authTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: Spacing.two,
-  },
-  authSub: {
-    textAlign: 'center',
-    marginTop: 6,
-    fontSize: 13,
-    paddingHorizontal: Spacing.four,
-  },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: Spacing.four,
-    gap: 10,
-    elevation: 1,
-  },
-  googleGLogo: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#ea4335',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleGText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  googleBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.four,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e2e8f0',
-  },
-  dividerText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginHorizontal: 12,
-  },
-  tabToggleRow: {
-    flexDirection: 'row',
-    backgroundColor: '#e2e8f0',
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: Spacing.three,
-  },
-  tabToggleBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  tabToggleActive: {
-    backgroundColor: '#ffffff',
-  },
-  tabToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  tabToggleTextActive: {
-    color: '#0f172a',
-  },
-  formContainer: {
-    gap: Spacing.three,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#0f172a',
-  },
-  submitBtn: {
-    backgroundColor: '#0f172a',
-    borderRadius: 10,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 6,
-  },
-  submitBtnText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
