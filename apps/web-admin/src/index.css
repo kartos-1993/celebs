@@ -198,6 +198,25 @@
     }
   }
 
+  /* Temporary highlight applied to a field/section after a failed submit
+     so the user can see exactly which field is invalid (see form-focus.ts). */
+  .field-error-flash {
+    outline: 2px solid var(--destructive);
+    outline-offset: 2px;
+    border-radius: 8px;
+    animation: fieldErrorFlashFade 1.8s ease-out forwards;
+  }
+
+  @keyframes fieldErrorFlashFade {
+    0%,
+    55% {
+      outline-color: var(--destructive);
+    }
+    100% {
+      outline-color: transparent;
+    }
+  }
+
   /* Hide native number input spinners only for our NumberInput */
   .number-input input[type='number']::-webkit-outer-spin-button,
   .number-input input[type='number']::-webkit-inner-spin-button {
