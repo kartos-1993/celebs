@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, getUserPermissions, Permission, ROLE_PERMISSIONS, Role } from '../index';
+import { can, getUserPermissions, hasPermissionAccess, Permission, ROLE_PERMISSIONS, Role } from '../index';
 
 describe('Hierarchical RBAC & Dynamic Permission System', () => {
   const ALL_PERMISSIONS = Object.values(Permission);
@@ -94,4 +94,42 @@ describe('Hierarchical RBAC & Dynamic Permission System', () => {
       });
     });
   });
+
+  describe('5. Polymorphic hasPermissionAccess & Mode Evaluation', () => {
+    it('returns true when required permissions is undefined or empty', () => {
+      expect(hasPermissionAccess('STAFF', [], undefined)).toBe(true);
+      expect(hasPermissionAccess('STAFF', [], [])).toBe(true);
+    });
+
+    it('SUPERADMIN always returns true for single or multi-permission requirements', () => {
+      expect(hasPermissionAccess('SUPERADMIN', [], Permission.PLATFORM_MANAGE)).toBe(true);
+      expect(hasPermissionAccess('SUPERADMIN', [], [Permission.PLATFORM_MANAGE, Permission.PRODUCT_DELETE], 'ALL')).toBe(true);
+    });
+
+    it('evaluates single permission correctly', () => {
+      expect(hasPermissionAccess('VENDOR', [], Permission.PRODUCT_CREATE)).toBe(true);
+      expect(hasPermissionAccess('VENDOR', [], Permission.PLATFORM_MANAGE)).toBe(false);
+    });
+
+    it('evaluates mode="ANY" correctly for STAFF with partial permissions', () => {
+      const staffPerms = [Permission.PRODUCT_VIEW, Permission.ORDER_VIEW];
+      expect(
+        hasPermissionAccess('STAFF', staffPerms, [Permission.PRODUCT_VIEW, Permission.FINANCE_VIEW], 'ANY')
+      ).toBe(true);
+      expect(
+        hasPermissionAccess('STAFF', staffPerms, [Permission.FINANCE_VIEW, Permission.CATALOG_MANAGE], 'ANY')
+      ).toBe(false);
+    });
+
+    it('evaluates mode="ALL" correctly for STAFF requiring multiple permissions', () => {
+      const staffPerms = [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE];
+      expect(
+        hasPermissionAccess('STAFF', staffPerms, [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE], 'ALL')
+      ).toBe(true);
+      expect(
+        hasPermissionAccess('STAFF', staffPerms, [Permission.PRODUCT_VIEW, Permission.PRODUCT_PUBLISH], 'ALL')
+      ).toBe(false);
+    });
+  });
 });
+
