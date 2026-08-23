@@ -1,7 +1,5 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { ImagePlus, Trash2, Upload } from 'lucide-react';
-
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import type { UiProps } from '../ui-registry';
@@ -13,7 +11,13 @@ import {
   uploadErrorMessage,
   uploadImageFiles,
   validateFileBasics,
+  AddFromFileTile,
+  FieldError,
+  VariantThumb,
+  getPathError,
 } from './shared';
+
+import { MediaLibraryButton } from '../../components/media-library-button';
 
 interface ColorInlineRowProps {
   color: string;
@@ -28,17 +32,14 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
   const images: ImageValue[] = watch(`${namePrefix}.images`) || [];
   const [isUploadingSwatch, setIsUploadingSwatch] = React.useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = React.useState(false);
-  const [swatchPreview, setSwatchPreview] = React.useState<string>('');
-  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
   const safeLimits = React.useMemo(() => limits || {}, [limits]);
-
-  React.useEffect(() => {
-    if (typeof swatchUrl === 'string') {
-      setSwatchPreview(swatchUrl);
-    }
-  }, [swatchUrl]);
+  const maxImages = typeof safeLimits.maxImages === 'number' ? safeLimits.maxImages : undefined;
+  const remainingSlots =
+    typeof maxImages === 'number' ? Math.max(0, maxImages - images.length) : undefined;
+  const canAddMore = typeof remainingSlots !== 'number' || remainingSlots > 0;
 
   const imagesHash = (images || []).map((file) => imageValueKey(file)).join('|');
+  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
   React.useEffect(() => {
     let active = true;
     const urls = (images || []).map((item) =>
@@ -62,86 +63,85 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
     register(`${namePrefix}.images`, {
       validate: (v: unknown) => {
         const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
-        if (typeof safeLimits.maxImages === 'number' && arr.length > safeLimits.maxImages)
-          return `Max ${safeLimits.maxImages} images`;
+        if (arr.length === 0) return `Upload at least one product image for ${color}`;
+        if (typeof maxImages === 'number' && arr.length > maxImages)
+          return `Max ${maxImages} images`;
         const ms = safeLimits.maxSize;
         if (typeof ms === 'number' && arr.some((f) => f instanceof File && f.size > ms))
           return `Each image must be <= ${Math.round(ms / 1024 / 1024)}MB`;
         return true;
       },
     });
-  }, [register, namePrefix, safeLimits]);
+  }, [register, namePrefix, safeLimits, maxImages, color]);
+
+  const appendImages = (urls: string[]) => {
+    const next = [...((watch(`${namePrefix}.images`) ?? []) as ImageValue[]), ...urls];
+    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
+    clearErrors(`${namePrefix}.images`);
+    trigger(`${namePrefix}.images`);
+  };
 
   const uploadSwatch = async (file: File | null) => {
     if (!file) return;
-    const err = validateFileBasics(file, {
-      accept,
-      maxSize: safeLimits.maxSize,
-    });
+    const err = validateFileBasics(file, { accept, maxSize: safeLimits.maxSize });
     if (err) {
-      setError(`${namePrefix}.swatch`, {
-        type: 'validate',
-        message: err,
-      });
+      setError(`${namePrefix}.swatch`, { type: 'validate', message: err });
       return;
     }
     setIsUploadingSwatch(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
-      setValue(`${namePrefix}.swatch`, uploadedUrl, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(`${namePrefix}.swatch`, uploadedUrl, { shouldDirty: true, shouldValidate: true });
       clearErrors(`${namePrefix}.swatch`);
       trigger(`${namePrefix}.swatch`);
     } catch (error) {
-      setError(`${namePrefix}.swatch`, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
+      setError(`${namePrefix}.swatch`, { type: 'upload', message: uploadErrorMessage(error) });
     } finally {
       setIsUploadingSwatch(false);
     }
   };
 
+  const handleSwatchFromLibrary = (urls: string[]) => {
+    const [url] = urls;
+    if (!url) return;
+    setValue(`${namePrefix}.swatch`, url, { shouldDirty: true, shouldValidate: true });
+    clearErrors(`${namePrefix}.swatch`);
+    trigger(`${namePrefix}.swatch`);
+  };
+
   const addFiles = async (list: FileList | null) => {
-    if (!list) return;
+    if (!list || list.length === 0) return;
     const incoming = Array.from(list);
+    const slots = typeof remainingSlots === 'number' ? remainingSlots : incoming.length;
+    const target = incoming.slice(0, slots);
+
+    if (target.length === 0) {
+      setError(`${namePrefix}.images`, {
+        type: 'validate',
+        message: `Max ${maxImages} images`,
+      });
+      return;
+    }
+
     const errors: string[] = [];
     const valids: File[] = [];
-    incoming.forEach((file) => {
-      const err = validateFileBasics(file, {
-        accept,
-        maxSize: safeLimits.maxSize,
-      });
+    target.forEach((file) => {
+      const err = validateFileBasics(file, { accept, maxSize: safeLimits.maxSize });
       if (err) errors.push(err);
       else valids.push(file);
     });
     if (valids.length === 0) {
       if (errors.length) {
-        setError(`${namePrefix}.images`, {
-          type: 'validate',
-          message: errors[0],
-        });
+        setError(`${namePrefix}.images`, { type: 'validate', message: errors[0] });
       }
       return;
     }
     setIsUploadingGallery(true);
     try {
       const uploadedUrls = await uploadImageFiles(valids);
-      const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
-      const next = [...current, ...uploadedUrls];
-      setValue(`${namePrefix}.images`, next, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      clearErrors(`${namePrefix}.images`);
-      trigger(`${namePrefix}.images`);
+      appendImages(uploadedUrls);
     } catch (error) {
-      setError(`${namePrefix}.images`, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
+      setError(`${namePrefix}.images`, { type: 'upload', message: uploadErrorMessage(error) });
     } finally {
       setIsUploadingGallery(false);
     }
@@ -149,15 +149,9 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
 
   const replaceAt = async (idx: number, file: File | null) => {
     if (!file) return;
-    const err = validateFileBasics(file, {
-      accept,
-      maxSize: safeLimits.maxSize,
-    });
+    const err = validateFileBasics(file, { accept, maxSize: safeLimits.maxSize });
     if (err) {
-      setError(`${namePrefix}.images`, {
-        type: 'validate',
-        message: err,
-      });
+      setError(`${namePrefix}.images`, { type: 'validate', message: err });
       return;
     }
     setIsUploadingGallery(true);
@@ -166,17 +160,11 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
       const next = [...current];
       next[idx] = uploadedUrl;
-      setValue(`${namePrefix}.images`, next, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
       clearErrors(`${namePrefix}.images`);
       trigger(`${namePrefix}.images`);
     } catch (error) {
-      setError(`${namePrefix}.images`, {
-        type: 'upload',
-        message: uploadErrorMessage(error),
-      });
+      setError(`${namePrefix}.images`, { type: 'upload', message: uploadErrorMessage(error) });
     } finally {
       setIsUploadingGallery(false);
     }
@@ -184,122 +172,120 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
 
   const removeAt = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
-    setValue(`${namePrefix}.images`, next, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+    setValue(`${namePrefix}.images`, next, { shouldDirty: true, shouldValidate: true });
     trigger(`${namePrefix}.images`);
   };
 
-  const fieldErrors = formState.errors as Record<string, { message?: string }> | undefined;
-  const imagesError = fieldErrors?.[`${namePrefix}.images`]?.message;
+  const fieldErrors = formState.errors;
+  const imagesError = getPathError(fieldErrors, `${namePrefix}.images`)?.message;
+  const swatchError = getPathError(fieldErrors, `${namePrefix}.swatch`)?.message;
+  const acceptStr = Array.isArray(accept) ? accept.join(',') : undefined;
+  const rowError = imagesError ?? swatchError;
 
   return (
-    <div className="flex items-start gap-4 rounded border p-3">
-      <div className="w-28">
-        <div className="text-xs text-muted-foreground mb-1">Color Image</div>
-        <label className="block h-8 w-8 rounded border overflow-hidden cursor-pointer">
+    <div className="px-3 py-2.5" data-error-path={`${namePrefix}.images`}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {/* Swatch — click to upload */}
+        <label
+          className="relative block h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-accent/20 transition-colors hover:border-primary/50"
+          title={swatchUrl ? 'Replace swatch image' : 'Upload swatch image'}
+        >
           <input
             type="file"
             className="hidden"
-            accept={Array.isArray(accept) ? accept.join(',') : undefined}
+            accept={acceptStr}
             disabled={isUploadingSwatch}
             onChange={(e) => {
               const input = e.currentTarget;
               const file = input.files?.[0] || null;
-              void uploadSwatch(file).finally(() => {
-                input.value = '';
-              });
+              input.value = '';
+              void uploadSwatch(file);
             }}
           />
-          {swatchPreview ? (
-            <div className="relative h-full w-full">
-              <img src={swatchPreview} alt={color} className="h-full w-full object-cover" />
-              {isUploadingSwatch && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <Spinner size="sm" className="text-white" />
-                </div>
-              )}
-            </div>
+          {swatchUrl ? (
+            <img src={swatchUrl} alt={color} className="h-full w-full object-cover" />
           ) : (
-            <div className="grid h-full w-full place-items-center bg-accent text-xs text-muted-foreground relative">
-              {isUploadingSwatch ? (
-                <Spinner size="sm" className="text-primary" />
-              ) : (
-                'Img'
-              )}
-            </div>
+            <span className="grid h-full w-full place-items-center text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+              Swatch
+            </span>
           )}
+          {isUploadingSwatch ? (
+            <span className="absolute inset-0 grid place-items-center bg-black/60">
+              <Spinner size="sm" className="text-white" />
+            </span>
+          ) : null}
         </label>
-      </div>
 
-      <div className="flex-1">
-        <div className="text-sm font-semibold mb-1">{color}</div>
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground">Gallery Images</div>
-          <div className="flex flex-wrap items-center gap-2">
-            {imagePreviews.map((src, idx) => (
-              <div
-                key={idx}
-                className="group relative h-12 w-12 rounded border overflow-hidden bg-accent/20"
-              >
-                <img src={src} alt={`${color} ${idx + 1}`} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                  <label className="grid h-6 w-6 cursor-pointer place-items-center rounded bg-white/90 text-black">
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept={Array.isArray(accept) ? accept.join(',') : undefined}
-                      disabled={isUploadingGallery}
-                      onChange={(e) => {
-                        const input = e.currentTarget;
-                        const file = input.files?.[0] || null;
-                        void replaceAt(idx, file).finally(() => {
-                          input.value = '';
-                        });
-                      }}
-                    />
-                    <Upload className="h-3 w-3" />
-                  </label>
-                  <button
-                    type="button"
-                    className="h-6 w-6 rounded bg-white/90 grid place-items-center text-destructive"
-                    onClick={() => removeAt(idx)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </div>
-              </div>
-            ))}
-            <label className="grid h-12 w-12 cursor-pointer place-items-center rounded border text-xs text-muted-foreground hover:bg-accent/30">
-              <input
-                type="file"
-                className="hidden"
-                accept={Array.isArray(accept) ? accept.join(',') : undefined}
+        {/* Name + optional swatch library pick */}
+        <span className="text-sm font-medium text-foreground">{color}</span>
+        {!swatchUrl ? (
+          <MediaLibraryButton
+            label="Set swatch"
+            maxSelect={1}
+            scope="PRODUCT"
+            initialSelectedUrls={[]}
+            disabled={isUploadingSwatch}
+            onSelect={handleSwatchFromLibrary}
+          />
+        ) : null}
+
+        {/* Product images */}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          {imagePreviews.map((src, idx) => (
+            <VariantThumb
+              key={idx}
+              src={src}
+              alt={`${color} ${idx + 1}`}
+              accept={acceptStr}
+              disabled={isUploadingGallery}
+              onReplace={(file) => void replaceAt(idx, file)}
+              onRemove={() => removeAt(idx)}
+            />
+          ))}
+          {isUploadingGallery ? (
+            <span className="grid h-12 w-12 place-items-center rounded-md border border-dashed border-border">
+              <Spinner size="sm" className="text-primary" />
+            </span>
+          ) : (
+            canAddMore && (
+              <AddFromFileTile
+                accept={acceptStr}
                 multiple
-                disabled={isUploadingGallery}
-                onChange={(e) => {
-                  const input = e.currentTarget;
-                  void addFiles(input.files).finally(() => {
-                    input.value = '';
-                  });
-                }}
+                onFiles={(files) => void addFiles(files)}
               />
-              {isUploadingGallery ? (
-                <div className="flex flex-col items-center justify-center text-primary gap-0.5">
-                  <Spinner size="sm" />
-                  <span className="text-xs font-medium">Uploading</span>
-                </div>
-              ) : (
-                <ImagePlus className="h-4 w-4" />
-              )}
-            </label>
-          </div>
-          {imagesError ? (
-            <div className="text-xs text-destructive mt-1">{String(imagesError)}</div>
+            )
+          )}
+          {canAddMore ? (
+            <MediaLibraryButton
+              maxSelect={typeof remainingSlots === 'number' ? Math.max(1, remainingSlots) : 8}
+              scope="PRODUCT"
+              initialSelectedUrls={images.filter((v): v is string => typeof v === 'string')}
+              onSelect={(urls) => {
+                const capped =
+                  typeof remainingSlots === 'number' ? urls.slice(0, remainingSlots) : urls;
+                if (capped.length) appendImages(capped);
+              }}
+            />
+          ) : null}
+          {!canAddMore ? (
+            <span className="text-[11px] text-muted-foreground">Max {maxImages} reached</span>
           ) : null}
         </div>
+
+        {/* Meta */}
+        <div className="ml-auto shrink-0">
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {images.length}
+            {maxImages != null ? ` / ${maxImages}` : ''}
+          </span>
+        </div>
       </div>
+
+      {rowError ? (
+        <div className="pt-1.5">
+          <FieldError message={rowError} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -331,7 +317,7 @@ export function ColorInlineInputField({ field }: UiProps) {
       ? [String(selected)]
       : [];
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 col-span-full">
       <div className="flex items-center gap-2 text-sm">
         <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
         {limits.maxImages != null ? (
@@ -341,18 +327,22 @@ export function ColorInlineInputField({ field }: UiProps) {
         ) : null}
       </div>
       {colors.length === 0 ? (
-        <div className="text-sm text-muted-foreground">Select one or more colors first.</div>
+        <div className="rounded-xl border border-dashed border-border/70 px-4 py-5 text-center text-xs text-muted-foreground">
+          Select one or more colors first — each color gets its own swatch and product images.
+        </div>
       ) : (
-        <div className="space-y-2">
-          {colors.map((c) => (
-            <ColorInlineRow
-              key={c}
-              color={labelOf(c)}
-              namePrefix={`variants.colorMeta.${c}`}
-              accept={accept}
-              limits={limits}
-            />
-          ))}
+        <div className="overflow-hidden rounded-2xl border border-border/70 bg-background">
+          <div className="divide-y divide-border/60">
+            {colors.map((c) => (
+              <ColorInlineRow
+                key={c}
+                color={labelOf(c)}
+                namePrefix={`variants.colorMeta.${c}`}
+                accept={accept}
+                limits={limits}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

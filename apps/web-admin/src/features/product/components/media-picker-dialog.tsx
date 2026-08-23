@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Check,
   Folder,
@@ -23,8 +23,6 @@ import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 
 import { useMediaAssets, useMediaFolders, useMediaQuota } from '../hooks/use-media-assets';
-
-import { StorageQuotaBar } from './storage-quota-bar';
 
 import { useDebounce } from '@/hooks/use-debounce';
 import { directUploadBatch } from '@/lib/media-upload';
@@ -69,6 +67,18 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
   const { data: quota } = useMediaQuota();
 
   const assets = useMemo(() => assetsData?.items || [], [assetsData]);
+
+  // Re-sync the selection each time the dialog opens so stale picks from a
+  // previous session never linger in state.
+  useEffect(() => {
+    if (open) {
+      setSelectedUrls(initialSelectedUrls ?? []);
+      setSelectedAssets([]);
+      setActiveTab('library');
+      setUploadError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const toggleSelectAsset = useCallback(
     (asset: MediaAsset) => {
@@ -136,63 +146,83 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
     e.stopPropagation();
   }, []);
 
+  const quotaPct =
+    quota && quota.maxBytes > 0
+      ? Math.min(100, Math.round((quota.usedBytes / quota.maxBytes) * 100))
+      : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-4 pb-2 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-lg font-bold">Media Center DAM</DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Select from your cloud media library or upload new high-resolution images.
+      <DialogContent className="flex h-[85vh] w-[95vw] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="shrink-0 space-y-0 border-b border-border/50 p-4 pb-3">
+          <div className="flex items-center justify-between gap-4 pr-8">
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-semibold">Media Library</DialogTitle>
+              <DialogDescription className="mt-0.5 text-xs text-muted-foreground">
+                Pick from your cloud library or upload new images.
               </DialogDescription>
             </div>
-            <Badge variant="secondary" className="text-xs font-normal">
-              {selectedUrls.length} / {maxSelect} selected
-            </Badge>
-          </div>
-
-          <div className="pt-2">
-            <StorageQuotaBar quota={quota} />
+            <div className="flex shrink-0 items-center gap-2">
+              {typeof quotaPct === 'number' ? (
+                <span
+                  className={cn(
+                    'hidden text-xs text-muted-foreground sm:inline',
+                    quotaPct > 90 && 'font-medium text-warning',
+                  )}
+                  title="Storage used"
+                >
+                  Storage {quotaPct}%
+                </span>
+              ) : null}
+              <Badge variant="secondary" className="text-xs font-normal tabular-nums">
+                {selectedUrls.length} / {maxSelect}
+              </Badge>
+            </div>
           </div>
         </DialogHeader>
 
         <Tabs
           value={activeTab}
           onValueChange={(val: string) => setActiveTab(val as 'library' | 'upload')}
-          className="flex-1 flex flex-col min-h-0"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="px-4 pt-2 border-b border-border/40 bg-muted/30">
-            <TabsList className="grid w-64 grid-cols-2">
-              <TabsTrigger value="library" className="text-xs">
-                Media Library
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 bg-muted/30 px-4 py-2">
+            <TabsList className="h-8">
+              <TabsTrigger value="library" className="h-7 px-3 text-xs">
+                Library
               </TabsTrigger>
-              <TabsTrigger value="upload" className="text-xs">
+              <TabsTrigger value="upload" className="h-7 px-3 text-xs">
                 Upload New
               </TabsTrigger>
             </TabsList>
+            {activeTab === 'library' && selectedUrls.length >= maxSelect ? (
+              <span className="text-xs font-medium text-warning">
+                Selection limit reached ({maxSelect})
+              </span>
+            ) : null}
           </div>
 
-          <TabsContent value="library" className="flex-1 flex min-h-0 m-0">
-            <div className="w-48 border-r border-border/40 p-3 flex flex-col gap-1 overflow-y-auto bg-muted/10">
-              <span className="text-xs font-semibold text-muted-foreground uppercase px-2 mb-1">
+          <TabsContent value="library" className="m-0 flex min-h-0 flex-1 overflow-hidden">
+            {/* Folders sidebar */}
+            <aside className="hidden w-44 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border/40 bg-muted/10 p-2 sm:flex">
+              <span className="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Folders
               </span>
               <Button
                 type="button"
                 variant="ghost"
                 className={cn(
-                  'flex w-full items-center justify-between px-2 py-1.5 h-auto text-xs',
+                  'flex h-auto w-full items-center justify-between rounded-md px-2 py-1.5 text-xs',
                   selectedFolderId === null
-                    ? 'bg-primary/10 text-primary font-medium hover:bg-primary/10'
+                    ? 'bg-primary/10 font-medium text-primary hover:bg-primary/10'
                     : 'text-muted-foreground hover:bg-muted',
                 )}
                 onClick={() => setSelectedFolderId(null)}
               >
-                <span className="flex items-center gap-1.5 truncate">
-                  <Folder className="h-3.5 w-3.5" /> All Assets
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Folder className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">All Assets</span>
                 </span>
-                <span className="text-xs text-muted-foreground">{assets.length}</span>
               </Button>
               {folders.map((folder) => (
                 <Button
@@ -200,29 +230,31 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                   type="button"
                   variant="ghost"
                   className={cn(
-                    'flex w-full items-center justify-between px-2 py-1.5 h-auto text-xs',
+                    'flex h-auto w-full items-center justify-between rounded-md px-2 py-1.5 text-xs',
                     selectedFolderId === folder.id
-                      ? 'bg-primary/10 text-primary font-medium hover:bg-primary/10'
+                      ? 'bg-primary/10 font-medium text-primary hover:bg-primary/10'
                       : 'text-muted-foreground hover:bg-muted',
                   )}
                   onClick={() => setSelectedFolderId(folder.id)}
                 >
-                  <span className="flex items-center gap-1.5 truncate">
-                    <Folder className="h-3.5 w-3.5" /> {folder.name}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <Folder className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{folder.name}</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="ml-1 text-[10px] tabular-nums opacity-70">
                     {folder.assetCount ?? 0}
                   </span>
                 </Button>
               ))}
-            </div>
+            </aside>
 
-            <div className="flex-1 flex flex-col min-h-0 p-4 gap-3">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            {/* Assets area */}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="shrink-0 p-3 pb-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Search media by filename..."
+                    placeholder="Search by filename..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="h-8 pl-8 text-xs"
@@ -231,15 +263,19 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
               </div>
 
               {isLoadingAssets ? (
-                <div className="grid grid-cols-4 gap-3">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="aspect-square rounded-lg bg-muted/40 animate-pulse" />
+                <div className="grid shrink-0 grid-cols-3 gap-3 p-3 pt-1 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square animate-pulse rounded-lg bg-muted/40"
+                    />
                   ))}
                 </div>
               ) : assets.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
-                  <ImageIcon className="h-10 w-10 stroke-1 mb-2 opacity-40" />
-                  <p className="text-sm font-medium">No media assets found</p>
+                <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                  <ImageIcon className="mb-2 h-10 w-10 stroke-1 opacity-40" />
+                  <p className="text-sm font-medium">No media found</p>
+                  <p className="mt-0.5 text-xs">Try another search or upload new images.</p>
                   <Button
                     size="sm"
                     variant="outline"
@@ -250,56 +286,72 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                   </Button>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2.5 p-1">
-                  {assets.map((asset) => {
-                    const isSelected = selectedUrls.includes(asset.url);
-                    return (
-                      <div
-                        key={asset.id}
-                        onClick={() => toggleSelectAsset(asset)}
-                        className={`group relative aspect-square rounded-lg border overflow-hidden cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary/5'
-                            : 'border-border/60 hover:border-foreground/40 bg-muted/20'
-                        }`}
-                      >
-                        <img
-                          src={asset.url}
-                          alt={asset.originalName}
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-xs text-white font-medium px-1 text-center truncate max-w-[90%]">
+                <div className="min-h-0 flex-1 overflow-y-auto p-3 pt-1">
+                  <div className="grid auto-rows-max grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                    {assets.map((asset) => {
+                      const isSelected = selectedUrls.includes(asset.url);
+                      return (
+                        <button
+                          key={asset.id}
+                          type="button"
+                          title={asset.originalName}
+                          aria-pressed={isSelected}
+                          disabled={!isSelected && selectedUrls.length >= maxSelect}
+                          onClick={() => toggleSelectAsset(asset)}
+                          className={cn(
+                            'group relative block aspect-square w-full overflow-hidden rounded-lg border text-left transition-all',
+                            isSelected
+                              ? 'border-primary ring-2 ring-primary ring-offset-1'
+                              : 'border-border/60 hover:border-foreground/40',
+                            !isSelected && selectedUrls.length >= maxSelect
+                              ? 'cursor-not-allowed opacity-40'
+                              : 'cursor-pointer',
+                          )}
+                        >
+                          <img
+                            src={asset.url}
+                            alt={asset.originalName}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div
+                            className={cn(
+                              'absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 pb-1 pt-3 text-[10px] font-medium text-white',
+                              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                            )}
+                          >
                             {asset.originalName}
-                          </span>
-                        </div>
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center shadow-md">
-                            <Check className="h-3 w-3 stroke-[3]" />
                           </div>
-                        )}
-                        {(asset.usageCount ?? 0) > 0 && (
-                          <span className="absolute bottom-1 left-1 bg-black/70 text-xs text-white px-1 py-0.2 rounded font-mono">
-                            {asset.usageCount}x
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {isSelected ? (
+                            <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                              <Check className="h-3 w-3 stroke-[3]" />
+                            </span>
+                          ) : null}
+                          {(asset.usageCount ?? 0) > 0 ? (
+                            <span className="absolute left-1.5 top-1.5 rounded bg-black/70 px-1 py-px font-mono text-[10px] leading-4 text-white">
+                              {asset.usageCount}x
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
           </TabsContent>
 
           {/* TAB 2: UPLOAD */}
-          <TabsContent value="upload" className="flex-1 p-6 flex flex-col items-center justify-center m-0">
+          <TabsContent
+            value="upload"
+            className="m-0 flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-6"
+          >
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
-              className="w-full max-w-lg border-2 border-dashed border-border/80 hover:border-primary rounded-2xl p-8 flex flex-col items-center justify-center gap-3 text-center transition-colors bg-card/50"
+              className="flex w-full max-w-md flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/80 bg-card/50 p-8 text-center transition-colors hover:border-primary"
             >
-              <div className="p-3 rounded-full bg-primary/10 text-primary">
+              <div className="rounded-full bg-primary/10 p-3 text-primary">
                 {isUploading ? (
                   <Spinner size="xl" />
                 ) : (
@@ -310,14 +362,14 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
                 <h3 className="text-sm font-semibold text-foreground">
                   Drag &amp; drop images here
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Supports JPEG, PNG, WebP, AVIF up to 10MB each
                 </p>
               </div>
 
-              {uploadError && (
-                <p className="text-xs text-destructive font-medium">{uploadError}</p>
-              )}
+              {uploadError ? (
+                <p className="text-xs font-medium text-destructive">{uploadError}</p>
+              ) : null}
 
               <label>
                 <input
@@ -344,9 +396,9 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="p-3 px-4 border-t border-border/40 bg-muted/20 flex items-center justify-between">
+        <DialogFooter className="shrink-0 items-center justify-between gap-2 border-t border-border/40 bg-muted/20 p-3 sm:justify-between">
           <div className="text-xs text-muted-foreground">
-            {selectedUrls.length} image{selectedUrls.length !== 1 ? 's' : ''} chosen
+            {selectedUrls.length} image{selectedUrls.length !== 1 ? 's' : ''} selected
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
