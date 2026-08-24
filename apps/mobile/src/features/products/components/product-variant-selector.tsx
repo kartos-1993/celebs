@@ -162,7 +162,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
               <View style={styles.measurementTextWrap}>
                 {selectedMeasurements.map((m) => (
                   <ThemedText key={m.name} style={styles.measurementText}>
-                    {m.name}: {m.value} {m.unit}
+                    <ThemedText style={styles.measurementLabel}>{m.name}:</ThemedText>{' '}
+                    {m.value} {m.unit}
                   </ThemedText>
                 ))}
               </View>

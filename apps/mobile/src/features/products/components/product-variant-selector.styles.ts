@@ -66,9 +66,9 @@ export const styles = StyleSheet.create({
 
   /* ---------- Size Boxes ---------- */
   sizeBox: {
-    minWidth: 48,
-    height: 36,
-    paddingHorizontal: Spacing.md,
+    minWidth: 40,
+    height: 28,
+    paddingHorizontal: Spacing.sm,
     borderRadius: Radius.sm,
     backgroundColor: Palette.gray100,
     justifyContent: 'center',
@@ -86,7 +86,7 @@ export const styles = StyleSheet.create({
     opacity: 0.4,
   },
   sizeText: {
-    fontSize: FontSize.small,
+    fontSize: FontSize.footnote,
     fontWeight: FontWeight.semibold,
     color: Palette.gray700,
   },
@@ -105,7 +105,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F7F7F8',
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.xs,
     marginTop: Spacing.md,
     gap: Spacing.sm,
   },
@@ -113,12 +113,18 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
+    columnGap: Spacing.sm,
+    rowGap: Spacing.xxs,
   },
   measurementText: {
-    fontSize: FontSize.caption,
+    fontSize: FontSize.micro,
     color: Palette.gray600,
-    lineHeight: 18,
+    lineHeight: 14,
+  },
+  measurementLabel: {
+    fontSize: FontSize.micro,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray800,
   },
 
   /* ---------- Size Guide Links ---------- */
