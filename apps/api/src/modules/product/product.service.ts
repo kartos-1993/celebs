@@ -79,19 +79,99 @@ const collectProductAssetUrls = (source: {
     }
   }
 
-  const colorMeta = (source.dynamicData as Record<string, unknown> | undefined)?.variants as
-    | Record<string, Record<string, unknown>>
-    | undefined;
+  const colorMeta = (
+    source.dynamicData as Record<string, unknown> | undefined
+  )?.variants as Record<string, unknown> | undefined;
+
+  const metaGroups: Array<Record<string, unknown>> = [];
   if (colorMeta && typeof colorMeta === 'object') {
-    for (const meta of Object.values(colorMeta)) {
-      if (typeof meta?.swatch === 'string') urls.push(meta.swatch);
-      if (Array.isArray(meta?.images)) {
-        urls.push(...(meta.images as unknown[]).filter((u): u is string => typeof u === 'string'));
-      }
+    // Current shape: variants.colorMeta.<ColorKey> = { swatch, images, name? }
+    const colorMetaMap = colorMeta.colorMeta as Record<string, unknown> | undefined;
+    if (colorMetaMap && typeof colorMetaMap === 'object') {
+      metaGroups.push(...Object.values(colorMetaMap).filter(
+        (m): m is Record<string, unknown> => Boolean(m) && typeof m === 'object',
+      ));
+    } else {
+      // Legacy fallback: variants.<ColorKey> = { swatch, images }
+      metaGroups.push(...Object.values(colorMeta).filter(
+        (m): m is Record<string, unknown> => Boolean(m) && typeof m === 'object',
+      ));
+    }
+  }
+
+  for (const meta of metaGroups) {
+    if (typeof meta.swatch === 'string') urls.push(meta.swatch);
+    if (Array.isArray(meta.images)) {
+      urls.push(...(meta.images as unknown[]).filter((u): u is string => typeof u === 'string'));
     }
   }
 
   return urls;
+};
+
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+const isFilledString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
+
+/**
+ * Derives storefront color variants from the dynamic-form color metadata
+ * (`dynamicData.variants.colorMeta.<Key>`), falling back to the legacy
+ * `colorVariants` column when no dynamic metadata exists.
+ */
+const resolveStorefrontColorVariants = (
+  legacyVariants: unknown,
+  dynamicData: unknown,
+): Array<{ name: string; colorCode?: string; swatch?: string; images: string[] }> => {
+  const dynamicDataObj =
+    dynamicData && typeof dynamicData === 'object'
+      ? (dynamicData as Record<string, unknown>)
+      : undefined;
+  const variantsRoot = dynamicDataObj?.variants as Record<string, unknown> | undefined;
+  const colorMetaMap = variantsRoot?.colorMeta as Record<string, unknown> | undefined;
+
+  if (colorMetaMap && typeof colorMetaMap === 'object') {
+    const derived = Object.entries(colorMetaMap)
+      .filter(([, meta]) => meta && typeof meta === 'object')
+      .map(([key, meta]) => {
+        const metaObj = meta as Record<string, unknown>;
+        const images = [
+          ...(isFilledString(metaObj.swatch) ? [metaObj.swatch] : []),
+          ...(Array.isArray(metaObj.images)
+            ? (metaObj.images as unknown[]).filter(isFilledString)
+            : []),
+        ];
+        return {
+          name: isFilledString(metaObj.name) ? metaObj.name.trim() : key,
+          colorCode: HEX_COLOR_PATTERN.test(key) ? key : undefined,
+          // Dots fall back to the variant's first product image when no
+          // dedicated swatch was uploaded (SHEIN-style thumbnails)
+          swatch: isFilledString(metaObj.swatch)
+            ? metaObj.swatch
+            : images[0],
+          images,
+        };
+      });
+    if (derived.length > 0) return derived;
+  }
+
+  if (Array.isArray(legacyVariants)) {
+    return (legacyVariants as Array<Record<string, unknown>>).map((variant) => {
+      const images = Array.isArray(variant.images)
+        ? (variant.images as unknown[]).filter(isFilledString)
+        : [];
+      return {
+        name: isFilledString(variant.name) ? variant.name : 'Variant',
+        colorCode: isFilledString(variant.colorCode) ? variant.colorCode : undefined,
+        swatch: isFilledString(variant.swatch)
+          ? variant.swatch
+          : images[0],
+        images,
+      };
+    });
+  }
+
+  return [];
 };
 
 export class ProductService {
@@ -130,7 +210,9 @@ export class ProductService {
       brand: prod.brand || (brandRefObj ? brandRefObj.name : null),
       brandRef: brandRefObj,
       price: prod.price != null ? Number(prod.price) : 0,
-      discountedPrice: prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
+      colorVariants: resolveStorefrontColorVariants(prod.colorVariants, prod.dynamicData),
+      discountedPrice:
+        prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
       category: categoryObj || prod.categoryId,
       subcategory: subcategoryObj || prod.subcategoryId,
     };

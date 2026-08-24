@@ -12,7 +12,7 @@ import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 export const styles = StyleSheet.create({
   cardContainer: {
     borderRadius: Radius.sm,
-    marginBottom: Spacing.lg,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   imageContainer: {
@@ -86,20 +86,21 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 4,
     zIndex: 5,
   },
   capsuleColorDot: {
-    width: 9,
-    height: 9,
+    width: 14,
+    height: 14,
     borderRadius: Radius.pill,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.7)',
+    overflow: 'hidden',
   },
   capsuleColorDotActive: {
     borderColor: Palette.white,
-    borderWidth: 1.5,
-    transform: [{ scale: 1.2 }],
+    borderWidth: 2,
+    transform: [{ scale: 1.15 }],
   },
   capsuleCountText: {
     fontSize: FontSize.micro,
@@ -109,37 +110,10 @@ export const styles = StyleSheet.create({
     marginTop: 0.5,
     textAlign: 'center',
   },
-
-  hotSellerBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Palette.danger,
-    paddingVertical: Spacing.xxs,
-    paddingHorizontal: Spacing.xs,
-  },
-  hotSellerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs,
-  },
-  hotSellerText: {
-    color: Palette.gold,
-    fontSize: responsiveFontSize(FontSize.micro),
-    fontWeight: FontWeight.black,
-    fontStyle: 'italic',
-    letterSpacing: 0.2,
-  },
-  hotSellerRight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  saveAmountText: {
-    color: Palette.white,
-    fontSize: responsiveFontSize(FontSize.micro),
-    fontWeight: FontWeight.extrabold,
+  capsuleSwatchImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: Radius.pill,
   },
 
   detailsContainer: {
@@ -185,44 +159,6 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.regular,
     lineHeight: responsiveFontSize(15),
     marginBottom: Spacing.xxs,
-  },
-
-  bestsellerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs,
-    marginBottom: Spacing.xxs,
-  },
-  bestsellerText: {
-    fontSize: responsiveFontSize(FontSize.micro),
-    fontWeight: FontWeight.extrabold,
-    color: Palette.warning,
-  },
-  bestsellerSub: {
-    fontSize: responsiveFontSize(FontSize.micro),
-    fontWeight: FontWeight.medium,
-    color: Palette.warning,
-  },
-
-  salesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: Spacing.xs,
-  },
-  newArrivalBadge: {
-    paddingHorizontal: Spacing.xxs,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  newArrivalText: {
-    fontSize: responsiveFontSize(FontSize.micro),
-    fontWeight: FontWeight.extrabold,
-    lineHeight: responsiveFontSize(9.5),
-  },
-  soldText: {
-    fontSize: responsiveFontSize(FontSize.micro),
-    fontWeight: FontWeight.medium,
   },
 
   bottomPriceRow: {

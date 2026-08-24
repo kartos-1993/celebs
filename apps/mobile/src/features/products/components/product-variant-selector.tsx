@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
+import { ChevronRight, Ruler, ScanLine } from 'lucide-react-native';
 
 import { ProductColorVariant, ProductSize } from '../hooks/use-products';
 
@@ -28,7 +29,8 @@ const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, 
   const [imageFailed, setImageFailed] = useState(false);
   const rawImage =
     variant.images?.[0] ||
-    (variant as { image?: string }).image;
+    (variant as { image?: string }).image ||
+    (variant as { swatch?: string }).swatch;
   const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
 
   return (
@@ -38,6 +40,7 @@ const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, 
       activeOpacity={0.8}
       accessible={true}
       accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
       accessibilityLabel={`Select color ${variant.name}`}
     >
       {imageUrl && !imageFailed ? (
@@ -50,9 +53,6 @@ const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, 
       ) : (
         <View style={[styles.colorDot, { backgroundColor: variant.colorCode || '#000000' }]} />
       )}
-      <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-        {variant.name}
-      </ThemedText>
     </TouchableOpacity>
   );
 };
@@ -77,17 +77,25 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
   const selectedSizeQty = selectedSize ? getStockQtyForSize(selectedSize) : null;
 
+  const selectedSizeData = sizes?.find(
+    (s) => s.name.toLowerCase() === selectedSize.toLowerCase(),
+  );
+  const selectedMeasurements = selectedSizeData?.productMeasurements ?? [];
+
   return (
     <View style={styles.container}>
       {/* Color Variants */}
       {colorVariants && colorVariants.length > 0 && (
         <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>
-            Color:{' '}
-            <ThemedText style={styles.valueText}>
-              {currentColorVariant?.name || 'Standard'}
+          <View style={styles.labelRow}>
+            <ThemedText style={styles.sectionLabel}>
+              Color:{' '}
+              <ThemedText style={styles.valueText}>
+                {currentColorVariant?.name || 'Standard'}
+              </ThemedText>
             </ThemedText>
-          </ThemedText>
+            <ChevronRight size={14} color="#9CA3AF" />
+          </View>
           <View style={styles.variantRow}>
             {colorVariants.map((c, idx) => (
               <ColorSwatchItem
@@ -104,14 +112,12 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
       {/* Size Variants */}
       {sizes && sizes.length > 0 && (
         <View style={styles.section}>
-          <View style={styles.sizeHeaderRow}>
+          <View style={styles.labelRow}>
             <ThemedText style={styles.sectionLabel}>
               Size:{' '}
-              <ThemedText style={styles.valueText}>{selectedSize || 'Select Size'}</ThemedText>
+              <ThemedText style={styles.valueText}>{selectedSize || 'Default'}</ThemedText>
             </ThemedText>
-            {!selectedSize && (
-              <ThemedText style={styles.sizeNoticeText}>Selection required</ThemedText>
-            )}
+            <ChevronRight size={14} color="#9CA3AF" />
           </View>
 
           <View style={styles.variantRow}>
@@ -131,6 +137,10 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                   onPress={() => !isOutOfStock && onSelectSize(s.name)}
                   disabled={isOutOfStock}
                   activeOpacity={0.8}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`Select size ${s.name}`}
                 >
                   <ThemedText
                     style={[
@@ -145,6 +155,35 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
               );
             })}
           </View>
+
+          {/* Product Measurements — shown underneath once a size is selected */}
+          {selectedSize && selectedMeasurements.length > 0 && (
+            <TouchableOpacity style={styles.measurementBox} activeOpacity={0.9}>
+              <View style={styles.measurementTextWrap}>
+                {selectedMeasurements.map((m) => (
+                  <ThemedText key={m.name} style={styles.measurementText}>
+                    <ThemedText style={styles.measurementLabel}>{m.name}:</ThemedText>{' '}
+                    {m.value} {m.unit}
+                  </ThemedText>
+                ))}
+              </View>
+              <ChevronRight size={14} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+
+          {/* Size Guide Links */}
+          {selectedSize && (
+            <View style={styles.sizeGuideRow}>
+              <View style={styles.sizeGuideLink}>
+                <Ruler size={14} color="#18181B" />
+                <ThemedText style={styles.sizeGuideText}>Size Guide</ThemedText>
+              </View>
+              <View style={styles.sizeGuideLink}>
+                <ScanLine size={14} color="#18181B" />
+                <ThemedText style={styles.sizeGuideText}>Check My Size</ThemedText>
+              </View>
+            </View>
+          )}
 
           {/* Stock Level Warning Indicator */}
           {selectedSize && selectedSizeQty !== null && (

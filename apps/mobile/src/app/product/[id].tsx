@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   Share,
   StatusBar,
@@ -17,11 +18,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ChevronLeft,
+  ChevronRight,
   Heart,
+  MoreHorizontal,
   RotateCcw,
+  Search,
   Share2,
   ShieldCheck,
-  ShoppingCart,
+  ShoppingBag,
   Star,
   Truck,
 } from 'lucide-react-native';
@@ -29,10 +33,9 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Palette, Spacing } from '@/constants/theme';
+import { useAuth } from '@/features/auth/context/auth-context';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
-import { BrandStoryBadge } from '@/features/products/components/brand-story-badge';
-import { FitRecommenderWidget } from '@/features/products/components/fit-recommender-widget';
 import { ProductGallery } from '@/features/products/components/product-gallery';
 import { ProductVariantSelector } from '@/features/products/components/product-variant-selector';
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
@@ -43,6 +46,7 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isLoggedIn } = useAuth();
   const { addToCart, itemCount } = useCart();
   const { product, loading, error } = useProduct(id || '');
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
@@ -146,6 +150,23 @@ export default function ProductDetailScreen() {
     }
   };
 
+  const handleHeaderMenu = () => {
+    if (!product) return;
+    Alert.alert(product.name, undefined, [
+      { text: 'Share', onPress: handleShare },
+      { text: 'View Cart', onPress: () => router.push('/cart') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleWishlist = () => {
+    if (!isLoggedIn) {
+      router.push('/(tabs)/me');
+      return;
+    }
+    setIsFavorite(!isFavorite);
+  };
+
   if (loading) {
     return (
       <View style={styles.centerBox}>
@@ -198,41 +219,70 @@ export default function ProductDetailScreen() {
     <ThemedView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Floating Header */}
-      <View style={[styles.headerOverlay, { paddingTop: insets.top + Spacing.sm }]}>
-        <TouchableOpacity
-          style={styles.headerIconButton}
-          onPress={() => router.back()}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ChevronLeft size={22} color={Palette.gray900} />
-        </TouchableOpacity>
-
-        <View style={styles.headerRightActions}>
-          <TouchableOpacity style={styles.headerIconButton} onPress={handleShare}>
-            <Share2 size={20} color={Palette.gray900} />
+      {/* Solid Header */}
+      <View style={[styles.headerBar, { paddingTop: insets.top }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={() => router.back()}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ChevronLeft size={22} color={Palette.gray900} />
           </TouchableOpacity>
 
-          <Animated.View style={animatedTopCartStyle}>
-            <View ref={topCartBtnRef} onLayout={measureTopCartIcon}>
-              <TouchableOpacity
-                style={styles.headerIconButton}
-                onPress={() => router.push('/cart')}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="View cart"
-              >
-                <ShoppingCart size={20} color={Palette.gray900} />
-                {itemCount > 0 && (
-                  <View style={styles.cartBadge}>
-                    <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
+          <TouchableOpacity
+            style={styles.headerSearchPill}
+            onPress={() => router.push('/(tabs)/explore')}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Search products"
+          >
+            <Search size={15} color={Palette.gray400} />
+            <ThemedText style={styles.headerSearchText}>Search products</ThemedText>
+          </TouchableOpacity>
+
+          <View style={styles.headerRightActions}>
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={handleHeaderMenu}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="More options"
+            >
+              <MoreHorizontal size={20} color={Palette.gray900} />
+            </TouchableOpacity>
+
+            <Animated.View style={animatedTopCartStyle}>
+              <View ref={topCartBtnRef} onLayout={measureTopCartIcon}>
+                <TouchableOpacity
+                  style={styles.headerIconButton}
+                  onPress={() => router.push('/cart')}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="View cart"
+                >
+                  <ShoppingBag size={20} color={Palette.gray900} />
+                  {itemCount > 0 && (
+                    <View style={styles.cartBadge}>
+                      <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={handleShare}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Share product"
+            >
+              <Share2 size={19} color={Palette.gray900} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -242,29 +292,6 @@ export default function ProductDetailScreen() {
 
         {/* Product Information Section */}
         <View style={styles.detailsContainer}>
-          {/* Brand Story Badge & Favorite */}
-          <View style={styles.brandRow}>
-            <View style={{ flex: 1 }}>
-              <BrandStoryBadge
-                brandName={product.brand}
-                brandRef={(product as { brandRef?: unknown })?.brandRef as never}
-              />
-            </View>
-            <TouchableOpacity
-              onPress={() => setIsFavorite(!isFavorite)}
-              style={{ marginLeft: Spacing.sm }}
-            >
-              <Heart
-                size={22}
-                color={isFavorite ? Palette.danger : Palette.gray400}
-                fill={isFavorite ? Palette.danger : 'transparent'}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Product Name */}
-          <ThemedText style={styles.productTitle}>{product.name}</ThemedText>
-
           {/* Pricing Row */}
           <View style={styles.priceRow}>
             <ThemedText style={styles.currentPrice}>Rs. {currentPrice.toLocaleString()}</ThemedText>
@@ -280,25 +307,25 @@ export default function ProductDetailScreen() {
             )}
           </View>
 
-          {/* Rating */}
-          <View style={styles.ratingRow}>
-            <Star size={14} color={Palette.gold} fill={Palette.gold} />
-            <ThemedText style={styles.ratingText}>4.8 (124 reviews)</ThemedText>
+          {/* Product Name + Rating */}
+          <View style={styles.titleRow}>
+            <ThemedText style={styles.productTitle} numberOfLines={2}>
+              {product.name}
+            </ThemedText>
+            <View style={styles.ratingInline}>
+              <Star size={13} color={Palette.gold} fill={Palette.gold} />
+              <ThemedText style={styles.ratingInlineText}>4.8</ThemedText>
+              <ThemedText style={styles.reviewsCount}>(124)</ThemedText>
+              <ChevronRight size={13} color={Palette.gray400} />
+            </View>
           </View>
+        </View>
 
-          <View style={styles.divider} />
+        {/* Section Band */}
+        <View style={styles.sectionBand} />
 
-          {/* Fit Recommender Widget (Nepali Sizing Engine) */}
-          <FitRecommenderWidget
-            availableSizes={
-              Array.isArray(product.sizes)
-                ? product.sizes.map((s) => (typeof s === 'string' ? s : s.name))
-                : ['S', 'M', 'L', 'XL', 'XXL']
-            }
-            selectedSize={selectedSize}
-            onSelectSize={setSelectedSize}
-          />
-
+        {/* Variants Section */}
+        <View style={styles.detailsContainer}>
           {/* Variant Selector */}
           <ProductVariantSelector
             colorVariants={product.colorVariants}
@@ -308,40 +335,88 @@ export default function ProductDetailScreen() {
             selectedSize={selectedSize}
             onSelectSize={setSelectedSize}
           />
+        </View>
 
-          <View style={styles.divider} />
+        {/* Section Band */}
+        <View style={styles.sectionBand} />
 
-          {/* Description */}
+        {/* Shipping & Services */}
+        <View style={styles.detailsContainer}>
+          <View style={styles.shippingSection}>
+            <View style={[styles.serviceRow, styles.serviceRowDivider]}>
+              <Truck size={18} color={Palette.gray800} />
+              <ThemedText style={styles.serviceText}>
+                Free Delivery{' '}
+                <ThemedText style={styles.serviceHighlight}>on orders over Rs. 3,000</ThemedText>
+              </ThemedText>
+              <ChevronRight size={15} color={Palette.gray400} />
+            </View>
+            <View style={[styles.serviceRow, styles.serviceRowDivider]}>
+              <RotateCcw size={18} color={Palette.gray800} />
+              <ThemedText style={styles.serviceText}>Returns Accepted · 7-day policy</ThemedText>
+              <ChevronRight size={15} color={Palette.gray400} />
+            </View>
+            <View style={styles.serviceRow}>
+              <ShieldCheck size={18} color={Palette.gray800} />
+              <ThemedText style={styles.serviceText}>Safe Payments · Privacy Protection</ThemedText>
+              <ChevronRight size={15} color={Palette.gray400} />
+            </View>
+          </View>
+        </View>
+
+        {/* Section Band */}
+        <View style={styles.sectionBand} />
+
+        {/* Reviews */}
+        <View style={styles.detailsContainer}>
+          <View style={styles.reviewsSection}>
+            <View style={styles.reviewsSummaryRow}>
+              <ThemedText style={styles.reviewsScore}>4.8</ThemedText>
+              <Star size={15} color={Palette.gold} fill={Palette.gold} />
+              <ThemedText style={styles.reviewsCount}>(124 reviews)</ThemedText>
+              <View style={styles.reviewsViewMore}>
+                <ThemedText style={styles.reviewsViewMoreText}>View more</ThemedText>
+                <ChevronRight size={14} color={Palette.gray400} />
+              </View>
+            </View>
+            <ThemedText style={styles.reviewsEmpty}>
+              No written reviews yet — be the first to review this product.
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Section Band */}
+        <View style={styles.sectionBand} />
+
+        {/* Description */}
+        <View style={styles.detailsContainer}>
           {product.description ? (
             <View style={styles.descriptionSection}>
               <ThemedText style={styles.sectionTitle}>Product Description</ThemedText>
               <ThemedText style={styles.descriptionText}>{product.description}</ThemedText>
             </View>
           ) : null}
-
-          {/* Value Props */}
-          <View style={styles.valuePropsRow}>
-            <View style={styles.propBox}>
-              <Truck size={20} color={Palette.brand} />
-              <ThemedText style={styles.propTitle}>Fast Delivery</ThemedText>
-              <ThemedText style={styles.propSub}>2-4 business days</ThemedText>
-            </View>
-            <View style={styles.propBox}>
-              <RotateCcw size={20} color={Palette.brand} />
-              <ThemedText style={styles.propTitle}>Easy Returns</ThemedText>
-              <ThemedText style={styles.propSub}>7-day return policy</ThemedText>
-            </View>
-            <View style={styles.propBox}>
-              <ShieldCheck size={20} color={Palette.brand} />
-              <ThemedText style={styles.propTitle}>100% Genuine</ThemedText>
-              <ThemedText style={styles.propSub}>Authentic products</ThemedText>
-            </View>
-          </View>
         </View>
       </ScrollView>
 
       {/* Bottom Sticky Action Bar */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.md }]}>
+        <TouchableOpacity
+          style={styles.wishlistBtn}
+          onPress={handleWishlist}
+          activeOpacity={0.85}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFavorite ? 'Remove from wishlist' : 'Add to wishlist. Requires login.'
+          }
+        >
+          <Heart
+            size={20}
+            color={isFavorite ? Palette.danger : Palette.gray700}
+            fill={isFavorite ? Palette.danger : 'transparent'}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.addToCartBtn}
           onPress={() => handleAddToCart()}
@@ -354,10 +429,7 @@ export default function ProductDetailScreen() {
           {isAdding ? (
             <ActivityIndicator size="small" color={Palette.white} />
           ) : (
-            <>
-              <ShoppingCart size={20} color={Palette.white} />
-              <ThemedText style={styles.addToCartText}>Add to Cart</ThemedText>
-            </>
+            <ThemedText style={styles.addToCartText}>Add to Cart</ThemedText>
           )}
         </TouchableOpacity>
       </View>

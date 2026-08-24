@@ -10,22 +10,23 @@ import {
 
 export const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: Spacing.sm,
-    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
     paddingHorizontal: Spacing.xxs,
   },
   titleWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
   headerTitle: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.extrabold,
     letterSpacing: -0.3,
   },

@@ -11,6 +11,7 @@ import {
   ComboBundleShowcase,
 } from '@/features/home/components/combo-bundle-showcase';
 import { ProductGrid } from '@/features/products/components/product-grid';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 
 export interface SDUIActionHandlers {
   onSelectCombo?: (combo: ComboBundleData) => void;
@@ -145,26 +146,26 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     marginHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Palette.gray100,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Palette.gray200,
   },
   unknownTitle: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#4B5563',
+    color: Palette.gray600,
   },
   unknownDetails: {
     fontSize: 10,
-    color: '#9CA3AF',
+    color: Palette.gray400,
     marginTop: 2,
   },
   promoCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#1E1E2E',
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.sm,
+    padding: Spacing.lg,
+    borderRadius: Radius.md,
+    backgroundColor: Palette.gray900,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -173,14 +174,14 @@ const styles = StyleSheet.create({
   },
   promoBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#EF4444',
+    backgroundColor: Palette.danger,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: Radius.xs,
+    marginBottom: Spacing.sm,
   },
   promoBadgeText: {
-    color: '#FFFFFF',
+    color: Palette.white,
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -188,23 +189,23 @@ const styles = StyleSheet.create({
   promoTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    color: Palette.white,
+    marginBottom: Spacing.xs,
   },
   promoSubtitle: {
     fontSize: 12,
-    color: '#A1A1AA',
-    marginBottom: 12,
+    color: Palette.gray400,
+    marginBottom: Spacing.md,
   },
   promoCtaButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Palette.white,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: Radius.sm,
   },
   promoCtaText: {
-    color: '#18181B',
+    color: Palette.gray900,
     fontSize: 12,
     fontWeight: '700',
   },

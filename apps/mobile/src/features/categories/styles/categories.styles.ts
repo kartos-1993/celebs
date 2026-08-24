@@ -10,10 +10,10 @@ import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 export const styles = StyleSheet.create({
   categoriesSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.md,
   },
   categoriesScrollContent: {
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.md,
   },
   categoriesRowWrapper: {
     flexDirection: 'row',
