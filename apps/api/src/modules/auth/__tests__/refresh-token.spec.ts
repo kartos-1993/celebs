@@ -142,4 +142,98 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
     expect(res.status).toBe(403);
     expect(res.body.success).toBe(false);
   });
+
+  it('should detect refresh token reuse and revoke the session family immediately', async () => {
+    const rawPassword = 'Password123!';
+    const email = faker.internet.exampleEmail().toLowerCase();
+    const user = await prisma.user.create({
+      data: {
+        name: faker.person.fullName(),
+        email,
+        password: await hashValue(rawPassword),
+        isEmailVerified: true,
+      },
+    });
+    createdUserId = user.id;
+
+    // 1. Initial Login
+    const loginRes = await request(app).post('/api/v1/auth/login').send({
+      email,
+      password: rawPassword,
+    });
+    expect(loginRes.status).toBe(200);
+
+    const token1 = loginRes.body.data.refreshToken;
+
+    // 2. Legitimate First Refresh
+    const refresh1Res = await request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', `refreshToken=${token1}`);
+
+    expect(refresh1Res.status).toBe(200);
+    const token2 = refresh1Res.body.data.refreshToken;
+    expect(token2).toBeDefined();
+    expect(token2).not.toEqual(token1);
+
+    // 3. Attacker replays token1 (already rotated)
+    const reuseRes = await request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', `refreshToken=${token1}`);
+
+    expect(reuseRes.status).toBe(401);
+    expect(reuseRes.body.message).toContain('Session revoked due to token reuse');
+
+    // 4. Verify session is deleted from DB
+    const sessionInDb = await prisma.session.findFirst({
+      where: { userId: user.id },
+    });
+    expect(sessionInDb).toBeNull();
+
+    // 5. Subsequent refresh attempt with token2 now also fails because session is gone
+    const failRes = await request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', `refreshToken=${token2}`);
+
+    expect(failRes.status).toBe(401);
+  });
+
+  it('should allow legacy jti-less token to refresh once and upgrade the session', async () => {
+    const email = faker.internet.exampleEmail().toLowerCase();
+    const user = await prisma.user.create({
+      data: {
+        name: faker.person.fullName(),
+        email,
+        password: await hashValue('Password123!'),
+        isEmailVerified: true,
+      },
+    });
+    createdUserId = user.id;
+
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        userAgent: 'Legacy Client',
+      },
+    });
+
+    // Sign legacy token without jti
+    const legacyToken = signJwtToken(
+      { sessionId: session.id },
+      { secret: config.JWT.REFRESH_SECRET },
+    );
+
+    const res = await request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', `refreshToken=${legacyToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.refreshToken).toBeDefined();
+
+    // Verify session now has rotatedRefreshId populated
+    const updatedSession = await prisma.session.findUnique({
+      where: { id: session.id },
+    });
+    expect(updatedSession?.rotatedRefreshId).toBeDefined();
+    expect(typeof updatedSession?.rotatedRefreshId).toBe('string');
+  });
 });

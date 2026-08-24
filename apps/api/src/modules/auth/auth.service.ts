@@ -1,4 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
+import { randomUUID } from 'node:crypto';
 
 import {
   loginType,
@@ -302,10 +303,12 @@ export class AuthService {
 
     // Create session
     logger.info({ userId: user.id }, 'Creating session');
+    const jti = randomUUID();
     const session = await prisma.session.create({
       data: {
         userId: user.id,
         userAgent,
+        rotatedRefreshId: jti,
       },
     });
 
@@ -319,6 +322,7 @@ export class AuthService {
 
     const refreshTokenPayload: RefreshTPayload = {
       sessionId: session.id,
+      jti,
     };
 
     const accessToken = signJwtToken(accessTokenPayload);
@@ -369,10 +373,12 @@ export class AuthService {
     // Create a session for the auto-login
     logger.info({ userId: updatedUser.id }, 'Creating session after email verification');
     const userAgent = 'Email Verification Auto-Login';
+    const jti = randomUUID();
     const session = await prisma.session.create({
       data: {
         userId: updatedUser.id,
         userAgent,
+        rotatedRefreshId: jti,
       },
     });
 
@@ -389,6 +395,7 @@ export class AuthService {
 
     const refreshTokenPayload: RefreshTPayload = {
       sessionId: session.id,
+      jti,
     };
 
     const accessToken = signJwtToken(accessTokenPayload);
@@ -574,16 +581,32 @@ export class AuthService {
       );
     }
 
+    const presentedJti = payload.jti;
+    if (presentedJti && session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
+      await prisma.session.delete({ where: { id: session.id } }).catch(() => {});
+      logger.error(
+        { sessionId: session.id, userId: session.userId },
+        'security.refresh_reuse_detected — session terminated',
+      );
+      throw new UnauthorizedException(
+        'Session revoked due to token reuse',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
     const user = session.user;
     // Single lifecycle chokepoint (covers owner + staff of the parent store).
     await storeLifecycle.assertSellerLoginAllowed(user);
 
-    // Sliding Session Window: Extend expiredAt forward on active refresh
+    const newJti = randomUUID();
+
+    // Sliding Session Window: Extend expiredAt forward on active refresh & record new rotatedRefreshId
     try {
       await prisma.session.update({
         where: { id: session.id },
         data: {
           expiredAt: new Date(Date.now() + config.SESSION.EXPIRY_MS),
+          rotatedRefreshId: newJti,
         },
       });
     } catch (err: unknown) {
@@ -603,6 +626,7 @@ export class AuthService {
 
     const refreshTokenPayload: RefreshTPayload = {
       sessionId: session.id,
+      jti: newJti,
     };
 
     const newAccessToken = signJwtToken(accessTokenPayload);
@@ -710,10 +734,12 @@ export class AuthService {
     // Single lifecycle chokepoint (covers owner + staff of the parent store).
     await storeLifecycle.assertSellerLoginAllowed(user);
 
+    const jti = randomUUID();
     const session = await prisma.session.create({
       data: {
         userId: user.id,
         userAgent: userAgent || 'Google Sign-In',
+        rotatedRefreshId: jti,
       },
     });
 
@@ -724,6 +750,7 @@ export class AuthService {
 
     const refreshTokenPayload: RefreshTPayload = {
       sessionId: session.id,
+      jti,
     };
 
     const accessToken = signJwtToken(accessTokenPayload);

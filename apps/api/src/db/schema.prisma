@@ -7,12 +7,13 @@ generator client {
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  userId    String   @map("userId")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userAgent String?
-  createdAt DateTime @default(now())
-  expiredAt DateTime @default(dbgenerated("NOW() + interval '30 days'"))
+  id               String   @id @default(uuid())
+  userId           String   @map("userId")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent        String?
+  rotatedRefreshId String?  @map("rotated_refresh_id")
+  createdAt        DateTime @default(now())
+  expiredAt        DateTime @default(dbgenerated("NOW() + interval '30 days'"))
 
   @@index([userId])
   @@index([expiredAt])
