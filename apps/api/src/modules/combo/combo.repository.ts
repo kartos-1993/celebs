@@ -51,16 +51,20 @@ export class ComboRepository {
   }
 
   async update(id: string, data: Prisma.ComboBundleUpdateInput, productIds?: string[]) {
-    if (productIds) {
-      await prisma.comboBundleItem.deleteMany({ where: { bundleId: id } });
-    }
+    // Transactional: without it, a failed update after deleteMany would
+    // permanently wipe all bundle items.
+    return prisma.$transaction(async (tx) => {
+      if (productIds) {
+        await tx.comboBundleItem.deleteMany({ where: { bundleId: id } });
+      }
 
-    return prisma.comboBundle.update({
-      where: { id },
-      data,
-      include: {
-        items: true,
-      },
+      return tx.comboBundle.update({
+        where: { id },
+        data,
+        include: {
+          items: true,
+        },
+      });
     });
   }
 

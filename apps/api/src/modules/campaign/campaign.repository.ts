@@ -52,16 +52,20 @@ export class CampaignRepository {
   }
 
   async update(id: string, data: Prisma.CampaignUpdateInput, productIds?: string[]) {
-    if (productIds) {
-      await prisma.campaignProduct.deleteMany({ where: { campaignId: id } });
-    }
+    // Transactional: without it, a failed update after deleteMany would
+    // permanently unlink all campaign products.
+    return prisma.$transaction(async (tx) => {
+      if (productIds) {
+        await tx.campaignProduct.deleteMany({ where: { campaignId: id } });
+      }
 
-    return prisma.campaign.update({
-      where: { id },
-      data,
-      include: {
-        products: true,
-      },
+      return tx.campaign.update({
+        where: { id },
+        data,
+        include: {
+          products: true,
+        },
+      });
     });
   }
 

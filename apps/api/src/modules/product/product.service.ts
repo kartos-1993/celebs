@@ -10,7 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, generateSheinStyleSku,HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSheinStyleSku, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { brandService } from '../brand/brand.service';
 import { mediaRepository } from '../media/media.repository';
@@ -359,10 +359,17 @@ export class ProductService {
       throw lastError || new AppError('Failed to create product', HTTPSTATUS.INTERNAL_SERVER_ERROR);
     }
 
-    // Link media usage so DAM badges / delete guards reflect reality
+    // Link media usage so DAM badges / delete guards reflect reality.
+    // Failures are logged loudly (never silently swallowed): a missed
+    // increment leaves usageCount desynced from live products.
     await mediaRepository
       .adjustUsageByUrls(collectProductAssetUrls(createdProduct), 1)
-      .catch(() => undefined);
+      .catch((err) =>
+        logger.error(
+          { err, productId: createdProduct.id },
+          'Media usage reconciliation failed on product create — usageCount may be desynced',
+        ),
+      );
 
     return this.formatProductResponse(createdProduct);
   }
@@ -987,10 +994,17 @@ export class ProductService {
     const addedUrls = nextUrls.filter((url) => !previousUrls.has(url));
     const removedUrls = Array.from(previousUrls).filter((url) => !nextUrls.includes(url));
 
-    await Promise.all([
-      addedUrls.length ? mediaRepository.adjustUsageByUrls(addedUrls, 1) : null,
-      removedUrls.length ? mediaRepository.adjustUsageByUrls(removedUrls, -1) : null,
-    ].filter(Boolean)).catch(() => undefined);
+    await Promise.all(
+      [
+        addedUrls.length ? mediaRepository.adjustUsageByUrls(addedUrls, 1) : null,
+        removedUrls.length ? mediaRepository.adjustUsageByUrls(removedUrls, -1) : null,
+      ].filter(Boolean),
+    ).catch((err) =>
+      logger.error(
+        { err, productId: id, addedUrls, removedUrls },
+        'Media usage reconciliation failed on product update — usageCount may be desynced',
+      ),
+    );
 
     return this.formatProductResponse(updated);
   }
@@ -1024,7 +1038,12 @@ export class ProductService {
     if (product.status !== PRODUCT_STATUS.ARCHIVED) {
       await mediaRepository
         .adjustUsageByUrls(collectProductAssetUrls(updated), -1)
-        .catch(() => undefined);
+        .catch((err) =>
+          logger.error(
+            { err, productId: id },
+            'Media usage reconciliation failed on product archive — usageCount may be desynced',
+          ),
+        );
     }
 
     return this.formatProductResponse(updated);

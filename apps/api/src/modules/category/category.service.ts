@@ -90,7 +90,7 @@ export class CategoryService {
   ): Promise<PaginatedCategoriesResponse> {
     const total = await this.categoryRepository.countDocuments();
     const pages = Math.ceil(total / limit);
-    const categories = await this.categoryRepository.find({}, limit);
+    const categories = await this.categoryRepository.find({}, limit, (page - 1) * limit);
 
     return { categories, total, page, limit, pages };
   }

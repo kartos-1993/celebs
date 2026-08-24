@@ -43,10 +43,16 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   passport.use(
     new JwtStrategy(options, async (req, payload: JwtPayload, done) => {
       try {
-        // Validate session exists in database and has not expired
-        const session = await prisma.session.findUnique({
-          where: { id: payload.sessionId },
-        });
+        // Parallel: both lookups key off the JWT payload — no data dependency.
+        // This is the hottest query pair in the app (every authenticated request).
+        const [session, user] = await Promise.all([
+          prisma.session.findUnique({
+            where: { id: payload.sessionId },
+            select: { id: true, expiredAt: true },
+          }),
+          userService.findAuthPrincipal(payload.userId),
+        ]);
+
         if (!session || (session.expiredAt && session.expiredAt <= new Date())) {
           return done(
             new UnauthorizedException(
@@ -57,7 +63,6 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
           );
         }
 
-        const user = await userService.findUserById(payload.userId);
         if (!user) {
           return done(
             new UnauthorizedException('User not found', ErrorCode.AUTH_USER_NOT_FOUND),

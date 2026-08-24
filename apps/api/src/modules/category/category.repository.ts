@@ -88,11 +88,13 @@ export class CategoryRepository {
   async findMany(
     where: Prisma.CategoryWhereInput = {},
     limit?: number,
+    skip?: number,
   ): Promise<CategoryEntity[]> {
     const categories = await prisma.category.findMany({
       where,
       orderBy: [{ level: 'asc' }, { name: 'asc' }],
       take: limit,
+      ...(skip !== undefined ? { skip } : {}),
     });
     return categories
       .map((c) => this.toEntity(c))
@@ -102,8 +104,9 @@ export class CategoryRepository {
   async find(
     where: Prisma.CategoryWhereInput = {},
     limit?: number,
+    skip?: number,
   ): Promise<CategoryEntity[]> {
-    return this.findMany(where, limit);
+    return this.findMany(where, limit, skip);
   }
 
   async create(data: Prisma.CategoryUncheckedCreateInput): Promise<CategoryEntity | null> {

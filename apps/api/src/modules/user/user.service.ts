@@ -21,4 +21,28 @@ export class UserService {
       vendorProfile: effectiveVendorProfile || null,
     };
   }
+
+  /**
+   * Lean identity projection for per-request JWT resolution.
+   *
+   * Excludes the password hash and wide relations — includes only what
+   * actor-context, store guards, and controllers read from `req.user`
+   * (id, name, email, role, permissions, isEmailVerified, vendorId,
+   * vendorProfile.id). Runs on EVERY authenticated request; keep it tight.
+   */
+  public async findAuthPrincipal(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        permissions: true,
+        isEmailVerified: true,
+        vendorId: true,
+        vendorProfile: { select: { id: true } },
+      },
+    });
+  }
 }

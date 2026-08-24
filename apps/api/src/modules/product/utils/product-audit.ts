@@ -80,6 +80,14 @@ export function summarizeAuditValue(value: unknown): string {
 }
 
 function isAuditDifferent(prev: unknown, next: unknown): boolean {
+  // Fast path: primitives (the majority of audited fields) compare directly.
+  // JSON serialization only runs for object/array fields like colorVariants.
+  if (
+    (typeof prev === 'string' || typeof prev === 'number' || typeof prev === 'boolean' || prev === null) &&
+    (typeof next === 'string' || typeof next === 'number' || typeof next === 'boolean' || next === null)
+  ) {
+    return prev !== next;
+  }
   return JSON.stringify(prev ?? null) !== JSON.stringify(next ?? null);
 }
 
