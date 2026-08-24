@@ -1,5 +1,4 @@
 {
-  "nxConsole.generateAiAgentRules": true,
   "java.server.launchMode": "off",
   "java.autobuild.enabled": false,
   "java.import.gradle.enabled": false,
