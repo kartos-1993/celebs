@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign,Percent, Plane, Plus, Search, Sparkles, Tag } from 'lucide-react';
+import { DollarSign,Percent, Plane, Plus, Sparkles, Tag } from 'lucide-react';
 
 import type { ComboBundleType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
+
+import { FilterBar, FilterSearch } from '@/components/filter-bar';
 import {
   Table,
   TableBody,
@@ -107,15 +108,13 @@ export default function ComboListPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
-        <Search className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
-        <Input
-          placeholder="Search by bundle title or tag (e.g. abroad-travel, festive)..."
+      <FilterBar>
+        <FilterSearch
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-none shadow-none text-xs focus-visible:ring-0 focus-visible:ring-offset-0 h-8"
+          onChange={setSearchQuery}
+          placeholder="Search by bundle title or tag (e.g. abroad-travel, festive)..."
         />
-      </div>
+      </FilterBar>
 
       {/* Combos Table */}
       <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">

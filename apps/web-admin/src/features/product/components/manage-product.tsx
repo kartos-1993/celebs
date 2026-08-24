@@ -6,7 +6,7 @@ import {
   Eye,
   EyeOff,
   Info,
-  Search,
+  MoreHorizontal,
   Send,
   ShoppingBag,
   Trash2,
@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import { Input } from '@celebs/shared-ui/components/input';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
@@ -44,7 +44,8 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
+
+import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
 
 import {
   archiveProduct,
@@ -60,6 +61,7 @@ import {
 import type { ProductListItem, ProductStatus } from '../types';
 
 import { useAuthContext } from '@/context/auth-provider';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';
 
 const PAGE_SIZE = 10;
@@ -72,6 +74,14 @@ const productStatusTabs: Array<{ id: ProductStatus | 'all'; label: string }> = [
   { id: 'rejected', label: 'Rejected' },
   { id: 'deactivated', label: 'Deactivated' },
 ];
+
+const statusLabels: Record<string, string> = {
+  draft: 'Draft',
+  pending_review: 'Pending Review',
+  published: 'Published',
+  rejected: 'Rejected',
+  deactivated: 'Deactivated',
+};
 
 const statusBadgeVariant = (
   status: string,
@@ -94,7 +104,7 @@ const ManageProduct = () => {
   const canDelete = can(user?.role || 'STAFF', Permission.PRODUCT_DELETE, userPermissions);
 
   const [searchInput, setSearchInput] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
+  const debouncedSearch = useDebounce(searchInput, 350);
   const [filterStatus, setFilterStatus] = useState<ProductStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -105,7 +115,7 @@ const ManageProduct = () => {
 
   const filters = useMemo<ProductFilterRequest>(
     () => ({
-      search: appliedSearch || undefined,
+      search: debouncedSearch || undefined,
       status: filterStatus === 'all' ? undefined : filterStatus,
       vendorId:
         user?.role === 'VENDOR'
@@ -116,7 +126,7 @@ const ManageProduct = () => {
       page,
       limit: PAGE_SIZE,
     }),
-    [appliedSearch, filterStatus, user, page],
+    [debouncedSearch, filterStatus, user, page],
   );
 
   const { data, isLoading, isFetching } = useProductsQuery(filters);
@@ -128,12 +138,6 @@ const ManageProduct = () => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const { toggleActivation, archive, submitForReview } = useProductMutations();
-
-  const handleSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    setAppliedSearch(searchInput.trim());
-    setPage(1);
-  };
 
   const handleSelectProduct = (productId: string, checked: boolean) => {
     setSelectedProducts((previous) =>
@@ -290,43 +294,32 @@ const ManageProduct = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Status Tabs */}
-          <Tabs
-            value={filterStatus}
-            onValueChange={(v: string) => {
-              setFilterStatus(v as ProductStatus | 'all');
-              setPage(1);
-            }}
-          >
-            <TabsList className="mb-6">
-              {productStatusTabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          {/* Search & Status Filter */}
+          <FilterBar className="mb-4">
+            <FilterSearch
+              value={searchInput}
+              onChange={(value) => {
+                setSearchInput(value);
+                setPage(1);
+              }}
+              placeholder="Search products..."
+            />
+            <SegmentedTabs
+              options={productStatusTabs.map((tab) => ({ value: tab.id, label: tab.label }))}
+              value={filterStatus}
+              onChange={(value) => {
+                setFilterStatus(value);
+                setPage(1);
+              }}
+            />
+          </FilterBar>
 
-          {/* Search & Batch Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <form onSubmit={handleSearch} className="flex gap-3 flex-1 max-w-md">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  className="pl-10"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </div>
-              <Button type="submit">Search</Button>
-            </form>
-
-            {selectedProducts.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/50 p-2 text-xs text-foreground shadow-sm">
-                <span className="font-semibold px-1">
-                  {selectedProducts.length} selected
-                </span>
+          {/* Batch Actions (contextual) */}
+          {selectedProducts.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/50 p-2 text-xs text-foreground shadow-sm mb-4">
+              <span className="font-semibold px-1">
+                {selectedProducts.length} selected
+              </span>
 
                 {isSellerOrStaff && canCreate && submittableCount > 0 && (
                   <Button
@@ -393,9 +386,8 @@ const ManageProduct = () => {
                 >
                   Clear
                 </Button>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Table */}
           <div
@@ -404,9 +396,19 @@ const ManageProduct = () => {
             }
           >
             {isLoading ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Loading products...</div>
+              <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+                Loading products...
+              </div>
             ) : products.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">No products found.</div>
+              <EmptyState
+                icon={<ShoppingBag className="h-8 w-8" />}
+                title="No products found"
+                description={
+                  debouncedSearch
+                    ? `Nothing matches "${debouncedSearch}". Try a different search or status filter.`
+                    : 'Try a different status filter, or create your first product.'
+                }
+              />
             ) : (
               <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <Table>
@@ -424,7 +426,7 @@ const ManageProduct = () => {
                       <TableHead className="text-right">Price</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Ownership</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -439,11 +441,25 @@ const ManageProduct = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <div className="font-medium">{product.name}</div>
-                            {product.brand && (
-                              <div className="text-xs text-muted-foreground">Brand: {product.brand}</div>
-                            )}
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={product.mainImages?.[0] || '/placeholder.svg'}
+                              alt={product.name}
+                              className="h-12 w-12 rounded object-cover border bg-muted"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                target.onerror = null;
+                                target.src = '/placeholder.svg';
+                              }}
+                            />
+                            <div className="min-w-0">
+                              <div className="font-medium max-w-xs truncate">{product.name}</div>
+                              {product.brand && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  Brand: {product.brand}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-semibold">
@@ -451,14 +467,14 @@ const ManageProduct = () => {
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusBadgeVariant(product.status)}>
-                            {product.status}
+                            {statusLabels[product.status] ?? product.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
                           {product.vendorName || 'Independent Seller'}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                             {isSellerOrStaff &&
                               canCreate &&
                               (product.status === 'draft' || product.status === 'rejected') && (
@@ -485,8 +501,9 @@ const ManageProduct = () => {
                               )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  More ▼
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open actions menu</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -510,8 +527,13 @@ const ManageProduct = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4">
-              <Button disabled={page === 1} onClick={() => setPage(page - 1)} variant="outline">
+            <div className="flex items-center justify-between mt-4">
+              <Button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                variant="outline"
+                size="sm"
+              >
                 Previous
               </Button>
               <span className="text-sm text-muted-foreground">
@@ -521,6 +543,7 @@ const ManageProduct = () => {
                 disabled={page >= totalPages}
                 onClick={() => setPage(page + 1)}
                 variant="outline"
+                size="sm"
               >
                 Next
               </Button>

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Flame,Plus, Search } from 'lucide-react';
+import { Calendar, Flame,Plus } from 'lucide-react';
 
 import type { CampaignItemType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
+
+import { FilterBar, FilterSearch } from '@/components/filter-bar';
 import {
   Table,
   TableBody,
@@ -67,15 +68,13 @@ export default function CampaignListPage() {
       />
 
       {/* Filter & Search Bar */}
-      <div className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
-        <Search className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
-        <Input
-          placeholder="Search campaigns (e.g. Dashain, Tihar)..."
+      <FilterBar>
+        <FilterSearch
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-none shadow-none text-xs focus-visible:ring-0 focus-visible:ring-offset-0 h-8"
+          onChange={setSearchQuery}
+          placeholder="Search campaigns (e.g. Dashain, Tihar)..."
         />
-      </div>
+      </FilterBar>
 
       {/* Campaigns Table */}
       <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">

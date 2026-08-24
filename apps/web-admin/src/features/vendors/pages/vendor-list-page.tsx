@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Eye, X } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
-import { Input } from '@celebs/shared-ui/components/input';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Table,
@@ -14,6 +14,15 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@celebs/shared-ui/components/tooltip';
+
+import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
+import { PageLoader } from '@/components/page-loader';
 
 import {
   approveVendor,
@@ -26,8 +35,6 @@ import { VENDORS_QUERY_KEYS } from '../api';
 import { VendorDetailModal } from '../components/vendor-detail-modal';
 import { VendorRejectionDialog } from '../components/vendor-rejection-dialog';
 import { VendorStatusBadge } from '../components/vendor-status-badge';
-
-import { PageLoader } from '@/components/page-loader';
 
 interface VendorListItem {
   id: string;
@@ -138,29 +145,24 @@ export default function VendorList() {
       />
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border">
-        <div className="w-full sm:w-72">
-          <Input
-            placeholder="Search by shop, owner, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-1 w-full sm:w-auto">
-          {['ALL', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED'].map((status) => (
-            <Button
-              key={status}
-              size="sm"
-              variant={statusFilter === status ? 'default' : 'ghost'}
-              onClick={() => setStatusFilter(status)}
-              className="text-xs"
-            >
-              {status === 'ALL' ? 'All Vendors' : status.replace('_', ' ')}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <FilterBar>
+        <FilterSearch
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search by shop, owner, or email..."
+        />
+        <SegmentedTabs
+          options={[
+            { value: 'ALL', label: 'All Vendors' },
+            { value: 'UNDER_REVIEW', label: 'Under Review' },
+            { value: 'APPROVED', label: 'Approved' },
+            { value: 'REJECTED', label: 'Rejected' },
+            { value: 'SUSPENDED', label: 'Suspended' },
+          ]}
+          value={statusFilter}
+          onChange={setStatusFilter}
+        />
+      </FilterBar>
 
       {/* Vendors Table */}
       <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
@@ -199,32 +201,61 @@ export default function VendorList() {
                   <TableCell>
                     <VendorStatusBadge status={vendor.status} />
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => handleInspect(vendor.id)}>
-                      Inspect Documents
-                    </Button>
+                  <TableCell className="text-right">
+                    <TooltipProvider>
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleInspect(vendor.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Inspect documents</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Inspect documents</TooltipContent>
+                        </Tooltip>
 
-                    {vendor.status !== 'APPROVED' && (
-                      <Button
-                        size="sm"
-                        
-                        onClick={() => approveMutation.mutate(vendor.id)}
-                        disabled={approveMutation.isPending}
-                      >
-                        Approve
-                      </Button>
-                    )}
+                        {vendor.status !== 'APPROVED' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-success hover:bg-success/10 hover:text-success"
+                                onClick={() => approveMutation.mutate(vendor.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                <Check className="h-4 w-4" />
+                                <span className="sr-only">Approve vendor</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Approve vendor</TooltipContent>
+                          </Tooltip>
+                        )}
 
-                    {vendor.status !== 'REJECTED' && vendor.status !== 'APPROVED' && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleInitiateReject(vendor)}
-                        disabled={rejectMutation.isPending}
-                      >
-                        Reject
-                      </Button>
-                    )}
+                        {vendor.status !== 'REJECTED' && vendor.status !== 'APPROVED' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => handleInitiateReject(vendor)}
+                                disabled={rejectMutation.isPending}
+                              >
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Reject vendor</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Reject vendor</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))

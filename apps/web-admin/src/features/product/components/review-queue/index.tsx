@@ -1,10 +1,10 @@
 import { useCallback, useMemo,useState } from 'react';
-import { AlertTriangle, Check, Eye, Search, ShieldCheck, Store, X } from 'lucide-react';
+import { Check, Eye, ShieldCheck, ShoppingBag, Store, X } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
-import { Input } from '@celebs/shared-ui/components/input';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import {
   Table,
@@ -14,7 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@celebs/shared-ui/components/tooltip';
 
 import type { ProductFilterRequest,ReviewProductRequestPayload } from '../../api';
 import {
@@ -29,6 +34,7 @@ import { QualityBadge } from './quality-badge';
 import { RejectionDialog } from './rejection-dialog';
 import type { ProductQueueItem } from './types';
 
+import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
 import { useDebounce } from '@/hooks/use-debounce';
 
 const PAGE_SIZE = 10;
@@ -106,49 +112,39 @@ export default function ReviewProductQueue() {
         description="Daraz & SHEIN quality control station with live customer PDP simulation and structured feedback."
       />
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(v: string) => {
-          setActiveTab(v as 'pending' | 'published' | 'rejected');
-          setCurrentPage(1);
-          setSearchInput('');
-        }}
-      >
-        <TabsList>
-          {(['pending', 'published', 'rejected'] as const).map((tab) => (
-            <TabsTrigger key={tab} value={tab} className="capitalize">
-              {tab === 'pending' ? 'Pending Review' : tab}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            {!isPendingTab && (
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by title, brand or vendor..."
-                  value={searchInput}
-                  onChange={(e) => {
-                    setSearchInput(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-9"
-                />
-              </div>
-            )}
-            <div className="text-sm text-muted-foreground ml-auto flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-success" />
-              Total listings found: <span className="font-semibold text-foreground">{total}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Search & Queue Filter */}
+      <FilterBar>
+        {!isPendingTab && (
+          <FilterSearch
+            value={searchInput}
+            onChange={(value) => {
+              setSearchInput(value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by title, brand or vendor..."
+          />
+        )}
+        <SegmentedTabs
+          className={!isPendingTab ? '' : 'sm:ml-auto'}
+          options={[
+            { value: 'pending', label: 'Pending Review' },
+            { value: 'published', label: 'Published' },
+            { value: 'rejected', label: 'Rejected' },
+          ]}
+          value={activeTab}
+          onChange={(value) => {
+            setActiveTab(value);
+            setCurrentPage(1);
+            setSearchInput('');
+          }}
+        />
+        <div className="text-sm text-muted-foreground flex items-center gap-2 sm:ml-2">
+          <ShieldCheck className="w-4 h-4 text-success shrink-0" />
+          <span className="whitespace-nowrap">
+            Total: <span className="font-semibold text-foreground">{total}</span>
+          </span>
+        </div>
+      </FilterBar>
 
       {/* Queue table */}
       <Card>
@@ -163,13 +159,18 @@ export default function ReviewProductQueue() {
               <span className="text-muted-foreground">Evaluating product review queue...</span>
             </div>
           ) : products.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center gap-2">
-              <AlertTriangle className="h-8 w-8 text-warning" />
-              <span className="text-muted-foreground">No product listings in this queue</span>
-            </div>
+            <EmptyState
+              icon={<ShoppingBag className="h-8 w-8" />}
+              title="No product listings in this queue"
+              description={
+                debouncedSearch
+                  ? `Nothing matches "${debouncedSearch}".`
+                  : 'New submissions will appear here as sellers submit products for review.'
+              }
+            />
           ) : (
             <div
-              className={`overflow-x-auto ${activeQuery.isFetching ? 'opacity-60' : ''} transition-opacity`}
+              className={`overflow-x-auto rounded-xl border bg-card shadow-sm transition-opacity ${activeQuery.isFetching ? 'opacity-60' : ''}`}
             >
               <Table>
                 <TableHeader>
@@ -178,11 +179,10 @@ export default function ReviewProductQueue() {
                     <TableHead>QC Score</TableHead>
                     <TableHead>Vendor</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
                     <TableHead>Submitted</TableHead>
                     {activeTab === 'rejected' && <TableHead>Rejection Reason</TableHead>}
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
+                    <TableHead className="text-right">Actions</TableHead>                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
@@ -224,7 +224,7 @@ export default function ReviewProductQueue() {
                           {formatProductCategoryBreadcrumb(product)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="text-right font-medium">
                         <div>Rs. {product.price.toLocaleString()}</div>
                         {product.discountedPrice && (
                           <div className="text-xs text-success font-normal">
@@ -248,38 +248,60 @@ export default function ReviewProductQueue() {
                         </TableCell>
                       )}
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openPreview(product)}
-                            className="gap-1"
-                          >
-                            <Eye className="h-4 w-4" /> Comprehensive Preview
-                          </Button>
-                          {isPendingTab && (
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-success hover:bg-success/90 text-success-foreground gap-1"
-                                onClick={() => handleApprove(product.id)}
-                                disabled={review.isPending}
-                              >
-                                <Check className="h-4 w-4" /> Approve
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="gap-1"
-                                onClick={() => openReject(product)}
-                                disabled={review.isPending}
-                              >
-                                <X className="h-4 w-4" /> Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                        <TooltipProvider>
+                          <div className="flex items-center justify-end gap-0.5">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                  onClick={() => openPreview(product)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  <span className="sr-only">Preview listing</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Preview listing</TooltipContent>
+                            </Tooltip>
+
+                            {isPendingTab && (
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-success hover:bg-success/10 hover:text-success"
+                                      onClick={() => handleApprove(product.id)}
+                                      disabled={review.isPending}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                      <span className="sr-only">Approve and publish</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Approve &amp; publish</TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                      onClick={() => openReject(product)}
+                                      disabled={review.isPending}
+                                    >
+                                      <X className="h-4 w-4" />
+                                      <span className="sr-only">Reject listing</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Reject listing</TooltipContent>
+                                </Tooltip>
+                              </>
+                            )}
+                          </div>
+                        </TooltipProvider>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -290,7 +312,7 @@ export default function ReviewProductQueue() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2 pt-4">
+            <div className="flex items-center justify-between pt-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -299,7 +321,7 @@ export default function ReviewProductQueue() {
               >
                 Previous
               </Button>
-              <span className="text-sm font-medium">
+              <span className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </span>
               <Button
