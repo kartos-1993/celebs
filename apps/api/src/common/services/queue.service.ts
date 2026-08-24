@@ -80,7 +80,22 @@ export const sessionQueue = new Queue('session-maintenance', {
       type: 'exponential',
       delay: 5000,
     },
-    removeOnComplete: 100,
-    removeOnFail: 100,
+    removeOnComplete: true,
+    removeOnFail: false,
+  },
+});
+
+// Outbound transactional email delivery (processed by mail.worker).
+// Retries harder than other queues — email providers rate-limit transiently.
+export const mailQueue = new Queue('mail-delivery', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 5,
+    backoff: {
+      type: 'exponential',
+      delay: 10_000,
+    },
+    removeOnComplete: true,
+    removeOnFail: false,
   },
 });

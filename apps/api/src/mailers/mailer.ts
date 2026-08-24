@@ -5,7 +5,7 @@ import { logger } from '@celebs/shared-utils';
 
 import { config } from '@/config/app.config';
 
-type Params = {
+export type MailParams = {
   to: string | string[];
   subject: string;
   text: string;
@@ -31,7 +31,7 @@ export const sendEmail = async ({
   subject,
   text,
   html,
-}: Params) => {
+}: MailParams) => {
   const apiKey = process.env.SMTP_API_KEY;
 
   // 1. Brevo HTTP API Transport (If SMTP_API_KEY is configured)

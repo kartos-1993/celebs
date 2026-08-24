@@ -5,9 +5,10 @@ import { NotFoundException } from '@celebs/shared-utils';
 import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
+import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
-import { sendEmail } from '@/mailers/mailer';
+import { } from '@/mailers/mailer';
 import {
   vendorApprovalTemplate,
   vendorRejectionTemplate,
@@ -71,7 +72,7 @@ export class AdminService {
 
     if (updated.user?.email) {
       const template = vendorApprovalTemplate(updated.shopName);
-      await sendEmail({
+      await enqueueMail({
         to: updated.user.email,
         subject: template.subject,
         text: template.text,
@@ -96,7 +97,7 @@ export class AdminService {
 
     if (updated.user?.email) {
       const template = vendorRejectionTemplate(updated.shopName, rejectionReasonText);
-      await sendEmail({
+      await enqueueMail({
         to: updated.user.email,
         subject: template.subject,
         text: template.text,

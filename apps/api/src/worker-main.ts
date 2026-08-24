@@ -28,7 +28,7 @@ const startWorker = async () => {
     await verifyRedisConnection();
     await verifyS3Connection();
 
-    logger.info('BullMQ Worker is active and listening to queues: asset-processing, session-maintenance');
+    logger.info('BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance');
 
     // Register daily repeatable session maintenance job (runs at midnight 00:00)
     await sessionQueue.add(

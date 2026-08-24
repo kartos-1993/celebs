@@ -9,11 +9,12 @@ import {
 } from '@celebs/shared-utils';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
+import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import { buildWebUrl } from '@/common/utils/url';
 import prisma from '@/config/db.prisma';
-import { sendEmail } from '@/mailers/mailer';
+import { } from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 
 export interface CreateStaffInput extends CreateStaffType {
@@ -206,7 +207,7 @@ export class StaffService {
     );
 
     try {
-      await sendEmail({
+      await enqueueMail({
         to: staff.email,
         subject: 'Activate your staff sub-account',
         text: `You have been added as a staff sub-account member. Please activate your account by clicking the following link: ${verificationUrl}`,

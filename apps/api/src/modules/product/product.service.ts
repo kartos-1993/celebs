@@ -29,8 +29,9 @@ import { calculateProductQCScore } from './utils/product-qc';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
+import { enqueueMail } from '@/common/services/mail.queue';
 import prisma from '@/config/db.prisma';
-import { sendEmail } from '@/mailers/mailer';
+import { } from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 
 export type CreateProductInput = CreateProductType;
@@ -795,7 +796,7 @@ export class ProductService {
             brandColor: '#EF4444',
           });
 
-          await sendEmail({
+          await enqueueMail({
             to: vendorProfile.user.email,
             subject: emailData.subject,
             text: emailData.text,
@@ -803,7 +804,7 @@ export class ProductService {
           });
         }
       } catch (err) {
-        console.error('Failed to send rejection email to vendor:', err);
+        logger.error({ err, productId: id }, 'Failed to enqueue rejection email to vendor');
       }
     }
 

@@ -24,6 +24,7 @@ import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
+import { enqueueMail } from '@/common/services/mail.queue';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import {
@@ -36,7 +37,7 @@ import {
 import { buildWebUrl } from '@/common/utils/url';
 import { config } from '@/config/app.config';
 import prisma, { Prisma } from '@/config/db.prisma';
-import { sendEmail } from '@/mailers/mailer';
+import { } from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 
 // Constructor arg is unused during verifyIdToken() — audience is controlled solely via options.audience
@@ -89,7 +90,7 @@ export class AuthService {
     const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
     logger.info({ email: newUser.email, verificationUrl }, 'Attempting to send verification email');
     try {
-      await sendEmail({
+      await enqueueMail({
         to: newUser.email,
         subject: 'Verify your email address',
         text: `Please verify your email by clicking the following link: ${verificationUrl}`,
@@ -238,7 +239,7 @@ export class AuthService {
       'Attempting to send verification email to vendor',
     );
     try {
-      await sendEmail({
+      await enqueueMail({
         to: user.email,
         subject: 'Verify your email address',
         text: `Please verify your email by clicking the following link: ${verificationUrl}`,
@@ -465,7 +466,7 @@ export class AuthService {
     logger.info({ email: user.email, verificationUrl }, 'Attempting to resend verification email');
 
     try {
-      await sendEmail({
+      await enqueueMail({
         to: user.email,
         subject: 'Activate your celebs.com.np account',
         text: `Please activate your account by clicking the following link: ${verificationUrl}`,
