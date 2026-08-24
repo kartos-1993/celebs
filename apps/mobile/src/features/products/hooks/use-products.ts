@@ -24,7 +24,8 @@ export interface ProductStock {
 
 export interface ProductColorVariant {
   name: string;
-  colorCode: string;
+  colorCode?: string;
+  swatch?: string;
   images?: string[];
   stocks?: ProductStock[];
 }

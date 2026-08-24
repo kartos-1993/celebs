@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Flame, Heart, ShoppingBag } from 'lucide-react-native';
+import { ChevronRight, Heart, ShoppingBag } from 'lucide-react-native';
 
 import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
@@ -287,7 +287,7 @@ export function ProductCard({
         </TouchableOpacity>
 
         {/* Interactive Vertical Color Swatch Capsule Overlay */}
-        {product.colorVariants && product.colorVariants.length > 0 && (
+        {product.colorVariants && product.colorVariants.length > 1 && (
           <View style={styles.imageColorCapsule}>
             {product.colorVariants.slice(0, 4).map((variant, idx) => (
               <TouchableOpacity
@@ -296,10 +296,20 @@ export function ProductCard({
                 onPress={(e) => handleSelectColor(idx, e)}
                 style={[
                   styles.capsuleColorDot,
-                  { backgroundColor: variant.colorCode || '#8e8e93' },
+                  !variant.swatch && { backgroundColor: variant.colorCode || '#8e8e93' },
                   selectedColorIndex === idx && styles.capsuleColorDotActive,
                 ]}
-              />
+              >
+                {variant.swatch ? (
+                  <Image
+                    source={{ uri: resolveImageUrl(variant.swatch) }}
+                    style={styles.capsuleSwatchImage}
+                    contentFit="cover"
+                    transition={100}
+                    cachePolicy="memory-disk"
+                  />
+                ) : null}
+              </TouchableOpacity>
             ))}
             {product.colorVariants.length > 4 && (
               <ThemedText style={styles.capsuleCountText}>
@@ -309,19 +319,6 @@ export function ProductCard({
           </View>
         )}
       </View>
-
-      {/* Flush-Mount Dual-Tone "HOT SELLER | Save Rs. X" Banner Bar */}
-      {hasDiscount && savingsAmount > 0 ? (
-        <View style={styles.hotSellerBanner}>
-          <View style={styles.hotSellerLeft}>
-            <Flame size={10} color={Palette.gold} strokeWidth={2.5} />
-            <ThemedText style={styles.hotSellerText}>HOT SELLER</ThemedText>
-          </View>
-          <View style={styles.hotSellerRight}>
-            <ThemedText style={styles.saveAmountText}>Save Rs. {savingsAmount}</ThemedText>
-          </View>
-        </View>
-      ) : null}
 
       {/* Content Details Area */}
       <Pressable onPress={handlePress} style={styles.detailsContainer}>
@@ -340,26 +337,6 @@ export function ProductCard({
         <ThemedText numberOfLines={1} style={[styles.productName, { color: Palette.gray900 }]}>
           {product.name}
         </ThemedText>
-
-        {/* Bestseller / Ranking Tag */}
-        {product.featured ? (
-          <View style={styles.bestsellerRow}>
-            <ThemedText numberOfLines={1} style={styles.bestsellerText}>
-              #1 Bestseller <ThemedText style={styles.bestsellerSub}>in Apparel</ThemedText>
-            </ThemedText>
-            <ChevronRight size={10} color={Palette.warning} />
-          </View>
-        ) : null}
-
-        {/* Sales / New Arrival Row */}
-        <View style={styles.salesRow}>
-          <View style={[styles.newArrivalBadge, { backgroundColor: Palette.successTint }]}>
-            <ThemedText style={[styles.newArrivalText, { color: Palette.success }]}>
-              NEW ARRIVAL
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.soldText, { color: Palette.gray500 }]}>80+ sold</ThemedText>
-        </View>
 
         {/* Bottom 2-Column Price & Quick Add Row */}
         <View style={styles.bottomPriceRow}>
