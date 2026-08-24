@@ -32,10 +32,13 @@ const router = Router();
 router.use(uploadRateLimiter);
 
 // identity → context → lifecycle → permission
-// Sellers must be APPROVED; platform actors bypass (Celebs 1P media library).
+// Media uploads must be available BEFORE approval: vendors upload KYC
+// documents during onboarding and re-upload them after rejection.
+// Only suspended stores are locked out; publishing stays gated by the
+// product/brand routers' own requireStoreState(['APPROVED']).
 router.use(authenticateJWT);
 router.use(asyncHandler(actorContext));
-router.use(requireStoreState(['APPROVED']));
+router.use(requireStoreState(['PENDING', 'UNDER_REVIEW', 'REJECTED', 'APPROVED']));
 
 /**
  * GET /api/v1/media/assets
