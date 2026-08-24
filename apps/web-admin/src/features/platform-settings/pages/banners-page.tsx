@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@celebs/shared-ui/components/card';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
@@ -170,11 +171,12 @@ const Banners: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground font-medium">Active:</span>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={banner.isActive}
-                    onChange={(e) => handleFieldChange(index, 'isActive', e.target.checked)}
-                    className="w-4 h-4 rounded accent-primary"
+                    onCheckedChange={(checked) =>
+                      handleFieldChange(index, 'isActive', checked === true)
+                    }
+                    className="w-4 h-4"
                   />
                 </div>
               </CardHeader>

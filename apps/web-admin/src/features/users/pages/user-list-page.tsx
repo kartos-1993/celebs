@@ -6,6 +6,13 @@ import type { UserData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@celebs/shared-ui/components/dialog';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
@@ -17,6 +24,13 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@celebs/shared-ui/components/select';
 import {
   Table,
   TableBody,
@@ -80,14 +94,14 @@ export default function UserList() {
       />
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-foreground">Create New Account</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
-                ✕
-              </Button>
-            </div>
+        <Dialog open onOpenChange={(open) => !open && setShowCreateModal(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Account</DialogTitle>
+              <DialogDescription>
+                Provision an admin or customer account directly.
+              </DialogDescription>
+            </DialogHeader>
 
             <Form {...createForm}>
               <form
@@ -140,14 +154,16 @@ export default function UserList() {
                     <FormItem>
                       <FormLabel>Role</FormLabel>
                       <FormControl>
-                        <select
-                          className="w-full bg-background border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                          {...field}
-                        >
-                          <option value="ADMIN">ADMIN</option>
-                          <option value="SUPERADMIN">SUPERADMIN</option>
-                          <option value="CUSTOMER">CUSTOMER</option>
-                        </select>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ADMIN">ADMIN</SelectItem>
+                            <SelectItem value="SUPERADMIN">SUPERADMIN</SelectItem>
+                            <SelectItem value="CUSTOMER">CUSTOMER</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -158,8 +174,8 @@ export default function UserList() {
                 </Button>
               </form>
             </Form>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">

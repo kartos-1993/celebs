@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, XCircle } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
+import { Label } from '@celebs/shared-ui/components/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@celebs/shared-ui/components/select';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 
 import type { ReviewProductRequestPayload } from '../../api';
@@ -109,38 +119,38 @@ export function RejectionDialog({
         <div className="space-y-5 py-3 text-sm">
           {/* Primary category */}
           <div>
-            <label className="font-semibold block mb-1 text-foreground">
+            <Label className="font-semibold block mb-1 text-foreground">
               Primary Rejection Category <span className="text-destructive">*</span>
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {REJECTION_CATEGORIES.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
+            </Label>
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a rejection category" />
+              </SelectTrigger>
+              <SelectContent>
+                {REJECTION_CATEGORIES.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Subcategory checklist */}
           <div>
-            <label className="font-semibold block mb-2 text-foreground">
+            <Label className="font-semibold block mb-2 text-foreground">
               Specific Issue Checklists (select all that apply)
-            </label>
+            </Label>
             <div className="space-y-2 bg-muted/30 p-3 rounded-lg border">
               {(activeCategory?.subcategories ?? []).map((subcategory) => (
                 <label
                   key={subcategory}
                   className="flex items-start gap-2 cursor-pointer text-xs leading-tight"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedSubcategories.includes(subcategory)}
-                    onChange={() => toggleSubcategory(subcategory)}
-                    className="mt-0.5 rounded border-input"
+                    onCheckedChange={() => toggleSubcategory(subcategory)}
+                    className="mt-0.5"
                   />
                   <span>{subcategory}</span>
                 </label>
@@ -150,9 +160,9 @@ export function RejectionDialog({
 
           {/* Flagged fields */}
           <div>
-            <label className="font-semibold block mb-2 text-foreground">
+            <Label className="font-semibold block mb-2 text-foreground">
               Flagged Fields (highlighted in seller dashboard)
-            </label>
+            </Label>
             <div className="flex flex-wrap gap-2">
               {FLAGGED_FIELDS_OPTIONS.map((field) => {
                 const isSelected = flaggedFields.includes(field.id);
@@ -178,9 +188,9 @@ export function RejectionDialog({
 
           {/* Remediation note */}
           <div>
-            <label className="font-semibold block mb-1 text-foreground">
+            <Label className="font-semibold block mb-1 text-foreground">
               Actionable Seller Remediation Notes
-            </label>
+            </Label>
             <Textarea
               placeholder="E.g., Please upload higher resolution photos without watermarks. Update the size chart to include chest measurements in cm."
               value={rejectionNote}
@@ -200,7 +210,7 @@ export function RejectionDialog({
             disabled={isSubmitting}
             className="gap-1"
           >
-            <X className="w-4 h-4" /> Submit Rejection
+            {isSubmitting ? <Spinner size="sm" /> : <X className="w-4 h-4" />} Submit Rejection
           </Button>
         </DialogFooter>
       </DialogContent>

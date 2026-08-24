@@ -29,8 +29,16 @@ import type { UserData } from '@celebs/shared-types';
 import { createStaffSchema } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
+import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@celebs/shared-ui/components/dialog';
 import {
   Form,
   FormControl,
@@ -43,6 +51,13 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@celebs/shared-ui/components/select';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
   Table,
@@ -153,11 +168,10 @@ function GroupedPermissionSelector({
                       isChecked ? 'border-primary/50 bg-primary/5' : 'border-border/60 hover:bg-muted/40'
                     }`}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={isChecked}
-                      onChange={() => togglePermission(perm)}
-                      className="rounded border-input text-primary focus:ring-primary h-3.5 w-3.5 mt-0.5"
+                      onCheckedChange={() => togglePermission(perm)}
+                      className="h-3.5 w-3.5 mt-0.5"
                     />
                     <div className="space-y-0.5">
                       <span className="font-medium text-foreground block leading-none">{label}</span>
@@ -362,22 +376,26 @@ export default function StaffList() {
             {isAdminOrSuperAdmin && vendorsList.length > 0 && (
               <div className="flex items-center gap-2">
                 <Store className="w-4 h-4 text-muted-foreground shrink-0" />
-                <select
-                  value={selectedVendorFilter || ''}
-                  onChange={(e) => {
-                    const val = e.target.value || undefined;
-                    setSelectedVendorFilter(val);
-                    setTargetVendorForCreate(val);
+                <Select
+                  value={selectedVendorFilter || 'ALL'}
+                  onValueChange={(value) => {
+                    const next = value === 'ALL' ? undefined : value;
+                    setSelectedVendorFilter(next);
+                    setTargetVendorForCreate(next);
                   }}
-                  className="h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-sm focus:outline-hidden focus:ring-1 focus:ring-ring"
                 >
-                  <option value="">All Vendor Shops</option>
-                  {vendorsList.map((v: { id: string; shopName: string }) => (
-                    <option key={v.id} value={v.id}>
-                      {v.shopName}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-9 w-[180px] text-xs">
+                    <SelectValue placeholder="All Vendor Shops" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Vendor Shops</SelectItem>
+                    {vendorsList.map((v: { id: string; shopName: string }) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.shopName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -389,14 +407,14 @@ export default function StaffList() {
       />
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-lg max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-lg font-semibold text-foreground">Add Vendor Staff Account</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
-                ✕
-              </Button>
-            </div>
+        <Dialog open onOpenChange={(open) => !open && setShowCreateModal(false)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add Vendor Staff Account</DialogTitle>
+              <DialogDescription>
+                Create a delegated sub-account for an existing vendor shop.
+              </DialogDescription>
+            </DialogHeader>
 
             <Form {...createForm}>
               <form
@@ -406,23 +424,24 @@ export default function StaffList() {
                 {isAdminOrSuperAdmin && (
                   <div className="space-y-1">
                     <Label>Target Vendor Shop</Label>
-                    <select
+                    <Select
                       value={targetVendorForCreate || selectedVendorFilter || ''}
-                      onChange={(e) => setTargetVendorForCreate(e.target.value)}
-                      className="w-full h-9 px-3 py-1 rounded-md border border-input bg-background text-xs shadow-sm focus:outline-hidden focus:ring-1 focus:ring-ring"
+                      onValueChange={(value) => setTargetVendorForCreate(value)}
                       required
                     >
-                      <option value="" disabled>
-                        Select Vendor Shop...
-                      </option>
-                      {vendorsList.map(
-                        (v: { id: string; shopName: string; user?: { email?: string } }) => (
-                          <option key={v.id} value={v.id}>
-                            {v.shopName} ({v.user?.email || 'Vendor'})
-                          </option>
-                        ),
-                      )}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Vendor Shop..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendorsList.map(
+                          (v: { id: string; shopName: string; user?: { email?: string } }) => (
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.shopName} ({v.user?.email || 'Vendor'})
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 
@@ -560,23 +579,20 @@ export default function StaffList() {
                 </Button>
               </form>
             </Form>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Edit Staff Permissions Modal */}
       {editingStaff && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-lg max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Edit Staff Permissions</h3>
-                <p className="text-xs text-muted-foreground">{editingStaff.name} ({editingStaff.email})</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setEditingStaff(null)}>
-                ✕
-              </Button>
-            </div>
+        <Dialog open onOpenChange={(open) => !open && setEditingStaff(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Staff Permissions</DialogTitle>
+              <DialogDescription>
+                {editingStaff.name} ({editingStaff.email})
+              </DialogDescription>
+            </DialogHeader>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -605,8 +621,8 @@ export default function StaffList() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">

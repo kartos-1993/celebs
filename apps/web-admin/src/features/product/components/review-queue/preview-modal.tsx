@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Check,
   CheckCircle2,
@@ -24,6 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
+import { Spinner } from '@celebs/shared-ui/components/spinner';
+import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 
 import { isMulticolorVariant, resolveColorCode } from '../../utils/add-product-helpers';
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
@@ -32,6 +34,31 @@ import { QualityBadge } from './quality-badge';
 import type { ProductQueueItem } from './types';
 
 type PreviewTab = 'overview' | 'specs' | 'sizes' | 'variants' | 'qc' | 'history';
+
+/** Structural containers inside dynamicData that are not user-facing attributes. */
+const STRUCTURAL_DYNAMIC_KEYS = new Set(['variantFields', 'uploadedAssets', 'sku']);
+
+/**
+ * Renders any attribute payload (string, number, boolean, array, option or
+ * measurement object) as a single human-readable line.
+ */
+function formatAttributeValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return 'N/A';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => formatAttributeValue(item)).join(', ') || 'N/A';
+  }
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if (obj.value !== undefined && obj.unit) return `${String(obj.value)} ${String(obj.unit)}`;
+    const labeled = obj.label ?? obj.name ?? obj.title ?? obj.text;
+    if (labeled !== undefined) return formatAttributeValue(labeled);
+    return JSON.stringify(obj);
+  }
+  return String(value);
+}
 
 const PREVIEW_TABS: Array<{ id: PreviewTab; label: string; icon: typeof Eye }> = [
   { id: 'overview', label: 'Live PDP Preview', icon: Eye },
@@ -70,6 +97,29 @@ export function PreviewModal({
       ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
       : 0;
 
+  /**
+   * dynamicData is stored as { values: {...attributes}, variantFields: [...],
+   * uploadedAssets: {...} }. The attribute grid must render the entries inside
+   * `values` (falling back to the record itself for legacy flat products),
+   * never the structural containers.
+   */
+  const specEntries = useMemo(() => {
+    const record = product.dynamicData as Record<string, unknown> | undefined;
+    if (!record) return [] as Array<[string, unknown]>;
+    const source = (
+      record.values && typeof record.values === 'object' && !Array.isArray(record.values)
+        ? record.values
+        : record
+    ) as Record<string, unknown>;
+    return Object.entries(source).filter(([key, value]) => {
+      if (STRUCTURAL_DYNAMIC_KEYS.has(key)) return false;
+      if (value === null || value === undefined || value === '') return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === 'object') return Object.keys(value).length > 0;
+      return true;
+    });
+  }, [product.dynamicData]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0">
@@ -107,58 +157,46 @@ export function PreviewModal({
             </div>
 
             {/* Device toggle */}
-            <div className="flex items-center bg-muted rounded-lg p-1 border">
+            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border">
               <Button
                 type="button"
-                variant="ghost"
+                variant={previewDevice === 'desktop' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setPreviewDevice('desktop')}
-                className={`gap-1.5 px-3 py-1 text-xs font-medium ${
-                  previewDevice === 'desktop'
-                    ? 'bg-background text-foreground shadow-sm hover:bg-background'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <Monitor className="w-3.5 h-3.5" /> Desktop View
+                <Monitor className="w-3.5 h-3.5" /> Desktop
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant={previewDevice === 'mobile' ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setPreviewDevice('mobile')}
-                className={`gap-1.5 px-3 py-1 text-xs font-medium ${
-                  previewDevice === 'mobile'
-                    ? 'bg-background text-foreground shadow-sm hover:bg-background'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <Smartphone className="w-3.5 h-3.5" /> Mobile Frame
+                <Smartphone className="w-3.5 h-3.5" /> Mobile
               </Button>
             </div>
           </div>
 
           {/* ── Tab navigation ─────────────────────────────────────── */}
-          <div className="flex border-b bg-background px-4 overflow-x-auto text-xs font-medium">
-            {PREVIEW_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = previewTab === tab.id;
-              return (
-                <Button
-                  key={tab.id}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreviewTab(tab.id)}
-                  className={`gap-1.5 rounded-none px-4 py-3 border-b-2 whitespace-nowrap ${
-                    isActive
-                      ? 'border-primary text-primary font-semibold hover:bg-transparent'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" /> {tab.label}
-                </Button>
-              );
-            })}
+          <div className="border-b bg-background px-4">
+            <Tabs value={previewTab} onValueChange={(v: string) => setPreviewTab(v as PreviewTab)}>
+              <TabsList className="bg-transparent h-auto w-full justify-start gap-1 rounded-none p-0 overflow-x-auto">
+                {PREVIEW_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.id}
+                      className="gap-1.5 rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none whitespace-nowrap"
+                    >
+                      <Icon className="w-3.5 h-3.5" /> {tab.label}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </Tabs>
           </div>
 
           {/* ── Tab body ───────────────────────────────────────────── */}
@@ -227,18 +265,22 @@ export function PreviewModal({
                       </Badge>
                       <h3 className="text-2xl font-bold text-foreground">{product.name}</h3>
                       <div className="flex items-baseline gap-3 mt-2">
-                        <span className="text-2xl font-extrabold text-foreground">
-                          Rs. {product.price.toLocaleString()}
-                        </span>
-                        {product.discountedPrice && (
+                        {product.discountedPrice ? (
                           <>
-                            <span className="text-base text-muted-foreground line-through">
+                            <span className="text-2xl font-extrabold text-foreground">
                               Rs. {product.discountedPrice.toLocaleString()}
+                            </span>
+                            <span className="text-base text-muted-foreground line-through">
+                              Rs. {product.price.toLocaleString()}
                             </span>
                             <Badge className="bg-destructive text-destructive-foreground">
                               {discountPercent}% OFF
                             </Badge>
                           </>
+                        ) : (
+                          <span className="text-2xl font-extrabold text-foreground">
+                            Rs. {product.price.toLocaleString()}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -337,15 +379,15 @@ export function PreviewModal({
                   <Tag className="w-4 h-4 text-primary" /> Vendor Specifications & Category
                   Attributes
                 </h4>
-                {product.dynamicData && Object.keys(product.dynamicData).length > 0 ? (
+                {specEntries.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {Object.entries(product.dynamicData).map(([key, value]) => (
-                      <div key={key} className="p-3 bg-muted/30 rounded-lg border">
+                    {specEntries.map(([key, value]) => (
+                      <div key={key} className="p-3 bg-muted/30 rounded-lg border min-w-0">
                         <span className="text-xs font-medium text-muted-foreground capitalize block">
                           {key.replace(/([A-Z])/g, ' $1')}
                         </span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {String(value ?? 'N/A')}
+                        <span className="text-sm font-semibold text-foreground break-words block">
+                          {formatAttributeValue(value)}
                         </span>
                       </div>
                     ))}
@@ -614,7 +656,7 @@ export function PreviewModal({
 
           {/* ── Footer actions ─────────────────────────────────────── */}
           <div className="p-4 border-t bg-muted/10 flex justify-end gap-3 mt-auto">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Close
             </Button>
             {product.status === 'pending_review' && (
@@ -625,7 +667,7 @@ export function PreviewModal({
                   disabled={isSubmitting}
                   className="gap-1"
                 >
-                  <X className="w-4 h-4" /> Reject Listing
+                  {isSubmitting ? <Spinner size="sm" /> : <X className="w-4 h-4" />} Reject Listing
                 </Button>
                 <Button
                   variant="default"
@@ -633,7 +675,8 @@ export function PreviewModal({
                   onClick={() => onApprove(product.id)}
                   disabled={isSubmitting}
                 >
-                  <Check className="w-4 h-4" /> Approve & Publish
+                  {isSubmitting ? <Spinner size="sm" /> : <Check className="w-4 h-4" />} Approve &amp;
+                  Publish
                 </Button>
               </>
             )}
