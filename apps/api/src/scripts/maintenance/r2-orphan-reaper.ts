@@ -24,9 +24,9 @@ import { DeleteObjectsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 import { logger } from '@celebs/shared-utils';
 
+import { s3Client } from '@/common/utils/s3.client';
 import { config } from '@/config/app.config';
 import prisma from '@/config/db.prisma';
-import { s3Client } from '@/common/utils/s3.client';
 
 const ALLOWED_PREFIXES = ['celebs/products', 'celebs/kyc', 'vendors', 'platform'] as const;
 
