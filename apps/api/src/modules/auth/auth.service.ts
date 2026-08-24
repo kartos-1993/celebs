@@ -37,7 +37,7 @@ import {
 import { buildWebUrl } from '@/common/utils/url';
 import { config } from '@/config/app.config';
 import prisma, { Prisma } from '@/config/db.prisma';
-import { } from '@/mailers/mailer';
+import {} from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 
 // Constructor arg is unused during verifyIdToken() — audience is controlled solely via options.audience
@@ -588,7 +588,10 @@ export class AuthService {
       });
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      logger.error({ error: errMsg, sessionId: session.id }, 'Failed to slide session window in database');
+      logger.error(
+        { error: errMsg, sessionId: session.id },
+        'Failed to slide session window in database',
+      );
       throw new InternalServerException('Failed to extend session lifetime');
     }
 
@@ -621,10 +624,7 @@ export class AuthService {
     return !superadminExists;
   }
 
-  public async googleSignIn(data: {
-    idToken: string;
-    userAgent?: string;
-  }) {
+  public async googleSignIn(data: { idToken: string; userAgent?: string }) {
     const { idToken, userAgent } = data;
 
     if (!idToken) {

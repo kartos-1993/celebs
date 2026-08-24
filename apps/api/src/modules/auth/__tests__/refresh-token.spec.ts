@@ -88,10 +88,7 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
     });
 
     // Sign with ACCESS token secret instead of REFRESH token secret
-    const tamperedToken = signJwtToken(
-      { sessionId: session.id },
-      { secret: config.JWT.SECRET },
-    );
+    const tamperedToken = signJwtToken({ sessionId: session.id }, { secret: config.JWT.SECRET });
 
     const res = await request(app)
       .post('/api/v1/auth/refresh')

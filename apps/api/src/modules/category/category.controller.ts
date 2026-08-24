@@ -209,7 +209,8 @@ export class CategoryController {
   getRecentCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.actor?.userId || req.user?.id || '';
-      const vendorId = req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
+      const vendorId =
+        req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
       const recent = await this.categoryService.getRecentCategories(userId, vendorId);
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -223,7 +224,8 @@ export class CategoryController {
   recordRecentCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.actor?.userId || req.user?.id || '';
-      const vendorId = req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
+      const vendorId =
+        req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
       const { categoryId } = recordRecentCategorySchema.parse(req.body);
       const recent = await this.categoryService.recordRecentCategory(userId, categoryId, vendorId);
       res.status(HTTPSTATUS.OK).json({

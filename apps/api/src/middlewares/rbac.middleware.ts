@@ -5,8 +5,6 @@ import { ForbiddenException, UnauthorizedException } from '@celebs/shared-utils'
 
 export const requirePermissions = (...requiredPermissions: Permission[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-
-
     // Prefer the normalized actor context (Layer 1); fall back to the raw
     // user record for routers that have not been migrated to actorContext yet.
     const actor = req.actor;

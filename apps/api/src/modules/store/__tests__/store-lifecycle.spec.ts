@@ -6,10 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
-import {
-  assertLegalTransition,
-  storeLifecycle,
-} from '@/modules/store/store-lifecycle.service';
+import { assertLegalTransition, storeLifecycle } from '@/modules/store/store-lifecycle.service';
 
 let seq = 0;
 const uniq = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${++seq}`;
@@ -83,9 +80,9 @@ describe('StoreLifecycleService.transition', () => {
   });
 
   it('throws NotFound for an unknown store id', async () => {
-    await expect(storeLifecycle.transition('00000000-0000-4000-8000-000000000000', 'APPROVED')).rejects.toMatchObject(
-      { statusCode: 404 },
-    );
+    await expect(
+      storeLifecycle.transition('00000000-0000-4000-8000-000000000000', 'APPROVED'),
+    ).rejects.toMatchObject({ statusCode: 404 });
   });
 
   it('CAS: concurrent conflicting transitions — exactly one wins, loser gets 409', async () => {
@@ -99,8 +96,7 @@ describe('StoreLifecycleService.transition', () => {
     const fulfilled = results.filter((r) => r.status === 'fulfilled').length;
     const rejectedWithConflict = results.filter(
       (r) =>
-        r.status === 'rejected' &&
-        ((r.reason as { statusCode?: number })?.statusCode ?? 0) === 409,
+        r.status === 'rejected' && ((r.reason as { statusCode?: number })?.statusCode ?? 0) === 409,
     ).length;
 
     expect(fulfilled + rejectedWithConflict).toBe(2);

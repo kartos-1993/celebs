@@ -2,10 +2,15 @@ import { SettingType } from '@prisma/client';
 
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
-import { PlatformSettingsRepository, platformSettingsRepository } from './platform-settings.repository';
+import {
+  PlatformSettingsRepository,
+  platformSettingsRepository,
+} from './platform-settings.repository';
 
 export class PlatformSettingsService {
-  constructor(private readonly repository: PlatformSettingsRepository = platformSettingsRepository) {}
+  constructor(
+    private readonly repository: PlatformSettingsRepository = platformSettingsRepository,
+  ) {}
 
   async getPublicSettings() {
     const settings = await this.repository.getPublicSettings();
@@ -39,7 +44,11 @@ export class PlatformSettingsService {
   async updateSetting(key: string, value: string, userId?: string, reason?: string) {
     const setting = await this.repository.getSettingByKey(key);
     if (!setting) {
-      throw new AppError(`Setting "${key}" not found`, HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      throw new AppError(
+        `Setting "${key}" not found`,
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
     this.validateSettingValue(value, setting.type);
@@ -57,7 +66,7 @@ export class PlatformSettingsService {
       isPublic?: boolean;
     },
     userId?: string,
-    reason?: string
+    reason?: string,
   ) {
     const targetType = data.type || 'BOOLEAN';
     this.validateSettingValue(data.value, targetType);
@@ -68,21 +77,25 @@ export class PlatformSettingsService {
         ...data,
         updatedBy: userId,
       },
-      reason
+      reason,
     );
   }
 
   async bulkUpdateSettings(
     settings: { key: string; value: string }[],
     userId?: string,
-    reason?: string
+    reason?: string,
   ) {
     const validatedSettings: { key: string; value: string }[] = [];
 
     for (const s of settings) {
       const existing = await this.repository.getSettingByKey(s.key);
       if (!existing) {
-        throw new AppError(`Setting "${s.key}" not found`, HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+        throw new AppError(
+          `Setting "${s.key}" not found`,
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.RESOURCE_NOT_FOUND,
+        );
       }
       this.validateSettingValue(s.value, existing.type);
       validatedSettings.push(s);
@@ -108,7 +121,7 @@ export class PlatformSettingsService {
           throw new AppError(
             `Invalid boolean value "${value}". Expected "true" or "false"`,
             HTTPSTATUS.BAD_REQUEST,
-            ErrorCode.VALIDATION_ERROR
+            ErrorCode.VALIDATION_ERROR,
           );
         }
         break;
@@ -118,7 +131,7 @@ export class PlatformSettingsService {
           throw new AppError(
             `Invalid numeric value "${value}". Expected a valid number`,
             HTTPSTATUS.BAD_REQUEST,
-            ErrorCode.VALIDATION_ERROR
+            ErrorCode.VALIDATION_ERROR,
           );
         }
         break;
@@ -130,7 +143,7 @@ export class PlatformSettingsService {
           throw new AppError(
             `Invalid JSON value "${value}". Expected a valid JSON string`,
             HTTPSTATUS.BAD_REQUEST,
-            ErrorCode.VALIDATION_ERROR
+            ErrorCode.VALIDATION_ERROR,
           );
         }
         break;

@@ -15,11 +15,7 @@ import {
 import { asyncHandler, BadRequestException, logger, NotFoundException } from '@celebs/shared-utils';
 
 import { mediaRepository } from './media.repository';
-import {
-  confirmUploadedObject,
-  createPresignedPut,
-  deleteS3Object,
-} from './storage.service';
+import { confirmUploadedObject, createPresignedPut, deleteS3Object } from './storage.service';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requireStoreState, resolveTargetStoreId } from '@/common/guards/store.guards';
@@ -143,10 +139,7 @@ router.delete(
       );
     }
 
-    await Promise.all([
-      mediaRepository.deleteAsset(id, vendorId),
-      deleteS3Object(asset.key),
-    ]);
+    await Promise.all([mediaRepository.deleteAsset(id, vendorId), deleteS3Object(asset.key)]);
 
     return res.json({ success: true, message: 'Asset deleted successfully' });
   }),
@@ -172,7 +165,10 @@ router.post(
       );
     }
 
-    await mediaRepository.deleteUnusedAssets(doomed.map((a) => a.id), vendorId);
+    await mediaRepository.deleteUnusedAssets(
+      doomed.map((a) => a.id),
+      vendorId,
+    );
 
     const results = await Promise.allSettled(doomed.map((a) => deleteS3Object(a.key)));
     const s3Failures = results.filter((r) => r.status === 'rejected');
@@ -253,7 +249,10 @@ router.post(
         mimeType: result.contentType,
       })
       .catch((err) => {
-        logger.warn({ error: err.message, key: result.key }, 'Failed to enqueue asset optimization job');
+        logger.warn(
+          { error: err.message, key: result.key },
+          'Failed to enqueue asset optimization job',
+        );
       });
 
     return res.json({ success: true, data: result });

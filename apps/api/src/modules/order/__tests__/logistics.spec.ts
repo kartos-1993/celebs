@@ -1,5 +1,5 @@
-import { CodStatus,OrderStatus, PaymentMethod } from '@prisma/client';
-import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+import { CodStatus, OrderStatus, PaymentMethod } from '@prisma/client';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';

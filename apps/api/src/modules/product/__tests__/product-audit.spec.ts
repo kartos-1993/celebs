@@ -60,10 +60,10 @@ describe('buildProductAuditDiff', () => {
   });
 
   it('summarizes array and object fields instead of dumping raw JSON', () => {
-    const changes = buildProductAuditDiff(
-      makeSnapshot(),
-      { mainImages: ['a.png', 'b.png'], dynamicData: { fabric: 'silk' } },
-    );
+    const changes = buildProductAuditDiff(makeSnapshot(), {
+      mainImages: ['a.png', 'b.png'],
+      dynamicData: { fabric: 'silk' },
+    });
 
     const images = changes.find((c) => c.field === 'mainImages');
     const dynamic = changes.find((c) => c.field === 'dynamicData');
@@ -74,10 +74,9 @@ describe('buildProductAuditDiff', () => {
   });
 
   it('captures forced status transitions (vendor publish demoted to pending_review)', () => {
-    const changes = buildProductAuditDiff(
-      makeSnapshot({ status: 'rejected' }),
-      { status: 'pending_review' },
-    );
+    const changes = buildProductAuditDiff(makeSnapshot({ status: 'rejected' }), {
+      status: 'pending_review',
+    });
 
     expect(changes).toContainEqual({
       field: 'status',

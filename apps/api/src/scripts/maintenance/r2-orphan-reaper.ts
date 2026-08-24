@@ -177,14 +177,20 @@ async function loadReferencedKeys(): Promise<Set<string>> {
 }
 
 function isManagedPrefix(key: string): boolean {
-  return ALLOWED_PREFIXES.some((p) => key === p || key.startsWith(`${p}/`)) ||
+  return (
+    ALLOWED_PREFIXES.some((p) => key === p || key.startsWith(`${p}/`)) ||
     key === 'platform' ||
-    key.startsWith('platform/');
+    key.startsWith('platform/')
+  );
 }
 
 async function main() {
   logger.info(
-    { bucket: config.S3.BUCKET_NAME, mode: DELETE ? 'DELETE' : 'DRY-RUN', olderThanDays: OLDER_THAN_DAYS },
+    {
+      bucket: config.S3.BUCKET_NAME,
+      mode: DELETE ? 'DELETE' : 'DRY-RUN',
+      olderThanDays: OLDER_THAN_DAYS,
+    },
     'R2 orphan reaper starting',
   );
 
@@ -203,10 +209,7 @@ async function main() {
     return obj.lastModified.getTime() <= cutoff;
   });
 
-  logger.info(
-    { referencedByLiveRecords: referencedKeys.size },
-    'Reference cross-check complete',
-  );
+  logger.info({ referencedByLiveRecords: referencedKeys.size }, 'Reference cross-check complete');
 
   const totalOrphanBytes = candidates.reduce((sum, o) => sum + o.size, 0);
   const byPrefix = candidates.reduce<Record<string, number>>((acc, o) => {
@@ -228,7 +231,9 @@ async function main() {
   );
 
   for (const obj of candidates.slice(0, 50)) {
-    console.log(`  ${(obj.size / 1024).toFixed(1)}KB  ${obj.lastModified.toISOString()}  ${obj.key}`);
+    console.log(
+      `  ${(obj.size / 1024).toFixed(1)}KB  ${obj.lastModified.toISOString()}  ${obj.key}`,
+    );
   }
   if (candidates.length > 50) console.log(`  … and ${candidates.length - 50} more`);
 

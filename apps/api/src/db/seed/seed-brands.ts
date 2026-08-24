@@ -8,7 +8,8 @@ export const SEED_BRANDS = [
     tier: 'FIRST_PARTY' as const,
     isGated: true,
     description: 'Flagship contemporary urban apparel designed for the modern lifestyle.',
-    story: 'Born in Kathmandu, Celebs Official brings premium runway silhouettes and daily luxury to Nepal with strict fabric standards and authentic craftsmanship.',
+    story:
+      'Born in Kathmandu, Celebs Official brings premium runway silhouettes and daily luxury to Nepal with strict fabric standards and authentic craftsmanship.',
     countryOfOrigin: 'Nepal',
     logoUrl: 'https://media.celebs.com.np/platform/branding/celebs-official-logo.webp',
   },
@@ -18,7 +19,8 @@ export const SEED_BRANDS = [
     tier: 'FIRST_PARTY' as const,
     isGated: true,
     description: 'Engineered high-retention denim, jeans, jackets, and timeless western cuts.',
-    story: 'Heavyweight selvedge, ring-spun cotton, and precision enzyme washes crafted to withstand every adventure across the Himalayas.',
+    story:
+      'Heavyweight selvedge, ring-spun cotton, and precision enzyme washes crafted to withstand every adventure across the Himalayas.',
     countryOfOrigin: 'Nepal',
     logoUrl: 'https://media.celebs.com.np/platform/branding/celebs-denim-logo.webp',
   },
@@ -28,7 +30,8 @@ export const SEED_BRANDS = [
     tier: 'FIRST_PARTY' as const,
     isGated: true,
     description: 'Festive Kurtis, fusion silhouettes, and traditional celebratory wear.',
-    story: 'Celebrating Nepali heritage through intricate handwork, silk blends, and contemporary Dashain/Tihar palettes.',
+    story:
+      'Celebrating Nepali heritage through intricate handwork, silk blends, and contemporary Dashain/Tihar palettes.',
     countryOfOrigin: 'Nepal',
     logoUrl: 'https://media.celebs.com.np/platform/branding/celebs-ethnic-logo.webp',
   },
@@ -38,7 +41,8 @@ export const SEED_BRANDS = [
     tier: 'FIRST_PARTY' as const,
     isGated: true,
     description: '100% Combed cotton everyday tees, loungewear, and minimalist staples.',
-    story: 'Heavyweight organic cotton essentials engineered for unbeatable daily comfort and shape retention.',
+    story:
+      'Heavyweight organic cotton essentials engineered for unbeatable daily comfort and shape retention.',
     countryOfOrigin: 'Nepal',
     logoUrl: 'https://media.celebs.com.np/platform/branding/celebs-basics-logo.webp',
   },

@@ -166,7 +166,9 @@ export class CategoryService {
       await this.categoryRepository.updateById(categoryId, {
         ...updateData,
         path: Array.isArray(existingCategory.path)
-          ? existingCategory.path.map((slug: string) => (slug === oldSlug ? newSlug : slug)).join('/')
+          ? existingCategory.path
+              .map((slug: string) => (slug === oldSlug ? newSlug : slug))
+              .join('/')
           : newSlug,
       });
 
@@ -214,8 +216,7 @@ export class CategoryService {
       );
     }
 
-    const productsCount =
-      await this.categoryRepository.countProductsByCategory(categoryId);
+    const productsCount = await this.categoryRepository.countProductsByCategory(categoryId);
 
     if (productsCount > 0) {
       throw new AppError(
@@ -318,7 +319,9 @@ export class CategoryService {
     }
 
     if (updateData.parentCategory) {
-      const parentCategory = await this.categoryRepository.findById(String(updateData.parentCategory));
+      const parentCategory = await this.categoryRepository.findById(
+        String(updateData.parentCategory),
+      );
       if (!parentCategory) {
         throw new AppError(
           'Parent category not found',
@@ -346,7 +349,9 @@ export class CategoryService {
     existingCategory: CategoryEntity,
   ): Promise<void> {
     const parentVal =
-      updateData.parentCategory !== undefined ? updateData.parentCategory : existingCategory.parentCategory;
+      updateData.parentCategory !== undefined
+        ? updateData.parentCategory
+        : existingCategory.parentCategory;
 
     const duplicateCategory = await this.categoryRepository.findOne({
       name: updateData.name,
@@ -388,7 +393,10 @@ export class CategoryService {
     });
   }
 
-  private async validateCategoryUniqueness(name: string, parentCategory: string | null): Promise<void> {
+  private async validateCategoryUniqueness(
+    name: string,
+    parentCategory: string | null,
+  ): Promise<void> {
     const existingCategory = await this.categoryRepository.findOne({
       name,
       parentCategory: parentCategory ? String(parentCategory) : null,
@@ -429,7 +437,10 @@ export class CategoryService {
       const childPath = Array.isArray(child.path)
         ? child.path.map((slug: string) => (slug === oldSlug ? newSlug : slug)).join('/')
         : typeof child.path === 'string'
-          ? child.path.split('/').map((slug: string) => (slug === oldSlug ? newSlug : slug)).join('/')
+          ? child.path
+              .split('/')
+              .map((slug: string) => (slug === oldSlug ? newSlug : slug))
+              .join('/')
           : newSlug;
 
       await this.categoryRepository.updateById(child.id, {

@@ -32,9 +32,7 @@ describe('Session Integration & Dual-Transport Test Suite', () => {
     const authCookie = Array.isArray(rawCookies) ? rawCookies.join('; ') : rawCookies || '';
 
     // Fetch session using Cookie
-    const sessionRes = await request(app)
-      .get('/api/v1/session')
-      .set('Cookie', authCookie);
+    const sessionRes = await request(app).get('/api/v1/session').set('Cookie', authCookie);
 
     expect(sessionRes.status).toBe(200);
     expect(sessionRes.body.success).toBe(true);

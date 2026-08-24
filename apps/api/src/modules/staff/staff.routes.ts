@@ -26,11 +26,7 @@ staffRoutes.use(requireStoreState(['PENDING', 'UNDER_REVIEW', 'APPROVED']));
 
 staffRoutes.post('/', requirePermissions(Permission.STAFF_MANAGE), staffController.createStaff);
 staffRoutes.get('/', requirePermissions(Permission.STAFF_VIEW), staffController.getStaff);
-staffRoutes.patch(
-  '/:id',
-  requirePermissions(Permission.STAFF_MANAGE),
-  staffController.updateStaff,
-);
+staffRoutes.patch('/:id', requirePermissions(Permission.STAFF_MANAGE), staffController.updateStaff);
 staffRoutes.delete(
   '/:id',
   requirePermissions(Permission.STAFF_MANAGE),

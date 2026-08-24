@@ -148,7 +148,6 @@ app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
 app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
-
 if (config.NODE_ENV !== 'production') {
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
 }

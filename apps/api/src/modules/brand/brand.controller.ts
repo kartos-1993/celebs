@@ -18,7 +18,6 @@ import { BrandService, brandService as defaultBrandService } from './brand.servi
 import { isPlatformActor } from '@/common/context/actor-context';
 
 export class BrandController {
-
   constructor(private brandService: BrandService = defaultBrandService) {}
 
   getAllBrands = async (req: Request, res: Response, next: NextFunction) => {
@@ -117,10 +116,7 @@ export class BrandController {
       if (!storeId) {
         if (req.actor && isPlatformActor(req.actor)) {
           const { vendorId } = getBrandAuthorizationsQuerySchema.parse(req.query);
-          const auths = vendorId
-            ? await this.brandService.getVendorAuthorizations(vendorId)
-            : [];
-
+          const auths = vendorId ? await this.brandService.getVendorAuthorizations(vendorId) : [];
 
           res.status(HTTPSTATUS.OK).json({
             success: true,

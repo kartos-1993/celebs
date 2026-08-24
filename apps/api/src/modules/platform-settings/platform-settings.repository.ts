@@ -49,7 +49,9 @@ export class PlatformSettingsRepository {
     this.l1Cache.set(key, { data: setting, expiresAt: now + this.L1_TTL_MS });
     if (setting) {
       try {
-        await upstashRedis.set(this.getL2Key(key), JSON.stringify(setting), { ex: this.L2_TTL_SEC });
+        await upstashRedis.set(this.getL2Key(key), JSON.stringify(setting), {
+          ex: this.L2_TTL_SEC,
+        });
       } catch (err) {
         logger.warn({ err, key }, 'Failed to write platform setting to L2 Redis cache');
       }
@@ -68,7 +70,9 @@ export class PlatformSettingsRepository {
     try {
       const l2Data = await upstashRedis.get<PlatformSetting[]>(this.L2_PUBLIC_KEY);
       if (l2Data) {
-        const parsed = (typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data) as PlatformSetting[];
+        const parsed = (
+          typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data
+        ) as PlatformSetting[];
         if (Array.isArray(parsed)) {
           this.l1Cache.set(this.L2_PUBLIC_KEY, { data: parsed, expiresAt: now + this.L1_TTL_MS });
           return parsed;
@@ -104,14 +108,18 @@ export class PlatformSettingsRepository {
     key: string,
     value: string,
     changedBy?: string,
-    reason?: string
+    reason?: string,
   ): Promise<PlatformSetting> {
     const existing = await prisma.platformSetting.findUnique({
       where: { key },
     });
 
     if (!existing) {
-      throw new AppError(`Setting with key "${key}" not found`, HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      throw new AppError(
+        `Setting with key "${key}" not found`,
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
     }
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -159,7 +167,7 @@ export class PlatformSettingsRepository {
       isPublic?: boolean;
       updatedBy?: string | null;
     },
-    reason?: string
+    reason?: string,
   ): Promise<PlatformSetting> {
     const setting = await prisma.$transaction(async (tx) => {
       const existing = await tx.platformSetting.findUnique({ where: { key } });

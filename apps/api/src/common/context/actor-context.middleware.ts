@@ -56,7 +56,11 @@ export const actorContext = async (req: Request, _res: Response, next: NextFunct
     }
 
     req.actor = buildActor(u);
-    req.store = await resolveStore(u.id, u.role ?? 'CUSTOMER', u.vendorProfile?.id ?? u.vendorId ?? null);
+    req.store = await resolveStore(
+      u.id,
+      u.role ?? 'CUSTOMER',
+      u.vendorProfile?.id ?? u.vendorId ?? null,
+    );
     next();
   } catch (error) {
     next(error);
@@ -72,12 +76,14 @@ export const optionalActorContext = async (req: Request, _res: Response, next: N
       return;
     }
     req.actor = buildActor(u);
-    req.store = await resolveStore(u.id, u.role ?? 'CUSTOMER', u.vendorProfile?.id ?? u.vendorId ?? null);
+    req.store = await resolveStore(
+      u.id,
+      u.role ?? 'CUSTOMER',
+      u.vendorProfile?.id ?? u.vendorId ?? null,
+    );
     next();
   } catch {
     // Never block storefront reads on context failures.
     next();
   }
 };
-
-

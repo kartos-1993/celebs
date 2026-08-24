@@ -1,9 +1,6 @@
 import { type Brand as PrismaBrand, Prisma } from '@prisma/client';
 
-import type {
-  Brand,
-  BrandTier,
-} from '@celebs/shared-types';
+import type { Brand, BrandTier } from '@celebs/shared-types';
 
 import prisma from '@/config/db.prisma';
 
@@ -139,13 +136,15 @@ export class BrandRepository {
     return this.db.vendorBrandAuthorization.findUnique({
       where: {
         vendorId_brandId: { vendorId, brandId },
-      },      include: {
+      },
+      include: {
         brand: {
           select: {
             id: true,
             name: true,
             slug: true,
-            logoUrl: true,            tier: true,
+            logoUrl: true,
+            tier: true,
             isGated: true,
           },
         },

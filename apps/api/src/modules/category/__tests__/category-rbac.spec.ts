@@ -335,11 +335,15 @@ describe('Category RBAC & Tree Operations', () => {
       const res1 = await request(app).get('/api/v1/category/search?q=winter');
       expect(res1.status).toBe(200);
       expect(res1.body.success).toBe(true);
-      expect(res1.body.data.some((c: { name: string }) => c.name === 'Winter Coats & Jackets')).toBe(true);
+      expect(
+        res1.body.data.some((c: { name: string }) => c.name === 'Winter Coats & Jackets'),
+      ).toBe(true);
 
       const res2 = await request(app).get('/api/v1/category/search?q=COAT');
       expect(res2.status).toBe(200);
-      expect(res2.body.data.some((c: { name: string }) => c.name === 'Winter Coats & Jackets')).toBe(true);
+      expect(
+        res2.body.data.some((c: { name: string }) => c.name === 'Winter Coats & Jackets'),
+      ).toBe(true);
     });
   });
 });

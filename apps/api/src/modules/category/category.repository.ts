@@ -1,10 +1,6 @@
-import { type Category,Prisma } from '@prisma/client';
+import { type Category, Prisma } from '@prisma/client';
 
-import type {
-  CategoryAttributeType,
-  CategoryEntity,
-  RecentCategory,
-} from '@celebs/shared-types';
+import type { CategoryAttributeType, CategoryEntity, RecentCategory } from '@celebs/shared-types';
 
 import prisma from '@/config/db.prisma';
 
@@ -21,16 +17,11 @@ export class CategoryRepository {
         id: item.id ? String(item.id) : undefined,
         name: String(item.name || ''),
         label: item.label ? String(item.label) : undefined,
-        type:
-          typeof item.type === 'string'
-            ? (item.type as CategoryAttributeType['type'])
-            : 'text',
+        type: typeof item.type === 'string' ? (item.type as CategoryAttributeType['type']) : 'text',
         values: Array.isArray(item.values) ? item.values.map(String) : [],
         isRequired: Boolean(item.isRequired),
         group:
-          typeof item.group === 'string'
-            ? (item.group as CategoryAttributeType['group'])
-            : 'basic',
+          typeof item.group === 'string' ? (item.group as CategoryAttributeType['group']) : 'basic',
         placeholder: item.placeholder ? String(item.placeholder) : undefined,
         info:
           typeof item.info === 'object' && item.info !== null
@@ -96,9 +87,7 @@ export class CategoryRepository {
       take: limit,
       ...(skip !== undefined ? { skip } : {}),
     });
-    return categories
-      .map((c) => this.toEntity(c))
-      .filter((c): c is CategoryEntity => c !== null);
+    return categories.map((c) => this.toEntity(c)).filter((c): c is CategoryEntity => c !== null);
   }
 
   async find(
@@ -203,10 +192,7 @@ export class CategoryRepository {
       .catch(() => null);
   }
 
-  async saveRecentCategoriesForUser(
-    userId: string,
-    categories: RecentCategory[],
-  ): Promise<void> {
+  async saveRecentCategoriesForUser(userId: string, categories: RecentCategory[]): Promise<void> {
     await prisma.userPreference.upsert({
       where: { userId },
       create: {

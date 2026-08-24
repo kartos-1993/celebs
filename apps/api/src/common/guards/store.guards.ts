@@ -2,11 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 
 import { ErrorCode, ForbiddenException, UnauthorizedException } from '@celebs/shared-utils';
 
-import {
-  isPlatformActor,
-  isSellerRole,
-  type StoreStatus,
-} from '@/common/context/actor-context';
+import { isPlatformActor, isSellerRole, type StoreStatus } from '@/common/context/actor-context';
 
 /**
  * Layer 2 — declarative guards.
@@ -130,7 +126,10 @@ export function mapStoreStatusToError(status: StoreStatus): ForbiddenException {
  *   absent param → null → PLATFORM-owned scope (vendorId IS NULL rows).
  * Returns `string | null` only — repositories must never receive `undefined`.
  */
-export function resolveTargetStoreId(req: Request, source: 'query' | 'body' = 'query'): string | null {
+export function resolveTargetStoreId(
+  req: Request,
+  source: 'query' | 'body' = 'query',
+): string | null {
   const { actor, store } = req;
   if (!actor) {
     throw new UnauthorizedException('Authentication required');

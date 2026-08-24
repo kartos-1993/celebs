@@ -1,6 +1,6 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { addressSchema, checkoutSchema,COD_MAX_LIMIT } from '@celebs/shared-types';
+import { addressSchema, checkoutSchema, COD_MAX_LIMIT } from '@celebs/shared-types';
 
 describe('Order & Checkout Validation Rules', () => {
   it('enforces maximum COD limit of NPR 5,000', () => {

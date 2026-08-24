@@ -79,18 +79,14 @@ describe('Google Sign-In Cryptographic Verification & Auth Suite', () => {
   it('should reject Google sign-in when idToken is expired or invalid', async () => {
     mockVerifyIdToken.mockRejectedValueOnce(new Error('Token used too late'));
 
-    const res = await request(app)
-      .post('/api/v1/auth/google')
-      .send({ idToken: 'expired-token' });
+    const res = await request(app).post('/api/v1/auth/google').send({ idToken: 'expired-token' });
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
   });
 
   it('should reject Google sign-in when idToken is omitted', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/google')
-      .send({});
+    const res = await request(app).post('/api/v1/auth/google').send({});
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);

@@ -19,8 +19,8 @@ import {
 } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import prisma from './config/db.prisma';
-import { assetWorker } from './modules/media/asset.worker';
 import { mailWorker } from './modules/mail/mail.worker';
+import { assetWorker } from './modules/media/asset.worker';
 import { sessionWorker } from './modules/session/session.worker';
 
 const startWorker = async () => {
@@ -34,7 +34,9 @@ const startWorker = async () => {
     await verifyRedisConnection();
     await verifyS3Connection();
 
-    logger.info('BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance');
+    logger.info(
+      'BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance',
+    );
 
     // Register daily repeatable session maintenance job (runs at midnight 00:00)
     await sessionQueue.add(

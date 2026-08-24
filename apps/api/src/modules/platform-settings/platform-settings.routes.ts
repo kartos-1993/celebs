@@ -26,7 +26,7 @@ platformSettingsRouter.get(
   authenticateJWT,
   asyncHandler(actorContext),
   requirePermissions(Permission.PLATFORM_MANAGE),
-  asyncHandler(platformSettingsController.getAuditLogs)
+  asyncHandler(platformSettingsController.getAuditLogs),
 );
 
 platformSettingsRouter.get(
@@ -34,7 +34,7 @@ platformSettingsRouter.get(
   authenticateJWT,
   asyncHandler(actorContext),
   requirePermissions(Permission.PLATFORM_MANAGE),
-  asyncHandler(platformSettingsController.getAllSettings)
+  asyncHandler(platformSettingsController.getAllSettings),
 );
 
 platformSettingsRouter.post(
@@ -43,7 +43,7 @@ platformSettingsRouter.post(
   asyncHandler(actorContext),
   requirePermissions(Permission.PLATFORM_MANAGE),
   validateBody(upsertPlatformSettingSchema),
-  asyncHandler(platformSettingsController.upsertSetting)
+  asyncHandler(platformSettingsController.upsertSetting),
 );
 
 platformSettingsRouter.get(
@@ -51,7 +51,7 @@ platformSettingsRouter.get(
   authenticateJWT,
   asyncHandler(actorContext),
   requirePermissions(Permission.PLATFORM_MANAGE),
-  asyncHandler(platformSettingsController.getSettingByKey)
+  asyncHandler(platformSettingsController.getSettingByKey),
 );
 
 platformSettingsRouter.put(
@@ -60,7 +60,7 @@ platformSettingsRouter.put(
   asyncHandler(actorContext),
   requirePermissions(Permission.PLATFORM_MANAGE),
   validateBody(updatePlatformSettingSchema),
-  asyncHandler(platformSettingsController.updateSetting)
+  asyncHandler(platformSettingsController.updateSetting),
 );
 
 platformSettingsRouter.post(
@@ -69,8 +69,7 @@ platformSettingsRouter.post(
   asyncHandler(actorContext),
   requirePermissions(Permission.PLATFORM_MANAGE),
   validateBody(bulkUpdatePlatformSettingsSchema),
-  asyncHandler(platformSettingsController.bulkUpdateSettings)
+  asyncHandler(platformSettingsController.bulkUpdateSettings),
 );
 
 export default platformSettingsRouter;
-

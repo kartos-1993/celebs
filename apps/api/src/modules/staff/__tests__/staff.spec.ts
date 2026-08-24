@@ -257,13 +257,16 @@ describe('Staff Management API Integration Tests', () => {
 
   it('should allow VENDOR 1 to update permissions for their staff member', async () => {
     const staffEmail = faker.internet.email().toLowerCase();
-    const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
-      name: 'Staff Member B',
-      email: staffEmail,
-      password: 'Password123!',
-      confirmPassword: 'Password123!',
-      permissions: ['product:view'],
-    });
+    const createRes = await request(app)
+      .post('/api/v1/staff')
+      .set('Cookie', vendor1Cookie)
+      .send({
+        name: 'Staff Member B',
+        email: staffEmail,
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+        permissions: ['product:view'],
+      });
 
     const targetStaffId = createRes.body.data.id;
     createdStaffIds.push(targetStaffId);

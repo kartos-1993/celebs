@@ -169,6 +169,7 @@
     "//_SEEDING": "=== Database Seeding ===",
     "seed": "pnpm --filter api seed",
     "seed:reset": "pnpm --filter api seed:reset",
+    "r2:orphans": "pnpm --filter api r2:orphans",
     "//_QUALITY": "=== Code Quality & Testing ===",
     "test": "turbo run test",
     "lint": "turbo run lint",

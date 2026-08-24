@@ -132,9 +132,7 @@ export class OrderService {
     }> = [];
 
     // Batch product lookup — one query instead of N+1 per cart line.
-    const cartProductIds = Array.from(
-      new Set(cart.items.map((item) => item.inventory.productId)),
-    );
+    const cartProductIds = Array.from(new Set(cart.items.map((item) => item.inventory.productId)));
     const cartProducts = await prisma.product.findMany({
       where: { id: { in: cartProductIds } },
       select: { id: true, price: true, discountedPrice: true, name: true, vendorId: true },

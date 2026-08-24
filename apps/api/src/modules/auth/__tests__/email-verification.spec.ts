@@ -125,9 +125,7 @@ describe('Email Verification End-to-End Suite', () => {
       },
     });
 
-    const res = await request(app)
-      .post('/api/v1/auth/verify-email')
-      .send({ code: expiredCode });
+    const res = await request(app).post('/api/v1/auth/verify-email').send({ code: expiredCode });
 
     expect(res.status).toBe(404);
     expect(res.body.success).toBe(false);

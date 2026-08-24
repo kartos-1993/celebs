@@ -10,16 +10,19 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, generateSheinStyleSku, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import {
+  AppError,
+  ErrorCode,
+  generateSheinStyleSku,
+  HTTPSTATUS,
+  logger,
+} from '@celebs/shared-utils';
 
 import { brandService } from '../brand/brand.service';
 import { mediaRepository } from '../media/media.repository';
 
 import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
-import {
-  PRODUCT_DETAIL_SELECT,
-  PRODUCT_LIST_SELECT,
-} from './repositories/product-projections';
+import { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import {
   appendAuditEntry,
   buildProductAuditDiff,
@@ -31,7 +34,7 @@ import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
 import { enqueueMail } from '@/common/services/mail.queue';
 import prisma from '@/config/db.prisma';
-import { } from '@/mailers/mailer';
+import {} from '@/mailers/mailer';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 
 export type CreateProductInput = CreateProductType;
@@ -45,7 +48,7 @@ const toJsonInput = (value: unknown): Prisma.InputJsonValue | undefined => {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 };
 
-export { PRODUCT_DETAIL_SELECT,PRODUCT_LIST_SELECT };
+export { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT };
 
 /**
  * Collects every media CDN URL referenced by a product (main images,
@@ -60,21 +63,25 @@ const collectProductAssetUrls = (source: {
   const urls: string[] = [];
 
   if (Array.isArray(source.mainImages)) {
-    urls.push(...(source.mainImages as unknown[]).filter((u): u is string => typeof u === 'string'));
+    urls.push(
+      ...(source.mainImages as unknown[]).filter((u): u is string => typeof u === 'string'),
+    );
   }
 
   if (Array.isArray(source.colorVariants)) {
     for (const variant of source.colorVariants as Array<Record<string, unknown>>) {
       if (typeof variant?.swatch === 'string') urls.push(variant.swatch);
       if (Array.isArray(variant?.images)) {
-        urls.push(...(variant.images as unknown[]).filter((u): u is string => typeof u === 'string'));
+        urls.push(
+          ...(variant.images as unknown[]).filter((u): u is string => typeof u === 'string'),
+        );
       }
     }
   }
 
-  const colorMeta = (
-    source.dynamicData as Record<string, unknown> | undefined
-  )?.variants as Record<string, Record<string, unknown>> | undefined;
+  const colorMeta = (source.dynamicData as Record<string, unknown> | undefined)?.variants as
+    | Record<string, Record<string, unknown>>
+    | undefined;
   if (colorMeta && typeof colorMeta === 'object') {
     for (const meta of Object.values(colorMeta)) {
       if (typeof meta?.swatch === 'string') urls.push(meta.swatch);
@@ -123,8 +130,7 @@ export class ProductService {
       brand: prod.brand || (brandRefObj ? brandRefObj.name : null),
       brandRef: brandRefObj,
       price: prod.price != null ? Number(prod.price) : 0,
-      discountedPrice:
-        prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
+      discountedPrice: prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
       category: categoryObj || prod.categoryId,
       subcategory: subcategoryObj || prod.subcategoryId,
     };
@@ -317,7 +323,9 @@ export class ProductService {
             },
             include: {
               category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-              subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+              subcategory: {
+                select: { id: true, name: true, slug: true, path: true, level: true },
+              },
               brandRef: {
                 select: {
                   id: true,
@@ -834,7 +842,10 @@ export class ProductService {
           ErrorCode.FORBIDDEN_RESOURCE,
         );
       }
-      if (!isPublisher && !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)) {
+      if (
+        !isPublisher &&
+        !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)
+      ) {
         throw new AppError(
           'Cannot update product unless it is draft or rejected',
           HTTPSTATUS.BAD_REQUEST,
@@ -871,7 +882,8 @@ export class ProductService {
 
     // Resolve Brand changes
     let resolvedBrandId = updateData.brandId !== undefined ? updateData.brandId : product.brandId;
-    let resolvedBrandName = updateData.brand !== undefined ? updateData.brand?.trim() || null : product.brand;
+    let resolvedBrandName =
+      updateData.brand !== undefined ? updateData.brand?.trim() || null : product.brand;
 
     if (updateData.brandId && updateData.brandId !== product.brandId) {
       const b = await prisma.brand.findUnique({ where: { id: updateData.brandId } });
@@ -1064,7 +1076,10 @@ export class ProductService {
       );
     }
 
-    if (product.status !== PRODUCT_STATUS.PUBLISHED && product.status !== PRODUCT_STATUS.DEACTIVATED) {
+    if (
+      product.status !== PRODUCT_STATUS.PUBLISHED &&
+      product.status !== PRODUCT_STATUS.DEACTIVATED
+    ) {
       throw new AppError(
         'Only published or deactivated products can be toggled',
         HTTPSTATUS.BAD_REQUEST,
@@ -1075,7 +1090,10 @@ export class ProductService {
     const updated = await prisma.product.update({
       where: { id },
       data: {
-        status: product.status === PRODUCT_STATUS.PUBLISHED ? PRODUCT_STATUS.DEACTIVATED : PRODUCT_STATUS.PUBLISHED,
+        status:
+          product.status === PRODUCT_STATUS.PUBLISHED
+            ? PRODUCT_STATUS.DEACTIVATED
+            : PRODUCT_STATUS.PUBLISHED,
       },
       include: {
         category: { select: { id: true, name: true, slug: true, path: true, level: true } },

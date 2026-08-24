@@ -54,11 +54,9 @@ export class TtlCache<T> {
     this.l1.set(key, { data: value, expiresAt: Date.now() + L1_TTL_MS });
     this.issuedKeys.add(key);
     try {
-      await upstashRedis.set(
-        `${this.namespace}:${key}`,
-        JSON.stringify(value),
-        { ex: this.l2TtlSec },
-      );
+      await upstashRedis.set(`${this.namespace}:${key}`, JSON.stringify(value), {
+        ex: this.l2TtlSec,
+      });
     } catch (err) {
       logger.warn({ err, cache: this.namespace, key }, 'TtlCache L2 write failed');
     }

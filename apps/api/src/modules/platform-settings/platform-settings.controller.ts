@@ -47,7 +47,11 @@ export class PlatformSettingsController {
       const { key } = settingKeyParamSchema.parse(req.params);
       const setting = await this.service.getSettingByKey(key);
       if (!setting) {
-        throw new AppError(`Setting "${key}" not found`, HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+        throw new AppError(
+          `Setting "${key}" not found`,
+          HTTPSTATUS.NOT_FOUND,
+          ErrorCode.RESOURCE_NOT_FOUND,
+        );
       }
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -75,7 +79,7 @@ export class PlatformSettingsController {
           isPublic: validated.isPublic,
         },
         userId,
-        validated.reason
+        validated.reason,
       );
 
       res.status(HTTPSTATUS.OK).json({

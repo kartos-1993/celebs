@@ -1,6 +1,6 @@
 import { Role } from '@prisma/client';
 import request from 'supertest';
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 import prisma from '@/config/db.prisma';

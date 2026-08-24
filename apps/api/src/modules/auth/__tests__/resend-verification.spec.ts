@@ -41,9 +41,9 @@ describe('AuthService - Resend Verification & Token Superseding', () => {
     expect(initialCode).toBeDefined();
 
     // 2. Attempt resending immediately (< 60s) -> Should throw BadRequestException (throttled)
-    await expect(
-      authService.resendVerification({ email: testEmail }),
-    ).rejects.toThrow(/Please wait/);
+    await expect(authService.resendVerification({ email: testEmail })).rejects.toThrow(
+      /Please wait/,
+    );
 
     // 3. Simulate 61 seconds passing by updating initial token createdAt
     await prisma.verificationCode.update({

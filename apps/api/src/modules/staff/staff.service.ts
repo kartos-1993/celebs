@@ -14,7 +14,7 @@ import { hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import { buildWebUrl } from '@/common/utils/url';
 import prisma from '@/config/db.prisma';
-import { } from '@/mailers/mailer';
+import {} from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 
 export interface CreateStaffInput extends CreateStaffType {
@@ -42,7 +42,10 @@ const GRANTABLE_TO_STAFF: ReadonlySet<string> = new Set<string>([
 ]);
 
 /** Grantor ceiling: sellers may only grant permissions they themselves hold. */
-function assertGrantablePermissions(requested: string[], grantor: { role: string; permissions: string[] }) {
+function assertGrantablePermissions(
+  requested: string[],
+  grantor: { role: string; permissions: string[] },
+) {
   const illegal = requested.filter((p) => !GRANTABLE_TO_STAFF.has(p));
   if (illegal.length > 0) {
     throw new ForbiddenException(
@@ -51,7 +54,10 @@ function assertGrantablePermissions(requested: string[], grantor: { role: string
     );
   }
 
-  const grantorEffective = getUserPermissions(grantor.role as Parameters<typeof getUserPermissions>[0], grantor.permissions);
+  const grantorEffective = getUserPermissions(
+    grantor.role as Parameters<typeof getUserPermissions>[0],
+    grantor.permissions,
+  );
   const exceeded = requested.filter((p) => !grantorEffective.includes(p as Permission));
   if (exceeded.length > 0) {
     throw new ForbiddenException(
@@ -281,7 +287,10 @@ export class StaffService {
 
   public async deleteStaff(staffId: string, creatorUserId: string) {
     if (staffId === creatorUserId) {
-      throw new ForbiddenException('You cannot delete your own account', ErrorCode.ACCESS_FORBIDDEN);
+      throw new ForbiddenException(
+        'You cannot delete your own account',
+        ErrorCode.ACCESS_FORBIDDEN,
+      );
     }
 
     const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId);

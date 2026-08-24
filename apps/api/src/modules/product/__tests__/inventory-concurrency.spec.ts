@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import prisma from '@/config/db.prisma';
 import { InventoryService, OutOfStockError } from '@/modules/inventory/inventory.service';

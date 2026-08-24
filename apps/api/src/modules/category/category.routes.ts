@@ -43,11 +43,7 @@ categoryRoute.get(
 );
 
 // Authenticated Recent Categories (must be before /:id to prevent Express routing collision)
-categoryRoute.get(
-  '/recent',
-  authenticateJWT,
-  asyncHandler(categoryController.getRecentCategories),
-);
+categoryRoute.get('/recent', authenticateJWT, asyncHandler(categoryController.getRecentCategories));
 categoryRoute.post(
   '/recent',
   authenticateJWT,

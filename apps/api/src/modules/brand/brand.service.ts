@@ -5,11 +5,7 @@ import {
   ReviewBrandAuthorizationType,
   UpdateBrandType,
 } from '@celebs/shared-types';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@celebs/shared-utils';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { BrandRepository, brandRepository as defaultBrandRepository } from './brand.repository';
 
@@ -108,7 +104,9 @@ export class BrandService {
     }
 
     if (!brand.isGated && brand.tier === 'OPEN_GENERIC') {
-      throw new BadRequestException('This brand is generic and open; authorization is not required');
+      throw new BadRequestException(
+        'This brand is generic and open; authorization is not required',
+      );
     }
 
     const expiryDate = input.documentExpiryDate ? new Date(input.documentExpiryDate) : null;

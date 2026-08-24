@@ -1,4 +1,10 @@
-import { AppError, ErrorCode, generateSheinStyleSku, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import {
+  AppError,
+  ErrorCode,
+  generateSheinStyleSku,
+  HTTPSTATUS,
+  logger,
+} from '@celebs/shared-utils';
 
 import prisma from '@/config/db.prisma';
 

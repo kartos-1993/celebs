@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-import {
-  batchPresignSchema,
-  confirmUploadSchema,
-  presignFileSchema,
-} from '@celebs/shared-types';
+import { batchPresignSchema, confirmUploadSchema, presignFileSchema } from '@celebs/shared-types';
 
 import { registry } from './registry';
 

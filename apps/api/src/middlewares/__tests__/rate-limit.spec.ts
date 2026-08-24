@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import app from '@/app';
 
@@ -43,7 +43,6 @@ describe('Rate Limiting System', () => {
       expect(lastRes?.body.errorCode).toBe('TOO_MANY_REQUESTS');
     });
   });
-
 
   describe('Product Search Rate Limiter (/api/v1/products)', () => {
     it('should process unauthenticated search queries normally under limit', async () => {

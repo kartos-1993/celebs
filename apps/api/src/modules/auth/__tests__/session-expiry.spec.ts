@@ -76,10 +76,7 @@ describe('Session Lifecycle & Expiry Enforcement Test Suite', () => {
       },
     });
 
-    const refreshToken = signJwtToken(
-      { sessionId: session.id },
-      refreshTokenSignOptions,
-    );
+    const refreshToken = signJwtToken({ sessionId: session.id }, refreshTokenSignOptions);
 
     // Use refresh token via x-refresh-token header
     const refreshRes = await request(app)
@@ -92,7 +89,9 @@ describe('Session Lifecycle & Expiry Enforcement Test Suite', () => {
     // Verify session expiredAt was slid forward (approx 30 days into future)
     const updatedSession = await prisma.session.findUnique({ where: { id: session.id } });
     expect(updatedSession).not.toBeNull();
-    expect(updatedSession!.expiredAt.getTime()).toBeGreaterThan(Date.now() + 20 * 24 * 60 * 60 * 1000);
+    expect(updatedSession!.expiredAt.getTime()).toBeGreaterThan(
+      Date.now() + 20 * 24 * 60 * 60 * 1000,
+    );
 
     // Cleanup
     await prisma.session.deleteMany({ where: { userId: user.id } });

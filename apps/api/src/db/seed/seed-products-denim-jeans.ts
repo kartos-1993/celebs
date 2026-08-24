@@ -109,27 +109,23 @@ export async function seedProductsDenimJeans(): Promise<void> {
       }),
     );
 
-    const colorVariants = (item.variants || []).map(
-      (v: { color?: string; images?: string[] }) => ({
-        name: v.color || 'Default',
-        colorCode: resolveColorHex(v.color || 'Default'),
-        images: Array.isArray(v.images) ? v.images : [],
-        stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
-          size: String(sc.size || 'M'),
-          quantity: 25,
-        })),
-      }),
-    );
+    const colorVariants = (item.variants || []).map((v: { color?: string; images?: string[] }) => ({
+      name: v.color || 'Default',
+      colorCode: resolveColorHex(v.color || 'Default'),
+      images: Array.isArray(v.images) ? v.images : [],
+      stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
+        size: String(sc.size || 'M'),
+        quantity: 25,
+      })),
+    }));
 
-    const allVariantImages = (item.variants || []).flatMap(
-      (v: { images?: string[] }) => (Array.isArray(v.images) ? v.images : []),
+    const allVariantImages = (item.variants || []).flatMap((v: { images?: string[] }) =>
+      Array.isArray(v.images) ? v.images : [],
     );
     const mainImages =
       allVariantImages.length > 0
         ? allVariantImages.slice(0, 10)
-        : [
-            'https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop',
-          ];
+        : ['https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop'];
 
     const price = 2200 + ((i * 120) % 1800);
     const discountedPrice = Math.round(price * 0.9);
@@ -170,4 +166,3 @@ export async function seedProductsDenimJeans(): Promise<void> {
 
   console.log(`✅ Seeded Denim Jeans in Postgres: ${count} processed.`);
 }
-

@@ -76,15 +76,20 @@ export class ProductController {
       }
 
       const isPublished =
-        product.status === 'published' || String(product.status).toLowerCase() === PRODUCT_STATUS.PUBLISHED;
+        product.status === 'published' ||
+        String(product.status).toLowerCase() === PRODUCT_STATUS.PUBLISHED;
       if (!isPublished) {
         // Default-deny: only platform reviewers and the owning store may read
         // unpublished products. Anonymous/customers get 404 (no existence leak).
         const actor = req.actor;
         const isReviewer =
-          !!actor && can(actor.role as Parameters<typeof can>[0], Permission.PRODUCT_REVIEW, actor.permissions);
-        const ownsIt =
-          !!req.store?.id && String(product.vendorId) === String(req.store.id);
+          !!actor &&
+          can(
+            actor.role as Parameters<typeof can>[0],
+            Permission.PRODUCT_REVIEW,
+            actor.permissions,
+          );
+        const ownsIt = !!req.store?.id && String(product.vendorId) === String(req.store.id);
         if (!isReviewer && !ownsIt) {
           throw new AppError(
             'Product not found',

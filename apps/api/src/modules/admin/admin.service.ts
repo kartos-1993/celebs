@@ -8,7 +8,7 @@ import { storeLifecycle } from '../store/store-lifecycle.service';
 import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
-import { } from '@/mailers/mailer';
+import {} from '@/mailers/mailer';
 import {
   vendorApprovalTemplate,
   vendorRejectionTemplate,
