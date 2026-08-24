@@ -10,85 +10,71 @@ import {
 
 export const styles = StyleSheet.create({
   container: {
-    marginVertical: Spacing.md,
+    marginTop: Spacing.sm,
   },
   section: {
     marginBottom: Spacing.lg,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
   },
   sectionLabel: {
     fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
-    marginBottom: Spacing.md,
   },
   valueText: {
     fontWeight: FontWeight.regular,
     color: Palette.gray600,
-  },
-  sizeHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  sizeNoticeText: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.semibold,
-    color: Palette.danger,
   },
   variantRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
   },
+
+  /* ---------- Color Swatches ---------- */
   colorChip: {
-    flexDirection: 'row',
+    width: 44,
+    height: 44,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Palette.gray200,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.pill,
-    backgroundColor: Palette.gray100,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    gap: Spacing.sm,
+    backgroundColor: Palette.white,
   },
   colorChipSelected: {
-    backgroundColor: Palette.white,
+    borderWidth: 2,
     borderColor: Palette.gray900,
   },
   colorDot: {
-    width: 16,
-    height: 16,
+    width: 24,
+    height: 24,
     borderRadius: Radius.pill,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.15)',
   },
   colorThumbnail: {
-    width: 20,
-    height: 20,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
+    width: 38,
+    height: 38,
+    borderRadius: Radius.sm - 1,
   },
-  chipText: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.medium,
-    color: Palette.gray700,
-  },
-  chipTextSelected: {
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-  },
+
+  /* ---------- Size Boxes ---------- */
   sizeBox: {
-    minWidth: 44,
-    height: 40,
+    minWidth: 48,
+    height: 36,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.sm,
     backgroundColor: Palette.gray100,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Palette.gray200,
+    borderColor: Palette.gray100,
   },
   sizeBoxSelected: {
     backgroundColor: Palette.gray900,
@@ -111,6 +97,49 @@ export const styles = StyleSheet.create({
     color: Palette.gray400,
     textDecorationLine: 'line-through',
   },
+
+  /* ---------- Measurement Box ---------- */
+  measurementBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F7F8',
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  measurementTextWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  measurementText: {
+    fontSize: FontSize.caption,
+    color: Palette.gray600,
+    lineHeight: 18,
+  },
+
+  /* ---------- Size Guide Links ---------- */
+  sizeGuideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xl,
+    marginTop: Spacing.md,
+  },
+  sizeGuideLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  sizeGuideText: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.semibold,
+    color: Palette.gray900,
+  },
+
+  /* ---------- Stock Notices ---------- */
   stockNoticeBox: {
     marginTop: Spacing.md,
   },

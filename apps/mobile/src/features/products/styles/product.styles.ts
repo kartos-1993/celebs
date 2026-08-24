@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   backBtn: {
-    backgroundColor: Palette.brand,
+    backgroundColor: Palette.gray900,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderRadius: Radius.sm,
@@ -38,27 +38,46 @@ export const styles = StyleSheet.create({
     color: Palette.white,
     fontWeight: FontWeight.semibold,
   },
-  headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+
+  /* ---------- Solid Header ---------- */
+  headerBar: {
+    backgroundColor: Palette.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Palette.gray100,
+  },
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingBottom: Spacing.sm,
+    height: 48,
   },
   headerIconButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: Radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerSearchPill: {
+    flex: 1,
+    height: 34,
+    borderRadius: Radius.pill,
+    backgroundColor: Palette.gray100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.xs,
+  },
+  headerSearchText: {
+    fontSize: FontSize.small,
+    color: Palette.gray400,
+  },
   headerRightActions: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    gap: Spacing.xxs,
   },
   cartBadge: {
     position: 'absolute',
@@ -66,8 +85,8 @@ export const styles = StyleSheet.create({
     right: -2,
     backgroundColor: Palette.danger,
     borderRadius: Radius.pill,
-    minWidth: 18,
-    height: 18,
+    minWidth: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.xs,
@@ -77,44 +96,59 @@ export const styles = StyleSheet.create({
     fontSize: FontSize.micro,
     fontWeight: FontWeight.extrabold,
   },
+
+  /* ---------- Scroll Sections ---------- */
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   detailsContainer: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
-  brandRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
-  },
-  brandText: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.brand,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  sectionBand: {
+    height: Spacing.sm,
+    backgroundColor: Palette.gray100,
+    marginVertical: Spacing.md,
   },
   productTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-    marginBottom: Spacing.sm,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.medium,
+    color: Palette.gray800,
+    lineHeight: 21,
+    flexShrink: 1,
+    flex: 1,
   },
-  priceRow: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  ratingInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  ratingInlineText: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.semibold,
+    color: Palette.gray700,
+  },
+
+  /* ---------- Price ---------- */
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     gap: Spacing.sm,
+    marginTop: Spacing.md,
     marginBottom: Spacing.sm,
   },
   currentPrice: {
-    fontSize: FontSize.title,
+    fontSize: FontSize.headline,
     fontWeight: FontWeight.extrabold,
     color: Palette.gray900,
   },
   originalPrice: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.base,
     color: Palette.gray400,
     textDecorationLine: 'line-through',
   },
@@ -129,58 +163,85 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Palette.danger,
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  ratingText: {
-    fontSize: FontSize.small,
-    color: Palette.gray500,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Palette.gray100,
-    marginVertical: Spacing.lg,
-  },
-  descriptionSection: {
-    marginBottom: Spacing.lg,
-  },
+
+  /* ---------- Section Headers ---------- */
   sectionTitle: {
-    fontSize: FontSize.body,
+    fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
     marginBottom: Spacing.sm,
   },
-  descriptionText: {
-    fontSize: FontSize.base,
-    color: Palette.gray600,
-    lineHeight: 22,
+
+  /* ---------- Shipping / Service Rows ---------- */
+  shippingSection: {
+    marginBottom: Spacing.xs,
   },
-  valuePropsRow: {
+  serviceRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Palette.gray50,
-    borderRadius: Radius.md,
-    padding: Spacing.lg,
-    marginTop: Spacing.sm,
-  },
-  propBox: {
     alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    minHeight: 44,
+  },
+  serviceRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: Palette.gray100,
+  },
+  serviceText: {
     flex: 1,
+    fontSize: FontSize.small,
+    color: Palette.gray700,
   },
-  propTitle: {
-    fontSize: FontSize.caption,
+  serviceHighlight: {
+    color: Palette.success,
     fontWeight: FontWeight.bold,
+  },
+
+  /* ---------- Reviews ---------- */
+  reviewsSection: {
+    marginBottom: Spacing.xs,
+  },
+  reviewsSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  reviewsScore: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.extrabold,
     color: Palette.gray900,
-    marginTop: Spacing.sm,
   },
-  propSub: {
-    fontSize: FontSize.micro,
+  reviewsCount: {
+    fontSize: FontSize.small,
     color: Palette.gray500,
-    marginTop: Spacing.xxs,
   },
+  reviewsViewMore: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxs,
+  },
+  reviewsViewMoreText: {
+    fontSize: FontSize.small,
+    color: Palette.gray500,
+  },
+  reviewsEmpty: {
+    fontSize: FontSize.small,
+    color: Palette.gray400,
+    marginTop: Spacing.md,
+  },
+
+  /* ---------- Description ---------- */
+  descriptionSection: {
+    marginBottom: Spacing.lg,
+  },
+  descriptionText: {
+    fontSize: FontSize.small,
+    color: Palette.gray600,
+    lineHeight: 21,
+  },
+
+  /* ---------- Bottom Sticky Bar ---------- */
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -191,15 +252,27 @@ export const styles = StyleSheet.create({
     borderTopColor: Palette.gray100,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-  },
-  addToCartBtn: {
-    backgroundColor: Palette.brand,
     flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  wishlistBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Palette.gray300,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.lg,
-    gap: Spacing.sm,
+    backgroundColor: Palette.white,
+  },
+  addToCartBtn: {
+    flex: 1,
+    backgroundColor: Palette.gray900,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    height: 48,
+    borderRadius: Radius.pill,
   },
   addToCartText: {
     fontSize: FontSize.md,

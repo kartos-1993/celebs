@@ -26,7 +26,8 @@ import { Palette } from '@/constants/theme';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const GRID_PADDING = 6;
+// Must match product-grid.styles container paddingHorizontal (Spacing.md)
+const GRID_PADDING = 12;
 const COLUMN_GAP = 6;
 const CARD_WIDTH = (SCREEN_WIDTH - GRID_PADDING * 2 - COLUMN_GAP) / 2;
 

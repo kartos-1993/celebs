@@ -12,7 +12,7 @@ import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 export const styles = StyleSheet.create({
   cardContainer: {
     borderRadius: Radius.sm,
-    marginBottom: Spacing.lg,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   imageContainer: {

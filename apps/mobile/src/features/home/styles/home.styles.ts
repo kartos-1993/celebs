@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   carouselContainer: {
     width: SCREEN_WIDTH,
@@ -86,7 +86,7 @@ export const styles = StyleSheet.create({
     marginTop: -Spacing.sm,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
-    paddingTop: Spacing.xxl,
+    paddingTop: Spacing.md,
     minHeight: 300,
     zIndex: 15,
   },

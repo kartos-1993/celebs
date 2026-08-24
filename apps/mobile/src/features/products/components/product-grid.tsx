@@ -13,7 +13,7 @@ import { ProductCard } from './product-card';
 import { styles } from './product-grid.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Palette, Spacing } from '@/constants/theme';
+import { Colors, Palette } from '@/constants/theme';
 
 export interface ProductGridRef {
   loadMore: () => void;
@@ -45,7 +45,7 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
         {/* Section Title Header */}
         <View style={styles.sectionHeader}>
           <View style={styles.titleWithIcon}>
-            <Sparkles size={18} color={Palette.danger} style={{ marginRight: Spacing.sm }} />
+            <Sparkles size={16} color={Palette.danger} />
             <ThemedText type="subtitle" style={styles.headerTitle}>
               Just For You
             </ThemedText>

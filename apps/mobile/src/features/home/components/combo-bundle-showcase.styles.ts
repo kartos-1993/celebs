@@ -9,10 +9,10 @@ import {
 
 export const styles = StyleSheet.create({
   container: {
-    marginVertical: Spacing.lg,
+    marginVertical: Spacing.md,
   },
   headerRow: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.md,
   },
   headerContent: {
