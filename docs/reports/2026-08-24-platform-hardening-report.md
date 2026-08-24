@@ -91,3 +91,23 @@ wrong. There is exactly one authoritative file per app
 running Prisma without loading any env file, which activated the
 `localhost:5432/celebs-auth` fallback in `prisma.config.ts`. Rule: always
 pass `-e apps/api/.env.development` explicitly when invoking Prisma CLI.
+
+---
+
+## 5. Follow-up audit findings (post-hardening)
+
+| Finding | Severity | Fixed in |
+|---|---|---|
+| Reject KHALTI/ESEWA checkout until real adapters exist; `getPaymentGateway` fallback was mock | High | Branch 1 (A1) |
+| `StripePaymentAdapter` silently faked success when `STRIPE_SECRET_KEY` missing in non-prod/prod | High | Branch 1 (A2) |
+| Idempotency keys: user-scoped lookup + race-safe placeholder in tx to prevent data leak & duplicates | High | Branch 1 (A3) |
+| Checkout oversell guard inside transaction using atomic conditional stock reservation | Med-High | Branch 1 (A4) |
+| Vendor-cancelled order items must release reserved stock in `updateOrderItemStatus` | Med-High | Branch 1 (A5) |
+| Scheduled background worker (`order-maintenance`) to reap stale online payment reservations | Med | Branch 1 (A6) |
+| Unpaid online orders (e.g. Stripe) must not be marked `paymentStatus: COMPLETED` on delivery | High | Branch 1 (A7) |
+| Refresh-token rotation with `jti` tracking and reuse detection / session family revocation | Med | Branch 1 (A8) |
+| Mobile checkout: guest/user cart divergence — `POST /cart/sync` defined but never called; checkout reads user-cart only → "cart is empty" 400 | High (orders silently never persist) | Branch 3 (C1) |
+| Mobile checkout: `.catch()` converts every failure into a fake "Order Placed!" success and clears the cart | High | Branch 3 (C2) |
+| Web-admin Orders page renders hardcoded mock data (`INITIAL_ORDERS`); fulfillment save is local-state only | High (operators believe orders are being managed) | Branch 4 (D3–D5) |
+| `dispatch3PLOrder` sends `{courierProvider}` but backend zod reads `provider` — courier silently defaults | Low-Med | Branch 4 (D1) |
+
