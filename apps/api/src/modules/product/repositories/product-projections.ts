@@ -73,3 +73,19 @@ export const PRODUCT_DETAIL_SELECT = {
   createdBy: true,
   updatedBy: true,
 } as const;
+
+export const PRODUCT_DETAIL_INCLUDE = {
+  category: { select: { id: true, name: true, slug: true, path: true, level: true } },
+  subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+  brandRef: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      logoUrl: true,
+      tier: true,
+      isGated: true,
+      countryOfOrigin: true,
+    },
+  },
+} as const;
