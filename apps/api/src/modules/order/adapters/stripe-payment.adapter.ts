@@ -1,3 +1,5 @@
+import { logger } from '@celebs/shared-utils';
+
 import {
   IPaymentGateway,
   PaymentIntentResult,
@@ -11,14 +13,21 @@ export class StripePaymentAdapter implements IPaymentGateway {
     this.secretKey = secretKey;
   }
 
+  private get isConfigured(): boolean {
+    return Boolean(this.secretKey);
+  }
+
   async createPaymentIntent(
     orderId: string,
     amount: number,
     currency = 'usd',
     metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {
-    if (!this.secretKey) {
-      // Fallback to simulation if Stripe key is not configured in env
+    if (!this.isConfigured) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('STRIPE_SECRET_KEY is required in production');
+      }
+      logger.warn({ orderId }, 'Stripe key missing — SIMULATING payment intent (non-production)');
       const mockId = `stripe_sim_${Date.now()}`;
       return {
         paymentId: mockId,
@@ -69,11 +78,19 @@ export class StripePaymentAdapter implements IPaymentGateway {
     paymentId: string,
     _payload: unknown = {},
   ): Promise<PaymentVerificationResult> {
-    if (!this.secretKey) {
+    if (!this.isConfigured) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('STRIPE_SECRET_KEY is required in production');
+      }
+      logger.warn(
+        { paymentId },
+        'Stripe key missing — payment verification pending (non-production)',
+      );
       return {
-        success: true,
+        success: false,
         transactionId: `txn_${paymentId}`,
-        status: 'COMPLETED',
+        status: 'PENDING',
+        rawResponse: { status: 'simulated_unconfigured' },
       };
     }
 

@@ -20,7 +20,11 @@ export const COD_MAX_LIMIT = 5000;
 export const checkoutSchema = z.object({
   addressId: z.string().uuid('Valid shipping address ID is required').optional(),
   shippingAddress: addressSchema.optional(),
-  paymentMethod: z.enum(['COD', 'STRIPE', 'KHALTI', 'ESEWA']),
+  paymentMethod: z
+    .enum(['COD', 'STRIPE', 'KHALTI', 'ESEWA'])
+    .refine((m) => m === 'COD' || m === 'STRIPE', {
+      message: 'KHALTI and ESEWA payments are not supported yet',
+    }),
   idempotencyKey: z.string().min(8, 'Idempotency key is required'),
   notes: z.string().optional(),
 });
