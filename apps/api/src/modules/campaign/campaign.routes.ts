@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { Permission } from '@celebs/rbac';
-import { createCampaignSchema } from '@celebs/shared-types';
+import { createCampaignSchema, updateCampaignSchema } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { authenticateJWT } from '../../middlewares/auth.middleware';
@@ -75,7 +75,8 @@ router.put(
   requirePermissions(Permission.CATALOG_MANAGE),
   asyncHandler(async (req, res) => {
     const id = req.params.id || '';
-    const updated = await campaignService.updateCampaign(id, req.body);
+    const validatedPayload = updateCampaignSchema.parse(req.body);
+    const updated = await campaignService.updateCampaign(id, validatedPayload);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
   }),
 );

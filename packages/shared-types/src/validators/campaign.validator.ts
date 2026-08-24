@@ -15,3 +15,12 @@ export const createCampaignSchema = z.object({
 });
 
 export type CreateCampaignType = z.infer<typeof createCampaignSchema>;
+
+/**
+ * Partial payload for campaign updates — strips unknown keys at the boundary.
+ * Extends with productIds (the shape the admin form actually PUTs).
+ */
+export const updateCampaignSchema = createCampaignSchema
+  .extend({ productIds: z.array(z.string()).optional() })
+  .partial();
+export type UpdateCampaignType = z.infer<typeof updateCampaignSchema>;

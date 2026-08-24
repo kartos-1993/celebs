@@ -36,15 +36,27 @@ export interface ColorVariantItem {
   stocks?: StockItem[];
 }
 
+export interface ReviewHistoryChange {
+  field: string;
+  from?: string;
+  to?: string;
+}
+
 export interface ReviewHistoryRecord {
-  action: 'approve' | 'reject' | 'submit';
+  action: 'approve' | 'reject' | 'submit' | 'edited';
   reviewerId?: string;
   reviewerName?: string;
+  editorId?: string;
+  editorRole?: string;
+  /** True when a platform actor edited another store's product. */
+  isCrossStoreEdit?: boolean;
+  changes?: ReviewHistoryChange[];
   rejectionReasonCategory?: string;
   rejectionSubcategories?: string[];
   rejectionFields?: string[];
   note?: string;
-  reviewedAt: string | Date;
+  reviewedAt?: string | Date;
+  editedAt?: string | Date;
 }
 
 export interface ProductQueueItem {

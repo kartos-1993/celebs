@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { Permission } from '@celebs/rbac';
-import { createComboSchema } from '@celebs/shared-types';
+import { createComboSchema, updateComboSchema } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { authenticateJWT } from '../../middlewares/auth.middleware';
@@ -76,7 +76,8 @@ router.put(
   requirePermissions(Permission.CATALOG_MANAGE),
   asyncHandler(async (req, res) => {
     const id = req.params.id || '';
-    const updated = await comboService.updateCombo(id, req.body);
+    const validatedPayload = updateComboSchema.parse(req.body);
+    const updated = await comboService.updateCombo(id, validatedPayload);
     res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
   }),
 );

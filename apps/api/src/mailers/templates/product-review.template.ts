@@ -1,3 +1,5 @@
+import { buildWebUrl } from '@/common/utils/url';
+
 export interface IProductRejectionParams {
   productName: string;
   rejectionReason: string;
@@ -93,7 +95,7 @@ export const productRejectionEmailTemplate = (
 
             <p>Please log in to your vendor dashboard to make the requested updates and re-submit your product for review.</p>
             <div style="text-align: center; margin-top: 28px;">
-              <a href="${process.env.APP_ORIGIN || 'http://localhost:5173'}/products/manage" class="button">Open Vendor Dashboard</a>
+              <a href="${buildWebUrl('/products/manage')}" class="button">Open Vendor Dashboard</a>
             </div>
           </div>
           <div class="footer">

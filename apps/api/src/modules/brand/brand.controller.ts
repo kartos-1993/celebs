@@ -13,8 +13,9 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { isPlatformActor } from '@/common/context/actor-context';
 import { BrandService, brandService as defaultBrandService } from './brand.service';
+
+import { isPlatformActor } from '@/common/context/actor-context';
 
 export class BrandController {
 

@@ -2,7 +2,7 @@ import { ErrorRequestHandler, Response } from 'express';
 import { z } from 'zod';
 
 import { IApiResponse } from '@celebs/shared-types';
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
 import { Prisma } from '@/config/db.prisma';
@@ -34,10 +34,21 @@ const formatZodError = (res: Response, error: z.ZodError) => {
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Response | void => {
   try {
-    // Log error details safely on server side
-    console.error(
-      `Error occurred on PATH: ${req.path} - ${error?.name || 'Error'}: ${error?.message || error}`,
-    );
+    // Structured log with request context; stack traces for unexpected errors only.
+    const isExpected = error instanceof AppError;
+    const logPayload = {
+      path: req.path,
+      method: req.method,
+      name: error?.name || 'Error',
+      message: error?.message || String(error),
+      errorCode: isRecord(error) ? error.errorCode : undefined,
+      ...(isExpected ? {} : { stack: error instanceof Error ? error.stack : undefined }),
+    };
+    if (isExpected) {
+      logger.warn(logPayload, `Handled application error on PATH: ${req.path}`);
+    } else {
+      logger.error(logPayload, `Unhandled error on PATH: ${req.path}`);
+    }
 
     // Ensure response always uses JSON content type
     if (!res.headersSent) {
@@ -149,7 +160,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
     };
     return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
   } catch (fatalErr) {
-    console.error('Fatal error within errorHandler middleware:', fatalErr);
+    logger.error({ err: fatalErr }, 'Fatal error within errorHandler middleware');
     if (!res.headersSent) {
       res.setHeader('Content-Type', 'application/json');
       return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json({

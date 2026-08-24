@@ -11,6 +11,7 @@ import {
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { ProductService } from './product.service';
+import { PRODUCT_STATUS } from './product-status';
 
 import { isPlatformActor } from '@/common/context/actor-context';
 
@@ -37,8 +38,8 @@ export class ProductController {
 
       // Non-publisher accounts (Vendors, Staff without explicit publish permission) cannot publish directly
       let initialStatus = payload.status;
-      if (!isPublisher && initialStatus === 'published') {
-        initialStatus = 'pending_review';
+      if (!isPublisher && initialStatus === PRODUCT_STATUS.PUBLISHED) {
+        initialStatus = PRODUCT_STATUS.PENDING_REVIEW;
       }
 
       // Sellers are pre-validated by requireStoreState(['APPROVED']).
@@ -75,7 +76,7 @@ export class ProductController {
       }
 
       const isPublished =
-        product.status === 'published' || (product.status as string) === 'PUBLISHED';
+        product.status === 'published' || String(product.status).toLowerCase() === PRODUCT_STATUS.PUBLISHED;
       if (!isPublished) {
         // Default-deny: only platform reviewers and the owning store may read
         // unpublished products. Anonymous/customers get 404 (no existence leak).
@@ -280,7 +281,7 @@ export class ProductController {
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
-        message: `Product successfully ${product?.status === 'published' ? 'activated' : 'deactivated'}`,
+        message: `Product successfully ${product?.status === PRODUCT_STATUS.PUBLISHED ? 'activated' : 'deactivated'}`,
         data: product,
       });
     } catch (error) {

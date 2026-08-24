@@ -20,7 +20,14 @@ import {
   PRODUCT_DETAIL_SELECT,
   PRODUCT_LIST_SELECT,
 } from './repositories/product-projections';
+import {
+  appendAuditEntry,
+  buildProductAuditDiff,
+  isCrossStoreProductEdit,
+} from './utils/product-audit';
 import { calculateProductQCScore } from './utils/product-qc';
+import type { ProductStatusValue } from './product-status';
+import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
 import prisma from '@/config/db.prisma';
 import { sendEmail } from '@/mailers/mailer';
@@ -301,7 +308,7 @@ export class ProductService {
               dynamicData: toJsonInput(input.dynamicData) ?? {},
               tags: input.tags ?? [],
               featured: input.featured ?? false,
-              status: input.status ?? 'draft',
+              status: input.status ?? PRODUCT_STATUS.DRAFT,
               vendorId: vendorId || undefined,
               vendorName: vendorName || undefined,
               createdBy: userId,
@@ -395,7 +402,7 @@ export class ProductService {
   ) {
     const where: Record<string, unknown> = {
       vendorId,
-      status: filters.status ? filters.status : { not: 'archived' },
+      status: filters.status ? filters.status : { not: PRODUCT_STATUS.ARCHIVED },
     };
 
     if (filters.search) {
@@ -458,9 +465,9 @@ export class ProductService {
     if (filters.status) {
       where.status = filters.status;
     } else if (filters.vendorId) {
-      where.status = { not: 'archived' };
+      where.status = { not: PRODUCT_STATUS.ARCHIVED };
     } else {
-      where.status = 'published';
+      where.status = PRODUCT_STATUS.PUBLISHED;
     }
 
     if (filters.search) {
@@ -596,7 +603,7 @@ export class ProductService {
     page = 1,
     limit = 10,
   ): Promise<{ products: Array<Record<string, unknown> | null>; total: number }> {
-    const where = { status: 'pending_review' };
+    const where = { status: PRODUCT_STATUS.PENDING_REVIEW };
     const skip = (page - 1) * limit;
 
     const [rawProducts, total] = await Promise.all([
@@ -642,7 +649,7 @@ export class ProductService {
       );
     }
 
-    if (product.status !== 'draft' && product.status !== 'rejected') {
+    if (!VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)) {
       throw new AppError(
         'Product is not in a submittable state',
         HTTPSTATUS.BAD_REQUEST,
@@ -652,7 +659,7 @@ export class ProductService {
 
     const updated = await prisma.product.update({
       where: { id },
-      data: { status: 'pending_review' },
+      data: { status: PRODUCT_STATUS.PENDING_REVIEW },
       include: {
         category: { select: { id: true, name: true, slug: true, path: true, level: true } },
         subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
@@ -684,7 +691,7 @@ export class ProductService {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if (product.status !== 'pending_review') {
+    if (product.status !== PRODUCT_STATUS.PENDING_REVIEW) {
       throw new AppError(
         'Product is not pending review',
         HTTPSTATUS.BAD_REQUEST,
@@ -741,13 +748,13 @@ export class ProductService {
     };
 
     if (action === 'approve') {
-      updateData.status = 'published';
+      updateData.status = PRODUCT_STATUS.PUBLISHED;
       updateData.reviewNote = null;
       updateData.rejectionReasonCategory = null;
       updateData.rejectionSubcategories = [];
       updateData.rejectionFields = [];
     } else {
-      updateData.status = 'rejected';
+      updateData.status = PRODUCT_STATUS.REJECTED;
       updateData.reviewNote = note || 'No specific feedback provided.';
       updateData.rejectionReasonCategory = category || null;
       updateData.rejectionSubcategories = subcategories;
@@ -819,17 +826,23 @@ export class ProductService {
           ErrorCode.FORBIDDEN_RESOURCE,
         );
       }
-      if (!isPublisher && product.status !== 'draft' && product.status !== 'rejected') {
+      if (!isPublisher && !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)) {
         throw new AppError(
           'Cannot update product unless it is draft or rejected',
           HTTPSTATUS.BAD_REQUEST,
           ErrorCode.INVALID_REQUEST,
         );
       }
-      if (!isPublisher && updateData.status === 'published') {
-        updateData.status = 'pending_review';
+      if (!isPublisher && updateData.status === PRODUCT_STATUS.PUBLISHED) {
+        updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
       }
     }
+
+    // ── Audit trail: record who changed what on every update ──
+    // Vendors and platform admins alike; cross-store (platform) edits are
+    // flagged so vendor-facing history can surface them explicitly.
+    const auditChanges = buildProductAuditDiff(product, updateData);
+    const crossStoreEdit = isCrossStoreProductEdit(role, product.vendorId);
 
     let resolvedCategoryId = product.categoryId;
     let resolvedSubcategoryId = product.subcategoryId;
@@ -913,6 +926,20 @@ export class ProductService {
           ...(updateData.featured !== undefined ? { featured: updateData.featured } : {}),
           ...(updateData.status ? { status: updateData.status } : {}),
           updatedBy: userId,
+          ...(auditChanges.length > 0
+            ? {
+                reviewHistory: toJsonInput(
+                  appendAuditEntry(product.reviewHistory, {
+                    action: 'edited',
+                    editorId: userId,
+                    editorRole: role,
+                    isCrossStoreEdit: crossStoreEdit,
+                    changes: auditChanges,
+                    editedAt: new Date(),
+                  }),
+                ),
+              }
+            : {}),
         },
         include: {
           category: { select: { id: true, name: true, slug: true, path: true, level: true } },
@@ -985,7 +1012,7 @@ export class ProductService {
     const updated = await prisma.product.update({
       where: { id },
       data: {
-        status: 'archived',
+        status: PRODUCT_STATUS.ARCHIVED,
         updatedBy: userId,
       },
       include: {
@@ -994,7 +1021,7 @@ export class ProductService {
       },
     });
 
-    if (product.status !== 'archived') {
+    if (product.status !== PRODUCT_STATUS.ARCHIVED) {
       await mediaRepository
         .adjustUsageByUrls(collectProductAssetUrls(updated), -1)
         .catch(() => undefined);
@@ -1017,7 +1044,7 @@ export class ProductService {
       );
     }
 
-    if (product.status !== 'published' && product.status !== 'deactivated') {
+    if (product.status !== PRODUCT_STATUS.PUBLISHED && product.status !== PRODUCT_STATUS.DEACTIVATED) {
       throw new AppError(
         'Only published or deactivated products can be toggled',
         HTTPSTATUS.BAD_REQUEST,
@@ -1028,7 +1055,7 @@ export class ProductService {
     const updated = await prisma.product.update({
       where: { id },
       data: {
-        status: product.status === 'published' ? 'deactivated' : 'published',
+        status: product.status === PRODUCT_STATUS.PUBLISHED ? PRODUCT_STATUS.DEACTIVATED : PRODUCT_STATUS.PUBLISHED,
       },
       include: {
         category: { select: { id: true, name: true, slug: true, path: true, level: true } },

@@ -623,27 +623,53 @@ export function PreviewModal({
                 </h4>
                 {(product.reviewHistory ?? []).length > 0 ? (
                   <div className="space-y-3">
-                    {(product.reviewHistory ?? []).map((log, index) => (
-                      <div key={index} className="p-3 border rounded-lg bg-card text-xs space-y-1">
-                        <div className="flex justify-between items-center">
-                          <Badge
-                            variant={log.action === 'approve' ? 'default' : 'destructive'}
-                            className="capitalize"
-                          >
-                            {log.action}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {new Date(log.reviewedAt).toLocaleString()}
-                          </span>
-                        </div>
-                        {log.rejectionReasonCategory && (
-                          <div className="font-semibold text-foreground">
-                            Category: {log.rejectionReasonCategory}
+                    {(product.reviewHistory ?? []).map((log, index) => {
+                      const timestamp = log.editedAt ?? log.reviewedAt;
+                      const isEdit = log.action === 'edited';
+                      return (
+                        <div key={index} className="p-3 border rounded-lg bg-card text-xs space-y-1">
+                          <div className="flex justify-between items-center">
+                            {isEdit ? (
+                              <Badge variant="outline" className="capitalize">
+                                Edited{log.isCrossStoreEdit ? ' · Platform' : ''}
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant={log.action === 'approve' ? 'default' : 'destructive'}
+                                className="capitalize"
+                              >
+                                {log.action}
+                              </Badge>
+                            )}
+                            <span className="text-muted-foreground">
+                              {timestamp ? new Date(timestamp).toLocaleString() : '—'}
+                            </span>
                           </div>
-                        )}
-                        {log.note && <p className="text-muted-foreground italic">{log.note}</p>}
-                      </div>
-                    ))}
+
+                          {isEdit && (log.changes?.length ?? 0) > 0 ? (
+                            <ul className="space-y-0.5 text-muted-foreground">
+                              {(log.changes ?? []).map((change) => (
+                                <li key={change.field} className="truncate">
+                                  <span className="font-medium text-foreground capitalize">
+                                    {change.field.replace(/([A-Z])/g, ' $1')}:
+                                  </span>{' '}
+                                  {change.from} → {change.to}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
+
+                          {!isEdit && log.rejectionReasonCategory && (
+                            <div className="font-semibold text-foreground">
+                              Category: {log.rejectionReasonCategory}
+                            </div>
+                          )}
+                          {!isEdit && log.note && (
+                            <p className="text-muted-foreground italic">{log.note}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-6 text-center text-muted-foreground border rounded-lg bg-muted/10">

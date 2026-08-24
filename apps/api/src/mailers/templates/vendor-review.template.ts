@@ -1,3 +1,5 @@
+import { buildWebUrl } from '@/common/utils/url';
+
 export const vendorApprovalTemplate = (shopName: string) => ({
   subject: 'Congratulations! Your Vendor Application is Approved',
   text: `Hello ${shopName},\n\nYour vendor application has been approved by the Celebs moderation team! You can now log in to your seller portal, upload catalog products, and start receiving orders.\n\nThank you for partnering with Celebs.`,
@@ -8,7 +10,7 @@ export const vendorApprovalTemplate = (shopName: string) => ({
       <p>Great news! Your vendor profile and store verification documents have been <strong>approved</strong> by our team.</p>
       <p>You can now log in to your seller portal to add catalog products, manage inventory, and start selling.</p>
       <div style="margin: 25px 0;">
-        <a href="http://localhost:5173/login" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Seller Portal</a>
+        <a href="${buildWebUrl('/login')}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Seller Portal</a>
       </div>
       <p style="color: #666; font-size: 14px;">Welcome aboard,<br/>The Celebs Platform Team</p>
     </div>
@@ -29,7 +31,7 @@ export const vendorRejectionTemplate = (shopName: string, reason: string) => ({
       </div>
       <p>Please log in to your onboarding portal to update the flagged details and resubmit for verification.</p>
       <div style="margin: 25px 0;">
-        <a href="http://localhost:5173/onboarding" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Update Application & Resubmit</a>
+        <a href="${buildWebUrl('/onboarding')}" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Update Application & Resubmit</a>
       </div>
       <p style="color: #666; font-size: 14px;">Thank you,<br/>The Celebs Moderation Team</p>
     </div>

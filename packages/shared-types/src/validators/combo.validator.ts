@@ -14,3 +14,7 @@ export const createComboSchema = z.object({
 });
 
 export type CreateComboType = z.infer<typeof createComboSchema>;
+
+/** Partial payload for combo updates — strips unknown keys at the boundary. */
+export const updateComboSchema = createComboSchema.partial();
+export type UpdateComboType = z.infer<typeof updateComboSchema>;
