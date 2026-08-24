@@ -197,6 +197,12 @@ export class BrandService {
     const activeRules = await this.brandRepository.findActiveProtectionRules();
     if (!activeRules.length) return;
 
+    // Pre-fetch all approvals once — per-rule lookups inside the loop were an
+    // N+1 on every product create/update.
+    const authorizedBrandIds = new Set(
+      vendorId ? await this.brandRepository.findApprovedBrandIdsForVendor(vendorId) : [],
+    );
+
     for (const rule of activeRules) {
       // If the vendor is using this exact brand with approval, skip rule
       if (selectedBrandId === rule.brandId) continue;
@@ -204,12 +210,7 @@ export class BrandService {
       try {
         const regex = new RegExp(rule.pattern, 'i');
         if (regex.test(combinedText)) {
-          // Check if vendor has authorization for this matched brand
-          let isAuthorized = false;
-          if (vendorId) {
-            const auth = await this.brandRepository.findAuthorization(vendorId, rule.brandId);
-            isAuthorized = auth?.status === 'APPROVED';
-          }
+          const isAuthorized = authorizedBrandIds.has(rule.brandId);
 
           if (!isAuthorized) {
             throw new BadRequestException(

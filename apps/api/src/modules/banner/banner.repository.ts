@@ -1,3 +1,4 @@
+import { TtlCache } from '@/common/utils/ttl-cache';
 import prisma from '@/config/db.prisma';
 
 export interface BannerCreateInput {
@@ -8,12 +9,21 @@ export interface BannerCreateInput {
   isActive: boolean;
 }
 
+const activeBannersCache = new TtlCache<unknown[]>('banners:active');
+
 export class BannerRepository {
   async findActiveBanners() {
-    return prisma.banner.findMany({
+    const cached = await activeBannersCache.get('all');
+    if (cached) return cached;
+
+    const banners = await prisma.banner.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'asc' },
     });
+
+    // Wholesale-replaced on every save, so invalidation below is always exact.
+    await activeBannersCache.set('all', banners);
+    return banners;
   }
 
   async findAllBanners() {
@@ -23,17 +33,20 @@ export class BannerRepository {
   }
 
   async replaceBanners(bannersData: BannerCreateInput[]) {
-    return prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       await tx.banner.deleteMany({});
-      const created = [];
+      const items = [];
       for (const b of bannersData) {
         const item = await tx.banner.create({
           data: b,
         });
-        created.push(item);
+        items.push(item);
       }
-      return created;
+      return items;
     });
+
+    await activeBannersCache.invalidate();
+    return created;
   }
 }
 

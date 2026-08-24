@@ -135,6 +135,21 @@ export class QuickFilterService {
       }
     }
 
+    // Hoisted: every auto-populated subcategory filter reuses this one fetch
+    // instead of issuing an identical query per filter.
+    const needsAutoPopulate = rawQuickFilters.some((qf) => {
+      const config = (
+        qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}
+      ) as { type?: string; autoPopulate?: boolean };
+      return config.type === 'subcategory' && config.autoPopulate !== false;
+    });
+    const autoPopulateChildren = needsAutoPopulate
+      ? await prisma.category.findMany({
+          where: { parentCategory: categoryId, isActive: true },
+          orderBy: { name: 'asc' },
+        })
+      : [];
+
     const quickFilters = [];
 
     for (const qf of rawQuickFilters) {
@@ -143,13 +158,7 @@ export class QuickFilterService {
       let finalItems = [...(formatted.items || [])];
 
       if (formatted.type === 'subcategory' && formatted.autoPopulate) {
-        const childCategories = await prisma.category.findMany({
-          where: {
-            parentCategory: categoryId,
-            isActive: true,
-          },
-          orderBy: { name: 'asc' },
-        });
+        const childCategories = autoPopulateChildren;
 
         if (childCategories.length > 0) {
           const autoItems = childCategories.map((child, idx) => ({

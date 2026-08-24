@@ -3,36 +3,49 @@ import { createCampaignSchema } from '@celebs/shared-types';
 
 import { CampaignRepository } from './campaign.repository';
 
+import { TtlCache } from '@/common/utils/ttl-cache';
+
 interface ProductItem {
   id: string;
   [key: string]: unknown;
 }
 
+// Public storefront reads — cached 60s L1 / 5min L2, busted on any mutation.
+const activeCampaignsCache = new TtlCache<unknown[]>('campaigns:active');
 
 export class CampaignService {
   constructor(private campaignRepository: CampaignRepository = new CampaignRepository()) {}
 
   async getActiveCampaigns() {
     const now = new Date();
+    // Bucket the fetch time so cache hits share one window; expiry filtering
+    // stays correct within the bucket granularity.
+    const bucket = Math.floor(now.getTime() / 60_000);
+    const cached = await activeCampaignsCache.get(`t${bucket}`);
+    if (cached) return cached;
+
     const campaigns = await this.campaignRepository.findActiveCampaigns(now);
 
     const allProductIds = Array.from(
       new Set(campaigns.flatMap((c) => (c.products || []).map((p) => p.productId))),
     );
 
+    let result: unknown[];
     if (allProductIds.length === 0) {
-      return campaigns.map((c) => ({ ...c, productDetails: [] }));
+      result = campaigns.map((c) => ({ ...c, productDetails: [] }));
+    } else {
+      const products = await this.campaignRepository.findProductsByIds(allProductIds);
+      const productMap = new Map(products.map((p: ProductItem) => [p.id.toString(), p]));
+      result = campaigns.map((c) => ({
+        ...c,
+        productDetails: (c.products || [])
+          .map((p: { productId: string }) => productMap.get(p.productId))
+          .filter(Boolean),
+      }));
     }
 
-    const products = await this.campaignRepository.findProductsByIds(allProductIds);
-    const productMap = new Map(products.map((p: ProductItem) => [p.id.toString(), p]));
-
-    return campaigns.map((c) => ({
-      ...c,
-      productDetails: (c.products || [])
-        .map((p: { productId: string }) => productMap.get(p.productId))
-        .filter(Boolean),
-    }));
+    await activeCampaignsCache.set(`t${bucket}`, result);
+    return result;
   }
 
   async getAllCampaigns() {
@@ -63,7 +76,7 @@ export class CampaignService {
     const validated = createCampaignSchema.parse(input);
     const { productIds, ...campaignData } = validated;
 
-    return this.campaignRepository.create({
+    const created = await this.campaignRepository.create({
       ...campaignData,
       startDate: new Date(campaignData.startDate),
       endDate: new Date(campaignData.endDate),
@@ -77,6 +90,9 @@ export class CampaignService {
           }
         : undefined,
     });
+
+    await activeCampaignsCache.invalidate();
+    return created;
   }
 
   async updateCampaign(id: string, input: UpdateCampaignType) {
@@ -86,6 +102,9 @@ export class CampaignService {
     if (startDate) dataToUpdate.startDate = new Date(startDate);
     if (endDate) dataToUpdate.endDate = new Date(endDate);
 
-    return this.campaignRepository.update(id, dataToUpdate, productIds);
+    const updated = await this.campaignRepository.update(id, dataToUpdate, productIds);
+
+    await activeCampaignsCache.invalidate();
+    return updated;
   }
 }

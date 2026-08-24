@@ -4,6 +4,8 @@ import { CreateComboType } from '@celebs/shared-types';
 
 import { ComboRepository, comboRepository } from './combo.repository';
 
+import { TtlCache } from '@/common/utils/ttl-cache';
+
 interface ComboItemInput {
   productId: string;
   [key: string]: unknown;
@@ -13,6 +15,11 @@ interface ComboInput {
   items?: ComboItemInput[];
   [key: string]: unknown;
 }
+
+// Public storefront reads — cached 60s L1 / 5min L2, busted on any mutation.
+type HydratedCombo = Record<string, unknown>;
+const activeCombosCache = new TtlCache<HydratedCombo[]>('combos:active');
+const allCombosCache = new TtlCache<HydratedCombo[]>('combos:all');
 
 export class ComboService {
   private comboRepository: ComboRepository;
@@ -49,13 +56,24 @@ export class ComboService {
   }
 
   async getActiveCombos(tag?: string) {
+    const key = tag ?? 'all';
+    const cached = await activeCombosCache.get(key);
+    if (cached) return cached;
+
     const combos = await this.comboRepository.findActiveCombos(tag);
-    return this.attachProductDetails(combos);
+    const hydrated = await this.attachProductDetails(combos);
+    await activeCombosCache.set(key, hydrated);
+    return hydrated;
   }
 
   async getAllCombos() {
+    const cached = await allCombosCache.get('all');
+    if (cached) return cached;
+
     const combos = await this.comboRepository.findAllCombos();
-    return this.attachProductDetails(combos);
+    const hydrated = await this.attachProductDetails(combos);
+    await allCombosCache.set('all', hydrated);
+    return hydrated;
   }
 
   async getComboBySlug(slug: string) {
@@ -95,6 +113,7 @@ export class ComboService {
       },
     });
 
+    await Promise.all([activeCombosCache.invalidate(), allCombosCache.invalidate()]);
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
   }
@@ -128,12 +147,15 @@ export class ComboService {
       payload.productIds,
     );
 
+    await Promise.all([activeCombosCache.invalidate(), allCombosCache.invalidate()]);
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
   }
 
   async deleteCombo(id: string) {
-    return this.comboRepository.delete(id);
+    const deleted = await this.comboRepository.delete(id);
+    await Promise.all([activeCombosCache.invalidate(), allCombosCache.invalidate()]);
+    return deleted;
   }
 }
 

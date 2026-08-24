@@ -126,19 +126,26 @@ export class BrandRepository {
 
   // ── Brand Authorization Data Operations ──
 
+  /** One-query pre-fetch used by hijack screening instead of per-rule lookups. */
+  async findApprovedBrandIdsForVendor(vendorId: string): Promise<string[]> {
+    const rows = await this.db.vendorBrandAuthorization.findMany({
+      where: { vendorId, status: 'APPROVED' },
+      select: { brandId: true },
+    });
+    return rows.map((row) => row.brandId);
+  }
+
   async findAuthorization(vendorId: string, brandId: string) {
     return this.db.vendorBrandAuthorization.findUnique({
       where: {
         vendorId_brandId: { vendorId, brandId },
-      },
-      include: {
+      },      include: {
         brand: {
           select: {
             id: true,
             name: true,
             slug: true,
-            logoUrl: true,
-            tier: true,
+            logoUrl: true,            tier: true,
             isGated: true,
           },
         },

@@ -1,28 +1,41 @@
 import prisma from '@/config/db.prisma';
 import { DEFAULT_OPTION_SETS } from '@/db/seed/seed-option-sets';
 
-async function ensureDefaults() {
-  const count = await prisma.optionSet.count();
-  if (count >= DEFAULT_OPTION_SETS.length) return;
-  for (const set of DEFAULT_OPTION_SETS) {
-    await prisma.optionSet.upsert({
-      where: { name: set.name },
-      update: {
-        displayName: set.name,
-        options: set.values,
-      },
-      create: {
-        name: set.name,
-        displayName: set.name,
-        options: set.values,
-      },
+// Write-on-read guard: seeding runs at most once per process. Without it,
+// every list() pays a count query and can cascade into N upserts under race.
+let defaultsEnsured: Promise<void> | null = null;
+
+function ensureDefaultsOnce(): Promise<void> {
+  if (!defaultsEnsured) {
+    defaultsEnsured = (async () => {
+      const count = await prisma.optionSet.count();
+      if (count >= DEFAULT_OPTION_SETS.length) return;
+      for (const set of DEFAULT_OPTION_SETS) {
+        await prisma.optionSet.upsert({
+          where: { name: set.name },
+          update: {
+            displayName: set.name,
+            options: set.values,
+          },
+          create: {
+            name: set.name,
+            displayName: set.name,
+            options: set.values,
+          },
+        });
+      }
+    })().catch((err) => {
+      // Allow a later request to retry seeding.
+      defaultsEnsured = null;
+      throw err;
     });
   }
+  return defaultsEnsured;
 }
 
 export class OptionSetService {
   async list(_type?: string) {
-    await ensureDefaults();
+    await ensureDefaultsOnce();
     const sets = await prisma.optionSet.findMany({ orderBy: { name: 'asc' } });
     return sets.map((s) => ({
       id: s.id,
