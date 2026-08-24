@@ -11,10 +11,16 @@ if (fs.existsSync(envPath)) {
 
 import { logger } from '@celebs/shared-utils';
 
-import { assetQueue, sessionQueue, verifyRedisConnection } from './common/services/queue.service';
+import {
+  assetQueue,
+  mailQueue,
+  sessionQueue,
+  verifyRedisConnection,
+} from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import prisma from './config/db.prisma';
 import { assetWorker } from './modules/media/asset.worker';
+import { mailWorker } from './modules/mail/mail.worker';
 import { sessionWorker } from './modules/session/session.worker';
 
 const startWorker = async () => {
@@ -46,8 +52,10 @@ const startWorker = async () => {
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}, shutting down worker gracefully...`);
       await assetWorker.close();
+      await mailWorker.close();
       await sessionWorker.close();
       await assetQueue.close();
+      await mailQueue.close();
       await sessionQueue.close();
       await prisma.$disconnect();
       logger.info('Worker shutdown complete. Exiting.');
