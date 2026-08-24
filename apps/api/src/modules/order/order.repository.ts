@@ -130,9 +130,16 @@ export class OrderRepository {
     return { orders, total, page, limit };
   }
 
-  async findIdempotencyKey(key: string) {
-    return prisma.idempotencyKey.findUnique({
+  async findIdempotencyKey(key: string, userId: string) {
+    return prisma.idempotencyKey.findFirst({
+      where: { key, userId },
+    });
+  }
+
+  async updateIdempotencyKeyResponse(key: string, responseBody: string) {
+    return prisma.idempotencyKey.update({
       where: { key },
+      data: { responseBody },
     });
   }
 

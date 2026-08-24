@@ -14,6 +14,7 @@ import { logger } from '@celebs/shared-utils';
 import {
   assetQueue,
   mailQueue,
+  orderMaintenanceQueue,
   sessionQueue,
   verifyRedisConnection,
 } from './common/services/queue.service';
@@ -21,6 +22,7 @@ import { verifyS3Connection } from './common/utils/s3.client';
 import prisma from './config/db.prisma';
 import { mailWorker } from './modules/mail/mail.worker';
 import { assetWorker } from './modules/media/asset.worker';
+import { orderReservationWorker } from './modules/order/order-reservation.worker';
 import { sessionWorker } from './modules/session/session.worker';
 
 const startWorker = async () => {
@@ -35,7 +37,7 @@ const startWorker = async () => {
     await verifyS3Connection();
 
     logger.info(
-      'BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance',
+      'BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance, order-maintenance',
     );
 
     // Register daily repeatable session maintenance job (runs at midnight 00:00)
@@ -51,14 +53,29 @@ const startWorker = async () => {
     );
     logger.info('Scheduled daily session maintenance job (pattern: 0 0 * * *)');
 
+    // Register 30-minute repeatable order maintenance job for releasing stale reservations
+    await orderMaintenanceQueue.add(
+      'release-stale-reservations',
+      {},
+      {
+        repeat: {
+          pattern: '*/30 * * * *',
+        },
+        jobId: 'stale-reservation-release',
+      },
+    );
+    logger.info('Scheduled periodic stale order reservation release job (pattern: */30 * * * *)');
+
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}, shutting down worker gracefully...`);
       await assetWorker.close();
       await mailWorker.close();
       await sessionWorker.close();
+      await orderReservationWorker.close();
       await assetQueue.close();
       await mailQueue.close();
       await sessionQueue.close();
+      await orderMaintenanceQueue.close();
       await prisma.$disconnect();
       logger.info('Worker shutdown complete. Exiting.');
       process.exit(0);

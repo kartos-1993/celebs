@@ -99,3 +99,16 @@ export const mailQueue = new Queue('mail-delivery', {
     removeOnFail: false,
   },
 });
+
+export const orderMaintenanceQueue = new Queue('order-maintenance', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: false,
+  },
+});

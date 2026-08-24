@@ -4,9 +4,8 @@ import {
   COD_MAX_LIMIT,
   UpdateAddressInput,
 } from '@celebs/shared-types';
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { MockPaymentAdapter } from './adapters/mock-payment.adapter';
 import { IPaymentGateway } from './adapters/payment-gateway.interface';
 import { StripePaymentAdapter } from './adapters/stripe-payment.adapter';
 import { orderRepository } from './order.repository';
@@ -18,8 +17,14 @@ export class OrderService {
     switch (method) {
       case 'STRIPE':
         return new StripePaymentAdapter();
+      case 'COD':
+        return null as unknown as IPaymentGateway;
       default:
-        return new MockPaymentAdapter();
+        throw new AppError(
+          `Payment gateway for ${method} is not configured`,
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
     }
   }
 
@@ -93,7 +98,7 @@ export class OrderService {
     }
 
     // Check Idempotency Key
-    const existingIdempotency = await orderRepository.findIdempotencyKey(idempotencyKey);
+    const existingIdempotency = await orderRepository.findIdempotencyKey(idempotencyKey, userId);
 
     if (existingIdempotency) {
       return JSON.parse(existingIdempotency.responseBody);
@@ -209,60 +214,93 @@ export class OrderService {
     const orderStatus = isCOD ? 'CONFIRMED' : 'PENDING_PAYMENT';
     const paymentStatus = isCOD ? 'PENDING' : 'PENDING';
 
-    // Atomic Transaction: Reserve Stock + Create Order + Clear Cart
-    const order = await orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Reserve inventory quantity
-      for (const item of itemDetails) {
-        await tx.productInventory.update({
-          where: { id: item.inventoryId },
+    let order;
+    try {
+      // Atomic Transaction: Reserve Stock + Create Order + Clear Cart + Placeholder Idempotency
+      order = await orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
+        // 1. Authoritative conditional atomic stock reservation
+        for (const item of itemDetails) {
+          const updated = await tx.$executeRaw`
+            UPDATE "ProductInventory"
+            SET reserved_quantity = reserved_quantity + ${item.quantity}
+            WHERE id = ${item.inventoryId}
+              AND quantity - reserved_quantity >= ${item.quantity}`;
+          if (updated === 0) {
+            throw new AppError(
+              `Insufficient stock for item (${item.colorVariantName} - ${item.size}) at checkout`,
+              HTTPSTATUS.CONFLICT,
+              ErrorCode.INVALID_REQUEST,
+            );
+          }
+        }
+
+        // 2. Create Order & Items
+        const createdOrder = await tx.order.create({
           data: {
-            reservedQuantity: {
-              increment: item.quantity,
+            orderNumber,
+            userId,
+            addressId: targetAddressId,
+            subtotal: subtotalDecimal,
+            shippingFee: shippingFeeDecimal,
+            discountAmount: new Prisma.Decimal(0),
+            totalAmount: totalAmountDecimal,
+            status: orderStatus,
+            paymentMethod,
+            paymentStatus,
+            items: {
+              create: itemDetails.map((det) => ({
+                inventoryId: det.inventoryId,
+                vendorId: det.vendorId,
+                productName: det.productName,
+                colorVariantName: det.colorVariantName,
+                size: det.size,
+                unitPrice: det.unitPrice,
+                quantity: det.quantity,
+                subtotal: det.subtotal,
+                itemStatus: isCOD ? 'PENDING' : 'PENDING',
+              })),
             },
           },
-        });
-      }
-
-      // 2. Create Order & Items
-      const createdOrder = await tx.order.create({
-        data: {
-          orderNumber,
-          userId,
-          addressId: targetAddressId,
-          subtotal: subtotalDecimal,
-          shippingFee: shippingFeeDecimal,
-          discountAmount: new Prisma.Decimal(0),
-          totalAmount: totalAmountDecimal,
-          status: orderStatus,
-          paymentMethod,
-          paymentStatus,
-          items: {
-            create: itemDetails.map((det) => ({
-              inventoryId: det.inventoryId,
-              vendorId: det.vendorId,
-              productName: det.productName,
-              colorVariantName: det.colorVariantName,
-              size: det.size,
-              unitPrice: det.unitPrice,
-              quantity: det.quantity,
-              subtotal: det.subtotal,
-              itemStatus: isCOD ? 'PENDING' : 'PENDING',
-            })),
+          include: {
+            items: true,
+            address: true,
           },
-        },
-        include: {
-          items: true,
-          address: true,
-        },
-      });
+        });
 
-      // 3. Clear User Cart
-      await tx.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
+        // 3. Clear User Cart
+        await tx.cartItem.deleteMany({
+          where: { cartId: cart.id },
+        });
 
-      return createdOrder;
-    });
+        // 4. Create placeholder idempotency key inside the transaction to guard against concurrent replay
+        await tx.idempotencyKey.create({
+          data: {
+            key: idempotencyKey,
+            userId,
+            statusCode: 201,
+            responseBody: JSON.stringify({ status: 'PROCESSING', retry_with_new_key: true }),
+          },
+        });
+
+        return createdOrder;
+      });
+    } catch (err: unknown) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        const recheck = await orderRepository.findIdempotencyKey(idempotencyKey, userId);
+        if (recheck) {
+          return JSON.parse(recheck.responseBody);
+        }
+        throw new AppError(
+          'Idempotency key already in use',
+          HTTPSTATUS.CONFLICT,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+      throw err;
+    }
 
     // Initialize Payment Intent for online payments
     let paymentResult = null;
@@ -295,13 +333,11 @@ export class OrderService {
       payment: paymentResult,
     };
 
-    // Record Idempotency Key
-    await orderRepository.createIdempotencyKey({
-      key: idempotencyKey,
-      userId,
-      statusCode: 201,
-      responseBody: JSON.stringify(responseBody),
-    });
+    // Update Idempotency Key with finalized response
+    await orderRepository.updateIdempotencyKeyResponse(
+      idempotencyKey,
+      JSON.stringify(responseBody),
+    );
 
     return responseBody;
   }
@@ -411,6 +447,20 @@ export class OrderService {
         });
       }
 
+      // If item is CANCELLED and was not already CANCELLED or DELIVERED, release reserved stock
+      if (
+        itemStatus === 'CANCELLED' &&
+        item.itemStatus !== 'CANCELLED' &&
+        item.itemStatus !== 'DELIVERED'
+      ) {
+        await tx.productInventory.update({
+          where: { id: item.inventoryId },
+          data: {
+            reservedQuantity: { decrement: item.quantity },
+          },
+        });
+      }
+
       // Check if all items in the parent order have reached the new status
       const allItems = await tx.orderItem.findMany({
         where: { orderId: item.orderId },
@@ -433,18 +483,95 @@ export class OrderService {
         newOrderStatus = 'PACKED';
       }
 
+      const isPaid =
+        item.order.paymentMethod === 'COD' ||
+        Boolean(
+          await tx.payment.findFirst({
+            where: { orderId: item.orderId, status: 'COMPLETED' },
+          }),
+        );
+
+      if (allDelivered && !isPaid) {
+        logger.error(
+          { orderId: item.orderId },
+          'Order delivered without completed payment — paymentStatus left PENDING',
+        );
+      }
+
       if (newOrderStatus !== item.order.status) {
         await tx.order.update({
           where: { id: item.orderId },
           data: {
             status: newOrderStatus,
-            ...(allDelivered ? { paymentStatus: 'COMPLETED' } : {}),
+            ...(allDelivered && isPaid ? { paymentStatus: 'COMPLETED' } : {}),
           },
         });
       }
 
       return updatedItem;
     });
+  }
+
+  // --- MAINTENANCE & REAPER ---
+
+  async releaseStaleReservations(): Promise<{ cancelledOrders: number }> {
+    const ttlHours = Number(process.env.ORDER_RESERVATION_TTL_HOURS ?? 2);
+    const cutoff = new Date(Date.now() - ttlHours * 3600_000);
+
+    const staleOrders = await prisma.order.findMany({
+      where: {
+        status: 'PENDING_PAYMENT',
+        paymentStatus: 'PENDING',
+        paymentMethod: { not: 'COD' },
+        updatedAt: { lte: cutoff },
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    let cancelledCount = 0;
+
+    for (const order of staleOrders) {
+      try {
+        await orderRepository.runTransaction(async (tx: Prisma.TransactionClient) => {
+          for (const item of order.items) {
+            if (item.itemStatus !== 'CANCELLED' && item.itemStatus !== 'DELIVERED') {
+              await tx.productInventory.update({
+                where: { id: item.inventoryId },
+                data: {
+                  reservedQuantity: {
+                    decrement: item.quantity,
+                  },
+                },
+              });
+            }
+          }
+
+          await tx.orderItem.updateMany({
+            where: { orderId: order.id },
+            data: { itemStatus: 'CANCELLED' },
+          });
+
+          await tx.order.update({
+            where: { id: order.id },
+            data: { status: 'CANCELLED' },
+          });
+        });
+
+        cancelledCount++;
+        const ageMinutes = Math.round((Date.now() - order.updatedAt.getTime()) / 60000);
+        logger.warn({ orderId: order.id, ageMinutes }, 'Released stale payment reservation');
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        logger.error(
+          { orderId: order.id, error: errorMsg },
+          'Failed to release stale reservation for order',
+        );
+      }
+    }
+
+    return { cancelledOrders: cancelledCount };
   }
 
   // --- ADMIN OVERVIEW ---
