@@ -88,6 +88,94 @@ async function loadKnownKeys(): Promise<Set<string>> {
   return known;
 }
 
+/**
+ * Recursively collect every string that looks like a URL or object key from
+ * arbitrary JSON blobs (colorVariants, dynamicData, filterConfig…).
+ */
+function collectUrlishStrings(node: unknown, sink: Set<string>): void {
+  if (typeof node === 'string') {
+    const trimmed = node.trim();
+    if (/^https?:\/\//i.test(trimmed)) {
+      try {
+        const path = new URL(trimmed).pathname.replace(/^\/+/, '');
+        if (path) {
+          sink.add(path);
+          sink.add(trimmed);
+        }
+      } catch {
+        sink.add(trimmed);
+      }
+    } else if (
+      ALLOWED_PREFIXES.some((p) => trimmed.startsWith(`${p}/`)) ||
+      trimmed.startsWith('platform/')
+    ) {
+      sink.add(trimmed);
+    }
+    return;
+  }
+  if (Array.isArray(node)) {
+    for (const item of node) collectUrlishStrings(item, sink);
+    return;
+  }
+  if (node && typeof node === 'object') {
+    for (const value of Object.values(node as Record<string, unknown>)) {
+      collectUrlishStrings(value, sink);
+    }
+  }
+}
+
+/**
+ * Sweep every live domain record that can reference a media object by URL —
+ * including legacy rows whose uploads predate the MediaAsset catalog.
+ * An object referenced here must NEVER be reaped, even without a DAM row.
+ */
+async function loadReferencedKeys(): Promise<Set<string>> {
+  const refs = new Set<string>();
+  const add = (value: unknown) => collectUrlishStrings(value, refs);
+
+  const [products, banners, vendors, campaigns, combos, brands, brandAuths] = await Promise.all([
+    prisma.product.findMany({
+      select: { mainImages: true, colorVariants: true, dynamicData: true },
+    }),
+    prisma.banner.findMany({ select: { imageUrl: true } }),
+    prisma.vendorProfile.findMany({
+      select: {
+        storeLogo: true,
+        panDocumentUrl: true,
+        citizenshipDocumentUrl: true,
+        ownerPhotoUrl: true,
+        vatDocumentUrl: true,
+        businessRegDocumentUrl: true,
+      },
+    }),
+    prisma.campaign.findMany({ select: { bannerImage: true } }),
+    prisma.comboBundle.findMany({ select: { bannerImage: true } }),
+    prisma.brand.findMany({ select: { logoUrl: true } }),
+    prisma.vendorBrandAuthorization.findMany({ select: { documentUrl: true } }),
+  ]);
+
+  for (const p of products) {
+    add(p.mainImages);
+    add(p.colorVariants);
+    add(p.dynamicData);
+  }
+  for (const b of banners) add(b.imageUrl);
+  for (const v of vendors) {
+    add(v.storeLogo);
+    add(v.panDocumentUrl);
+    add(v.citizenshipDocumentUrl);
+    add(v.ownerPhotoUrl);
+    add(v.vatDocumentUrl);
+    add(v.businessRegDocumentUrl);
+  }
+  for (const c of campaigns) add(c.bannerImage);
+  for (const c of combos) add(c.bannerImage);
+  for (const b of brands) add(b.logoUrl);
+  for (const a of brandAuths) add(a.documentUrl);
+
+  return refs;
+}
+
 function isManagedPrefix(key: string): boolean {
   return ALLOWED_PREFIXES.some((p) => key === p || key.startsWith(`${p}/`)) ||
     key === 'platform' ||
@@ -100,14 +188,25 @@ async function main() {
     'R2 orphan reaper starting',
   );
 
-  const [objects, knownKeys] = await Promise.all([listBucketObjects(), loadKnownKeys()]);
+  const [objects, knownKeys, referencedKeys] = await Promise.all([
+    listBucketObjects(),
+    loadKnownKeys(),
+    loadReferencedKeys(),
+  ]);
+  // A live reference wins even when the DAM row is missing (legacy uploads).
+  const protectedKeys = new Set([...knownKeys, ...referencedKeys]);
   const cutoff = Date.now() - OLDER_THAN_DAYS * 24 * 60 * 60 * 1000;
 
   const candidates = objects.filter((obj) => {
-    if (knownKeys.has(obj.key)) return false;
+    if (protectedKeys.has(obj.key)) return false;
     if (!isManagedPrefix(obj.key)) return false;
     return obj.lastModified.getTime() <= cutoff;
   });
+
+  logger.info(
+    { referencedByLiveRecords: referencedKeys.size },
+    'Reference cross-check complete',
+  );
 
   const totalOrphanBytes = candidates.reduce((sum, o) => sum + o.size, 0);
   const byPrefix = candidates.reduce<Record<string, number>>((acc, o) => {
