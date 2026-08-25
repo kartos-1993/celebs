@@ -17,11 +17,7 @@ import { dynamicWidgetSchema } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 
-import {
-  DEVICE_PRESETS,
-  DeviceViewport,
-  MOCK_SDUI_LAYOUT,
-} from './widget-preview-types';
+import { DEVICE_PRESETS, DeviceViewport, MOCK_SDUI_LAYOUT } from './widget-preview-types';
 
 interface WidgetPreviewBoundaryProps {
   layout?: SDUIPageLayout;
@@ -55,9 +51,12 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
               Festival Exclusive
             </span>
             <h3 className="text-lg font-extrabold tracking-tight text-white leading-tight">
-              {(data as { title?: string })?.title || 'Dashain & Tihar Festive Luxe Collection 2026'}
+              {(data as { title?: string })?.title ||
+                'Dashain & Tihar Festive Luxe Collection 2026'}
             </h3>
-            <p className="text-[11px] text-neutral-200">Up to 60% Off Premium Silk, Kurtas &amp; Western Sets</p>
+            <p className="text-[11px] text-neutral-200">
+              Up to 60% Off Premium Silk, Kurtas &amp; Western Sets
+            </p>
           </div>
 
           {/* Carousel Dots */}
@@ -115,8 +114,12 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 text-amber-500" />
               <div>
-                <h4 className="text-xs font-black text-foreground">Curated Festive Combo Bundles</h4>
-                <p className="text-[10px] text-muted-foreground">Complete Outfits with Automatic Multi-Item Discount</p>
+                <h4 className="text-xs font-black text-foreground">
+                  Curated Festive Combo Bundles
+                </h4>
+                <p className="text-[10px] text-muted-foreground">
+                  Complete Outfits with Automatic Multi-Item Discount
+                </p>
               </div>
             </div>
             <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
@@ -136,7 +139,9 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
                   3 Items Pack
                 </span>
               </div>
-              <p className="text-[11px] font-bold text-foreground leading-tight truncate">Australia Winter Survival Kit</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight truncate">
+                Australia Winter Survival Kit
+              </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-primary">Rs. 8,499</span>
                 <span className="text-[10px] text-muted-foreground line-through">Rs. 10,999</span>
@@ -154,7 +159,9 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
                   2 Items Pack
                 </span>
               </div>
-              <p className="text-[11px] font-bold text-foreground leading-tight truncate">Tihar Ethnic Silk Saree Set</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight truncate">
+                Tihar Ethnic Silk Saree Set
+              </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-primary">Rs. 5,999</span>
                 <span className="text-[10px] text-muted-foreground line-through">Rs. 7,499</span>
@@ -168,19 +175,37 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
       return (
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h4 className="text-xs font-black tracking-tight text-foreground">Explore Categories</h4>
+            <h4 className="text-xs font-black tracking-tight text-foreground">
+              Explore Categories
+            </h4>
             <span className="text-[10px] font-semibold text-primary">View All</span>
           </div>
           <div className="grid grid-cols-4 gap-2 text-center">
             {[
-              { name: 'Women Ethnic', img: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&auto=format&fit=crop' },
-              { name: 'Men Luxury', img: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=200&auto=format&fit=crop' },
-              { name: 'Festive Kurta', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&auto=format&fit=crop' },
-              { name: 'Footwear', img: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&auto=format&fit=crop' },
+              {
+                name: 'Women Ethnic',
+                img: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&auto=format&fit=crop',
+              },
+              {
+                name: 'Men Luxury',
+                img: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=200&auto=format&fit=crop',
+              },
+              {
+                name: 'Festive Kurta',
+                img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&auto=format&fit=crop',
+              },
+              {
+                name: 'Footwear',
+                img: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&auto=format&fit=crop',
+              },
             ].map((cat) => (
               <div key={cat.name} className="flex flex-col items-center gap-1 group cursor-pointer">
                 <div className="h-13 w-13 overflow-hidden rounded-full border-2 border-primary/30 p-0.5 shadow-xs transition-transform group-hover:scale-105">
-                  <img src={cat.img} alt={cat.name} className="h-full w-full rounded-full object-cover" />
+                  <img
+                    src={cat.img}
+                    alt={cat.name}
+                    className="h-full w-full rounded-full object-cover"
+                  />
                 </div>
                 <span className="text-[10px] font-semibold text-foreground/90 leading-tight truncate w-full">
                   {cat.name}
@@ -196,8 +221,12 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
         <div className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <div>
-              <h4 className="text-xs font-black tracking-tight text-foreground">Trending For You</h4>
-              <p className="text-[10px] text-muted-foreground">Fast-Fashion Daily Drops &amp; Bestsellers</p>
+              <h4 className="text-xs font-black tracking-tight text-foreground">
+                Trending For You
+              </h4>
+              <p className="text-[10px] text-muted-foreground">
+                Fast-Fashion Daily Drops &amp; Bestsellers
+              </p>
             </div>
             <span className="text-[10px] font-bold text-primary flex items-center gap-0.5">
               Feed <ArrowRight className="h-3 w-3" />
@@ -239,9 +268,16 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
                 rating: 5.0,
               },
             ].map((p, idx) => (
-              <div key={idx} className="group relative rounded-xl border bg-card p-2 space-y-1.5 shadow-xs transition-all hover:shadow-md">
+              <div
+                key={idx}
+                className="group relative rounded-xl border bg-card p-2 space-y-1.5 shadow-xs transition-all hover:shadow-md"
+              >
                 <div className="relative h-36 w-full overflow-hidden rounded-lg bg-neutral-100">
-                  <img src={p.img} alt={p.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <img
+                    src={p.img}
+                    alt={p.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                   <span className="absolute top-1.5 left-1.5 rounded-full bg-rose-600 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
                     -{p.discount}%
                   </span>
@@ -255,10 +291,16 @@ function MockWidgetRenderer({ widget }: { widget: DynamicWidget }) {
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                     <span className="text-[10px] font-bold text-foreground">{p.rating}</span>
                   </div>
-                  <p className="text-[11px] font-bold text-foreground leading-tight line-clamp-1">{p.title}</p>
+                  <p className="text-[11px] font-bold text-foreground leading-tight line-clamp-1">
+                    {p.title}
+                  </p>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black text-primary">Rs. {p.price.toLocaleString()}</span>
-                    <span className="text-[9px] text-muted-foreground line-through">Rs. {p.originalPrice.toLocaleString()}</span>
+                    <span className="text-xs font-black text-primary">
+                      Rs. {p.price.toLocaleString()}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground line-through">
+                      Rs. {p.originalPrice.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -291,7 +333,7 @@ export function WidgetPreviewBoundary({
       [...(layout.widgets || [])]
         .filter((w) => w.isActive !== false)
         .sort((a, b) => a.order - b.order),
-    [layout.widgets]
+    [layout.widgets],
   );
 
   // Validate widgets against shared Zod schema

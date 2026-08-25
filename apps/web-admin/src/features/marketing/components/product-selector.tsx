@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo,useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Package,Search, X } from 'lucide-react';
+import { Package, Search, X } from 'lucide-react';
 
-import type { CatalogProductType,ProductSelectorPropsType } from '@celebs/shared-types';
+import type { CatalogProductType, ProductSelectorPropsType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
@@ -40,10 +40,7 @@ export function ProductSelector({
   });
 
   const rawProducts = data?.data?.products;
-  const productsList = useMemo(
-    () => (rawProducts as CatalogProductType[]) ?? [],
-    [rawProducts],
-  );
+  const productsList = useMemo(() => (rawProducts as CatalogProductType[]) ?? [], [rawProducts]);
 
   useEffect(() => {
     if (productsList.length > 0) {

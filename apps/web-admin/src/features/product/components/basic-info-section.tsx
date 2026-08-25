@@ -69,9 +69,9 @@ const BasicInfoSection = ({
     isDirty ||
     Boolean(
       formValues?.name ||
-      formValues?.brand ||
-      formValues?.description ||
-      (formValues?.attributes && Object.keys(formValues.attributes).length > 0),
+        formValues?.brand ||
+        formValues?.description ||
+        (formValues?.attributes && Object.keys(formValues.attributes).length > 0),
     );
 
   return (

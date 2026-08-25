@@ -1,4 +1,4 @@
-import React, { useCallback,useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { FolderTree, SlidersHorizontal, Store } from 'lucide-react';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';

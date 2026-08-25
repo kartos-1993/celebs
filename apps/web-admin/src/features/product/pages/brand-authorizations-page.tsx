@@ -125,12 +125,20 @@ export const BrandAuthorizationsPage = memo(function BrandAuthorizationsPage() {
             <div className="flex flex-col items-center justify-center p-12 text-center gap-3">
               <ShieldAlert className="h-10 w-10 text-muted-foreground/40" />
               <div>
-                <h3 className="text-sm font-semibold text-foreground">No brand authorizations requested</h3>
+                <h3 className="text-sm font-semibold text-foreground">
+                  No brand authorizations requested
+                </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  If you sell authentic branded goods (e.g. Nike, Zara, Levi&apos;s), apply for authorization to list products.
+                  If you sell authentic branded goods (e.g. Nike, Zara, Levi&apos;s), apply for
+                  authorization to list products.
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setIsApplyOpen(true)} className="mt-2 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsApplyOpen(true)}
+                className="mt-2 text-xs"
+              >
                 <Plus className="h-3.5 w-3.5 mr-1" /> Apply Now
               </Button>
             </div>
@@ -153,7 +161,8 @@ export const BrandAuthorizationsPage = memo(function BrandAuthorizationsPage() {
                         {getStatusBadge(auth.status)}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Doc Type: <span className="font-medium text-foreground">{auth.documentType}</span>
+                        Doc Type:{' '}
+                        <span className="font-medium text-foreground">{auth.documentType}</span>
                         {auth.documentExpiryDate && (
                           <> • Expires: {new Date(auth.documentExpiryDate).toLocaleDateString()}</>
                         )}

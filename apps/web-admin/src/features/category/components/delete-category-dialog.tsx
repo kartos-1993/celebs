@@ -48,9 +48,7 @@ export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
             <AlertTriangle className="h-5 w-5 text-warning" />
             Delete {category.name}?
           </DialogTitle>
-          <DialogDescription className="text-destructive">
-            {category.name}
-          </DialogDescription>
+          <DialogDescription className="text-destructive">{category.name}</DialogDescription>
         </DialogHeader>
         <div className="py-3 space-y-4">
           <div className="space-y-2">

@@ -1,4 +1,4 @@
-import React, { ChangeEvent,useCallback, useEffect, useState } from 'react';
+import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { Image as ImageIcon, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
@@ -15,7 +15,7 @@ import {
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { useQuickFilters } from '../hooks/use-quick-filters';
-import { QuickFilter, QuickFilterDisplayAs,QuickFilterItem, QuickFilterType } from '../types';
+import { QuickFilter, QuickFilterDisplayAs, QuickFilterItem, QuickFilterType } from '../types';
 
 import { uploadFiles } from '@/features/product/api';
 
@@ -217,10 +217,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
             checked={autoPopulate}
             onCheckedChange={(checked) => setAutoPopulate(!!checked)}
           />
-          <Label
-            htmlFor="autoPopulate"
-            className="cursor-pointer"
-          >
+          <Label htmlFor="autoPopulate" className="cursor-pointer">
             Auto-populate items from child categories (uses each child category's thumbnail image)
           </Label>
         </div>
@@ -229,9 +226,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
       {/* Custom Items List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label>
-            Custom / Overridden Filter Items
-          </Label>
+          <Label>Custom / Overridden Filter Items</Label>
           <Button
             type="button"
             variant="outline"
@@ -289,9 +284,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
 
                 {/* Avatar Image Picker: Dual File Upload + Text URL */}
                 <div className="flex items-center gap-3 pt-1 border-t border-border">
-                  <Label className="shrink-0">
-                    Avatar Image:
-                  </Label>
+                  <Label className="shrink-0">Avatar Image:</Label>
 
                   {item.image ? (
                     <div className="relative w-12 h-12 rounded border overflow-hidden group shrink-0">

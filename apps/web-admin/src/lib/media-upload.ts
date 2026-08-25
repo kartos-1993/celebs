@@ -54,15 +54,12 @@ export async function directUploadFile(
   // 1. Get presigned PUT URL
   let presignData: PresignFileResponse | undefined;
   try {
-    const presignRes = await axiosClient.post<ApiResponse<PresignFileResponse>>(
-      '/media/presign',
-      {
-        originalname: file.name,
-        mimeType,
-        size: file.size,
-        folder,
-      },
-    );
+    const presignRes = await axiosClient.post<ApiResponse<PresignFileResponse>>('/media/presign', {
+      originalname: file.name,
+      mimeType,
+      size: file.size,
+      folder,
+    });
     presignData = presignRes.data?.data;
   } catch (error) {
     throw new Error(
@@ -185,16 +182,13 @@ async function directUploadChunk(
     }
 
     try {
-      const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>(
-        '/media/confirm',
-        {
-          key: item.key,
-          originalname: file.name,
-          mimeType,
-          size: file.size,
-          scope,
-        },
-      );
+      const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>('/media/confirm', {
+        key: item.key,
+        originalname: file.name,
+        mimeType,
+        size: file.size,
+        scope,
+      });
       return confirmRes.data?.data?.url || item.publicUrl;
     } catch (error) {
       throw new Error(

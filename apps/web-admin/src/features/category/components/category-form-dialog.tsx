@@ -97,7 +97,8 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = ({
           <CategoryForm
             key={freshCategoryData?.id || parentCategoryId || 'new-category'}
             initialData={
-              freshCategoryData || (parentCategoryId ? { parentCategory: parentCategoryId } : undefined)
+              freshCategoryData ||
+              (parentCategoryId ? { parentCategory: parentCategoryId } : undefined)
             }
             categories={categories}
             onSave={onSave}

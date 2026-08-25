@@ -1,4 +1,4 @@
-import { hasPermissionAccess, type PermissionMode,type PermissionRequirement } from '@celebs/rbac';
+import { hasPermissionAccess, type PermissionMode, type PermissionRequirement } from '@celebs/rbac';
 
 import { useAuthContext } from '@/context/auth-provider';
 

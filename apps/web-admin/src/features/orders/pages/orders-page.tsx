@@ -114,8 +114,7 @@ const Orders: React.FC = () => {
       mode === 'vendor'
         ? ORDERS_QUERY_KEYS.vendor(queryParams)
         : ORDERS_QUERY_KEYS.admin(queryParams),
-    queryFn: () =>
-      mode === 'vendor' ? getVendorOrders(queryParams) : getAdminOrders(queryParams),
+    queryFn: () => (mode === 'vendor' ? getVendorOrders(queryParams) : getAdminOrders(queryParams)),
   });
 
   const rows = useMemo<OrderItemUI[]>(() => {
@@ -198,7 +197,8 @@ const Orders: React.FC = () => {
   });
 
   const settleCodMutation = useMutation({
-    mutationFn: () => settleCodOrder({ orderId: selectedItem!.orderId, reference: `VOUCHER-${Date.now()}` }),
+    mutationFn: () =>
+      settleCodOrder({ orderId: selectedItem!.orderId, reference: `VOUCHER-${Date.now()}` }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: activeListKey });
       setIsDialogOpen(false);
@@ -215,7 +215,11 @@ const Orders: React.FC = () => {
 
   const handleOpenFulfillModal = (item: OrderItemUI) => {
     setSelectedItem(item);
-    setNewStatus(item.itemStatus === 'DELIVERED' || item.itemStatus === 'CANCELLED' ? item.itemStatus : 'PACKED');
+    setNewStatus(
+      item.itemStatus === 'DELIVERED' || item.itemStatus === 'CANCELLED'
+        ? item.itemStatus
+        : 'PACKED',
+    );
     setCourier(item.courierPartner || 'Nepal Can Move');
     setTrackingNo(item.trackingNumber || '');
     setIsDialogOpen(true);
@@ -448,82 +452,88 @@ const Orders: React.FC = () => {
                 </div>
               </div>
 
-              {canManage && selectedItem.itemStatus !== 'DELIVERED' && selectedItem.itemStatus !== 'CANCELLED' && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>Update Fulfillment Stage</Label>
-                    <Select
-                      value={newStatus}
-                      onValueChange={(val: string) => setNewStatus(val as OrderItemStatus)}
-                    >
-                      <SelectTrigger className="text-xs h-9">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ALLOWED_TRANSITIONS[selectedItem.itemStatus].map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {ITEM_STATUS_LABELS[status]}
-                            {status === 'PACKED' && ' (Item boxed & sealed)'}
-                            {status === 'HANDED_OVER' && ' (Scanned by Courier)'}
-                            {status === 'DELIVERED' && ' (Received by Customer)'}
-                            {status === 'CANCELLED' && ' (Out of stock / Cancelled)'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {canManage &&
+                selectedItem.itemStatus !== 'DELIVERED' &&
+                selectedItem.itemStatus !== 'CANCELLED' && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Update Fulfillment Stage</Label>
+                      <Select
+                        value={newStatus}
+                        onValueChange={(val: string) => setNewStatus(val as OrderItemStatus)}
+                      >
+                        <SelectTrigger className="text-xs h-9">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ALLOWED_TRANSITIONS[selectedItem.itemStatus].map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {ITEM_STATUS_LABELS[status]}
+                              {status === 'PACKED' && ' (Item boxed & sealed)'}
+                              {status === 'HANDED_OVER' && ' (Scanned by Courier)'}
+                              {status === 'DELIVERED' && ' (Received by Customer)'}
+                              {status === 'CANCELLED' && ' (Out of stock / Cancelled)'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {(newStatus === 'PACKED' || newStatus === 'HANDED_OVER') && (
-                    <>
-                      <div className="space-y-1.5">
-                        <Label>Courier / Logistics Partner</Label>
-                        <Select value={courier} onValueChange={setCourier}>
-                          <SelectTrigger className="text-xs h-9">
-                            <SelectValue placeholder="Select courier" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Upaya Logistics">Upaya Logistics</SelectItem>
-                            <SelectItem value="Nepal Can Move">Nepal Can Move</SelectItem>
-                            <SelectItem value="PATHAO">Pathao Courier</SelectItem>
-                            <SelectItem value="MANUAL">Manual / Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label>Tracking Number / Airway Bill</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={trackingNo}
-                            onChange={(e) => setTrackingNo(e.target.value)}
-                            placeholder="e.g. NCM-98214-NP"
-                            className="text-xs h-9 font-mono flex-1"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-9 gap-1.5"
-                            disabled={!canManage || dispatchMutation.isPending || newStatus !== 'HANDED_OVER'}
-                            onClick={() => dispatchMutation.mutate()}
-                          >
-                            {dispatchMutation.isPending ? (
-                              <Spinner size="sm" />
-                            ) : (
-                              <Send className="w-3.5 h-3.5" />
-                            )}
-                            {dispatchMutation.isPending ? 'Dispatching…' : '3PL Dispatch'}
-                          </Button>
+                    {(newStatus === 'PACKED' || newStatus === 'HANDED_OVER') && (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label>Courier / Logistics Partner</Label>
+                          <Select value={courier} onValueChange={setCourier}>
+                            <SelectTrigger className="text-xs h-9">
+                              <SelectValue placeholder="Select courier" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Upaya Logistics">Upaya Logistics</SelectItem>
+                              <SelectItem value="Nepal Can Move">Nepal Can Move</SelectItem>
+                              <SelectItem value="PATHAO">Pathao Courier</SelectItem>
+                              <SelectItem value="MANUAL">Manual / Other</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Dispatch hands the parcel to Nepal Can Move via 3PL and records the
-                          handover.
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
+
+                        <div className="space-y-1.5">
+                          <Label>Tracking Number / Airway Bill</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={trackingNo}
+                              onChange={(e) => setTrackingNo(e.target.value)}
+                              placeholder="e.g. NCM-98214-NP"
+                              className="text-xs h-9 font-mono flex-1"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-9 gap-1.5"
+                              disabled={
+                                !canManage ||
+                                dispatchMutation.isPending ||
+                                newStatus !== 'HANDED_OVER'
+                              }
+                              onClick={() => dispatchMutation.mutate()}
+                            >
+                              {dispatchMutation.isPending ? (
+                                <Spinner size="sm" />
+                              ) : (
+                                <Send className="w-3.5 h-3.5" />
+                              )}
+                              {dispatchMutation.isPending ? 'Dispatching…' : '3PL Dispatch'}
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Dispatch hands the parcel to Nepal Can Move via 3PL and records the
+                            handover.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
 
               {selectedItem.paymentMethod === 'COD' &&
                 selectedItem.paymentStatus === 'PENDING' &&
@@ -578,13 +588,7 @@ const Orders: React.FC = () => {
   );
 };
 
-function CardWrapper({
-  isFetching,
-  children,
-}: {
-  isFetching: boolean;
-  children: React.ReactNode;
-}) {
+function CardWrapper({ isFetching, children }: { isFetching: boolean; children: React.ReactNode }) {
   return (
     <div
       className={`overflow-x-auto rounded-xl border bg-card shadow-sm transition-opacity ${

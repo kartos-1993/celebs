@@ -1,11 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Check,
-  Folder,
-  Image as ImageIcon,
-  Search,
-  UploadCloud,
-} from 'lucide-react';
+import { Check, Folder, Image as ImageIcon, Search, UploadCloud } from 'lucide-react';
 
 import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -265,10 +259,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
               {isLoadingAssets ? (
                 <div className="grid shrink-0 grid-cols-3 gap-3 p-3 pt-1 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {Array.from({ length: 12 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="aspect-square animate-pulse rounded-lg bg-muted/40"
-                    />
+                    <div key={i} className="aspect-square animate-pulse rounded-lg bg-muted/40" />
                   ))}
                 </div>
               ) : assets.length === 0 ? (
@@ -352,11 +343,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
               className="flex w-full max-w-md flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/80 bg-card/50 p-8 text-center transition-colors hover:border-primary"
             >
               <div className="rounded-full bg-primary/10 p-3 text-primary">
-                {isUploading ? (
-                  <Spinner size="xl" />
-                ) : (
-                  <UploadCloud className="h-8 w-8" />
-                )}
+                {isUploading ? <Spinner size="xl" /> : <UploadCloud className="h-8 w-8" />}
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
@@ -404,11 +391,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              disabled={selectedUrls.length === 0}
-              onClick={handleConfirmSelection}
-            >
+            <Button size="sm" disabled={selectedUrls.length === 0} onClick={handleConfirmSelection}>
               Insert {selectedUrls.length > 0 ? `(${selectedUrls.length})` : ''}
             </Button>
           </div>

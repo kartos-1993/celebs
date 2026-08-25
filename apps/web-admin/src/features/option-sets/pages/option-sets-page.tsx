@@ -1,4 +1,4 @@
-import React, { useCallback,useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Edit, Layers, Plus, Search, Trash2, X } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -16,7 +16,7 @@ import { Label } from '@celebs/shared-ui/components/label';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import { createOptionSet, deleteOptionSet,fetchOptionSets, updateOptionSet } from '../api';
+import { createOptionSet, deleteOptionSet, fetchOptionSets, updateOptionSet } from '../api';
 import type { OptionSet } from '../types';
 
 import { PageLoader } from '@/components/page-loader';
@@ -340,13 +340,7 @@ export default function OptionSetsPage() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? (
-                <Spinner size="sm" />
-              ) : editingSet ? (
-                'Save Changes'
-              ) : (
-                'Create Option Set'
-              )}
+              {isSaving ? <Spinner size="sm" /> : editingSet ? 'Save Changes' : 'Create Option Set'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -359,8 +353,8 @@ export default function OptionSetsPage() {
             <DialogTitle>Delete Option Set</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete{' '}
-              <strong className="text-foreground">{deleteTarget?.name}</strong>? This action cannot be
-              undone.
+              <strong className="text-foreground">{deleteTarget?.name}</strong>? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

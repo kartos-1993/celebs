@@ -46,10 +46,7 @@ export async function getMediaFolders(): Promise<IApiResponse<MediaFolder[]>> {
 export async function createMediaFolder(
   data: CreateMediaFolderType,
 ): Promise<IApiResponse<MediaFolder>> {
-  const response = await axiosClient.post<IApiResponse<MediaFolder>>(
-    `${BASE_PATH}/folders`,
-    data,
-  );
+  const response = await axiosClient.post<IApiResponse<MediaFolder>>(`${BASE_PATH}/folders`, data);
   return response.data;
 }
 
@@ -100,9 +97,6 @@ export async function batchPresignMedia(
 export async function confirmMediaUpload(
   data: ConfirmUploadInput,
 ): Promise<IApiResponse<MediaAsset>> {
-  const response = await axiosClient.post<IApiResponse<MediaAsset>>(
-    `${BASE_PATH}/confirm`,
-    data,
-  );
+  const response = await axiosClient.post<IApiResponse<MediaAsset>>(`${BASE_PATH}/confirm`, data);
   return response.data;
 }

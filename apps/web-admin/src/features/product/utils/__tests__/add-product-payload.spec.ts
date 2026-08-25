@@ -11,7 +11,9 @@ describe('buildProductPayload', () => {
   ];
 
   const mockUpload = vi.fn().mockImplementation(async (files: unknown[]) => {
-    return files.map((f, i) => (typeof f === 'string' ? f : `https://cdn.example.com/uploaded-${i}.jpg`));
+    return files.map((f, i) =>
+      typeof f === 'string' ? f : `https://cdn.example.com/uploaded-${i}.jpg`,
+    );
   });
 
   it('should throw an error when price is missing', async () => {

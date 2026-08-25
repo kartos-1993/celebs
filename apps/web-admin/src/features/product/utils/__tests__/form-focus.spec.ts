@@ -1,6 +1,6 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { flattenFormErrors, focusFirstError,formatFieldLabel } from '../form-focus';
+import { flattenFormErrors, focusFirstError, formatFieldLabel } from '../form-focus';
 
 describe('form-focus utility', () => {
   beforeEach(() => {
@@ -13,9 +13,7 @@ describe('form-focus utility', () => {
         name: { message: 'Product name is required' },
         sizes: [
           {
-            bodyMeasurements: [
-              { value: { message: 'Bust measurement is required' } },
-            ],
+            bodyMeasurements: [{ value: { message: 'Bust measurement is required' } }],
           },
         ],
       };
@@ -55,9 +53,7 @@ describe('form-focus utility', () => {
       const errors = {
         sizes: [
           {
-            bodyMeasurements: [
-              { value: { message: 'Bust is required' } },
-            ],
+            bodyMeasurements: [{ value: { message: 'Bust is required' } }],
           },
         ],
       };

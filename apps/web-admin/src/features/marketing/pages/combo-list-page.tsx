@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign,Percent, Plane, Plus, Sparkles, Tag } from 'lucide-react';
+import { DollarSign, Percent, Plane, Plus, Sparkles, Tag } from 'lucide-react';
 
 import type { ComboBundleType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -172,7 +172,9 @@ export default function ComboListPage() {
                       {combo.tag === 'abroad-travel' && (
                         <Plane className="w-3 h-3 mr-1 text-info" />
                       )}
-                      {combo.tag === 'festive' && <Sparkles className="w-3 h-3 mr-1 text-warning" />}
+                      {combo.tag === 'festive' && (
+                        <Sparkles className="w-3 h-3 mr-1 text-warning" />
+                      )}
                       {combo.tag || 'general'}
                     </Badge>
                   </TableCell>

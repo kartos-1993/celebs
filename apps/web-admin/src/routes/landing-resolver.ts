@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router-dom';
 
-import { hasPermissionAccess, type PermissionMode,type PermissionRequirement } from '@celebs/rbac';
+import { hasPermissionAccess, type PermissionMode, type PermissionRequirement } from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
 
 export interface RouteMeta {
@@ -54,7 +54,11 @@ export function resolveDefaultLandingRoute(
 
       if (!isAllowed) continue;
 
-      if (meta?.allowedRoles && meta.allowedRoles.length > 0 && !meta.allowedRoles.includes(user!.role)) {
+      if (
+        meta?.allowedRoles &&
+        meta.allowedRoles.length > 0 &&
+        !meta.allowedRoles.includes(user!.role)
+      ) {
         continue;
       }
 

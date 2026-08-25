@@ -89,7 +89,10 @@ export function CollapseMenuButton({
                   {label}
                 </span>
               </div>
-              <ChevronDown size={15} className="ml-2 shrink-0 text-muted-foreground transition-transform duration-200" />
+              <ChevronDown
+                size={15}
+                className="ml-2 shrink-0 text-muted-foreground transition-transform duration-200"
+              />
             </div>
           </Button>
         </CollapsibleTrigger>
@@ -105,7 +108,12 @@ export function CollapseMenuButton({
                 asChild
               >
                 <Link to={href} className="flex w-full items-center">
-                  <span className={cn('truncate py-0.5 text-sm', isActive ? 'font-medium text-foreground' : 'text-muted-foreground')}>
+                  <span
+                    className={cn(
+                      'truncate py-0.5 text-sm',
+                      isActive ? 'font-medium text-foreground' : 'text-muted-foreground',
+                    )}
+                  >
                     {label}
                   </span>
                 </Link>

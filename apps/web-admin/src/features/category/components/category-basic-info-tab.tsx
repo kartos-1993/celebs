@@ -1,6 +1,6 @@
 import React, { ChangeEvent } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { Upload,X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';

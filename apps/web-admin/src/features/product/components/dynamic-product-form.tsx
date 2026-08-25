@@ -83,8 +83,8 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
 
     React.useEffect(() => {
       if (restDetailsFields.length === 0 || detailsExpanded) return;
-      const hasErrorInCollapsed = restDetailsFields.some(
-        (field) => Boolean(form.formState.errors[field.name]),
+      const hasErrorInCollapsed = restDetailsFields.some((field) =>
+        Boolean(form.formState.errors[field.name]),
       );
       if (hasErrorInCollapsed) {
         setDetailsExpanded(true);
@@ -204,10 +204,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     };
     const variantFields = [...(grouped.variant || [])].sort((a, b) => kindRank(a) - kindRank(b));
 
-    const otherMediaFields = [
-      ...(grouped.base || []),
-      ...(grouped.media || []),
-    ];
+    const otherMediaFields = [...(grouped.base || []), ...(grouped.media || [])];
     const imageFields = otherMediaFields.filter((field) => field.uiType === 'MainImage');
     const swatchMediaFields = otherMediaFields.filter((field) => field.uiType !== 'MainImage');
     const saleFields = grouped.sale || [];
@@ -227,9 +224,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     return (
       <div className="space-y-8">
         {/* Section: Media & Swatches */}
-        {variantFields.length > 0 ||
-        imageFields.length > 0 ||
-        swatchMediaFields.length > 0 ? (
+        {variantFields.length > 0 || imageFields.length > 0 || swatchMediaFields.length > 0 ? (
           <div
             id="product-section-base"
             className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
@@ -250,9 +245,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
 
             <div className="space-y-6">
               {/* Main product image always comes first */}
-              {imageFields.length > 0 ? (
-                <div>{renderFieldNodes(imageFields)}</div>
-              ) : null}
+              {imageFields.length > 0 ? <div>{renderFieldNodes(imageFields)}</div> : null}
 
               {/* Variants — color/size selectors stacked in one column */}
               {variantFields.length > 0 ? (
@@ -332,9 +325,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
                 <Package className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Shipping & Warranty
-                </h3>
+                <h3 className="text-base font-semibold text-foreground">Shipping & Warranty</h3>
                 <p className="text-xs text-muted-foreground">
                   Parcel dimensions, weight, and guarantee options
                 </p>
@@ -355,9 +346,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
                 <FileText className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Terms & Conditions
-                </h3>
+                <h3 className="text-base font-semibold text-foreground">Terms & Conditions</h3>
                 <p className="text-xs text-muted-foreground">
                   Product warranty policies and return disclaimers
                 </p>
@@ -400,13 +389,7 @@ function VariantSelectorCard({
   );
 }
 
-function VariantFieldSlot({
-  field,
-  control,
-}: {
-  field: FieldSpec;
-  control: Control<FieldValues>;
-}) {
+function VariantFieldSlot({ field, control }: { field: FieldSpec; control: Control<FieldValues> }) {
   const value = useWatch({ name: field.name, control });
   const count = Array.isArray(value)
     ? value.length

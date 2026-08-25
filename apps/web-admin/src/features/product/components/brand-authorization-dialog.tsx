@@ -39,7 +39,9 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
   preselectedBrandId,
 }: BrandAuthorizationDialogProps) {
   const [brandId, setBrandId] = useState(preselectedBrandId || '');
-  const [documentType, setDocumentType] = useState<'LOA' | 'TRADEMARK_CERT' | 'INVOICE' | 'DEALERSHIP_CONTRACT'>('LOA');
+  const [documentType, setDocumentType] = useState<
+    'LOA' | 'TRADEMARK_CERT' | 'INVOICE' | 'DEALERSHIP_CONTRACT'
+  >('LOA');
   const [documentUrl, setDocumentUrl] = useState('');
   const [documentExpiryDate, setDocumentExpiryDate] = useState('');
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
@@ -48,9 +50,7 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
   const submitAuthMutation = useSubmitBrandAuthorization();
 
   const gatedBrands = useMemo(() => {
-    return (brandsData?.items || []).filter(
-      (b) => b.isGated && b.tier !== 'FIRST_PARTY',
-    );
+    return (brandsData?.items || []).filter((b) => b.isGated && b.tier !== 'FIRST_PARTY');
   }, [brandsData]);
 
   const handleFileUpload = useCallback(async (file: File) => {
@@ -76,11 +76,19 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
 
   const handleSubmit = useCallback(async () => {
     if (!brandId) {
-      toast({ title: 'Validation Error', description: 'Please select a brand', variant: 'destructive' });
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a brand',
+        variant: 'destructive',
+      });
       return;
     }
     if (!documentUrl) {
-      toast({ title: 'Validation Error', description: 'Please upload the authorization document', variant: 'destructive' });
+      toast({
+        title: 'Validation Error',
+        description: 'Please upload the authorization document',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -89,7 +97,9 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
         brandId,
         documentType,
         documentUrl,
-        documentExpiryDate: documentExpiryDate ? new Date(documentExpiryDate).toISOString() : undefined,
+        documentExpiryDate: documentExpiryDate
+          ? new Date(documentExpiryDate).toISOString()
+          : undefined,
       });
 
       toast({
@@ -116,7 +126,9 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold">Brand Authorization (LOA) Application</DialogTitle>
+              <DialogTitle className="text-base font-bold">
+                Brand Authorization (LOA) Application
+              </DialogTitle>
               <DialogDescription className="text-xs">
                 Submit brand distribution rights to list products under gated trademarks.
               </DialogDescription>
@@ -137,7 +149,9 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
                   <SelectItem key={b.id} value={b.id}>
                     <div className="flex items-center justify-between gap-2 w-full">
                       <span>{b.name}</span>
-                      <Badge variant="outline" className="text-xs">Gated</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Gated
+                      </Badge>
                     </div>
                   </SelectItem>
                 ))}
@@ -158,7 +172,9 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
               <SelectContent>
                 <SelectItem value="LOA">Letter of Authorization (LOA)</SelectItem>
                 <SelectItem value="TRADEMARK_CERT">Trademark Registration Certificate</SelectItem>
-                <SelectItem value="DEALERSHIP_CONTRACT">Official Dealership / Distribution Contract</SelectItem>
+                <SelectItem value="DEALERSHIP_CONTRACT">
+                  Official Dealership / Distribution Contract
+                </SelectItem>
                 <SelectItem value="INVOICE">Authorized Distributor Purchase Invoice</SelectItem>
               </SelectContent>
             </Select>
@@ -204,8 +220,12 @@ export const BrandAuthorizationDialog = memo(function BrandAuthorizationDialog({
                 ) : (
                   <>
                     <UploadCloud className="h-6 w-6 text-muted-foreground mb-1" />
-                    <span className="text-xs font-bold text-foreground">Click to upload document</span>
-                    <span className="text-xs text-muted-foreground mt-0.5">PDF, PNG, JPG up to 10MB</span>
+                    <span className="text-xs font-bold text-foreground">
+                      Click to upload document
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      PDF, PNG, JPG up to 10MB
+                    </span>
                   </>
                 )}
                 <input

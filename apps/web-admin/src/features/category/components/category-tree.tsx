@@ -3,7 +3,7 @@
  * Uses TanStack Table to display hierarchical category structures with visual guidelines
  */
 
-import React, { useCallback,useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ColumnDef,
   ExpandedState,
@@ -12,7 +12,7 @@ import {
   getExpandedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronRight, Edit, Folder, FolderOpen, Plus,Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit, Folder, FolderOpen, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -166,9 +166,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
 
                 {/* Category Name & Meta Info */}
                 <div className="flex items-baseline gap-2 ml-1">
-                  <span className="text-sm font-medium text-foreground">
-                    {category.name}
-                  </span>
+                  <span className="text-sm font-medium text-foreground">{category.name}</span>
                   <span className="text-xs tracking-wider text-muted-foreground font-mono">
                     L{category.level}
                   </span>
@@ -195,9 +193,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               />
               <span
                 className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  isActive
-                    ? 'bg-success/10 text-success'
-                    : 'bg-muted text-muted-foreground'
+                  isActive ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {isActive ? 'Active' : 'Inactive'}
@@ -307,10 +303,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
       <Table>
         <TableHeader className="bg-muted/50">
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow
-              key={headerGroup.id}
-              className="hover:bg-transparent border-b border-border"
-            >
+            <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border">
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}

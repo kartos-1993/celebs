@@ -61,9 +61,7 @@ const ProductFormSidebar = ({
               Content Score
             </p>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-foreground">
-                {completionPercentage}%
-              </span>
+              <span className="text-2xl font-bold text-foreground">{completionPercentage}%</span>
               <Badge
                 variant="outline"
                 className={`rounded-full border-border px-2 py-0 text-xs bg-card ${score.tone}`}
@@ -75,10 +73,7 @@ const ProductFormSidebar = ({
           <Sparkles className="h-4 w-4 text-primary" />
         </div>
 
-        <Progress
-          value={completionPercentage}
-          className="mt-2.5 h-1.5 bg-muted"
-        />
+        <Progress value={completionPercentage} className="mt-2.5 h-1.5 bg-muted" />
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-3.5 shadow-xs">

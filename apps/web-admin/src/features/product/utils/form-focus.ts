@@ -19,7 +19,9 @@ export const flattenFormErrors = (
       if ('message' in value && typeof value.message === 'string' && value.message.trim() !== '') {
         result.push({ path: currentPath, message: value.message });
       } else {
-        result.push(...flattenFormErrors(value as FieldErrors<Record<string, unknown>>, currentPath));
+        result.push(
+          ...flattenFormErrors(value as FieldErrors<Record<string, unknown>>, currentPath),
+        );
       }
     }
   }
@@ -163,4 +165,3 @@ export const focusMissingField = (
 
   return null;
 };
-

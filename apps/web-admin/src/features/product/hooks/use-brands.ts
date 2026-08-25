@@ -32,7 +32,6 @@ export function useBrandDetail(id: string) {
 export function useMyBrandAuthorizations() {
   const { isVendor, isStaff } = useAuthContext();
 
-
   return useQuery({
     queryKey: BRAND_QUERY_KEYS.myAuthorizations(),
     queryFn: getMyBrandAuthorizations,
@@ -40,7 +39,6 @@ export function useMyBrandAuthorizations() {
     select: (res) => res?.data || [],
   });
 }
-
 
 export function useSubmitBrandAuthorization() {
   const queryClient = useQueryClient();

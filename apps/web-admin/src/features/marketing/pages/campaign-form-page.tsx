@@ -1,7 +1,7 @@
-import { useEffect,useState } from 'react';
-import { Link,useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Flame,Save } from 'lucide-react';
+import { ArrowLeft, Flame, Save } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -16,7 +16,7 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { logger } from '@celebs/shared-utils';
 
-import { createCampaign, getCampaignById,updateCampaign } from '../api';
+import { createCampaign, getCampaignById, updateCampaign } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';

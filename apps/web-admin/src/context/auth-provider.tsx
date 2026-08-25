@@ -5,7 +5,7 @@ import { logger } from '@celebs/shared-utils';
 import useAuth from '@/hooks/use-auth';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
 import { axiosClient } from '@/lib/axios/axios-client';
-import { broadcastLogout,setAuthCallbacks } from '@/lib/axios/interceptors';
+import { broadcastLogout, setAuthCallbacks } from '@/lib/axios/interceptors';
 import { UserData } from '@/types';
 // ─── Context Shape ────────────────────────────────────────────────────────────
 export type AuthContextType = {

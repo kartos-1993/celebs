@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Alert, AlertDescription,AlertTitle } from '@celebs/shared-ui/components/alert';
+import { Alert, AlertDescription, AlertTitle } from '@celebs/shared-ui/components/alert';
 import { Button } from '@celebs/shared-ui/components/button';
 
 import { useAuthContext } from '@/context/auth-provider';

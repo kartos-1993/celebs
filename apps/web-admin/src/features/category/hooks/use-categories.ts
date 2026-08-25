@@ -14,7 +14,7 @@ import {
   getCategoryTree,
   updateCategory,
 } from '../api';
-import type { UpdateCategoryRequest,UseCategoriesReturn } from '../types';
+import type { UpdateCategoryRequest, UseCategoriesReturn } from '../types';
 
 import { PRODUCT_SCHEMA_QUERY_KEYS } from '@/features/product/hooks/use-product-schema';
 import { useToast } from '@/hooks/use-toast';
@@ -100,7 +100,9 @@ export function useCategories(): UseCategoriesReturn {
     onSuccess: (_, categoryId) => {
       invalidateAll();
       const category = categoriesData?.data?.categories.find((c) => c.id === categoryId);
-      const hasChildren = categoriesData?.data?.categories.some((c) => c.parentCategory === categoryId);
+      const hasChildren = categoriesData?.data?.categories.some(
+        (c) => c.parentCategory === categoryId,
+      );
 
       toast({
         title: 'Success',

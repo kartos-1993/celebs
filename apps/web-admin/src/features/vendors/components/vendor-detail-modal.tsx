@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
 import { ScrollArea } from '@celebs/shared-ui/components/scroll-area';
-import { Tabs, TabsContent,TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 
 import { VendorStatusBadge } from './vendor-status-badge';
 

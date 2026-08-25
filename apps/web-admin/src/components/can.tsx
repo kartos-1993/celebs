@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { PermissionMode,PermissionRequirement } from '@celebs/rbac';
+import type { PermissionMode, PermissionRequirement } from '@celebs/rbac';
 import {
   Tooltip,
   TooltipContent,

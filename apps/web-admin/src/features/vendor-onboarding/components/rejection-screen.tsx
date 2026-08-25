@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit3,XCircle } from 'lucide-react';
+import { Edit3, XCircle } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 

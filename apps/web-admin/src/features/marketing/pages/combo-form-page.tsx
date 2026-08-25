@@ -1,5 +1,5 @@
-import React, { useEffect,useState } from 'react';
-import { Link,useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Sparkles } from 'lucide-react';
 
@@ -17,7 +17,7 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { logger } from '@celebs/shared-utils';
 
-import { createCombo, getComboById,updateCombo } from '../api';
+import { createCombo, getComboById, updateCombo } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
 import { BannerImageUpload } from '../components/banner-image-upload';
 import { ProductSelector } from '../components/product-selector';

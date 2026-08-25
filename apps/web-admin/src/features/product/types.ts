@@ -13,8 +13,20 @@ export type ProductRecord = Partial<ProductType> & {
   slug?: string;
   name?: string;
   price?: number;
-  category?: { id?: string; name?: string; slug?: string; path?: string | string[]; level?: number };
-  subcategory?: { id?: string; name?: string; slug?: string; path?: string | string[]; level?: number };
+  category?: {
+    id?: string;
+    name?: string;
+    slug?: string;
+    path?: string | string[];
+    level?: number;
+  };
+  subcategory?: {
+    id?: string;
+    name?: string;
+    slug?: string;
+    path?: string | string[];
+    level?: number;
+  };
 };
 
 export type ProductStatus =

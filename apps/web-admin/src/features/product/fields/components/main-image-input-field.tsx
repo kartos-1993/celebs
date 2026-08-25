@@ -9,7 +9,14 @@ import { MediaCropDialog } from '../../components/media-crop-dialog';
 import { MediaLibraryButton } from '../../components/media-library-button';
 import type { UiProps } from '../ui-registry';
 
-import { FieldError, ImageValue, imageValueKey, LabelWithRequired,uploadErrorMessage, uploadImageFiles } from './shared';
+import {
+  FieldError,
+  ImageValue,
+  imageValueKey,
+  LabelWithRequired,
+  uploadErrorMessage,
+  uploadImageFiles,
+} from './shared';
 
 export const MainImageInputField = memo(function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
@@ -57,7 +64,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         const dims = await getDims(file);
         const ratio = dims.w / dims.h;
         // Standard 3:4 is 0.75; accept reasonable tolerance between 0.70 and 0.80
-        return { needsCrop: ratio < 0.70 || ratio > 0.80 };
+        return { needsCrop: ratio < 0.7 || ratio > 0.8 };
       } catch {
         return { needsCrop: false };
       }
@@ -320,30 +327,29 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
   );
 
   return (
-      <div className="space-y-2 col-span-full" data-error-path={field.name}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
-            <MediaLibraryButton
-              maxSelect={maxItems}
-              scope="PRODUCT"
-              initialSelectedUrls={previews.filter((v): v is string => typeof v === 'string')}
-              disabled={isUploading}
-              onSelect={handlePickerSelect}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {previews.length}/{maxItems} uploaded
-          </span>
+    <div className="space-y-2 col-span-full" data-error-path={field.name}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
+          <MediaLibraryButton
+            maxSelect={maxItems}
+            scope="PRODUCT"
+            initialSelectedUrls={previews.filter((v): v is string => typeof v === 'string')}
+            disabled={isUploading}
+            onSelect={handlePickerSelect}
+          />
         </div>
+        <span className="text-xs text-muted-foreground">
+          {previews.length}/{maxItems} uploaded
+        </span>
+      </div>
 
-        <MediaCropDialog
-          open={croppingFile !== null}
-          file={croppingFile?.file ?? null}
-          onCropComplete={handleCropComplete}
-          onCancel={() => setCroppingFile(null)}
-        />
-
+      <MediaCropDialog
+        open={croppingFile !== null}
+        file={croppingFile?.file ?? null}
+        onCropComplete={handleCropComplete}
+        onCancel={() => setCroppingFile(null)}
+      />
 
       <div className="space-y-3">
         {/* Single File Mode */}

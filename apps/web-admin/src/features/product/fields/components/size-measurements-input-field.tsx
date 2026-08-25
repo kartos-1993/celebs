@@ -1,4 +1,4 @@
-import React, { useEffect,useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import { Button } from '@celebs/shared-ui/components/button';
@@ -98,16 +98,13 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
         const list = sizeEntry?.[listKey];
         if (!list) return false;
         if (Array.isArray(list)) {
-          return list.some(
-            (item: { value?: { message?: string }; message?: string } | undefined) =>
-              Boolean(item?.value?.message || item?.message),
+          return list.some((item: { value?: { message?: string }; message?: string } | undefined) =>
+            Boolean(item?.value?.message || item?.message),
           );
         }
         if (typeof list === 'object') {
           return Object.values(list).some((item: unknown) => {
-            const castItem = item as
-              | { value?: { message?: string }; message?: string }
-              | undefined;
+            const castItem = item as { value?: { message?: string }; message?: string } | undefined;
             return Boolean(castItem?.value?.message || castItem?.message);
           });
         }

@@ -8,10 +8,10 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
 import { logger } from '@celebs/shared-utils';
 
-import { createProduct, type CreateProductRequest,updateProduct } from '../../api';
+import { createProduct, type CreateProductRequest, updateProduct } from '../../api';
 import { extractVariantsMeta } from '../../fields/variant-utils';
 import { useProductDraft } from '../../hooks/use-product-draft';
-import { type ProductFormValues,useProductForm } from '../../hooks/use-product-form';
+import { type ProductFormValues, useProductForm } from '../../hooks/use-product-form';
 import { useProductSchema } from '../../hooks/use-product-schema';
 import { useSubmissionState } from '../../hooks/use-submission-state';
 import type { FieldSpec } from '../../types';
@@ -413,9 +413,7 @@ const AddProductFormBody = ({
                   <ClipboardList className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">
-                    Basic Information
-                  </h3>
+                  <h3 className="text-base font-semibold text-foreground">Basic Information</h3>
                   <p className="text-xs text-muted-foreground">
                     Start with the category, name, brand, and description. The remaining sections
                     adapt to the chosen category.

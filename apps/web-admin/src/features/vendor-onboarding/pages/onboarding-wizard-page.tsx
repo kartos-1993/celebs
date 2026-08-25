@@ -1,4 +1,4 @@
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,7 @@ import {
   vendorProfileSchema,
   warehouseSchema,
 } from '@celebs/shared-types';
-import { Alert, AlertDescription,AlertTitle } from '@celebs/shared-ui/components/alert';
+import { Alert, AlertDescription, AlertTitle } from '@celebs/shared-ui/components/alert';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Form,

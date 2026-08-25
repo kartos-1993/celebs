@@ -557,8 +557,7 @@ export function PreviewModal({
                 <div className="flex items-center justify-between p-4 bg-muted/30 border rounded-xl">
                   <div>
                     <h4 className="font-bold text-lg flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality
-                      Score
+                      <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality Score
                     </h4>
                     <p className="text-xs text-muted-foreground">
                       System audit computed from listing completeness & guideline metrics.
@@ -627,7 +626,10 @@ export function PreviewModal({
                       const timestamp = log.editedAt ?? log.reviewedAt;
                       const isEdit = log.action === 'edited';
                       return (
-                        <div key={index} className="p-3 border rounded-lg bg-card text-xs space-y-1">
+                        <div
+                          key={index}
+                          className="p-3 border rounded-lg bg-card text-xs space-y-1"
+                        >
                           <div className="flex justify-between items-center">
                             {isEdit ? (
                               <Badge variant="outline" className="capitalize">
@@ -701,8 +703,8 @@ export function PreviewModal({
                   onClick={() => onApprove(product.id)}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? <Spinner size="sm" /> : <Check className="w-4 h-4" />} Approve &amp;
-                  Publish
+                  {isSubmitting ? <Spinner size="sm" /> : <Check className="w-4 h-4" />} Approve
+                  &amp; Publish
                 </Button>
               </>
             )}

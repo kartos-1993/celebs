@@ -1,7 +1,12 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { ProductQueueItem } from '../../components/review-queue/types';
-import { extractHexColor,isHexColor, isMulticolorVariant, resolveColorCode } from '../add-product-helpers';
+import {
+  extractHexColor,
+  isHexColor,
+  isMulticolorVariant,
+  resolveColorCode,
+} from '../add-product-helpers';
 import { formatProductCategoryBreadcrumb } from '../category-format';
 
 describe('Color Resolver & Category Breadcrumb Formatting', () => {
@@ -59,9 +64,16 @@ describe('Color Resolver & Category Breadcrumb Formatting', () => {
     it('should format Category > Subcategory when both objects exist', () => {
       const product: Partial<ProductQueueItem> = {
         category: { id: 'cat-1', name: 'Apparel', slug: 'apparel', path: 'apparel' },
-        subcategory: { id: 'cat-2', name: 'Denim Jackets', slug: 'denim-jackets', path: 'apparel/denim-jackets' },
+        subcategory: {
+          id: 'cat-2',
+          name: 'Denim Jackets',
+          slug: 'denim-jackets',
+          path: 'apparel/denim-jackets',
+        },
       };
-      expect(formatProductCategoryBreadcrumb(product as ProductQueueItem)).toBe('Apparel > Denim Jackets');
+      expect(formatProductCategoryBreadcrumb(product as ProductQueueItem)).toBe(
+        'Apparel > Denim Jackets',
+      );
     });
 
     it('should not display duplicate names if category and subcategory are identical', () => {
@@ -84,7 +96,9 @@ describe('Color Resolver & Category Breadcrumb Formatting', () => {
       const product: Partial<ProductQueueItem> = {
         category: { id: 'c1', name: '', path: 'men/clothing/jackets' },
       };
-      expect(formatProductCategoryBreadcrumb(product as ProductQueueItem)).toBe('men > clothing > jackets');
+      expect(formatProductCategoryBreadcrumb(product as ProductQueueItem)).toBe(
+        'men > clothing > jackets',
+      );
     });
   });
 });

@@ -132,21 +132,18 @@ const MediaCenterPage = memo(function MediaCenterPage() {
     setPendingConfirm({ kind: 'delete-folder', folderId: id });
   }, []);
 
-  const handleDeleteAsset = useCallback(
-    (asset: MediaAsset) => {
-      if ((asset.usageCount ?? 0) > 0) {
-        toast({
-          title: 'Action Blocked',
-          description: `Cannot delete asset: actively used in ${asset.usageCount} products.`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (!asset.id) return;
-      setPendingConfirm({ kind: 'delete-asset', asset });
-    },
-    [],
-  );
+  const handleDeleteAsset = useCallback((asset: MediaAsset) => {
+    if ((asset.usageCount ?? 0) > 0) {
+      toast({
+        title: 'Action Blocked',
+        description: `Cannot delete asset: actively used in ${asset.usageCount} products.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!asset.id) return;
+    setPendingConfirm({ kind: 'delete-asset', asset });
+  }, []);
 
   const handleCleanupUnused = useCallback(() => {
     if (!quota?.unlinkedAssetCount) return;
@@ -311,9 +308,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
               onClick={() => setSelectedScope(value)}
               className={cn(
                 'h-8 rounded-full px-3.5 text-xs',
-                isActive
-                  ? ''
-                  : 'border-border/70 text-muted-foreground hover:text-foreground',
+                isActive ? '' : 'border-border/70 text-muted-foreground hover:text-foreground',
               )}
             >
               <Icon className="mr-1.5 h-3.5 w-3.5" />
@@ -657,9 +652,7 @@ const MediaCenterPage = memo(function MediaCenterPage() {
           if (!open) setPendingConfirm(null);
         }}
         destructive
-        confirmLabel={
-          pendingConfirm?.kind === 'cleanup-unused' ? 'Clean up' : 'Delete'
-        }
+        confirmLabel={pendingConfirm?.kind === 'cleanup-unused' ? 'Clean up' : 'Delete'}
         title={
           pendingConfirm?.kind === 'delete-folder'
             ? 'Delete this folder?'

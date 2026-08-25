@@ -20,4 +20,3 @@ export function cleanSkuAttributeCode(label: string): string {
       .slice(0, 6) || 'OPT'
   );
 }
-

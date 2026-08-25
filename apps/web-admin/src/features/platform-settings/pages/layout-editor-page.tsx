@@ -103,7 +103,13 @@ const widgetMeta = (type: string): WidgetTypeMeta =>
 
 const DEFAULT_LAYOUT_WIDGETS: DynamicWidget[] = [
   { id: 'widget-banner-carousel', type: 'BANNER_CAROUSEL', order: 1, data: {}, isActive: true },
-  { id: 'widget-campaign-countdown', type: 'CAMPAIGN_COUNTDOWN', order: 2, data: {}, isActive: true },
+  {
+    id: 'widget-campaign-countdown',
+    type: 'CAMPAIGN_COUNTDOWN',
+    order: 2,
+    data: {},
+    isActive: true,
+  },
   { id: 'widget-combo-showcase', type: 'COMBO_SHOWCASE', order: 3, data: {}, isActive: true },
   { id: 'widget-category-grid', type: 'CATEGORY_GRID', order: 4, data: {}, isActive: true },
   { id: 'widget-product-grid', type: 'PRODUCT_GRID', order: 5, data: {}, isActive: true },
@@ -173,18 +179,19 @@ export default function LayoutEditorPage() {
     (id: string, patch: Partial<DynamicWidget>) => {
       mutateWidgets(widgets.map((w) => (w.id === id ? { ...w, ...patch } : w)));
     },
-    [mutateWidgets, widgets]
+    [mutateWidgets, widgets],
   );
 
   const moveWidget = useCallback(
     (from: number, to: number) => {
-      if (from === to || from < 0 || to < 0 || from >= widgets.length || to >= widgets.length) return;
+      if (from === to || from < 0 || to < 0 || from >= widgets.length || to >= widgets.length)
+        return;
       const next = [...widgets];
       const [moved] = next.splice(from, 1);
       next.splice(to, 0, moved);
       mutateWidgets(next);
     },
-    [mutateWidgets, widgets]
+    [mutateWidgets, widgets],
   );
 
   const removeWidget = useCallback(
@@ -192,7 +199,7 @@ export default function LayoutEditorPage() {
       mutateWidgets(widgets.filter((w) => w.id !== id));
       setSelectedId((prev) => (prev === id ? null : prev));
     },
-    [mutateWidgets, widgets]
+    [mutateWidgets, widgets],
   );
 
   const duplicateWidget = useCallback(
@@ -210,7 +217,7 @@ export default function LayoutEditorPage() {
       mutateWidgets(next);
       setSelectedId(copy.id);
     },
-    [mutateWidgets, widgets]
+    [mutateWidgets, widgets],
   );
 
   const addWidget = useCallback(
@@ -226,14 +233,14 @@ export default function LayoutEditorPage() {
       setSelectedId(widget.id);
       setIsAddDialogOpen(false);
     },
-    [mutateWidgets, widgets]
+    [mutateWidgets, widgets],
   );
 
   const selected = widgets.find((w) => w.id === selectedId) ?? null;
 
   const liveLayout: SDUIPageLayout = useMemo(
     () => ({ pageId: 'home', title: pageTitle, widgets }),
-    [pageTitle, widgets]
+    [pageTitle, widgets],
   );
 
   const handleSave = async () => {
@@ -400,11 +407,7 @@ export default function LayoutEditorPage() {
                           updateWidget(widget.id, { isActive: inactive });
                         }}
                       >
-                        {inactive ? (
-                          <EyeOff className="h-3 w-3" />
-                        ) : (
-                          <Eye className="h-3 w-3" />
-                        )}
+                        {inactive ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                       </button>
                       <button
                         aria-label="Duplicate widget"

@@ -1,6 +1,6 @@
 import React, { KeyboardEvent } from 'react';
-import { UseFieldArrayRemove,UseFormReturn } from 'react-hook-form';
-import { Plus, Shirt, SlidersHorizontal,UserCheck, X } from 'lucide-react';
+import { UseFieldArrayRemove, UseFormReturn } from 'react-hook-form';
+import { Plus, Shirt, SlidersHorizontal, UserCheck, X } from 'lucide-react';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -110,9 +110,7 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
         <div className="space-y-2.5 p-4 rounded-xl border bg-muted/10 space-y-3">
           <div className="flex items-center gap-2">
             <Shirt className="h-4 w-4 text-info" />
-            <FormLabel>
-              Product Size Chart Columns (Garment Flat Dimensions)
-            </FormLabel>
+            <FormLabel>Product Size Chart Columns (Garment Flat Dimensions)</FormLabel>
           </div>
 
           <div className="flex items-center gap-2">
@@ -168,9 +166,7 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
         <div className="space-y-2.5 p-4 rounded-xl border bg-muted/10 space-y-3">
           <div className="flex items-center gap-2">
             <UserCheck className="h-4 w-4 text-info" />
-            <FormLabel>
-              Body Size Chart Columns (Wearer Recommended Dimensions)
-            </FormLabel>
+            <FormLabel>Body Size Chart Columns (Wearer Recommended Dimensions)</FormLabel>
           </div>
 
           <div className="flex items-center gap-2">

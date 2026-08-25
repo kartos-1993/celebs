@@ -11,9 +11,7 @@ export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   try {
     const res = await getCategoryById(catId);
     const cat = res?.data;
-    const attrs: CategoryAttributeType[] = Array.isArray(cat?.attributes)
-      ? cat.attributes
-      : [];
+    const attrs: CategoryAttributeType[] = Array.isArray(cat?.attributes) ? cat.attributes : [];
 
     const existingNames = new Set(merged.map((f) => f.name.toLowerCase()));
     const extra: FieldSpec[] = [];

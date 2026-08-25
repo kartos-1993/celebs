@@ -43,9 +43,7 @@ export const MOCK_SDUI_LAYOUT: SDUIPageLayout = {
       type: 'BANNER_CAROUSEL',
       order: 1,
       data: {
-        banners: [
-          { title: 'Mega Festive Collection 2026', subtitle: 'Up to 50% Off Top Brands' },
-        ],
+        banners: [{ title: 'Mega Festive Collection 2026', subtitle: 'Up to 50% Off Top Brands' }],
       },
     },
     {

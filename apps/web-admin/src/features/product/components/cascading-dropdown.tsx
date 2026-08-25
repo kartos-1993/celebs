@@ -624,8 +624,9 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Change Category?</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground pt-1.5">
-              You have already entered product details for this category. Switching to a new category
-              will regenerate the form schema and may reset category-specific dynamic fields.
+              You have already entered product details for this category. Switching to a new
+              category will regenerate the form schema and may reset category-specific dynamic
+              fields.
               <br />
               <br />
               Are you sure you want to change to{' '}
@@ -636,19 +637,10 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2 sm:justify-end pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleConfirmModalCancel}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={handleConfirmModalCancel}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleConfirmModalProceed}
-            >
+            <Button type="button" size="sm" onClick={handleConfirmModalProceed}>
               Change Category
             </Button>
           </DialogFooter>

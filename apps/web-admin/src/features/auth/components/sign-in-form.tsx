@@ -1,9 +1,9 @@
-import { HTMLAttributes, useEffect,useState } from 'react';
+import { HTMLAttributes, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useLocation,useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2,Send } from 'lucide-react';
+import { CheckCircle2, Send } from 'lucide-react';
 import { z } from 'zod';
 
 import { Button } from '@celebs/shared-ui/components/button';
@@ -177,7 +177,8 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
       {serverError && (
         <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md mb-2 space-y-2">
           <div>{serverError}</div>
-          {(serverError.toLowerCase().includes('verify') || serverError.toLowerCase().includes('unverified')) && (
+          {(serverError.toLowerCase().includes('verify') ||
+            serverError.toLowerCase().includes('unverified')) && (
             <ResendBannerButton email={form.getValues('email')} />
           )}
         </div>

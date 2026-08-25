@@ -26,14 +26,10 @@ export const formatProductCategoryBreadcrumb = (product: ProductQueueItem): stri
   if (catName) return catName;
 
   if (typeof sub === 'object' && sub?.path) {
-    return Array.isArray(sub.path)
-      ? sub.path.join(' > ')
-      : String(sub.path).split('/').join(' > ');
+    return Array.isArray(sub.path) ? sub.path.join(' > ') : String(sub.path).split('/').join(' > ');
   }
   if (typeof cat === 'object' && cat?.path) {
-    return Array.isArray(cat.path)
-      ? cat.path.join(' > ')
-      : String(cat.path).split('/').join(' > ');
+    return Array.isArray(cat.path) ? cat.path.join(' > ') : String(cat.path).split('/').join(' > ');
   }
 
   return 'Uncategorized';

@@ -1,6 +1,6 @@
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { Permission } from '@celebs/rbac';
 
@@ -10,7 +10,6 @@ import { RoleGuard } from '../role-guard';
 
 import { AuthContext, defaultAuthContext } from '@/context/auth-provider';
 import ForbiddenError from '@/features/errors/forbidden-error';
-
 
 const ForbiddenInspector = () => {
   const location = useLocation();
@@ -74,10 +73,10 @@ describe('RoleGuard Integration Tests', () => {
   });
 
   it('allows SUPERADMIN access unconditionally', () => {
-    renderWithAuth(
-      { id: 'admin-1', role: 'SUPERADMIN', permissions: [] },
-      [Permission.PLATFORM_MANAGE, Permission.PRODUCT_DELETE],
-    );
+    renderWithAuth({ id: 'admin-1', role: 'SUPERADMIN', permissions: [] }, [
+      Permission.PLATFORM_MANAGE,
+      Permission.PRODUCT_DELETE,
+    ]);
     expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
 });

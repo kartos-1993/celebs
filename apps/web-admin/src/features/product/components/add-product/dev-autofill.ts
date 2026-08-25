@@ -8,11 +8,7 @@ export function autofillProductForm(
   form: UseFormReturn<ProductFormValues>,
   schemaFields: FieldSpec[],
 ): void {
-  const setFieldValue = (
-    name: string,
-    value: unknown,
-    options?: { shouldValidate?: boolean },
-  ) => {
+  const setFieldValue = (name: string, value: unknown, options?: { shouldValidate?: boolean }) => {
     form.setValue(name as Path<ProductFormValues>, value as never, options);
   };
   const getFieldValue = (name: string) => form.getValues(name as Path<ProductFormValues>);

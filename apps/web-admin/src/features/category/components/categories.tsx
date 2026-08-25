@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { FolderPlus,FolderTree } from 'lucide-react';
+import { FolderPlus, FolderTree } from 'lucide-react';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -171,7 +171,8 @@ export const Categories: React.FC = () => {
             ? {
                 name: categories.find((c) => c.id === uiState.categoryToDelete)?.name || '',
                 hasChildren: categories.some((c) => c.parentCategory === uiState.categoryToDelete),
-                childCount: categories.filter((c) => c.parentCategory === uiState.categoryToDelete).length,
+                childCount: categories.filter((c) => c.parentCategory === uiState.categoryToDelete)
+                  .length,
                 attributes:
                   categories.find((c) => c.id === uiState.categoryToDelete)?.attributes || [],
               }

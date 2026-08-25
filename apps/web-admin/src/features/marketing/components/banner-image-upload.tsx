@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ImagePlus, Link as LinkIcon, RefreshCw,Trash2 } from 'lucide-react';
+import { ImagePlus, Link as LinkIcon, RefreshCw, Trash2 } from 'lucide-react';
 
 import type { BannerImageUploadPropsType } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -73,11 +73,7 @@ export function BannerImageUpload({
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
             >
-              {isUploading ? (
-                <Spinner size="sm" />
-              ) : (
-                <RefreshCw className="w-3.5 h-3.5" />
-              )}
+              {isUploading ? <Spinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
               Change Image
             </Button>
             <Button
@@ -97,9 +93,7 @@ export function BannerImageUpload({
         <div
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 bg-muted/50 hover:bg-muted ${
-            isUploading
-              ? 'opacity-50 pointer-events-none'
-              : 'border-border hover:border-info'
+            isUploading ? 'opacity-50 pointer-events-none' : 'border-border hover:border-info'
           }`}
         >
           {isUploading ? (

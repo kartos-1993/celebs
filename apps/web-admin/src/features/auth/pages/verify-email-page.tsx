@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate,useSearchParams } from 'react-router-dom';
-import { AlertCircle,CheckCircle2, Send } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertCircle, CheckCircle2, Send } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import { resendVerification,verifyEmail } from '../api';
+import { resendVerification, verifyEmail } from '../api';
 
 import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
 import { useAuthContext } from '@/context/auth-provider';
@@ -20,13 +20,20 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
   const [resendEmail, setResendEmail] = useState('');
-  const [resendStatus, setResendStatus] = useState<{ loading: boolean; message?: string; error?: string }>({
+  const [resendStatus, setResendStatus] = useState<{
+    loading: boolean;
+    message?: string;
+    error?: string;
+  }>({
     loading: false,
   });
 
   const { user, refetch } = useAuthContext();
   const hasAttemptedRef = useRef(false);
-  const { secondsRemaining, isCoolingDown, startCooldown } = useResendCooldown('verify_email_resend_cooldown', 60);
+  const { secondsRemaining, isCoolingDown, startCooldown } = useResendCooldown(
+    'verify_email_resend_cooldown',
+    60,
+  );
 
   useEffect(() => {
     if (user?.email && !resendEmail) {
@@ -50,10 +57,11 @@ export default function VerifyEmailPage() {
 
     if (!initialCode) {
       setStatus('error');
-      setErrorMessage('Verification link is missing or expired. Please request a new verification email.');
+      setErrorMessage(
+        'Verification link is missing or expired. Please request a new verification email.',
+      );
       return;
     }
-
 
     // Prevent duplicate API calls from React 18 StrictMode double-invocation
     if (hasAttemptedRef.current) return;
@@ -65,25 +73,36 @@ export default function VerifyEmailPage() {
     }
 
     verifyEmail({ code: initialCode })
-      .then((res: { data?: { data?: { user?: { role?: string; vendorProfile?: { status?: string } } } } }) => {
-        setStatus('success');
-        const verifiedUser = res?.data?.data?.user;
-        refetch();
-        setTimeout(() => {
-          const targetPath =
-            verifiedUser?.role === 'VENDOR' && verifiedUser?.vendorProfile?.status !== 'APPROVED'
-              ? PATHS.VENDORS.ONBOARDING
-              : PATHS.DASHBOARD;
-          navigate(targetPath, { replace: true });
-        }, 1500);
-      })
+      .then(
+        (res: {
+          data?: { data?: { user?: { role?: string; vendorProfile?: { status?: string } } } };
+        }) => {
+          setStatus('success');
+          const verifiedUser = res?.data?.data?.user;
+          refetch();
+          setTimeout(() => {
+            const targetPath =
+              verifiedUser?.role === 'VENDOR' && verifiedUser?.vendorProfile?.status !== 'APPROVED'
+                ? PATHS.VENDORS.ONBOARDING
+                : PATHS.DASHBOARD;
+            navigate(targetPath, { replace: true });
+          }, 1500);
+        },
+      )
       .catch((err: { response?: { data?: { message?: string } } }) => {
         setStatus('error');
         setErrorMessage(
           err?.response?.data?.message || 'Verification link is invalid or has expired.',
         );
       });
-  }, [initialCode, navigate, refetch, user?.isEmailVerified, user?.role, user?.vendorProfile?.status]);
+  }, [
+    initialCode,
+    navigate,
+    refetch,
+    user?.isEmailVerified,
+    user?.role,
+    user?.vendorProfile?.status,
+  ]);
 
   const handleResend = async (e: React.FormEvent) => {
     e.preventDefault();

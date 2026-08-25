@@ -40,7 +40,7 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
-import { createUser, deleteUser,getUsers } from '../api';
+import { createUser, deleteUser, getUsers } from '../api';
 import { USERS_QUERY_KEYS } from '../api';
 
 import { PageLoader } from '@/components/page-loader';

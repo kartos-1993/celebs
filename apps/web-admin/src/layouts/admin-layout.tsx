@@ -1,4 +1,4 @@
-import { Suspense,useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Outlet, useMatches, useNavigation } from 'react-router-dom';
 
 import Main from '@/components/main';

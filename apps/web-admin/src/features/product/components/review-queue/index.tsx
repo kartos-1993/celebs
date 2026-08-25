@@ -1,4 +1,4 @@
-import { useCallback, useMemo,useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Check, Eye, ShieldCheck, ShoppingBag, Store, X } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from '@celebs/shared-ui/components/tooltip';
 
-import type { ProductFilterRequest,ReviewProductRequestPayload } from '../../api';
+import type { ProductFilterRequest, ReviewProductRequestPayload } from '../../api';
 import {
   useProductMutations,
   useProductsQuery,
@@ -182,7 +182,8 @@ export default function ReviewProductQueue() {
                     <TableHead className="text-right">Price</TableHead>
                     <TableHead>Submitted</TableHead>
                     {activeTab === 'rejected' && <TableHead>Rejection Reason</TableHead>}
-                    <TableHead className="text-right">Actions</TableHead>                  </TableRow>
+                    <TableHead className="text-right">Actions</TableHead>{' '}
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
@@ -220,7 +221,11 @@ export default function ReviewProductQueue() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs max-w-[220px] truncate block" title={formatProductCategoryBreadcrumb(product)}>
+                        <Badge
+                          variant="outline"
+                          className="text-xs max-w-[220px] truncate block"
+                          title={formatProductCategoryBreadcrumb(product)}
+                        >
                           {formatProductCategoryBreadcrumb(product)}
                         </Badge>
                       </TableCell>

@@ -32,10 +32,7 @@ export function LabelWithRequired({
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <div
-      role="alert"
-      className="mt-1 flex items-start gap-1 text-xs font-medium text-destructive"
-    >
+    <div role="alert" className="mt-1 flex items-start gap-1 text-xs font-medium text-destructive">
       <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
       <span>{message}</span>
     </div>
@@ -52,17 +49,12 @@ interface ErrorLike {
  * while fields registered under dynamic paths (e.g. `variants.colorMeta.Red.images`)
  * only know their dotted path. Resolve the path segment by segment.
  */
-export function getPathError(
-  errors: unknown,
-  path: string,
-): ErrorLike | undefined {
+export function getPathError(errors: unknown, path: string): ErrorLike | undefined {
   if (!errors || typeof errors !== 'object') return undefined;
-  const resolved = path
-    .split('.')
-    .reduce<unknown>((acc, key) => {
-      if (acc === null || acc === undefined || typeof acc !== 'object') return undefined;
-      return (acc as Record<string, unknown>)[key];
-    }, errors);
+  const resolved = path.split('.').reduce<unknown>((acc, key) => {
+    if (acc === null || acc === undefined || typeof acc !== 'object') return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, errors);
   if (resolved && typeof resolved === 'object' && 'message' in (resolved as ErrorLike)) {
     return resolved as ErrorLike;
   }
@@ -89,10 +81,15 @@ export function VariantThumb({
   onRemove: () => void;
 }) {
   return (
-    <div className={`group relative ${TILE} shrink-0 overflow-hidden rounded-md border bg-accent/20`}>
+    <div
+      className={`group relative ${TILE} shrink-0 overflow-hidden rounded-md border bg-accent/20`}
+    >
       <img src={src} alt={alt} className="h-full w-full object-cover" />
       <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-        <label className="grid h-6 w-6 cursor-pointer place-items-center rounded bg-white/90 text-black" title="Replace">
+        <label
+          className="grid h-6 w-6 cursor-pointer place-items-center rounded bg-white/90 text-black"
+          title="Replace"
+        >
           <input
             type="file"
             className="hidden"
@@ -154,5 +151,3 @@ export function AddFromFileTile({
     </label>
   );
 }
-
-

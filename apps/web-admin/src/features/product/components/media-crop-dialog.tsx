@@ -65,8 +65,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
     };
   }, [file]);
 
-  const isLowRes =
-    naturalDims.width > 0 && (naturalDims.width < 1200 || naturalDims.height < 1600);
+  const isLowRes = naturalDims.width > 0 && (naturalDims.width < 1200 || naturalDims.height < 1600);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -176,9 +175,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Crop className="h-4 w-4 text-primary" />
-              <DialogTitle className="text-base font-bold">
-                Standard 3:4 Fashion Crop
-              </DialogTitle>
+              <DialogTitle className="text-base font-bold">Standard 3:4 Fashion Crop</DialogTitle>
             </div>
             <Badge variant="outline" className="text-xs font-mono">
               3:4 Portrait (0.75)
@@ -274,8 +271,8 @@ export const MediaCropDialog = memo(function MediaCropDialog({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-warning/10 border border-warning/30 text-warning text-xs w-full">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               <span>
-                Original is {naturalDims.width}x{naturalDims.height}px. High-res zoom may look
-                soft. (Recommended 1200x1600px+).
+                Original is {naturalDims.width}x{naturalDims.height}px. High-res zoom may look soft.
+                (Recommended 1200x1600px+).
               </span>
             </div>
           )}

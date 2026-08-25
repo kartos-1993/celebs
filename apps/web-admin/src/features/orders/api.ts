@@ -79,14 +79,22 @@ export type AdminOrdersResponse = {
   data: { orders: AdminOrderDto[]; total: number; page: number; limit: number };
 };
 
-export async function getVendorOrders({ status, page = 1, limit = 10 }: OrdersListParams): Promise<VendorOrdersResponse> {
+export async function getVendorOrders({
+  status,
+  page = 1,
+  limit = 10,
+}: OrdersListParams): Promise<VendorOrdersResponse> {
   const response = await axiosClient.get('/orders/vendor/orders', {
     params: { ...(status ? { status } : {}), page, limit },
   });
   return response.data as VendorOrdersResponse;
 }
 
-export async function getAdminOrders({ status, page = 1, limit = 10 }: OrdersListParams): Promise<AdminOrdersResponse> {
+export async function getAdminOrders({
+  status,
+  page = 1,
+  limit = 10,
+}: OrdersListParams): Promise<AdminOrdersResponse> {
   const response = await axiosClient.get('/orders/admin/orders', {
     params: { ...(status ? { status } : {}), page, limit },
   });
@@ -97,7 +105,10 @@ export async function updateOrderItemStatusApi(
   orderItemId: string,
   body: UpdateOrderItemStatusInput,
 ) {
-  const response = await axiosClient.patch(`/orders/vendor/orders/items/${orderItemId}/status`, body);
+  const response = await axiosClient.patch(
+    `/orders/vendor/orders/items/${orderItemId}/status`,
+    body,
+  );
   return response.data as { success: boolean; data: VendorOrderItemDto };
 }
 

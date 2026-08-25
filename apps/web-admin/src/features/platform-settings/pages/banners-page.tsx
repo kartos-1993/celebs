@@ -1,5 +1,5 @@
-import React, { useCallback,useEffect, useState } from 'react';
-import { ExternalLink, Eye,Link2, Smartphone, Upload } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ExternalLink, Eye, Link2, Smartphone, Upload } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -24,7 +24,7 @@ import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import type { Category } from '../../category/types';
 import { ProductApiService } from '../../product/api';
-import { Banner,PlatformSettingsApiService } from '../api';
+import { Banner, PlatformSettingsApiService } from '../api';
 
 import { PageLoader } from '@/components/page-loader';
 import { CategoryApiService } from '@/features/category/api';

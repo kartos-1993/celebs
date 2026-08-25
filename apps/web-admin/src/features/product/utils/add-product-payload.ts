@@ -214,8 +214,12 @@ export async function buildProductPayload({
     },
     tags: [],
     featured: false,
-    skus: Array.isArray(values.skus) ? (values.skus as CreateProductRequest['skus'] & unknown[]) : [],
-    variantOptions: Array.isArray(values.variantOptions) ? (values.variantOptions as CreateProductRequest['variantOptions'] & unknown[]) : [],
+    skus: Array.isArray(values.skus)
+      ? (values.skus as CreateProductRequest['skus'] & unknown[])
+      : [],
+    variantOptions: Array.isArray(values.variantOptions)
+      ? (values.variantOptions as CreateProductRequest['variantOptions'] & unknown[])
+      : [],
     status,
   };
 }

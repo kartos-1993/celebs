@@ -1,7 +1,7 @@
-import React, { KeyboardEvent,useState } from 'react';
+import React, { KeyboardEvent, useState } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, ChevronUp, Layers,Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers, Plus, X } from 'lucide-react';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';

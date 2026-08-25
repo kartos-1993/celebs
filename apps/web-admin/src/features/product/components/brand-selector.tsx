@@ -90,9 +90,7 @@ export const BrandSelector = memo(function BrandSelector({
           </SelectItem>
           {brands.map((b) => {
             const isAuthorized =
-              b.tier === 'OPEN_GENERIC' ||
-              b.tier === 'FIRST_PARTY' ||
-              authorizedBrandIds.has(b.id);
+              b.tier === 'OPEN_GENERIC' || b.tier === 'FIRST_PARTY' || authorizedBrandIds.has(b.id);
 
             return (
               <SelectItem key={b.id} value={b.id}>

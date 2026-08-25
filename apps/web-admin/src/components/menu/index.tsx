@@ -104,7 +104,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                               <span
                                 className={cn(
                                   'flex shrink-0 items-center justify-center',
-                                  ((active === undefined && pathname.startsWith(href)) || active)
+                                  (active === undefined && pathname.startsWith(href)) || active
                                     ? 'text-primary'
                                     : 'text-muted-foreground',
                                 )}

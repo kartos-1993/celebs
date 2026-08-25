@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { CheckCircle,Upload, X } from 'lucide-react';
+import { CheckCircle, Upload, X } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
@@ -107,9 +107,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               >
                 View Uploaded Image
               </a>
-              <p className="text-xs text-muted-foreground truncate">
-                Compressed WebP image stored
-              </p>
+              <p className="text-xs text-muted-foreground truncate">Compressed WebP image stored</p>
             </div>
           </div>
 
@@ -160,9 +158,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               <p className="text-xs font-medium text-foreground">
                 Click to upload image <span className="text-muted-foreground">(Max 5MB)</span>
               </p>
-              <p className="text-xs text-muted-foreground">
-                JPEG, PNG, WEBP, or AVIF images only
-              </p>
+              <p className="text-xs text-muted-foreground">JPEG, PNG, WEBP, or AVIF images only</p>
             </div>
           )}
         </div>

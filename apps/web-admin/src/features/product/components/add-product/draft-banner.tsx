@@ -13,11 +13,10 @@ export const DraftBanner = memo(({ restoredDraftAt, onDiscard }: DraftBannerProp
     <div className="flex items-center gap-3">
       <FileClock className="h-5 w-5 shrink-0 text-warning" />
       <div>
-        <p className="text-xs font-semibold text-warning">
-          Saved draft auto-restored
-        </p>
+        <p className="text-xs font-semibold text-warning">Saved draft auto-restored</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Loaded unfinished draft saved on {new Date(restoredDraftAt).toLocaleString()}. Note: image files must be re-attached before submitting.
+          Loaded unfinished draft saved on {new Date(restoredDraftAt).toLocaleString()}. Note: image
+          files must be re-attached before submitting.
         </p>
       </div>
     </div>

@@ -10,7 +10,8 @@ import { hydrateProductForm, toCategoryPath } from '../utils/hydrate-product-for
 
 import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 
-export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> & Record<string, unknown>;
+export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> &
+  Record<string, unknown>;
 
 /**
  * NOTE: intentionally no `resolver` here. React Hook Form skips ALL

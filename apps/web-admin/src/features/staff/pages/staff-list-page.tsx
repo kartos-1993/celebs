@@ -20,11 +20,7 @@ import {
 } from 'lucide-react';
 import { z } from 'zod';
 
-import {
-  getGroupedPermissions,
-  Permission,
-  STAFF_ROLE_PRESETS,
-} from '@celebs/rbac';
+import { getGroupedPermissions, Permission, STAFF_ROLE_PRESETS } from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
 import { createStaffSchema } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -120,9 +116,7 @@ function GroupedPermissionSelector({
     }
   };
 
-  const visibleGroups = allGroups.filter(
-    (g) => isAdmin || g.module.key !== 'PLATFORM',
-  );
+  const visibleGroups = allGroups.filter((g) => isAdmin || g.module.key !== 'PLATFORM');
 
   return (
     <div className="space-y-3">
@@ -165,7 +159,9 @@ function GroupedPermissionSelector({
                   <label
                     key={perm}
                     className={`flex items-start gap-2 p-2 rounded-md border text-xs cursor-pointer transition-colors ${
-                      isChecked ? 'border-primary/50 bg-primary/5' : 'border-border/60 hover:bg-muted/40'
+                      isChecked
+                        ? 'border-primary/50 bg-primary/5'
+                        : 'border-border/60 hover:bg-muted/40'
                     }`}
                   >
                     <Checkbox
@@ -174,7 +170,9 @@ function GroupedPermissionSelector({
                       className="h-3.5 w-3.5 mt-0.5"
                     />
                     <div className="space-y-0.5">
-                      <span className="font-medium text-foreground block leading-none">{label}</span>
+                      <span className="font-medium text-foreground block leading-none">
+                        {label}
+                      </span>
                       <span className="text-[10px] text-muted-foreground block leading-tight">
                         {description}
                       </span>
@@ -511,7 +509,9 @@ export default function StaffList() {
 
                 {/* Role Preset Selector */}
                 <div className="space-y-3 border-t pt-3">
-                  <FormLabel className="block">Select Delegated Role Preset &amp; Permissions</FormLabel>
+                  <FormLabel className="block">
+                    Select Delegated Role Preset &amp; Permissions
+                  </FormLabel>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {STAFF_ROLE_PRESETS.map((preset) => {
                       const PresetIcon = ICON_MAP[preset.iconKey] || Shield;
@@ -614,7 +614,9 @@ export default function StaffList() {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => updateMutation.mutate({ id: editingStaff.id, permissions: editPermissions })}
+                  onClick={() =>
+                    updateMutation.mutate({ id: editingStaff.id, permissions: editPermissions })
+                  }
                   disabled={updateMutation.isPending}
                 >
                   {updateMutation.isPending ? 'Saving...' : 'Save Permissions'}
@@ -660,11 +662,7 @@ export default function StaffList() {
                     <div className="flex flex-wrap gap-1">
                       {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
                         member.permissions.slice(0, 4).map((perm: string) => (
-                          <Badge
-                            key={perm}
-                            variant="outline"
-                            className="py-0 px-1.5 font-mono"
-                          >
+                          <Badge key={perm} variant="outline" className="py-0 px-1.5 font-mono">
                             {perm}
                           </Badge>
                         ))
@@ -682,34 +680,38 @@ export default function StaffList() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                    {!member.isEmailVerified && (
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="warning">
-                          <MailWarning className="w-3 h-3 mr-1 inline" /> Unverified
-                        </Badge>
-                        <ResendStaffInviteButton email={member.email} />
-                      </div>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingStaff(member);
-                        setEditPermissions(Array.isArray(member.permissions) ? (member.permissions as string[]) : []);
-                      }}
-                      className="h-8 gap-1"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setStaffToDelete(member)}
-                      disabled={deleteMutation.isPending}
-                      className="h-8 gap-1"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </Button>
+                      {!member.isEmailVerified && (
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="warning">
+                            <MailWarning className="w-3 h-3 mr-1 inline" /> Unverified
+                          </Badge>
+                          <ResendStaffInviteButton email={member.email} />
+                        </div>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingStaff(member);
+                          setEditPermissions(
+                            Array.isArray(member.permissions)
+                              ? (member.permissions as string[])
+                              : [],
+                          );
+                        }}
+                        className="h-8 gap-1"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setStaffToDelete(member)}
+                        disabled={deleteMutation.isPending}
+                        className="h-8 gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

@@ -229,9 +229,7 @@ const ManageProduct = () => {
 
     setIsBatchProcessing(true);
     try {
-      const results = await Promise.allSettled(
-        selectedProducts.map((id) => archiveProduct(id)),
-      );
+      const results = await Promise.allSettled(selectedProducts.map((id) => archiveProduct(id)));
       const successful = results.filter((r) => r.status === 'fulfilled').length;
       await queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
       setSelectedProducts([]);
@@ -316,75 +314,69 @@ const ManageProduct = () => {
           {/* Batch Actions (contextual) */}
           {selectedProducts.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/50 p-2 text-xs text-foreground shadow-sm mb-4">
-              <span className="font-semibold px-1">
-                {selectedProducts.length} selected
-              </span>
+              <span className="font-semibold px-1">{selectedProducts.length} selected</span>
 
-                {isSellerOrStaff && canCreate && submittableCount > 0 && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="h-7 gap-1 px-2.5 text-xs"
-                    disabled={isBatchProcessing}
-                    onClick={handleBatchSubmit}
-                  >
-                    {isBatchProcessing ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                    Submit ({submittableCount})
-                  </Button>
-                )}
-
-                {isSellerOrStaff && canEdit && activatableCount > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1 border-success/30 bg-success/10 px-2.5 text-xs text-success hover:bg-success/20"
-                    disabled={isBatchProcessing}
-                    onClick={() => handleBatchToggleStatus('activate')}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    Activate ({activatableCount})
-                  </Button>
-                )}
-
-                {isSellerOrStaff && canEdit && deactivatableCount > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1 border-warning/30 bg-warning/10 px-2.5 text-xs text-warning hover:bg-warning/20"
-                    disabled={isBatchProcessing}
-                    onClick={() => handleBatchToggleStatus('deactivate')}
-                  >
-                    <EyeOff className="h-3.5 w-3.5" />
-                    Deactivate ({deactivatableCount})
-                  </Button>
-                )}
-
-                {canDelete && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1 border-destructive/30 bg-destructive/10 px-2.5 text-xs text-destructive hover:bg-destructive/20"
-                    disabled={isBatchProcessing}
-                    onClick={() => setIsBatchArchiveOpen(true)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Archive ({selectedProducts.length})
-                  </Button>
-                )}
-
+              {isSellerOrStaff && canCreate && submittableCount > 0 && (
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setSelectedProducts([])}
+                  variant="default"
+                  className="h-7 gap-1 px-2.5 text-xs"
                   disabled={isBatchProcessing}
+                  onClick={handleBatchSubmit}
                 >
-                  Clear
+                  {isBatchProcessing ? <Spinner size="sm" /> : <Send className="h-3.5 w-3.5" />}
+                  Submit ({submittableCount})
                 </Button>
+              )}
+
+              {isSellerOrStaff && canEdit && activatableCount > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 border-success/30 bg-success/10 px-2.5 text-xs text-success hover:bg-success/20"
+                  disabled={isBatchProcessing}
+                  onClick={() => handleBatchToggleStatus('activate')}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Activate ({activatableCount})
+                </Button>
+              )}
+
+              {isSellerOrStaff && canEdit && deactivatableCount > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 border-warning/30 bg-warning/10 px-2.5 text-xs text-warning hover:bg-warning/20"
+                  disabled={isBatchProcessing}
+                  onClick={() => handleBatchToggleStatus('deactivate')}
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                  Deactivate ({deactivatableCount})
+                </Button>
+              )}
+
+              {canDelete && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 border-destructive/30 bg-destructive/10 px-2.5 text-xs text-destructive hover:bg-destructive/20"
+                  disabled={isBatchProcessing}
+                  onClick={() => setIsBatchArchiveOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Archive ({selectedProducts.length})
+                </Button>
+              )}
+
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setSelectedProducts([])}
+                disabled={isBatchProcessing}
+              >
+                Clear
+              </Button>
             </div>
           )}
 

@@ -72,7 +72,10 @@ export function useProductSchema(catId: string, productId?: string) {
         const merged = ensureVariantSupportFields(normalizeSchema(withFallbacks));
         return merged.length > 0 ? merged : [...BASELINE_SCHEMA];
       } catch (error) {
-        logger.warn({ error, catId }, 'Failed to load category schema; falling back to baseline schema');
+        logger.warn(
+          { error, catId },
+          'Failed to load category schema; falling back to baseline schema',
+        );
         return [...BASELINE_SCHEMA];
       }
     },

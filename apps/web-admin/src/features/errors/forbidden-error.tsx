@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, HelpCircle,Home, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Home, ShieldAlert } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 

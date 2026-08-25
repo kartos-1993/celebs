@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Flame,Plus } from 'lucide-react';
+import { Calendar, Flame, Plus } from 'lucide-react';
 
 import type { CampaignItemType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
