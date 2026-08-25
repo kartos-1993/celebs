@@ -52,7 +52,7 @@ Verification at stack tip: `turbo typecheck` 7/7 ✅ · `turbo lint` 7/7 ✅ ·
 
 | Item | Why parked |
 |---|---|
-| **God files/methods** — `product.service.ts` (~1154 lines; `updateProduct` ≈192L, `getAllProducts` ≈149L, `reviewProduct` ≈134L, `createProduct` ≈130L), `auth.service.ts` (739L; `vendorRegister` ≈149L, `googleSignIn` ≈116L) | Deliberate policy (`AGENTS.md`): refactor-as-you-touch. These methods grew slightly (audit trail added lines) — decomposition is the largest open debt item |
+| ~~**God files/methods**~~ — `product.service.ts` RESOLVED 2026-08-25: decomposed into `product-query.service`, `product-lifecycle.service`, `product.presenter`, `product-assets`, `product-payloads`, + inventory sync moved to repository. Largest file now 525L, no method >80L, all 194 API tests green unchanged. Remaining: `auth.service.ts` (739L) — refactor-as-you-touch applies | Deliberate policy (`AGENTS.md`): refactor-as-you-touch. Decomposition completed per `docs/plans/2026-08-24-api-remediation-and-god-file-plan.md` §2 |
 | Response-envelope unification (123 inline literals vs dead helper; two competing error shapes) | Touches 19 backend files + frontend error handling; needs its own branch |
 | Media-counter reconciliation inside the transaction | Current state: post-commit with loud structured logging; true fix wants `tx`-aware repository signature or outbox |
 | Admin/staff unpaginated listings | Requires coordinated web-admin UI change |
