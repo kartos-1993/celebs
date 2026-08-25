@@ -1,8 +1,6 @@
 import { type Product } from '@prisma/client';
 
-import {
-  CreateProductType,
-} from '@celebs/shared-types';
+import { CreateProductType } from '@celebs/shared-types';
 
 import { appendAuditEntry, buildProductAuditDiff } from './utils/product-audit';
 import { toJsonInput } from './product-assets';

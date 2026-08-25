@@ -10,12 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
-import {
-  AppError,
-  ErrorCode,
-  HTTPSTATUS,
-  logger,
-} from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { brandService } from '../brand/brand.service';
 import { mediaRepository } from '../media/media.repository';
@@ -26,10 +21,7 @@ import {
   PRODUCT_DETAIL_SELECT,
   PRODUCT_LIST_SELECT,
 } from './repositories/product-projections';
-import {
-  buildProductAuditDiff,
-  isCrossStoreProductEdit,
-} from './utils/product-audit';
+import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import { ProductLifecycleService } from './product-lifecycle.service';
@@ -353,7 +345,10 @@ export class ProductService {
     });
   }
 
-  private async resolveUpdateCategoryIds(product: Product, updateData: Partial<CreateProductInput>) {
+  private async resolveUpdateCategoryIds(
+    product: Product,
+    updateData: Partial<CreateProductInput>,
+  ) {
     let resolvedCategoryId = product.categoryId;
     let resolvedSubcategoryId = product.subcategoryId;
 

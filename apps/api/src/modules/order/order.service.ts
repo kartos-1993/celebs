@@ -285,10 +285,7 @@ export class OrderService {
         return createdOrder;
       });
     } catch (err: unknown) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         const recheck = await orderRepository.findIdempotencyKey(idempotencyKey, userId);
         if (recheck) {
           return JSON.parse(recheck.responseBody);

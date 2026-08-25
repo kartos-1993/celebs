@@ -39,9 +39,9 @@ export const collectProductAssetUrls = (source: {
     }
   }
 
-  const colorMeta = (
-    source.dynamicData as Record<string, unknown> | undefined
-  )?.variants as Record<string, unknown> | undefined;
+  const colorMeta = (source.dynamicData as Record<string, unknown> | undefined)?.variants as
+    | Record<string, unknown>
+    | undefined;
 
   const metaGroups: Array<Record<string, unknown>> = [];
   if (colorMeta && typeof colorMeta === 'object') {
