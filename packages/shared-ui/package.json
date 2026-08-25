@@ -5,6 +5,7 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
