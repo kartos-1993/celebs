@@ -38,9 +38,7 @@ export function CartCheckoutBar({
         {savings > 0 && (
           <View style={styles.savingsRow}>
             <ThemedText style={styles.savingsLabel}>You save</ThemedText>
-            <ThemedText style={styles.savingsValue}>
-              Rs. {formatPrice(savings)}
-            </ThemedText>
+            <ThemedText style={styles.savingsValue}>Rs. {formatPrice(savings)}</ThemedText>
           </View>
         )}
       </View>

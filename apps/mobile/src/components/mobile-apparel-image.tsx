@@ -48,4 +48,3 @@ export const MobileApparelImage: React.FC<MobileApparelImageProps> = ({
     </View>
   );
 };
-

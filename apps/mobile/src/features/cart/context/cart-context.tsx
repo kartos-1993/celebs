@@ -63,7 +63,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     [items, selectedItemIds],
   );
   const totals = useMemo(() => computeTotals(selectedItems), [selectedItems]);
-  const isAllSelected = items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
+  const isAllSelected =
+    items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
 
   return (
     <CartContext.Provider

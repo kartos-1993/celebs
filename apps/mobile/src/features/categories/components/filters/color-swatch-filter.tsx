@@ -93,4 +93,3 @@ export const ColorSwatchFilter: React.FC<ColorSwatchFilterProps> = ({
     </ScrollView>
   );
 };
-

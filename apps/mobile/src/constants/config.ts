@@ -61,8 +61,7 @@ export function resolveImageUrl(url?: string | null): string {
   return trimmed;
 }
 
-export const GOOGLE_CLIENT_ID =
-  process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+export const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 export const API_CONFIG = {
   baseURL: getDevBaseUrl(),

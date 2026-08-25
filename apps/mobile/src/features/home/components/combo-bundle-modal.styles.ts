@@ -1,11 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import {
-  FontSize,
-  Palette,
-  Radius,
-  Spacing,
-} from '@/constants/theme';
+import { FontSize, Palette, Radius, Spacing } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
   modalOverlay: {

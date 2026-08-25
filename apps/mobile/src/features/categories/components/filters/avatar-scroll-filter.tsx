@@ -65,4 +65,3 @@ export const AvatarScrollFilter: React.FC<AvatarScrollFilterProps> = ({
     </ScrollView>
   );
 };
-

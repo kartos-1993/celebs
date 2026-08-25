@@ -36,12 +36,7 @@ export function CartItemsSection({
 
   const items = useMemo(() => cart?.items || [], [cart]);
   const brands = useMemo(
-    () =>
-      [
-        ...new Set(
-          items.map((item) => item.productBrand?.trim() || 'Other'),
-        ),
-      ].sort(),
+    () => [...new Set(items.map((item) => item.productBrand?.trim() || 'Other'))].sort(),
     [items],
   );
 
@@ -102,9 +97,7 @@ export function CartItemsSection({
       {visibleItems.length === 0 ? (
         <View style={styles.emptyFilterBox}>
           <ThemedText style={styles.emptyFilterText}>
-            {filter === 'selected'
-              ? 'No items selected yet.'
-              : 'No items found for this brand.'}
+            {filter === 'selected' ? 'No items selected yet.' : 'No items found for this brand.'}
           </ThemedText>
         </View>
       ) : (

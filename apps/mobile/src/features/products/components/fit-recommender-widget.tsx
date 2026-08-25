@@ -1,11 +1,5 @@
 import React, { memo, useCallback, useState } from 'react';
-import {
-  Modal,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { Modal, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { Check, Ruler, Sparkles, X } from 'lucide-react-native';
 
 import { styles } from './fit-recommender-widget.styles';
@@ -105,7 +99,12 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
         <Sparkles size={12} color={Palette.accent} />
       </TouchableOpacity>
 
-      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsOpen(false)}
+      >
         <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
@@ -181,7 +180,9 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
                     <View style={styles.resultTop}>
                       <View>
                         <ThemedText style={styles.resultLabel}>Recommended Fit</ThemedText>
-                        <ThemedText style={styles.resultSize}>Size {recommendedResult.size}</ThemedText>
+                        <ThemedText style={styles.resultSize}>
+                          Size {recommendedResult.size}
+                        </ThemedText>
                       </View>
                       <View style={styles.confidenceBadge}>
                         <Check size={12} color={Palette.success} />

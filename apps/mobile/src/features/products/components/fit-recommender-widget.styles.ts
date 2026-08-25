@@ -1,12 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import {
-  FontSize,
-  FontWeight,
-  Palette,
-  Radius,
-  Spacing,
-} from '@/constants/theme';
+import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
   triggerButton: {

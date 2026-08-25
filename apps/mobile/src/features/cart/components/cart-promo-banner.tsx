@@ -45,7 +45,9 @@ export function CartPromoBanner({
           <BadgePercent size={14} color={Palette.white} />
         </View>
         <View style={styles.textWrap}>
-          <ThemedText style={styles.textHighlight}>Rs. {formatPrice(freeShippingRemaining)}</ThemedText>
+          <ThemedText style={styles.textHighlight}>
+            Rs. {formatPrice(freeShippingRemaining)}
+          </ThemedText>
           <ThemedText style={styles.textBase}>more to get</ThemedText>
           <ThemedText style={styles.textHighlight}>FREE delivery</ThemedText>
           <ThemedText style={styles.textBase}>. Add more items to apply!</ThemedText>

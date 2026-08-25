@@ -6,13 +6,7 @@ import type {
   WidgetStyling,
 } from '@celebs/shared-types';
 
-export type {
-  DynamicWidget,
-  SDUIPageLayout,
-  WidgetAnalytics,
-  WidgetProps,
-  WidgetStyling,
-};
+export type { DynamicWidget, SDUIPageLayout, WidgetAnalytics, WidgetProps, WidgetStyling };
 
 export type KnownSDUIWidgetType =
   | 'BANNER_CAROUSEL'

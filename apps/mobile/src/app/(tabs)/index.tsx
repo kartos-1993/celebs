@@ -62,7 +62,7 @@ export default function HomeScreen() {
       onSelectCombo: handleSelectCombo,
       loadMoreSignal,
     }),
-    [handleSelectCombo, loadMoreSignal]
+    [handleSelectCombo, loadMoreSignal],
   );
 
   return (

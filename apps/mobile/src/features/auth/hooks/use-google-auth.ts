@@ -38,11 +38,7 @@ const getNativeGoogleSignin = (): NativeGoogleSignin => {
  *  reset silently instead of showing a scary error. */
 const isCancelledError = (error: unknown): boolean => {
   const err = error as { code?: string; message?: string };
-  return (
-    err?.code === '-5' ||
-    err?.code === '12501' ||
-    /cancel|dismiss/i.test(err?.message ?? '')
-  );
+  return err?.code === '-5' || err?.code === '12501' || /cancel|dismiss/i.test(err?.message ?? '');
 };
 
 export function useGoogleAuth() {
@@ -79,9 +75,7 @@ export function useGoogleAuth() {
         setIsAuthenticating(true);
         setAuthError(null);
         try {
-          const idToken =
-            response.params?.id_token ||
-            response.authentication?.idToken;
+          const idToken = response.params?.id_token || response.authentication?.idToken;
 
           if (!idToken) {
             throw new Error('Could not retrieve Google ID token');

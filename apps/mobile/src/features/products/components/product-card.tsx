@@ -70,20 +70,36 @@ export function ProductCard({
       rawList = activeColorImages;
     } else if (Array.isArray(product.mainImages) && product.mainImages.length > 0) {
       rawList = product.mainImages;
-    } else if (Array.isArray(dynamicValuesObj?.mainImage) && dynamicValuesObj.mainImage.length > 0) {
+    } else if (
+      Array.isArray(dynamicValuesObj?.mainImage) &&
+      dynamicValuesObj.mainImage.length > 0
+    ) {
       rawList = dynamicValuesObj.mainImage;
     } else if (Array.isArray(dynamicDataObj?.mainImage) && dynamicDataObj.mainImage.length > 0) {
       rawList = dynamicDataObj.mainImage;
-    } else if (Array.isArray(uploadedAssetsObj?.mainImages) && uploadedAssetsObj.mainImages.length > 0) {
+    } else if (
+      Array.isArray(uploadedAssetsObj?.mainImages) &&
+      uploadedAssetsObj.mainImages.length > 0
+    ) {
       rawList = uploadedAssetsObj.mainImages;
-    } else if (Array.isArray(product.colorVariants?.[0]?.images) && product.colorVariants[0].images.length > 0) {
+    } else if (
+      Array.isArray(product.colorVariants?.[0]?.images) &&
+      product.colorVariants[0].images.length > 0
+    ) {
       rawList = product.colorVariants[0].images;
     }
 
     return rawList
       .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
       .map((item) => item.trim());
-  }, [activeColorImages, product.mainImages, dynamicValuesObj, dynamicDataObj, uploadedAssetsObj, product.colorVariants]);
+  }, [
+    activeColorImages,
+    product.mainImages,
+    dynamicValuesObj,
+    dynamicDataObj,
+    uploadedAssetsObj,
+    product.colorVariants,
+  ]);
 
   // First-time discovery hint animation for the first card on mount
   useEffect(() => {
@@ -325,7 +341,9 @@ export function ProductCard({
             <ThemedText style={styles.trendsText}>Trends</ThemedText>
           </View>
           <View style={[styles.storeBadge, { backgroundColor: Palette.accentTint }]}>
-            <ThemedText style={[styles.storeText, { color: Palette.accent }]}>{storeName}</ThemedText>
+            <ThemedText style={[styles.storeText, { color: Palette.accent }]}>
+              {storeName}
+            </ThemedText>
             <ChevronRight size={9} color={Palette.accent} />
           </View>
         </View>

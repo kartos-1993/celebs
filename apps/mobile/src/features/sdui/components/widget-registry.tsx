@@ -31,7 +31,9 @@ function UnknownWidgetFallback({ widget }: { widget: DynamicWidget }) {
   return (
     <View style={styles.unknownWidget}>
       <Text style={styles.unknownTitle}>Unrecognized SDUI Widget: {widget.type}</Text>
-      <Text style={styles.unknownDetails}>ID: {widget.id} (Order: {widget.order})</Text>
+      <Text style={styles.unknownDetails}>
+        ID: {widget.id} (Order: {widget.order})
+      </Text>
     </View>
   );
 }
@@ -60,9 +62,7 @@ function PromoCardWidget({
         widget.styling?.backgroundColor
           ? { backgroundColor: widget.styling.backgroundColor }
           : undefined,
-        widget.styling?.borderRadius
-          ? { borderRadius: widget.styling.borderRadius }
-          : undefined,
+        widget.styling?.borderRadius ? { borderRadius: widget.styling.borderRadius } : undefined,
       ]}
     >
       {badge && (
@@ -97,10 +97,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
   ),
 
   COMBO_SHOWCASE: ({ widget: _widget, handlers, refreshKey }) => (
-    <ComboBundleShowcase
-      key={`combo-${refreshKey || 0}`}
-      onSelectCombo={handlers?.onSelectCombo}
-    />
+    <ComboBundleShowcase key={`combo-${refreshKey || 0}`} onSelectCombo={handlers?.onSelectCombo} />
   ),
 
   CATEGORY_GRID: ({ widget: _widget, refreshKey }) => (
@@ -108,15 +105,20 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
   ),
 
   PRODUCT_GRID: ({ widget: _widget, handlers, refreshKey }) => (
-    <ProductGrid
-      key={`prod-${refreshKey || 0}`}
-      loadMoreTrigger={handlers?.loadMoreSignal}
-    />
+    <ProductGrid key={`prod-${refreshKey || 0}`} loadMoreTrigger={handlers?.loadMoreSignal} />
   ),
 
   PROMO_CARD: ({ widget, handlers }) => (
     <PromoCardWidget
-      widget={widget as DynamicWidget<{ title?: string; subtitle?: string; badge?: string; ctaText?: string; targetRoute?: string }>}
+      widget={
+        widget as DynamicWidget<{
+          title?: string;
+          subtitle?: string;
+          badge?: string;
+          ctaText?: string;
+          targetRoute?: string;
+        }>
+      }
       onAction={handlers?.onCustomAction}
     />
   ),
@@ -129,7 +131,7 @@ export function registerWidget(type: string, renderer: WidgetComponentRenderer):
 export function renderSDUIWidget(
   widget: DynamicWidget,
   handlers?: SDUIActionHandlers,
-  refreshKey?: number
+  refreshKey?: number,
 ): React.ReactElement | null {
   const Renderer = WIDGET_REGISTRY[widget.type];
   if (!Renderer) {
@@ -138,7 +140,6 @@ export function renderSDUIWidget(
 
   return Renderer({ widget, handlers, refreshKey });
 }
-
 
 const styles = StyleSheet.create({
   unknownWidget: {

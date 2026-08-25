@@ -132,4 +132,3 @@ function FlyItem({
     </Animated.View>
   );
 }
-

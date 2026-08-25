@@ -1,8 +1,4 @@
-import type {
-  QuickFilterDisplayAs,
-  QuickFilterItem,
-  QuickFilterType,
-} from '@celebs/shared-types';
+import type { QuickFilterDisplayAs, QuickFilterItem, QuickFilterType } from '@celebs/shared-types';
 
 export type { QuickFilterDisplayAs, QuickFilterItem, QuickFilterType };
 

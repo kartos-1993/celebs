@@ -1,10 +1,5 @@
 import React, { memo, useState } from 'react';
-import {
-  Modal,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { Modal, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { Award, CheckCircle2, ChevronRight, ShieldCheck, Sparkles, X } from 'lucide-react-native';
 
 import { styles } from './brand-story-badge.styles';

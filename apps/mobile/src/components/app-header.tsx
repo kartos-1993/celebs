@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View , useColorScheme } from 'react-native';
+import { ScrollView, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -103,11 +103,7 @@ export function AppHeader({
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Heart size={22} color={textColor} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            activeOpacity={0.7}
-            onPress={openCartSheet}
-          >
+          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={openCartSheet}>
             <ShoppingCart size={22} color={textColor} strokeWidth={2} />
             {itemCount > 0 && (
               <View style={styles.cartBadge}>
@@ -156,4 +152,3 @@ export function AppHeader({
     </View>
   );
 }
-

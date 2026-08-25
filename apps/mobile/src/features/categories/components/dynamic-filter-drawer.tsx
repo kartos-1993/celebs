@@ -260,4 +260,3 @@ export const DynamicFilterDrawer: React.FC<DynamicFilterDrawerProps> = ({
     </Modal>
   );
 };
-

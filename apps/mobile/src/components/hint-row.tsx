@@ -20,4 +20,3 @@ export function HintRow({ title = 'Try editing', hint = 'app/index.tsx' }: HintR
     </View>
   );
 }
-

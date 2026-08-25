@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import type { DynamicWidget } from '../types';
 
 import { WidgetErrorBoundary } from './widget-error-boundary';
-import { renderSDUIWidget,SDUIActionHandlers } from './widget-registry';
+import { renderSDUIWidget, SDUIActionHandlers } from './widget-registry';
 
 export interface DynamicLayoutProps {
   widgets?: DynamicWidget[];
@@ -12,11 +12,7 @@ export interface DynamicLayoutProps {
   refreshKey?: number;
 }
 
-export function DynamicLayout({
-  widgets = [],
-  handlers,
-  refreshKey = 0,
-}: DynamicLayoutProps) {
+export function DynamicLayout({ widgets = [], handlers, refreshKey = 0 }: DynamicLayoutProps) {
   if (!widgets || widgets.length === 0) {
     return null;
   }
@@ -40,14 +36,8 @@ export function DynamicLayout({
           : undefined;
 
         return (
-          <WidgetErrorBoundary
-            key={widget.id}
-            widgetId={widget.id}
-            widgetType={widget.type}
-          >
-            <View style={customStyle}>
-              {renderSDUIWidget(widget, handlers, refreshKey)}
-            </View>
+          <WidgetErrorBoundary key={widget.id} widgetId={widget.id} widgetType={widget.type}>
+            <View style={customStyle}>{renderSDUIWidget(widget, handlers, refreshKey)}</View>
           </WidgetErrorBoundary>
         );
       })}

@@ -28,7 +28,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
       console.warn(
         `[SDUI] Widget Error in <${this.props.widgetType || 'Unknown'} (id: ${this.props.widgetId})>:`,
         error,
-        errorInfo
+        errorInfo,
       );
     }
   }

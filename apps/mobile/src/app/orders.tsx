@@ -188,7 +188,11 @@ export default function MyOrdersScreen() {
                     {ord.courierPartner || 'Nepal Can Move'}:{' '}
                     <ThemedText style={styles.trackingNo}>{ord.trackingNumber}</ThemedText>
                   </ThemedText>
-                  <ExternalLink size={12} color={Palette.accent} style={{ marginLeft: Spacing.xs }} />
+                  <ExternalLink
+                    size={12}
+                    color={Palette.accent}
+                    style={{ marginLeft: Spacing.xs }}
+                  />
                 </TouchableOpacity>
               )}
             </View>

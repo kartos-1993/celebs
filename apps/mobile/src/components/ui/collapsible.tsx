@@ -37,4 +37,3 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
     </ThemedView>
   );
 }
-

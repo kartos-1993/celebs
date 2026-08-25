@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from 'react-native';
+import { ActivityIndicator, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 
 import { Product, useProducts } from '../hooks/use-products';

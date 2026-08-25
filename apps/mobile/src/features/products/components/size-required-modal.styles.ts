@@ -1,12 +1,6 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
-import {
-  FontSize,
-  FontWeight,
-  Palette,
-  Radius,
-  Spacing,
-} from '@/constants/theme';
+import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

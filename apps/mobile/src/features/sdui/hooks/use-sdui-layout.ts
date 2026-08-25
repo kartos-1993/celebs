@@ -59,7 +59,11 @@ export function useSDUILayout(pageId: string = 'home') {
           | SDUIPageLayout
           | undefined;
 
-        if (customLayout && Array.isArray(customLayout.widgets) && customLayout.widgets.length > 0) {
+        if (
+          customLayout &&
+          Array.isArray(customLayout.widgets) &&
+          customLayout.widgets.length > 0
+        ) {
           return customLayout;
         }
       } catch {

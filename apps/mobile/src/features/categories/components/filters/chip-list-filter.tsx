@@ -46,4 +46,3 @@ export const ChipListFilter: React.FC<ChipListFilterProps> = ({
     </ScrollView>
   );
 };
-

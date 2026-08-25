@@ -28,7 +28,9 @@ export function CartFilterChips({ value, brandLabel, onChange }: CartFilterChips
         label="Selected Items"
         active={value === 'selected'}
         onPress={() => onChange('selected')}
-        icon={<ShoppingCart size={14} color={value === 'selected' ? Palette.white : Palette.gray800} />}
+        icon={
+          <ShoppingCart size={14} color={value === 'selected' ? Palette.white : Palette.gray800} />
+        }
         accessibilityLabel="Show selected items only"
       />
       <Chip
@@ -37,14 +39,8 @@ export function CartFilterChips({ value, brandLabel, onChange }: CartFilterChips
         onPress={() => onChange('brand')}
         icon={
           <>
-            <LayoutGrid
-              size={14}
-              color={value === 'brand' ? Palette.white : Palette.gray800}
-            />
-            <ChevronDown
-              size={14}
-              color={value === 'brand' ? Palette.white : Palette.gray800}
-            />
+            <LayoutGrid size={14} color={value === 'brand' ? Palette.white : Palette.gray800} />
+            <ChevronDown size={14} color={value === 'brand' ? Palette.white : Palette.gray800} />
           </>
         }
         accessibilityLabel="Filter by brand"

@@ -96,8 +96,7 @@ export function BottomSheet({
           if (gesture.dy > 0) dragOffset.setValue(gesture.dy);
         },
         onPanResponderRelease: (_event, gesture) => {
-          const shouldClose =
-            gesture.dy > CLOSE_DRAG_DISTANCE || gesture.vy > CLOSE_DRAG_VELOCITY;
+          const shouldClose = gesture.dy > CLOSE_DRAG_DISTANCE || gesture.vy > CLOSE_DRAG_VELOCITY;
           if (shouldClose) {
             dragOffset.setValue(0);
             onClose();

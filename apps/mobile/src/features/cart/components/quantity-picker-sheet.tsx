@@ -19,7 +19,12 @@ interface QuantityPickerSheetProps {
   onSelect: (quantity: number) => void;
 }
 
-export function QuantityPickerSheet({ item, visible, onClose, onSelect }: QuantityPickerSheetProps) {
+export function QuantityPickerSheet({
+  item,
+  visible,
+  onClose,
+  onSelect,
+}: QuantityPickerSheetProps) {
   const insets = useSafeAreaInsets();
   const [lastItem, setLastItem] = useState<CartItemHydrated | null>(item);
 
@@ -60,9 +65,7 @@ export function QuantityPickerSheet({ item, visible, onClose, onSelect }: Quanti
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`Quantity ${quantity}`}
               >
-                <ThemedText
-                  style={[styles.optionText, isSelected && styles.optionTextSelected]}
-                >
+                <ThemedText style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                   {quantity}
                 </ThemedText>
               </TouchableOpacity>
@@ -70,9 +73,7 @@ export function QuantityPickerSheet({ item, visible, onClose, onSelect }: Quanti
           })}
         </View>
 
-        <ThemedText style={styles.stockNote}>
-          {data.availableStock} available in stock
-        </ThemedText>
+        <ThemedText style={styles.stockNote}>{data.availableStock} available in stock</ThemedText>
       </View>
     </BottomSheet>
   );

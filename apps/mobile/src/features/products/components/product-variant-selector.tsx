@@ -77,9 +77,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
   const selectedSizeQty = selectedSize ? getStockQtyForSize(selectedSize) : null;
 
-  const selectedSizeData = sizes?.find(
-    (s) => s.name.toLowerCase() === selectedSize.toLowerCase(),
-  );
+  const selectedSizeData = sizes?.find((s) => s.name.toLowerCase() === selectedSize.toLowerCase());
   const selectedMeasurements = selectedSizeData?.productMeasurements ?? [];
 
   return (
@@ -114,8 +112,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
         <View style={styles.section}>
           <View style={styles.labelRow}>
             <ThemedText style={styles.sectionLabel}>
-              Size:{' '}
-              <ThemedText style={styles.valueText}>{selectedSize || 'Default'}</ThemedText>
+              Size: <ThemedText style={styles.valueText}>{selectedSize || 'Default'}</ThemedText>
             </ThemedText>
             <ChevronRight size={14} color="#9CA3AF" />
           </View>
@@ -162,8 +159,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
               <View style={styles.measurementTextWrap}>
                 {selectedMeasurements.map((m) => (
                   <ThemedText key={m.name} style={styles.measurementText}>
-                    <ThemedText style={styles.measurementLabel}>{m.name}:</ThemedText>{' '}
-                    {m.value} {m.unit}
+                    <ThemedText style={styles.measurementLabel}>{m.name}:</ThemedText> {m.value}{' '}
+                    {m.unit}
                   </ThemedText>
                 ))}
               </View>

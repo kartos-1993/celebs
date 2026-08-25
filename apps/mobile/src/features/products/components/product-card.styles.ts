@@ -1,12 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import {
-  FontSize,
-  FontWeight,
-  Palette,
-  Radius,
-  Spacing,
-} from '@/constants/theme';
+import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 import { moderateScale, responsiveFontSize } from '@/utils/responsive';
 
 export const styles = StyleSheet.create({
