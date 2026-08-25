@@ -31,6 +31,14 @@
       "expo-router",
       "@react-native-google-signin/google-signin",
       [
+        "@sentry/react-native/expo",
+        {
+          "organization": "celebs",
+          "project": "react-native",
+          "url": "https://sentry.io/"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",
@@ -38,6 +46,8 @@
           "imageWidth": 120
         }
       ]
+    ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,
