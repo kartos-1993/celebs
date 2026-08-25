@@ -46,6 +46,14 @@ export default function RootLayout() {
                         name="orders"
                         options={{ headerShown: false, animation: 'slide_from_right' }}
                       />
+                      <Stack.Screen
+                        name="order-detail"
+                        options={{ headerShown: false, animation: 'slide_from_right' }}
+                      />
+                      <Stack.Screen
+                        name="wishlist"
+                        options={{ headerShown: false, animation: 'slide_from_right' }}
+                      />
                     </Stack>
                     <FlyToCartOverlay />
                   </View>

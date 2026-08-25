@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import {
   ChevronRight,
   Heart,
   Lock,
-  LogOut,
   Mail,
+  LogOut,
   MapPin,
   ShieldCheck,
   ShoppingBag,
@@ -96,7 +89,7 @@ export default function MeScreen() {
   if (isLoggedIn && user) {
     return (
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* User Info Header */}
           <View style={styles.profileHeader}>
             <View style={styles.avatarBadge}>
@@ -106,72 +99,73 @@ export default function MeScreen() {
             </View>
 
             <View style={styles.profileInfo}>
-              <ThemedText type="subtitle" style={styles.userName}>
-                {user.name}
-              </ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.userEmail}>
-                {user.email}
-              </ThemedText>
+              <ThemedText style={styles.userName}>{user.name}</ThemedText>
+              <ThemedText style={styles.userEmail}>{user.email}</ThemedText>
               <View style={styles.verifiedBadge}>
-                <ShieldCheck size={14} color={Palette.success} />
+                <ShieldCheck size={13} color={Palette.success} />
                 <ThemedText style={styles.verifiedText}>Verified Customer</ThemedText>
               </View>
             </View>
           </View>
 
-          {/* Quick Action Grid */}
-          <View style={styles.sectionContainer}>
-            <ThemedText style={styles.sectionTitle}>MY ACCOUNT</ThemedText>
+          <View style={styles.sectionBand} />
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/orders')}>
+          {/* Account menu */}
+          <View style={styles.menuGroup}>
+            <TouchableOpacity
+              style={[styles.menuItem, styles.menuItemDivided]}
+              onPress={() => router.push('/orders')}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="My orders"
+            >
               <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: Palette.successTint }]}>
-                  <ShoppingBag size={20} color={Palette.success} />
-                </View>
-                <View>
-                  <ThemedText style={styles.menuItemTitle}>My Orders</ThemedText>
-                  <ThemedText themeColor="textSecondary" style={styles.menuItemSub}>
-                    Track active deliveries & order history
-                  </ThemedText>
-                </View>
+                <ShoppingBag size={19} color={Palette.gray900} strokeWidth={1.8} />
+                <ThemedText style={styles.menuItemTitle}>My Orders</ThemedText>
               </View>
-              <ChevronRight size={18} color={Palette.gray400} />
+              <ChevronRight size={17} color={Palette.gray400} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/checkout')}>
+            <TouchableOpacity
+              style={[styles.menuItem, styles.menuItemDivided]}
+              onPress={() => router.push('/wishlist')}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="Saved wishlist"
+            >
               <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: Palette.brandTint }]}>
-                  <MapPin size={20} color={Palette.brand} />
-                </View>
-                <View>
-                  <ThemedText style={styles.menuItemTitle}>Shipping Addresses</ThemedText>
-                  <ThemedText themeColor="textSecondary" style={styles.menuItemSub}>
-                    Kathmandu Valley & delivery locations
-                  </ThemedText>
-                </View>
+                <Heart size={19} color={Palette.gray900} strokeWidth={1.8} />
+                <ThemedText style={styles.menuItemTitle}>Saved Wishlist</ThemedText>
               </View>
-              <ChevronRight size={18} color={Palette.gray400} />
+              <ChevronRight size={17} color={Palette.gray400} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/checkout')}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="Shipping addresses"
+            >
               <View style={styles.menuItemLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: Palette.dangerTint }]}>
-                  <Heart size={20} color={Palette.danger} />
-                </View>
-                <View>
-                  <ThemedText style={styles.menuItemTitle}>Saved Wishlist</ThemedText>
-                  <ThemedText themeColor="textSecondary" style={styles.menuItemSub}>
-                    Favorites and saved fashion items
-                  </ThemedText>
-                </View>
+                <MapPin size={19} color={Palette.gray900} strokeWidth={1.8} />
+                <ThemedText style={styles.menuItemTitle}>Shipping Addresses</ThemedText>
               </View>
-              <ChevronRight size={18} color={Palette.gray400} />
+              <ChevronRight size={17} color={Palette.gray400} />
             </TouchableOpacity>
           </View>
 
-          {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <LogOut size={18} color={Palette.danger} />
+          <View style={styles.sectionBand} />
+
+          {/* Logout */}
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
+          >
+            <LogOut size={17} color={Palette.danger} />
             <ThemedText style={styles.logoutText}>Log Out</ThemedText>
           </TouchableOpacity>
         </ScrollView>
@@ -182,14 +176,12 @@ export default function MeScreen() {
   // --- LOGGED OUT AUTHENTICATION FORM ---
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.authBanner}>
-          <User size={42} color={Palette.black} strokeWidth={1.8} />
-          <ThemedText type="subtitle" style={styles.authTitle}>
-            Welcome to Celebs
-          </ThemedText>
-          <ThemedText themeColor="textSecondary" style={styles.authSub}>
-            Sign in to track orders, save shipping addresses, and sync your cart.
+          <User size={40} color={Palette.gray900} strokeWidth={1.7} />
+          <ThemedText style={styles.authTitle}>Welcome to Celebs</ThemedText>
+          <ThemedText style={styles.authSub}>
+            Sign in to track orders live, save shipping addresses, and sync your cart.
           </ThemedText>
         </View>
 
@@ -198,6 +190,8 @@ export default function MeScreen() {
           style={styles.googleBtn}
           onPress={handleRealGoogleSignIn}
           disabled={isAuthenticating || isSubmitting}
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Google"
         >
           {isAuthenticating ? (
             <ActivityIndicator color={Palette.black} />
@@ -222,6 +216,8 @@ export default function MeScreen() {
           <TouchableOpacity
             style={[styles.tabToggleBtn, authMode === 'login' && styles.tabToggleActive]}
             onPress={() => setAuthMode('login')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: authMode === 'login' }}
           >
             <ThemedText
               style={[styles.tabToggleText, authMode === 'login' && styles.tabToggleTextActive]}
@@ -233,6 +229,8 @@ export default function MeScreen() {
           <TouchableOpacity
             style={[styles.tabToggleBtn, authMode === 'register' && styles.tabToggleActive]}
             onPress={() => setAuthMode('register')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: authMode === 'register' }}
           >
             <ThemedText
               style={[styles.tabToggleText, authMode === 'register' && styles.tabToggleTextActive]}
@@ -286,6 +284,8 @@ export default function MeScreen() {
             style={styles.submitBtn}
             onPress={handleSubmitForm}
             disabled={isSubmitting}
+            accessibilityRole="button"
+            accessibilityLabel={authMode === 'login' ? 'Sign in' : 'Create account'}
           >
             {isSubmitting ? (
               <ActivityIndicator color={Palette.white} />

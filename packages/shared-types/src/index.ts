@@ -46,6 +46,7 @@ export * from './validators/order.validator';
 export * from './validators/platform-settings.validator';
 export * from './validators/product.validator';
 export * from './validators/vendor.validator';
+export * from './validators/wishlist.validator';
 
 export type loginType = z.infer<typeof loginSchema>;
 export type registerType = z.infer<typeof registerSchema>;

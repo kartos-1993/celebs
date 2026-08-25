@@ -37,6 +37,7 @@ import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
 import sessionRoutes from './modules/session/session.routes';
 import staffRoutes from './modules/staff/staff.routes';
 import vendorRoutes from './modules/vendor/vendor.routes';
+import wishlistRoutes from './modules/wishlist/wishlist.routes';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -153,6 +154,7 @@ app.use(`${config.BASE_PATH}/orders`, orderRoutes);
 app.use(`${config.BASE_PATH}/campaigns`, campaignRoutes);
 app.use(`${config.BASE_PATH}/combos`, comboRoutes);
 app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
+app.use(`${config.BASE_PATH}/wishlist`, wishlistRoutes);
 app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 

@@ -53,6 +53,9 @@ export class OrderRepository {
         items: true,
         address: true,
         payments: true,
+        trackingEvents: {
+          orderBy: { timestamp: 'asc' as const },
+        },
       },
     });
   }

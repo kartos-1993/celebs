@@ -5,160 +5,201 @@ import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/them
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Palette.gray50,
+    backgroundColor: Palette.white,
   },
-  header: {
+  headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     backgroundColor: Palette.white,
-    borderBottomWidth: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Palette.gray100,
   },
-  backBtn: {
-    padding: Spacing.xs,
-  },
-  headerTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-    gap: Spacing.lg,
-  },
-  orderCard: {
-    backgroundColor: Palette.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    borderWidth: 1,
-    borderColor: Palette.gray200,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  headerIconSlot: {
+    width: 32,
+    height: 32,
     alignItems: 'flex-start',
-  },
-  orderNo: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-    fontFamily: 'monospace',
-  },
-  orderDate: {
-    fontSize: FontSize.footnote,
-    color: Palette.gray500,
-    marginTop: Spacing.xxs,
-  },
-  badge: {
-    backgroundColor: Palette.brandTint,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.md,
-  },
-  badgeText: {
-    fontSize: FontSize.footnote,
-    fontWeight: FontWeight.bold,
-    color: Palette.brand,
-  },
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    backgroundColor: Palette.gray50,
-    padding: Spacing.md,
-    borderRadius: Radius.md,
-  },
-  productIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: Palette.brandTint,
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  productTitle: {
+  headerTitle: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
+  },
+  sectionBand: {
+    height: Spacing.sm,
+    backgroundColor: Palette.gray100,
+  },
+
+  /* ---------- Order card ---------- */
+  orderCard: {
+    backgroundColor: Palette.white,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.xs,
+  },
+  statusTextActive: {
     fontSize: FontSize.small,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
-  productVariant: {
-    fontSize: FontSize.footnote,
+  statusTextSuccess: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.success,
+  },
+  statusTextWarning: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.warning,
+  },
+  statusTextDanger: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.danger,
+  },
+  statusTextNeutral: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray700,
+  },
+  dateText: {
+    fontSize: FontSize.caption,
     color: Palette.gray500,
   },
-  amountText: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.bold,
-    color: Palette.brand,
+
+  /* ---------- Footer ---------- */
+  cardFooter: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Palette.gray100,
+    paddingTop: Spacing.sm,
     marginTop: Spacing.xxs,
-  },
-  trackerContainer: {
     gap: Spacing.sm,
-    marginTop: Spacing.xs,
   },
-  trackerHeaderTitle: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.semibold,
-    color: Palette.gray600,
-  },
-  timelineRow: {
+  totalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  stepCol: {
-    alignItems: 'center',
-    gap: Spacing.xs,
-    width: 60,
+  totalLabel: {
+    fontSize: FontSize.caption,
+    color: Palette.gray600,
   },
-  stepDot: {
-    width: 18,
-    height: 18,
+  totalValue: {
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.extrabold,
+    color: Palette.danger,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+  },
+  liveHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxs + 1,
+    flex: 1,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
     borderRadius: Radius.pill,
-    backgroundColor: Palette.gray300,
+    backgroundColor: Palette.success,
+  },
+  liveHintText: {
+    fontSize: FontSize.micro,
+    color: Palette.success,
+    fontWeight: FontWeight.semibold,
+  },
+  trackBtn: {
+    borderWidth: 1,
+    borderColor: Palette.gray900,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.sm - 1,
+    paddingHorizontal: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepDotPassed: {
-    backgroundColor: Palette.success,
+  trackBtnText: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
   },
-  stepLabel: {
-    fontSize: FontSize.micro,
-    color: Palette.gray400,
+
+  /* ---------- States ---------- */
+  centerBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    padding: Spacing.xl,
+  },
+  loadingText: {
+    fontSize: FontSize.small,
+    color: Palette.gray500,
+  },
+  errorText: {
+    fontSize: FontSize.small,
+    color: Palette.danger,
     textAlign: 'center',
   },
-  stepLabelPassed: {
-    color: Palette.success,
+  retryBtn: {
+    borderWidth: 1,
+    borderColor: Palette.gray900,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm + 2,
+  },
+  retryBtnText: {
+    fontSize: FontSize.small,
     fontWeight: FontWeight.bold,
+    color: Palette.gray900,
   },
-  stepLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: Palette.gray200,
-    marginBottom: Spacing.lg,
-  },
-  stepLinePassed: {
-    backgroundColor: Palette.success,
-  },
-  courierRow: {
-    flexDirection: 'row',
+  emptyIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: Radius.pill,
+    backgroundColor: Palette.gray100,
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Palette.accentTint,
-    padding: Spacing.sm,
-    borderRadius: Radius.sm,
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
   },
-  courierText: {
-    fontSize: FontSize.footnote,
-    color: Palette.accent,
-  },
-  trackingNo: {
+  emptyTitle: {
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    fontFamily: 'monospace',
+    color: Palette.gray900,
+  },
+  emptySub: {
+    fontSize: FontSize.small,
+    color: Palette.gray500,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  shopNowBtn: {
+    backgroundColor: Palette.gray900,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.xxl,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.xs,
+  },
+  shopNowBtnText: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.white,
+  },
+  footerSpinner: {
+    paddingVertical: Spacing.lg,
   },
 });
-
-export default styles;

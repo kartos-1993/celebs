@@ -23,7 +23,12 @@ import { styles } from './product-card.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
+import { useAuth } from '@/features/auth/context/auth-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import {
+  useWishlistActions,
+  useWishlistStatus,
+} from '@/features/wishlist/hooks/use-wishlist';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Must match product-grid.styles container paddingHorizontal (Spacing.md)
@@ -45,10 +50,26 @@ export function ProductCard({
   isFirstCard = false,
 }: ProductCardProps) {
   const router = useRouter();
-  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { startFlyAnimation } = useFlyToCart();
+  const { isLoggedIn } = useAuth();
+  const { isWishlisted } = useWishlistStatus();
+  const { addToWishlist, removeFromWishlist } = useWishlistActions();
+  const isFavorite = isWishlisted(product.id);
+
+  const handleToggleWishlist = (e?: GestureResponderEvent) => {
+    e?.stopPropagation?.();
+    if (!isLoggedIn) {
+      router.push('/(tabs)/me');
+      return;
+    }
+    if (isFavorite) {
+      removeFromWishlist.mutate(product.id);
+    } else {
+      addToWishlist.mutate(product.id);
+    }
+  };
 
   const imageRef = useRef<View>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -287,10 +308,12 @@ export function ProductCard({
         <TouchableOpacity
           activeOpacity={0.8}
           style={[styles.heartButton, { backgroundColor: 'rgba(255, 255, 255, 0.85)' }]}
-          onPress={(e) => {
-            e.stopPropagation();
-            setIsFavorite(!isFavorite);
-          }}
+          onPress={handleToggleWishlist}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFavorite ? 'Remove from wishlist' : 'Add to wishlist'
+          }
         >
           <Heart
             size={14}

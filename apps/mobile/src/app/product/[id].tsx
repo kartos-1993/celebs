@@ -42,6 +42,10 @@ import { ProductVariantSelector } from '@/features/products/components/product-v
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
+import {
+  useWishlistActions,
+  useWishlistStatus,
+} from '@/features/wishlist/hooks/use-wishlist';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -58,9 +62,13 @@ export default function ProductDetailScreen() {
   // Component States
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+
+  // Wishlist (server-backed)
+  const { isWishlisted } = useWishlistStatus();
+  const { addToWishlist, removeFromWishlist } = useWishlistActions();
+  const isFavorite = id ? isWishlisted(String(id)) : false;
 
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -162,11 +170,15 @@ export default function ProductDetailScreen() {
   };
 
   const handleWishlist = () => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || !product) {
       router.push('/(tabs)/me');
       return;
     }
-    setIsFavorite(!isFavorite);
+    if (isFavorite) {
+      removeFromWishlist.mutate(product.id);
+    } else {
+      addToWishlist.mutate(product.id);
+    }
   };
 
   if (loading) {

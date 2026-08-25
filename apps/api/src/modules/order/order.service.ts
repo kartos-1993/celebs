@@ -267,6 +267,19 @@ export class OrderService {
           },
         });
 
+        // 2b. Seed the first tracking event so the customer timeline exists from day one
+        await tx.orderTrackingEvent.create({
+          data: {
+            orderId: createdOrder.id,
+            status: orderStatus,
+            title: 'Order Placed',
+            description: isCOD
+              ? 'Your order has been confirmed. Pay with cash on delivery.'
+              : 'Order received. Complete the payment to begin processing.',
+            source: 'SYSTEM',
+          },
+        });
+
         // 3. Clear User Cart
         await tx.cartItem.deleteMany({
           where: { cartId: cart.id },
@@ -388,6 +401,16 @@ export class OrderService {
         data: { itemStatus: 'CANCELLED' },
       });
 
+      await tx.orderTrackingEvent.create({
+        data: {
+          orderId: order.id,
+          status: 'CANCELLED',
+          title: 'Order Cancelled',
+          description: 'This order was cancelled and reserved stock was released.',
+          source: 'SYSTEM',
+        },
+      });
+
       return tx.order.update({
         where: { id: order.id },
         data: { status: 'CANCELLED' },
@@ -501,6 +524,31 @@ export class OrderService {
           data: {
             status: newOrderStatus,
             ...(allDelivered && isPaid ? { paymentStatus: 'COMPLETED' } : {}),
+          },
+        });
+
+        // Mirror the rollup onto the customer-facing tracking timeline
+        const eventTitle =
+          newOrderStatus === 'PACKED'
+            ? 'Order Packed'
+            : newOrderStatus === 'HANDED_OVER'
+              ? 'Handed Over to Courier'
+              : 'Delivered';
+        const eventDescription =
+          newOrderStatus === 'HANDED_OVER'
+            ? `Your package ${trackingNumber ? `(${trackingNumber}) ` : ''}is on its way${
+                courierPartner ? ` via ${courierPartner}` : ''
+              }.`
+            : undefined;
+
+        await tx.orderTrackingEvent.create({
+          data: {
+            orderId: item.orderId,
+            status: newOrderStatus,
+            title: eventTitle,
+            ...(eventDescription ? { description: eventDescription } : {}),
+            ...(courierPartner ? { location: courierPartner } : {}),
+            source: 'VENDOR',
           },
         });
       }

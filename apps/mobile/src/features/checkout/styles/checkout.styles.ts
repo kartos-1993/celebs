@@ -3,94 +3,122 @@ import { StyleSheet } from 'react-native';
 import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
+  /* ---------- Shell ---------- */
   container: {
     flex: 1,
-    backgroundColor: Palette.gray50,
+    backgroundColor: Palette.white,
   },
-  header: {
+  headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     backgroundColor: Palette.white,
-    borderBottomWidth: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Palette.gray100,
   },
-  backBtn: {
-    padding: Spacing.xs,
+  headerIconSlot: {
+    width: 32,
+    height: 32,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
   scrollContent: {
-    padding: Spacing.lg,
-    gap: Spacing.lg,
-    paddingBottom: 100,
-  },
-  sectionCard: {
+    paddingBottom: Spacing.xl,
     backgroundColor: Palette.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    borderWidth: 1,
-    borderColor: Palette.gray200,
   },
-  sectionHeader: {
+  sectionBand: {
+    height: Spacing.sm,
+    backgroundColor: Palette.gray100,
+  },
+  detailsContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md + 2,
+    gap: Spacing.md,
+  },
+
+  /* ---------- Items strip ---------- */
+  itemsHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xs,
+    justifyContent: 'space-between',
   },
-  sectionTitle: {
-    fontSize: FontSize.body,
+  itemsCountText: {
+    fontSize: FontSize.small,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
-  formGroup: {
-    gap: Spacing.xs,
-  },
-  rowGroup: {
+  itemsRow: {
     flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  label: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.semibold,
-    color: Palette.gray600,
-  },
-  input: {
-    backgroundColor: Palette.gray50,
-    borderWidth: 1,
-    borderColor: Palette.gray300,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    fontSize: FontSize.base,
-    color: Palette.gray900,
-  },
-  paymentOption: {
-    borderWidth: 1.5,
-    borderColor: Palette.gray200,
-    borderRadius: Radius.md,
-    padding: Spacing.lg,
     gap: Spacing.sm,
   },
-  paymentOptionSelected: {
-    borderColor: Palette.brand,
-    backgroundColor: Palette.brandTint,
-  },
-  paymentOptionDisabled: {
-    backgroundColor: Palette.gray100,
+  itemThumbWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: Palette.gray200,
-    opacity: 0.7,
+    backgroundColor: Palette.gray50,
+    overflow: 'hidden',
   },
-  paymentRadioRow: {
+  itemThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  itemQtyBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    backgroundColor: Palette.gray900,
+    borderTopLeftRadius: Radius.sm,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 1,
+  },
+  itemQtyText: {
+    fontSize: FontSize.micro,
+    fontWeight: FontWeight.bold,
+    color: Palette.white,
+  },
+
+  /* ---------- Section headers ---------- */
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
+  },
+
+  /* ---------- Address ---------- */
+  addrHint: {
+    fontSize: FontSize.caption,
+    color: Palette.gray500,
+  },
+
+  /* ---------- Payment ---------- */
+  paymentList: {},
+  paymentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
+    paddingVertical: Spacing.md + 2,
+  },
+  rowDivided: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Palette.gray100,
+  },
+  paymentInfo: {
+    flex: 1,
+    gap: Spacing.xxs,
   },
   radioOuter: {
     width: 20,
@@ -100,33 +128,39 @@ export const styles = StyleSheet.create({
     borderColor: Palette.gray300,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Palette.white,
   },
   radioOuterSelected: {
-    borderColor: Palette.brand,
+    borderColor: Palette.gray900,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: Radius.pill,
-    backgroundColor: Palette.brand,
+    backgroundColor: Palette.gray900,
   },
   paymentName: {
     fontSize: FontSize.base,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.semibold,
     color: Palette.gray900,
   },
   paymentDesc: {
     fontSize: FontSize.caption,
     color: Palette.gray500,
   },
-  codWarningBadge: {
+  comingSoonTag: {
+    fontSize: FontSize.micro,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray400,
+    letterSpacing: 0.5,
+  },
+  codWarning: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     backgroundColor: Palette.warningTint,
     padding: Spacing.sm,
     borderRadius: Radius.sm,
-    marginTop: Spacing.xs,
   },
   codWarningText: {
     fontSize: FontSize.footnote,
@@ -134,6 +168,8 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     flex: 1,
   },
+
+  /* ---------- Summary ---------- */
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -144,61 +180,87 @@ export const styles = StyleSheet.create({
     color: Palette.gray500,
   },
   summaryValue: {
-    fontSize: FontSize.base,
+    fontSize: FontSize.small,
     fontWeight: FontWeight.semibold,
     color: Palette.gray900,
   },
+  freeShippingText: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.success,
+  },
   divider: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: Palette.gray200,
-    marginVertical: Spacing.xs,
+    marginVertical: Spacing.xxs,
+  },
+  totalRowGap: {
+    marginTop: Spacing.xs,
   },
   totalLabel: {
-    fontSize: FontSize.body,
+    fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
   totalValue: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.extrabold,
-    color: Palette.brand,
+    color: Palette.gray900,
   },
   securityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+    paddingVertical: Spacing.lg,
   },
   securityText: {
     fontSize: FontSize.footnote,
-    color: Palette.gray600,
+    color: Palette.gray500,
   },
+
+  /* ---------- Bottom action bar (normal flow — never absolute) ---------- */
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
     backgroundColor: Palette.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Palette.gray100,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Palette.gray200,
+    paddingTop: Spacing.sm,
   },
-  submitBtn: {
-    backgroundColor: Palette.brand,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.lg,
+  barTotalsGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  barCaption: {
+    fontSize: FontSize.footnote,
+    color: Palette.gray500,
+  },
+  barTotalPrice: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.extrabold,
+    color: Palette.danger,
+  },
+  placeBtn: {
+    backgroundColor: Palette.gray900,
+    borderRadius: Radius.pill,
+    minHeight: 48,
+    paddingHorizontal: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  submitBtnDisabled: {
-    opacity: 0.7,
+  placeBtnDisabled: {
+    opacity: 0.4,
   },
-  submitBtnText: {
-    fontSize: FontSize.md,
+  placeBtnText: {
+    fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     color: Palette.white,
   },
+
+  /* ---------- Logged-out notice ---------- */
   authNoticeContainer: {
     flex: 1,
     alignItems: 'center',
@@ -225,11 +287,10 @@ export const styles = StyleSheet.create({
     backgroundColor: Palette.white,
     borderWidth: 1.5,
     borderColor: Palette.gray200,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.lg,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.lg - 2,
     width: '100%',
     gap: Spacing.md,
-    elevation: 1,
   },
   googleGLogo: {
     width: 22,
@@ -249,14 +310,10 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     color: Palette.gray900,
   },
-  secondaryBtn: {
-    paddingVertical: Spacing.md,
-  },
   secondaryBtnText: {
-    fontSize: FontSize.base,
+    fontSize: FontSize.small,
     fontWeight: FontWeight.semibold,
-    color: Palette.brand,
+    color: Palette.gray700,
+    textDecorationLine: 'underline',
   },
 });
-
-export default styles;

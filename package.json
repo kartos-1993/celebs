@@ -144,6 +144,7 @@
     "dev:web": "pnpm --filter web-admin dev",
     "dev:web:staging": "pnpm --filter web-admin dev:staging",
     "dev:mobile": "pnpm --filter mobile dev",
+    "dev:mobile:go": "pnpm --filter mobile start:go",
     "dev:mobile:staging": "pnpm --filter mobile dev:staging",
     "dev:worker": "pnpm --filter api dev:worker",
     "//_INFRASTRUCTURE": "=== Infrastructure Services ===",

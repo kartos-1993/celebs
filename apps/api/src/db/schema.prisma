@@ -48,6 +48,7 @@ model User {
   addresses         Address[]
   orders            Order[]
   reviews           Review[]
+  wishlistItems     WishlistItem[]
 
   @@index([vendorId])
 }
@@ -127,6 +128,18 @@ model VerificationCode {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
 }
 
 model Warehouse {
@@ -695,6 +708,7 @@ model Product {
 
   inventories             ProductInventory[]
   reviews                 Review[]
+  wishlistItems           WishlistItem[]
 
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt

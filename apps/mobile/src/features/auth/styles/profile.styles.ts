@@ -1,11 +1,11 @@
 import { StyleSheet } from 'react-native';
 
-import { FontSize, Palette, Radius, Spacing } from '@/constants/theme';
+import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Palette.gray50,
+    backgroundColor: Palette.white,
   },
   loadingContainer: {
     flex: 1,
@@ -13,128 +13,118 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scrollContent: {
-    padding: Spacing.xl,
-    paddingBottom: 100,
+    paddingBottom: Spacing.xxl,
+    backgroundColor: Palette.white,
   },
+
+  /* ---------- Profile header ---------- */
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Palette.white,
-    padding: Spacing.xl,
-    borderRadius: Radius.lg,
-    marginBottom: Spacing.xl,
-    shadowColor: Palette.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xl - 4,
+    gap: Spacing.md + 2,
   },
   avatarBadge: {
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
     borderRadius: Radius.pill,
     backgroundColor: Palette.gray900,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.lg,
   },
   avatarText: {
     color: Palette.white,
     fontSize: FontSize.headline,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   profileInfo: {
     flex: 1,
+    gap: Spacing.xxs,
   },
   userName: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: FontWeight.extrabold,
+    color: Palette.gray900,
   },
   userEmail: {
     fontSize: FontSize.small,
-    marginBottom: Spacing.xs,
+    color: Palette.gray500,
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: Spacing.xxs + 1,
   },
   verifiedText: {
     fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
     color: Palette.success,
-    fontWeight: '600',
   },
-  sectionContainer: {
+
+  sectionBand: {
+    height: Spacing.sm,
+    backgroundColor: Palette.gray100,
+  },
+
+  /* ---------- Menu ---------- */
+  menuGroup: {
     backgroundColor: Palette.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.xl,
-    marginBottom: Spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: FontSize.caption,
-    fontWeight: '700',
-    color: Palette.gray400,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.lg,
-    borderBottomWidth: 1,
+    minHeight: 54,
+  },
+  menuItemDivided: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Palette.gray100,
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.lg,
-  },
-  menuIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: Spacing.md + 2,
+    flex: 1,
   },
   menuItemTitle: {
-    fontSize: FontSize.body,
-    fontWeight: '600',
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.medium,
     color: Palette.gray900,
-  },
-  menuItemSub: {
-    fontSize: FontSize.caption,
-    marginTop: Spacing.xxs,
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: Palette.dangerTint,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
+    minHeight: 54,
+    backgroundColor: Palette.white,
   },
   logoutText: {
     color: Palette.danger,
-    fontWeight: '600',
-    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
+    fontSize: FontSize.base,
   },
+
+  /* ---------- Logged-out auth ---------- */
   authBanner: {
     alignItems: 'center',
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.xl,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.sm,
   },
   authTitle: {
     fontSize: FontSize.title,
-    fontWeight: '700',
-    marginTop: Spacing.sm,
+    fontWeight: FontWeight.extrabold,
+    color: Palette.gray900,
   },
   authSub: {
     textAlign: 'center',
-    marginTop: Spacing.sm,
     fontSize: FontSize.small,
+    color: Palette.gray500,
     paddingHorizontal: Spacing.xl,
+    lineHeight: 19,
   },
   googleBtn: {
     flexDirection: 'row',
@@ -143,11 +133,10 @@ export const styles = StyleSheet.create({
     backgroundColor: Palette.white,
     borderWidth: 1.5,
     borderColor: Palette.gray200,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.lg,
-    marginBottom: Spacing.xl,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.lg - 2,
+    marginBottom: Spacing.lg,
     gap: Spacing.md,
-    elevation: 1,
   },
   googleGLogo: {
     width: 22,
@@ -160,21 +149,21 @@ export const styles = StyleSheet.create({
   googleGText: {
     color: Palette.white,
     fontSize: FontSize.small,
-    fontWeight: '900',
+    fontWeight: FontWeight.black,
   },
   googleBtnText: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
     color: Palette.gray900,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   dividerLine: {
     flex: 1,
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: Palette.gray200,
   },
   dividerText: {
@@ -184,38 +173,38 @@ export const styles = StyleSheet.create({
   },
   tabToggleRow: {
     flexDirection: 'row',
-    backgroundColor: Palette.gray200,
-    borderRadius: Radius.md,
-    padding: Spacing.xs,
+    backgroundColor: Palette.gray100,
+    borderRadius: Radius.pill,
+    padding: 3,
     marginBottom: Spacing.lg,
   },
   tabToggleBtn: {
     flex: 1,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.sm + 1,
     alignItems: 'center',
-    borderRadius: Radius.sm,
+    borderRadius: Radius.pill,
   },
   tabToggleActive: {
     backgroundColor: Palette.white,
   },
   tabToggleText: {
     fontSize: FontSize.base,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
     color: Palette.gray500,
   },
   tabToggleTextActive: {
     color: Palette.gray900,
   },
   formContainer: {
-    gap: Spacing.lg,
+    gap: Spacing.md,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Palette.white,
+    backgroundColor: Palette.gray50,
     borderWidth: 1,
-    borderColor: Palette.gray300,
-    borderRadius: Radius.md,
+    borderColor: Palette.gray200,
+    borderRadius: Radius.sm,
     paddingHorizontal: Spacing.md,
     height: 48,
   },
@@ -224,22 +213,20 @@ export const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    fontSize: FontSize.body,
+    fontSize: FontSize.base,
     color: Palette.gray900,
   },
   submitBtn: {
     backgroundColor: Palette.gray900,
-    borderRadius: Radius.md,
+    borderRadius: Radius.pill,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   submitBtnText: {
     color: Palette.white,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontWeight: FontWeight.bold,
   },
 });
-
-export default styles;
