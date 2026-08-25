@@ -1,0 +1,7 @@
+# Prettier formatting commits — excluded from git blame
+# Enable locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
+c9cc9f2 style(prettier): stage 1 root configs, tsconfigs, ci; ignore lockfile+tmp
+467e0cf style(prettier): stage 2 packages/*
+4a38567 style(prettier): stage 3 apps/api
+6069548 style(prettier): stage 4 apps/web-admin
+422d3b0 style(prettier): stage 5 apps/mobile

@@ -79,71 +79,63 @@ async function seedApprovedStoreWithStaff() {
 }
 
 describe('Store lifecycle session revocation', () => {
-  it(
-    'suspension kills owner AND staff sessions instantly; reinstate never resurrects old tokens',
-    async () => {
-      const env = await seedApprovedStoreWithStaff();
-      const sellerCenter = (token?: string) =>
-        request(app)
-          .get(`${BASE}/media/folders`)
-          .set(token ? { Authorization: `Bearer ${token}` } : {});
+  it('suspension kills owner AND staff sessions instantly; reinstate never resurrects old tokens', async () => {
+    const env = await seedApprovedStoreWithStaff();
+    const sellerCenter = (token?: string) =>
+      request(app)
+        .get(`${BASE}/media/folders`)
+        .set(token ? { Authorization: `Bearer ${token}` } : {});
 
-      // Sanity: approved-store staff can use the seller center before suspension.
-      await sellerCenter(env.staff.access).expect(200);
+    // Sanity: approved-store staff can use the seller center before suspension.
+    await sellerCenter(env.staff.access).expect(200);
 
-      // Suspend via the platform endpoint.
-      const suspendRes = await request(app)
-        .patch(`${BASE}/admin/vendors/${env.storeId}/suspend`)
-        .set('Authorization', `Bearer ${env.admin.access}`)
-        .send({});
-      expect(suspendRes.status).toBe(200);
+    // Suspend via the platform endpoint.
+    const suspendRes = await request(app)
+      .patch(`${BASE}/admin/vendors/${env.storeId}/suspend`)
+      .set('Authorization', `Bearer ${env.admin.access}`)
+      .send({});
+    expect(suspendRes.status).toBe(200);
 
-      // Both member tokens die on next use — no grace period.
-      await sellerCenter(env.staff.access).expect(401);
-      await sellerCenter(env.owner.access).expect(401);
+    // Both member tokens die on next use — no grace period.
+    await sellerCenter(env.staff.access).expect(401);
+    await sellerCenter(env.owner.access).expect(401);
 
-      // Refresh flow is dead too (session rows deleted).
-      const refreshed = await request(app)
-        .post(`${BASE}/auth/refresh`)
-        .set('x-refresh-token', env.owner.refresh);
-      expect(refreshed.status).toBe(401);
+    // Refresh flow is dead too (session rows deleted).
+    const refreshed = await request(app)
+      .post(`${BASE}/auth/refresh`)
+      .set('x-refresh-token', env.owner.refresh);
+    expect(refreshed.status).toBe(401);
 
-      // Reinstatement must NOT resurrect pre-suspension tokens.
-      const approveRes = await request(app)
-        .patch(`${BASE}/admin/vendors/${env.storeId}/approve`)
-        .set('Authorization', `Bearer ${env.admin.access}`)
-        .send({});
-      expect(approveRes.status).toBe(200);
+    // Reinstatement must NOT resurrect pre-suspension tokens.
+    const approveRes = await request(app)
+      .patch(`${BASE}/admin/vendors/${env.storeId}/approve`)
+      .set('Authorization', `Bearer ${env.admin.access}`)
+      .send({});
+    expect(approveRes.status).toBe(200);
 
-      await sellerCenter(env.owner.access).expect(401);
-      await sellerCenter(env.staff.access).expect(401);
+    await sellerCenter(env.owner.access).expect(401);
+    await sellerCenter(env.staff.access).expect(401);
 
-      // A reinstated seller can authenticate afresh.
-      const login = await request(app)
-        .post(`${BASE}/auth/login`)
-        .send({ email: env.ownerUser.email, password: PASSWORD });
-      expect(login.status).toBe(200);
-    },
-    30_000,
-  );
+    // A reinstated seller can authenticate afresh.
+    const login = await request(app)
+      .post(`${BASE}/auth/login`)
+      .send({ email: env.ownerUser.email, password: PASSWORD });
+    expect(login.status).toBe(200);
+  }, 30_000);
 
-  it(
-    'suspended sellers cannot log back in while suspended',
-    async () => {
-      const env = await seedApprovedStoreWithStaff();
-      await request(app)
-        .patch(`${BASE}/admin/vendors/${env.storeId}/suspend`)
-        .set('Authorization', `Bearer ${env.admin.access}`)
-        .send({})
-        .expect(200);
+  it('suspended sellers cannot log back in while suspended', async () => {
+    const env = await seedApprovedStoreWithStaff();
+    await request(app)
+      .patch(`${BASE}/admin/vendors/${env.storeId}/suspend`)
+      .set('Authorization', `Bearer ${env.admin.access}`)
+      .send({})
+      .expect(200);
 
-      const login = await request(app)
-        .post(`${BASE}/auth/login`)
-        .send({ email: env.staffUser.email, password: PASSWORD });
+    const login = await request(app)
+      .post(`${BASE}/auth/login`)
+      .send({ email: env.staffUser.email, password: PASSWORD });
 
-      expect(login.status).toBe(403);
-      expect(login.body?.errorCode).toBe('STORE_SUSPENDED');
-    },
-    30_000,
-  );
+    expect(login.status).toBe(403);
+    expect(login.body?.errorCode).toBe('STORE_SUSPENDED');
+  }, 30_000);
 });

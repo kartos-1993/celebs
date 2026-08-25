@@ -20,14 +20,14 @@ Do not improvise beyond what is written; if reality diverges from this plan
 
 ### Repository facts
 
-| Fact | Value |
-|---|---|
-| Monorepo | pnpm workspaces + Turborepo |
-| API app | `apps/api` (Express + Prisma + PostgreSQL) |
-| Shared packages | `packages/shared-types` (zod validators), `packages/shared-utils`, `packages/rbac` |
-| Prisma schema | `apps/api/src/db/schema.prisma` |
-| Background worker entrypoint | `apps/api/src/worker-main.ts` |
-| Queue factory | `apps/api/src/common/services/queue.service.ts` |
+| Fact                         | Value                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| Monorepo                     | pnpm workspaces + Turborepo                                                        |
+| API app                      | `apps/api` (Express + Prisma + PostgreSQL)                                         |
+| Shared packages              | `packages/shared-types` (zod validators), `packages/shared-utils`, `packages/rbac` |
+| Prisma schema                | `apps/api/src/db/schema.prisma`                                                    |
+| Background worker entrypoint | `apps/api/src/worker-main.ts`                                                      |
+| Queue factory                | `apps/api/src/common/services/queue.service.ts`                                    |
 
 ### Commands (run from repo root)
 
@@ -50,7 +50,7 @@ pnpm --filter @celebs/api exec prisma migrate dev -e apps/api/.env.development -
 - Errors: `AppError(message, HTTPSTATUS.X, ErrorCode.Y)` / typed exceptions from shared-utils.
 - Validation: zod schemas live in `packages/shared-types/src/validators/`; routes/controllers parse input before services.
 - Repositories: each module keeps Prisma access in `<module>.repository.ts`; services stay storage-aware but delegate raw queries where a repository already exists.
-- Import order: enforce existing lint rules (external → @celebs/* → relative → @/aliases).
+- Import order: enforce existing lint rules (external → @celebs/\* → relative → @/aliases).
 - No comments unless a non-obvious decision needs one; match surrounding style.
 
 ### Hard rules
@@ -80,6 +80,7 @@ for anything except `payload.status === 'failed'`
 (`apps/api/src/modules/order/adapters/mock-payment.adapter.ts:29-40`).
 
 **Change.**
+
 1. In `checkoutSchema` (order.validator.ts:20-26) keep the enum values (mobile clients compile against the type) but append a refine:
    ```ts
    paymentMethod: z
@@ -102,6 +103,7 @@ for anything except `payload.status === 'failed'`
    The call site (`order.service.ts:269-271`) is already inside `if (!isCOD)`, so COD never reaches it; keep that structure.
 
 **Acceptance tests.**
+
 - `POST /api/v1/orders/checkout` with `paymentMethod: 'KHALTI'` → 400, message contains "not supported".
 - Same for `'ESEWA'`.
 
@@ -115,6 +117,7 @@ and `verifyPayment` returns `success: true, status: 'COMPLETED'` (lines 72-78).
 In production this means orders "paid" with no money movement.
 
 **Change.**
+
 1. Add a private helper:
    ```ts
    private get isConfigured(): boolean { return Boolean(this.secretKey); }
@@ -128,6 +131,7 @@ In production this means orders "paid" with no money movement.
 5. Import `logger` from `@celebs/shared-utils`.
 
 **Acceptance tests.**
+
 - Adapter with no key, `NODE_ENV='test'`: `verifyPayment` returns `success:false, status:'PENDING'`.
 - Adapter with no key + forced prod env: `createPaymentIntent` rejects.
 
@@ -140,18 +144,20 @@ In production this means orders "paid" with no money movement.
 1. `findIdempotencyKey(key)` filters by key only (`apps/api/src/modules/order/order.repository.ts:133-137`),
    and `order.service.ts:96-100` replays whatever response is stored. Any authenticated user who obtains/guesses another user's key receives that user's full order payload (name, address, phone, items). The schema confirms `key String @unique` with a separate unused `userId` column (`schema.prisma:97-107`).
 2. Check-then-create across awaits (`service :96` then `:299`) is a TOCTOU race: two concurrent submits both pass the existence check and both create orders.
-3. The record is written *after* payment-intent creation; if that call throws, the retry creates a duplicate order because no key was recorded.
+3. The record is written _after_ payment-intent creation; if that call throws, the retry creates a duplicate order because no key was recorded.
 
 **Change.**
 
-*Repository* (`order.repository.ts`):
+_Repository_ (`order.repository.ts`):
+
 ```ts
 async findIdempotencyKey(key: string, userId: string) {
   return prisma.idempotencyKey.findFirst({ where: { key, userId } });
 }
 ```
 
-*Service* (`order.service.ts` `checkout`):
+_Service_ (`order.service.ts` `checkout`):
+
 1. Pass `userId` at the lookup site (`:96`).
 2. Inside the existing `runTransaction` block (starts `:213`), immediately after cart clear (`:260-262`) insert the placeholder:
    ```ts
@@ -164,17 +170,18 @@ async findIdempotencyKey(key: string, userId: string) {
      },
    });
    ```
-3.    Delete the post-commit `createIdempotencyKey` call (`:299-304`); after payment init succeeds, update the stored body:
-   ```ts
-   await orderRepository.updateIdempotencyKeyResponse(idempotencyKey, JSON.stringify(responseBody));
-   ```
-   Repository method **already exists** — `updateIdempotencyKeyResponse` at
-   `order.repository.ts:139-143` (verified) — reuse it as-is.
-4. Handle the unique-violation race at the top of `checkout`: wrap the tx in try/catch for Prisma error `P2002` on target `IdempotencyKey_key_key` → re-fetch with `(idempotencyKey, userId)`; if found → replay stored responseBody (same semantics as today's early return); if *not* found (key belongs to another user) → throw
-   `new AppError('Idempotency key already in use', HTTPSTATUS.CONFLICT, ErrorCode.INVALID_REQUEST)`.
-5. Replay of a `{status:'PROCESSING'}` body: return HTTP 200 with that body rather than pretending the order exists — include `"retry_with_new_key": true` hint field. Document this in the controller's success shape comment-free by simply returning it.
+3. Delete the post-commit `createIdempotencyKey` call (`:299-304`); after payment init succeeds, update the stored body:
+
+```ts
+await orderRepository.updateIdempotencyKeyResponse(idempotencyKey, JSON.stringify(responseBody));
+```
+
+Repository method **already exists** — `updateIdempotencyKeyResponse` at
+`order.repository.ts:139-143` (verified) — reuse it as-is. 4. Handle the unique-violation race at the top of `checkout`: wrap the tx in try/catch for Prisma error `P2002` on target `IdempotencyKey_key_key` → re-fetch with `(idempotencyKey, userId)`; if found → replay stored responseBody (same semantics as today's early return); if _not_ found (key belongs to another user) → throw
+`new AppError('Idempotency key already in use', HTTPSTATUS.CONFLICT, ErrorCode.INVALID_REQUEST)`. 5. Replay of a `{status:'PROCESSING'}` body: return HTTP 200 with that body rather than pretending the order exists — include `"retry_with_new_key": true` hint field. Document this in the controller's success shape comment-free by simply returning it.
 
 **Acceptance tests.**
+
 - User B submitting user A's key → 409, and B never sees A's order data.
 - Two parallel checkouts (same user, same key, e.g. `Promise.allSettled` against the service twice) → exactly one Order row created; other result replays/errors without duplicating.
 - Payment-init failure injection (stub adapter throwing): retry with same key does NOT create a second order.
@@ -183,7 +190,7 @@ async findIdempotencyKey(key: string, userId: string) {
 
 ### A4 — Checkout oversell guard inside the transaction (Med-High)
 
-**Problem.** Stock availability is checked *outside* the transaction
+**Problem.** Stock availability is checked _outside_ the transaction
 (`order.service.ts:142-152`), and reservation inside the tx is a blind increment
 (`:215-224`). Two concurrent checkouts can both pass validation and oversell.
 An atomic helper already exists elsewhere (`InventoryService.decrementStock`,
@@ -218,6 +225,7 @@ guard is now authoritative. Throwing inside `runTransaction` rolls back order +
 cart-clear automatically (existing behavior).
 
 **Acceptance test.**
+
 - Integration: seed inventory `quantity=1, reservedQuantity=0`; run two checkouts concurrently (`Promise.allSettled`); assert exactly one resolves, inventory ends `reserved_quantity=1`, exactly one Order exists.
 
 ---
@@ -254,6 +262,7 @@ logic treats `CANCELLED` correctly (it does: `allDelivered` requires every item
 DELIVERED, so a cancelled item blocks auto-completion — leave as-is).
 
 **Acceptance tests.**
+
 - Vendor cancels a PENDING item → inventory `availableQuantity` increases back by item quantity.
 - Calling cancel twice → reservation decremented once only.
 - Cancel after DELIVERED → 400 or no-op without stock mutation.
@@ -269,12 +278,16 @@ Only customer `cancelOrder` releases. No job exists.
 **Change.** Mirror the session-maintenance worker trio exactly:
 
 1. **Queue** — `apps/api/src/common/services/queue.service.ts` (pattern: `sessionQueue` at :75):
+
    ```ts
-   export const orderMaintenanceQueue = new Queue('order-maintenance', { connection: redisConnection });
+   export const orderMaintenanceQueue = new Queue('order-maintenance', {
+     connection: redisConnection,
+   });
    ```
 
 2. **Worker** — new file `apps/api/src/modules/order/order-reservation.worker.ts`, modeled on
    `session.worker.ts` (entire file, 32 lines):
+
    ```ts
    const orderReservationWorker = new Worker(
      'order-maintenance',
@@ -288,6 +301,7 @@ Only customer `cancelOrder` releases. No job exists.
    ```
 
 3. **Service method** — add to `OrderService` (or a small `OrderMaintenanceService` in the same module):
+
    ```ts
    async releaseStaleReservations(): Promise<{ cancelledOrders: number }> {
      const ttlHours = Number(process.env.ORDER_RESERVATION_TTL_HOURS ?? 2);
@@ -295,9 +309,11 @@ Only customer `cancelOrder` releases. No job exists.
      // find PENDING_PAYMENT orders older than cutoff (include items), reuse cancelOrder's tx logic
    }
    ```
+
    Reuse the exact release pattern from `cancelOrder` (:340-363): decrement reservations, mark items CANCELLED, mark order CANCELLED. Wrap all in ONE transaction per order. Log each release with `logger.warn({ orderId, ageMinutes }, 'Released stale payment reservation')`. Send cancellation email via the existing `enqueueMail` queue (see product.service usage of mail queue for the import path).
 
 4. **Registration** — `apps/api/src/worker-main.ts`:
+
    - Import `orderMaintenanceQueue` (+ worker) alongside session ones (:14-24).
    - Register repeatable next to the session job (:41-52):
      ```ts
@@ -313,6 +329,7 @@ Only customer `cancelOrder` releases. No job exists.
 5. **Env** — document `ORDER_RESERVATION_TTL_HOURS` (optional, default 2) wherever `.env.example` files exist.
 
 **Acceptance tests.**
+
 - Seed PENDING_PAYMENT order `updatedAt` 3h ago → service method cancels it, releases reservations, marks items CANCELLED.
 - Fresh PENDING_PAYMENT order (< TTL) → untouched.
 - CONFIRMED (COD) old order → untouched (COD orders are never reaped).
@@ -353,6 +370,7 @@ Note: `item.order` must include `paymentMethod` — extend the include in
 includes order — add `select` for `id, status, paymentMethod`).
 
 **Acceptance tests.**
+
 - COD order fully delivered → `paymentStatus: COMPLETED` (unchanged behavior).
 - STRIPE order delivered with no COMPLETED Payment row → `paymentStatus` stays PENDING, order status DELIVERED.
 
@@ -368,20 +386,25 @@ session expiry even after the victim rotates.
 **Change.**
 
 1. **Migration** (additive, safe):
+
    ```prisma
    model Session {
      ...
      rotatedRefreshId String? @map("rotated_refresh_id")
    }
    ```
+
    Run: `pnpm --filter @celebs/api exec prisma migrate dev -e apps/api/.env.development --name session_rotated_refresh_id`
 
 2. **Token issuance sites** — four places create refresh payloads; embed a fresh jti in each:
+
    - vendor register ~`:320`, login ~`:390`, google sign-in ~`:725`, rotation `:604-606`.
+
    ```ts
    import { randomUUID } from 'node:crypto';
    const refreshTokenPayload: RefreshTPayload = { sessionId: session.id, jti: randomUUID() };
    ```
+
    Extend `RefreshTPayload` in `@celebs/shared-utils` jwt types (`jti?: string` — optional keeps old tokens verifiable during rolling deploy).
 
 3. **Creation sites must persist the jti**: wherever a Session row is created
@@ -412,6 +435,7 @@ session expiry even after the victim rotates.
 succeeds and upgrades the session — this is deliberate for rolling deploys.
 
 **Acceptance tests** (extend `__tests__/refresh-token.spec.ts` patterns):
+
 - Valid rotation chain works (jti updates each hop).
 - Replaying the PREVIOUS refresh token → 401, session deleted, subsequent refresh with newest token also fails (family killed).
 - Legacy jti-less token → still refreshes once (upgrade path).
@@ -436,10 +460,10 @@ Mobile orders never persist because of two stacked bugs:
    already defines `CartApiService.syncCart` → `POST /cart/sync`
    (`apps/mobile/src/features/cart/services/cart-service.ts:84`) but **nothing calls
    it anywhere in the app**. Symptom is intermittent: it works only for users
-   who log in *before* adding items.
+   who log in _before_ adding items.
 2. **M2 — Fake-success fallback.** `apps/mobile/src/app/checkout.tsx:105-113`
    attaches `.catch(async () => ({ data: { success: true, data: { orderId:
-   'CEL-2026-<random>' } } }))` (comment: *"Fallback simulation for staging"*).
+'CEL-2026-<random>' } } }))` (comment: _"Fallback simulation for staging"_).
    Every failure — validation, auth, network, the M1 empty-cart 400 — becomes an
    "Order Placed!" alert, after which the local cart is cleared. The user can
    never see a real error.
@@ -451,6 +475,7 @@ dishonest; remove it.
 ### C1 — Wire guest→user cart sync on login
 
 **Change.**
+
 1. Find the successful-login/token-acquisition point in the mobile auth flow
    (search `apps/mobile/src` for where the auth token is persisted to
    SecureStore / the auth store transitions to authenticated).
@@ -484,10 +509,11 @@ the server ignores sessionId when a userId is present
 ### C2 — Remove fake success; honest error handling
 
 **Change.** In `apps/mobile/src/app/checkout.tsx`:
+
 1. Delete the `.catch(async () => ({ data: { success: true, ... } }))` block
    entirely (lines ~105-113). No fallback simulation survives.
 2. Wrap the POST in try/catch. On error: show `Alert.alert('Order failed',
-   <server message>)` using the same error-normalization pattern other screens
+<server message>)` using the same error-normalization pattern other screens
    use with `apiClient` (see how existing screens surface API errors — reuse
    that helper). **Do not** call `clearCart()`, **do not** navigate away.
 3. Success path: read the real identifiers from the response
@@ -500,6 +526,7 @@ the server ignores sessionId when a userId is present
    gateways re-enable entries later without logic changes.
 
 **Acceptance (manual smoke, no RN unit harness assumed).**
+
 1. Logged out: add item to cart → log in → verify (via admin/API) the user cart
    contains the item → COD checkout → Order row exists in DB; confirmation shows
    real order number.
@@ -526,6 +553,7 @@ sends `{ courierProvider }` while the backend zod schema reads `req.body.provide
 (`apps/api/src/modules/logistics/logistics.routes.ts:23`).
 
 Backend endpoints are ready and match the per-item fulfillment UI:
+
 - `GET /orders/vendor/orders` — paginated `{items,total,page,limit}`; each item
   includes `order{..., address, user{id,name}}`; vendor-scoped; `?status=` filter
   on itemStatus.
@@ -540,6 +568,7 @@ consumed via TanStack Query in `vendor-list-page.tsx:67-98`.
 ### D1 — API client layer
 
 Extend `features/orders/api.ts` following the vendors pattern:
+
 ```ts
 export const ORDERS_QUERY_KEYS = {
   vendor: (filters) => ['orders', 'vendor', filters] as const,
@@ -549,11 +578,13 @@ getVendorOrders({ status?, page?, limit? })   // GET /orders/vendor/orders
 getAdminOrders({ status?, page?, limit? })    // GET /orders/admin/orders
 updateOrderItemStatus(orderItemId, body)      // PATCH .../items/:orderItemId/status
 ```
+
 Fix `dispatch3PLOrder`: rename body key `courierProvider` → `provider`.
 
 ### D2 — Shape mapper
 
 Flatten either backend shape into the existing `OrderItemUI` rows:
+
 - From vendor items: `item.order.orderNumber`, `item.order.user.name`,
   `item.order.address.{phone, province, district, cityArea}`,
   `item.{productName, colorVariantName, size, quantity}`,
@@ -568,13 +599,14 @@ Flatten either backend shape into the existing `OrderItemUI` rows:
 ### D3 — Dual-mode page wiring
 
 Mode resolution (mirror how other features read identity from the auth store):
+
 - user has `vendorProfile` → vendor mode → `useQuery(ORDERS_QUERY_KEYS.vendor(filters), getVendorOrders)`
 - role `ADMIN|SUPERADMIN` with ORDER_VIEW → admin mode → admin endpoint +
   order-level status tabs (8-value enum from `updateOrderStatusSchema`:
   PENDING_PAYMENT, CONFIRMED, PACKED, HANDED_OVER, OUT_FOR_DELIVERY,
   DELIVERED, CANCELLED, RETURNED)
-Both modes get pagination controls wired to `{page,limit}` and loading/error/
-empty states per the house recipe (dim wrapper/PageLoader/EmptyState).
+  Both modes get pagination controls wired to `{page,limit}` and loading/error/
+  empty states per the house recipe (dim wrapper/PageLoader/EmptyState).
 
 ### D4 — Live mutations
 
@@ -595,6 +627,7 @@ existing `EmptyState`. Explicitly out of scope: return-orders-page.tsx and
 reviews-page.tsx stay stubs.
 
 **Acceptance (manual smoke against staging API).**
+
 1. Vendor login → sees only own items; PACKED transition persists after reload;
    inventory reserved count drops on DELIVERED (A5 behavior visible).
 2. Admin login → platform-wide orders with working order-status tabs + pagination.
@@ -612,30 +645,30 @@ Base: Branch 1 tip (stacked). **Zero behavior change. Zero test-file edits.**
 
 Module-level helpers:
 
-| Lines | Symbol |
-|---|---|
-| 46-56 | `toJsonInput` |
-| 58-110 | `collectProductAssetUrls` (exported? no — internal) |
-| 112 | `HEX_COLOR_PATTERN` |
-| 114-120 | `isFilledString` |
-| 122-~176 | `resolveStorefrontColorVariants` |
+| Lines    | Symbol                                              |
+| -------- | --------------------------------------------------- |
+| 46-56    | `toJsonInput`                                       |
+| 58-110   | `collectProductAssetUrls` (exported? no — internal) |
+| 112      | `HEX_COLOR_PATTERN`                                 |
+| 114-120  | `isFilledString`                                    |
+| 122-~176 | `resolveStorefrontColorVariants`                    |
 
 Class methods (`export class ProductService` at :177):
 
-| Lines | Method | Size |
-|---|---|---|
-| 180-183 | `getProducts` | thin wrapper |
-| 184-328 | `formatProductResponse` (private) | ~145L |
-| 329-467 | `createProduct` | ~139L |
-| 468-494 | `getProductById` | ~27L |
-| 495-550 | `getProductsByVendor` | ~56L |
-| 551-699 | `getAllProducts` | ~149L |
-| 700-732 | `getProductReviewQueue` | ~33L |
-| 733-769 | `submitProductForReview` | ~37L |
-| 770-903 | `reviewProduct` | ~134L |
-| 904-1106 | `updateProduct` | ~203L ← worst |
-| 1107-1146 | `archiveProduct` | ~40L |
-| 1147-1253 | `toggleProductActivation` | ~106L |
+| Lines     | Method                            | Size          |
+| --------- | --------------------------------- | ------------- |
+| 180-183   | `getProducts`                     | thin wrapper  |
+| 184-328   | `formatProductResponse` (private) | ~145L         |
+| 329-467   | `createProduct`                   | ~139L         |
+| 468-494   | `getProductById`                  | ~27L          |
+| 495-550   | `getProductsByVendor`             | ~56L          |
+| 551-699   | `getAllProducts`                  | ~149L         |
+| 700-732   | `getProductReviewQueue`           | ~33L          |
+| 733-769   | `submitProductForReview`          | ~37L          |
+| 770-903   | `reviewProduct`                   | ~134L         |
+| 904-1106  | `updateProduct`                   | ~203L ← worst |
+| 1107-1146 | `archiveProduct`                  | ~40L          |
+| 1147-1253 | `toggleProductActivation`         | ~106L         |
 
 Type exports at top (`CreateProductInput`, etc.) and re-export
 `{ PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT }` (:41) must remain importable
@@ -687,7 +720,9 @@ Facade wiring:
 export class ProductService {
   private queries = new ProductQueryService();
   private lifecycle = new ProductLifecycleService();
-  getProducts(f) { return this.queries.getProducts(f); }
+  getProducts(f) {
+    return this.queries.getProducts(f);
+  }
   // …delegate every legacy public member with identical signature…
 }
 export type CreateProductInput = CreateProductType; // keep all existing exports
@@ -695,6 +730,7 @@ export { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT };
 ```
 
 **Acceptance criteria (Branch 2 as a whole).**
+
 - All 5 spec files byte-identical to base branch (`git diff --stat` shows no `__tests__` changes).
 - No file >600L; no method >80L.
 - Public API surface of `product.service.ts` unchanged (same exported names/types).
@@ -747,12 +783,13 @@ coordination beyond Branch 1's A1 already being merged (payment-method gating).
    table from this plan (A1–A8 sources) with resolution mapping, plus the
    mobile/admin rows below:
 
-   | Finding | Severity | Fixed in |
-   |---|---|---|
-   | Mobile checkout: guest/user cart divergence — `POST /cart/sync` defined but never called; checkout reads user-cart only → "cart is empty" 400 | High (orders silently never persist) | Branch 3 (C1) |
-   | Mobile checkout: `.catch()` converts every failure into a fake "Order Placed!" success and clears the cart | High | Branch 3 (C2) |
-   | Web-admin Orders page renders hardcoded mock data (`INITIAL_ORDERS`); fulfillment save is local-state only | High (operators believe orders are being managed) | Branch 4 (D3–D5) |
-   | `dispatch3PLOrder` sends `{courierProvider}` but backend zod reads `provider` — courier silently defaults | Low-Med | Branch 4 (D1) |
+   | Finding                                                                                                                                       | Severity                                          | Fixed in         |
+   | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ---------------- |
+   | Mobile checkout: guest/user cart divergence — `POST /cart/sync` defined but never called; checkout reads user-cart only → "cart is empty" 400 | High (orders silently never persist)              | Branch 3 (C1)    |
+   | Mobile checkout: `.catch()` converts every failure into a fake "Order Placed!" success and clears the cart                                    | High                                              | Branch 3 (C2)    |
+   | Web-admin Orders page renders hardcoded mock data (`INITIAL_ORDERS`); fulfillment save is local-state only                                    | High (operators believe orders are being managed) | Branch 4 (D3–D5) |
+   | `dispatch3PLOrder` sends `{courierProvider}` but backend zod reads `provider` — courier silently defaults                                     | Low-Med                                           | Branch 4 (D1)    |
+
 2. After Branch 2 merges: flip the god-file row in that report's
    “Explicitly NOT resolved” table to resolved-with-link-to-this-plan.
 3. Update `AGENTS.md` if the refactor-as-you-touch policy gets an exception note
@@ -762,21 +799,21 @@ coordination beyond Branch 1's A1 already being merged (payment-method gating).
 
 ## Execution order summary
 
-| Step | Branch | Commit(s) |
-|---|---|---|
-| A1+A2 (validation & stripe traps) | 1 | `fix(api): reject unsupported payment methods and unconfigured stripe` |
-| A3 (idempotency) | 1 | `fix(api): scope checkout idempotency keys to users and close creation race` |
-| A4 (oversell guard) | 1 | `fix(api): conditional stock reservation inside checkout transaction` |
-| A5 (vendor cancel restock) | 1 | `fix(api): release reserved stock when vendor cancels order items` |
-| A6 (reaper) | 1 | `feat(api): scheduled stale-reservation reaper worker` |
-| A7 (paid gate) | 1 | `fix(api): require completed payment before marking online orders paid` |
-| A8 (refresh reuse) | 1 | `feat(api): detect refresh-token reuse and kill sessions` |
-| Report update §4.1 | 1 | `docs: append follow-up audit findings to hardening report` |
-| B1–B5 decomposition | 2 | one commit per B-step, `refactor(product): …` |
-| C1 cart sync on login | 3 | `fix(mobile): sync guest cart into user cart after login` |
-| C2 honest checkout errors | 3 | `fix(mobile): remove fake checkout success fallback, surface real errors` |
-| D1+D2 api layer + mapper | 4 | `feat(web-admin): add orders query layer and shape mapper` |
-| D3 dual-mode page | 4 | `feat(web-admin): wire orders page to live vendor/admin endpoints` |
-| D4+D5 mutations & mock removal | 4 | `feat(web-admin): live fulfillment mutations; delete mock order data` |
+| Step                              | Branch | Commit(s)                                                                    |
+| --------------------------------- | ------ | ---------------------------------------------------------------------------- |
+| A1+A2 (validation & stripe traps) | 1      | `fix(api): reject unsupported payment methods and unconfigured stripe`       |
+| A3 (idempotency)                  | 1      | `fix(api): scope checkout idempotency keys to users and close creation race` |
+| A4 (oversell guard)               | 1      | `fix(api): conditional stock reservation inside checkout transaction`        |
+| A5 (vendor cancel restock)        | 1      | `fix(api): release reserved stock when vendor cancels order items`           |
+| A6 (reaper)                       | 1      | `feat(api): scheduled stale-reservation reaper worker`                       |
+| A7 (paid gate)                    | 1      | `fix(api): require completed payment before marking online orders paid`      |
+| A8 (refresh reuse)                | 1      | `feat(api): detect refresh-token reuse and kill sessions`                    |
+| Report update §4.1                | 1      | `docs: append follow-up audit findings to hardening report`                  |
+| B1–B5 decomposition               | 2      | one commit per B-step, `refactor(product): …`                                |
+| C1 cart sync on login             | 3      | `fix(mobile): sync guest cart into user cart after login`                    |
+| C2 honest checkout errors         | 3      | `fix(mobile): remove fake checkout success fallback, surface real errors`    |
+| D1+D2 api layer + mapper          | 4      | `feat(web-admin): add orders query layer and shape mapper`                   |
+| D3 dual-mode page                 | 4      | `feat(web-admin): wire orders page to live vendor/admin endpoints`           |
+| D4+D5 mutations & mock removal    | 4      | `feat(web-admin): live fulfillment mutations; delete mock order data`        |
 
 Merge order: 1 → 3 → 4 (Branch 2 independent, any time after 1).

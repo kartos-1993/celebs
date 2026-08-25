@@ -9,7 +9,9 @@ test.describe('E2E: Product Draft Persistence & Page Reload', () => {
     await page.goto('/products/new', { waitUntil: 'domcontentloaded' });
   });
 
-  test('should save draft and restore form state accurately after page reload', async ({ page }) => {
+  test('should save draft and restore form state accurately after page reload', async ({
+    page,
+  }) => {
     // 1. Select category
     await page.getByTestId('category-cascading-trigger').click();
     await page.getByText("Men's Apparel").first().click();

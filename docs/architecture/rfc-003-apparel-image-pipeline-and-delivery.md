@@ -14,6 +14,7 @@ In fashion e-commerce (SHEIN, Zara, ASOS, SSENSE), product imagery directly driv
 Furthermore, hardcoding pixel dimensions (`360x480`, `q=80`) across screens is an anti-pattern that breaks responsive layouts, fails on high-density Retina/OLED displays (iPhone Pro, Galaxy Ultra), and wastes mobile bandwidth.
 
 This document defines the **End-to-End Dynamic Fashion Image Pipeline** for `celebs`:
+
 1. **Strict 3:4 Portrait Aspect Ratio Enforcement** at upload time.
 2. **Canonical Master URL Storage**: Database & APIs store ONLY the master image URL without baked-in dimensions.
 3. **Dynamic Semantic Presets & Auto `srcset`**: Components select semantic roles (`grid-card`, `pdp-hero`, `thumbnail`) while resolution, DPR, and formats are computed on the fly.
@@ -31,11 +32,11 @@ graph TD
     B --> C["Direct Presigned PUT to Cloudflare R2 / S3"]
     C --> D["API Confirm Upload & Metadata Catalog (width, height, aspectRatio)"]
     D --> E["BullMQ Sharp Worker (4 Static Derivatives for Dev/Fallback)"]
-    
+
     subgraph "Database Layer (Single Source of Truth)"
         DB["Store ONLY Clean Master URL: https://cdn.celebs.com/vendors/.../dress.webp"]
     end
-    
+
     D --> DB
 
     subgraph "Delivery Pipeline (Storefront, Web Admin, Mobile)"
@@ -58,30 +59,31 @@ All apparel catalog images strictly conform to the **`3:4` vertical portrait rat
 
 Modern devices require distinct physical pixel densities to avoid blurry rendering on OLED/Retina screens:
 
-| Context / Viewport | 1x Standard Display (1080p) | 2x Retina (MacBook / iPad) | 3x Super Retina (iPhone Pro / OLED) | Quality | Fit Mode | Primary Codecs |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Grid / Catalog Feed** | `360 x 480 px` (~25 KB) | `720 x 960 px` (~65 KB) | `1080 x 1440 px` (~120 KB) | `q=80` | `cover` | `AVIF` / `WebP` |
-| **PDP Main Hero** | `750 x 1000 px` (~80 KB) | `1500 x 2000 px` (~180 KB) | `1500 x 2000 px` (~180 KB) | `q=85` | `inside` | `AVIF` / `WebP` |
-| **PDP Hi-Res Zoom Modal**| `1200 x 1600 px` (~150 KB)| `1800 x 2400 px` (~280 KB)| `1800 x 2400 px` (~280 KB)| `q=90` | `inside` | `WebP` |
-| **Cart / Order Mini-Thumb**| `120 x 160 px` (~8 KB) | `240 x 320 px` (~18 KB) | `360 x 480 px` (~28 KB) | `q=75` | `cover` | `WebP` |
-| **LQIP Blur Placeholder** | `30 x 40 px` (< 1 KB) | `30 x 40 px` (< 1 KB) | `30 x 40 px` (< 1 KB) | `q=60` | `cover` | Base64 Data URL |
+| Context / Viewport          | 1x Standard Display (1080p) | 2x Retina (MacBook / iPad) | 3x Super Retina (iPhone Pro / OLED) | Quality | Fit Mode | Primary Codecs  |
+| :-------------------------- | :-------------------------- | :------------------------- | :---------------------------------- | :------ | :------- | :-------------- |
+| **Grid / Catalog Feed**     | `360 x 480 px` (~25 KB)     | `720 x 960 px` (~65 KB)    | `1080 x 1440 px` (~120 KB)          | `q=80`  | `cover`  | `AVIF` / `WebP` |
+| **PDP Main Hero**           | `750 x 1000 px` (~80 KB)    | `1500 x 2000 px` (~180 KB) | `1500 x 2000 px` (~180 KB)          | `q=85`  | `inside` | `AVIF` / `WebP` |
+| **PDP Hi-Res Zoom Modal**   | `1200 x 1600 px` (~150 KB)  | `1800 x 2400 px` (~280 KB) | `1800 x 2400 px` (~280 KB)          | `q=90`  | `inside` | `WebP`          |
+| **Cart / Order Mini-Thumb** | `120 x 160 px` (~8 KB)      | `240 x 320 px` (~18 KB)    | `360 x 480 px` (~28 KB)             | `q=75`  | `cover`  | `WebP`          |
+| **LQIP Blur Placeholder**   | `30 x 40 px` (< 1 KB)       | `30 x 40 px` (< 1 KB)      | `30 x 40 px` (< 1 KB)               | `q=60`  | `cover`  | Base64 Data URL |
 
 ---
 
 ## 4. Detailed Implementation Modules
 
 ### Module 1: Centralized Preset Registry & Dynamic URL Builder (`@celebs/shared-utils`)
+
 **File:** `packages/shared-utils/src/utils/image-url.ts`
 
 Centralizes all semantic presets and dynamically constructs Cloudflare Edge transformation URLs or static local dev paths:
 
 ```typescript
 export const IMAGE_PRESETS = {
-  'thumbnail':   { width: 120, height: 160, quality: 75, fit: 'cover' as const },
-  'grid-card':   { width: 360, height: 480, quality: 80, fit: 'cover' as const },
-  'pdp-hero':    { width: 750, height: 1000, quality: 85, fit: 'inside' as const },
-  'zoom':        { width: 1500, height: 2000, quality: 90, fit: 'inside' as const },
-  'avatar':      { width: 80, height: 80, quality: 80, fit: 'cover' as const },
+  thumbnail: { width: 120, height: 160, quality: 75, fit: 'cover' as const },
+  'grid-card': { width: 360, height: 480, quality: 80, fit: 'cover' as const },
+  'pdp-hero': { width: 750, height: 1000, quality: 85, fit: 'inside' as const },
+  zoom: { width: 1500, height: 2000, quality: 90, fit: 'inside' as const },
+  avatar: { width: 80, height: 80, quality: 80, fit: 'cover' as const },
 } as const;
 
 export type ImagePreset = keyof typeof IMAGE_PRESETS;
@@ -98,7 +100,7 @@ export interface ImageTransformOptions {
 
 export function getOptimizedImageUrl(
   sourceUrl: string,
-  options: ImageTransformOptions = {}
+  options: ImageTransformOptions = {},
 ): string {
   if (!sourceUrl) return '';
 
@@ -113,8 +115,7 @@ export function getOptimizedImageUrl(
 
   // 1. Cloudflare CDN Edge Transformation (Production)
   const isCloudflare =
-    sourceUrl.includes('cdn.celebs.com') ||
-    process.env.NEXT_PUBLIC_USE_CLOUDFLARE_IMAGE === 'true';
+    sourceUrl.includes('cdn.celebs.com') || process.env.NEXT_PUBLIC_USE_CLOUDFLARE_IMAGE === 'true';
 
   if (isCloudflare) {
     const params: string[] = [];
@@ -152,12 +153,11 @@ export function getOptimizedImageUrl(
  */
 export function buildDprSrcSet(
   sourceUrl: string,
-  options: Omit<ImageTransformOptions, 'dpr'> = {}
+  options: Omit<ImageTransformOptions, 'dpr'> = {},
 ): string {
   return [1, 2, 3]
     .map(
-      (dpr) =>
-        `${getOptimizedImageUrl(sourceUrl, { ...options, dpr: dpr as 1 | 2 | 3 })} ${dpr}x`
+      (dpr) => `${getOptimizedImageUrl(sourceUrl, { ...options, dpr: dpr as 1 | 2 | 3 })} ${dpr}x`,
     )
     .join(',\n    ');
 }
@@ -166,9 +166,11 @@ export function buildDprSrcSet(
 ---
 
 ### Module 2: Client-Side 3:4 Aspect Ratio Guard & Cropper (`apps/web-admin`)
+
 **File:** `apps/web-admin/src/features/product/components/media-crop-dialog.tsx`
 
 When a vendor or administrator uploads an apparel image:
+
 1. Client inspects dimensions in browser memory: `ratio = img.width / img.height`.
 2. If `ratio < 0.70` or `ratio > 0.80` (i.e., not within standard `3:4` bounds):
    - Launches interactive crop modal locking the viewport to `3:4`.
@@ -178,6 +180,7 @@ When a vendor or administrator uploads an apparel image:
 ---
 
 ### Module 3: Universal Zero-CLS `<ApparelImage />` Component (`@celebs/shared-ui`)
+
 **File:** `packages/shared-ui/src/components/apparel-image.tsx`
 
 Supports **both** semantic presets (`preset="grid-card"`) and viewport-relative responsive sizing (`sizes="..."`):
@@ -233,7 +236,7 @@ export const ApparelImage: React.FC<ApparelImageProps> = ({
         className={cn(
           'h-full w-full object-cover transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
-          className
+          className,
         )}
         {...props}
       />
@@ -245,6 +248,7 @@ export const ApparelImage: React.FC<ApparelImageProps> = ({
 ---
 
 ### Module 4: React Native Mobile Integration (`apps/mobile`)
+
 **File:** `apps/mobile/src/components/apparel-image.tsx`
 
 Mobile screens query device hardware metrics automatically via `PixelRatio`:
@@ -270,11 +274,7 @@ export const MobileApparelImage: React.FC<MobileApparelImageProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <Image
-        source={{ uri: optimizedUrl }}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      <Image source={{ uri: optimizedUrl }} style={styles.image} resizeMode="cover" />
     </View>
   );
 };
@@ -296,6 +296,7 @@ const styles = StyleSheet.create({
 ---
 
 ### Module 5: Color Swatch Swapping on Catalog Feeds
+
 **File:** `apps/web-admin/src/features/product/components/product-feed-card.tsx`
 
 ```tsx
@@ -329,9 +330,9 @@ export const ProductFeedCard = ({ product }: { product: ProductWithVariants }) =
 
 ## 5. Implementation Milestones
 
-| Milestone | Deliverables | Target Package / App |
-| :--- | :--- | :--- |
-| **Phase 1: Shared Preset & URL Engine** | Add `IMAGE_PRESETS`, `getOptimizedImageUrl`, and `buildDprSrcSet` with unit tests | `packages/shared-utils` |
-| **Phase 2: Client 3:4 Uploader Guard** | Add `3:4` validation inspection and interactive cropper in product add modal | `apps/web-admin` |
-| **Phase 3: Universal `<ApparelImage />`** | Implement zero-CLS `<ApparelImage />` with `aspect-[3/4]`, `srcSet`, and blur-up | `packages/shared-ui` |
-| **Phase 4: Mobile & Variant Interactivity** | Mobile React Native component + color swatch image switching on feed cards | `apps/mobile` & `apps/web-admin` |
+| Milestone                                   | Deliverables                                                                      | Target Package / App             |
+| :------------------------------------------ | :-------------------------------------------------------------------------------- | :------------------------------- |
+| **Phase 1: Shared Preset & URL Engine**     | Add `IMAGE_PRESETS`, `getOptimizedImageUrl`, and `buildDprSrcSet` with unit tests | `packages/shared-utils`          |
+| **Phase 2: Client 3:4 Uploader Guard**      | Add `3:4` validation inspection and interactive cropper in product add modal      | `apps/web-admin`                 |
+| **Phase 3: Universal `<ApparelImage />`**   | Implement zero-CLS `<ApparelImage />` with `aspect-[3/4]`, `srcSet`, and blur-up  | `packages/shared-ui`             |
+| **Phase 4: Mobile & Variant Interactivity** | Mobile React Native component + color swatch image switching on feed cards        | `apps/mobile` & `apps/web-admin` |

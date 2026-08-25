@@ -8,19 +8,19 @@ If you are about to write raw HTML for a control (`<select>`, `<input type="chec
 
 ## Shared component map
 
-| Need | Use | NEVER |
-|---|---|---|
-| Dropdown | `Select / SelectContent / SelectItem / SelectTrigger / SelectValue` | native `<select>` |
-| Checkbox | `Checkbox` (`checked` + `onCheckedChange`) | `<input type="checkbox">` |
-| Modal | `Dialog / DialogContent / DialogHeader / DialogTitle / DialogDescription / DialogFooter` | `fixed inset-0 bg-black/60` overlay divs, text `✕` close buttons |
-| Confirm dialog | `ConfirmDialog` (has `destructive`, `confirmLabel`, async `onConfirm`) | ad-hoc confirm modals |
-| Tabs | `Tabs / TabsList / TabsTrigger` | hand-rolled underline/pill button bars with manual active classes |
-| Tooltip on icon buttons | `Tooltip > TooltipTrigger asChild > … <TooltipContent>` | bare `title` attributes as the only label |
-| Empty table/list state | `EmptyState` (`icon`, `title`, `description`, `action`) | plain centered text lines |
-| Page loading | `PageLoader`; in-table: `h-32` centered muted text or `Spinner` | nothing / layout shift |
-| Toasts | `useToast()` from `@/hooks/use-toast` | `alert()`, silent failures |
-| Text field | `Input`, `Textarea`, `PasswordInput`, `NumberInput` | unstyled inputs |
-| Labels | `Label` | bare `<label>` without styling parity |
+| Need                    | Use                                                                                      | NEVER                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Dropdown                | `Select / SelectContent / SelectItem / SelectTrigger / SelectValue`                      | native `<select>`                                                 |
+| Checkbox                | `Checkbox` (`checked` + `onCheckedChange`)                                               | `<input type="checkbox">`                                         |
+| Modal                   | `Dialog / DialogContent / DialogHeader / DialogTitle / DialogDescription / DialogFooter` | `fixed inset-0 bg-black/60` overlay divs, text `✕` close buttons  |
+| Confirm dialog          | `ConfirmDialog` (has `destructive`, `confirmLabel`, async `onConfirm`)                   | ad-hoc confirm modals                                             |
+| Tabs                    | `Tabs / TabsList / TabsTrigger`                                                          | hand-rolled underline/pill button bars with manual active classes |
+| Tooltip on icon buttons | `Tooltip > TooltipTrigger asChild > … <TooltipContent>`                                  | bare `title` attributes as the only label                         |
+| Empty table/list state  | `EmptyState` (`icon`, `title`, `description`, `action`)                                  | plain centered text lines                                         |
+| Page loading            | `PageLoader`; in-table: `h-32` centered muted text or `Spinner`                          | nothing / layout shift                                            |
+| Toasts                  | `useToast()` from `@/hooks/use-toast`                                                    | `alert()`, silent failures                                        |
+| Text field              | `Input`, `Textarea`, `PasswordInput`, `NumberInput`                                      | unstyled inputs                                                   |
+| Labels                  | `Label`                                                                                  | bare `<label>` without styling parity                             |
 
 Radix gotcha: `SelectItem` values cannot be empty strings — use a sentinel (e.g. `'ALL'`) and map it back.
 
@@ -54,16 +54,17 @@ Reference implementations: `features/vendors/pages/vendor-list-page.tsx`, `featu
 - Actions column: header `text-right`; cell `text-right` + `flex items-center justify-end gap-0.5 whitespace-nowrap`.
 - **Row actions are compact icon buttons** (`size="sm" variant="ghost" className="h-8 w-8 p-0"`), color-coded by semantics, each wrapped in a Tooltip + `sr-only` span:
 
-| Action | Icon | Tint class on ghost button |
-|---|---|---|
-| View / inspect / preview | `Eye` | `text-muted-foreground hover:text-foreground` |
-| Approve / activate | `Check` | `text-success hover:bg-success/10 hover:text-success` |
-| Reject / deactivate | `X` | `text-destructive hover:bg-destructive/10` |
-| Edit | `Pencil` | default foreground |
-| Delete / archive | `Trash2` | destructive tint, must open a confirm dialog |
-| Overflow menu | `MoreHorizontal` | dropdown trigger, never literal `▼` text |
+| Action                   | Icon             | Tint class on ghost button                            |
+| ------------------------ | ---------------- | ----------------------------------------------------- |
+| View / inspect / preview | `Eye`            | `text-muted-foreground hover:text-foreground`         |
+| Approve / activate       | `Check`          | `text-success hover:bg-success/10 hover:text-success` |
+| Reject / deactivate      | `X`              | `text-destructive hover:bg-destructive/10`            |
+| Edit                     | `Pencil`         | default foreground                                    |
+| Delete / archive         | `Trash2`         | destructive tint, must open a confirm dialog          |
+| Overflow menu            | `MoreHorizontal` | dropdown trigger, never literal `▼` text              |
 
 Full-text labeled buttons belong inside modals/detail views, not table rows.
+
 - Status badges: human-readable labels only — never raw snake_case enum values (`pending_review` → "Pending Review"). Keep a `statusLabels` map next to the page.
 - Row hover is built into `TableRow`; don't re-add it per row.
 

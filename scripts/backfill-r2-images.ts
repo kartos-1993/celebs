@@ -17,9 +17,10 @@ const s3 = new S3Client({
 async function main() {
   const { prisma } = await import('../apps/api/src/config/db.prisma');
   const bucket = process.env.S3_BUCKET_NAME || 'celebs-media-staging';
-  const publicBase = (
-    process.env.MEDIA_PUBLIC_BASE_URL || 'https://media.celebs.com.np'
-  ).replace(/\/$/, '');
+  const publicBase = (process.env.MEDIA_PUBLIC_BASE_URL || 'https://media.celebs.com.np').replace(
+    /\/$/,
+    '',
+  );
 
   console.log(`Fetching available image keys from R2 bucket: ${bucket}...`);
   const r2Res = await s3.send(
@@ -55,7 +56,9 @@ async function main() {
   for (let i = 0; i < products.length; i++) {
     const product = products[i];
     const currentImgs = product.mainImages || [];
-    const hasValidR2 = currentImgs.some((url) => url.includes('pub-') && !url.includes('127.0.0.1'));
+    const hasValidR2 = currentImgs.some(
+      (url) => url.includes('pub-') && !url.includes('127.0.0.1'),
+    );
 
     if (!hasValidR2 || currentImgs.length === 0) {
       // Pick a round-robin valid image from R2

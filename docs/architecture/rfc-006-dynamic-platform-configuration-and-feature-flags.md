@@ -2,19 +2,21 @@
 
 **Status**: Proposed / Approved  
 **Authors**: Celebs Core Architecture Team  
-**Scope**: `apps/api`, `apps/web-admin`, `apps/mobile`, `packages/shared-types`, Database  
+**Scope**: `apps/api`, `apps/web-admin`, `apps/mobile`, `packages/shared-types`, Database
 
 ---
 
 ## 1. Executive Summary & Problem Statement
 
 As e-commerce platforms grow, operational business parameters and feature toggles must change frequently:
+
 - Enabling or disabling **Brand LOA Gating** for Phase 1 MVP vs. Phase 2 Mall launch.
 - Adjusting **Global Vendor Commission Rates** (%) or payout hold periods.
 - Switching **Product Review Moderation** between instant auto-publishing and manual admin approval.
 - Enabling or disabling **Mobile Festival Banners, Flash Sales, or High-AOV Combos**.
 
 ### Why Environment Variables (`.env`) Become Technical Debt:
+
 1. **The Redeployment Bottleneck**: Changing a `.env` variable requires committing code or updating container environment variables, triggering a CI/CD build, and restarting/redeploying backend services. During an operational emergency or at the exact midnight conclusion of a flash sale, waiting 10–15 minutes for a build is unacceptable.
 2. **Non-Technical Team Blockade**: Product managers, marketing leads, compliance officers, and operations teams cannot toggle flags themselves—they are forced to submit engineering tickets for simple configuration tweaks.
 3. **No Audit Trail**: `.env` files maintain no historical record of **who** changed a value, **when** it was altered, or **why** (critical for legal and financial accountability).
@@ -85,7 +87,7 @@ model PlatformSettingAudit {
   id           String          @id @default(uuid())
   settingKey   String          @map("setting_key")
   setting      PlatformSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
-  
+
   oldValue     String?         @map("old_value")
   newValue     String          @map("new_value")
   changedBy    String          @map("changed_by") // User ID of the acting Superadmin
@@ -112,7 +114,7 @@ import redis from '@/config/redis'; // Upstash Redis singleton
 export class PlatformConfigService {
   private memoryCache = new Map<string, { value: unknown; expiry: number }>();
   private L1_TTL_MS = 60 * 1000; // 1 minute in-memory TTL
-  private L2_TTL_SEC = 300;      // 5 minutes Redis TTL
+  private L2_TTL_SEC = 300; // 5 minutes Redis TTL
 
   // ── Typed Accessors ────────────────────────────────────────────────────────
 
@@ -184,12 +186,7 @@ export class PlatformConfigService {
 
   // ── Mutation with Instant Cache Invalidation ────────────────────────────────
 
-  async setSetting(params: {
-    key: string;
-    value: string;
-    adminUserId: string;
-    reason?: string;
-  }) {
+  async setSetting(params: { key: string; value: string; adminUserId: string; reason?: string }) {
     const { key, value, adminUserId, reason } = params;
 
     const existing = await prisma.platformSetting.findUnique({ where: { key } });
@@ -232,13 +229,13 @@ export const platformConfig = new PlatformConfigService();
 
 ## 5. Standard Platform Feature Flags in Celebs
 
-| Flag Key | Type | Default | Description | Impact Area |
-| :--- | :--- | :--- | :--- | :--- |
-| `brand_gating_enabled` | `BOOLEAN` | `false` | When `false`, sellers can pick any brand without LOA upload. When `true`, gated brands demand verified LOAs. | Brand Registry & Catalog |
-| `product_review_required` | `BOOLEAN` | `true` | When `true`, vendor product additions enter review queue before publishing. | Product Lifecycle |
-| `strict_kyc_onboarding` | `BOOLEAN` | `false` | When `true`, vendor stores require manual document approval before creating listings. | Vendor Portal |
-| `mobile_festival_campaign_enabled` | `BOOLEAN` | `false` | Controls whether the live countdown and festival discount strip render on the mobile app. | Mobile App Homepage |
-| `standard_commission_percentage` | `NUMBER` | `8.0` | Default platform commission fee taken on completed 3P orders. | Finance & Settlements |
+| Flag Key                           | Type      | Default | Description                                                                                                  | Impact Area              |
+| :--------------------------------- | :-------- | :------ | :----------------------------------------------------------------------------------------------------------- | :----------------------- |
+| `brand_gating_enabled`             | `BOOLEAN` | `false` | When `false`, sellers can pick any brand without LOA upload. When `true`, gated brands demand verified LOAs. | Brand Registry & Catalog |
+| `product_review_required`          | `BOOLEAN` | `true`  | When `true`, vendor product additions enter review queue before publishing.                                  | Product Lifecycle        |
+| `strict_kyc_onboarding`            | `BOOLEAN` | `false` | When `true`, vendor stores require manual document approval before creating listings.                        | Vendor Portal            |
+| `mobile_festival_campaign_enabled` | `BOOLEAN` | `false` | Controls whether the live countdown and festival discount strip render on the mobile app.                    | Mobile App Homepage      |
+| `standard_commission_percentage`   | `NUMBER`  | `8.0`   | Default platform commission fee taken on completed 3P orders.                                                | Finance & Settlements    |
 
 ---
 

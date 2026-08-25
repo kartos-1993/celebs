@@ -2,15 +2,16 @@
 
 **Status**: Proposed / Approved  
 **Authors**: Celebs Core Architecture Team  
-**Scope**: `apps/mobile`, `apps/api`, `apps/web-admin`, `packages/shared-types`, Database  
+**Scope**: `apps/mobile`, `apps/api`, `apps/web-admin`, `packages/shared-types`, Database
 
 ---
 
 ## 1. Executive Summary & Problem Statement
 
-In high-velocity fashion e-commerce (such as Shein, Daraz, and Myntra), the mobile application homepage accounts for **over 80% of top-of-funnel customer traffic and immediate purchasing intent**. 
+In high-velocity fashion e-commerce (such as Shein, Daraz, and Myntra), the mobile application homepage accounts for **over 80% of top-of-funnel customer traffic and immediate purchasing intent**.
 
 Currently, the mobile homepage (`apps/mobile/src/app/(tabs)/index.tsx`) hardcodes the visual hierarchy:
+
 - `BannerCarousel`
 - `CampaignCountdownBanner` (Festival Campaign Banner)
 - `ComboBundleShowcase` (Curated Festive Combos)
@@ -18,6 +19,7 @@ Currently, the mobile homepage (`apps/mobile/src/app/(tabs)/index.tsx`) hardcode
 - `ProductGrid` (Infinite Feed)
 
 ### The Core Business & Technical Bottlenecks:
+
 1. **App Store Review Delays**: Marketing events (e.g. Dashain Flash Deals, Black Friday, Weekend Drops) start and end abruptly. Waiting 2 to 4 days for Apple and Google app reviews makes real-time campaign execution impossible.
 2. **Post-Campaign Conversion Slump**: If an expired campaign banner remains visible on the mobile app after a festival ends, customer trust and checkout conversion rates plummet.
 3. **Hardcoded Dispatcher Anti-Pattern**: Writing `switch (widget.type)` statements directly inside screens forces developers to modify and redeploy screen files every time a new marketing section is introduced.
@@ -28,7 +30,8 @@ Currently, the mobile homepage (`apps/mobile/src/app/(tabs)/index.tsx`) hardcode
 ## 2. Server-Driven UI (SDUI) Paradigm
 
 Server-Driven UI decouples **Data & Layout Composition** from **Client-side Rendering**:
-- The **Backend (API)** dictates *what* widgets appear, in *what order*, with *what configuration*, and under *what time window*.
+
+- The **Backend (API)** dictates _what_ widgets appear, in _what order_, with _what configuration_, and under _what time window_.
 - The **Mobile App (React Native)** acts as a pure rendering engine powered by a **Decoupled Component Registry**, completely agnostic of specific marketing campaigns.
 
 ```
@@ -104,7 +107,7 @@ export interface DynamicWidget<TData = Record<string, unknown>> {
   enabled: boolean;
   schedule?: {
     startsAt?: string; // ISO 8601
-    endsAt?: string;   // Auto-expires after festive countdown
+    endsAt?: string; // Auto-expires after festive countdown
   };
   data: TData;
   styling?: DynamicWidgetStyling;
@@ -155,10 +158,7 @@ export const WIDGET_REGISTRY: Record<string, React.ComponentType<WidgetProps<nev
 };
 
 /** Dynamic registration helper for extensible modular widgets */
-export function registerWidget(
-  type: string,
-  component: React.ComponentType<WidgetProps<never>>,
-) {
+export function registerWidget(type: string, component: React.ComponentType<WidgetProps<never>>) {
   WIDGET_REGISTRY[type] = component;
 }
 ```
@@ -251,11 +251,7 @@ export default function HomeScreen() {
   const scheme = useColorScheme();
   const [scrollY, setScrollY] = useState(0);
 
-  const {
-    data: layout,
-    isLoading,
-    refetch,
-  } = useScreenLayout('HOME');
+  const { data: layout, isLoading, refetch } = useScreenLayout('HOME');
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     setScrollY(event.nativeEvent.contentOffset.y);
@@ -269,7 +265,9 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <StatusBar
-        barStyle={scrollY > 50 ? (scheme === 'dark' ? 'light-content' : 'dark-content') : 'light-content'}
+        barStyle={
+          scrollY > 50 ? (scheme === 'dark' ? 'light-content' : 'dark-content') : 'light-content'
+        }
         translucent={true}
         backgroundColor="transparent"
       />
@@ -288,10 +286,7 @@ export default function HomeScreen() {
           />
         }
       >
-        <DynamicLayout
-          widgets={layout?.widgets || []}
-          onWidgetAction={handleWidgetAction}
-        />
+        <DynamicLayout widgets={layout?.widgets || []} onWidgetAction={handleWidgetAction} />
       </ScrollView>
 
       <AppHeader transparent={true} scrollY={scrollY} showSubHeader={true} initialSubTab="Men" />
@@ -331,10 +326,10 @@ model LayoutWidget {
   type           String       // "BANNER_CAROUSEL", "CAMPAIGN_COUNTDOWN", etc.
   order          Int          @default(0)
   enabled        Boolean      @default(true)
-  
+
   startsAt       DateTime?    @map("starts_at")
   endsAt         DateTime?    @map("ends_at")
-  
+
   data           Json         // Flexible widget parameters (banners, text, product IDs)
   styling        Json?        // Margin, padding, background colors
   analyticsTag   String?      @map("analytics_tag")
@@ -351,10 +346,10 @@ model LayoutWidget {
 
 ## 6. High Conversion Rate (CRO) Impact
 
-| Capability | Static Hardcoded App | SDUI Dynamic Homepage |
-| :--- | :--- | :--- |
-| **Festival Season Switching** | Requires new App Store binary build (2–4 days) | **Instant 1-Click Toggle** in Superadmin UI |
-| **Auto-Expiry of Flash Sales** | Countdown reaches zero but expired banner remains | **Auto-hides at 00:00:00** based on server schedule |
-| **A/B Testing Hero Layouts** | Hardcoded for all users | **Dynamic variant serving per user segment** |
-| **New Marketing Widget Rollouts**| Modify `index.tsx` + risk regression bugs | **Add component to registry without touching screens** |
-| **Multi-Surface Reuse** | Code locked only to Home Tab | **Powers Brand Storefronts, Explore, and Flash Sale pages** |
+| Capability                        | Static Hardcoded App                              | SDUI Dynamic Homepage                                       |
+| :-------------------------------- | :------------------------------------------------ | :---------------------------------------------------------- |
+| **Festival Season Switching**     | Requires new App Store binary build (2–4 days)    | **Instant 1-Click Toggle** in Superadmin UI                 |
+| **Auto-Expiry of Flash Sales**    | Countdown reaches zero but expired banner remains | **Auto-hides at 00:00:00** based on server schedule         |
+| **A/B Testing Hero Layouts**      | Hardcoded for all users                           | **Dynamic variant serving per user segment**                |
+| **New Marketing Widget Rollouts** | Modify `index.tsx` + risk regression bugs         | **Add component to registry without touching screens**      |
+| **Multi-Surface Reuse**           | Code locked only to Home Tab                      | **Powers Brand Storefronts, Explore, and Flash Sale pages** |

@@ -12,7 +12,10 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
   ({ title, description, actions, className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between', className)}
+      className={cn(
+        'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
+        className,
+      )}
       {...props}
     >
       <div className="space-y-1">

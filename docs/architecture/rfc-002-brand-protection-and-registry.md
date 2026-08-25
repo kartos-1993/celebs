@@ -2,7 +2,7 @@
 
 **Status**: Proposed  
 **Authors**: Celebs Core Engineering Team  
-**Scope**: `apps/api`, `apps/web-admin`, `apps/mobile`, `packages/shared-types`, Database  
+**Scope**: `apps/api`, `apps/web-admin`, `apps/mobile`, `packages/shared-types`, Database
 
 ---
 
@@ -22,12 +22,12 @@ This RFC outlines the architecture for a **Daraz Mall / Shein / Amazon Brand Reg
 
 The platform establishes four distinct brand tiers:
 
-| Tier | Category | Example | Eligibility & Authorization | Customer Trust Badge |
-| :--- | :--- | :--- | :--- | :--- |
-| **Tier 1: 1P Private Label** | `FIRST_PARTY` | *Celebs Studio*, *Celebs Denim*, *MOTF-style labels* | Restricted strictly to Celebs Platform Super-Admins | **✨ Celebs Official** |
-| **Tier 2: Gated Global / Premium** | `GATED_GLOBAL` | *Nike*, *Zara*, *Apple*, *Levi's* | Requires approved Letter of Authorization (LOA) or Trademark Cert | **🛡️ Verified Brand Store** |
-| **Tier 3: Registered Vendor Brand** | `REGISTERED_VENDOR` | *Local Designer Label*, *Exclusive Vendor Brand* | Registered by vendor with proof of trademark ownership | **🏬 Brand Authorized** |
-| **Tier 4: Open / Generic** | `OPEN_GENERIC` | *Generic*, *Unbranded*, *OEM Fashion* | Open to all registered vendors | *Standard Seller Storefront* |
+| Tier                                | Category            | Example                                              | Eligibility & Authorization                                       | Customer Trust Badge         |
+| :---------------------------------- | :------------------ | :--------------------------------------------------- | :---------------------------------------------------------------- | :--------------------------- |
+| **Tier 1: 1P Private Label**        | `FIRST_PARTY`       | _Celebs Studio_, _Celebs Denim_, _MOTF-style labels_ | Restricted strictly to Celebs Platform Super-Admins               | **✨ Celebs Official**       |
+| **Tier 2: Gated Global / Premium**  | `GATED_GLOBAL`      | _Nike_, _Zara_, _Apple_, _Levi's_                    | Requires approved Letter of Authorization (LOA) or Trademark Cert | **🛡️ Verified Brand Store**  |
+| **Tier 3: Registered Vendor Brand** | `REGISTERED_VENDOR` | _Local Designer Label_, _Exclusive Vendor Brand_     | Registered by vendor with proof of trademark ownership            | **🏬 Brand Authorized**      |
+| **Tier 4: Open / Generic**          | `OPEN_GENERIC`      | _Generic_, _Unbranded_, _OEM Fashion_                | Open to all registered vendors                                    | _Standard Seller Storefront_ |
 
 ---
 
@@ -70,20 +70,20 @@ model Brand {
   bannerUrl        String?         @map("banner_url")
   description      String?
   websiteUrl       String?         @map("website_url")
-  
+
   tier             BrandTier       @default(OPEN_GENERIC)
   isGated          Boolean         @default(false) @map("is_gated")
-  
+
   // Brand Owner Information (if vendor-owned)
   ownerVendorId    String?         @map("owner_vendor_id")
   ownerVendor      VendorProfile?  @relation("OwnedBrands", fields: [ownerVendorId], references: [id], onDelete: SetNull)
-  
+
   // Relations
   products         Product[]
   authorizations   VendorBrandAuthorization[]
   protectionRules  BrandProtectionRule[]
   infringements    BrandInfringementReport[]
-  
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -95,15 +95,15 @@ model VendorBrandAuthorization {
   id                 String          @id @default(uuid())
   vendorId           String          @map("vendor_id")
   vendor             VendorProfile   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  
+
   brandId            String          @map("brand_id")
   brand              Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  
+
   status             BrandAuthStatus @default(PENDING)
   documentType       String          @map("document_type") // LOA, TRADEMARK_CERT, INVOICE
   documentUrl        String          @map("document_url")  // Cloudflare R2 KYC Private Vault
   documentExpiryDate DateTime?       @map("document_expiry_date")
-  
+
   // Moderation Audit Trail
   reviewedBy         String?         @map("reviewed_by")
   reviewedAt         DateTime?       @map("reviewed_at")
@@ -122,12 +122,12 @@ model BrandProtectionRule {
   id          String   @id @default(uuid())
   brandId     String   @map("brand_id")
   brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  
+
   // Forbidden keywords or regex patterns for unauthorized sellers
   pattern     String   // e.g. "(?i)\\b(nike|air\\s*jordan)\\b"
   matchField  String   @default("TITLE_AND_DESCRIPTION") @map("match_field")
   isActive    Boolean  @default(true) @map("is_active")
-  
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -138,20 +138,20 @@ model BrandInfringementReport {
   id              String             @id @default(uuid())
   brandId         String             @map("brand_id")
   brand           Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  
+
   reporterVendorId String?           @map("reporter_vendor_id")
   reporterVendor   VendorProfile?    @relation("ReportedInfringements", fields: [reporterVendorId], references: [id], onDelete: SetNull)
-  
+
   accusedProductId String            @map("accused_product_id")
   accusedProduct   Product           @relation(fields: [accusedProductId], references: [id], onDelete: Cascade)
-  
+
   reason          String             // COUNTERFEIT, TRADEMARK_INFRINGEMENT, COPYRIGHT_IMAGE_THEFT
   evidenceUrl     String?            @map("evidence_url")
   description     String
   status          InfringementStatus @default(SUBMITTED)
   adminNotes      String?            @map("admin_notes")
   actionTakenAt   DateTime?          @map("action_taken_at")
-  
+
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -216,14 +216,15 @@ When a vendor saves or publishes a product (`POST /api/v1/products` or `PUT /api
 ## 6. Storefront & Customer Experience
 
 ### In Web & Mobile PDP:
+
 1. **1P Platform Products**:
    - Badge: `✨ Celebs Official`
-   - Benefits: *Fast Track 24h Dispatch | Free 14-day Returns | Guaranteed Authentic*
+   - Benefits: _Fast Track 24h Dispatch | Free 14-day Returns | Guaranteed Authentic_
 2. **Verified Brand Mall Products**:
-   - Badge: `🛡️ Verified Brand Store` (e.g., *"Official Levi's Store"*)
+   - Badge: `🛡️ Verified Brand Store` (e.g., _"Official Levi's Store"_)
    - Direct link to brand's curated showcase tab.
 3. **General Marketplace Products**:
-   - Label: *"Sold by [Vendor Shop Name]"* + Vendor Rating Score.
+   - Label: _"Sold by [Vendor Shop Name]"_ + Vendor Rating Score.
 
 ---
 

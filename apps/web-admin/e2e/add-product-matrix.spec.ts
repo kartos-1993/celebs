@@ -42,9 +42,9 @@ test.describe('E2E: Full Apparel Product Creation Flow', () => {
     }
 
     // ── 4. Select Two Colors (Vintage Black, Washed Olive) ───────────────────
-    const colorDropdown = page.getByRole('button', { name: /select available colors/i }).or(
-      page.getByText('Select Available Colors')
-    );
+    const colorDropdown = page
+      .getByRole('button', { name: /select available colors/i })
+      .or(page.getByText('Select Available Colors'));
     if (await colorDropdown.isVisible({ timeout: 3000 }).catch(() => false)) {
       await colorDropdown.click();
       await page.getByText('Vintage Black').first().click();
@@ -54,9 +54,9 @@ test.describe('E2E: Full Apparel Product Creation Flow', () => {
     }
 
     // ── 5. Select Two Sizes (Small, Medium) ──────────────────────────────────
-    const sizeDropdown = page.getByRole('button', { name: /select available sizes/i }).or(
-      page.getByText('Select Available Sizes')
-    );
+    const sizeDropdown = page
+      .getByRole('button', { name: /select available sizes/i })
+      .or(page.getByText('Select Available Sizes'));
     if (await sizeDropdown.isVisible({ timeout: 3000 }).catch(() => false)) {
       await sizeDropdown.click();
       await page.getByText('Small').first().click();

@@ -33,7 +33,9 @@ test.describe('E2E: Size Measurements & Fit Guides', () => {
     }
 
     // 4. Fill in product measurement (Bust: 104) while leaving optional columns blank
-    const bustInput = page.getByTestId('measurement-input-M-Bust').or(page.locator('input[placeholder*="70"]').first());
+    const bustInput = page
+      .getByTestId('measurement-input-M-Bust')
+      .or(page.locator('input[placeholder*="70"]').first());
     if (await bustInput.isVisible()) {
       await bustInput.fill('104');
     }

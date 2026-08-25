@@ -19,7 +19,7 @@ Docker runtime, branch `staging`). Without a worker service:
 - ❌ No vendor approval/rejection/verification emails are sent
 - ❌ Asset processing and session purge jobs never run
 - ✅ The API itself still works — registration/login fall back to inline
-  email send when the enqueue fails, but only if Redis is *down*. If Redis
+  email send when the enqueue fails, but only if Redis is _down_. If Redis
   is up and no worker runs, emails silently pile up in the queue.
 
 ### Fix options
@@ -28,12 +28,12 @@ Docker runtime, branch `staging`). Without a worker service:
 
 Create a new service of type `worker`:
 
-| Setting | Value |
-|---|---|
-| Runtime | Node |
-| Build command | `corepack enable && pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm --filter "@celebs/*" build && pnpm --filter api build` |
-| Pre-deploy / start command | `node apps/api/dist/apps/api/src/worker-main.js` *(verify emitted path against your Dockerfile's build output; adjust if dist layout differs)* |
-| Env vars | Copy ALL env vars from the web service (`REDIS_*`, `DATABASE_URL`, `DIRECT_URL`, `S3_*`, `APP_ORIGIN`, `SMTP_API_KEY`, JWT secrets, …) |
+| Setting                    | Value                                                                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime                    | Node                                                                                                                                           |
+| Build command              | `corepack enable && pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm --filter "@celebs/*" build && pnpm --filter api build`      |
+| Pre-deploy / start command | `node apps/api/dist/apps/api/src/worker-main.js` _(verify emitted path against your Dockerfile's build output; adjust if dist layout differs)_ |
+| Env vars                   | Copy ALL env vars from the web service (`REDIS_*`, `DATABASE_URL`, `DIRECT_URL`, `S3_*`, `APP_ORIGIN`, `SMTP_API_KEY`, JWT secrets, …)         |
 
 > Note: Render Background Workers historically require the native runtime
 > (Docker runtime is web-service-only). If your build pipeline depends on
@@ -49,6 +49,7 @@ service (otherwise leave blank). This is functionally a worker; it just
 bills as a web service.
 
 Either way, verify after first deploy:
+
 ```
 Logs contain: "BullMQ Worker is active and listening to queues:
 asset-processing, mail-delivery, session-maintenance"
@@ -58,14 +59,14 @@ asset-processing, mail-delivery, session-maintenance"
 
 ## 2. Verify environment variables on the web service
 
-| Var | Required change? | Notes |
-|---|---|---|
-| `APP_ORIGIN` | **Verify value per environment** | Vendor/product emails now build links from it (`buildWebUrl`). Wrong/missing value → links point to `http://localhost:5173`. Must be the storefront/admin origin for that environment (e.g. `https://celebs-admin.onrender.com`). |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Already present ✅ | Now also used by new storefront caches (`TtlCache`) and mail queue. Same Upstash instance is fine. |
-| `SMTP_API_KEY` | Optional | Brevo HTTP transport when set; SMTP otherwise. Queued either way. |
-| `S3_*`, `AWS_*` | Already present ✅ | Unchanged; reaper uses them too. |
-| `DATABASE_URL` / `DIRECT_URL` | Already present ✅ | Schema already synced earlier this cycle (`PlatformSetting` tables). |
-| New env vars introduced by code changes | **None** | Caching/queues reuse `REDIS_*`; nothing else was added. |
+| Var                                            | Required change?                 | Notes                                                                                                                                                                                                                             |
+| ---------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_ORIGIN`                                   | **Verify value per environment** | Vendor/product emails now build links from it (`buildWebUrl`). Wrong/missing value → links point to `http://localhost:5173`. Must be the storefront/admin origin for that environment (e.g. `https://celebs-admin.onrender.com`). |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Already present ✅               | Now also used by new storefront caches (`TtlCache`) and mail queue. Same Upstash instance is fine.                                                                                                                                |
+| `SMTP_API_KEY`                                 | Optional                         | Brevo HTTP transport when set; SMTP otherwise. Queued either way.                                                                                                                                                                 |
+| `S3_*`, `AWS_*`                                | Already present ✅               | Unchanged; reaper uses them too.                                                                                                                                                                                                  |
+| `DATABASE_URL` / `DIRECT_URL`                  | Already present ✅               | Schema already synced earlier this cycle (`PlatformSetting` tables).                                                                                                                                                              |
+| New env vars introduced by code changes        | **None**                         | Caching/queues reuse `REDIS_*`; nothing else was added.                                                                                                                                                                           |
 
 ---
 

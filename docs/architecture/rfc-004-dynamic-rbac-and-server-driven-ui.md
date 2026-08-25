@@ -2,7 +2,7 @@
 
 **Status**: Proposed / Approved  
 **Authors**: Celebs Core Architecture Team  
-**Scope**: `apps/api`, `apps/web-admin`, `apps/mobile`, `packages/rbac`, `packages/shared-types`, Database  
+**Scope**: `apps/api`, `apps/web-admin`, `apps/mobile`, `packages/rbac`, `packages/shared-types`, Database
 
 ---
 
@@ -93,7 +93,11 @@ export function getUserPermissions(
 
   const defaultRolePermissions = ROLE_PERMISSIONS[role as Role] ?? [];
 
-  if (userCustomPermissions && Array.isArray(userCustomPermissions) && userCustomPermissions.length > 0) {
+  if (
+    userCustomPermissions &&
+    Array.isArray(userCustomPermissions) &&
+    userCustomPermissions.length > 0
+  ) {
     const combined = new Set<string>([...defaultRolePermissions, ...userCustomPermissions]);
     return Array.from(combined) as Permission[];
   }
@@ -115,7 +119,7 @@ export function hasPermissionAccess(
   role: Role | string,
   userCustomPermissions: string[] | undefined,
   required: PermissionRequirement | undefined,
-  mode: PermissionMode = 'ANY'
+  mode: PermissionMode = 'ANY',
 ): boolean {
   if (!required) return true;
   if (role === 'SUPERADMIN') return true;
@@ -144,7 +148,7 @@ import { hasPermissionAccess, type PermissionRequirement, type PermissionMode } 
 
 export function usePermission(
   required?: PermissionRequirement,
-  mode: PermissionMode = 'ANY'
+  mode: PermissionMode = 'ANY',
 ): boolean {
   const { user } = useAuthContext();
   if (!user) return false;
@@ -274,6 +278,7 @@ export default RoleGuard;
 ### 3.1 Declarative Route Manifest & Dynamic Navigation Tree
 
 #### The Anti-Pattern: Hardcoded Switch / If-Else Navigation
+
 Writing imperative `if (hasPerm(Permission.XYZ)) list.push(...)` in `menu-data.ts` or sequential fallback branches in a landing resolver violates OCP and causes out-of-sync navigation bugs.
 
 #### The Enterprise Pattern: Manifest-Driven Navigation & Landing Resolver
@@ -304,6 +309,7 @@ export type AppRouteObject = RouteObject & {
 ```
 
 #### Pure, Zero-Hardcoded Landing Resolver
+
 ```typescript
 // apps/web-admin/src/routes/landing-resolver.ts
 import { hasPermissionAccess } from '@celebs/rbac';
@@ -318,7 +324,7 @@ interface FlatNavCandidate {
 export function resolveDefaultLandingRoute(
   routes: AppRouteObject[],
   user: UserData,
-  basePath = ''
+  basePath = '',
 ): string {
   const candidates: FlatNavCandidate[] = [];
 
@@ -332,7 +338,7 @@ export function resolveDefaultLandingRoute(
         user.role,
         user.permissions,
         meta?.permissions,
-        meta?.permissionMode
+        meta?.permissionMode,
       );
 
       if (!isAllowed) continue;
@@ -394,6 +400,7 @@ const columns = useMemo<ColumnDef<ProductData>[]>(() => {
 ### 3.3 Dynamic Forms: Privileged Field Gating & Zod Desynchronization
 
 When privileged fields (e.g. `isApproved`, `commissionRate`, `directPublish`) are gated by `<Can>` in React Hook Form:
+
 1. Privileged fields in base schemas must be `.optional()` in `@celebs/shared-types`.
 2. Do not enable `shouldUnregister: true` globally, as it wipes existing server-persisted data on submit for fields that the current user cannot see.
 
@@ -402,6 +409,7 @@ When privileged fields (e.g. `isApproved`, `commissionRate`, `directPublish`) ar
 ### 3.4 1P Superadmin Context Switching & Target Vendor Selector
 
 Platform Administrators (Superadmin/Admin) have platform-wide permissions but lack an implicit `vendorId`.
+
 - **Form Rule**: On vendor-scoped creation forms (e.g. `AddProductPage`, `CreateComboPage`), if `user.role === 'SUPERADMIN' || user.role === 'ADMIN'`, the form must render a mandatory searchable **"Target Vendor Selector"** before allowing submission.
 
 ---
@@ -409,6 +417,7 @@ Platform Administrators (Superadmin/Admin) have platform-wide permissions but la
 ### 3.5 Mid-Session Revocation, 403 Handling & Deterministic Rollback
 
 When a store master revokes permissions from an active staff user:
+
 1. **Axios 403 Interception**: If an API request returns `403 FORBIDDEN` with `PERMISSION_DENIED`, trigger a session refresh (`authContext.refetch()`).
 2. **TanStack Query Deterministic Rollback**: All optimistic mutations must implement `onError` to restore the previous snapshot from context.
 
@@ -457,7 +466,9 @@ export function useDeleteProduct() {
 ### 3.6 403 Forbidden UX Architecture: Context Preservation, Shell Retention & Recovery Flows
 
 #### The Problem: Dead-End Redirection & UX Traps
+
 Redirecting unauthorized users to a bare `/403` string or generic error view introduces severe usability issues:
+
 1. **Zero Diagnostic Context**: Users (especially Staff with partial permissions) cannot determine which permission was missing or why they were blocked.
 2. **Dead-End Experience**: Users are stranded with no recovery actions (no "Go Back", "Back to Dashboard", or "Request Access" buttons).
 3. **Shell Loss Disorientation**: If rendered outside `AdminLayout`, the user loses the navigation sidebar and top header, breaking the flow of work.
@@ -754,7 +765,10 @@ export class WidgetPreviewBoundary extends Component<Props, State> {
       return (
         <div className="p-3 my-2 border border-destructive/40 bg-destructive/10 rounded-md text-xs text-destructive flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>Error previewing widget <strong>{this.props.widgetType}</strong>: {this.state.error?.message}</span>
+          <span>
+            Error previewing widget <strong>{this.props.widgetType}</strong>:{' '}
+            {this.state.error?.message}
+          </span>
         </div>
       );
     }
@@ -787,7 +801,7 @@ model PlatformSetting {
   label        String      // "Enable Brand LOA Gating"
   description  String?     // Human-readable explanation for Superadmins
   isPublic     Boolean     @default(false) @map("is_public") // If true, accessible by Mobile App & Web Storefront
-  
+
   updatedBy    String?     @map("updated_by") // Admin user ID for audit logging
   updatedAt    DateTime    @updatedAt
   createdAt    DateTime    @default(now())
@@ -802,7 +816,7 @@ model PlatformSettingAudit {
   id           String          @id @default(uuid())
   settingKey   String          @map("setting_key")
   setting      PlatformSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
-  
+
   oldValue     String?         @map("old_value")
   newValue     String          @map("new_value")
   changedBy    String          @map("changed_by")
@@ -840,17 +854,17 @@ model PlatformSettingAudit {
 
 ### 6.1 Layer 1: Unit Tests (`@celebs/rbac` & Core Primitives)
 
-| Test ID | Unit Under Test | Scenario | Expected Behavior |
-| :--- | :--- | :--- | :--- |
-| `UT-RBAC-001` | `can()` | `role = SUPERADMIN`, arbitrary permission | Always returns `true`. |
-| `UT-RBAC-002` | `can()` | `role = VENDOR`, `Permission.PRODUCT_CREATE` | Returns `true` (default role capability). |
-| `UT-RBAC-003` | `can()` | `role = VENDOR`, `Permission.PLATFORM_MANAGE` | Returns `false` (1P restricted). |
-| `UT-RBAC-004` | `hasPermissionAccess()` | `role = STAFF`, `permissions = [PRODUCT_VIEW, ORDER_VIEW]`, `mode = 'ANY'` | Returns `true` if staff has either permission. |
-| `UT-RBAC-005` | `hasPermissionAccess()` | `role = STAFF`, `permissions = [PRODUCT_VIEW, PRODUCT_PUBLISH]`, `mode = 'ALL'` | Returns `false` if staff only has `PRODUCT_VIEW`. |
-| `UT-HOOK-001` | `usePermission` | Unauthenticated user (`user = null`) | Returns `false` gracefully without exceptions. |
-| `UT-COMP-001` | `<Can />` | Unauthorized user with `mode = "disable"` | Clones children with `disabled`, `aria-disabled="true"`, and tooltip wrapper. |
-| `UT-GUARD-001` | `<RoleGuard />` | User lacks permission | Redirects to `fallbackPath` (`/403`) with `location.state` preserving `from`, `requiredPermissions`, and `userRole`. |
-| `UT-ERR-001` | `<ForbiddenError />` | Rendered with navigation `state` | Displays attempted path, required permission code, "Go Back", and "Back to Dashboard" recovery routes. |
+| Test ID        | Unit Under Test         | Scenario                                                                        | Expected Behavior                                                                                                    |
+| :------------- | :---------------------- | :------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------- |
+| `UT-RBAC-001`  | `can()`                 | `role = SUPERADMIN`, arbitrary permission                                       | Always returns `true`.                                                                                               |
+| `UT-RBAC-002`  | `can()`                 | `role = VENDOR`, `Permission.PRODUCT_CREATE`                                    | Returns `true` (default role capability).                                                                            |
+| `UT-RBAC-003`  | `can()`                 | `role = VENDOR`, `Permission.PLATFORM_MANAGE`                                   | Returns `false` (1P restricted).                                                                                     |
+| `UT-RBAC-004`  | `hasPermissionAccess()` | `role = STAFF`, `permissions = [PRODUCT_VIEW, ORDER_VIEW]`, `mode = 'ANY'`      | Returns `true` if staff has either permission.                                                                       |
+| `UT-RBAC-005`  | `hasPermissionAccess()` | `role = STAFF`, `permissions = [PRODUCT_VIEW, PRODUCT_PUBLISH]`, `mode = 'ALL'` | Returns `false` if staff only has `PRODUCT_VIEW`.                                                                    |
+| `UT-HOOK-001`  | `usePermission`         | Unauthenticated user (`user = null`)                                            | Returns `false` gracefully without exceptions.                                                                       |
+| `UT-COMP-001`  | `<Can />`               | Unauthorized user with `mode = "disable"`                                       | Clones children with `disabled`, `aria-disabled="true"`, and tooltip wrapper.                                        |
+| `UT-GUARD-001` | `<RoleGuard />`         | User lacks permission                                                           | Redirects to `fallbackPath` (`/403`) with `location.state` preserving `from`, `requiredPermissions`, and `userRole`. |
+| `UT-ERR-001`   | `<ForbiddenError />`    | Rendered with navigation `state`                                                | Displays attempted path, required permission code, "Go Back", and "Back to Dashboard" recovery routes.               |
 
 ---
 
@@ -901,14 +915,14 @@ describe('RoleGuard Integration Tests', () => {
             <Route path="/login" element={<div data-testid="login-page">Login Page</div>} />
           </Routes>
         </MemoryRouter>
-      </AuthContext.Provider>
+      </AuthContext.Provider>,
     );
   };
 
   it('renders protected content when Staff has the required permission', () => {
     renderWithAuth(
       { id: 'staff-1', role: 'STAFF', permissions: [Permission.PRODUCT_VIEW] },
-      Permission.PRODUCT_VIEW
+      Permission.PRODUCT_VIEW,
     );
     expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
@@ -916,7 +930,7 @@ describe('RoleGuard Integration Tests', () => {
   it('redirects Staff to /403 with context state when lacking required permission', () => {
     renderWithAuth(
       { id: 'staff-1', role: 'STAFF', permissions: [Permission.ORDER_VIEW] },
-      Permission.PRODUCT_VIEW
+      Permission.PRODUCT_VIEW,
     );
     expect(screen.getByTestId('forbidden-page')).toBeInTheDocument();
     expect(screen.getByTestId('state-from')).toHaveTextContent('/protected');
@@ -930,30 +944,30 @@ describe('RoleGuard Integration Tests', () => {
 
 ### 6.3 Layer 3: Dynamic Form & SDUI Widget Schema Contract Tests
 
-| Test ID | Component / Feature | Test Scenario | Expected Outcome |
-| :--- | :--- | :--- | :--- |
-| `SDUI-VAL-001` | Widget Schema | `BANNER_CAROUSEL` with valid images and links | Zod validation passes; preview renders successfully. |
-| `SDUI-VAL-002` | Widget Schema | `CAMPAIGN_COUNTDOWN` with invalid ISO date | Zod validation fails; form shows field error; preview does not crash. |
-| `SDUI-ERR-001` | Widget Error Boundary | Preview component throws runtime exception | Error boundary catches error; renders fallback card with error details. |
-| `FORM-1P-001` | Superadmin Product Form | Superadmin opens `AddProductPage` | Vendor Selector is displayed and required before submission. |
+| Test ID        | Component / Feature     | Test Scenario                                 | Expected Outcome                                                        |
+| :------------- | :---------------------- | :-------------------------------------------- | :---------------------------------------------------------------------- |
+| `SDUI-VAL-001` | Widget Schema           | `BANNER_CAROUSEL` with valid images and links | Zod validation passes; preview renders successfully.                    |
+| `SDUI-VAL-002` | Widget Schema           | `CAMPAIGN_COUNTDOWN` with invalid ISO date    | Zod validation fails; form shows field error; preview does not crash.   |
+| `SDUI-ERR-001` | Widget Error Boundary   | Preview component throws runtime exception    | Error boundary catches error; renders fallback card with error details. |
+| `FORM-1P-001`  | Superadmin Product Form | Superadmin opens `AddProductPage`             | Vendor Selector is displayed and required before submission.            |
 
 ---
 
 ### 6.4 Layer 4: RBAC Cross-Role Permutation Matrix
 
 | Capability / Permission | SUPERADMIN | ADMIN | VENDOR (Owner) | STAFF (Catalog Mgr) | STAFF (Order Ops) | STAFF (Finance) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `product:view` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `product:create` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `product:edit` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `product:delete` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `product:publish` | ✅ | ✅ | ✅ | ❌ (Review only)| ❌ | ❌ |
-| `order:view` | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `order:manage` | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `finance:view` | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
-| `finance:manage` | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| `staff:manage` | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| `platform:manage` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| :---------------------- | :--------: | :---: | :------------: | :-----------------: | :---------------: | :-------------: |
+| `product:view`          |     ✅     |  ✅   |       ✅       |         ✅          |        ❌         |       ❌        |
+| `product:create`        |     ✅     |  ✅   |       ✅       |         ✅          |        ❌         |       ❌        |
+| `product:edit`          |     ✅     |  ✅   |       ✅       |         ✅          |        ❌         |       ❌        |
+| `product:delete`        |     ✅     |  ✅   |       ✅       |         ❌          |        ❌         |       ❌        |
+| `product:publish`       |     ✅     |  ✅   |       ✅       |  ❌ (Review only)   |        ❌         |       ❌        |
+| `order:view`            |     ✅     |  ✅   |       ✅       |         ❌          |        ✅         |       ❌        |
+| `order:manage`          |     ✅     |  ✅   |       ✅       |         ❌          |        ✅         |       ❌        |
+| `finance:view`          |     ✅     |  ✅   |       ✅       |         ❌          |        ❌         |       ✅        |
+| `finance:manage`        |     ✅     |  ❌   |       ✅       |         ❌          |        ❌         |       ❌        |
+| `staff:manage`          |     ✅     |  ❌   |       ✅       |         ❌          |        ❌         |       ❌        |
+| `platform:manage`       |     ✅     |  ❌   |       ❌       |         ❌          |        ❌         |       ❌        |
 
 ---
 
@@ -1025,11 +1039,11 @@ describe('RBAC Concurrency & Revocation Rollback', () => {
 
 ## 7. Summary of Architectural Benefits
 
-| Dimension | Before (Hardcoded / Static) | After (Dynamic RBAC + SDUI + Manifest Routing) |
-| :--- | :--- | :--- |
-| **Festival Campaign Toggles** | Requires App Store binary build (2–4 days delay) | **Instant Real-Time Toggle** in Superadmin UI (0s delay) |
-| **Adding New Feature Routes** | Manually edit 4+ files (`menu-data.ts`, `routes.tsx`, `resolvers`) | **Declare once in feature `routes.tsx`** via typed `handle` metadata |
-| **Sub-Account Staff UX** | 403 deadlocks on login; buttons vanish mysteriously | **Dynamic Landing Resolver + Accessible `<Can mode="disable">` tooltips** |
-| **Table Layout Stability** | Empty table columns or layout thrashing | **Pruned column definitions inside `useMemo` before table instantiation** |
-| **Mid-Session Revocation** | Broken optimistic UI state and unhandled exceptions | **Deterministic TanStack Query rollbacks and automated 403 session sync** |
-| **SDUI Reliability** | Corrupted widget JSON crashes admin interface | **Widget-level Error Boundaries & Zod schema validation** |
+| Dimension                     | Before (Hardcoded / Static)                                        | After (Dynamic RBAC + SDUI + Manifest Routing)                            |
+| :---------------------------- | :----------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| **Festival Campaign Toggles** | Requires App Store binary build (2–4 days delay)                   | **Instant Real-Time Toggle** in Superadmin UI (0s delay)                  |
+| **Adding New Feature Routes** | Manually edit 4+ files (`menu-data.ts`, `routes.tsx`, `resolvers`) | **Declare once in feature `routes.tsx`** via typed `handle` metadata      |
+| **Sub-Account Staff UX**      | 403 deadlocks on login; buttons vanish mysteriously                | **Dynamic Landing Resolver + Accessible `<Can mode="disable">` tooltips** |
+| **Table Layout Stability**    | Empty table columns or layout thrashing                            | **Pruned column definitions inside `useMemo` before table instantiation** |
+| **Mid-Session Revocation**    | Broken optimistic UI state and unhandled exceptions                | **Deterministic TanStack Query rollbacks and automated 403 session sync** |
+| **SDUI Reliability**          | Corrupted widget JSON crashes admin interface                      | **Widget-level Error Boundaries & Zod schema validation**                 |

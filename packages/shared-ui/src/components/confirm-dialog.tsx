@@ -60,10 +60,7 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="w-[calc(100vw-2rem)] sm:max-w-md"
-        style={{ maxWidth: '28rem' }}
-      >
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md" style={{ maxWidth: '28rem' }}>
         <DialogHeader
           className="min-w-0 space-y-0"
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}

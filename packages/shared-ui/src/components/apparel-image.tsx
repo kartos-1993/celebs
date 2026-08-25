@@ -66,9 +66,7 @@ export const ApparelImage: React.FC<ApparelImageProps> = ({
   }
 
   const optimizedSrc = getOptimizedImageUrl(cleanSrc, { preset });
-  const srcSet = sizes
-    ? buildWidthSrcSet(cleanSrc)
-    : buildDprSrcSet(cleanSrc, { preset });
+  const srcSet = sizes ? buildWidthSrcSet(cleanSrc) : buildDprSrcSet(cleanSrc, { preset });
 
   return (
     <div
