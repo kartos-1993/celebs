@@ -1,0 +1,19 @@
+# Normalize line endings — Prettier enforces LF, so git should too.
+# Prevents phantom "modified" files on Windows (CRLF churn).
+* text=auto eol=lf
+
+# Binary assets — never touch
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.keystore binary
+*.jks binary
+*.db binary
+*.sqlite binary

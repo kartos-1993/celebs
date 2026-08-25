@@ -1,7 +1,7 @@
 {
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
     "@celebs/eslint-config": "workspace:*",
+    "@eslint/js": "^9.25.0",
     "@faker-js/faker": "^9.5.0",
     "@swc-node/register": "~1.9.1",
     "@swc/core": "~1.5.7",
@@ -41,8 +41,10 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^15.15.0",
+    "husky": "^9.1.7",
     "jiti": "2.4.2",
     "jsdom": "^30.0.1",
+    "lint-staged": "^17.3.0",
     "mailhog": "^4.16.0",
     "msw": "^2.7.0",
     "nodemon": "^3.1.10",
@@ -137,6 +139,7 @@
     "zod": "^3.24.3"
   },
   "scripts": {
+    "prepare": "husky",
     "//_DEVELOPMENT": "=== Local Development ===",
     "dev": "turbo run dev --ui=stream",
     "dev:api": "pnpm --filter api dev",
@@ -175,6 +178,15 @@
     "format": "prettier --write .",
     "format:api": "pnpm --filter api format",
     "format:web": "pnpm --filter web-admin format"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix --no-warn-ignored"
+    ],
+    "*.{json,yml,yaml,md,css}": [
+      "prettier --write"
+    ]
   },
   "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184",
   "workspaces": [
