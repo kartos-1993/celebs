@@ -11,7 +11,10 @@ projects:
             repo: https://github.com/kartos-1993/celebs
             branch: staging
             plan: free
+            healthCheckPath: /health
             envVars:
+              - key: LOG_LEVEL
+                value: info
               - key: BASE_PATH
                 value: /api/v1
               - key: APP_ORIGIN
