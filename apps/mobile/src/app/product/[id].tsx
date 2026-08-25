@@ -42,10 +42,7 @@ import { ProductVariantSelector } from '@/features/products/components/product-v
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
-import {
-  useWishlistActions,
-  useWishlistStatus,
-} from '@/features/wishlist/hooks/use-wishlist';
+import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

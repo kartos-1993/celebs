@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Heart } from 'lucide-react-native';
@@ -16,10 +10,7 @@ import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { ProductCard } from '@/features/products/components/product-card';
 import type { Product } from '@/features/products/hooks/use-products';
-import {
-  useWishlist,
-  type WishlistEntryView,
-} from '@/features/wishlist/hooks/use-wishlist';
+import { useWishlist, type WishlistEntryView } from '@/features/wishlist/hooks/use-wishlist';
 import { styles } from '@/features/wishlist/styles/wishlist.styles';
 
 function toProduct(entry: WishlistEntryView): Product {
@@ -28,9 +19,7 @@ function toProduct(entry: WishlistEntryView): Product {
     name: entry.product.name || 'Product',
     ...(entry.product.brand ? { brand: entry.product.brand } : {}),
     price: entry.product.price,
-    ...(entry.product.discountedPrice
-      ? { discountedPrice: entry.product.discountedPrice }
-      : {}),
+    ...(entry.product.discountedPrice ? { discountedPrice: entry.product.discountedPrice } : {}),
     mainImages: entry.product.mainImages,
     status: 'published',
   };

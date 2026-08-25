@@ -4,10 +4,7 @@ import { View } from 'react-native';
 import { styles } from './tracking-timeline.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import type {
-  OrderStatus,
-  OrderTrackingEventView,
-} from '../utils/order-status';
+import type { OrderStatus, OrderTrackingEventView } from '../utils/order-status';
 import { formatDateTime, getOrderStatusMeta } from '../utils/order-status';
 
 interface TrackingTimelineProps {
@@ -53,10 +50,7 @@ export function TrackingTimeline({ events, orderStatus }: TrackingTimelineProps)
             {/* Content */}
             <View style={[styles.content, !isLast && styles.contentSpaced]}>
               <ThemedText
-                style={[
-                  styles.title,
-                  isFirst && !isTerminal ? styles.titleActive : undefined,
-                ]}
+                style={[styles.title, isFirst && !isTerminal ? styles.titleActive : undefined]}
               >
                 {event.title}
               </ThemedText>
@@ -66,9 +60,7 @@ export function TrackingTimeline({ events, orderStatus }: TrackingTimelineProps)
               <ThemedText style={styles.timestamp}>
                 {formatDateTime(event.timestamp)}
                 {event.location ? ` · ${event.location}` : ''}
-                {isFirst && !isTerminal && meta.tone === 'active'
-                  ? ' · Latest update'
-                  : ''}
+                {isFirst && !isTerminal && meta.tone === 'active' ? ' · Latest update' : ''}
               </ThemedText>
             </View>
           </View>

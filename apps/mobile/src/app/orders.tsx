@@ -17,7 +17,11 @@ import { Palette } from '@/constants/theme';
 import { OrderItemRow } from '@/features/orders/components/order-item-row';
 import { useMyOrders } from '@/features/orders/hooks/use-orders';
 import type { OrderView } from '@/features/orders/utils/order-status';
-import { formatDate, getOrderStatusMeta, isActiveOrder } from '@/features/orders/utils/order-status';
+import {
+  formatDate,
+  getOrderStatusMeta,
+  isActiveOrder,
+} from '@/features/orders/utils/order-status';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { styles } from '@/features/orders/styles/orders.styles';
 
@@ -45,11 +49,7 @@ function OrderCard({ order }: { order: OrderView }) {
 
       <View>
         {order.items.map((item, index) => (
-          <OrderItemRow
-            key={item.id}
-            item={item}
-            isLast={index === order.items.length - 1}
-          />
+          <OrderItemRow key={item.id} item={item} isLast={index === order.items.length - 1} />
         ))}
       </View>
 
@@ -82,7 +82,9 @@ function OrderCard({ order }: { order: OrderView }) {
           {trackable ? (
             <TouchableOpacity
               style={styles.trackBtn}
-              onPress={() => router.push({ pathname: '/order-detail', params: { orderId: order.id } })}
+              onPress={() =>
+                router.push({ pathname: '/order-detail', params: { orderId: order.id } })
+              }
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={`Track order ${order.orderNumber}`}
@@ -101,14 +103,7 @@ export default function MyOrdersScreen() {
   const insets = useSafeAreaInsets();
   const { isLoggedIn } = useAuth();
 
-  const {
-    orders,
-    loading,
-    loadingMore,
-    error,
-    refresh,
-    loadMore,
-  } = useMyOrders(isLoggedIn);
+  const { orders, loading, loadingMore, error, refresh, loadMore } = useMyOrders(isLoggedIn);
 
   const renderOrder = ({ item }: { item: OrderView }) => (
     <>

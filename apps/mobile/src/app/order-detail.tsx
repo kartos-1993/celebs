@@ -45,9 +45,7 @@ function Band() {
 function AddressBlock({ order }: { order: OrderView }) {
   if (!order.address) return null;
   const address = order.address;
-  const line2 = [address.cityArea, address.district, address.province]
-    .filter(Boolean)
-    .join(', ');
+  const line2 = [address.cityArea, address.district, address.province].filter(Boolean).join(', ');
 
   return (
     <Section>
@@ -194,10 +192,7 @@ export default function OrderDetailScreen() {
         {/* Tracking timeline */}
         <Section>
           <ThemedText style={styles.sectionTitle}>Delivery Timeline</ThemedText>
-          <TrackingTimeline
-            events={order.trackingEvents ?? []}
-            orderStatus={order.status}
-          />
+          <TrackingTimeline events={order.trackingEvents ?? []} orderStatus={order.status} />
 
           {(order.courierName || order.trackingNumber) && (
             <View style={styles.courierCard}>
@@ -206,22 +201,22 @@ export default function OrderDetailScreen() {
                 <ThemedText style={styles.courierName}>
                   {order.courierName || order.courierProvider || 'Courier'}
                 </ThemedText>
-              {!!order.trackingNumber && (
-                <ThemedText style={styles.courierWaybill}>
-                  Waybill {order.trackingNumber}
-                </ThemedText>
+                {!!order.trackingNumber && (
+                  <ThemedText style={styles.courierWaybill}>
+                    Waybill {order.trackingNumber}
+                  </ThemedText>
+                )}
+              </View>
+              {!!order.trackingUrl && (
+                <TouchableOpacity
+                  style={styles.iconAction}
+                  onPress={handleOpenCourier}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open courier tracking page"
+                >
+                  <ExternalLink size={15} color={Palette.gray700} />
+                </TouchableOpacity>
               )}
-            </View>
-            {!!order.trackingUrl && (
-              <TouchableOpacity
-                style={styles.iconAction}
-                onPress={handleOpenCourier}
-                accessibilityRole="button"
-                accessibilityLabel="Open courier tracking page"
-              >
-                <ExternalLink size={15} color={Palette.gray700} />
-              </TouchableOpacity>
-            )}
             </View>
           )}
         </Section>
@@ -233,11 +228,7 @@ export default function OrderDetailScreen() {
           <ThemedText style={styles.sectionTitle}>Items</ThemedText>
           <View>
             {order.items.map((item, index) => (
-              <OrderItemRow
-                key={item.id}
-                item={item}
-                isLast={index === order.items.length - 1}
-              />
+              <OrderItemRow key={item.id} item={item} isLast={index === order.items.length - 1} />
             ))}
           </View>
 

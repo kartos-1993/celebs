@@ -16,9 +16,7 @@ interface OrderItemRowProps {
 }
 
 export function OrderItemRow({ item, imageUrl, isLast }: OrderItemRowProps) {
-  const variantLine = [item.colorVariantName, `Size ${item.size}`]
-    .filter(Boolean)
-    .join(' · ');
+  const variantLine = [item.colorVariantName, `Size ${item.size}`].filter(Boolean).join(' · ');
 
   return (
     <View style={[styles.row, !isLast && styles.rowDivided]}>

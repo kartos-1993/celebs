@@ -8,12 +8,7 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'RETURNED';
 
-export type OrderItemStatus =
-  | 'PENDING'
-  | 'PACKED'
-  | 'HANDED_OVER'
-  | 'DELIVERED'
-  | 'CANCELLED';
+export type OrderItemStatus = 'PENDING' | 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED';
 
 export interface OrderItemView {
   id: string;
@@ -109,20 +104,7 @@ export function isActiveOrder(status: OrderStatus): boolean {
   );
 }
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function formatDate(iso: string): string {
   const date = new Date(iso);

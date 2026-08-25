@@ -69,8 +69,7 @@ app.use(
   pinoHttp({
     genReqId(req, res) {
       const incoming = req.headers['x-request-id'];
-      const id =
-        typeof incoming === 'string' && incoming.trim() !== '' ? incoming : randomUUID();
+      const id = typeof incoming === 'string' && incoming.trim() !== '' ? incoming : randomUUID();
       res.setHeader('X-Request-Id', id);
       return id;
     },

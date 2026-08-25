@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
 import {
   ChevronRight,
@@ -89,7 +96,10 @@ export default function MeScreen() {
   if (isLoggedIn && user) {
     return (
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* User Info Header */}
           <View style={styles.profileHeader}>
             <View style={styles.avatarBadge}>

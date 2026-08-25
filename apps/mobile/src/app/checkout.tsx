@@ -11,7 +11,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, ChevronLeft, CreditCard, Lock, MapPin, ShieldCheck } from 'lucide-react-native';
+import {
+  AlertCircle,
+  ChevronLeft,
+  CreditCard,
+  Lock,
+  MapPin,
+  ShieldCheck,
+} from 'lucide-react-native';
 
 import { apiClient } from '@/api/client';
 import { ThemedText } from '@/components/themed-text';
@@ -47,9 +54,11 @@ export default function CheckoutScreen() {
   const [placingOrder, setPlacingOrder] = useState<boolean>(false);
 
   // --- Saved addresses (Daraz-style address book) ---
-  const { addresses, loading: addressesLoading, refetch: refetchAddresses } = useAddresses(
-    isLoggedIn,
-  );
+  const {
+    addresses,
+    loading: addressesLoading,
+    refetch: refetchAddresses,
+  } = useAddresses(isLoggedIn);
   const createAddress = useCreateAddress();
   const updateAddress = useUpdateAddress();
   const deleteAddress = useDeleteAddress();
@@ -110,8 +119,7 @@ export default function CheckoutScreen() {
             onError: (err: Error) => {
               Alert.alert(
                 'Cannot Delete Address',
-                err.message ||
-                  'This address may be linked to past orders. Try editing it instead.',
+                err.message || 'This address may be linked to past orders. Try editing it instead.',
               );
             },
           });
@@ -285,9 +293,7 @@ export default function CheckoutScreen() {
   ];
 
   const deliveryCaption =
-    shippingFee === 0
-      ? 'Free delivery applied'
-      : `Incl. Rs. ${formatPrice(shippingFee)} delivery`;
+    shippingFee === 0 ? 'Free delivery applied' : `Incl. Rs. ${formatPrice(shippingFee)} delivery`;
 
   return (
     <ThemedView style={styles.container}>
@@ -377,8 +383,7 @@ export default function CheckoutScreen() {
 
           <View style={styles.paymentList}>
             {paymentRows.map((row, index) => {
-              const isSelected =
-                row.key !== 'WALLET' && paymentMethod === row.key && !row.disabled;
+              const isSelected = row.key !== 'WALLET' && paymentMethod === row.key && !row.disabled;
               const isLast = index === paymentRows.length - 1;
 
               return (
@@ -402,9 +407,7 @@ export default function CheckoutScreen() {
                   accessibilityLabel={row.name}
                   accessibilityState={{ selected: isSelected, disabled: !!row.disabled }}
                 >
-                  <View
-                    style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}
-                  >
+                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
                     {isSelected && <View style={styles.radioInner} />}
                   </View>
                   <View style={styles.paymentInfo}>

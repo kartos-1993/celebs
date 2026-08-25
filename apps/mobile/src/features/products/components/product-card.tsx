@@ -25,10 +25,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
-import {
-  useWishlistActions,
-  useWishlistStatus,
-} from '@/features/wishlist/hooks/use-wishlist';
+import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Must match product-grid.styles container paddingHorizontal (Spacing.md)
@@ -311,9 +308,7 @@ export function ProductCard({
           onPress={handleToggleWishlist}
           accessible={true}
           accessibilityRole="button"
-          accessibilityLabel={
-            isFavorite ? 'Remove from wishlist' : 'Add to wishlist'
-          }
+          accessibilityLabel={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           <Heart
             size={14}

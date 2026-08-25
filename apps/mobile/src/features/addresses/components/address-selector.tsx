@@ -16,9 +16,7 @@ interface AddressSelectorProps {
 }
 
 export function formatAddressLine(address: SavedAddress): string {
-  return [address.streetAddress, address.cityArea, address.district]
-    .filter(Boolean)
-    .join(', ');
+  return [address.streetAddress, address.cityArea, address.district].filter(Boolean).join(', ');
 }
 
 export function AddressSelector({
