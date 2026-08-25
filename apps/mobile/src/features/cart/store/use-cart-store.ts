@@ -27,6 +27,8 @@ interface CartState extends SelectionSlice {
   toggleItemSelection: (itemId: string) => void;
   setItemsSelection: (itemIds: string[], selected: boolean) => void;
   toggleAllSelection: () => void;
+  mergeGuestCartOnLogin: () => Promise<void>;
+  startFreshGuestSession: () => Promise<void>;
 }
 
 const syncSelection = (prev: SelectionSlice, items: CartItemHydrated[]): SelectionSlice => {
@@ -202,4 +204,49 @@ export const useCartStore = create<CartState>((set, get) => ({
         items.length > 0 && items.every((item) => state.selectedItemIds.includes(item.id));
       return { selectedItemIds: allSelected ? [] : items.map((item) => item.id) };
     }),
+
+  // Called right after a successful login: pushes guest cart items into the
+  // user's server-side cart (POST /cart/sync), then rotates the guest identity
+  // and loads the authenticated user cart. Server ignores x-session-id once a
+  // Bearer token is present, so the merged cart resolves by userId.
+  mergeGuestCartOnLogin: async () => {
+    const guestItems = (get().cart?.items || []).map((item) => ({
+      productId: item.productId,
+      colorVariantName: item.colorVariantName,
+      size: item.size,
+      quantity: item.quantity,
+    }));
+
+    await get().startFreshGuestSession();
+
+    if (guestItems.length === 0) {
+      await get().fetchCart();
+      return;
+    }
+
+    try {
+      const mergedCart = await CartApiService.syncCart({ items: guestItems });
+      set((state) => ({
+        ...syncSelection(state, mergedCart.items),
+        cart: mergedCart,
+        loading: false,
+        error: null,
+      }));
+    } catch (err: unknown) {
+      // Sync is best-effort — out-of-stock lines are skipped server-side;
+      // still surface the user's authoritative server cart afterwards.
+      console.warn('Guest cart sync after login failed:', err);
+      await get().fetchCart();
+    }
+  },
+
+  startFreshGuestSession: async () => {
+    try {
+      await SecureStore.deleteItemAsync(GUEST_SESSION_KEY);
+    } catch {
+      // Storage failure is non-fatal — initSession mints a fresh id regardless
+    }
+    set({ cart: null, selectedItemIds: [], selectionInitialized: false, error: null });
+    await get().initSession();
+  },
 }));

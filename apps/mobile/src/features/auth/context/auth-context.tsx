@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 import { apiClient } from '@/api/client';
+import { useCartStore } from '@/features/cart/store/use-cart-store';
 
 export interface UserProfile {
   id: string;
@@ -68,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiClient.post('/auth/google', data, { skipAuth: true });
       const { user: userProfile, accessToken } = response.data.data;
       await saveSession(accessToken, userProfile);
+      await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
       setIsLoading(false);
     }
@@ -80,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiClient.post('/auth/login', { email, password }, { skipAuth: true });
       const { user: userProfile, accessToken } = response.data.data;
       await saveSession(accessToken, userProfile);
+      await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await SecureStore.deleteItemAsync(USER_KEY);
       setToken(null);
       setUser(null);
+      // Mint a clean guest identity so the next logged-out session starts
+      // with an empty cart instead of the previous user's server cart.
+      await useCartStore.getState().startFreshGuestSession();
     } finally {
       setIsLoading(false);
     }

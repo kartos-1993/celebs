@@ -98,36 +98,23 @@ export default function CheckoutScreen() {
           streetAddress,
         },
         paymentMethod,
-        items: checkoutItems.map(
-          (item: {
-            productId?: string;
-            id?: string;
-            quantity: number;
-            unitPrice?: number;
-            price?: number;
-          }) => ({
-            productId: item.productId || item.id,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice || item.price,
-          }),
-        ),
       };
 
-      await apiClient.post('/orders/checkout', payload).catch(async () => {
-        // Fallback simulation for staging if endpoint isn't fully seeded
-        return {
-          data: {
-            success: true,
-            data: { orderId: `CEL-2026-${Math.floor(10000 + Math.random() * 90000)}` },
-          },
-        };
-      });
+      // Server builds the order from the authenticated user's server-side cart
+      // (guest carts are merged into it on login) — no client item list is sent.
+      const response = await apiClient.post<{
+        message: string;
+        data: { order?: { orderNumber?: string } };
+      }>('/orders/checkout', payload);
+      const placedOrderNumber = response.data?.data?.order?.orderNumber;
 
       await clearCart();
 
       Alert.alert(
         'Order Placed!',
-        'Thank you for your order. We are processing it and will update you soon.',
+        placedOrderNumber
+          ? `Order ${placedOrderNumber} confirmed. Thank you for your purchase.`
+          : 'Thank you for your order. We are processing it and will update you soon.',
         [
           {
             text: 'OK',
@@ -330,23 +317,19 @@ export default function CheckoutScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* eSewa Option */}
+          {/* eSewa / Khalti — disabled until the real gateway integration ships;
+              the API rejects these methods with 400 (see order.validator.ts) */}
           <TouchableOpacity
-            style={[
-              styles.paymentOption,
-              paymentMethod === 'ESEWA' && styles.paymentOptionSelected,
-            ]}
-            onPress={() => setPaymentMethod('ESEWA')}
-            activeOpacity={0.8}
+            style={[styles.paymentOption, styles.paymentOptionDisabled]}
+            activeOpacity={1}
+            disabled
           >
             <View style={styles.paymentRadioRow}>
-              <View
-                style={[styles.radioOuter, paymentMethod === 'ESEWA' && styles.radioOuterSelected]}
-              >
-                {paymentMethod === 'ESEWA' && <View style={styles.radioInner} />}
-              </View>
+              <View style={styles.radioOuter} />
               <View style={{ flex: 1 }}>
-                <ThemedText style={styles.paymentName}>eSewa / Khalti Digital Wallet</ThemedText>
+                <ThemedText style={styles.paymentName}>
+                  eSewa / Khalti Digital Wallet (Coming Soon)
+                </ThemedText>
                 <ThemedText style={styles.paymentDesc}>
                   Instant payment via Nepal digital wallet app
                 </ThemedText>
