@@ -40,11 +40,7 @@ export class TooManyRequestsException extends AppError {
 }
 
 export class HttpException extends AppError {
-  constructor(
-    arg1: string | number,
-    arg2?: string | HttpStatusCode,
-    arg3?: ErrorCode,
-  ) {
+  constructor(arg1: string | number, arg2?: string | HttpStatusCode, arg3?: ErrorCode) {
     let statusCode: HttpStatusCode;
     let message: string;
     let errorCode: ErrorCode | undefined;

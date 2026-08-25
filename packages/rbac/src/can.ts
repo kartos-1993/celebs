@@ -1,6 +1,6 @@
 import { Permission } from './permissions';
 import { Role, ROLE_PERMISSIONS } from './role-permissions';
-import type { PermissionMode,PermissionRequirement } from './types';
+import type { PermissionMode, PermissionRequirement } from './types';
 
 /**
  * Returns all effective permissions for a given user, merging static role defaults
@@ -16,7 +16,11 @@ export function getUserPermissions(
 
   const defaultRolePermissions = ROLE_PERMISSIONS[role as Role] ?? [];
 
-  if (userCustomPermissions && Array.isArray(userCustomPermissions) && userCustomPermissions.length > 0) {
+  if (
+    userCustomPermissions &&
+    Array.isArray(userCustomPermissions) &&
+    userCustomPermissions.length > 0
+  ) {
     const combined = new Set<string>([...defaultRolePermissions, ...userCustomPermissions]);
     return Array.from(combined) as Permission[];
   }
@@ -61,4 +65,3 @@ export function hasPermissionAccess(
 
   return perms.some((perm) => can(role, perm, userCustomPermissions));
 }
-

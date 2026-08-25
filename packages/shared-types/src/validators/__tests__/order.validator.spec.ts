@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 
 import { addressSchema, checkoutSchema } from '../order.validator';

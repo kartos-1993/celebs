@@ -37,7 +37,7 @@ export const bulkUpdatePlatformSettingsSchema = z.object({
       z.object({
         key: z.string().min(1, 'Key is required'),
         value: z.string({ required_error: 'Value is required' }),
-      })
+      }),
     )
     .min(1, 'At least one setting must be provided'),
   reason: z.string().max(255).optional(),
@@ -66,4 +66,6 @@ export type UpsertPlatformSettingType = z.infer<typeof upsertPlatformSettingSche
 export type BulkUpdatePlatformSettingsType = z.infer<typeof bulkUpdatePlatformSettingsSchema>;
 export type SettingKeyParamType = z.infer<typeof settingKeyParamSchema>;
 export type GetPlatformSettingsQueryType = z.infer<typeof getPlatformSettingsQuerySchema>;
-export type GetPlatformSettingAuditLogsQueryType = z.infer<typeof getPlatformSettingAuditLogsQuerySchema>;
+export type GetPlatformSettingAuditLogsQueryType = z.infer<
+  typeof getPlatformSettingAuditLogsQuerySchema
+>;

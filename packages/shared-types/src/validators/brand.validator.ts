@@ -66,7 +66,9 @@ export const reviewBrandAuthorizationSchema = z.object({
 export const createBrandProtectionRuleSchema = z.object({
   brandId: idSchema,
   pattern: z.string().trim().min(2, 'Pattern is required'),
-  matchField: z.enum(['TITLE', 'DESCRIPTION', 'TITLE_AND_DESCRIPTION']).default('TITLE_AND_DESCRIPTION'),
+  matchField: z
+    .enum(['TITLE', 'DESCRIPTION', 'TITLE_AND_DESCRIPTION'])
+    .default('TITLE_AND_DESCRIPTION'),
   isActive: z.boolean().optional().default(true),
 });
 
@@ -86,4 +88,3 @@ export type ReviewBrandAuthorizationType = z.infer<typeof reviewBrandAuthorizati
 export type CreateBrandProtectionRuleType = z.infer<typeof createBrandProtectionRuleSchema>;
 export type GetBrandParamType = z.infer<typeof getBrandParamSchema>;
 export type GetBrandAuthorizationsQueryType = z.infer<typeof getBrandAuthorizationsQuerySchema>;
-

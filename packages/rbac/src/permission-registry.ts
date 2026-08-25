@@ -273,16 +273,13 @@ export const STAFF_ROLE_PRESETS: StaffRolePreset[] = [
     label: 'Finance Accountant',
     description: 'Can view shop earnings, payout ledgers, and financial balance statements.',
     iconKey: 'receipt',
-    permissions: [
-      Permission.FINANCE_VIEW,
-      Permission.FINANCE_MANAGE,
-      Permission.ORDER_VIEW,
-    ],
+    permissions: [Permission.FINANCE_VIEW, Permission.FINANCE_MANAGE, Permission.ORDER_VIEW],
   },
   {
     id: 'full_manager',
     label: 'Full Store Manager',
-    description: 'Complete operational delegation across products, media, orders, finance, and team.',
+    description:
+      'Complete operational delegation across products, media, orders, finance, and team.',
     iconKey: 'shield-check',
     permissions: [
       Permission.PRODUCT_VIEW,

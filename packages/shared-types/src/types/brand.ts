@@ -1,8 +1,4 @@
-export type BrandTier =
-  | 'FIRST_PARTY'
-  | 'GATED_GLOBAL'
-  | 'REGISTERED_VENDOR'
-  | 'OPEN_GENERIC';
+export type BrandTier = 'FIRST_PARTY' | 'GATED_GLOBAL' | 'REGISTERED_VENDOR' | 'OPEN_GENERIC';
 
 export type BrandAuthStatus =
   | 'PENDING'

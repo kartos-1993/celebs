@@ -69,7 +69,10 @@ export function resolveDepartmentCode(departmentOrCategory?: string): string {
 
 export function generateSheinStyleSku(options: SkuOptions = {}): string {
   const brand =
-    options.brandPrefix?.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 1) || 'c';
+    options.brandPrefix
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .slice(0, 1) || 'c';
   const dept = resolveDepartmentCode(options.department);
   const now = options.date instanceof Date ? options.date : new Date();
 

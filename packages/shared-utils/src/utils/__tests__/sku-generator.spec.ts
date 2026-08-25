@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  generateSheinStyleSku,
-  resolveDepartmentCode,
-} from '../sku-generator';
+import { generateSheinStyleSku, resolveDepartmentCode } from '../sku-generator';
 
 describe('Shein/Retail Standard SKU Generator', () => {
   it('resolves department codes accurately from category/department names', () => {

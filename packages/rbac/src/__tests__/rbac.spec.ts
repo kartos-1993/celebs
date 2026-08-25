@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { can, getUserPermissions, hasPermissionAccess, Permission, Role,ROLE_PERMISSIONS } from '../index';
+import {
+  can,
+  getUserPermissions,
+  hasPermissionAccess,
+  Permission,
+  Role,
+  ROLE_PERMISSIONS,
+} from '../index';
 
 describe('Hierarchical RBAC & Dynamic Permission System', () => {
   const ALL_PERMISSIONS = Object.values(Permission);
@@ -104,7 +111,14 @@ describe('Hierarchical RBAC & Dynamic Permission System', () => {
 
     it('SUPERADMIN always returns true for single or multi-permission requirements', () => {
       expect(hasPermissionAccess('SUPERADMIN', [], Permission.PLATFORM_MANAGE)).toBe(true);
-      expect(hasPermissionAccess('SUPERADMIN', [], [Permission.PLATFORM_MANAGE, Permission.PRODUCT_DELETE], 'ALL')).toBe(true);
+      expect(
+        hasPermissionAccess(
+          'SUPERADMIN',
+          [],
+          [Permission.PLATFORM_MANAGE, Permission.PRODUCT_DELETE],
+          'ALL',
+        ),
+      ).toBe(true);
     });
 
     it('evaluates single permission correctly', () => {
@@ -115,22 +129,41 @@ describe('Hierarchical RBAC & Dynamic Permission System', () => {
     it('evaluates mode="ANY" correctly for STAFF with partial permissions', () => {
       const staffPerms = [Permission.PRODUCT_VIEW, Permission.ORDER_VIEW];
       expect(
-        hasPermissionAccess('STAFF', staffPerms, [Permission.PRODUCT_VIEW, Permission.FINANCE_VIEW], 'ANY')
+        hasPermissionAccess(
+          'STAFF',
+          staffPerms,
+          [Permission.PRODUCT_VIEW, Permission.FINANCE_VIEW],
+          'ANY',
+        ),
       ).toBe(true);
       expect(
-        hasPermissionAccess('STAFF', staffPerms, [Permission.FINANCE_VIEW, Permission.CATALOG_MANAGE], 'ANY')
+        hasPermissionAccess(
+          'STAFF',
+          staffPerms,
+          [Permission.FINANCE_VIEW, Permission.CATALOG_MANAGE],
+          'ANY',
+        ),
       ).toBe(false);
     });
 
     it('evaluates mode="ALL" correctly for STAFF requiring multiple permissions', () => {
       const staffPerms = [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE];
       expect(
-        hasPermissionAccess('STAFF', staffPerms, [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE], 'ALL')
+        hasPermissionAccess(
+          'STAFF',
+          staffPerms,
+          [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE],
+          'ALL',
+        ),
       ).toBe(true);
       expect(
-        hasPermissionAccess('STAFF', staffPerms, [Permission.PRODUCT_VIEW, Permission.PRODUCT_PUBLISH], 'ALL')
+        hasPermissionAccess(
+          'STAFF',
+          staffPerms,
+          [Permission.PRODUCT_VIEW, Permission.PRODUCT_PUBLISH],
+          'ALL',
+        ),
       ).toBe(false);
     });
   });
 });
-

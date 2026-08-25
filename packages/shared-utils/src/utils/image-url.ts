@@ -101,7 +101,9 @@ export function isEdgeTransformableUrl(sourceUrl: string): boolean {
     const urlObj = new URL(sourceUrl);
     const registered = getRegisteredEdgeHostnames();
     if (registered.length === 0) return false;
-    return registered.some((host: string) => urlObj.hostname === host || urlObj.hostname.endsWith(`.${host}`));
+    return registered.some(
+      (host: string) => urlObj.hostname === host || urlObj.hostname.endsWith(`.${host}`),
+    );
   } catch {
     return false;
   }
@@ -163,9 +165,7 @@ export function getOptimizedImageUrl(
 
   // 2. Local Development / MinIO Static Derivative Mapping (if local path with .webp/.jpg)
   const isLocalDevUrl =
-    trimmed.includes('localhost') ||
-    trimmed.includes('127.0.0.1') ||
-    trimmed.startsWith('/');
+    trimmed.includes('localhost') || trimmed.includes('127.0.0.1') || trimmed.startsWith('/');
 
   if (isLocalDevUrl && (width || presetConfig)) {
     const effectiveWidth = (width || 360) * dpr;
