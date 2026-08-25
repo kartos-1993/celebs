@@ -1,13 +1,18 @@
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 
-import { AddToCartInput, CartResponse } from '@celebs/shared-types';
+import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
 
 import { CartApiService } from '../services/cart-service';
 
 const GUEST_SESSION_KEY = 'celebs_guest_session_id';
 
-interface CartState {
+interface SelectionSlice {
+  selectedItemIds: string[];
+  selectionInitialized: boolean;
+}
+
+interface CartState extends SelectionSlice {
   cart: CartResponse | null;
   sessionId: string | null;
   loading: boolean;
@@ -19,13 +24,29 @@ interface CartState {
   updateQuantity: (itemId: string, newQuantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
+  toggleItemSelection: (itemId: string) => void;
+  setItemsSelection: (itemIds: string[], selected: boolean) => void;
+  toggleAllSelection: () => void;
 }
+
+const syncSelection = (prev: SelectionSlice, items: CartItemHydrated[]): SelectionSlice => {
+  if (!prev.selectionInitialized) {
+    return { selectedItemIds: items.map((item) => item.id), selectionInitialized: true };
+  }
+  const validIds = new Set(items.map((item) => item.id));
+  return {
+    selectedItemIds: prev.selectedItemIds.filter((id) => validIds.has(id)),
+    selectionInitialized: true,
+  };
+};
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: null,
   sessionId: null,
   loading: false,
   error: null,
+  selectedItemIds: [],
+  selectionInitialized: false,
 
   initSession: async () => {
     try {
@@ -49,7 +70,12 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const fetchedCart = await CartApiService.getCart(session);
-      set({ cart: fetchedCart, loading: false });
+      set((state) => ({
+        ...syncSelection(state, fetchedCart.items),
+        cart: fetchedCart,
+        loading: false,
+        error: null,
+      }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch cart';
       set({ error: msg, loading: false });
@@ -61,7 +87,20 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const updatedCart = await CartApiService.addToCart(input, session);
-      set({ cart: updatedCart, loading: false });
+      const previousIds = new Set((get().cart?.items || []).map((item) => item.id));
+      const newItemIds = updatedCart.items
+        .filter((item) => !previousIds.has(item.id))
+        .map((item) => item.id);
+      set((state) => {
+        const synced = syncSelection(state, updatedCart.items);
+        return {
+          ...synced,
+          selectedItemIds: [...new Set([...synced.selectedItemIds, ...newItemIds])],
+          cart: updatedCart,
+          loading: false,
+          error: null,
+        };
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to add item to cart';
       set({ error: msg, loading: false });
@@ -78,7 +117,12 @@ export const useCartStore = create<CartState>((set, get) => ({
         { quantity: newQuantity },
         session,
       );
-      set({ cart: updatedCart, loading: false });
+      set((state) => ({
+        ...syncSelection(state, updatedCart.items),
+        cart: updatedCart,
+        loading: false,
+        error: null,
+      }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update item quantity';
       set({ error: msg, loading: false });
@@ -91,7 +135,12 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const updatedCart = await CartApiService.removeCartItem(itemId, session);
-      set({ cart: updatedCart, loading: false });
+      set((state) => ({
+        ...syncSelection(state, updatedCart.items),
+        cart: updatedCart,
+        loading: false,
+        error: null,
+      }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to remove item';
       set({ error: msg, loading: false });
@@ -119,8 +168,38 @@ export const useCartStore = create<CartState>((set, get) => ({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
+        selectedItemIds: [],
+        selectionInitialized: false,
         loading: false,
       });
     }
   },
+
+  toggleItemSelection: (itemId) =>
+    set((state) => ({
+      selectedItemIds: state.selectedItemIds.includes(itemId)
+        ? state.selectedItemIds.filter((id) => id !== itemId)
+        : [...state.selectedItemIds, itemId],
+    })),
+
+  setItemsSelection: (itemIds, selected) =>
+    set((state) => {
+      const ids = new Set(state.selectedItemIds);
+      for (const id of itemIds) {
+        if (selected) {
+          ids.add(id);
+        } else {
+          ids.delete(id);
+        }
+      }
+      return { selectedItemIds: [...ids] };
+    }),
+
+  toggleAllSelection: () =>
+    set((state) => {
+      const items = state.cart?.items || [];
+      const allSelected =
+        items.length > 0 && items.every((item) => state.selectedItemIds.includes(item.id));
+      return { selectedItemIds: allSelected ? [] : items.map((item) => item.id) };
+    }),
 }));
