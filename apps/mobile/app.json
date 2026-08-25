@@ -34,7 +34,7 @@
         "@sentry/react-native/expo",
         {
           "organization": "celebs",
-          "project": "react-native",
+          "project": "celebs-mobile",
           "url": "https://sentry.io/"
         }
       ],
