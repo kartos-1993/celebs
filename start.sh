@@ -10,5 +10,8 @@ else
   npx prisma migrate deploy --schema src/db/schema.prisma
 fi
 
+echo "Starting background worker..."
+node dist/src/worker-main.js &
+
 echo "Starting application..."
-node dist/src/main.js
+exec node dist/src/main.js
