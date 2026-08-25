@@ -5,6 +5,7 @@ import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
 
 import { config } from '@/config/app.config';
 import prisma from '@/config/db.prisma';
+import { setSentryUser } from '@/config/sentry';
 import { UserService } from '@/modules/user/user.service';
 
 const userService = new UserService();
@@ -82,6 +83,7 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
           userId: user.id,
           sessionId: payload.sessionId,
         };
+        setSentryUser(mappedUser);
         return done(null, mappedUser);
       } catch (error) {
         return done(error, false);

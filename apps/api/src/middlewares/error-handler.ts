@@ -6,6 +6,7 @@ import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { clearAuthenticationCookies, REFRESH_PATH } from '@/common/utils/cookie';
 import { Prisma } from '@/config/db.prisma';
+import { captureSentryException } from '@/config/sentry';
 
 function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === 'object' && val !== null;
@@ -34,9 +35,18 @@ const formatZodError = (res: Response, error: z.ZodError) => {
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Response | void => {
   try {
+    const rawRequestId = res.getHeader('X-Request-Id');
+    const requestId =
+      typeof rawRequestId === 'string'
+        ? rawRequestId
+        : Array.isArray(rawRequestId)
+          ? rawRequestId[0]
+          : undefined;
+
     // Structured log with request context; stack traces for unexpected errors only.
     const isExpected = error instanceof AppError;
     const logPayload = {
+      requestId,
       path: req.path,
       method: req.method,
       name: error?.name || 'Error',
@@ -48,6 +58,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
       logger.warn(logPayload, `Handled application error on PATH: ${req.path}`);
     } else {
       logger.error(logPayload, `Unhandled error on PATH: ${req.path}`);
+      captureSentryException(error, { path: req.path, method: req.method });
     }
 
     // Ensure response always uses JSON content type
@@ -87,6 +98,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
         message: error.message || 'An error occurred',
         errorCode: error.errorCode as ErrorCode,
         data: null,
+        requestId,
       };
       return res.status(error.statusCode || HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
     }
@@ -157,6 +169,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
       message: 'Internal Server Error',
       data: null,
       errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
+      requestId,
     };
     return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
   } catch (fatalErr) {

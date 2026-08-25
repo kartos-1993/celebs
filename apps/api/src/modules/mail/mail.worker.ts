@@ -11,11 +11,17 @@ export const mailWorker = new Worker(
   async (job: Job) => {
     if (job.name !== 'send') return { ignored: true };
 
-    const params = job.data as MailParams;
+    const params = job.data as MailParams & { requestId?: string };
     try {
       await sendEmail(params);
       logger.info(
-        { jobId: job.id, to: params.to, subject: params.subject, attempt: job.attemptsMade + 1 },
+        {
+          jobId: job.id,
+          requestId: params.requestId,
+          to: params.to,
+          subject: params.subject,
+          attempt: job.attemptsMade + 1,
+        },
         'Email delivered',
       );
       return { delivered: true };
@@ -24,7 +30,13 @@ export const mailWorker = new Worker(
       // BullMQ retries with exponential backoff; final failure lands in
       // the failed-jobs set (removeOnFail: false) for manual replay.
       logger.error(
-        { error: errMsg, jobId: job.id, to: params.to, subject: params.subject },
+        {
+          error: errMsg,
+          jobId: job.id,
+          requestId: params.requestId,
+          to: params.to,
+          subject: params.subject,
+        },
         `Email delivery failed (attempt ${job.attemptsMade + 1}/${job.opts?.attempts ?? '?'})`,
       );
       throw error;

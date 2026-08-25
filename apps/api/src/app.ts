@@ -1,6 +1,7 @@
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import { randomUUID } from 'crypto';
 import express from 'express';
 import { json } from 'express';
 import session from 'express-session';
@@ -65,6 +66,13 @@ app.use(cookieParser());
 app.use(passport.initialize());
 app.use(
   pinoHttp({
+    genReqId(req, res) {
+      const incoming = req.headers['x-request-id'];
+      const id =
+        typeof incoming === 'string' && incoming.trim() !== '' ? incoming : randomUUID();
+      res.setHeader('X-Request-Id', id);
+      return id;
+    },
     logger,
     // Silence request logging in test environment to keep test runs clean
     useLevel: process.env.NODE_ENV === 'test' ? 'silent' : 'info',

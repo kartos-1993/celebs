@@ -20,10 +20,22 @@ import {
 } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import prisma from './config/db.prisma';
+import { captureSentryException, closeSentry, initSentry } from './config/sentry';
 import { mailWorker } from './modules/mail/mail.worker';
 import { assetWorker } from './modules/media/asset.worker';
 import { orderReservationWorker } from './modules/order/order-reservation.worker';
 import { sessionWorker } from './modules/session/session.worker';
+
+initSentry();
+
+logger.info(
+  {
+    nodeEnv: process.env.NODE_ENV ?? 'development',
+    version: process.env.RENDER_GIT_COMMIT ?? 'local',
+    sentry: process.env.SENTRY_DSN ? 'enabled' : 'disabled',
+  },
+  'Background worker starting',
+);
 
 const startWorker = async () => {
   try {
@@ -67,7 +79,7 @@ const startWorker = async () => {
     logger.info('Scheduled periodic stale order reservation release job (pattern: */30 * * * *)');
 
     const shutdown = async (signal: string) => {
-      logger.info(`Received ${signal}, shutting down worker gracefully...`);
+      logger.info({ signal }, `Received ${signal}, shutting down worker gracefully`);
       await assetWorker.close();
       await mailWorker.close();
       await sessionWorker.close();
@@ -77,12 +89,22 @@ const startWorker = async () => {
       await sessionQueue.close();
       await orderMaintenanceQueue.close();
       await prisma.$disconnect();
+      await closeSentry();
       logger.info('Worker shutdown complete. Exiting.');
       process.exit(0);
     };
 
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('unhandledRejection', (reason) => {
+      logger.error({ err: reason }, 'Unhandled promise rejection in worker');
+      captureSentryException(reason);
+    });
+    process.on('uncaughtException', (err) => {
+      logger.error({ err }, 'Uncaught exception in worker, exiting');
+      captureSentryException(err);
+      process.exit(1);
+    });
   } catch (error) {
     logger.error({ error }, 'Failed to start Background Worker Service');
     process.exit(1);

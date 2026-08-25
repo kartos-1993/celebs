@@ -43,6 +43,7 @@
     "@celebs/rbac": "workspace:*",
     "@celebs/shared-types": "workspace:*",
     "@celebs/shared-utils": "workspace:*",
+    "@sentry/node": "^10.71.0",
     "@upstash/redis": "^1.38.2",
     "bullmq": "^5.41.0",
     "google-auth-library": "^11.0.2",

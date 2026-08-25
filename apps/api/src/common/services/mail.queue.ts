@@ -13,15 +13,23 @@ import { type MailParams, sendEmail } from '@/mailers/mailer';
  * - If the queue is unreachable: degrades to inline send — an email must
  *   never be silently dropped because Redis is down.
  */
-export async function enqueueMail(params: MailParams): Promise<void> {
+export async function enqueueMail(
+  params: MailParams,
+  meta?: { requestId?: string },
+): Promise<void> {
   if (config.NODE_ENV === 'test') {
     await sendEmail(params);
     return;
   }
 
+  const jobData = meta?.requestId ? { ...params, requestId: meta.requestId } : params;
+
   try {
-    await mailQueue.add('send', params);
-    logger.info({ to: params.to, subject: params.subject }, 'Email queued for delivery');
+    await mailQueue.add('send', jobData);
+    logger.info(
+      { to: params.to, subject: params.subject, requestId: meta?.requestId },
+      'Email queued for delivery',
+    );
   } catch (err) {
     logger.warn(
       { err, to: params.to, subject: params.subject },

@@ -17,9 +17,24 @@ import { verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import { config } from './config/app.config';
 import prisma from './config/db.prisma';
+import { captureSentryException, closeSentry, initSentry } from './config/sentry';
 import app from './app';
 
+initSentry();
+
 const port = config.PORT;
+
+let currentServer: ReturnType<typeof app.listen> | null = null;
+let selfPingTimer: NodeJS.Timeout | null = null;
+
+logger.info(
+  {
+    nodeEnv: config.NODE_ENV,
+    version: process.env.RENDER_GIT_COMMIT ?? 'local',
+    sentry: process.env.SENTRY_DSN ? 'enabled' : 'disabled',
+  },
+  'API starting',
+);
 
 const startServer = async () => {
   try {
@@ -36,6 +51,7 @@ const startServer = async () => {
       startSelfPing();
     });
     server.on('error', console.error);
+    currentServer = server;
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
@@ -55,7 +71,7 @@ const startSelfPing = () => {
 
   logger.info(`Starting self-ping service targeting: ${pingUrl} (every 14 minutes)`);
 
-  setInterval(async () => {
+  selfPingTimer = setInterval(async () => {
     try {
       const response = await fetch(pingUrl);
       logger.info(`Self-ping status: ${response.status} ${response.statusText}`);
@@ -65,6 +81,41 @@ const startSelfPing = () => {
     }
   }, intervalMs);
 };
+
+const shutdown = async (signal: string) => {
+  logger.info({ signal }, 'Received shutdown signal, draining gracefully');
+  if (selfPingTimer) clearInterval(selfPingTimer);
+  setTimeout(() => {
+    logger.error('Graceful shutdown timed out, forcing exit');
+    process.exit(1);
+  }, 10_000).unref();
+
+  try {
+    await new Promise<void>((resolve) => {
+      if (!currentServer) return resolve();
+      currentServer.close(() => resolve());
+    });
+    await prisma.$disconnect();
+    await closeSentry();
+    logger.info('Graceful shutdown complete');
+    process.exit(0);
+  } catch (error) {
+    logger.error({ error }, 'Error during shutdown');
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => {
+  logger.error({ err: reason }, 'Unhandled promise rejection');
+  captureSentryException(reason);
+});
+process.on('uncaughtException', (err) => {
+  logger.error({ err }, 'Uncaught exception, exiting');
+  captureSentryException(err);
+  process.exit(1);
+});
 
 startServer().catch((error: unknown) => {
   logger.error({ error }, 'Unhandled server startup rejection');
