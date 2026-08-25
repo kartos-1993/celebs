@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { flattenFormErrors, formatFieldLabel, focusFirstError } from '../form-focus';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
+import { flattenFormErrors, focusFirstError,formatFieldLabel } from '../form-focus';
 
 describe('form-focus utility', () => {
   beforeEach(() => {

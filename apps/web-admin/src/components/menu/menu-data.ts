@@ -11,7 +11,8 @@ import {
   UserPen,
   Users,
 } from 'lucide-react';
-import { Permission, can, type Role } from '@celebs/rbac';
+
+import { can, Permission, type Role } from '@celebs/rbac';
 
 type Submenu = {
   href: string;

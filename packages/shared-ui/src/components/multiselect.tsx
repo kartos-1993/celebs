@@ -1,8 +1,9 @@
 import * as React from 'react';
+import { Check, ChevronDown, Search, X } from 'lucide-react';
+
+import { Badge } from './badge';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { ScrollArea } from './scroll-area';
-import { Badge } from './badge';
-import { Check, ChevronDown, Search, X } from 'lucide-react';
 
 export type MultiSelectOption = { label: string; value: string };
 

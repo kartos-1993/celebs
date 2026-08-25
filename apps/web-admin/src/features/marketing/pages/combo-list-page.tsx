@@ -7,8 +7,6 @@ import type { ComboBundleType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-
-import { FilterBar, FilterSearch } from '@/components/filter-bar';
 import {
   Table,
   TableBody,
@@ -20,6 +18,8 @@ import {
 
 import { getCombos } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
+
+import { FilterBar, FilterSearch } from '@/components/filter-bar';
 
 export default function ComboListPage() {
   const [searchQuery, setSearchQuery] = useState('');

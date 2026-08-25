@@ -1,9 +1,13 @@
-import '@testing-library/jest-dom/vitest';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { describe, it, expect } from 'vitest';
-import { RoleGuard } from '../role-guard';
+import { describe, expect,it } from 'vitest';
+
 import { Permission } from '@celebs/rbac';
+
+import '@testing-library/jest-dom/vitest';
+
+import { RoleGuard } from '../role-guard';
+
 import { AuthContext, defaultAuthContext } from '@/context/auth-provider';
 import ForbiddenError from '@/features/errors/forbidden-error';
 

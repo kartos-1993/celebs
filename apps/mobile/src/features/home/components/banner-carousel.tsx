@@ -54,17 +54,6 @@ export function BannerCarousel() {
   const banners = useMemo(() => data || [], [data]);
   const hasBanners = banners.length > 0;
 
-  useEffect(() => {
-    return () => stopAutoPlay();
-  }, []);
-
-  useEffect(() => {
-    if (banners.length > 0) {
-      startAutoPlay();
-    }
-    return () => stopAutoPlay();
-  }, [banners, activeIndex]);
-
   const startAutoPlay = () => {
     stopAutoPlay();
     if (banners.length <= 1) return;
@@ -85,6 +74,17 @@ export function BannerCarousel() {
       autoPlayTimer.current = null;
     }
   };
+
+  useEffect(() => {
+    return () => stopAutoPlay();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length > 0) {
+      startAutoPlay();
+    }
+    return () => stopAutoPlay();
+  }, [banners, activeIndex]);
 
   const handleBannerPress = (banner: Banner) => {
     if (banner.linkType === 'NONE') return;

@@ -1,6 +1,7 @@
-import { hasPermissionAccess, type PermissionRequirement, type PermissionMode } from '@celebs/rbac';
-import type { UserData } from '@celebs/shared-types';
 import type { RouteObject } from 'react-router-dom';
+
+import { hasPermissionAccess, type PermissionMode,type PermissionRequirement } from '@celebs/rbac';
+import type { UserData } from '@celebs/shared-types';
 
 export interface RouteMeta {
   title?: string;

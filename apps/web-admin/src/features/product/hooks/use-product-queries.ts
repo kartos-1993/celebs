@@ -5,17 +5,19 @@
  * meta.suppressErrorToast).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+
 import {
   archiveProduct,
-  getProducts,
   getProductReviewQueue,
+  getProducts,
+  type ProductFilterRequest,
   reviewProduct,
+  type ReviewProductRequestPayload,
   submitProductForReview,
   toggleProductActivation,
-  type ProductFilterRequest,
-  type ReviewProductRequestPayload,
 } from '../api';
+
+import { useToast } from '@/hooks/use-toast';
 
 export const PRODUCT_QUERY_KEYS = {
   all: ['products'] as const,

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { Button } from '@celebs/shared-ui/components/button';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 
 interface VendorRejectionDialogProps {

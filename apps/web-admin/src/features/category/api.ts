@@ -4,16 +4,18 @@
  */
 
 import type { RecentCategory } from '@celebs/shared-types';
-import { axiosClient } from '@/lib/axios/axios-client';
+
 import {
+  ApiResponse,
   Category,
   CategoryTreeNode,
   CreateCategoryRequest,
-  UpdateCategoryRequest,
   PaginatedCategoriesResponse,
-  ApiResponse,
   QuickFilter,
+  UpdateCategoryRequest,
 } from './types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 const BASE_PATH = '/category';
 

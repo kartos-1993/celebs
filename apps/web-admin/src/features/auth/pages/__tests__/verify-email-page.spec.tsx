@@ -1,8 +1,9 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import VerifyEmailPage from '../verify-email-page';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
 import * as authApi from '../../api';
+import VerifyEmailPage from '../verify-email-page';
 
 const mockNavigate = vi.fn();
 const mockSearchParams = new URLSearchParams();

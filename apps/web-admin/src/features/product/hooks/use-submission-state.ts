@@ -1,5 +1,6 @@
 import { useDeferredValue, useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+
 import type { FieldSpec, ProductSidebarSection, VariantMetaItem } from '../types';
 import { buildSidebarSections, flattenFormErrors } from '../utils/add-product-validation';
 

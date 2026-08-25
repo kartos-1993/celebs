@@ -89,4 +89,7 @@ const startWorker = async () => {
   }
 };
 
-startWorker();
+startWorker().catch((error: unknown) => {
+  logger.error({ error }, 'Unhandled worker startup rejection');
+  process.exit(1);
+});

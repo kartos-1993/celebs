@@ -1,4 +1,3 @@
-import { axiosClient } from '@/lib/axios/axios-client';
 import type {
   Brand,
   BrandFilterType,
@@ -6,6 +5,8 @@ import type {
   IApiResponse,
   VendorBrandAuthorization,
 } from '@celebs/shared-types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 export interface PaginatedBrandsResponse {
   items: Brand[];

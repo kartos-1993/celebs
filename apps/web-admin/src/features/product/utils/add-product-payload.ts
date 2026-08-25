@@ -1,7 +1,8 @@
 import { uploadFiles } from '../api';
+import { extractVariantsMeta } from '../fields/variant-utils';
 import type { CreateProductRequest } from '../types';
 import type { FieldSpec } from '../types';
-import { extractVariantsMeta } from '../fields/variant-utils';
+
 import {
   flattenObject,
   getFirstPrice,

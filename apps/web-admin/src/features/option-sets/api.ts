@@ -1,5 +1,6 @@
+import type { CreateOptionSetInput, OptionSet, UpdateOptionSetInput } from './types';
+
 import { axiosClient } from '@/lib/axios/axios-client';
-import type { OptionSet, CreateOptionSetInput, UpdateOptionSetInput } from './types';
 
 export async function fetchOptionSets(): Promise<OptionSet[]> {
   const res = await axiosClient.get('/option-sets');

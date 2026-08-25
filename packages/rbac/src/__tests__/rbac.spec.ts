@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { can, getUserPermissions, hasPermissionAccess, Permission, ROLE_PERMISSIONS, Role } from '../index';
+
+import { can, getUserPermissions, hasPermissionAccess, Permission, Role,ROLE_PERMISSIONS } from '../index';
 
 describe('Hierarchical RBAC & Dynamic Permission System', () => {
   const ALL_PERMISSIONS = Object.values(Permission);

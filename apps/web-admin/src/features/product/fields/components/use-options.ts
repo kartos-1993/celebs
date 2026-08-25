@@ -1,7 +1,10 @@
 import React from 'react';
+
 import { logger } from '@celebs/shared-utils';
-import { axiosClient } from '@/lib/axios/axios-client';
+
 import type { FieldSpec } from '../ui-registry';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 interface OptionItem {
   label: string;

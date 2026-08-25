@@ -45,8 +45,6 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
-import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
-
 import {
   archiveProduct,
   type ProductFilterRequest,
@@ -60,6 +58,7 @@ import {
 } from '../hooks/use-product-queries';
 import type { ProductListItem, ProductStatus } from '../types';
 
+import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
 import { useAuthContext } from '@/context/auth-provider';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';

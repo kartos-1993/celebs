@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { idSchema } from './common.validator';
 
 export const brandTierSchema = z.enum([

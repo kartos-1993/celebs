@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from 'react';
-
 import { AlertCircle, ImagePlus, Trash2, Upload } from 'lucide-react';
 
 import { Label } from '@celebs/shared-ui/components/label';

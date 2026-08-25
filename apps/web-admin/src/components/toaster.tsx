@@ -6,6 +6,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from '@celebs/shared-ui/components/toast';
+
 import { useToast } from '@/hooks/use-toast';
 
 export function Toaster() {

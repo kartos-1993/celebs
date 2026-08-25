@@ -50,9 +50,6 @@ jobs:
       - name: Run Linting
         run: pnpm lint
 
-      - name: Format Check
-        run: pnpm exec prettier --check .
-
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest

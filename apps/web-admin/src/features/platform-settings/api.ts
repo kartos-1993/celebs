@@ -1,7 +1,7 @@
+import type { SDUIPageLayout } from '@celebs/shared-types';
+
 import { axiosClient } from '@/lib/axios/axios-client';
 import { directUploadFile } from '@/lib/media-upload';
-
-import type { SDUIPageLayout } from '@celebs/shared-types';
 
 export interface Banner {
   id?: string;

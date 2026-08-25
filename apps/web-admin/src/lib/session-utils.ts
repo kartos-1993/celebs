@@ -1,6 +1,6 @@
-import { UAParser } from 'ua-parser-js';
 import { format, formatDistanceToNowStrict, isPast } from 'date-fns';
-import { Smartphone, Laptop, LucideIcon } from 'lucide-react';
+import { Laptop, LucideIcon,Smartphone } from 'lucide-react';
+import { UAParser } from 'ua-parser-js';
 
 export interface SessionInfo {
   deviceType: string;

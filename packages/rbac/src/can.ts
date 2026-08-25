@@ -1,6 +1,6 @@
-import { Role, ROLE_PERMISSIONS } from './role-permissions';
 import { Permission } from './permissions';
-import type { PermissionRequirement, PermissionMode } from './types';
+import { Role, ROLE_PERMISSIONS } from './role-permissions';
+import type { PermissionMode,PermissionRequirement } from './types';
 
 /**
  * Returns all effective permissions for a given user, merging static role defaults

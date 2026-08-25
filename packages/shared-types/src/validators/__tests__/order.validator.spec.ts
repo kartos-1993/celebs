@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
 import { ZodError } from 'zod';
+
 import { addressSchema, checkoutSchema } from '../order.validator';
 
 describe('Order Zod Validator Unit Tests', () => {

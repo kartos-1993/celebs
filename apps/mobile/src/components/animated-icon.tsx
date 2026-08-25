@@ -41,7 +41,7 @@ export function AnimatedSplashOverlay() {
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
 
   return animate ? (
@@ -101,13 +101,13 @@ export function AnimatedIcon() {
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
+        { }
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>
 
       <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
+        { }
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
       </Animated.View>
     </View>

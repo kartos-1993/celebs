@@ -92,3 +92,5 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
     );
   },
 );
+
+ProductGrid.displayName = 'ProductGrid';

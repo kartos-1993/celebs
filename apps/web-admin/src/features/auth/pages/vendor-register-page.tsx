@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
-import { z } from 'zod';
+import { useEffect,useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, Link } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { Link,useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { z } from 'zod';
+
+import { vendorRegisterSchema } from '@celebs/shared-types';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Form,
   FormControl,
@@ -14,8 +17,7 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
-import { Button } from '@celebs/shared-ui/components/button';
-import { vendorRegisterSchema } from '@celebs/shared-types';
+
 import { registerVendor } from '../api';
 
 type FormValues = z.infer<typeof vendorRegisterSchema>;

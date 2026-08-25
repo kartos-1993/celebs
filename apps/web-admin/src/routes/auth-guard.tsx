@@ -1,8 +1,10 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthContext } from '@/context/auth-provider';
-import { FullscreenLoader } from '@/components/page-loader';
+
 import { PATHS } from './paths';
+
+import { FullscreenLoader } from '@/components/page-loader';
+import { useAuthContext } from '@/context/auth-provider';
 
 interface AuthGuardProps {
   children: React.ReactNode;

@@ -1,5 +1,5 @@
-import type { ProductRecord } from '../types';
 import type { ProductFormValues } from '../hooks/use-product-form';
+import type { ProductRecord } from '../types';
 
 export const toCategoryPath = (cat: unknown): string[] => {
   if (!cat || typeof cat !== 'object') return [];

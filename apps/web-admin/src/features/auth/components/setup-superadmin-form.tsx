@@ -1,11 +1,13 @@
 import { HTMLAttributes } from 'react';
-import { AxiosError } from 'axios';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { cn } from '@/lib/utils';
+import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import { z } from 'zod';
+
+import { setupSuperadminSchema } from '@celebs/shared-types';
+import { Button } from '@celebs/shared-ui/components/button';
 import {
   Form,
   FormControl,
@@ -16,9 +18,10 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
-import { Button } from '@celebs/shared-ui/components/button';
-import { setupSuperadminSchema } from '@celebs/shared-types';
+
 import { setupSuperadmin } from '../api';
+
+import { cn } from '@/lib/utils';
 
 type SetupSuperadminFormProps = HTMLAttributes<HTMLDivElement>;
 

@@ -1,23 +1,23 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
+import { MediaLibraryButton } from '../../components/media-library-button';
 import type { UiProps } from '../ui-registry';
 
 import {
+  AddFromFileTile,
+  FieldError,
+  getPathError,
   ImageValue,
   imageValueKey,
   LabelWithRequired,
   uploadErrorMessage,
   uploadImageFiles,
   validateFileBasics,
-  AddFromFileTile,
-  FieldError,
   VariantThumb,
-  getPathError,
 } from './shared';
-
-import { MediaLibraryButton } from '../../components/media-library-button';
 
 interface ColorInlineRowProps {
   color: string;

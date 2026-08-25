@@ -1,7 +1,9 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import { RoleGuard } from '@/routes/role-guard';
+
 import { Permission } from '@celebs/rbac';
+
+import { RoleGuard } from '@/routes/role-guard';
 
 const OrdersPage = lazy(() => import('./pages/orders-page'));
 const ReturnOrdersPage = lazy(() => import('./pages/return-orders-page'));

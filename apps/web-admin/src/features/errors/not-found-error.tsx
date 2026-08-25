@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+
 import { Button } from '@celebs/shared-ui/components/button';
 
 export default function NotFoundError() {

@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ChevronDown,
+  ChevronUp,
+  Copy,
   Eye,
   EyeOff,
-  Copy,
+  Gift,
   GripVertical,
   Image,
   LayoutGrid,
@@ -13,9 +16,6 @@ import {
   ShoppingBag,
   Timer,
   Trash2,
-  ChevronUp,
-  ChevronDown,
-  Gift,
 } from 'lucide-react';
 
 import type { DynamicWidget, SDUIPageLayout } from '@celebs/shared-types';
@@ -34,10 +34,9 @@ import { Label } from '@celebs/shared-ui/components/label';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
 
 import { WidgetPreviewBoundary } from '../../marketing/components/widget-preview-boundary';
-
-import { PageLoader } from '@/components/page-loader';
 import { PlatformSettingsApiService } from '../api';
 
+import { PageLoader } from '@/components/page-loader';
 import { useToast } from '@/hooks/use-toast';
 
 interface WidgetTypeMeta {

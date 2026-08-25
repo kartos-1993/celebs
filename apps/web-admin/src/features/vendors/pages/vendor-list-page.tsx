@@ -21,9 +21,6 @@ import {
   TooltipTrigger,
 } from '@celebs/shared-ui/components/tooltip';
 
-import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
-import { PageLoader } from '@/components/page-loader';
-
 import {
   approveVendor,
   getAdminVendorById,
@@ -35,6 +32,9 @@ import { VENDORS_QUERY_KEYS } from '../api';
 import { VendorDetailModal } from '../components/vendor-detail-modal';
 import { VendorRejectionDialog } from '../components/vendor-rejection-dialog';
 import { VendorStatusBadge } from '../components/vendor-status-badge';
+
+import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
+import { PageLoader } from '@/components/page-loader';
 
 interface VendorListItem {
   id: string;

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useController } from 'react-hook-form';
+
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
+
 import type { UiProps } from '../ui-registry';
 
 import { FieldError, LabelWithRequired, rulesFrom } from './shared';

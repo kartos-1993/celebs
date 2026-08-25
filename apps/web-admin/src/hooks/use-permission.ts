@@ -1,5 +1,6 @@
+import { hasPermissionAccess, type PermissionMode,type PermissionRequirement } from '@celebs/rbac';
+
 import { useAuthContext } from '@/context/auth-provider';
-import { hasPermissionAccess, type PermissionRequirement, type PermissionMode } from '@celebs/rbac';
 
 /**
  * Custom hook to dynamically evaluate whether the currently logged-in user

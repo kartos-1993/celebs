@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
 import { ZodError } from 'zod';
-import { registerSchema, loginSchema, emailSchema } from '../auth.validator';
+
+import { emailSchema,loginSchema, registerSchema } from '../auth.validator';
 
 describe('Auth Zod Validator Unit Tests', () => {
   it('should pass valid registration payloads cleanly', () => {

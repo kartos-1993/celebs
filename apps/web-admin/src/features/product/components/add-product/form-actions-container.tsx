@@ -1,4 +1,5 @@
 import { memo } from 'react';
+
 import type { ProductSidebarSection } from '../../types';
 import ProductFormActions from '../product-form-action';
 

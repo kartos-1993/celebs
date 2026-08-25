@@ -1,9 +1,12 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthContext } from '@/context/auth-provider';
-import { hasPermissionAccess, type PermissionRequirement, type PermissionMode, type Permission } from '@celebs/rbac';
-import PageLoader from '@/components/page-loader';
+
+import { hasPermissionAccess, type Permission,type PermissionMode, type PermissionRequirement } from '@celebs/rbac';
+
 import { PATHS } from './paths';
+
+import PageLoader from '@/components/page-loader';
+import { useAuthContext } from '@/context/auth-provider';
 
 
 interface RoleGuardProps {

@@ -1,5 +1,6 @@
 import { memo, useEffect } from 'react';
-import { useWatch, type Control, type FieldValues } from 'react-hook-form';
+import { type Control, type FieldValues,useWatch } from 'react-hook-form';
+
 import { getDraftStorageKey, serializeDraftValue } from '../../utils/add-product-helpers';
 
 interface DraftAutoSaverProps {

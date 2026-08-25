@@ -17,9 +17,9 @@ export function WebBadge() {
       <Image
         source={
           scheme === 'dark'
-            ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+            ?  
               require('@/assets/images/expo-badge-white.png')
-            : // eslint-disable-next-line @typescript-eslint/no-require-imports
+            :  
               require('@/assets/images/expo-badge.png')
         }
         style={styles.badgeImage}

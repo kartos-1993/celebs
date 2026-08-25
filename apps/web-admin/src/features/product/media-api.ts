@@ -1,4 +1,3 @@
-import { axiosClient } from '@/lib/axios/axios-client';
 import type {
   ConfirmUploadInput,
   CreateMediaFolderType,
@@ -11,6 +10,8 @@ import type {
   PresignFileInput,
   PresignFileResponse,
 } from '@celebs/shared-types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 export interface PaginatedMediaAssetsResponse {
   items: MediaAsset[];

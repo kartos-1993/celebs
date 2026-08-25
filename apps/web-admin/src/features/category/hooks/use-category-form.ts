@@ -1,14 +1,17 @@
-import { useState, ChangeEvent } from 'react';
-import { useForm, useFieldArray, UseFormReturn, UseFieldArrayRemove } from 'react-hook-form';
+import { ChangeEvent,useState } from 'react';
+import { useFieldArray, UseFieldArrayRemove,useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useToast } from '@/hooks/use-toast';
-import { uploadFiles } from '@/features/product/api';
-import { Category } from '../types';
+
 import {
+  CategoryAttributeType as AttributeFormInput,
   createCategorySchema as categoryFormSchema,
   CreateCategoryType as CategoryFormData,
-  CategoryAttributeType as AttributeFormInput,
 } from '@celebs/shared-types';
+
+import { Category } from '../types';
+
+import { uploadFiles } from '@/features/product/api';
+import { useToast } from '@/hooks/use-toast';
 
 export interface UseCategoryFormProps {
   initialData?: Partial<Category> | null;

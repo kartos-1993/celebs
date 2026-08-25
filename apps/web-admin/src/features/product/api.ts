@@ -1,12 +1,14 @@
-import { axiosClient } from '@/lib/axios/axios-client';
-import { directUploadBatch } from '@/lib/media-upload';
 import type { IApiResponse } from '@celebs/shared-types';
+
 import type {
   CreateProductRequest,
   ProductFilterRequest,
   ProductRecord,
   UpdateProductRequest,
 } from './types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
+import { directUploadBatch } from '@/lib/media-upload';
 
 // Public type aliases — required by manage-product, use-product-queries, add-product
 export type {

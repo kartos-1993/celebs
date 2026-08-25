@@ -1,14 +1,15 @@
-import { axiosClient } from '@/lib/axios/axios-client';
 import type {
   loginType,
-  registerType,
-  verifyEmailType,
-  resetPasswordType,
-  verifyMFAType,
   mfaLoginType,
+  registerType,
+  resetPasswordType,
   setupSuperadminType,
   vendorRegisterType,
+  verifyEmailType,
+  verifyMFAType,
 } from '@celebs/shared-types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 export interface ForgotPasswordPayload {
   email: string;

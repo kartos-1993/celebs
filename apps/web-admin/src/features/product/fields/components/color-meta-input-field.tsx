@@ -6,23 +6,22 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
+import { MediaLibraryButton } from '../../components/media-library-button';
 import type { UiProps } from '../ui-registry';
 
 import {
+  AddFromFileTile,
+  FieldError,
+  getPathError,
   ImageValue,
   imageValueKey,
   LabelWithRequired,
   uploadErrorMessage,
   uploadImageFiles,
   validateFileBasics,
-  AddFromFileTile,
-  FieldError,
   VariantThumb,
-  getPathError,
 } from './shared';
 import { useObjectUrl } from './use-object-url';
-
-import { MediaLibraryButton } from '../../components/media-library-button';
 
 function joinAccept(accept?: string[]) {
   return Array.isArray(accept) ? accept.join(',') : undefined;

@@ -1,7 +1,9 @@
-import { getCategoryById } from '@/features/category/api';
 import type { CategoryAttributeType } from '@celebs/shared-types';
-import type { FieldSpec } from '../types';
+
 import { extractVariantsMeta } from '../fields/variant-utils';
+import type { FieldSpec } from '../types';
+
+import { getCategoryById } from '@/features/category/api';
 
 export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   const merged = Array.isArray(next) ? [...next] : [];

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
+import { cn } from '../lib/utils';
+
 import { Button } from './button';
 import {
   Dialog,
@@ -11,7 +13,6 @@ import {
   DialogTitle,
 } from './dialog';
 import { Spinner } from './spinner';
-import { cn } from '../lib/utils';
 
 export interface ConfirmDialogProps {
   open: boolean;

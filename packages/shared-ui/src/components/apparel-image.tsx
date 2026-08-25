@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+
 import {
   buildDprSrcSet,
   buildWidthSrcSet,
   getOptimizedImageUrl,
   type ImagePreset,
 } from '@celebs/shared-utils';
+
 import { cn } from '../lib/utils';
 
 export interface ApparelImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {

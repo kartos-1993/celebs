@@ -1,10 +1,10 @@
 // Common API response interface
-export interface IApiResponse<T = any> {
+export interface IApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data: T | null;
-  errorCode?: any;
-  errors?: any[];
+  errorCode?: unknown;
+  errors?: unknown[];
 }
 
 // Pagination response interface

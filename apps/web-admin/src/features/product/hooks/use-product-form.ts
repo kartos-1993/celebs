@@ -2,10 +2,13 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+
 import { baseProductSchema } from '@celebs/shared-types';
+
 import { getProductById } from '../api';
-import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 import { hydrateProductForm, toCategoryPath } from '../utils/hydrate-product-form';
+
+import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 
 export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> & Record<string, unknown>;
 

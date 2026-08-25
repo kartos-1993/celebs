@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { useColorScheme } from 'react-native';
+import { ScrollView, TouchableOpacity, View , useColorScheme } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Mail, Menu, Search, ShoppingCart } from 'lucide-react-native';

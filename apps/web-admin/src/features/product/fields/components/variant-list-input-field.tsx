@@ -1,9 +1,12 @@
 import React from 'react';
 import { useController, useFormContext } from 'react-hook-form';
+
 import { Multiselect } from '@celebs/shared-ui/components/multiselect';
+
 import type { UiProps } from '../ui-registry';
-import { LabelWithRequired, FieldError, rulesFrom } from './shared';
+
 import { useOptions } from './dropdown-input-field';
+import { FieldError, LabelWithRequired, rulesFrom } from './shared';
 
 export function VariantListInputField({ field, control }: UiProps) {
   const { setValue } = useFormContext();

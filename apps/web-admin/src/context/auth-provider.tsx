@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect } from 'react';
+
 import { logger } from '@celebs/shared-utils';
+
 import useAuth from '@/hooks/use-auth';
-import { UserData } from '@/types';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
 import { axiosClient } from '@/lib/axios/axios-client';
-import { setAuthCallbacks, broadcastLogout } from '@/lib/axios/interceptors';
+import { broadcastLogout,setAuthCallbacks } from '@/lib/axios/interceptors';
+import { UserData } from '@/types';
 // ─── Context Shape ────────────────────────────────────────────────────────────
 export type AuthContextType = {
   user?: UserData;

@@ -6,14 +6,17 @@
  * SkuTableV2) → baseline safety net (media/pricing) if still empty.
  */
 import { useQuery } from '@tanstack/react-query';
+
 import { logger } from '@celebs/shared-utils';
-import { axiosClient } from '@/lib/axios/axios-client';
-import type { FieldSpec } from '../types';
+
 import {
   addFallbackFields,
   ensureVariantSupportFields,
   normalizeSchema,
 } from '../components/dynamic-form-utils';
+import type { FieldSpec } from '../types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
 
 export const PRODUCT_SCHEMA_QUERY_KEYS = {
   all: ['product-schema'] as const,

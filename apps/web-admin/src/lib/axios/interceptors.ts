@@ -1,5 +1,6 @@
-import { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { CustomAxiosRequestConfig, ApiErrorResponse } from './types';
+import { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+
+import { ApiErrorResponse,CustomAxiosRequestConfig } from './types';
 
 // ─── Mutex Lock State ────────────────────────────────────────────────────────
 let isRefreshing = false;

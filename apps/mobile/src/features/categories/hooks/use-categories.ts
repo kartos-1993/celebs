@@ -19,7 +19,7 @@ export function useCategories() {
       const flattened: Category[] = [];
 
       const processNodes = (
-        nodes: Array<Category & { name: string; children?: Category[] }>,
+        nodes: (Category & { name: string; children?: Category[] })[],
         parentName?: string,
       ) => {
         nodes.forEach((node) => {
@@ -33,7 +33,7 @@ export function useCategories() {
 
           if (node.children && node.children.length > 0) {
             processNodes(
-              node.children as Array<Category & { name: string; children?: Category[] }>,
+              node.children as (Category & { name: string; children?: Category[] })[],
               parentName || node.name,
             );
           }

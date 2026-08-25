@@ -17,7 +17,7 @@ interface FitRecommenderWidgetProps {
   availableSizes?: string[];
   selectedSize?: string;
   onSelectSize: (size: string) => void;
-  productMeasurements?: Array<{ name: string; value: string; unit?: string }>;
+  productMeasurements?: { name: string; value: string; unit?: string }[];
 }
 
 export const FitRecommenderWidget = memo(function FitRecommenderWidget({

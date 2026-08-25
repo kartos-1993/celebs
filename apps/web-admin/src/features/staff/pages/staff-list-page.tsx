@@ -21,9 +21,9 @@ import {
 import { z } from 'zod';
 
 import {
+  getGroupedPermissions,
   Permission,
   STAFF_ROLE_PRESETS,
-  getGroupedPermissions,
 } from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
 import { createStaffSchema } from '@celebs/shared-types';
@@ -31,7 +31,6 @@ import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
-import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
+import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
   FormControl,

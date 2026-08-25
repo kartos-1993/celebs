@@ -13,12 +13,12 @@ export interface HydratedProduct {
   name?: string;
   price?: number;
   mainImages?: string[];
-  colorVariants?: Array<{
+  colorVariants?: {
     name: string;
     colorCode?: string;
     images?: string[];
-    stocks?: Array<{ size: string; quantity: number }>;
-  }>;
+    stocks?: { size: string; quantity: number }[];
+  }[];
 }
 
 export interface ComboItemData {

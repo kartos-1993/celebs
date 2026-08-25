@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildProductPayload } from '../add-product-payload';
+
 import type { FieldSpec } from '../../types';
+import { buildProductPayload } from '../add-product-payload';
 
 describe('buildProductPayload', () => {
   const fields: FieldSpec[] = [

@@ -3,7 +3,8 @@
  * Encapsulates all UI-related state and actions
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback,useState } from 'react';
+
 import { Category, CategoryUIState } from '../types';
 
 interface UseCategoryStateReturn {

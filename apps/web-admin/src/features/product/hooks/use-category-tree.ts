@@ -4,7 +4,9 @@
  */
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import type { CategoryTreeNode, DropdownCategory, RecentCategory } from '@celebs/shared-types';
+
 import { CATEGORY_QUERY_KEYS, CategoryApiService } from '@/features/category/api';
 
 /** Flatten a category tree into the lightweight dropdown shape. */

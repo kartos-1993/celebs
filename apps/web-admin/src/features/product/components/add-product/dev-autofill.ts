@@ -1,6 +1,7 @@
 import type { Path, UseFormReturn } from 'react-hook-form';
-import type { FieldSpec } from '../../types';
+
 import type { ProductFormValues } from '../../hooks/use-product-form';
+import type { FieldSpec } from '../../types';
 
 /** Development-only: fills the form with mock data (skips Cloudinary uploads). */
 export function autofillProductForm(

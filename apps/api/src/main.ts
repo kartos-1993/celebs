@@ -66,4 +66,7 @@ const startSelfPing = () => {
   }, intervalMs);
 };
 
-startServer();
+startServer().catch((error: unknown) => {
+  logger.error({ error }, 'Unhandled server startup rejection');
+  process.exit(1);
+});

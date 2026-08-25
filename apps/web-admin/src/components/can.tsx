@@ -1,12 +1,14 @@
 import React from 'react';
-import { usePermission } from '@/hooks/use-permission';
-import type { PermissionRequirement, PermissionMode } from '@celebs/rbac';
+
+import type { PermissionMode,PermissionRequirement } from '@celebs/rbac';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@celebs/shared-ui/components/tooltip';
+
+import { usePermission } from '@/hooks/use-permission';
 
 export interface ChildElementProps {
   disabled?: boolean;

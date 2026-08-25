@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import type { BrandFilterType, CreateBrandAuthorizationType } from '@celebs/shared-types';
-import { useAuthContext } from '@/context/auth-provider';
+
 import {
   getBrandById,
   getBrands,
@@ -8,6 +9,8 @@ import {
   submitBrandAuthorization,
 } from '../brand-api';
 import { BRAND_QUERY_KEYS } from '../brand-query-keys';
+
+import { useAuthContext } from '@/context/auth-provider';
 
 export function useBrands(filters?: Partial<BrandFilterType>) {
   return useQuery({

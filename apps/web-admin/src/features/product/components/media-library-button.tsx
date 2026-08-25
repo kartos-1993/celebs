@@ -3,9 +3,9 @@ import React, { memo, useCallback, useState } from 'react';
 import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 
-import { cn } from '@/lib/utils';
-
 import { MediaPickerDialog } from './media-picker-dialog';
+
+import { cn } from '@/lib/utils';
 
 interface MediaLibraryButtonProps {
   label?: string;

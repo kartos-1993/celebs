@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import {
-  getQuickFiltersForCategory,
   createQuickFilter,
-  updateQuickFilter,
   deleteQuickFilter,
+  getQuickFiltersForCategory,
+  updateQuickFilter,
 } from '../api';
 import { QuickFilter } from '../types';
 

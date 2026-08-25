@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { hydrateProductForm, toCategoryPath } from '../hydrate-product-form';
+
 import type { ProductRecord } from '../../types';
+import { hydrateProductForm, toCategoryPath } from '../hydrate-product-form';
 
 describe('hydrateProductForm', () => {
   it('should parse category paths from array, slash string, or name fallback', () => {

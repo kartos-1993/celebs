@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { resolveColorCode, isMulticolorVariant, isHexColor, extractHexColor } from '../add-product-helpers';
-import { formatProductCategoryBreadcrumb } from '../category-format';
+import { describe, expect,it } from 'vitest';
+
 import type { ProductQueueItem } from '../../components/review-queue/types';
+import { extractHexColor,isHexColor, isMulticolorVariant, resolveColorCode } from '../add-product-helpers';
+import { formatProductCategoryBreadcrumb } from '../category-format';
 
 describe('Color Resolver & Category Breadcrumb Formatting', () => {
   describe('isHexColor & extractHexColor', () => {

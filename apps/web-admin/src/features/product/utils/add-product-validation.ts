@@ -1,21 +1,23 @@
 // ─── Shared Zod validators — single source of truth from @celebs/shared-types ──
 // Form components should import these directly rather than defining local copies.
-export {
-  createProductSchema,
-  updateProductSchema,
-  productFilterSchema,
-  productReviewActionSchema,
-} from '@celebs/shared-types';
 export type {
   CreateProductType,
-  UpdateProductType,
   ProductFilterType,
   ProductReviewActionType,
+  UpdateProductType,
+} from '@celebs/shared-types';
+export {
+  createProductSchema,
+  productFilterSchema,
+  productReviewActionSchema,
+  updateProductSchema,
 } from '@celebs/shared-types';
 
 import type { FieldErrors } from 'react-hook-form';
+
 import type { FieldSpec } from '../fields/ui-registry';
 import type { ProductSidebarSection } from '../types';
+
 import {
   getLabelMap,
   getNestedValue,

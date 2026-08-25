@@ -1,7 +1,9 @@
 import { lazy } from 'react';
 import { Navigate, type RouteObject } from 'react-router-dom';
-import { RoleGuard } from '@/routes/role-guard';
+
 import { Permission } from '@celebs/rbac';
+
+import { RoleGuard } from '@/routes/role-guard';
 
 const ManageProductPage = lazy(() => import('./pages/manage-product-page'));
 const AddProductPage = lazy(() => import('./pages/add-product-page'));

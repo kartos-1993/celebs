@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+
 import {
   buildDprSrcSet,
   buildWidthSrcSet,
   configureImagePipeline,
   getOptimizedImageUrl,
   IMAGE_PRESETS,
-  isEdgeTransformActive,
   isEdgeTransformableUrl,
 } from '../image-url';
 

@@ -1,9 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import type {
   CreateMediaFolderType,
   DeleteUnusedMediaType,
   MediaAssetFilterType,
 } from '@celebs/shared-types';
+
+import type { PaginatedMediaAssetsResponse } from '../media-api';
 import {
   cleanupUnusedMedia,
   createMediaFolder,
@@ -13,7 +16,6 @@ import {
   getMediaFolders,
   getMediaQuota,
 } from '../media-api';
-import type { PaginatedMediaAssetsResponse } from '../media-api';
 import { MEDIA_QUERY_KEYS } from '../media-query-keys';
 
 export function useMediaAssets(filters?: Partial<MediaAssetFilterType>) {

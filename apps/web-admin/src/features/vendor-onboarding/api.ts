@@ -1,11 +1,12 @@
-import { axiosClient } from '@/lib/axios/axios-client';
-import { directUploadFile } from '@/lib/media-upload';
 import type {
+  vendorBusinessInfoType,
+  vendorDocumentsType,
   vendorProfileType,
   warehouseType,
-  vendorDocumentsType,
-  vendorBusinessInfoType,
 } from '@celebs/shared-types';
+
+import { axiosClient } from '@/lib/axios/axios-client';
+import { directUploadFile } from '@/lib/media-upload';
 
 export async function getOnboardingStatus() {
   const response = await axiosClient.get('/vendor/onboarding-status');

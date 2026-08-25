@@ -1,6 +1,8 @@
 import { Dispatch, SetStateAction } from 'react';
-import { Button } from '@celebs/shared-ui/components/button';
 import { ChevronLeft } from 'lucide-react';
+
+import { Button } from '@celebs/shared-ui/components/button';
+
 import { cn } from '@/lib/utils';
 
 type SibarToggleProps = {

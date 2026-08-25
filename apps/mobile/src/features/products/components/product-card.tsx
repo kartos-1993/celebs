@@ -182,10 +182,6 @@ export function ProductCard({
     ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
     : (productRecord.discountPercent as number | undefined) || 0;
 
-  const _savingsAmount = hasDiscount
-    ? Math.round(product.price - (product.discountedPrice || product.price))
-    : 0;
-
   const priceColor = hasDiscount ? Palette.warning : Palette.black;
   const integerPart = Math.floor(currentPrice);
   const decimalPart = (currentPrice % 1).toFixed(2).substring(1);

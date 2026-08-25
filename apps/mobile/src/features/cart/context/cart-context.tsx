@@ -98,9 +98,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useCart = (): CartContextType => {
   const context = useContext(CartContext);
+  const store = useCartStore();
   if (!context) {
     // Fallback directly to Zustand store if invoked outside provider
-    const store = useCartStore();
     const items = store.cart?.items || [];
     const selectedItems = items.filter((item) => store.selectedItemIds.includes(item.id));
     const totals = computeTotals(selectedItems);

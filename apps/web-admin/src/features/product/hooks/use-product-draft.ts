@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Path, UseFormReturn } from 'react-hook-form';
+
 import { logger } from '@celebs/shared-utils';
+
 import type { ProductDraft } from '../types';
 import {
   flattenObject,
   getDraftStorageKey,
   serializeDraftValue,
 } from '../utils/add-product-helpers';
+
 import type { ProductFormValues } from './use-product-form';
 
 interface UseProductDraftOptions {

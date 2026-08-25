@@ -1,5 +1,6 @@
-import { ErrorCode } from '../enums/error-code.enum';
 import { HTTPSTATUS, HttpStatusCode } from '../config/http.config';
+import { ErrorCode } from '../enums/error-code.enum';
+
 import { AppError } from './app-error';
 
 export class NotFoundException extends AppError {

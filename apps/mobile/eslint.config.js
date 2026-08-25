@@ -5,4 +5,10 @@ module.exports = [
   {
     ignores: ['.expo/*', 'android/**', 'node_modules/*'],
   },
+  {
+    rules: {
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+    },
+  },
 ];

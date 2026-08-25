@@ -10,7 +10,7 @@ const canUsePretty = (() => {
   try {
     require.resolve('pino-pretty');
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 })();

@@ -1,8 +1,8 @@
 import type {
   CreateProductType,
-  UpdateProductType,
   ProductFilterType,
   ProductType,
+  UpdateProductType,
 } from '@celebs/shared-types';
 
 export type CreateProductRequest = CreateProductType;

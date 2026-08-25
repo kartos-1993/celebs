@@ -9,7 +9,7 @@ import { MediaCropDialog } from '../../components/media-crop-dialog';
 import { MediaLibraryButton } from '../../components/media-library-button';
 import type { UiProps } from '../ui-registry';
 
-import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles, FieldError, LabelWithRequired } from './shared';
+import { FieldError, ImageValue, imageValueKey, LabelWithRequired,uploadErrorMessage, uploadImageFiles } from './shared';
 
 export const MainImageInputField = memo(function MainImageInputField({ field }: UiProps) {
   const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();

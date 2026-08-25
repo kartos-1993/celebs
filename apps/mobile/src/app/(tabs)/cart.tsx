@@ -93,7 +93,7 @@ export default function CartScreen() {
           </View>
           <ThemedText style={styles.emptyTitle}>Your Cart is Empty</ThemedText>
           <ThemedText style={styles.emptyDescription}>
-            Looks like you haven't added any items to your shopping cart yet.
+            Looks like you haven&apos;t added any items to your shopping cart yet.
           </ThemedText>
           <TouchableOpacity
             style={styles.exploreBtn}
