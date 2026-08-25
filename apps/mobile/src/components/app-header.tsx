@@ -10,6 +10,7 @@ import { styles } from './app-header.styles';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Palette } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
+import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
 
 interface AppHeaderProps {
   showSubHeader?: boolean;
@@ -33,6 +34,7 @@ export function AppHeader({
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const router = useRouter();
   const { itemCount } = useCart();
+  const { openCartSheet } = useCartSheet();
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
 
   const handleSubTabPress = (tab: string) => {
@@ -104,7 +106,7 @@ export function AppHeader({
           <TouchableOpacity
             style={styles.iconButton}
             activeOpacity={0.7}
-            onPress={() => router.push('/cart')}
+            onPress={openCartSheet}
           >
             <ShoppingCart size={22} color={textColor} strokeWidth={2} />
             {itemCount > 0 && (

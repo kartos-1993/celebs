@@ -35,6 +35,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useCart } from '@/features/cart/context/cart-context';
+import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { ProductGallery } from '@/features/products/components/product-gallery';
 import { ProductVariantSelector } from '@/features/products/components/product-variant-selector';
@@ -48,6 +49,7 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const { isLoggedIn } = useAuth();
   const { addToCart, itemCount } = useCart();
+  const { openCartSheet } = useCartSheet();
   const { product, loading, error } = useProduct(id || '');
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
   const topCartBtnRef = useRef<View>(null);
@@ -154,7 +156,7 @@ export default function ProductDetailScreen() {
     if (!product) return;
     Alert.alert(product.name, undefined, [
       { text: 'Share', onPress: handleShare },
-      { text: 'View Cart', onPress: () => router.push('/cart') },
+      { text: 'View Cart', onPress: openCartSheet },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
@@ -258,7 +260,7 @@ export default function ProductDetailScreen() {
               <View ref={topCartBtnRef} onLayout={measureTopCartIcon}>
                 <TouchableOpacity
                   style={styles.headerIconButton}
-                  onPress={() => router.push('/cart')}
+                  onPress={openCartSheet}
                   accessible={true}
                   accessibilityRole="button"
                   accessibilityLabel="View cart"

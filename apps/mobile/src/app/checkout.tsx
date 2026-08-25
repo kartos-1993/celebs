@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -30,11 +30,17 @@ import { styles } from '@/features/checkout/styles/checkout.styles';
 export default function CheckoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { cart, subtotal, clearCart } = useCart();
+  const { cart, subtotal, selectedItems, selectedSubtotal, clearCart } = useCart();
   const { user, isLoggedIn } = useAuth();
   const { signInWithGoogle, isAuthenticating } = useGoogleAuth();
 
   const [loading, setLoading] = useState<boolean>(false);
+
+  const checkoutItems = useMemo(
+    () => (selectedItems.length > 0 ? selectedItems : cart?.items || []),
+    [selectedItems, cart],
+  );
+  const itemsSubtotal = selectedItems.length > 0 ? selectedSubtotal : subtotal;
 
   // Address State (Daraz Nepal Structure)
   const [fullName, setFullName] = useState<string>(user?.name || 'Ram Bahadur Shrestha');
@@ -47,13 +53,18 @@ export default function CheckoutScreen() {
   // Payment Method State
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'STRIPE' | 'ESEWA' | 'KHALTI'>('COD');
 
-  const shippingFee = subtotal > 3000 ? 0 : 150;
-  const grandTotal = subtotal + shippingFee;
+  const shippingFee = itemsSubtotal > 3000 ? 0 : 150;
+  const grandTotal = itemsSubtotal + shippingFee;
   const isCodDisabled = grandTotal > 5000;
 
   const handlePlaceOrder = async () => {
     if (!isLoggedIn) {
       Alert.alert('Login Required', 'Please sign in to complete your checkout.');
+      return;
+    }
+
+    if (checkoutItems.length === 0) {
+      Alert.alert('No Items Selected', 'Please select items in your cart before checking out.');
       return;
     }
 
@@ -87,7 +98,7 @@ export default function CheckoutScreen() {
           streetAddress,
         },
         paymentMethod,
-        items: (cart?.items || []).map(
+        items: checkoutItems.map(
           (item: {
             productId?: string;
             id?: string;
@@ -350,7 +361,9 @@ export default function CheckoutScreen() {
 
           <View style={styles.summaryRow}>
             <ThemedText style={styles.summaryLabel}>Subtotal</ThemedText>
-            <ThemedText style={styles.summaryValue}>Rs. {subtotal.toLocaleString()}</ThemedText>
+            <ThemedText style={styles.summaryValue}>
+              Rs. {itemsSubtotal.toLocaleString()}
+            </ThemedText>
           </View>
 
           <View style={styles.summaryRow}>

@@ -15,6 +15,7 @@ import { ChevronLeft, Search, ShoppingCart, SlidersHorizontal } from 'lucide-rea
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Palette, Spacing } from '@/constants/theme';
+import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
 import { DynamicFilterDrawer } from '@/features/categories/components/dynamic-filter-drawer';
 import { QuickFilterRenderer } from '@/features/categories/components/quick-filter-renderer';
 import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
@@ -28,6 +29,7 @@ export default function CategoryProductsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
+  const { openCartSheet } = useCartSheet();
 
   const categorySlug = (Array.isArray(slug) ? slug[0] : slug) || '';
 
@@ -162,7 +164,7 @@ export default function CategoryProductsScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push('/cart')}
+          onPress={openCartSheet}
           style={styles.headerBtn}
           accessible={true}
           accessibilityRole="button"

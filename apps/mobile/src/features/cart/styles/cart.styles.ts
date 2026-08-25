@@ -5,36 +5,28 @@ import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/them
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Palette.gray50,
+  },
+  pageHeader: {
     backgroundColor: Palette.white,
   },
-  scrollContent: {
-    paddingHorizontal: Spacing.md,
+  section: {
+    flex: 1,
+    minHeight: 0,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  screenTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Palette.black,
-  },
-  clearCartText: {
-    fontSize: FontSize.small,
-    color: Palette.danger,
-    fontWeight: FontWeight.semibold,
+  footerGroup: {
+    backgroundColor: Palette.white,
+    borderTopWidth: 1,
+    borderTopColor: Palette.gray100,
   },
   stockNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    backgroundColor: Palette.dangerTint,
     borderRadius: Radius.md,
     padding: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
     gap: Spacing.xs,
   },
   stockNoticeText: {
@@ -48,6 +40,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
+    backgroundColor: Palette.white,
   },
   loadingText: {
     fontSize: FontSize.small,
@@ -58,7 +51,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.xl,
-    marginTop: 100,
   },
   emptyIconCircle: {
     width: 96,
@@ -94,5 +86,3 @@ export const styles = StyleSheet.create({
     fontSize: FontSize.small,
   },
 });
-
-export default styles;

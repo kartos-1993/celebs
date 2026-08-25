@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import type { DynamicWidget, WidgetProps } from '../types';
 
+import { Palette, Radius, Spacing } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CampaignCountdownBanner } from '@/features/home/components/campaign-countdown-banner';
@@ -11,7 +12,6 @@ import {
   ComboBundleShowcase,
 } from '@/features/home/components/combo-bundle-showcase';
 import { ProductGrid } from '@/features/products/components/product-grid';
-import { Palette, Radius, Spacing } from '@/constants/theme';
 
 export interface SDUIActionHandlers {
   onSelectCombo?: (combo: ComboBundleData) => void;
