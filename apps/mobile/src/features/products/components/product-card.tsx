@@ -18,10 +18,12 @@ import { ChevronRight, Heart, ShoppingBag } from 'lucide-react-native';
 import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
 import { Product, resolveImageUrl } from '../hooks/use-products';
+import { isProductFullyOutOfStock } from '../utils/stock';
 
 import { styles } from './product-card.styles';
 
 import { ThemedText } from '@/components/themed-text';
+import { showToast } from '@/components/toast/toast';
 import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
@@ -178,6 +180,10 @@ export function ProductCard({
 
   const handleAddToCart = (evt?: GestureResponderEvent) => {
     evt?.stopPropagation?.();
+    if (isOutOfStock) {
+      showToast('Out of stock', { type: 'error' });
+      return;
+    }
     const touchX = evt?.nativeEvent?.pageX;
     const touchY = evt?.nativeEvent?.pageY;
 
@@ -223,6 +229,14 @@ export function ProductCard({
   // Store & Brand
   const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
 
+  const currentVariant = product.colorVariants?.[selectedColorIndex];
+  const isSelectedVariantOutOfStock =
+    currentVariant && Array.isArray(currentVariant.stocks) && currentVariant.stocks.length > 0
+      ? currentVariant.stocks.every((s) => (s.quantity ?? 0) <= 0)
+      : false;
+  // Show OOS overlay if fully sold out, or the currently viewed color is sold out (more visible in grid)
+  const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
+
   return (
     <View style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: Palette.white }]}>
       {/* 3:4 Aspect Ratio Image Gallery Viewport */}
@@ -232,7 +246,12 @@ export function ProductCard({
         style={[styles.imageContainer, { backgroundColor: Palette.gray100 }]}
       >
         {cardImages.length > 0 ? (
-          <Animated.View style={{ flex: 1, transform: [{ translateX: hintAnim }] }}>
+          <Animated.View
+            style={[
+              { flex: 1, transform: [{ translateX: hintAnim }] },
+              isOutOfStock && styles.oosImage,
+            ]}
+          >
             <ScrollView
               ref={scrollViewRef}
               horizontal
@@ -298,6 +317,15 @@ export function ProductCard({
                 ]}
               />
             ))}
+          </View>
+        )}
+
+        {/* Out of Stock overlay — still tappable to view product */}
+        {isOutOfStock && (
+          <View style={styles.oosOverlay} pointerEvents="none">
+            <View style={styles.oosBadge}>
+              <ThemedText style={styles.oosBadgeText}>OUT OF STOCK</ThemedText>
+            </View>
           </View>
         )}
 
@@ -397,8 +425,11 @@ export function ProductCard({
             style={[
               styles.cartActionButton,
               { backgroundColor: Palette.gray100, borderColor: Palette.gray200 },
+              isOutOfStock && styles.cartActionButtonDisabled,
             ]}
             onPress={handleAddToCart}
+            accessibilityLabel={isOutOfStock ? 'Out of stock' : 'Add to cart'}
+            accessibilityState={{ disabled: isOutOfStock }}
           >
             <ShoppingBag size={14} color={Palette.gray900} strokeWidth={2.2} />
           </TouchableOpacity>

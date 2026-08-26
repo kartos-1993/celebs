@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
+import { useAuth } from '@/features/auth/context/auth-context';
 
 export interface WishlistProductView {
   id: string;
@@ -85,13 +86,16 @@ export function useWishlist(enabled: boolean) {
 /**
  * Membership check backed by the shared ['wishlist'] cache — usable anywhere
  * (PDP heart, grid-card hearts) without extra fetches once loaded.
+ * Guests never hit the network: hearts render empty and tapping prompts login.
+ * Waits for auth restore to finish to avoid SecureStore race after login.
  */
 export function useWishlistStatus() {
-  const { wishlistedIds } = useWishlist(true);
+  const { isLoggedIn, isLoading } = useAuth();
+  const { wishlistedIds } = useWishlist(isLoggedIn && !isLoading);
 
   const isWishlisted = useCallback(
-    (productId: string) => wishlistedIds.has(productId),
-    [wishlistedIds],
+    (productId: string) => isLoggedIn && !isLoading && wishlistedIds.has(productId),
+    [isLoggedIn, isLoading, wishlistedIds],
   );
 
   return { isWishlisted };

@@ -24,21 +24,14 @@ export class CartApiService {
     if (sessionId) {
       headers['x-session-id'] = sessionId;
     }
-    console.log('[Mobile CartApiService] addToCart payload:', input, 'sessionId:', sessionId);
-    try {
-      const response = await apiClient.post<{ message: string; data: CartResponse }>(
-        '/cart/items',
-        input,
-        {
-          headers,
-        },
-      );
-      console.log('[Mobile CartApiService] addToCart success response:', response.data);
-      return response.data.data;
-    } catch (error: unknown) {
-      console.error('[Mobile CartApiService] addToCart API error:', JSON.stringify(error, null, 2));
-      throw error;
-    }
+    const response = await apiClient.post<{ message: string; data: CartResponse }>(
+      '/cart/items',
+      input,
+      {
+        headers,
+      },
+    );
+    return response.data.data;
   }
 
   static async updateCartItem(

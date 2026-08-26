@@ -28,8 +28,8 @@ function toProduct(entry: WishlistEntryView): Product {
 export default function WishlistScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isLoggedIn } = useAuth();
-  const { entries, loading, refreshing, error, refresh } = useWishlist(isLoggedIn);
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
+  const { entries, loading, refreshing, error, refresh } = useWishlist(isLoggedIn && !authLoading);
 
   const Header = (
     <View style={[styles.headerBar, { paddingTop: insets.top }]}>
@@ -48,7 +48,44 @@ export default function WishlistScreen() {
     </View>
   );
 
-  if (!isLoggedIn || loading) {
+  if (authLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        {Header}
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color={Palette.gray900} />
+          <ThemedText style={styles.loadingText}>Restoring session…</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <ThemedView style={styles.container}>
+        {Header}
+        <View style={styles.centerBox}>
+          <View style={styles.emptyIconCircle}>
+            <Heart size={36} color={Palette.gray400} strokeWidth={1.6} />
+          </View>
+          <ThemedText style={styles.emptyTitle}>Sign in to save items</ThemedText>
+          <ThemedText style={styles.emptySub}>
+            Your wishlist is saved to your account. Log in to view and sync it.
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.shopNowBtn}
+            onPress={() => router.push('/(tabs)/me')}
+            accessibilityRole="button"
+            accessibilityLabel="Go to login"
+          >
+            <ThemedText style={styles.shopNowBtnText}>Log In</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (loading) {
     return (
       <ThemedView style={styles.container}>
         {Header}

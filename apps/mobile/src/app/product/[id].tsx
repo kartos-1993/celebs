@@ -43,6 +43,10 @@ import { ProductVariantSelector } from '@/features/products/components/product-v
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
+import {
+  isProductFullyOutOfStock,
+  isSelectedCombinationOutOfStock,
+} from '@/features/products/utils/stock';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
 export default function ProductDetailScreen() {
@@ -111,25 +115,33 @@ export default function ProductDetailScreen() {
     transform: [{ scale: topCartScale.value }],
   }));
 
+  const isFullyOutOfStock = isProductFullyOutOfStock(product);
+  const isSelectedOutOfStock = isSelectedCombinationOutOfStock(
+    product,
+    selectedColorIndex,
+    selectedSize,
+  );
+  // If any size is selectable, OOS is decided by the chosen combo; otherwise the whole product
+  const isAddToCartDisabled = isFullyOutOfStock || (selectedSize ? isSelectedOutOfStock : false);
+
   const handleAddToCart = async (overrideSize?: string) => {
     if (!product) return;
     const finalSize = overrideSize || selectedSize;
+    const currentVariant = product.colorVariants?.[selectedColorIndex];
+    const finalSizeQty = (() => {
+      const stocks = currentVariant?.stocks;
+      if (!stocks || stocks.length === 0 || !finalSize) return null;
+      const entry = stocks.find((s) => s.size.toLowerCase() === finalSize.toLowerCase());
+      return entry ? (entry.quantity ?? null) : null;
+    })();
+    const isFinalSizeOutOfStock = finalSizeQty !== null && finalSizeQty <= 0;
+    if (isFullyOutOfStock || isFinalSizeOutOfStock) {
+      showToast('No stock available', { type: 'error' });
+      return;
+    }
     if (product.sizes && product.sizes.length > 0 && !finalSize) {
       setIsSizeModalOpen(true);
       return;
-    }
-
-    // Trigger Fly-to-Cart animation
-    const flyImage =
-      product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
-    if (flyImage) {
-      startFlyAnimation({
-        imageUrl: resolveImageUrl(flyImage),
-        startX: 180,
-        startY: 500,
-        startWidth: 100,
-        startHeight: 120,
-      });
     }
 
     setIsAdding(true);
@@ -140,12 +152,26 @@ export default function ProductDetailScreen() {
         size: finalSize || 'Standard',
         colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
       });
+      // Fly only on success — no animation for OOS/failed adds
+      const flyImage =
+        product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
+      if (flyImage) {
+        startFlyAnimation({
+          imageUrl: resolveImageUrl(flyImage),
+          startX: 180,
+          startY: 500,
+          startWidth: 100,
+          startHeight: 120,
+        });
+      }
     } catch (err: unknown) {
-      const message =
+      const raw =
         err instanceof Error && err.message
           ? err.message
           : 'Could not add to cart. Please try again.';
-      showToast(message, { type: 'error' });
+      // Shein-style: OOS errors are generic, without stock counts
+      const isOosError = /exceeds available stock|out of stock/i.test(raw);
+      showToast(isOosError ? 'No stock available' : raw, { type: 'error' });
     } finally {
       setIsAdding(false);
     }
@@ -304,7 +330,18 @@ export default function ProductDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Product Image Gallery */}
-        <ProductGallery images={galleryImages} productName={product.name} />
+        <View style={styles.galleryWrapper}>
+          <View style={isAddToCartDisabled ? styles.galleryOosImage : undefined}>
+            <ProductGallery images={galleryImages} productName={product.name} />
+          </View>
+          {isAddToCartDisabled && (
+            <View style={styles.galleryOosOverlay} pointerEvents="none">
+              <View style={styles.galleryOosBadge}>
+                <ThemedText style={styles.galleryOosBadgeText}>OUT OF STOCK</ThemedText>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Product Information Section */}
         <View style={styles.detailsContainer}>
@@ -434,18 +471,23 @@ export default function ProductDetailScreen() {
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.addToCartBtn}
+          style={[styles.addToCartBtn, isAddToCartDisabled && styles.addToCartBtnDisabled]}
           onPress={() => handleAddToCart()}
-          disabled={isAdding}
+          disabled={isAdding || isAddToCartDisabled}
           activeOpacity={0.85}
           accessible={true}
           accessibilityRole="button"
-          accessibilityLabel="Add product to cart"
+          accessibilityLabel={isAddToCartDisabled ? 'Out of stock' : 'Add product to cart'}
+          accessibilityState={{ disabled: isAdding || isAddToCartDisabled }}
         >
           {isAdding ? (
             <ActivityIndicator size="small" color={Palette.white} />
           ) : (
-            <ThemedText style={styles.addToCartText}>Add to Cart</ThemedText>
+            <ThemedText
+              style={[styles.addToCartText, isAddToCartDisabled && styles.addToCartTextDisabled]}
+            >
+              {isAddToCartDisabled ? 'Out of Stock' : 'Add to Cart'}
+            </ThemedText>
           )}
         </TouchableOpacity>
       </View>

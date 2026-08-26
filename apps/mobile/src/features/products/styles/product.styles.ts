@@ -273,6 +273,43 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Palette.white,
   },
+  addToCartBtnDisabled: {
+    backgroundColor: Palette.gray300,
+  },
+  addToCartTextDisabled: {
+    color: Palette.gray500,
+  },
+
+  /* ---------- Gallery OOS ---------- */
+  galleryWrapper: {
+    position: 'relative',
+  },
+  galleryOosImage: {
+    opacity: 0.55,
+  },
+  galleryOosOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    zIndex: 5,
+  },
+  galleryOosBadge: {
+    backgroundColor: 'rgba(17,24,39,0.88)',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.pill,
+  },
+  galleryOosBadgeText: {
+    color: Palette.white,
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
+  },
 });
 
 export default styles;

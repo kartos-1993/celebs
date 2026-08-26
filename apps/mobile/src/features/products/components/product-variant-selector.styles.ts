@@ -45,6 +45,27 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Palette.gray900,
   },
+  colorChipDisabled: {
+    opacity: 0.42,
+  },
+  colorChipDisabledOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.62)',
+    borderRadius: Radius.sm - 1,
+  },
+  colorChipDisabledLine: {
+    position: 'absolute',
+    width: '120%',
+    height: 1,
+    backgroundColor: Palette.gray400,
+    transform: [{ rotate: '-36deg' }],
+  },
   colorDot: {
     width: 24,
     height: 24,
@@ -79,6 +100,16 @@ export const styles = StyleSheet.create({
     borderColor: Palette.gray200,
     opacity: 0.4,
   },
+  sizeBoxLowStock: {
+    borderColor: Palette.warning,
+    backgroundColor: Palette.warningTint,
+    minHeight: 38,
+    paddingVertical: 4,
+  },
+  sizeBoxInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sizeText: {
     fontSize: FontSize.footnote,
     fontWeight: FontWeight.semibold,
@@ -90,6 +121,19 @@ export const styles = StyleSheet.create({
   sizeTextDisabled: {
     color: Palette.gray400,
     textDecorationLine: 'line-through',
+  },
+  sizeTextLowStock: {
+    color: Palette.warning,
+  },
+  sizeLowStockTag: {
+    fontSize: 9,
+    fontWeight: FontWeight.bold,
+    color: Palette.warning,
+    lineHeight: 10,
+    marginTop: 1,
+  },
+  sizeLowStockTagSelected: {
+    color: Palette.white,
   },
 
   /* ---------- Measurement Box ---------- */
@@ -147,15 +191,5 @@ export const styles = StyleSheet.create({
     fontSize: FontSize.caption,
     fontWeight: FontWeight.bold,
     color: Palette.danger,
-  },
-  lowStockText: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.bold,
-    color: Palette.warning,
-  },
-  inStockText: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.semibold,
-    color: Palette.success,
   },
 });

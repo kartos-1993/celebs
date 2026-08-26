@@ -210,4 +210,35 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
+  cartActionButtonDisabled: {
+    opacity: 0.45,
+  },
+
+  // --- Out of stock ---
+  oosImage: {
+    opacity: 0.55,
+  },
+  oosOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    zIndex: 6,
+  },
+  oosBadge: {
+    backgroundColor: 'rgba(17,24,39,0.88)',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.pill,
+  },
+  oosBadgeText: {
+    color: Palette.white,
+    fontSize: FontSize.footnote,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
+  },
 });
