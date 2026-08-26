@@ -15,6 +15,9 @@ import { useCart } from '@/features/cart/context/cart-context';
 import { styles } from '@/features/cart/styles/cart.styles';
 import { FREE_SHIPPING_THRESHOLD } from '@/features/cart/utils/cart-selectors';
 
+// Mirrors TAB_BAR_CONTENT_HEIGHT in (tabs)/_layout.tsx
+const TAB_BAR_CONTENT_HEIGHT = 56;
+
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -139,7 +142,13 @@ export default function CartScreen() {
         />
       </View>
 
-      <View style={[styles.footerGroup, { paddingBottom: Spacing.sm }]}>
+      {/* Padded above the absolute-positioned tab bar (56 content height, see (tabs)/_layout) */}
+      <View
+        style={[
+          styles.footerGroup,
+          { paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT + Spacing.xs },
+        ]}
+      >
         <CartPromoBanner
           savings={selectedSavings}
           savingsPercent={selectedSavingsPercent}

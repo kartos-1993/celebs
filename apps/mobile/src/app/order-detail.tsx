@@ -14,17 +14,17 @@ import { ChevronLeft, ExternalLink, MapPin, Truck } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Palette, Spacing } from '@/constants/theme';
+import { useAuth } from '@/features/auth/context/auth-context';
 import { OrderItemRow } from '@/features/orders/components/order-item-row';
 import { TrackingTimeline } from '@/features/orders/components/tracking-timeline';
 import { LIVE_POLL_INTERVAL_MS, useOrderDetail } from '@/features/orders/hooks/use-orders';
+import { styles } from '@/features/orders/styles/order-detail.styles';
 import type { OrderView } from '@/features/orders/utils/order-status';
 import {
   formatDate,
   getOrderStatusMeta,
   isActiveOrder,
 } from '@/features/orders/utils/order-status';
-import { useAuth } from '@/features/auth/context/auth-context';
-import { styles } from '@/features/orders/styles/order-detail.styles';
 
 const STATUS_STYLE: Record<string, object> = {
   active: styles.statusTextActive,
@@ -76,7 +76,6 @@ export default function OrderDetailScreen() {
   const { order, loading, refreshing, error, refresh } = useOrderDetail(
     orderId,
     isLoggedIn && !!orderId,
-    true,
   );
 
   const livePolling = !!order && isActiveOrder(order.status);

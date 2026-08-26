@@ -7,33 +7,39 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {
   ChevronRight,
   Heart,
-  Lock,
-  Mail,
   LogOut,
+  Mail,
   MapPin,
   ShieldCheck,
   ShoppingBag,
   User,
 } from 'lucide-react-native';
 
+import { PasswordInput } from '@/components/password-input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Palette } from '@/constants/theme';
+import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
 import { styles } from '@/features/auth/styles/profile.styles';
 
+// Mirrors TAB_BAR_CONTENT_HEIGHT in (tabs)/_layout.tsx
+const TAB_BAR_CONTENT_HEIGHT = 56;
+
 export default function MeScreen() {
+  const insets = useSafeAreaInsets();
   const { user, isLoggedIn, isLoading, loginWithEmail, register, logout } = useAuth();
   const { signInWithGoogle, isAuthenticating } = useGoogleAuth();
 
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,10 +56,31 @@ export default function MeScreen() {
   };
 
   // Handle Email/Password Submission
+  const PASSWORD_POLICY =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
   const handleSubmitForm = async () => {
     if (!email || !password || (authMode === 'register' && !name)) {
       Alert.alert('Missing Fields', 'Please fill out all required fields');
       return;
+    }
+
+    if (authMode === 'register') {
+      if (name.trim().length < 3) {
+        Alert.alert('Invalid Name', 'Name must be at least 3 characters long.');
+        return;
+      }
+      if (!PASSWORD_POLICY.test(password)) {
+        Alert.alert(
+          'Weak Password',
+          'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.',
+        );
+        return;
+      }
+      if (password !== confirmPassword) {
+        Alert.alert('Password Mismatch', 'The passwords you entered do not match.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -62,14 +89,25 @@ export default function MeScreen() {
         await loginWithEmail(email, password);
         Alert.alert('Welcome Back!', 'You have logged in successfully');
       } else {
-        await register(name, email, password);
+        await register(name, email, password, confirmPassword);
         await loginWithEmail(email, password);
         Alert.alert('Account Created', 'Welcome to Celebs Fashion!');
       }
     } catch (err: unknown) {
+      const apiError = err as {
+        message?: string;
+        statusCode?: number;
+        errors?: { field?: string; message?: string }[];
+      };
+      const reasons = Array.isArray(apiError?.errors)
+        ? apiError.errors
+            .map((issue) => issue?.message)
+            .filter((msg): msg is string => Boolean(msg))
+            .join('\n')
+        : '';
       Alert.alert(
-        'Authentication Error',
-        (err as { message?: string })?.message || 'Authentication failed',
+        apiError?.statusCode === 400 ? 'Check Your Details' : 'Authentication Error',
+        reasons || apiError?.message || 'Something went wrong. Please try again.',
       );
     } finally {
       setIsSubmitting(false);
@@ -97,7 +135,11 @@ export default function MeScreen() {
     return (
       <ThemedView style={styles.container}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            // Clear the absolute-positioned tab bar (56 content height, see (tabs)/_layout)
+            { paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT + Spacing.lg },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* User Info Header */}
@@ -278,17 +320,19 @@ export default function MeScreen() {
             />
           </View>
 
-          <View style={styles.inputWrapper}>
-            <Lock size={18} color={Palette.gray400} style={styles.inputIcon} />
-            <TextInput
-              style={styles.textInput}
-              placeholder="Password"
-              placeholderTextColor={Palette.gray400}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
+          <PasswordInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password (min 8, Aa1! special char)"
+          />
+
+          {authMode === 'register' && (
+            <PasswordInput
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirm Password"
             />
-          </View>
+          )}
 
           <TouchableOpacity
             style={styles.submitBtn}

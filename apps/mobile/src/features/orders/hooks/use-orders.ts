@@ -1,16 +1,17 @@
 import { useCallback } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient } from '@/api/client';
-
-import type {
-  OrderAddressView,
-  OrderItemStatus,
-  OrderItemView,
-  OrderStatus,
-  OrderTrackingEventView,
-  OrderView,
+import {
+  isActiveOrder,
+  type OrderAddressView,
+  type OrderItemStatus,
+  type OrderItemView,
+  type OrderStatus,
+  type OrderTrackingEventView,
+  type OrderView,
 } from '../utils/order-status';
+
+import { apiClient } from '@/api/client';
 
 const ORDERS_QUERY_KEY = ['my-orders'] as const;
 const PAGE_SIZE = 10;
@@ -167,10 +168,19 @@ export function useMyOrders(enabled: boolean) {
   };
 }
 
-/** Single order with tracking events; polls every LIVE_POLL_INTERVAL_MS while active */
+/**
+ * Single order with tracking events.
+ *
+ * Polling policy (server-friendly by design):
+ * - active fulfillment (CONFIRMED → OUT_FOR_DELIVERY): every LIVE_POLL_INTERVAL_MS
+ * - PENDING_PAYMENT: 30s (waiting on webhook to flip payment status)
+ * - terminal states (DELIVERED / CANCELLED / RETURNED): no polling at all
+ * - backgrounded app: paused via refetchIntervalInBackground:false
+ */
 export const LIVE_POLL_INTERVAL_MS = 15000;
+const PENDING_PAYMENT_POLL_MS = 30000;
 
-export function useOrderDetail(orderId: string, enabled: boolean, poll: boolean) {
+export function useOrderDetail(orderId: string, enabled: boolean) {
   const query = useQuery({
     queryKey: ['order', orderId],
     enabled: enabled && !!orderId,
@@ -181,9 +191,15 @@ export function useOrderDetail(orderId: string, enabled: boolean, poll: boolean)
       if (!response.data?.data) throw new Error('Order not found');
       return mapOrder(response.data.data as unknown as RawOrder);
     },
-    refetchInterval: poll ? LIVE_POLL_INTERVAL_MS : false,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (!status) return LIVE_POLL_INTERVAL_MS;
+      if (isActiveOrder(status)) return LIVE_POLL_INTERVAL_MS;
+      if (status === 'PENDING_PAYMENT') return PENDING_PAYMENT_POLL_MS;
+      return false;
+    },
     refetchIntervalInBackground: false,
-    staleTime: poll ? 0 : 1000 * 30,
+    staleTime: 0,
   });
 
   return {

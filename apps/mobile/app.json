@@ -47,8 +47,6 @@
         }
       ]
     ],
-      "@sentry/react-native"
-    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

@@ -112,7 +112,8 @@ if (!config.JWT.SECRET) {
 
 let sessionStore;
 
-if (config.REDIS.HOST && config.REDIS.PASSWORD) {
+// Any reachable Redis host qualifies (local Memurai/Docker runs passwordless)
+if (config.REDIS.HOST) {
   sessionStore = new UpstashRedisStore('celebs_sess:', 86400);
 } else {
   logger.warn(

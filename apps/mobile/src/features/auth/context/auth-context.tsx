@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
-import { apiClient } from '@/api/client';
+import { apiClient, setUnauthorizedHandler, storeRefreshToken } from '@/api/client';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 
 export interface UserProfile {
@@ -20,11 +20,17 @@ interface AuthContextType {
   isLoading: boolean;
   loginWithGoogle: (data: { idToken: string }) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    confirmPassword?: string,
+  ) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const TOKEN_KEY = 'auth_access_token';
+const REFRESH_KEY = 'auth_refresh_token';
 const USER_KEY = 'auth_user_profile';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +39,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Any hard 401 (silent refresh failed too) resets auth state immediately
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setToken(null);
+      setUser(null);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   // Restore stored session on mount
   useEffect(() => {
@@ -44,6 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedToken && storedUserJson) {
           setToken(storedToken);
           setUser(JSON.parse(storedUserJson));
+          // An expired access token is fine here — the API client silently
+          // refreshes it on the first 401 using the stored refresh token.
         }
       } catch (err) {
         console.warn('Failed to restore auth session:', err);
@@ -55,11 +72,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Save session state to SecureStore
-  const saveSession = async (newToken: string, newUser: UserProfile) => {
+  const saveSession = async (newToken: string, newUser: UserProfile, refreshToken?: string) => {
     setToken(newToken);
     setUser(newUser);
     await SecureStore.setItemAsync(TOKEN_KEY, newToken);
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(newUser));
+    if (refreshToken) {
+      await storeRefreshToken(refreshToken);
+    }
   };
 
   // Google 1-Tap Login
@@ -67,8 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const response = await apiClient.post('/auth/google', data, { skipAuth: true });
-      const { user: userProfile, accessToken } = response.data.data;
-      await saveSession(accessToken, userProfile);
+      const { user: userProfile, accessToken, refreshToken } = response.data.data;
+      await saveSession(accessToken, userProfile, refreshToken);
       await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
       setIsLoading(false);
@@ -89,12 +109,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // User Registration
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    confirmPassword?: string,
+  ) => {
     setIsLoading(true);
     try {
       const response = await apiClient.post(
         '/auth/register',
-        { name, email, password },
+        { name, email, password, confirmPassword: confirmPassword ?? password },
         { skipAuth: true },
       );
       // After registration, log the user in automatically or return
@@ -110,6 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await apiClient.post('/auth/logout').catch(() => {});
       await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await SecureStore.deleteItemAsync(REFRESH_KEY);
       await SecureStore.deleteItemAsync(USER_KEY);
       setToken(null);
       setUser(null);
