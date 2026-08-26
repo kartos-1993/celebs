@@ -42,6 +42,20 @@ const syncSelection = (prev: SelectionSlice, items: CartItemHydrated[]): Selecti
   };
 };
 
+/**
+ * The api client rejects with a plain ApiError object (not an Error instance),
+ * so instanceof checks alone would discard server messages like
+ * "Requested quantity (5) exceeds available stock (2)".
+ */
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === 'object' && err !== null) {
+    const maybe = err as { message?: unknown };
+    if (typeof maybe.message === 'string' && maybe.message) return maybe.message;
+  }
+  return fallback;
+}
+
 export const useCartStore = create<CartState>((set, get) => ({
   cart: null,
   sessionId: null,
@@ -79,7 +93,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         error: null,
       }));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to fetch cart';
+      const msg = getErrorMessage(err, 'Failed to fetch cart');
       set({ error: msg, loading: false });
     }
   },
@@ -104,7 +118,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         };
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to add item to cart';
+      const msg = getErrorMessage(err, 'Failed to add item to cart');
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -126,7 +140,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         error: null,
       }));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to update item quantity';
+      const msg = getErrorMessage(err, 'Failed to update item quantity');
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -144,7 +158,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         error: null,
       }));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to remove item';
+      const msg = getErrorMessage(err, 'Failed to remove item');
       set({ error: msg, loading: false });
       throw new Error(msg);
     }

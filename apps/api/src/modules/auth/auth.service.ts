@@ -24,6 +24,7 @@ import {
 import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
+import { authCache } from '@/common/cache/auth-cache';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { enqueueMail } from '@/common/services/mail.queue';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
@@ -505,6 +506,7 @@ export class AuthService {
       .catch((err: Error) => {
         logger.error({ err, sessionId }, 'Failed to delete session on logout');
       });
+    await authCache.invalidateSessions([sessionId]);
   }
 
   public async setupSuperadmin(setupData: setupSuperadminType) {
@@ -584,6 +586,7 @@ export class AuthService {
     const presentedJti = payload.jti;
     if (presentedJti && session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
       await prisma.session.delete({ where: { id: session.id } }).catch(() => {});
+      await authCache.invalidateSessions([session.id]);
       logger.error(
         { sessionId: session.id, userId: session.userId },
         'security.refresh_reuse_detected — session terminated',
@@ -609,6 +612,7 @@ export class AuthService {
           rotatedRefreshId: newJti,
         },
       });
+      await authCache.invalidateSessions([session.id]);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       logger.error(

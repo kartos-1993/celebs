@@ -3,12 +3,9 @@ import { ExtractJwt, Strategy as JwtStrategy, StrategyOptionsWithRequest } from 
 
 import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
 
+import { authCache, authCacheLoaders } from '@/common/cache/auth-cache';
 import { config } from '@/config/app.config';
-import prisma from '@/config/db.prisma';
 import { setSentryUser } from '@/config/sentry';
-import { UserService } from '@/modules/user/user.service';
-
-const userService = new UserService();
 
 interface JwtPayload {
   userId: string;
@@ -44,14 +41,16 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   passport.use(
     new JwtStrategy(options, async (req, payload: JwtPayload, done) => {
       try {
-        // Parallel: both lookups key off the JWT payload — no data dependency.
-        // This is the hottest query pair in the app (every authenticated request).
+        // Redis-first (30s TTL) with Postgres fallback. Session keys are
+        // invalidated at every revocation point (logout, refresh-reuse,
+        // store suspension), so instant server-side revocation still holds.
         const [session, user] = await Promise.all([
-          prisma.session.findUnique({
-            where: { id: payload.sessionId },
-            select: { id: true, expiredAt: true },
-          }),
-          userService.findAuthPrincipal(payload.userId),
+          authCache
+            .getSession(payload.sessionId)
+            .then((hit) => hit ?? authCacheLoaders.loadSession(payload.sessionId)),
+          authCache
+            .getUser(payload.userId)
+            .then((hit) => hit ?? authCacheLoaders.loadUser(payload.userId)),
         ]);
 
         if (!session || (session.expiredAt && session.expiredAt <= new Date())) {

@@ -32,6 +32,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { showToast } from '@/components/toast/toast';
 import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useCart } from '@/features/cart/context/cart-context';
@@ -139,8 +140,12 @@ export default function ProductDetailScreen() {
         size: finalSize || 'Standard',
         colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
       });
-    } catch {
-      // Error handled in store
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Could not add to cart. Please try again.';
+      showToast(message, { type: 'error' });
     } finally {
       setIsAdding(false);
     }

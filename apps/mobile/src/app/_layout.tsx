@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { FlyToCartOverlay } from '@/components/fly-to-cart-overlay';
+import { ToastHost } from '@/components/toast/toast';
 import { AuthProvider } from '@/features/auth/context/auth-context';
 import { CartProvider } from '@/features/cart/context/cart-context';
 import { CartSheetProvider } from '@/features/cart/context/cart-sheet-context';
@@ -56,6 +57,7 @@ export default function RootLayout() {
                       />
                     </Stack>
                     <FlyToCartOverlay />
+                    <ToastHost />
                   </View>
                 </CartSheetProvider>
               </FlyToCartProvider>

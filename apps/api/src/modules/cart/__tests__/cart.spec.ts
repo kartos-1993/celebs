@@ -90,4 +90,93 @@ describe('Cart Integration Test Suite', () => {
       }),
     ).rejects.toThrow(AppError);
   });
+
+  it('should batch-sync guest items: merge duplicates, merge with existing cart item', async () => {
+    const user = await prisma.user.create({
+      data: {
+        name: 'Sync Tester',
+        email: `sync-tester-${Date.now()}@test.local`,
+        password: 'not-a-real-hash',
+      },
+    });
+
+    const category = await prisma.category.create({
+      data: { name: 'Sync Test Category', slug: `sync-test-${Date.now()}` },
+    });
+    const product = await prisma.product.create({
+      data: {
+        name: 'Sync Test Tee',
+        brand: 'Celebs',
+        slug: `sync-test-tee-${Date.now()}`,
+        price: 500,
+        status: 'published',
+        categoryId: category.id,
+        colorVariants: [
+          { name: 'Blue', stocks: [{ size: 'L', quantity: 10 }] },
+          { name: 'Red', stocks: [{ size: 'M', quantity: 10 }] },
+        ],
+      },
+    });
+
+    // Existing user cart already holds 1x Blue/L
+    await CartService.addToCart(user.id, undefined, {
+      productId: product.id,
+      colorVariantName: 'Blue',
+      size: 'L',
+      quantity: 1,
+    });
+
+    // Guest cart: duplicate Blue/L entries (1+2) must merge with existing -> 4 total;
+    // Red/M is a new line.
+    const result = await CartService.syncCart(user.id, [
+      { productId: product.id, colorVariantName: 'Blue', size: 'L', quantity: 2 },
+      { productId: product.id, colorVariantName: 'Blue', size: 'L', quantity: 1 },
+      { productId: product.id, colorVariantName: 'Red', size: 'M', quantity: 1 },
+    ]);
+
+    expect(result.items).toHaveLength(2);
+    const blue = result.items.find((i) => i.colorVariantName === 'Blue');
+    const red = result.items.find((i) => i.colorVariantName === 'Red');
+    expect(blue?.quantity).toBe(4);
+    expect(red?.quantity).toBe(1);
+
+    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+  });
+
+  it('should silently skip out-of-stock guest items while syncing the rest', async () => {
+    const user = await prisma.user.create({
+      data: {
+        name: 'Sync OOS Tester',
+        email: `sync-oos-${Date.now()}@test.local`,
+        password: 'not-a-real-hash',
+      },
+    });
+
+    const category = await prisma.category.create({
+      data: { name: 'Sync OOS Category', slug: `sync-oos-${Date.now()}` },
+    });
+    const product = await prisma.product.create({
+      data: {
+        name: 'Sync OOS Hoodie',
+        brand: 'Celebs',
+        slug: `sync-oos-hoodie-${Date.now()}`,
+        price: 900,
+        status: 'published',
+        categoryId: category.id,
+        colorVariants: [{ name: 'Black', stocks: [{ size: 'S', quantity: 2 }] }],
+      },
+    });
+
+    // Black/S only has stock 2; guest asks for 5 -> skipped. Green/XL variant
+    // does not exist in JSON either but sync materializes it with default qty.
+    const result = await CartService.syncCart(user.id, [
+      { productId: product.id, colorVariantName: 'Black', size: 'S', quantity: 5 },
+      { productId: product.id, colorVariantName: 'Green', size: 'XL', quantity: 1 },
+    ]);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.colorVariantName).toBe('Green');
+
+    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+  });
 });

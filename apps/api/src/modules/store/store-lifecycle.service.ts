@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@celebs/shared-utils';
 
+import { authCache } from '@/common/cache/auth-cache';
 import type { StoreStatus } from '@/common/context/actor-context';
 import prisma from '@/config/db.prisma';
 
@@ -93,9 +94,21 @@ export class StoreLifecycleService {
     });
     if (members.length === 0) return 0;
 
-    const result = await prisma.session.deleteMany({
-      where: { userId: { in: members.map((m) => m.id) } },
+    const memberIds = members.map((m) => m.id);
+    const doomed = await prisma.session.findMany({
+      where: { userId: { in: memberIds } },
+      select: { id: true },
     });
+
+    const result = await prisma.session.deleteMany({
+      where: { userId: { in: memberIds } },
+    });
+
+    // Keep the Redis identity cache honest — revocation must stay instant.
+    if (doomed.length > 0) {
+      await authCache.invalidateSessions(doomed.map((s) => s.id));
+    }
+
     logger.info({ storeId, revokedSessions: result.count }, 'Store sessions revoked');
     return result.count;
   }
