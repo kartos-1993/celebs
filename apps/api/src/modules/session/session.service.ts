@@ -1,9 +1,9 @@
-import { NotFoundException } from '@celebs/shared-utils';
+import { ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import prisma from '@/config/db.prisma';
 
 export class SessionService {
-  public async getSessionById(sessionId: string) {
+  public async getSessionById(sessionId: string, actorUserId?: string) {
     const session = await prisma.session.findUnique({
       where: {
         id: sessionId,
@@ -43,6 +43,10 @@ export class SessionService {
     });
     if (!session) {
       throw new NotFoundException('Session not found');
+    }
+
+    if (actorUserId && session.userId !== actorUserId) {
+      throw new ForbiddenException('You do not own this session');
     }
 
     const { vendor, vendorProfile, ...userWithoutVendor } = session.user;

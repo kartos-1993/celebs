@@ -1,20 +1,29 @@
 import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
+import { ForbiddenException } from '@celebs/shared-utils';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 
 import prisma from '@/config/db.prisma';
 
 export class LogisticsService {
-  async dispatchOrder(payload: DispatchOrderType) {
+  async dispatchOrder(payload: DispatchOrderType, actorStoreId: string | null = null) {
     const order = await prisma.order.findUnique({
       where: { id: payload.orderId },
-      include: { address: true },
+      include: { address: true, items: { select: { vendorId: true } } },
     });
 
     if (!order) {
       throw new Error('Order not found');
+    }
+
+    // Tenant isolation: sellers can only dispatch orders that contain their own items
+    if (actorStoreId) {
+      const ownsItem = order.items.some((it) => it.vendorId === actorStoreId);
+      if (!ownsItem) {
+        throw new ForbiddenException('You do not own any item in this order');
+      }
     }
 
     let trackingNumber = payload.manualTrackingNumber || '';

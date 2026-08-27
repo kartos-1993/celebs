@@ -72,7 +72,7 @@ export class StaffService {
    * Resolves vendorProfile and user info for a given userId.
    * Handles VENDOR owners, STAFF sub-users, and ADMIN/SUPERADMIN roles.
    */
-  private async resolveUserAndVendor(userId: string, targetVendorId?: string) {
+  private async resolveUserAndVendor(userId: string, targetVendorId?: string | null) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -106,7 +106,9 @@ export class StaffService {
       updatedAt: true,
     };
 
-    // 1. If explicit targetVendorId is passed (e.g. by admin)
+    // 1. If explicit targetVendorId is passed (e.g. by admin via resolveTargetStoreId)
+    // targetVendorId is already tenant-isolated via resolveTargetStoreId at controller layer:
+    // sellers are forced to own storeId, platform may supply vendorId
     if (targetVendorId) {
       const vendorProfile = await prisma.vendorProfile.findUnique({
         where: { id: targetVendorId },
@@ -143,8 +145,14 @@ export class StaffService {
     return { user, vendorProfile: vendorProfile || null };
   }
 
-  public async createStaff(creatorUserId: string, data: CreateStaffInput) {
-    const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId, data.vendorId);
+  public async createStaff(
+    creatorUserId: string,
+    targetStoreId: string | null,
+    data: CreateStaffInput,
+  ) {
+    // Drop legacy vendorId from body - now tenant-isolated via controller's resolveTargetStoreId
+    const { vendorId: _ignored, ...cleanData } = data as CreateStaffInput & { vendorId?: string };
+    const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId, targetStoreId);
 
     const effectiveVendorId: string | undefined = vendorProfile?.id;
 
@@ -158,7 +166,7 @@ export class StaffService {
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { email: data.email.toLowerCase() },
+      where: { email: cleanData.email.toLowerCase() },
     });
     if (existingUser) {
       throw new BadRequestException(
@@ -166,21 +174,21 @@ export class StaffService {
       );
     }
 
-    if (Array.isArray(data.permissions)) {
-      assertGrantablePermissions(data.permissions, {
+    if (Array.isArray(cleanData.permissions)) {
+      assertGrantablePermissions(cleanData.permissions, {
         role: user.role,
         permissions: user.permissions ?? [],
       });
     }
 
-    const hashedPassword = await hashValue(data.password);
+    const hashedPassword = await hashValue(cleanData.password);
     const staff = await prisma.user.create({
       data: {
-        name: data.name,
-        email: data.email.toLowerCase(),
+        name: cleanData.name,
+        email: cleanData.email.toLowerCase(),
         password: hashedPassword,
         role: 'STAFF',
-        permissions: data.permissions || [],
+        permissions: cleanData.permissions || [],
         isEmailVerified: false,
         vendorId: effectiveVendorId,
       },
@@ -233,8 +241,11 @@ export class StaffService {
     return staff;
   }
 
-  public async getStaff(creatorUserId: string, targetVendorId?: string) {
-    const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId, targetVendorId);
+  public async getStaff(creatorUserId: string, targetStoreId?: string | null) {
+    const { user, vendorProfile } = await this.resolveUserAndVendor(
+      creatorUserId,
+      targetStoreId ?? undefined,
+    );
 
     // If Admin/Superadmin and no specific vendor profile found/requested, return all staff
     if (!vendorProfile && (user.role === 'SUPERADMIN' || user.role === 'ADMIN')) {

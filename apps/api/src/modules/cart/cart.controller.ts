@@ -1,9 +1,17 @@
 import { Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
 
-import { addToCartSchema, syncCartSchema, updateCartItemSchema } from '@celebs/shared-types';
+import {
+  addToCartSchema,
+  CartResponse,
+  syncCartSchema,
+  updateCartItemSchema,
+} from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { CartService } from './cart.service';
+
+import { appConfig } from '@/config/app.config';
 
 interface AuthUser {
   id: string;
@@ -11,32 +19,80 @@ interface AuthUser {
   role?: string;
 }
 
+const GUEST_SESSION_REGEX = /^[a-zA-Z0-9-_]{8,128}$/;
+
 export class CartController {
-  private static getIdentifiers(req: Request): { userId?: string; sessionId?: string } {
+  private static extractIdentifiers(req: Request): { userId?: string; sessionId?: string } {
     const user = req.user as AuthUser | undefined;
     const userId = user?.id;
+    if (userId) return { userId };
 
-    const sessionIdHeader = req.headers['x-session-id'];
-    let sessionId: string | undefined;
+    // 1. Prioritize HttpOnly cookie (Web) over client header (Mobile)
+    const cookieId =
+      req.cookies && typeof req.cookies.sessionId === 'string'
+        ? req.cookies.sessionId.trim()
+        : undefined;
 
-    if (typeof sessionIdHeader === 'string') {
-      sessionId = sessionIdHeader;
-    } else if (Array.isArray(sessionIdHeader) && sessionIdHeader.length > 0) {
-      sessionId = sessionIdHeader[0];
-    } else if (req.cookies && typeof req.cookies.sessionId === 'string') {
-      sessionId = req.cookies.sessionId;
+    const headerRaw = req.headers['x-session-id'];
+    const headerId =
+      typeof headerRaw === 'string'
+        ? headerRaw.trim()
+        : Array.isArray(headerRaw)
+          ? headerRaw[0]?.trim()
+          : undefined;
+
+    let candidate = cookieId || headerId;
+
+    // 2. Reject legacy/shared default and malformed IDs
+    if (
+      candidate === 'guest-session-default' ||
+      (candidate && !GUEST_SESSION_REGEX.test(candidate))
+    ) {
+      candidate = undefined;
     }
 
-    if (!userId && !sessionId) {
-      // Fallback session identifier for guest browsing if header missing
-      sessionId = 'guest-session-default';
-    }
+    return { sessionId: candidate };
+  }
 
-    return { userId, sessionId };
+  private static ensureSessionId(res: Response, existingSessionId?: string): string {
+    const sessionId = existingSessionId || randomUUID();
+    const config = appConfig();
+
+    res.cookie('sessionId', sessionId, {
+      httpOnly: config.COOKIE.HTTPONLY,
+      secure: config.COOKIE.SECURE,
+      sameSite: config.COOKIE.SAME_SITE,
+      domain: config.COOKIE.DOMAIN || undefined,
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    res.setHeader('x-session-id', sessionId);
+
+    return sessionId;
   }
 
   static getCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId, sessionId } = CartController.getIdentifiers(req);
+    const { userId, sessionId } = CartController.extractIdentifiers(req);
+
+    // Prevent crawler DB bloat: return ephemeral empty cart without writing to PostgreSQL
+    if (!userId && !sessionId) {
+      res.status(HTTPSTATUS.OK).json({
+        message: 'Cart retrieved successfully',
+        data: {
+          id: '',
+          userId: null,
+          sessionId: null,
+          items: [],
+          subtotal: 0,
+          itemCount: 0,
+          hasStockIssues: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } satisfies CartResponse,
+      });
+      return;
+    }
+
     logger.info({ userId, sessionId }, '[CartController.getCart] Fetching cart');
     const cart = await CartService.getCart(userId, sessionId);
 
@@ -47,7 +103,14 @@ export class CartController {
   });
 
   static addToCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId, sessionId } = CartController.getIdentifiers(req);
+    const { userId } = CartController.extractIdentifiers(req);
+    let { sessionId } = CartController.extractIdentifiers(req);
+
+    // Lazy generation: only provision a session when mutating
+    if (!userId) {
+      sessionId = CartController.ensureSessionId(res, sessionId);
+    }
+
     logger.info(
       { userId, sessionId, body: req.body },
       '[CartController.addToCart] Received add to cart request',
@@ -68,7 +131,7 @@ export class CartController {
   });
 
   static updateCartItem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId, sessionId } = CartController.getIdentifiers(req);
+    const { userId, sessionId } = CartController.extractIdentifiers(req);
     const itemIdParam = req.params.itemId;
     const itemId = Array.isArray(itemIdParam) ? itemIdParam[0] : itemIdParam;
     const validatedInput = updateCartItemSchema.parse(req.body);
@@ -87,7 +150,7 @@ export class CartController {
   });
 
   static removeCartItem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId, sessionId } = CartController.getIdentifiers(req);
+    const { userId, sessionId } = CartController.extractIdentifiers(req);
     const itemIdParam = req.params.itemId;
     const itemId = Array.isArray(itemIdParam) ? itemIdParam[0] : itemIdParam;
 
@@ -100,7 +163,7 @@ export class CartController {
   });
 
   static clearCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId, sessionId } = CartController.getIdentifiers(req);
+    const { userId, sessionId } = CartController.extractIdentifiers(req);
     const cart = await CartService.clearCart(userId, sessionId);
 
     res.status(HTTPSTATUS.OK).json({

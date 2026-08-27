@@ -1,10 +1,13 @@
 import { Router } from 'express';
 
 import { Permission } from '@celebs/rbac';
+import { asyncHandler } from '@celebs/shared-utils';
 
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 
+import { actorContext } from '@/common/context/actor-context.middleware';
+import { requirePlatformActor } from '@/common/guards/store.guards';
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
@@ -28,12 +31,14 @@ orderRoutes.post('/my-orders/:orderId/cancel', authenticateJWT, controller.cance
 orderRoutes.get(
   '/vendor/orders',
   authenticateJWT,
+  asyncHandler(actorContext),
   requirePermissions(Permission.ORDER_VIEW),
   controller.getVendorOrders,
 );
 orderRoutes.patch(
   '/vendor/orders/items/:orderItemId/status',
   authenticateJWT,
+  asyncHandler(actorContext),
   requirePermissions(Permission.ORDER_MANAGE),
   controller.updateOrderItemStatus,
 );
@@ -42,6 +47,8 @@ orderRoutes.patch(
 orderRoutes.get(
   '/admin/orders',
   authenticateJWT,
+  asyncHandler(actorContext),
+  requirePlatformActor,
   requirePermissions(Permission.ORDER_VIEW),
   controller.adminGetOrders,
 );

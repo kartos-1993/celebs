@@ -5,6 +5,8 @@ import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-
 
 import { StaffService } from './staff.service';
 
+import { resolveTargetStoreId } from '@/common/guards/store.guards';
+
 export class StaffController {
   private staffService: StaffService;
 
@@ -23,8 +25,8 @@ export class StaffController {
   public createStaff = asyncHandler(async (req: Request, res: Response) => {
     const userId = this.getUserId(req);
     const body = createStaffSchema.parse(req.body);
-    const vendorId = typeof req.body.vendorId === 'string' ? req.body.vendorId : undefined;
-    const staff = await this.staffService.createStaff(userId, { ...body, vendorId });
+    const storeId = resolveTargetStoreId(req, 'body');
+    const staff = await this.staffService.createStaff(userId, storeId, body);
     const response: IApiResponse<typeof staff> = {
       success: true,
       message: 'Staff account created successfully',
@@ -35,8 +37,8 @@ export class StaffController {
 
   public getStaff = asyncHandler(async (req: Request, res: Response) => {
     const userId = this.getUserId(req);
-    const vendorId = typeof req.query.vendorId === 'string' ? req.query.vendorId : undefined;
-    const staffList = await this.staffService.getStaff(userId, vendorId);
+    const storeId = resolveTargetStoreId(req, 'query');
+    const staffList = await this.staffService.getStaff(userId, storeId);
     const response: IApiResponse<typeof staffList> = {
       success: true,
       message: 'Staff list retrieved successfully',

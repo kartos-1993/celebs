@@ -15,11 +15,23 @@ export class CartService {
    */
   private static async getOrCreateCartRecord(userId?: string, sessionId?: string) {
     if (!userId && !sessionId) {
+      // No identifier for anonymous guest — create ephemeral in-memory empty cart response
+      // Caller handles Set-Cookie issuance; do not fall back to shared guest-session-default
       throw new AppError(
         'Either userId or sessionId is required to access cart',
         HTTPSTATUS.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
+    }
+    if (sessionId) {
+      // Harden against shared default value even if callers bypass controller validation
+      if (sessionId === 'guest-session-default' || sessionId.trim().length < 8) {
+        throw new AppError(
+          'Invalid session identifier',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.VALIDATION_ERROR,
+        );
+      }
     }
 
     if (userId) {

@@ -34,7 +34,8 @@ export class SessionController {
       sessionId = result.payload.sessionId;
     }
 
-    const session = await this.sessionService.getSessionById(sessionId);
+    const actorUserId = (req.user as { id?: string })?.id;
+    const session = await this.sessionService.getSessionById(sessionId, actorUserId);
     const response: IApiResponse<typeof session> = {
       success: true,
       message: 'Session retrieved successfully',

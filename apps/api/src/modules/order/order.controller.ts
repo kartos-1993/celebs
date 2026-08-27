@@ -79,7 +79,13 @@ export class OrderController {
   // --- VENDOR FULFILLMENT HANDLERS ---
 
   getVendorOrders = async (req: Request, res: Response) => {
-    const vendorId = req.user?.vendorProfile?.id || '';
+    const vendorId = req.store?.id || req.user?.vendorProfile?.id || '';
+    if (!vendorId) {
+      res
+        .status(HTTPSTATUS.FORBIDDEN)
+        .json({ success: false, message: 'Seller store context required' });
+      return;
+    }
     const status = req.query.status as string | undefined;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -89,7 +95,13 @@ export class OrderController {
   };
 
   updateOrderItemStatus = async (req: Request, res: Response) => {
-    const vendorId = req.user?.vendorProfile?.id || '';
+    const vendorId = req.store?.id || req.user?.vendorProfile?.id || '';
+    if (!vendorId) {
+      res
+        .status(HTTPSTATUS.FORBIDDEN)
+        .json({ success: false, message: 'Seller store context required' });
+      return;
+    }
     const orderItemId = req.params.orderItemId || '';
     const validated = updateOrderItemStatusSchema.parse(req.body);
 
