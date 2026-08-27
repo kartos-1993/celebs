@@ -342,4 +342,114 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
     expect(deliveredOrder?.status).toBe(OrderStatus.DELIVERED);
     expect(deliveredOrder?.paymentStatus).toBe(PaymentStatus.PENDING); // MUST NOT BE COMPLETED
   });
+
+  it('A8: shirt (Red / S, stock=2) checked out concurrently by User A and User B for qty=2 -> exactly 1 order placed, 1 rejected, no overselling', async () => {
+    // 1. Create a Shirt with Red variant and Small size
+    const category = await prisma.category.findFirst();
+    const shirt = await prisma.product.create({
+      data: {
+        name: 'Classic Casual Shirt',
+        brand: 'Celebs Apparel',
+        slug: `shirt-red-s-${Date.now()}`,
+        price: 1200,
+        status: 'published',
+        categoryId: category?.id || '',
+        vendorId: vendorProfileId,
+        colorVariants: [
+          {
+            name: 'Red',
+            colorCode: '#FF0000',
+            images: ['https://example.com/shirt-red.jpg'],
+            stocks: [{ size: 'S', quantity: 2 }],
+          },
+        ],
+      },
+    });
+
+    // 2. Initialize ProductInventory with exactly 2 stock
+    const shirtInventory = await prisma.productInventory.create({
+      data: {
+        productId: shirt.id,
+        colorVariantName: 'Red',
+        size: 'S',
+        sku: `SHIRT-RED-S-${Date.now()}`,
+        quantity: 2,
+        reservedQuantity: 0,
+      },
+    });
+
+    // 3. User A adds 2 items of (Red / S) to their cart
+    const cartA = await prisma.cart.create({ data: { userId: userAId } });
+    await prisma.cartItem.create({
+      data: {
+        cartId: cartA.id,
+        inventoryId: shirtInventory.id,
+        quantity: 2,
+      },
+    });
+
+    // 4. User B adds 2 items of (Red / S) to their cart
+    const cartB = await prisma.cart.create({ data: { userId: userBId } });
+    await prisma.cartItem.create({
+      data: {
+        cartId: cartB.id,
+        inventoryId: shirtInventory.id,
+        quantity: 2,
+      },
+    });
+
+    // Verify both users currently have 2 items in their carts
+    const verifyCartA = await prisma.cartItem.findFirst({ where: { cartId: cartA.id } });
+    const verifyCartB = await prisma.cartItem.findFirst({ where: { cartId: cartB.id } });
+    expect(verifyCartA?.quantity).toBe(2);
+    expect(verifyCartB?.quantity).toBe(2);
+
+    // 5. Both users attempt to checkout SIMULTANEOUSLY
+    const [orderAAttempt, orderBAttempt] = await Promise.allSettled([
+      orderService.checkout(userAId, {
+        addressId: addressAId,
+        paymentMethod: 'COD',
+        idempotencyKey: `idemp_simul_a_${Date.now()}`,
+      }),
+      orderService.checkout(userBId, {
+        addressId: addressBId,
+        paymentMethod: 'COD',
+        idempotencyKey: `idemp_simul_b_${Date.now()}`,
+      }),
+    ]);
+
+    const successes = [orderAAttempt, orderBAttempt].filter((r) => r.status === 'fulfilled');
+    const rejections = [orderAAttempt, orderBAttempt].filter((r) => r.status === 'rejected');
+
+    // Exactly 1 must succeed, exactly 1 must fail
+    expect(successes).toHaveLength(1);
+    expect(rejections).toHaveLength(1);
+
+    // The rejected request must be an AppError with 409 CONFLICT or insufficient stock message
+    const rejectedReason = (rejections[0] as PromiseRejectedResult).reason;
+    expect(rejectedReason.message).toMatch(/Insufficient stock for item/i);
+
+    // 6. Verify Database Inventory State: MUST NOT OVERSELL
+    const finalInventory = await prisma.productInventory.findUnique({
+      where: { id: shirtInventory.id },
+    });
+    expect(finalInventory?.quantity).toBe(2);
+    expect(finalInventory?.reservedQuantity).toBe(2);
+    expect(finalInventory!.quantity - finalInventory!.reservedQuantity).toBe(0);
+
+    // Verify Orders in DB: Only 1 order exists for this shirt inventory
+    const placedOrderItems = await prisma.orderItem.findMany({
+      where: { inventoryId: shirtInventory.id },
+    });
+    expect(placedOrderItems).toHaveLength(1);
+    expect(placedOrderItems[0]?.quantity).toBe(2);
+
+    // Clean up
+    await prisma.orderItem.deleteMany({ where: { inventoryId: shirtInventory.id } });
+    await prisma.order.deleteMany({ where: { id: placedOrderItems[0]?.orderId } });
+    await prisma.cartItem.deleteMany({ where: { inventoryId: shirtInventory.id } });
+    await prisma.cart.deleteMany({ where: { id: { in: [cartA.id, cartB.id] } } });
+    await prisma.productInventory.delete({ where: { id: shirtInventory.id } });
+    await prisma.product.delete({ where: { id: shirt.id } });
+  });
 });
