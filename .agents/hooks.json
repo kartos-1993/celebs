@@ -1,0 +1,24 @@
+{
+  "agents-mandate-gate": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .agents/scripts/pre-tool-gate.js",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "node .agents/scripts/inject-mandate.js",
+        "timeout": 10
+      }
+    ]
+  }
+}

@@ -1,103 +1,49 @@
-# web-admin Agent Guide
+# Web-Admin Architectural Mandates (`apps/web-admin`)
 
-Vite + React 19 + TS + Tailwind v4 + react-router. UI primitives live in `packages/shared-ui` (`@celebs/shared-ui/components/*`). **Never hand-roll UI that a shared primitive already covers.** Read this before writing or reviewing any page.
+## 1. Feature-Sliced Domain Architecture (FSD)
 
-## The one rule
+- Strictly adhere to Feature-Sliced Design under `src/features/{domain}/`.
+- Monolithic folders (global `/components`, `/hooks`, `/services`) are strictly prohibited.
+- Internal Module Structure per feature:
+  - `api.ts`: Axios client calls and centralized `QUERY_KEYS` factory.
+  - `hooks/`: Feature-specific TanStack Query hooks and custom state hooks.
+  - `components/`: UI components strictly bound to this domain (max 150 lines per file).
+  - `pages/`: Thin route-level orchestrator components (<60 lines, lazy-loaded).
+  - `types.ts`: Feature-specific UI state types (never duplicate `@celebs/shared-types`).
+- No Barrel Files: Do not use `index.ts` barrel files for exporting within a feature. Import directly from the exact file path.
+- Unidirectional Flow: Features MUST NOT import directly from other features.
 
-If you are about to write raw HTML for a control (`<select>`, `<input type="checkbox">`, `fixed inset-0` overlays, custom tab bars), STOP — there is a shared component. Grep `packages/shared-ui/src/components/` first.
+## 2. Server-State Orchestration (TanStack Query)
 
-## Shared component map
+- Query Key Factory Pattern: Query keys MUST NOT be hardcoded strings. They MUST be generated via centralized factory objects (e.g., `VENDOR_ONBOARDING_QUERY_KEYS.status()`).
+- No Raw Inline Mutations: Mutations MUST NOT be instantiated directly in presentation leaf components. Extract to `hooks/use-*-mutations.ts`.
+- Cache Invalidation Precision: Mutations MUST invalidate specific query keys (`queryClient.invalidateQueries({ queryKey: [...] })`), not broad global refetches.
+- Use `useInfiniteQuery` or cursor pagination for large datasets. Offset-based pagination refetching entire lists is prohibited.
 
-| Need                    | Use                                                                                      | NEVER                                                             |
-| ----------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Dropdown                | `Select / SelectContent / SelectItem / SelectTrigger / SelectValue`                      | native `<select>`                                                 |
-| Checkbox                | `Checkbox` (`checked` + `onCheckedChange`)                                               | `<input type="checkbox">`                                         |
-| Modal                   | `Dialog / DialogContent / DialogHeader / DialogTitle / DialogDescription / DialogFooter` | `fixed inset-0 bg-black/60` overlay divs, text `✕` close buttons  |
-| Confirm dialog          | `ConfirmDialog` (has `destructive`, `confirmLabel`, async `onConfirm`)                   | ad-hoc confirm modals                                             |
-| Tabs                    | `Tabs / TabsList / TabsTrigger`                                                          | hand-rolled underline/pill button bars with manual active classes |
-| Tooltip on icon buttons | `Tooltip > TooltipTrigger asChild > … <TooltipContent>`                                  | bare `title` attributes as the only label                         |
-| Empty table/list state  | `EmptyState` (`icon`, `title`, `description`, `action`)                                  | plain centered text lines                                         |
-| Page loading            | `PageLoader`; in-table: `h-32` centered muted text or `Spinner`                          | nothing / layout shift                                            |
-| Toasts                  | `useToast()` from `@/hooks/use-toast`                                                    | `alert()`, silent failures                                        |
-| Text field              | `Input`, `Textarea`, `PasswordInput`, `NumberInput`                                      | unstyled inputs                                                   |
-| Labels                  | `Label`                                                                                  | bare `<label>` without styling parity                             |
+## 3. Dynamic Form Engine & Context Isolation
 
-Radix gotcha: `SelectItem` values cannot be empty strings — use a sentinel (e.g. `'ALL'`) and map it back.
+- Complex dynamic forms MUST utilize React Hook Form (RHF) and Zod.
+- Form validation schemas MUST originate from `@celebs/shared-types`. Use `zodResolver`.
+- Context Isolation: Avoid wrapping massive DOM trees in `<FormProvider>`. Pass `control` explicitly to sub-components to prevent global form re-renders on keystroke.
+- Path Type Safety: Use `Path<TFormValues>` or `FieldPath<TFormValues>` generics when calling `form.setValue` or `form.watch`.
 
-## List page recipe (the house pattern)
+## 4. Render Determinism, Memoization & Component Purity
 
-Reference implementations: `features/vendors/pages/vendor-list-page.tsx`, `features/product/components/manage-product.tsx`.
+- File Length Budget: No `.tsx` component file may exceed 150 lines. Decompose into sub-components.
+- Complexity Budget: Cyclomatic Complexity per component/function must not exceed 8.
+- Component Purity: `.tsx` files MUST ONLY export React components. Data mappers, constants, and helper functions must be extracted into adjacent `.ts` files to preserve HMR.
+- Hook Stability: Functions passed down as props or used in dependency arrays MUST be stabilized using `useCallback` or `useMemo`.
+- Object URL Teardown: `URL.createObjectURL()` MUST be paired with a `useEffect` cleanup calling `URL.revokeObjectURL()`.
+- AbortController: Axios requests in `useEffect` MUST be tied to an `AbortController` with `.abort()` in cleanup.
 
-```
-<PageHeader title description actions={primary button} />
-<FilterBar>                        ← from @/components/filter-bar — THE toolbar
-  <FilterSearch value onChange placeholder />   ← debounced at page level (~350ms)
-  <SegmentedTabs options value onChange />      ← black-pill status switcher, right side
-</FilterBar>
-<Card>
-  <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">  ← every table
-    <Table>…
-  </div>
-  [pagination]
-</Card>
-```
+## 5. UI Composition & Accessibility
 
-- `Tabs/TabsList` are for **content panes** (e.g. modal tab navigation). List-page **status filtering always uses `SegmentedTabs`** inside `FilterBar`.
-- Contextual batch-action bars render as their own row between `FilterBar` and the table.
-- Loading: `flex h-32 items-center justify-center text-sm text-muted-foreground`
-- Empty: `<EmptyState icon={<Thing className="h-8 w-8" />}`
-- Fetching refetches: dim wrapper `opacity-60 transition-opacity`
+- Radix Primitive Supremacy: Do not build custom dropdowns/modals using raw `div`s. Use headless Radix primitives from `@celebs/shared-ui`.
+- Tailwind Class Determinism: Use `cn()` utility (`clsx` + `tailwind-merge`) for conditional class names.
+- Discriminated Unions: Model UI states with discriminated unions (`{ status: 'loading' } | { status: 'error', message: string } | { status: 'success', data: T }`).
 
-## Table conventions
+## 6. Testing & Mocking Isolation
 
-- Money columns: header + cells `text-right`.
-- Actions column: header `text-right`; cell `text-right` + `flex items-center justify-end gap-0.5 whitespace-nowrap`.
-- **Row actions are compact icon buttons** (`size="sm" variant="ghost" className="h-8 w-8 p-0"`), color-coded by semantics, each wrapped in a Tooltip + `sr-only` span:
-
-| Action                   | Icon             | Tint class on ghost button                            |
-| ------------------------ | ---------------- | ----------------------------------------------------- |
-| View / inspect / preview | `Eye`            | `text-muted-foreground hover:text-foreground`         |
-| Approve / activate       | `Check`          | `text-success hover:bg-success/10 hover:text-success` |
-| Reject / deactivate      | `X`              | `text-destructive hover:bg-destructive/10`            |
-| Edit                     | `Pencil`         | default foreground                                    |
-| Delete / archive         | `Trash2`         | destructive tint, must open a confirm dialog          |
-| Overflow menu            | `MoreHorizontal` | dropdown trigger, never literal `▼` text              |
-
-Full-text labeled buttons belong inside modals/detail views, not table rows.
-
-- Status badges: human-readable labels only — never raw snake_case enum values (`pending_review` → "Pending Review"). Keep a `statusLabels` map next to the page.
-- Row hover is built into `TableRow`; don't re-add it per row.
-
-## Dialog conventions
-
-- Footer = `DialogFooter`: Cancel (`variant="outline"`) left of the primary action.
-- Primary destructive actions use `variant="destructive"`; approve-style success uses `variant="default" className="bg-success hover:bg-success/90 text-success-foreground"`.
-- While submitting: disable the button AND swap its icon for `<Spinner size="sm" />`.
-- Controlled modals render conditionally (`{open && <Dialog open …>}`) when they hold per-entity form state.
-
-## Money & data display
-
-- Prices: `Rs. {value.toLocaleString()}`. Discounted PDP order: discounted price prominent → original struck through (`line-through`) → `% OFF` badge.
-- Never render unknown objects directly (`String(value)` on objects gives `[object Object]`). Format values through a helper that handles primitives, arrays (join), `{label|name}`, `{value, unit}`, JSON fallback.
-- Images always get `/placeholder.svg` fallback via `onError`.
-
-## Uploads
-
-Only via `directUploadFile(file, folder, scope)` / `directUploadBatch` from `@/lib/media-upload`. Folders must satisfy the API allowlist (`celebs/products`, `celebs/kyc`, `vendors`, `platform`); pass the semantically correct `scope` (`PRODUCT`, `KYC`, `MARKETING`). Current mapping: products→`celebs/products`, KYC/vendor docs→`celebs/kyc`+KYC, marketing/banners→`platform`+MARKETING.
-
-## RBAC
-
-Gate pages with `RoleGuard requiredPermission={…}` in the feature's `routes.tsx`. Gate in-page controls with `can(role, Permission.X, userPermissions)`. Do not add hardcoded role-string checks — permissions are the source of truth.
-
-## Known debt (don't copy these patterns; fix when touched)
-
-- `features/category/components/category-tree.tsx` — legacy tree UI.
-- Marketing list pages lack `EmptyState` (plain text empty rows).
-- `staff-list-page.tsx` table actions still full-text (Edit/Delete); convert to icon+tooltip when editing that file.
-
-## Before committing UI changes
-
-1. `npm run lint && npm run typecheck` in `apps/web-admin` — both must pass.
-2. No new native `<select>` / checkbox / overlay div / `▼` / `[object Object]` introduced.
-3. New list pages follow the recipe above (wrapper div, EmptyState, right-aligned compact actions).
-4. Every destructive action has a confirm dialog; every async button shows pending feedback (Spinner/disabled).
+- MSW Mandate: Intercept API interactions in integration tests using MSW.
+- Component Testing over E2E: Use Vitest + React Testing Library for unit/integration testing.
+- Deterministic Mocks: Generate test fixtures with seeded values.
