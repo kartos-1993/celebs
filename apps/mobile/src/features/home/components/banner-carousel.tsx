@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,23 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 
+import { useBanners } from '../hooks/use-home-queries';
 import { styles } from '../styles/home.styles';
+import type { Banner } from '../types';
 
-import { apiClient } from '@/api/client';
 import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
-
-interface Banner {
-  id: string;
-  imageUrl: string;
-  linkType: 'PRODUCT' | 'CATEGORY' | 'EXTERNAL' | 'NONE';
-  linkValue?: string;
-  title?: string;
-  order: number;
-}
 
 export function BannerCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -33,25 +24,7 @@ export function BannerCarousel() {
   const flatListRef = useRef<FlatList>(null);
   const autoPlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchBanners = async (): Promise<Banner[]> => {
-    const response = await apiClient.get('/banners', { skipAuth: true });
-    const resData = response.data;
-    if (resData.success && Array.isArray(resData.data)) {
-      return resData.data;
-    }
-    return [];
-  };
-
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['banners'],
-    queryFn: fetchBanners,
-    // Marketing surface: revalidate on every mount so published banners go
-    // live immediately instead of being served from the persisted cache.
-    staleTime: 0,
-    refetchOnMount: 'always',
-  });
-
-  const banners = useMemo(() => data || [], [data]);
+  const { banners, loading } = useBanners();
   const hasBanners = banners.length > 0;
 
   const startAutoPlay = () => {
