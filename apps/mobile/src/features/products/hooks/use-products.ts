@@ -1,72 +1,35 @@
 import { useCallback, useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import { apiClient } from '@/api/client';
-import { resolveImageUrl } from '@/constants/config';
-export { resolveImageUrl };
+import { getProductById, getProducts, PRODUCT_QUERY_KEYS } from '../api';
 
-export interface ProductMeasurement {
-  name: string;
-  value: string;
-  unit: string;
-}
-
-export interface ProductSize {
-  name: string;
-  productMeasurements?: ProductMeasurement[];
-  bodyMeasurements?: ProductMeasurement[];
-}
-
-export interface ProductStock {
-  size: string;
-  quantity: number;
-}
-
-export interface ProductColorVariant {
-  name: string;
-  colorCode?: string;
-  swatch?: string;
-  images?: string[];
-  stocks?: ProductStock[];
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  brand?: string;
-  description?: string;
-  price: number;
-  discountedPrice?: number;
-  mainImages: string[];
-  sizes?: ProductSize[];
-  colorVariants?: ProductColorVariant[];
-  status: string;
-  featured?: boolean;
-}
+export { PRODUCT_QUERY_KEYS } from '../api';
+export type {
+  Product,
+  ProductColorVariant,
+  ProductFilterParams,
+  ProductMeasurement,
+  ProductSize,
+  ProductStock,
+} from '../types';
+export { resolveImageUrl } from '@/constants/config';
 
 export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
-  const fetchProductsPage = async ({ pageParam = null }: { pageParam: string | null }) => {
-    const params: Record<string, unknown> = { limit: initialLimit, status: 'published' };
-    if (categorySlugOrId) params.category = categorySlugOrId;
-    if (pageParam) params.cursor = pageParam;
-
-    const response = await apiClient.get('/products', {
-      params,
-      skipAuth: true,
-    });
-    return response.data;
-  };
-
   const queryKey = useMemo(() => {
     return categorySlugOrId
-      ? ['products', { limit: initialLimit, category: categorySlugOrId }]
-      : ['products', { limit: initialLimit }];
+      ? PRODUCT_QUERY_KEYS.list({ limit: initialLimit, category: categorySlugOrId })
+      : PRODUCT_QUERY_KEYS.list({ limit: initialLimit });
   }, [initialLimit, categorySlugOrId]);
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
     useInfiniteQuery({
       queryKey,
-      queryFn: fetchProductsPage,
+      queryFn: ({ pageParam = null }: { pageParam: string | null }) =>
+        getProducts({
+          limit: initialLimit,
+          category: categorySlugOrId,
+          cursor: pageParam,
+        }),
       initialPageParam: null as string | null,
       getNextPageParam: (lastPage) => {
         if (lastPage?.success && lastPage?.data) {
@@ -128,23 +91,13 @@ export function useProducts(initialLimit = 10, categorySlugOrId?: string) {
 }
 
 export function useProduct(id: string) {
-  const fetchSingleProduct = async () => {
-    const response = await apiClient.get(`/products/${id}`, { skipAuth: true });
-    const resData = response.data;
-    if (resData.success && resData.data) {
-      return resData.data as Product;
-    } else {
-      throw new Error(resData.error || 'Product not found');
-    }
-  };
-
   const {
     data: product,
     isLoading: loading,
     error,
   } = useQuery({
-    queryKey: ['product', id],
-    queryFn: fetchSingleProduct,
+    queryKey: PRODUCT_QUERY_KEYS.detail(id),
+    queryFn: () => getProductById(id),
     enabled: !!id,
     staleTime: 1000 * 30, // 30 seconds
   });
