@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   GestureResponderEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -9,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -29,11 +29,9 @@ import { useAuth } from '@/features/auth/context/auth-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Must match product-grid.styles container paddingHorizontal (Spacing.md)
 const GRID_PADDING = 12;
 const COLUMN_GAP = 6;
-const CARD_WIDTH = (SCREEN_WIDTH - GRID_PADDING * 2 - COLUMN_GAP) / 2;
 
 interface ProductCardProps {
   product: Product;
@@ -49,6 +47,8 @@ export function ProductCard({
   isFirstCard = false,
 }: ProductCardProps) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const CARD_WIDTH = (windowWidth - GRID_PADDING * 2 - COLUMN_GAP) / 2;
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { startFlyAnimation } = useFlyToCart();
@@ -57,22 +57,26 @@ export function ProductCard({
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
   const isFavorite = isWishlisted(product.id);
 
-  const handleToggleWishlist = (e?: GestureResponderEvent) => {
-    e?.stopPropagation?.();
-    if (!isLoggedIn) {
-      router.push('/(tabs)/me');
-      return;
-    }
-    if (isFavorite) {
-      removeFromWishlist.mutate(product.id);
-    } else {
-      addToWishlist.mutate(product.id);
-    }
-  };
+  const handleToggleWishlist = useCallback(
+    (e?: GestureResponderEvent) => {
+      e?.stopPropagation?.();
+      if (!isLoggedIn) {
+        router.push('/(tabs)/me');
+        return;
+      }
+      if (isFavorite) {
+        removeFromWishlist.mutate(product.id);
+      } else {
+        addToWishlist.mutate(product.id);
+      }
+    },
+    [isLoggedIn, isFavorite, router, product.id, addToWishlist, removeFromWishlist],
+  );
 
   const imageRef = useRef<View>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-  const hintAnim = useRef(new Animated.Value(0)).current;
+  // Fix: useMemo for stable Animated.Value - avoids "Cannot access refs during render" lint
+  const hintAnim = useMemo(() => new Animated.Value(0), []);
 
   const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
 
@@ -150,72 +154,27 @@ export function ProductCard({
     }
   }, [isFirstCard, cardImages.length, hintAnim]);
 
-  const handleSelectColor = (idx: number, e?: GestureResponderEvent) => {
+  const handleSelectColor = useCallback((idx: number, e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
     setSelectedColorIndex(idx);
     setActiveImageIndex(0);
     scrollViewRef.current?.scrollTo({ x: 0, animated: true });
-  };
+  }, []);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slide = Math.round(event.nativeEvent.contentOffset.x / CARD_WIDTH);
-    if (slide !== activeImageIndex && slide >= 0 && slide < cardImages.length) {
-      setActiveImageIndex(slide);
-    }
-  };
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const slide = Math.round(event.nativeEvent.contentOffset.x / CARD_WIDTH);
+      if (slide !== activeImageIndex && slide >= 0 && slide < cardImages.length) {
+        setActiveImageIndex(slide);
+      }
+    },
+    [CARD_WIDTH, activeImageIndex, cardImages.length],
+  );
 
   const primaryImage = cardImages[activeImageIndex] || cardImages[0] || '';
   const resolvedPrimaryUrl = resolveImageUrl(primaryImage);
 
-  const handlePress = () => {
-    if (onPress) {
-      onPress(product);
-    } else {
-      router.push({
-        pathname: '/product/[id]',
-        params: { id: product.id },
-      });
-    }
-  };
-
-  const handleAddToCart = (evt?: GestureResponderEvent) => {
-    evt?.stopPropagation?.();
-    if (isOutOfStock) {
-      showToast('Out of stock', { type: 'error' });
-      return;
-    }
-    const touchX = evt?.nativeEvent?.pageX;
-    const touchY = evt?.nativeEvent?.pageY;
-
-    if (imageRef.current && resolvedPrimaryUrl) {
-      imageRef.current.measureInWindow((x, y, width, height) => {
-        const startX =
-          typeof x === 'number' && !isNaN(x) && x !== 0
-            ? x + width / 2
-            : touchX || SCREEN_WIDTH / 2;
-        const startY =
-          typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : touchY || 300;
-        startFlyAnimation({
-          imageUrl: resolvedPrimaryUrl,
-          startX,
-          startY,
-          startWidth: width || 80,
-          startHeight: height || 80,
-        });
-      });
-    } else if (resolvedPrimaryUrl && touchX && touchY) {
-      startFlyAnimation({
-        imageUrl: resolvedPrimaryUrl,
-        startX: touchX,
-        startY: touchY,
-        startWidth: 80,
-        startHeight: 80,
-      });
-    }
-    onAddToCart?.(product);
-  };
-
-  // Price & Savings calculations
+  // Price & Savings calculations - must be before handleAddToCart (uses isOutOfStock)
   const currentPrice = product.discountedPrice || product.price;
   const hasDiscount = Boolean(product.discountedPrice && product.discountedPrice < product.price);
   const discountPercent = hasDiscount
@@ -236,6 +195,56 @@ export function ProductCard({
       : false;
   // Show OOS overlay if fully sold out, or the currently viewed color is sold out (more visible in grid)
   const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
+
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress(product);
+    } else {
+      router.push({
+        pathname: '/product/[id]',
+        params: { id: product.id },
+      });
+    }
+  }, [onPress, product, router]);
+
+  const handleAddToCart = useCallback(
+    (evt?: GestureResponderEvent) => {
+      evt?.stopPropagation?.();
+      if (isOutOfStock) {
+        showToast('Out of stock', { type: 'error' });
+        return;
+      }
+      const touchX = evt?.nativeEvent?.pageX;
+      const touchY = evt?.nativeEvent?.pageY;
+
+      if (imageRef.current && resolvedPrimaryUrl) {
+        imageRef.current.measureInWindow((x, y, width, height) => {
+          // Fixed: removed x!==0 guard - left column legitimately has x=0
+          const isValidMeasure =
+            typeof x === 'number' && !isNaN(x) && typeof y === 'number' && !isNaN(y);
+          const startX = isValidMeasure ? x + width / 2 : touchX || windowWidth / 2;
+          const startY = isValidMeasure ? y + height / 2 : touchY || 300;
+          startFlyAnimation({
+            imageUrl: resolvedPrimaryUrl,
+            startX,
+            startY,
+            startWidth: width || 80,
+            startHeight: height || 80,
+          });
+        });
+      } else if (resolvedPrimaryUrl && touchX && touchY) {
+        startFlyAnimation({
+          imageUrl: resolvedPrimaryUrl,
+          startX: touchX,
+          startY: touchY,
+          startWidth: 80,
+          startHeight: 80,
+        });
+      }
+      onAddToCart?.(product);
+    },
+    [isOutOfStock, resolvedPrimaryUrl, windowWidth, startFlyAnimation, onAddToCart, product],
+  );
 
   return (
     <View style={[styles.cardContainer, { width: CARD_WIDTH, backgroundColor: Palette.white }]}>

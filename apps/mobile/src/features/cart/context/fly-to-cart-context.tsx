@@ -1,7 +1,5 @@
-import React, { createContext, useCallback, useContext, useState } from 'react';
-import { Dimensions } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { useWindowDimensions } from 'react-native';
 
 export interface FlyToCartItem {
   id: string;
@@ -16,8 +14,9 @@ export interface FlyToCartItem {
 
 interface FlyToCartContextType {
   activeAnimation: FlyToCartItem | null;
+  queue: FlyToCartItem[];
   startFlyAnimation: (item: Omit<FlyToCartItem, 'id'>) => void;
-  onAnimationComplete: () => void;
+  onAnimationComplete: (id?: string) => void;
   cartIconCoords: { x: number; y: number };
   setCartIconCoords: (coords: { x: number; y: number }) => void;
   triggerCartPulse: () => void;
@@ -26,16 +25,17 @@ interface FlyToCartContextType {
 
 const FlyToCartContext = createContext<FlyToCartContextType | undefined>(undefined);
 
-// Default position for cart header icon (top right area of header bar)
-const DEFAULT_CART_COORDS = {
-  x: SCREEN_WIDTH - 45,
-  y: 55,
-};
-
 export const FlyToCartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeAnimation, setActiveAnimation] = useState<FlyToCartItem | null>(null);
+  const { width: windowWidth } = useWindowDimensions();
+  const DEFAULT_CART_COORDS = {
+    x: windowWidth - 45,
+    y: 55,
+  };
+  const [queue, setQueue] = useState<FlyToCartItem[]>([]);
+  const activeAnimation = queue[0] ?? null;
   const [cartIconCoords, setCartIconCoords] = useState(DEFAULT_CART_COORDS);
   const [pulseTrigger, setPulseTrigger] = useState(0);
+  const idCounterRef = useRef(0);
 
   const triggerCartPulse = useCallback(() => {
     setPulseTrigger((prev) => prev + 1);
@@ -43,26 +43,34 @@ export const FlyToCartProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const startFlyAnimation = useCallback(
     (item: Omit<FlyToCartItem, 'id'>) => {
-      const id = `${Date.now()}-${Math.random()}`;
-      setActiveAnimation({
+      const id = `${Date.now()}-${idCounterRef.current++}`;
+      const entry: FlyToCartItem = {
         id,
         ...item,
         targetX: item.targetX ?? cartIconCoords.x,
         targetY: item.targetY ?? cartIconCoords.y,
-      });
+      };
+      setQueue((q) => [...q, entry]);
     },
     [cartIconCoords],
   );
 
-  const onAnimationComplete = useCallback(() => {
-    setActiveAnimation(null);
-    triggerCartPulse();
-  }, [triggerCartPulse]);
+  const onAnimationComplete = useCallback(
+    (id?: string) => {
+      setQueue((q) => {
+        if (id) return q.filter((i) => i.id !== id);
+        return q.slice(1);
+      });
+      triggerCartPulse();
+    },
+    [triggerCartPulse],
+  );
 
   return (
     <FlyToCartContext.Provider
       value={{
         activeAnimation,
+        queue,
         startFlyAnimation,
         onAnimationComplete,
         cartIconCoords,

@@ -29,8 +29,25 @@ function CategoryIcon({ color, size }: { color: ColorValue; size: number }) {
 }
 
 function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
-  const { pulseTrigger } = useFlyToCart();
+  const { pulseTrigger, setCartIconCoords } = useFlyToCart();
   const scale = useSharedValue(1);
+  const iconRef = React.useRef<View>(null);
+
+  // Measure bottom tab cart icon and sync as fly target - updates on mount and on pulse (ensures coords stay fresh after rotation)
+  const measureCartIcon = React.useCallback(() => {
+    // Delay to ensure layout is committed
+    setTimeout(() => {
+      iconRef.current?.measureInWindow((x, y, width, height) => {
+        if (typeof x === 'number' && typeof y === 'number' && width > 0 && height > 0) {
+          setCartIconCoords({ x: x + width / 2, y: y + height / 2 });
+        }
+      });
+    }, 100);
+  }, [setCartIconCoords]);
+
+  React.useEffect(() => {
+    measureCartIcon();
+  }, [measureCartIcon]);
 
   React.useEffect(() => {
     if (pulseTrigger > 0) {
@@ -46,7 +63,7 @@ function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }
   }));
 
   return (
-    <View collapsable={false}>
+    <View ref={iconRef} collapsable={false} onLayout={measureCartIcon}>
       <Animated.View style={animatedStyle}>
         <ShoppingCart size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
       </Animated.View>

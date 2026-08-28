@@ -20,6 +20,8 @@ interface UseProductDetailCartParams {
   selectedSize: string;
   isFullyOutOfStock: boolean;
   onOpenSizeModal: () => void;
+  // Optional ref to the product image for accurate fly animation start coords
+  imageRef?: React.RefObject<View>;
 }
 
 export function useProductDetailCart({
@@ -28,6 +30,7 @@ export function useProductDetailCart({
   selectedSize,
   isFullyOutOfStock,
   onOpenSizeModal,
+  imageRef,
 }: UseProductDetailCartParams) {
   const { addToCart } = useCart();
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
@@ -67,51 +70,90 @@ export function useProductDetailCart({
     transform: [{ scale: topCartScale.value }],
   }));
 
-  const handleAddToCart = async (overrideSize?: string) => {
-    if (!product) return;
-    const finalSize = overrideSize || selectedSize;
-    const currentVariant = product.colorVariants?.[selectedColorIndex];
-    const isFinalOos = finalSize ? isSizeOutOfStockForVariant(currentVariant, finalSize) : false;
+  const triggerFlyAnimation = useCallback(
+    (fallbackImage: string) => {
+      const resolved = resolveImageUrl(fallbackImage);
+      if (!resolved) return;
 
-    if (isFullyOutOfStock || isFinalOos) {
-      showToast('No stock available', { type: 'error' });
-      return;
-    }
-    if (product.sizes && product.sizes.length > 0 && !finalSize) {
-      onOpenSizeModal();
-      return;
-    }
-
-    setIsAdding(true);
-    try {
-      await addToCart({
-        productId: product.id,
-        quantity: 1,
-        size: finalSize || 'Standard',
-        colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
-      });
-      const flyImage =
-        product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
-      if (flyImage) {
+      const launch = (startX: number, startY: number, startWidth: number, startHeight: number) => {
         startFlyAnimation({
-          imageUrl: resolveImageUrl(flyImage),
-          startX: 180,
-          startY: 500,
-          startWidth: 100,
-          startHeight: 120,
+          imageUrl: resolved,
+          startX,
+          startY,
+          startWidth,
+          startHeight,
         });
+      };
+
+      if (imageRef?.current) {
+        imageRef.current.measureInWindow((x, y, width, height) => {
+          const isValid =
+            typeof x === 'number' && !isNaN(x) && typeof y === 'number' && !isNaN(y) && width > 0;
+          if (isValid) {
+            launch(x + width / 2, y + height / 2, width, height);
+          } else {
+            // Fallback: use center of screen with estimated image size
+            launch(0, 0, 100, 120);
+          }
+        });
+      } else {
+        // No imageRef provided - fallback to center (FlyItem will resolve target from cart coords)
+        launch(0, 0, 100, 120);
       }
-    } catch (err: unknown) {
-      const raw =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Could not add to cart. Please try again.';
-      const isOosError = /exceeds available stock|out of stock/i.test(raw);
-      showToast(isOosError ? 'No stock available' : raw, { type: 'error' });
-    } finally {
-      setIsAdding(false);
-    }
-  };
+    },
+    [imageRef, startFlyAnimation],
+  );
+
+  const handleAddToCart = useCallback(
+    async (overrideSize?: string) => {
+      if (!product) return;
+      const finalSize = overrideSize || selectedSize;
+      const currentVariant = product.colorVariants?.[selectedColorIndex];
+      const isFinalOos = finalSize ? isSizeOutOfStockForVariant(currentVariant, finalSize) : false;
+
+      if (isFullyOutOfStock || isFinalOos) {
+        showToast('No stock available', { type: 'error' });
+        return;
+      }
+      if (product.sizes && product.sizes.length > 0 && !finalSize) {
+        onOpenSizeModal();
+        return;
+      }
+
+      setIsAdding(true);
+      try {
+        await addToCart({
+          productId: product.id,
+          quantity: 1,
+          size: finalSize || 'Standard',
+          colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
+        });
+        const flyImage =
+          product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
+        if (flyImage) {
+          triggerFlyAnimation(flyImage);
+        }
+      } catch (err: unknown) {
+        const raw =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Could not add to cart. Please try again.';
+        const isOosError = /exceeds available stock|out of stock/i.test(raw);
+        showToast(isOosError ? 'No stock available' : raw, { type: 'error' });
+      } finally {
+        setIsAdding(false);
+      }
+    },
+    [
+      product,
+      selectedColorIndex,
+      selectedSize,
+      isFullyOutOfStock,
+      onOpenSizeModal,
+      addToCart,
+      triggerFlyAnimation,
+    ],
+  );
 
   return {
     isAdding,
@@ -119,5 +161,6 @@ export function useProductDetailCart({
     measureTopCartIcon,
     animatedTopCartStyle,
     topCartBtnRef,
+    triggerFlyAnimation,
   };
 }
