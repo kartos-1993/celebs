@@ -41,8 +41,9 @@ export const DEFAULT_HOME_LAYOUT: SDUIPageLayout = {
   ],
 };
 
-const SDUI_QUERY_KEYS = {
-  layout: (pageId: string) => ['sdui', 'layout', pageId] as const,
+export const SDUI_QUERY_KEYS = {
+  all: ['sdui'] as const,
+  layout: (pageId: string) => [...SDUI_QUERY_KEYS.all, 'layout', pageId] as const,
 };
 
 export function useSDUILayout(pageId: string = 'home') {
