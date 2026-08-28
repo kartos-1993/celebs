@@ -82,12 +82,12 @@ function ScreenshotFlyItem({
 
   useEffect(() => {
     progress.value = 0;
-    // Ultra-visible screenshot fly: ~1.35s so even slow eyes track it
+    // Clearly visible: 1.8s linear so speed is constant and trackable
     progress.value = withTiming(
       1,
       {
-        duration: 1350,
-        easing: Easing.out(Easing.cubic),
+        duration: 1800,
+        easing: Easing.linear,
         reduceMotion: ReduceMotion.System,
       },
       (finished) => {
