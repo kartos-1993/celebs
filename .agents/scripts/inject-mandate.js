@@ -11,7 +11,7 @@ const message = {
   injectSteps: [
     {
       ephemeralMessage:
-        'MANDATORY PRE-FLIGHT: You are operating under .agents/AGENTS.md. For apps/web-admin, enforce max 150 lines per .tsx, no inline useMutation, FSD boundaries, and pure .ts mappers. For apps/api, enforce controller/service/repo boundaries and port 6543 pooling. Proposing monolithic files is strictly blocked.',
+        'MANDATORY PRE-FLIGHT (.agents/AGENTS.md): 1) web-admin & mobile: max 150 lines/tsx, no inline mutations/apiClient in UI, use <RESOURCE>_QUERY_KEYS factory. 2) api: Clean Architecture (routes->controller->service->repo), zero Prisma in controllers, port 6543 pool. 3) REST: standard verbs (GET/POST/PUT/PATCH/DELETE) and plural nouns.',
     },
   ],
 };
