@@ -229,4 +229,10 @@ export const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
+  fieldErrorText: {
+    fontSize: FontSize.caption,
+    color: Palette.danger,
+    marginTop: -Spacing.xs,
+    marginLeft: Spacing.xs,
+  },
 });
