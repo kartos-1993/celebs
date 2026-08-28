@@ -100,8 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { email, password }, { skipAuth: true });
-      const { user: userProfile, accessToken } = response.data.data;
-      await saveSession(accessToken, userProfile);
+      const { user: userProfile, accessToken, refreshToken } = response.data.data;
+      await saveSession(accessToken, userProfile, refreshToken);
       await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
       setIsLoading(false);

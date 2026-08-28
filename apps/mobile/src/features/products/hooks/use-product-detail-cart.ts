@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withSpring,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { showToast } from '@/components/toast/toast';
 import { useCart } from '@/features/cart/context/cart-context';
@@ -32,9 +33,12 @@ export function useProductDetailCart({
   onOpenSizeModal,
   imageRef,
 }: UseProductDetailCartParams) {
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const { addToCart } = useCart();
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
   const topCartBtnRef = useRef<View>(null);
+  const topCartCoordsRef = useRef<{ x: number; y: number } | null>(null);
   const topCartScale = useSharedValue(1);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -50,8 +54,16 @@ export function useProductDetailCart({
     setTimeout(() => {
       if (!isMountedRef.current) return;
       topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
-        if (isMountedRef.current && typeof x === 'number' && x > 0 && y > 0) {
-          setCartIconCoords({ x: x + width / 2, y: y + height / 2 });
+        if (
+          isMountedRef.current &&
+          typeof x === 'number' &&
+          typeof y === 'number' &&
+          width > 0 &&
+          height > 0
+        ) {
+          const coords = { x: x + width / 2, y: y + height / 2 };
+          topCartCoordsRef.current = coords;
+          setCartIconCoords(coords);
         }
       });
     }, 100);
@@ -75,6 +87,12 @@ export function useProductDetailCart({
       const resolved = resolveImageUrl(fallbackImage);
       if (!resolved) return;
 
+      // Always explicitly target the top header shopping bag icon on the product page
+      const defaultHeaderCartX = windowWidth - 72;
+      const defaultHeaderCartY = (insets.top || 30) + 24;
+      const targetX = topCartCoordsRef.current?.x ?? defaultHeaderCartX;
+      const targetY = topCartCoordsRef.current?.y ?? defaultHeaderCartY;
+
       const launch = (startX: number, startY: number, startWidth: number, startHeight: number) => {
         startFlyAnimation({
           imageUrl: resolved,
@@ -82,6 +100,8 @@ export function useProductDetailCart({
           startY,
           startWidth,
           startHeight,
+          targetX,
+          targetY,
         });
       };
 
@@ -92,16 +112,14 @@ export function useProductDetailCart({
           if (isValid) {
             launch(x + width / 2, y + height / 2, width, height);
           } else {
-            // Fallback: use center of screen with estimated image size
-            launch(0, 0, 100, 120);
+            launch(windowWidth / 2, 300, 100, 120);
           }
         });
       } else {
-        // No imageRef provided - fallback to center (FlyItem will resolve target from cart coords)
-        launch(0, 0, 100, 120);
+        launch(windowWidth / 2, 300, 100, 120);
       }
     },
-    [imageRef, startFlyAnimation],
+    [imageRef, insets.top, startFlyAnimation, windowWidth],
   );
 
   const handleAddToCart = useCallback(

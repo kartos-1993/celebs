@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .agents/scripts/pre-tool-gate.js",
+            "command": "node scripts/pre-tool-gate.js",
             "timeout": 15
           }
         ]
@@ -16,7 +16,7 @@
     "PreInvocation": [
       {
         "type": "command",
-        "command": "node .agents/scripts/inject-mandate.js",
+        "command": "node scripts/inject-mandate.js",
         "timeout": 10
       }
     ]

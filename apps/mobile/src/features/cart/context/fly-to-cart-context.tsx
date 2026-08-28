@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface FlyToCartItem {
   id: string;
@@ -27,9 +28,10 @@ const FlyToCartContext = createContext<FlyToCartContextType | undefined>(undefin
 
 export const FlyToCartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const DEFAULT_CART_COORDS = {
     x: windowWidth - 45,
-    y: 55,
+    y: (insets.top || 30) + 24,
   };
   const [queue, setQueue] = useState<FlyToCartItem[]>([]);
   const activeAnimation = queue[0] ?? null;
