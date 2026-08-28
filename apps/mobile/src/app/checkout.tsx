@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import {
   AlertCircle,
   ChevronLeft,
@@ -36,8 +36,9 @@ import type { AddressDraft, SavedAddress } from '@/features/addresses/types';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
 import { useCart } from '@/features/cart/context/cart-context';
-import { styles } from '@/features/checkout/styles/checkout.styles';
 import { formatPrice } from '@/features/cart/utils/cart-selectors';
+import { styles } from '@/features/checkout/styles/checkout.styles';
+import { ORDER_QUERY_KEYS } from '@/features/orders/api';
 
 const FREE_SHIPPING_THRESHOLD = 3000;
 const SHIPPING_FEE = 150;
@@ -187,7 +188,7 @@ export default function CheckoutScreen() {
       const placedOrderNumber = response.data?.data?.order?.orderNumber;
 
       await clearCart();
-      queryClient.invalidateQueries({ queryKey: ['my-orders'] });
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
 
       Alert.alert(
         'Order Placed!',

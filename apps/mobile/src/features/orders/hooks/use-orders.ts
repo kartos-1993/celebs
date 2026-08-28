@@ -1,147 +1,23 @@
 import { useCallback } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  isActiveOrder,
-  type OrderAddressView,
-  type OrderItemStatus,
-  type OrderItemView,
-  type OrderStatus,
-  type OrderTrackingEventView,
-  type OrderView,
-} from '../utils/order-status';
+import { getMyOrders, getOrderById, ORDER_QUERY_KEYS } from '../api';
+import { PAGE_SIZE } from '../types';
+import { isActiveOrder } from '../utils/order-status';
 
-import { apiClient } from '@/api/client';
+export { ORDER_QUERY_KEYS } from '../api';
+export { mapOrder } from '../utils/order-mappers';
 
-const ORDERS_QUERY_KEY = ['my-orders'] as const;
-const PAGE_SIZE = 10;
-
-function toNumber(value: unknown): number {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
-}
-
-interface RawOrder {
-  id: string;
-  orderNumber: string;
-  createdAt: string;
-  updatedAt: string;
-  status: OrderStatus;
-  paymentMethod: string;
-  paymentStatus: string;
-  subtotal: string | number;
-  shippingFee: string | number;
-  discountAmount: string | number;
-  totalAmount: string | number;
-  courierProvider?: string | null;
-  courierName?: string | null;
-  trackingNumber?: string | null;
-  trackingUrl?: string | null;
-  estimatedDelivery?: string | null;
-  items?: Record<string, unknown>[];
-  address?: OrderAddressView | null;
-  payments?: Record<string, unknown>[];
-  trackingEvents?: Record<string, unknown>[];
-}
-
-function mapItem(raw: Record<string, unknown>): OrderItemView {
-  return {
-    id: String(raw.id),
-    productName: String(raw.productName ?? 'Item'),
-    colorVariantName: String(raw.colorVariantName ?? ''),
-    size: String(raw.size ?? ''),
-    quantity: toNumber(raw.quantity),
-    unitPrice: toNumber(raw.unitPrice),
-    subtotal: toNumber(raw.subtotal),
-    itemStatus: (raw.itemStatus as OrderItemStatus) ?? 'PENDING',
-    ...(raw.trackingNumber ? { trackingNumber: String(raw.trackingNumber) } : {}),
-    ...(raw.courierPartner ? { courierPartner: String(raw.courierPartner) } : {}),
-  };
-}
-
-function mapEvent(raw: Record<string, unknown>): OrderTrackingEventView {
-  return {
-    id: String(raw.id),
-    status: (raw.status as OrderStatus) ?? 'CONFIRMED',
-    title: String(raw.title ?? ''),
-    description: raw.description ? String(raw.description) : null,
-    location: raw.location ? String(raw.location) : null,
-    source: String(raw.source ?? 'SYSTEM'),
-    timestamp: String(raw.timestamp ?? new Date().toISOString()),
-  };
-}
-
-export function mapOrder(raw: RawOrder): OrderView {
-  const payments = (raw.payments ?? []).map((p) => ({
-    id: String(p.id),
-    amount: toNumber(p.amount),
-    currency: String(p.currency ?? 'NPR'),
-    gateway: String(p.gateway ?? raw.paymentMethod),
-    status: String(p.status ?? 'PENDING'),
-  }));
-
-  return {
-    id: raw.id,
-    orderNumber: raw.orderNumber,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    status: raw.status,
-    paymentMethod: raw.paymentMethod,
-    paymentStatus: raw.paymentStatus,
-    subtotal: toNumber(raw.subtotal),
-    shippingFee: toNumber(raw.shippingFee),
-    discountAmount: toNumber(raw.discountAmount),
-    totalAmount: toNumber(raw.totalAmount),
-    ...(raw.courierProvider ? { courierProvider: raw.courierProvider } : {}),
-    ...(raw.courierName ? { courierName: raw.courierName } : {}),
-    ...(raw.trackingNumber ? { trackingNumber: raw.trackingNumber } : {}),
-    ...(raw.trackingUrl ? { trackingUrl: raw.trackingUrl } : {}),
-    ...(raw.estimatedDelivery ? { estimatedDelivery: raw.estimatedDelivery } : {}),
-    items: (raw.items ?? []).map(mapItem),
-    address: raw.address
-      ? {
-          fullName: String(raw.address.fullName ?? ''),
-          phone: String(raw.address.phone ?? ''),
-          province: String(raw.address.province ?? ''),
-          district: String(raw.address.district ?? ''),
-          cityArea: String(raw.address.cityArea ?? ''),
-          streetAddress: String(raw.address.streetAddress ?? ''),
-          landmark: raw.address.landmark ? String(raw.address.landmark) : null,
-        }
-      : null,
-    ...(payments.length > 0 ? { payments } : {}),
-    ...(raw.trackingEvents ? { trackingEvents: raw.trackingEvents.map(mapEvent) } : {}),
-  };
-}
-
-interface MyOrdersResponse {
-  success?: boolean;
-  data?: {
-    orders?: RawOrder[];
-    total?: number;
-    page?: number;
-    limit?: number;
-  };
-}
+export const LIVE_POLL_INTERVAL_MS = 15000;
+const PENDING_PAYMENT_POLL_MS = 30000;
 
 /** Paginated list of the signed-in user's orders */
 export function useMyOrders(enabled: boolean) {
   const query = useInfiniteQuery({
-    queryKey: ORDERS_QUERY_KEY,
+    queryKey: ORDER_QUERY_KEYS.myOrders(),
     enabled,
     initialPageParam: 1,
-    queryFn: async ({ pageParam }: { pageParam: number }): Promise<OrderView[]> => {
-      const response = await apiClient.get<MyOrdersResponse>('/orders/my-orders', {
-        params: { page: pageParam, limit: PAGE_SIZE },
-      });
-      const payload = response.data?.data;
-      const orders = Array.isArray(payload?.orders) ? payload.orders : [];
-      return orders.map((order) => mapOrder(order));
-    },
+    queryFn: ({ pageParam }: { pageParam: number }) => getMyOrders(pageParam, PAGE_SIZE),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < PAGE_SIZE) return undefined;
       return allPages.length + 1;
@@ -170,27 +46,12 @@ export function useMyOrders(enabled: boolean) {
 
 /**
  * Single order with tracking events.
- *
- * Polling policy (server-friendly by design):
- * - active fulfillment (CONFIRMED → OUT_FOR_DELIVERY): every LIVE_POLL_INTERVAL_MS
- * - PENDING_PAYMENT: 30s (waiting on webhook to flip payment status)
- * - terminal states (DELIVERED / CANCELLED / RETURNED): no polling at all
- * - backgrounded app: paused via refetchIntervalInBackground:false
  */
-export const LIVE_POLL_INTERVAL_MS = 15000;
-const PENDING_PAYMENT_POLL_MS = 30000;
-
 export function useOrderDetail(orderId: string, enabled: boolean) {
   const query = useQuery({
-    queryKey: ['order', orderId],
+    queryKey: ORDER_QUERY_KEYS.detail(orderId),
     enabled: enabled && !!orderId,
-    queryFn: async (): Promise<OrderView> => {
-      const response = await apiClient.get<{ data?: Record<string, unknown> }>(
-        `/orders/my-orders/${orderId}`,
-      );
-      if (!response.data?.data) throw new Error('Order not found');
-      return mapOrder(response.data.data as unknown as RawOrder);
-    },
+    queryFn: () => getOrderById(orderId),
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (!status) return LIVE_POLL_INTERVAL_MS;
@@ -214,6 +75,6 @@ export function useOrderDetail(orderId: string, enabled: boolean) {
 export function useInvalidateOrders() {
   const queryClient = useQueryClient();
   return useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
   }, [queryClient]);
 }
