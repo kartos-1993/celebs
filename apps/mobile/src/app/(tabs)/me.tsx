@@ -23,6 +23,7 @@ import {
 import { PasswordInput } from '@/components/password-input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { showToast } from '@/components/toast/toast';
 import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useGoogleAuth } from '@/features/auth/hooks/use-google-auth';
@@ -48,10 +49,9 @@ export default function MeScreen() {
     try {
       await signInWithGoogle();
     } catch (err: unknown) {
-      Alert.alert(
-        'Google Sign-In Error',
-        (err as { message?: string })?.message || 'Failed to initialize Google Sign-In',
-      );
+      showToast((err as { message?: string })?.message || 'Failed to initialize Google Sign-In', {
+        type: 'error',
+      });
     }
   };
 
@@ -61,24 +61,23 @@ export default function MeScreen() {
 
   const handleSubmitForm = async () => {
     if (!email || !password || (authMode === 'register' && !name)) {
-      Alert.alert('Missing Fields', 'Please fill out all required fields');
+      showToast('Please fill out all required fields', { type: 'error' });
       return;
     }
 
     if (authMode === 'register') {
       if (name.trim().length < 3) {
-        Alert.alert('Invalid Name', 'Name must be at least 3 characters long.');
+        showToast('Name must be at least 3 characters long', { type: 'error' });
         return;
       }
       if (!PASSWORD_POLICY.test(password)) {
-        Alert.alert(
-          'Weak Password',
-          'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.',
-        );
+        showToast('Password must be at least 8 chars with uppercase, lowercase, number & symbol', {
+          type: 'error',
+        });
         return;
       }
       if (password !== confirmPassword) {
-        Alert.alert('Password Mismatch', 'The passwords you entered do not match.');
+        showToast('The passwords you entered do not match', { type: 'error' });
         return;
       }
     }
@@ -87,11 +86,11 @@ export default function MeScreen() {
     try {
       if (authMode === 'login') {
         await loginWithEmail(email, password);
-        Alert.alert('Welcome Back!', 'You have logged in successfully');
+        showToast('Welcome back! Logged in successfully', { type: 'success' });
       } else {
         await register(name, email, password, confirmPassword);
         await loginWithEmail(email, password);
-        Alert.alert('Account Created', 'Welcome to Celebs Fashion!');
+        showToast('Welcome to Celebs Fashion!', { type: 'success' });
       }
     } catch (err: unknown) {
       const apiError = err as {
@@ -103,12 +102,11 @@ export default function MeScreen() {
         ? apiError.errors
             .map((issue) => issue?.message)
             .filter((msg): msg is string => Boolean(msg))
-            .join('\n')
+            .join(' · ')
         : '';
-      Alert.alert(
-        apiError?.statusCode === 400 ? 'Check Your Details' : 'Authentication Error',
-        reasons || apiError?.message || 'Something went wrong. Please try again.',
-      );
+      showToast(reasons || apiError?.message || 'Authentication failed. Please try again.', {
+        type: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Linking,
   NativeScrollEvent,
@@ -15,6 +14,7 @@ import { useBanners } from '../hooks/use-home-queries';
 import { styles } from '../styles/home.styles';
 import type { Banner } from '../types';
 
+import { showToast } from '@/components/toast/toast';
 import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
 
@@ -64,13 +64,10 @@ export function BannerCarousel() {
 
     if (banner.linkType === 'EXTERNAL' && banner.linkValue) {
       Linking.openURL(banner.linkValue).catch(() => {
-        Alert.alert('Error', 'Could not open URL');
+        showToast('Could not open link', { type: 'error' });
       });
     } else {
-      Alert.alert(
-        'Deep Link Triggered',
-        `Navigating to ${banner.linkType} ID: ${banner.linkValue}`,
-      );
+      showToast(`Navigating to ${banner.linkType.toLowerCase()}`, { type: 'info' });
     }
   };
 
