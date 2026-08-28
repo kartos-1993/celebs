@@ -82,13 +82,12 @@ function ScreenshotFlyItem({
 
   useEffect(() => {
     progress.value = 0;
-    // Screenshot shutter: hold full-size 120ms like camera flash, then fly slowly so user perceives
+    // Ultra-visible screenshot fly: ~1.35s so even slow eyes track it
     progress.value = withTiming(
       1,
       {
-        duration: 950,
-        // Slower, highly visible: gentle start, long cruise, soft landing
-        easing: Easing.bezier(0.32, 0.0, 0.67, 0.0),
+        duration: 1350,
+        easing: Easing.out(Easing.cubic),
         reduceMotion: ReduceMotion.System,
       },
       (finished) => {
@@ -104,11 +103,14 @@ function ScreenshotFlyItem({
 
     // Quadratic Bezier: B(t) = (1-t)^2*P0 + 2(1-t)t*P1 + t^2*P2
     const oneMinusP = 1 - p;
-    const x = oneMinusP * oneMinusP * startX + 2 * oneMinusP * p * controlX + p * p * targetX;
-    const y = oneMinusP * oneMinusP * startY + 2 * oneMinusP * p * controlY + p * p * targetY;
+    const centerX = oneMinusP * oneMinusP * startX + 2 * oneMinusP * p * controlX + p * p * targetX;
+    const centerY = oneMinusP * oneMinusP * startY + 2 * oneMinusP * p * controlY + p * p * targetY;
+    // Convert center to top-left for transform (left:0 top:0)
+    const x = centerX - startW / 2;
+    const y = centerY - startH / 2;
 
-    // Screenshot shrink: hold large longer, then shrink smoothly into 20px badge
-    const scale = interpolate(p, [0, 0.25, 0.75, 1], [1, 0.85, 0.32, 0.14], Extrapolate.CLAMP);
+    // Screenshot shrink: hold screenshot 40% of flight, then shrink into badge
+    const scale = interpolate(p, [0, 0.35, 0.8, 1], [1, 0.92, 0.34, 0.18], Extrapolate.CLAMP);
     // Subtle 3D tilt, more visible with slower flight
     const rotate = interpolate(p, [0, 0.4, 1], [0, -8, 0], Extrapolate.CLAMP);
     // Border radius stays screenshot-like, then rounds into badge
@@ -124,7 +126,7 @@ function ScreenshotFlyItem({
       shadowOpacity,
       transform: [{ translateX: x }, { translateY: y }, { scale }, { rotateZ: `${rotate}deg` }],
     };
-  }, [startX, startY, targetX, targetY, controlX, controlY]);
+  }, [startX, startY, targetX, targetY, controlX, controlY, startW, startH]);
 
   // Initial snapshot flash: white border + shadow like iOS screenshot
   return (
@@ -144,8 +146,8 @@ function ScreenshotFlyItem({
         source={{ uri: item.imageUrl ?? item.imageUri }}
         style={styles.image}
         contentFit="cover"
-        cachePolicy="memory"
-        priority="low"
+        cachePolicy="memory-disk"
+        priority="high"
         transition={0}
       />
     </Animated.View>
