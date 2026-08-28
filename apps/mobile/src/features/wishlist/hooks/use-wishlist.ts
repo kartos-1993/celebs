@@ -1,7 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { addToWishlistApi, getWishlist, removeFromWishlistApi, WISHLIST_QUERY_KEYS } from '../api';
+import {
+  addToWishlistApi,
+  getWishlist,
+  removeFromWishlistApi,
+  WISHLIST_QUERY_KEYS,
+} from '../api';
 import type { WishlistEntryView } from '../types';
 
 import { useAuth } from '@/features/auth/context/auth-context';
@@ -11,10 +16,13 @@ export const WISHLIST_QUERY_KEY = WISHLIST_QUERY_KEYS.all;
 export type { WishlistEntryView, WishlistProductView } from '../types';
 
 /** Signed-in user's wishlist (products hydrated by the API) */
-export function useWishlist(enabled: boolean) {
+export function useWishlist(enabled: boolean = true) {
+  const { isLoggedIn, isLoading } = useAuth();
+  const shouldEnable = Boolean(enabled && isLoggedIn && !isLoading);
+
   const query = useQuery({
     queryKey: WISHLIST_QUERY_KEYS.all,
-    enabled,
+    enabled: shouldEnable,
     staleTime: 1000 * 30,
     queryFn: getWishlist,
   });

@@ -17,7 +17,9 @@ export interface CheckoutResponse {
   };
 }
 
-export async function placeOrderApi(payload: CheckoutRequest): Promise<CheckoutResponse> {
+export async function placeOrder(payload: CheckoutRequest): Promise<CheckoutResponse> {
   const response = await apiClient.post<CheckoutResponse>('/orders/checkout', payload);
   return response.data;
 }
+
+export const placeOrderApi = placeOrder;

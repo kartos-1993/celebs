@@ -4,6 +4,8 @@ import { apiClient } from '@/api/client';
 
 export const WISHLIST_QUERY_KEYS = {
   all: ['wishlist'] as const,
+  lists: () => [...WISHLIST_QUERY_KEYS.all, 'list'] as const,
+  details: () => [...WISHLIST_QUERY_KEYS.all, 'detail'] as const,
 };
 
 export async function getWishlist(): Promise<WishlistEntryView[]> {
@@ -27,10 +29,13 @@ export async function getWishlist(): Promise<WishlistEntryView[]> {
   }));
 }
 
-export async function addToWishlistApi(productId: string): Promise<void> {
+export async function addToWishlist(productId: string): Promise<void> {
   await apiClient.post('/wishlist', { productId });
 }
 
-export async function removeFromWishlistApi(productId: string): Promise<void> {
+export async function removeFromWishlist(productId: string): Promise<void> {
   await apiClient.delete(`/wishlist/${productId}`);
 }
+
+export const addToWishlistApi = addToWishlist;
+export const removeFromWishlistApi = removeFromWishlist;

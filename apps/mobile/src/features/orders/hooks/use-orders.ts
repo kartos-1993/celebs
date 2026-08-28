@@ -5,6 +5,8 @@ import { getMyOrders, getOrderById, ORDER_QUERY_KEYS } from '../api';
 import { PAGE_SIZE } from '../types';
 import { isActiveOrder } from '../utils/order-status';
 
+import { useAuth } from '@/features/auth/context/auth-context';
+
 export { ORDER_QUERY_KEYS } from '../api';
 export { mapOrder } from '../utils/order-mappers';
 
@@ -12,10 +14,13 @@ export const LIVE_POLL_INTERVAL_MS = 15000;
 const PENDING_PAYMENT_POLL_MS = 30000;
 
 /** Paginated list of the signed-in user's orders */
-export function useMyOrders(enabled: boolean) {
+export function useMyOrders(enabled: boolean = true) {
+  const { isLoggedIn, isLoading } = useAuth();
+  const shouldEnable = Boolean(enabled && isLoggedIn && !isLoading);
+
   const query = useInfiniteQuery({
     queryKey: ORDER_QUERY_KEYS.myOrders(),
-    enabled,
+    enabled: shouldEnable,
     initialPageParam: 1,
     queryFn: ({ pageParam }: { pageParam: number }) => getMyOrders(pageParam, PAGE_SIZE),
     getNextPageParam: (lastPage, allPages) => {
@@ -47,10 +52,13 @@ export function useMyOrders(enabled: boolean) {
 /**
  * Single order with tracking events.
  */
-export function useOrderDetail(orderId: string, enabled: boolean) {
+export function useOrderDetail(orderId: string, enabled: boolean = true) {
+  const { isLoggedIn, isLoading } = useAuth();
+  const shouldEnable = Boolean(enabled && !!orderId && isLoggedIn && !isLoading);
+
   const query = useQuery({
     queryKey: ORDER_QUERY_KEYS.detail(orderId),
-    enabled: enabled && !!orderId,
+    enabled: shouldEnable,
     queryFn: () => getOrderById(orderId),
     refetchInterval: (query) => {
       const status = query.state.data?.status;

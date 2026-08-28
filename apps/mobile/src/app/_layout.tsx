@@ -20,7 +20,19 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister: clientPersister, maxAge: 1000 * 60 * 60 * 4 }}
+        persistOptions={{
+          persister: clientPersister,
+          maxAge: 1000 * 60 * 60 * 4,
+          dehydrateOptions: {
+            shouldDehydrateQuery: (query) => {
+              const rootKey = query.queryKey[0];
+              if (rootKey === 'wishlist' || rootKey === 'orders' || rootKey === 'addresses') {
+                return false;
+              }
+              return true;
+            },
+          },
+        }}
       >
         <ThemeProvider value={DefaultTheme}>
           <AuthProvider>

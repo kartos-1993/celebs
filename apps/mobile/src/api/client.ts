@@ -49,6 +49,19 @@ declare module 'axios' {
  * exactly once. Concurrent 401s await the same in-flight refresh.
  */
 
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
+export const setAuthToken = setAccessToken;
+export const getAuthToken = getAccessToken;
+
 let refreshInFlight: Promise<string | null> | null = null;
 
 async function performRefresh(): Promise<string | null> {
@@ -65,6 +78,7 @@ async function performRefresh(): Promise<string | null> {
     const data = response.data?.data as { accessToken?: string; refreshToken?: string } | undefined;
     if (!data?.accessToken || !data?.refreshToken) return null;
 
+    accessToken = data.accessToken;
     await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
     await SecureStore.setItemAsync(REFRESH_KEY, data.refreshToken);
     return data.accessToken;
@@ -82,23 +96,33 @@ function refreshSingleFlight(): Promise<string | null> {
   return refreshInFlight;
 }
 
-// Request Interceptor: Dynamically resolve baseURL per request + attach Auth Token
+// Request Interceptor: Synchronously attach central in-memory Auth Token (0ms bridge latency)
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
     config.baseURL = getApiBaseUrl();
 
     if (!config.skipAuth) {
-      try {
-        const token = await SecureStore.getItemAsync(TOKEN_KEY);
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`;
-        } else if (!isGuestCapable(config.url)) {
-          console.warn(
-            `[apiClient] ${config.method?.toUpperCase()} ${config.url} has no stored token — request will be anonymous`,
-          );
+      // 1. Fast in-memory access token read
+      let token = accessToken;
+
+      // 2. Cold-boot fallback: if memory token not yet hydrated, read from SecureStore once
+      if (!token) {
+        try {
+          token = await SecureStore.getItemAsync(TOKEN_KEY);
+          if (token) {
+            accessToken = token;
+          }
+        } catch (error) {
+          console.warn('Failed to retrieve auth token from SecureStore:', error);
         }
-      } catch (error) {
-        console.warn('Failed to retrieve auth token from SecureStore:', error);
+      }
+
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      } else if (__DEV__ && !isGuestCapable(config.url)) {
+        console.warn(
+          `[apiClient] ${config.method?.toUpperCase()} ${config.url} has no stored token — request will be anonymous`,
+        );
       }
     }
     return config;
@@ -115,7 +139,14 @@ type RetriableConfig = InternalAxiosRequestConfig & {
  * Endpoints that legitimately serve guests via `optionalAuthenticateJWT` —
  * a missing token on these is normal, not a misconfiguration.
  */
-const GUEST_CAPABLE_PREFIXES = ['/cart', '/category'];
+const GUEST_CAPABLE_PREFIXES = [
+  '/cart',
+  '/category',
+  '/products',
+  '/banners',
+  '/combos',
+  '/settings',
+];
 
 function isGuestCapable(url?: string): boolean {
   return !!url && GUEST_CAPABLE_PREFIXES.some((prefix) => url.startsWith(prefix));
@@ -159,6 +190,7 @@ apiClient.interceptors.response.use(
       }
 
       // Refresh unavailable/failed → tear the whole session down.
+      accessToken = null;
       try {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
         await SecureStore.deleteItemAsync(REFRESH_KEY);
@@ -187,3 +219,5 @@ apiClient.interceptors.response.use(
 export async function storeRefreshToken(refreshToken: string): Promise<void> {
   await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
 }
+
+export const setRefreshToken = storeRefreshToken;

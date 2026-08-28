@@ -15,7 +15,7 @@ export async function getAddresses(): Promise<SavedAddress[]> {
   return response.data?.data ?? [];
 }
 
-export async function createAddressApi(draft: AddressDraft): Promise<SavedAddress> {
+export async function createAddress(draft: AddressDraft): Promise<SavedAddress> {
   const response = await apiClient.post<{ data?: SavedAddress }>('/orders/addresses', draft);
   if (!response.data?.data) {
     throw new Error('Failed to save address');
@@ -23,7 +23,7 @@ export async function createAddressApi(draft: AddressDraft): Promise<SavedAddres
   return response.data.data;
 }
 
-export async function updateAddressApi(
+export async function updateAddress(
   addressId: string,
   draft: Partial<AddressDraft>,
 ): Promise<SavedAddress> {
@@ -37,6 +37,10 @@ export async function updateAddressApi(
   return response.data.data;
 }
 
-export async function deleteAddressApi(addressId: string): Promise<void> {
+export async function deleteAddress(addressId: string): Promise<void> {
   await apiClient.delete(`/orders/addresses/${addressId}`);
 }
+
+export const createAddressApi = createAddress;
+export const updateAddressApi = updateAddress;
+export const deleteAddressApi = deleteAddress;

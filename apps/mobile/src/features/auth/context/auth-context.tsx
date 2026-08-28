@@ -1,37 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
 
-import { apiClient, setUnauthorizedHandler, storeRefreshToken } from '@/api/client';
+import type { AuthContextType, UserProfile } from '../types';
+import { clearAuthSession, restoreAuthSession, saveAuthSession } from '../utils/auth-storage';
+
+import { apiClient, setUnauthorizedHandler } from '@/api/client';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  isEmailVerified: boolean;
-  avatar?: string;
-}
-
-interface AuthContextType {
-  user: UserProfile | null;
-  token: string | null;
-  isLoggedIn: boolean;
-  isLoading: boolean;
-  loginWithGoogle: (data: { idToken: string }) => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    confirmPassword?: string,
-  ) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const TOKEN_KEY = 'auth_access_token';
-const REFRESH_KEY = 'auth_refresh_token';
-const USER_KEY = 'auth_user_profile';
+export type { UserProfile };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -40,7 +15,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Any hard 401 (silent refresh failed too) resets auth state immediately
+  // Hard 401 resets React and in-memory state
   useEffect(() => {
     setUnauthorizedHandler(() => {
       setToken(null);
@@ -51,35 +26,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Restore stored session on mount
   useEffect(() => {
-    async function restoreSession() {
+    async function restore() {
       try {
-        const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
-        const storedUserJson = await SecureStore.getItemAsync(USER_KEY);
-
-        if (storedToken && storedUserJson) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUserJson));
-          // An expired access token is fine here — the API client silently
-          // refreshes it on the first 401 using the stored refresh token.
+        const stored = await restoreAuthSession();
+        if (stored.token && stored.user) {
+          setToken(stored.token);
+          setUser(stored.user);
         }
-      } catch (err) {
-        console.warn('Failed to restore auth session:', err);
       } finally {
         setIsLoading(false);
       }
     }
-    restoreSession();
+    restore();
   }, []);
 
-  // Save session state to SecureStore
-  const saveSession = async (newToken: string, newUser: UserProfile, refreshToken?: string) => {
+  const handleSaveSession = async (
+    newToken: string,
+    newUser: UserProfile,
+    refreshToken?: string,
+  ) => {
     setToken(newToken);
     setUser(newUser);
-    await SecureStore.setItemAsync(TOKEN_KEY, newToken);
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(newUser));
-    if (refreshToken) {
-      await storeRefreshToken(refreshToken);
-    }
+    await saveAuthSession(newToken, newUser, refreshToken);
   };
 
   // Google 1-Tap Login
@@ -88,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await apiClient.post('/auth/google', data, { skipAuth: true });
       const { user: userProfile, accessToken, refreshToken } = response.data.data;
-      await saveSession(accessToken, userProfile, refreshToken);
+      await handleSaveSession(accessToken, userProfile, refreshToken);
       await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
       setIsLoading(false);
@@ -101,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await apiClient.post('/auth/login', { email, password }, { skipAuth: true });
       const { user: userProfile, accessToken, refreshToken } = response.data.data;
-      await saveSession(accessToken, userProfile, refreshToken);
+      await handleSaveSession(accessToken, userProfile, refreshToken);
       await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
       setIsLoading(false);
@@ -122,7 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { name, email, password, confirmPassword: confirmPassword ?? password },
         { skipAuth: true },
       );
-      // After registration, log the user in automatically or return
       return response.data;
     } finally {
       setIsLoading(false);
@@ -134,13 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await apiClient.post('/auth/logout').catch(() => {});
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
-      await SecureStore.deleteItemAsync(REFRESH_KEY);
-      await SecureStore.deleteItemAsync(USER_KEY);
+      await clearAuthSession();
       setToken(null);
       setUser(null);
-      // Mint a clean guest identity so the next logged-out session starts
-      // with an empty cart instead of the previous user's server cart.
       await useCartStore.getState().startFreshGuestSession();
     } finally {
       setIsLoading(false);
