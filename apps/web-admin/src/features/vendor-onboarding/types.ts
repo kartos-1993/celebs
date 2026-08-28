@@ -41,6 +41,11 @@ export interface ReviewSubmitStepProps {
   onSuccess: () => void;
 }
 
+export type VendorProfileFormValues = vendorProfileType;
+export type WarehouseFormValues = warehouseType;
+export type VendorDocumentsFormValues = vendorDocumentsType;
+export type VendorBusinessInfoFormValues = vendorBusinessInfoType;
+
 export type {
   vendorBusinessInfoType,
   vendorDocumentsType,
