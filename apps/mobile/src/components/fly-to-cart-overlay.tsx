@@ -3,6 +3,8 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
+  Extrapolate,
+  interpolate,
   ReduceMotion,
   runOnJS,
   useAnimatedStyle,
@@ -22,15 +24,24 @@ export function FlyToCartOverlay() {
   if (queue.length === 0) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { zIndex: 999, elevation: 999 }]} pointerEvents="none">
       {queue.map((item) => (
-        <FlyItem key={item.id} item={item} onComplete={() => onAnimationComplete(item.id)} />
+        <ScreenshotFlyItem
+          key={item.id}
+          item={item}
+          onComplete={() => onAnimationComplete(item.id)}
+        />
       ))}
     </View>
   );
 }
 
-function FlyItem({
+/**
+ * Screenshot-style fly: feels like we snapped the image and it shrinks into the cart.
+ * Performant: only transform + opacity + borderRadius on UI thread (Reanimated worklet).
+ * Bezier trajectory for natural arc, scale 1 -> 0.12, fade at 90%.
+ */
+function ScreenshotFlyItem({
   item,
   onComplete,
 }: {
@@ -42,8 +53,6 @@ function FlyItem({
     startY?: number;
     targetX?: number;
     targetY?: number;
-    endX?: number;
-    endY?: number;
     startWidth?: number;
     startHeight?: number;
   };
@@ -53,65 +62,71 @@ function FlyItem({
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const progress = useSharedValue(0);
 
-  // Dynamic cart icon coordinates - bottom tab bar is primary target
+  // Targets: bottom tab cart by default (measured via CartTabIcon), fallback to top-right
   const defaultStartX = windowWidth / 2;
-  const defaultStartY = windowHeight - 100;
+  const defaultStartY = windowHeight / 2;
   const defaultTargetX = windowWidth - 28;
-  const defaultTargetY = (insets.top || 30) + 20;
+  const defaultTargetY = windowHeight - 34 - (insets.bottom || 0);
 
-  const startX = item.startX && item.startX > 0 ? item.startX : defaultStartX;
-  const startY = item.startY && item.startY > 0 ? item.startY : defaultStartY;
+  const startX = item.startX && item.startX > 20 ? item.startX : defaultStartX;
+  const startY = item.startY && item.startY > 20 ? item.startY : defaultStartY;
   const targetX = item.targetX && item.targetX > 20 ? item.targetX : defaultTargetX;
   const targetY = item.targetY && item.targetY > 20 ? item.targetY : defaultTargetY;
 
-  const startW = item.startWidth || 70;
-  const startH = item.startHeight || 90;
+  const startW = item.startWidth || 110;
+  const startH = item.startHeight || 140;
+
+  // Bezier control point: higher arc so flight is visible longer, slight left curve
+  const controlX = (startX + targetX) / 2 - 60;
+  const controlY = Math.min(startY, targetY) - 180;
 
   useEffect(() => {
     progress.value = 0;
+    // Screenshot shutter: hold full-size 120ms like camera flash, then fly slowly so user perceives
     progress.value = withTiming(
       1,
       {
-        duration: 520,
-        easing: Easing.out(Easing.quad),
+        duration: 950,
+        // Slower, highly visible: gentle start, long cruise, soft landing
+        easing: Easing.bezier(0.32, 0.0, 0.67, 0.0),
         reduceMotion: ReduceMotion.System,
       },
       (finished) => {
-        if (finished) {
-          runOnJS(onComplete)();
-        }
+        if (finished) runOnJS(onComplete)();
       },
     );
-    return () => {
-      cancelAnimation(progress);
-    };
+    return () => cancelAnimation(progress);
   }, [progress, onComplete]);
 
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';
     const p = progress.value;
 
-    // Direct trajectory with smooth gentle arc to cart icon
-    const currentX = startX + (targetX - startX) * p;
-    const directY = startY + (targetY - startY) * p;
-    const arcLift = Math.sin(Math.PI * p) * 30;
-    const currentY = directY - arcLift;
+    // Quadratic Bezier: B(t) = (1-t)^2*P0 + 2(1-t)t*P1 + t^2*P2
+    const oneMinusP = 1 - p;
+    const x = oneMinusP * oneMinusP * startX + 2 * oneMinusP * p * controlX + p * p * targetX;
+    const y = oneMinusP * oneMinusP * startY + 2 * oneMinusP * p * controlY + p * p * targetY;
 
-    // Scale down smoothly from initial size into the cart icon
-    const scale = Math.max(0.08, 1 - p * 0.85);
-
-    // Fade out right as it lands into the cart icon
-    let opacity = 1;
-    if (p > 0.82) {
-      opacity = (1 - p) / 0.18;
-    }
+    // Screenshot shrink: hold large longer, then shrink smoothly into 20px badge
+    const scale = interpolate(p, [0, 0.25, 0.75, 1], [1, 0.85, 0.32, 0.14], Extrapolate.CLAMP);
+    // Subtle 3D tilt, more visible with slower flight
+    const rotate = interpolate(p, [0, 0.4, 1], [0, -8, 0], Extrapolate.CLAMP);
+    // Border radius stays screenshot-like, then rounds into badge
+    const borderRadius = interpolate(p, [0, 0.6, 1], [12, 12, 10], Extrapolate.CLAMP);
+    // Opacity: stay fully visible until 92% then quick fade into cart
+    const opacity = interpolate(p, [0, 0.92, 1], [1, 1, 0], Extrapolate.CLAMP);
+    // Shadow visible entire flight
+    const shadowOpacity = interpolate(p, [0, 0.8, 1], [0.22, 0.16, 0], Extrapolate.CLAMP);
 
     return {
       opacity,
-      transform: [{ translateX: currentX }, { translateY: currentY }, { scale }],
+      borderRadius,
+      shadowOpacity,
+      transform: [{ translateX: x }, { translateY: y }, { scale }, { rotateZ: `${rotate}deg` }],
     };
-  });
+  }, [startX, startY, targetX, targetY, controlX, controlY]);
 
+  // Initial snapshot flash: white border + shadow like iOS screenshot
   return (
     <Animated.View
       style={[
@@ -119,8 +134,9 @@ function FlyItem({
         {
           width: startW,
           height: startH,
-          // Initial position is handled via transform, keep layout static for performance
+          // Keep layout static; all motion via transform (GPU compositable)
         },
+        styles.screenshotFrame,
         animatedStyle,
       ]}
     >
@@ -130,6 +146,7 @@ function FlyItem({
         contentFit="cover"
         cachePolicy="memory"
         priority="low"
+        transition={0}
       />
     </Animated.View>
   );

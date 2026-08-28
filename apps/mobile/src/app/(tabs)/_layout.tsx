@@ -11,6 +11,7 @@ import { Tabs } from 'expo-router';
 import { Home, Search, ShoppingCart, TrendingUp, User } from 'lucide-react-native';
 
 import { Colors, FontSize, FontWeight, Spacing } from '@/constants/theme';
+import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
 const TAB_BAR_CONTENT_HEIGHT = 56;
@@ -30,12 +31,14 @@ function CategoryIcon({ color, size }: { color: ColorValue; size: number }) {
 
 function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
   const { pulseTrigger, setCartIconCoords } = useFlyToCart();
+  const { itemCount } = useCart();
   const scale = useSharedValue(1);
+  const badgeScale = useSharedValue(1);
   const iconRef = React.useRef<View>(null);
+  const prevCountRef = React.useRef(itemCount);
 
-  // Measure bottom tab cart icon and sync as fly target - updates on mount and on pulse (ensures coords stay fresh after rotation)
+  // Measure bottom tab cart icon and sync as fly target
   const measureCartIcon = React.useCallback(() => {
-    // Delay to ensure layout is committed
     setTimeout(() => {
       iconRef.current?.measureInWindow((x, y, width, height) => {
         if (typeof x === 'number' && typeof y === 'number' && width > 0 && height > 0) {
@@ -49,6 +52,7 @@ function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }
     measureCartIcon();
   }, [measureCartIcon]);
 
+  // Icon bounce on fly landing
   React.useEffect(() => {
     if (pulseTrigger > 0) {
       scale.value = withSequence(
@@ -58,15 +62,68 @@ function CartTabIcon({ color, focused }: { color: ColorValue; focused: boolean }
     }
   }, [pulseTrigger, scale]);
 
+  // Badge pop when number increases - like screenshot landing into badge
+  React.useEffect(() => {
+    if (itemCount > prevCountRef.current) {
+      badgeScale.value = withSequence(
+        withSpring(1.6, { damping: 5, stiffness: 260 }),
+        withSpring(1.0, { damping: 9, stiffness: 180 }),
+      );
+    }
+    prevCountRef.current = itemCount;
+  }, [itemCount, badgeScale]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  const badgeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
+  }));
+
   return (
-    <View ref={iconRef} collapsable={false} onLayout={measureCartIcon}>
+    <View
+      ref={iconRef}
+      collapsable={false}
+      onLayout={measureCartIcon}
+      style={{ alignItems: 'center', justifyContent: 'center' }}
+    >
       <Animated.View style={animatedStyle}>
         <ShoppingCart size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
       </Animated.View>
+      {itemCount > 0 && (
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: -6,
+              right: -10,
+              minWidth: 16,
+              height: 16,
+              borderRadius: 8,
+              backgroundColor: '#FF3B30',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: 4,
+              borderWidth: 1.5,
+              borderColor: '#fff',
+            },
+            badgeAnimatedStyle,
+          ]}
+        >
+          <Animated.Text
+            style={{
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: '700',
+              lineHeight: 12,
+              textAlign: 'center',
+            }}
+          >
+            {itemCount > 99 ? '99+' : String(itemCount)}
+          </Animated.Text>
+        </Animated.View>
+      )}
     </View>
   );
 }

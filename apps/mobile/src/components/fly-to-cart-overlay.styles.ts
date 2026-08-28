@@ -1,22 +1,31 @@
 import { StyleSheet } from 'react-native';
 
-import { Palette, Radius } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
   flyingCard: {
     position: 'absolute',
     left: 0,
     top: 0,
-    borderRadius: Radius.sm,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: Palette.white,
-    // Shadow removed during flight for performance - add elevation only on Android
-    // shadow* triggers offscreen compositing every frame @520ms
-    elevation: 4,
+    // Performant shadow: elevation for Android, shadow only for iOS initial frame
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+  },
+  // Screenshot frame: mimics iOS screenshot with rounded corners and thin border
+  screenshotFrame: {
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: Palette.white,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: Radius.sm,
+    borderRadius: 12,
   },
 });
