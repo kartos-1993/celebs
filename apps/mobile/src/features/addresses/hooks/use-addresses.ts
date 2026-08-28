@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient } from '@/api/client';
+import {
+  ADDRESS_QUERY_KEYS,
+  createAddressApi,
+  deleteAddressApi,
+  getAddresses,
+  updateAddressApi,
+} from '../api';
+import type { AddressDraft } from '../types';
 
-import type { AddressDraft, SavedAddress } from '../types';
-
-export const ADDRESSES_QUERY_KEY = ['addresses'] as const;
+export { ADDRESS_QUERY_KEYS } from '../api';
+export const ADDRESSES_QUERY_KEY = ADDRESS_QUERY_KEYS.all;
 
 export function useAddresses(enabled: boolean) {
   const query = useQuery({
-    queryKey: ADDRESSES_QUERY_KEY,
-    queryFn: async (): Promise<SavedAddress[]> => {
-      const response = await apiClient.get<{ data?: SavedAddress[] }>('/orders/addresses');
-      return response.data?.data ?? [];
-    },
+    queryKey: ADDRESS_QUERY_KEYS.list(),
+    queryFn: getAddresses,
     enabled,
     staleTime: 1000 * 60,
   });
@@ -28,13 +31,9 @@ export function useCreateAddress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (draft: AddressDraft): Promise<SavedAddress> => {
-      const response = await apiClient.post<{ data?: SavedAddress }>('/orders/addresses', draft);
-      if (!response.data?.data) throw new Error('Failed to save address');
-      return response.data.data;
-    },
+    mutationFn: (draft: AddressDraft) => createAddressApi(draft),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ADDRESS_QUERY_KEYS.all });
     },
   });
 }
@@ -43,22 +42,10 @@ export function useUpdateAddress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      addressId,
-      draft,
-    }: {
-      addressId: string;
-      draft: Partial<AddressDraft>;
-    }): Promise<SavedAddress> => {
-      const response = await apiClient.patch<{ data?: SavedAddress }>(
-        `/orders/addresses/${addressId}`,
-        draft,
-      );
-      if (!response.data?.data) throw new Error('Failed to update address');
-      return response.data.data;
-    },
+    mutationFn: ({ addressId, draft }: { addressId: string; draft: Partial<AddressDraft> }) =>
+      updateAddressApi(addressId, draft),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ADDRESS_QUERY_KEYS.all });
     },
   });
 }
@@ -67,11 +54,9 @@ export function useDeleteAddress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (addressId: string): Promise<void> => {
-      await apiClient.delete(`/orders/addresses/${addressId}`);
-    },
+    mutationFn: (addressId: string) => deleteAddressApi(addressId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ADDRESS_QUERY_KEYS.all });
     },
   });
 }

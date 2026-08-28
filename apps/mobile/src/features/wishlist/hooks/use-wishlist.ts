@@ -1,73 +1,22 @@
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient } from '@/api/client';
+import { addToWishlistApi, getWishlist, removeFromWishlistApi, WISHLIST_QUERY_KEYS } from '../api';
+import type { WishlistEntryView } from '../types';
+
 import { useAuth } from '@/features/auth/context/auth-context';
 
-export interface WishlistProductView {
-  id: string;
-  name: string;
-  brand?: string;
-  slug: string;
-  price: number;
-  discountedPrice?: number;
-  mainImages: string[];
-}
-
-export interface WishlistEntryView {
-  id: string;
-  productId: string;
-  addedAt: string;
-  product: WishlistProductView;
-}
-
-export const WISHLIST_QUERY_KEY = ['wishlist'] as const;
-
-interface WishlistApiResponse {
-  success?: boolean;
-  message?: string;
-  data?: {
-    id: string;
-    productId: string;
-    addedAt: string;
-    product: {
-      id: string;
-      name: string;
-      brand?: string | null;
-      slug: string;
-      price: number;
-      discountedPrice?: number | null;
-      mainImages: string[];
-    };
-  }[];
-}
+export { WISHLIST_QUERY_KEYS } from '../api';
+export const WISHLIST_QUERY_KEY = WISHLIST_QUERY_KEYS.all;
+export type { WishlistEntryView, WishlistProductView } from '../types';
 
 /** Signed-in user's wishlist (products hydrated by the API) */
 export function useWishlist(enabled: boolean) {
   const query = useQuery({
-    queryKey: WISHLIST_QUERY_KEY,
+    queryKey: WISHLIST_QUERY_KEYS.all,
     enabled,
     staleTime: 1000 * 30,
-    queryFn: async (): Promise<WishlistEntryView[]> => {
-      const response = await apiClient.get<WishlistApiResponse>('/wishlist');
-      const entries = Array.isArray(response.data?.data) ? response.data.data : [];
-      return entries.map((entry) => ({
-        id: entry.id,
-        productId: entry.productId,
-        addedAt: entry.addedAt,
-        product: {
-          id: entry.product.id,
-          name: entry.product.name,
-          ...(entry.product.brand ? { brand: entry.product.brand } : {}),
-          slug: entry.product.slug,
-          price: Number(entry.product.price ?? 0),
-          ...(entry.product.discountedPrice
-            ? { discountedPrice: Number(entry.product.discountedPrice) }
-            : {}),
-          mainImages: Array.isArray(entry.product.mainImages) ? entry.product.mainImages : [],
-        },
-      }));
-    },
+    queryFn: getWishlist,
   });
 
   const entries = useMemo(() => query.data ?? [], [query.data]);
@@ -84,10 +33,7 @@ export function useWishlist(enabled: boolean) {
 }
 
 /**
- * Membership check backed by the shared ['wishlist'] cache — usable anywhere
- * (PDP heart, grid-card hearts) without extra fetches once loaded.
- * Guests never hit the network: hearts render empty and tapping prompts login.
- * Waits for auth restore to finish to avoid SecureStore race after login.
+ * Membership check backed by the shared ['wishlist'] cache
  */
 export function useWishlistStatus() {
   const { isLoggedIn, isLoading } = useAuth();
@@ -101,13 +47,13 @@ export function useWishlistStatus() {
   return { isWishlisted };
 }
 
-/** Optimistic add/remove against /wishlist */
+/** Optimistic add/remove against /wishlist with rollback context */
 export function useWishlistActions() {
   const queryClient = useQueryClient();
 
   const applyOptimistic = useCallback(
     (productId: string, adding: boolean) => {
-      queryClient.setQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEY, (previous) => {
+      queryClient.setQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEYS.all, (previous) => {
         const current = previous ?? [];
         if (adding) {
           if (current.some((entry) => entry.productId === productId)) return current;
@@ -134,32 +80,42 @@ export function useWishlistActions() {
   );
 
   const addToWishlist = useMutation({
-    mutationFn: async (productId: string): Promise<void> => {
-      await apiClient.post('/wishlist', { productId });
-    },
+    mutationFn: (productId: string) => addToWishlistApi(productId),
     onMutate: async (productId: string) => {
+      await queryClient.cancelQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
+      const previousWishlist = queryClient.getQueryData<WishlistEntryView[]>(
+        WISHLIST_QUERY_KEYS.all,
+      );
       applyOptimistic(productId, true);
+      return { previousWishlist };
     },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+    onError: (_err, _productId, context) => {
+      if (context?.previousWishlist) {
+        queryClient.setQueryData(WISHLIST_QUERY_KEYS.all, context.previousWishlist);
+      }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
     },
   });
 
   const removeFromWishlist = useMutation({
-    mutationFn: async (productId: string): Promise<void> => {
-      await apiClient.delete(`/wishlist/${productId}`);
-    },
+    mutationFn: (productId: string) => removeFromWishlistApi(productId),
     onMutate: async (productId: string) => {
+      await queryClient.cancelQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
+      const previousWishlist = queryClient.getQueryData<WishlistEntryView[]>(
+        WISHLIST_QUERY_KEYS.all,
+      );
       applyOptimistic(productId, false);
+      return { previousWishlist };
     },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+    onError: (_err, _productId, context) => {
+      if (context?.previousWishlist) {
+        queryClient.setQueryData(WISHLIST_QUERY_KEYS.all, context.previousWishlist);
+      }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
     },
   });
 
