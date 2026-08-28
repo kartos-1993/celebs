@@ -35,3 +35,12 @@ export interface StorefrontConfigData {
   quickFilters: QuickFilterConfig[];
   drawerFilters: DrawerFilterConfig[];
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  slug?: string;
+  displayName?: string;
+  imageUrl?: string | null;
+  level: number;
+}

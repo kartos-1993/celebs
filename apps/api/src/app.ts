@@ -139,6 +139,7 @@ app.use(
 
 app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
+app.use(`${config.BASE_PATH}/categories`, categoryRoutes);
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
 app.use(`${config.BASE_PATH}/quick-filter`, quickFilterRoutes);
 app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
