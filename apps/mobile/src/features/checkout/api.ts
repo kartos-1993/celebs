@@ -1,5 +1,10 @@
 import { apiClient } from '@/api/client';
 
+export const CHECKOUT_QUERY_KEYS = {
+  all: ['checkout'] as const,
+  summary: () => [...CHECKOUT_QUERY_KEYS.all, 'summary'] as const,
+};
+
 export interface CheckoutRequest {
   addressId: string;
   paymentMethod: 'COD' | 'STRIPE';
