@@ -1,70 +1,98 @@
-import { Dimensions, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 export const styles = StyleSheet.create({
-  overlay: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Palette.gray200,
+    gap: Spacing.md,
+  },
+  thumbnail: {
+    width: 68,
+    height: 68,
+    borderRadius: Radius.sm,
+    backgroundColor: Palette.gray100,
+  },
+  headerInfo: {
     flex: 1,
-    backgroundColor: Palette.overlay,
-    justifyContent: 'flex-end',
+    gap: Spacing.xxs,
   },
-  sheetContainer: {
-    borderTopLeftRadius: Radius.xxl,
-    borderTopRightRadius: Radius.xxl,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.xxl,
-    width: SCREEN_WIDTH,
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.xs,
   },
-  headerRow: {
+  currentPrice: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.black,
+    color: Palette.danger,
+  },
+  originalPrice: {
+    fontSize: FontSize.small,
+    color: Palette.gray400,
+    textDecorationLine: 'line-through',
+  },
+  selectedVariantText: {
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.medium,
+    color: Palette.gray600,
+  },
+  closeBtn: {
+    padding: Spacing.xs,
+    alignSelf: 'flex-start',
+  },
+
+  content: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.lg,
-  },
-  titleText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.extrabold,
-  },
-  subTitleText: {
-    fontSize: FontSize.small,
-    opacity: 0.6,
-    marginTop: Spacing.xxs,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.pill,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  labelSection: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
     marginBottom: Spacing.md,
-    opacity: 0.8,
   },
+  sectionTitle: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
+  },
+  sizeGuideLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xxs,
+  },
+  sizeGuideText: {
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
+    color: Palette.gray500,
+  },
+
   sizePillsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
+    gap: Spacing.sm + 2,
+    marginBottom: Spacing.lg,
   },
   sizePill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.lg,
+    height: 38,
+    borderRadius: Radius.sm,
     minWidth: 54,
     borderWidth: 1.5,
   },
   sizePillSelected: {
-    backgroundColor: Palette.black,
-    borderColor: Palette.black,
+    backgroundColor: Palette.gray900,
+    borderColor: Palette.gray900,
   },
   sizePillUnselected: {
     backgroundColor: Palette.white,
@@ -75,9 +103,10 @@ export const styles = StyleSheet.create({
     borderColor: Palette.gray200,
     opacity: 0.45,
   },
+
   sizeText: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.footnote,
+    fontWeight: FontWeight.bold,
   },
   sizeTextSelected: {
     color: Palette.white,
@@ -85,22 +114,26 @@ export const styles = StyleSheet.create({
   },
   sizeTextUnselected: {
     color: Palette.gray900,
-    fontWeight: FontWeight.bold,
   },
   sizeTextDisabled: {
     color: Palette.gray400,
     textDecorationLine: 'line-through',
   },
+
   confirmBtn: {
-    backgroundColor: Palette.danger,
+    backgroundColor: Palette.gray900,
     borderRadius: Radius.pill,
-    paddingVertical: Spacing.lg,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: Spacing.lg,
+  },
+  confirmBtnDisabled: {
+    opacity: 0.4,
   },
   confirmBtnText: {
     color: Palette.white,
-    fontSize: FontSize.body,
-    fontWeight: FontWeight.extrabold,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
   },
 });
