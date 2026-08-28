@@ -9,10 +9,30 @@ export function isVariantOutOfStock(variant: ProductColorVariant | undefined): b
 
 export function isProductFullyOutOfStock(product: Product | null | undefined): boolean {
   if (!product) return false;
+  const prodRec = product as Product & Record<string, unknown>;
+
+  // Check explicit status flags
+  if (prodRec.status === 'out_of_stock' || prodRec.status === 'OUT_OF_STOCK') {
+    return true;
+  }
+  if (prodRec.inStock === false || prodRec.isAvailable === false) {
+    return true;
+  }
+  const totalStock = prodRec.totalStock ?? prodRec.stock;
+  if (typeof totalStock === 'number' && totalStock <= 0) {
+    return true;
+  }
+
   const variants = product.colorVariants;
   if (!Array.isArray(variants) || variants.length === 0) return false;
-  // Product is fully OOS only if EVERY variant is OOS
-  return variants.every(isVariantOutOfStock);
+
+  // Product is fully OOS only if variants have tracked stock and every variant is OOS
+  const trackedVariants = variants.filter((v) => Array.isArray(v.stocks) && v.stocks.length > 0);
+  if (trackedVariants.length > 0) {
+    return trackedVariants.every(isVariantOutOfStock);
+  }
+
+  return false;
 }
 
 export function getStockQtyForVariantSize(
@@ -41,7 +61,6 @@ export function isSelectedCombinationOutOfStock(
   const variant = product.colorVariants?.[selectedColorIndex];
   if (!variant) return false;
   if (!selectedSize) {
-    // No size picked yet: consider OOS only if the whole variant is OOS
     return isVariantOutOfStock(variant);
   }
   return isSizeOutOfStockForVariant(variant, selectedSize);

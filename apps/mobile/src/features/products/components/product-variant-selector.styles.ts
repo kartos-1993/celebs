@@ -81,15 +81,15 @@ export const styles = StyleSheet.create({
 
   /* ---------- Size Boxes ---------- */
   sizeBox: {
-    minWidth: 40,
-    height: 28,
-    paddingHorizontal: Spacing.sm,
+    minWidth: 42,
+    height: 32,
+    paddingHorizontal: Spacing.sm + 2,
     borderRadius: Radius.sm,
-    backgroundColor: Palette.gray100,
+    backgroundColor: Palette.white,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Palette.gray100,
+    borderWidth: 1.5,
+    borderColor: Palette.gray300,
   },
   sizeBoxSelected: {
     backgroundColor: Palette.gray900,
@@ -98,12 +98,12 @@ export const styles = StyleSheet.create({
   sizeBoxDisabled: {
     backgroundColor: Palette.gray100,
     borderColor: Palette.gray200,
-    opacity: 0.4,
+    opacity: 0.45,
   },
   sizeBoxLowStock: {
     borderColor: Palette.warning,
     backgroundColor: Palette.warningTint,
-    minHeight: 38,
+    minHeight: 40,
     paddingVertical: 4,
   },
   sizeBoxInner: {
@@ -112,11 +112,12 @@ export const styles = StyleSheet.create({
   },
   sizeText: {
     fontSize: FontSize.footnote,
-    fontWeight: FontWeight.semibold,
-    color: Palette.gray700,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
   },
   sizeTextSelected: {
     color: Palette.white,
+    fontWeight: FontWeight.extrabold,
   },
   sizeTextDisabled: {
     color: Palette.gray400,

@@ -12,6 +12,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface SizeRequiredModalProps {
   visible: boolean;
   availableSizes: string[];
+  disabledSizes?: string[];
   productName: string;
   initialSize?: string;
   imageUrl?: string;
@@ -22,6 +23,7 @@ interface SizeRequiredModalProps {
 export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   visible,
   availableSizes,
+  disabledSizes = [],
   productName,
   initialSize = '',
   imageUrl: _imageUrl,
@@ -39,17 +41,16 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   }, [visible, initialSize]);
 
   const handleConfirm = () => {
-    if (!selectedSize) return;
+    if (!selectedSize || disabledSizes.includes(selectedSize)) return;
     if (confirmBtnRef.current) {
       confirmBtnRef.current.measureInWindow((x, y, width, height) => {
         const startX =
           typeof x === 'number' && !isNaN(x) && x !== 0 ? x + width / 2 : SCREEN_WIDTH / 2;
-        const startY =
-          typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : SCREEN_WIDTH * 1.2;
+        const startY = typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : 400;
         onSelectSizeAndConfirm(selectedSize, { x: startX, y: startY });
       });
     } else {
-      onSelectSizeAndConfirm(selectedSize, { x: SCREEN_WIDTH / 2, y: SCREEN_WIDTH * 1.2 });
+      onSelectSizeAndConfirm(selectedSize);
     }
   };
 
@@ -79,20 +80,29 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
           <View style={styles.sizePillsGrid}>
             {availableSizes.map((size) => {
               const isSelected = selectedSize === size;
+              const isOos = disabledSizes.includes(size);
+
               return (
                 <TouchableOpacity
                   key={size}
-                  activeOpacity={0.8}
-                  onPress={() => setSelectedSize(size)}
+                  activeOpacity={isOos ? 1 : 0.8}
+                  onPress={() => {
+                    if (!isOos) setSelectedSize(size);
+                  }}
+                  disabled={isOos}
                   style={[
                     styles.sizePill,
-                    isSelected ? styles.sizePillSelected : styles.sizePillUnselected,
+                    isSelected && styles.sizePillSelected,
+                    !isSelected && !isOos && styles.sizePillUnselected,
+                    isOos && styles.sizePillDisabled,
                   ]}
                 >
                   <ThemedText
                     style={[
                       styles.sizeText,
-                      isSelected ? styles.sizeTextSelected : styles.sizeTextUnselected,
+                      isSelected && styles.sizeTextSelected,
+                      !isSelected && !isOos && styles.sizeTextUnselected,
+                      isOos && styles.sizeTextDisabled,
                     ]}
                   >
                     {size}

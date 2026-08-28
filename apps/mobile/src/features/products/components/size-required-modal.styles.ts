@@ -60,12 +60,20 @@ export const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: Radius.md,
     minWidth: 54,
+    borderWidth: 1.5,
   },
   sizePillSelected: {
     backgroundColor: Palette.black,
+    borderColor: Palette.black,
   },
   sizePillUnselected: {
+    backgroundColor: Palette.white,
+    borderColor: Palette.gray300,
+  },
+  sizePillDisabled: {
     backgroundColor: Palette.gray100,
+    borderColor: Palette.gray200,
+    opacity: 0.45,
   },
   sizeText: {
     fontSize: FontSize.base,
@@ -77,6 +85,11 @@ export const styles = StyleSheet.create({
   },
   sizeTextUnselected: {
     color: Palette.gray900,
+    fontWeight: FontWeight.bold,
+  },
+  sizeTextDisabled: {
+    color: Palette.gray400,
+    textDecorationLine: 'line-through',
   },
   confirmBtn: {
     backgroundColor: Palette.danger,

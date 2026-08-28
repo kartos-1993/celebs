@@ -32,29 +32,43 @@ export function CartItemCard({
   onQuantityPress,
   onRemove,
 }: CartItemCardProps) {
+  const isOutOfStock = !item.isAvailable || item.availableStock <= 0;
   const discountPercent = getDiscountPercent(item);
   const variantLabel = [item.colorVariantName, item.size].filter(Boolean).join(' / ');
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, isOutOfStock && styles.rowDisabled]}>
       <View style={styles.checkboxWrap}>
         <CartCheckbox
-          checked={checked}
-          onPress={onToggle}
+          checked={!isOutOfStock && checked}
+          onPress={isOutOfStock ? undefined : onToggle}
+          disabled={isOutOfStock}
           accessibilityLabel={`Select ${item.productName}`}
         />
       </View>
 
-      <Image
-        source={{ uri: resolveImageUrl(item.image || '') }}
-        style={styles.thumbnail}
-        contentFit="cover"
-        transition={200}
-      />
+      <View style={styles.thumbnailWrap}>
+        <Image
+          source={{ uri: resolveImageUrl(item.image || '') }}
+          style={[styles.thumbnail, isOutOfStock && styles.thumbnailOos]}
+          contentFit="cover"
+          transition={200}
+        />
+        {isOutOfStock && (
+          <View style={styles.oosOverlay} pointerEvents="none">
+            <View style={styles.oosBadge}>
+              <ThemedText style={styles.oosBadgeText}>OUT OF STOCK</ThemedText>
+            </View>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <ThemedText style={styles.productName} numberOfLines={2}>
+          <ThemedText
+            style={[styles.productName, isOutOfStock && { color: Palette.gray500 }]}
+            numberOfLines={2}
+          >
             {item.productName}
           </ThemedText>
           <TouchableOpacity
@@ -78,26 +92,32 @@ export function CartItemCard({
 
         <View style={styles.priceRow}>
           <View style={styles.priceGroup}>
-            <CartPrice value={getUnitPrice(item)} color={Palette.danger} size="lg" />
-            {discountPercent > 0 && (
+            {isOutOfStock ? (
+              <ThemedText style={styles.oosTag}>Out of stock</ThemedText>
+            ) : (
               <>
-                <ThemedText style={styles.strikePrice}>{item.price.toFixed(2)}</ThemedText>
-                <View style={styles.discountChip}>
-                  <ThemedText style={styles.discountChipText}>-{discountPercent}%</ThemedText>
-                </View>
+                <CartPrice value={getUnitPrice(item)} color={Palette.danger} size="lg" />
+                {discountPercent > 0 && (
+                  <>
+                    <ThemedText style={styles.strikePrice}>{item.price.toFixed(2)}</ThemedText>
+                    <View style={styles.discountChip}>
+                      <ThemedText style={styles.discountChipText}>-{discountPercent}%</ThemedText>
+                    </View>
+                  </>
+                )}
+                {item.stockWarning ? (
+                  <ThemedText style={styles.stockWarning} numberOfLines={1}>
+                    {item.stockWarning}
+                  </ThemedText>
+                ) : null}
               </>
             )}
-            {item.stockWarning ? (
-              <ThemedText style={styles.stockWarning} numberOfLines={1}>
-                {item.stockWarning}
-              </ThemedText>
-            ) : null}
           </View>
 
           <TouchableOpacity
-            style={styles.qtyButton}
+            style={[styles.qtyButton, (isUpdating || isOutOfStock) && styles.qtyButtonDisabled]}
             onPress={onQuantityPress}
-            disabled={isUpdating}
+            disabled={isUpdating || isOutOfStock}
             activeOpacity={0.7}
             accessible={true}
             accessibilityRole="button"

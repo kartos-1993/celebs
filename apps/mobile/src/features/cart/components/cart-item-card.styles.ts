@@ -10,14 +10,58 @@ export const styles = StyleSheet.create({
     gap: Spacing.md,
     backgroundColor: Palette.white,
   },
+  rowDisabled: {
+    backgroundColor: Palette.gray50,
+  },
   checkboxWrap: {
     paddingTop: Spacing.xs,
   },
-  thumbnail: {
+  thumbnailWrap: {
     width: 88,
     height: 88,
     borderRadius: Radius.sm,
+    overflow: 'hidden',
+    position: 'relative',
     backgroundColor: Palette.gray100,
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbnailOos: {
+    opacity: 0.5,
+  },
+  oosOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    zIndex: 5,
+  },
+  oosBadge: {
+    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  oosBadgeText: {
+    color: Palette.white,
+    fontSize: 8,
+    fontWeight: FontWeight.extrabold,
+    letterSpacing: 0.3,
+  },
+  oosTag: {
+    color: Palette.danger,
+    fontSize: FontSize.micro,
+    fontWeight: FontWeight.bold,
+    backgroundColor: Palette.dangerTint,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 2,
   },
   content: {
     flex: 1,
@@ -99,6 +143,9 @@ export const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     minWidth: 64,
     justifyContent: 'center',
+  },
+  qtyButtonDisabled: {
+    opacity: 0.45,
   },
   qtyText: {
     fontSize: FontSize.small,

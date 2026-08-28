@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   Share,
   StatusBar,
@@ -43,6 +42,7 @@ import { ProductVariantSelector } from '@/features/products/components/product-v
 import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { resolveImageUrl, useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
+import { isSizeOutOfStockForVariant } from '@/features/products/utils/stock';
 import {
   isProductFullyOutOfStock,
   isSelectedCombinationOutOfStock,
@@ -189,12 +189,7 @@ export default function ProductDetailScreen() {
   };
 
   const handleHeaderMenu = () => {
-    if (!product) return;
-    Alert.alert(product.name, undefined, [
-      { text: 'Share', onPress: handleShare },
-      { text: 'View Cart', onPress: openCartSheet },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    handleShare();
   };
 
   const handleWishlist = () => {
@@ -497,6 +492,9 @@ export default function ProductDetailScreen() {
         visible={isSizeModalOpen}
         onClose={() => setIsSizeModalOpen(false)}
         availableSizes={availableSizeNames}
+        disabledSizes={availableSizeNames.filter((s) =>
+          isSizeOutOfStockForVariant(product.colorVariants?.[selectedColorIndex], s),
+        )}
         productName={product.name}
         initialSize={selectedSize}
         onSelectSizeAndConfirm={(chosenSize) => {
