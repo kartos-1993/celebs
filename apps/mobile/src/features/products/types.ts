@@ -42,5 +42,12 @@ export interface ProductFilterParams {
   category?: string;
   cursor?: string | null;
   status?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  tag?: string;
+  brandId?: string;
+  sortBy?: 'createdAt' | 'price' | 'name';
+  sortOrder?: 'asc' | 'desc';
   [key: string]: unknown;
 }
