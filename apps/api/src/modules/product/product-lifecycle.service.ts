@@ -263,13 +263,13 @@ export class ProductLifecycleService {
     return formatProductResponse(updated);
   }
 
-  async toggleProductActivation(id: string, vendorId: string) {
+  async toggleProductActivation(id: string, vendorId?: string, isPlatform = false) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if (String(product.vendorId) !== String(vendorId)) {
+    if (!isPlatform && String(product.vendorId) !== String(vendorId)) {
       throw new AppError(
         'Forbidden: You do not own this product',
         HTTPSTATUS.FORBIDDEN,

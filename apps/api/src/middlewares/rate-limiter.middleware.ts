@@ -36,10 +36,11 @@ export const authRateLimiter = rateLimit({
  */
 export const searchRateLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 300,
+  max: (req: Request) => (req.user ? 600 : 300),
+  keyGenerator: (req: Request) => (req.user?.id ? `user:${req.user.id}` : req.ip || 'anonymous'),
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req: Request) => shouldSkipRateLimit(req) || !!req.user,
+  skip: (req: Request) => shouldSkipRateLimit(req),
   message: standardRateLimitMessage,
 });
 

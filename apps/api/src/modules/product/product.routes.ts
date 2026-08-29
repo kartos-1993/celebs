@@ -18,9 +18,9 @@ const productController = new ProductController(new ProductService());
 // Public / Storefront Product Routes (Optional Auth + optional context enrichment)
 productRoutes.get(
   '/',
-  searchRateLimiter,
   optionalAuthenticateJWT,
   optionalActorContext,
+  searchRateLimiter,
   asyncHandler(productController.getProducts),
 );
 productRoutes.get(
@@ -31,9 +31,9 @@ productRoutes.get(
 );
 productRoutes.get(
   '/:id',
-  searchRateLimiter,
   optionalAuthenticateJWT,
   optionalActorContext,
+  searchRateLimiter,
   asyncHandler(productController.getProductById),
 );
 

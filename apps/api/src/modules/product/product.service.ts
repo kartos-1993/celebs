@@ -26,7 +26,7 @@ import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import { ProductLifecycleService } from './product-lifecycle.service';
 import { buildProductCreateData, buildProductUpdateData } from './product-payloads';
-import { ProductQueryService } from './product-query.service';
+import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
@@ -47,12 +47,12 @@ export class ProductService {
 
   // --- QUERY DELEGATES ---
 
-  async getProducts(filters: ProductFilterType) {
-    return this.queryService.getProducts(filters);
+  async getProducts(filters: ProductFilterType, opts: QueryServiceOptions = {}) {
+    return this.queryService.getProducts(filters, opts);
   }
 
-  async getProductById(id: string) {
-    return this.queryService.getProductById(id);
+  async getProductById(id: string, isElevated = false) {
+    return this.queryService.getProductById(id, isElevated);
   }
 
   async getProductsByVendor(
@@ -102,8 +102,8 @@ export class ProductService {
     return this.lifecycleService.archiveProduct(id, userId, role, vendorId);
   }
 
-  async toggleProductActivation(id: string, vendorId: string) {
-    return this.lifecycleService.toggleProductActivation(id, vendorId);
+  async toggleProductActivation(id: string, vendorId?: string, isPlatform = false) {
+    return this.lifecycleService.toggleProductActivation(id, vendorId, isPlatform);
   }
 
   // --- CREATE & UPDATE CRUD ---

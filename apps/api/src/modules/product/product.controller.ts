@@ -70,7 +70,17 @@ export class ProductController {
   getProductById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = idParamSchema.parse(req.params);
-      const product = await this.productService.getProductById(id);
+      const actor = req.actor;
+      const isElevated =
+        isPlatformActor(actor) ||
+        (!!actor &&
+          can(
+            actor.role as Parameters<typeof can>[0],
+            Permission.PRODUCT_REVIEW,
+            actor.permissions,
+          ));
+
+      const product = await this.productService.getProductById(id, isElevated);
       if (!product) {
         throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
       }
@@ -79,18 +89,9 @@ export class ProductController {
         product.status === 'published' ||
         String(product.status).toLowerCase() === PRODUCT_STATUS.PUBLISHED;
       if (!isPublished) {
-        // Default-deny: only platform reviewers and the owning store may read
-        // unpublished products. Anonymous/customers get 404 (no existence leak).
-        const actor = req.actor;
-        const isReviewer =
-          !!actor &&
-          can(
-            actor.role as Parameters<typeof can>[0],
-            Permission.PRODUCT_REVIEW,
-            actor.permissions,
-          );
+        // Default-deny: only platform reviewers and the owning store may read unpublished products
         const ownsIt = !!req.store?.id && String(product.vendorId) === String(req.store.id);
-        if (!isReviewer && !ownsIt) {
+        if (!isElevated && !ownsIt) {
           throw new AppError(
             'Product not found',
             HTTPSTATUS.NOT_FOUND,
@@ -111,26 +112,22 @@ export class ProductController {
 
   getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const page = req.query.page ? parseInt(req.query.page as string) : 1;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-      const cursor = req.query.cursor ? (req.query.cursor as string) : undefined;
+      // Delegate all query parsing & coercion strictly to Zod schema (prevents NaN leak C1)
+      const filters = productFilterSchema.parse(req.query);
 
-      const filters = productFilterSchema.parse({
-        ...req.query,
-        cursor,
-        page,
-        limit,
+      const isStoreManagement = req.headers['x-surface'] === 'admin' || req.query.manage === 'true';
+
+      const result = await this.productService.getProducts(filters, {
+        actor: req.actor,
+        storeId: req.store?.id,
+        isStoreManagement,
       });
 
-      // Tenant isolation: requests explicitly from admin management surfaces
-      // carrying a store context are strictly scoped to that store.
-      // Storefront browsing (mobile & customer web) browses the full marketplace catalog.
-      const isStoreManagement = req.headers['x-surface'] === 'admin' || req.query.manage === 'true';
-      if (req.store && isStoreManagement) {
-        filters.vendorId = req.store.id;
+      // C10: Send caching headers for public storefront browse
+      const isElevated = isPlatformActor(req.actor);
+      if (!isElevated && !req.headers.authorization) {
+        res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=120');
       }
-
-      const result = await this.productService.getProducts(filters);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
@@ -266,24 +263,18 @@ export class ProductController {
 
   toggleProductActivation = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const isPlatform = isPlatformActor(req.actor);
       const storeId = req.store?.id;
-      if (!storeId && !isPlatformActor(req.actor)) {
+      if (!storeId && !isPlatform) {
         throw new AppError(
           'This operation requires a seller store context',
           HTTPSTATUS.FORBIDDEN,
           ErrorCode.SELLER_CONTEXT_REQUIRED,
         );
       }
-      if (!storeId) {
-        throw new AppError(
-          'Vendor profile not found',
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST,
-        );
-      }
 
       const { id } = idParamSchema.parse(req.params);
-      const product = await this.productService.toggleProductActivation(id, storeId);
+      const product = await this.productService.toggleProductActivation(id, storeId, isPlatform);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,
