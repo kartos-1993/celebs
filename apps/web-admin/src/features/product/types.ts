@@ -94,15 +94,6 @@ export interface ProductDraft {
   values?: Record<string, unknown>;
 }
 
-export interface ProductListItem {
-  id: string;
-  name: string;
-  brand?: string;
-  price: number;
-  status: ProductStatus;
-  vendorName?: string;
-  mainImages?: string[];
-  createdAt?: string;
-}
+export type ProductListItem = ProductRecord;
 
 export type { DropdownCategory, RecentCategory } from '@celebs/shared-types';
