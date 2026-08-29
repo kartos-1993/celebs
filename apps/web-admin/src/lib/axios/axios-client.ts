@@ -18,6 +18,7 @@ export const axiosClient = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
+    'X-Surface': 'admin',
   },
 });
 

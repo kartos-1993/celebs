@@ -122,10 +122,11 @@ export class ProductController {
         limit,
       });
 
-      // Tenant isolation: any request carrying a store context is strictly
-      // scoped to that store — regardless of query params supplied by the client.
-      // Platform actors (store = null) browse the whole catalog.
-      if (req.store) {
+      // Tenant isolation: requests explicitly from admin management surfaces
+      // carrying a store context are strictly scoped to that store.
+      // Storefront browsing (mobile & customer web) browses the full marketplace catalog.
+      const isStoreManagement = req.headers['x-surface'] === 'admin' || req.query.manage === 'true';
+      if (req.store && isStoreManagement) {
         filters.vendorId = req.store.id;
       }
 

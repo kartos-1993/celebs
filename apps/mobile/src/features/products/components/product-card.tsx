@@ -57,6 +57,8 @@ export function ProductCard({
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
   const isFavorite = isWishlisted(product.id);
 
+  const isWishlistBusy = addToWishlist.isPending || removeFromWishlist.isPending;
+
   const handleToggleWishlist = useCallback(
     (e?: GestureResponderEvent) => {
       e?.stopPropagation?.();
@@ -64,13 +66,15 @@ export function ProductCard({
         router.push('/(tabs)/me');
         return;
       }
+      if (isWishlistBusy) return;
+
       if (isFavorite) {
         removeFromWishlist.mutate(product.id);
       } else {
         addToWishlist.mutate(product.id);
       }
     },
-    [isLoggedIn, isFavorite, router, product.id, addToWishlist, removeFromWishlist],
+    [isLoggedIn, isFavorite, isWishlistBusy, router, product.id, addToWishlist, removeFromWishlist],
   );
 
   const imageRef = useRef<View>(null);
@@ -343,6 +347,7 @@ export function ProductCard({
           activeOpacity={0.8}
           style={[styles.heartButton, { backgroundColor: 'rgba(255, 255, 255, 0.85)' }]}
           onPress={handleToggleWishlist}
+          disabled={isWishlistBusy}
           accessible={true}
           accessibilityRole="button"
           accessibilityLabel={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}

@@ -1,29 +1,22 @@
-import { useState } from 'react';
-import { ScrollView, Share, StatusBar, View } from 'react-native';
+import { Share, StatusBar } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
 import { ProductBottomBar } from '@/features/products/components/product-bottom-bar';
-import { ProductDescriptionCard } from '@/features/products/components/product-description-card';
 import { ProductDetailHeader } from '@/features/products/components/product-detail-header';
+import { ProductDetailScrollContent } from '@/features/products/components/product-detail-scroll-content';
+import { ProductDetailSizeModal } from '@/features/products/components/product-detail-size-modal';
 import { ProductDetailState } from '@/features/products/components/product-detail-state';
-import { ProductGallery } from '@/features/products/components/product-gallery';
-import { ProductPriceCard } from '@/features/products/components/product-price-card';
-import { ProductReviewsCard } from '@/features/products/components/product-reviews-card';
-import { ProductServicesCard } from '@/features/products/components/product-services-card';
-import { ProductVariantSelector } from '@/features/products/components/product-variant-selector';
-import { SizeRequiredModal } from '@/features/products/components/size-required-modal';
 import { useProductDetailCart } from '@/features/products/hooks/use-product-detail-cart';
+import { useProductVariantSelection } from '@/features/products/hooks/use-product-variant-selection';
 import { useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
 import {
   isProductFullyOutOfStock,
   isSelectedCombinationOutOfStock,
-  isSizeOutOfStockForVariant,
 } from '@/features/products/utils/stock';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
@@ -35,9 +28,14 @@ export default function ProductDetailScreen() {
   const { openCartSheet } = useCartSheet();
   const { product, loading, error } = useProduct(id || '');
 
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+  const {
+    selectedColorIndex,
+    selectedSize,
+    setSelectedSize,
+    isSizeModalOpen,
+    setIsSizeModalOpen,
+    handleColorChange,
+  } = useProductVariantSelection(product);
 
   const { isWishlisted } = useWishlistStatus();
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
@@ -69,28 +67,18 @@ export default function ProductDetailScreen() {
     }
   };
 
+  const isWishlistBusy = addToWishlist.isPending || removeFromWishlist.isPending;
+
   const handleWishlist = () => {
     if (!isLoggedIn || !product) {
       router.push('/(tabs)/me');
       return;
     }
+    if (isWishlistBusy) return;
     if (isFavorite) {
       removeFromWishlist.mutate(product.id);
     } else {
       addToWishlist.mutate(product.id);
-    }
-  };
-
-  const handleColorChange = (index: number) => {
-    setSelectedColorIndex(index);
-    const newVariant = product?.colorVariants?.[index];
-    if (selectedSize && newVariant?.stocks) {
-      const stockItem = newVariant.stocks.find(
-        (st) => st.size.toLowerCase() === selectedSize.toLowerCase(),
-      );
-      if (!stockItem || stockItem.quantity <= 0) {
-        setSelectedSize('');
-      }
     }
   };
 
@@ -103,8 +91,6 @@ export default function ProductDetailScreen() {
     product.colorVariants[selectedColorIndex].images!.length > 0
       ? product.colorVariants[selectedColorIndex].images!
       : product.mainImages || [];
-
-  const availableSizeNames = product.sizes ? product.sizes.map((s) => s.name) : [];
 
   return (
     <ThemedView style={styles.container}>
@@ -119,45 +105,15 @@ export default function ProductDetailScreen() {
         onShare={handleShare}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.galleryWrapper}>
-          <View style={isAddToCartDisabled ? styles.galleryOosImage : undefined}>
-            <ProductGallery images={galleryImages} productName={product.name} />
-          </View>
-          {isAddToCartDisabled && (
-            <View style={styles.galleryOosOverlay} pointerEvents="none">
-              <View style={styles.galleryOosBadge}>
-                <ThemedText style={styles.galleryOosBadgeText}>OUT OF STOCK</ThemedText>
-              </View>
-            </View>
-          )}
-        </View>
-
-        <ProductPriceCard
-          name={product.name}
-          price={product.price}
-          discountedPrice={product.discountedPrice}
-        />
-
-        <View style={styles.sectionBand} />
-
-        <View style={styles.detailsContainer}>
-          <ProductVariantSelector
-            colorVariants={product.colorVariants}
-            selectedColorIndex={selectedColorIndex}
-            onSelectColor={handleColorChange}
-            sizes={product.sizes}
-            selectedSize={selectedSize}
-            onSelectSize={setSelectedSize}
-          />
-        </View>
-
-        <View style={styles.sectionBand} />
-        <ProductServicesCard />
-        <View style={styles.sectionBand} />
-        <ProductReviewsCard />
-        <ProductDescriptionCard description={product.description} />
-      </ScrollView>
+      <ProductDetailScrollContent
+        product={product}
+        galleryImages={galleryImages}
+        isOutOfStock={isAddToCartDisabled}
+        selectedColorIndex={selectedColorIndex}
+        selectedSize={selectedSize}
+        onSelectColor={handleColorChange}
+        onSelectSize={setSelectedSize}
+      />
 
       <ProductBottomBar
         isFavorite={isFavorite}
@@ -167,21 +123,12 @@ export default function ProductDetailScreen() {
         onAddToCart={() => handleAddToCart()}
       />
 
-      <SizeRequiredModal
+      <ProductDetailSizeModal
         visible={isSizeModalOpen}
         onClose={() => setIsSizeModalOpen(false)}
-        availableSizes={availableSizeNames}
-        disabledSizes={availableSizeNames.filter((s) =>
-          isSizeOutOfStockForVariant(product.colorVariants?.[selectedColorIndex], s),
-        )}
-        productName={product.name}
-        initialSize={selectedSize}
-        imageUrl={
-          product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0]
-        }
-        price={product.price}
-        discountedPrice={product.discountedPrice}
-        selectedColorName={product.colorVariants?.[selectedColorIndex]?.name}
+        product={product}
+        selectedColorIndex={selectedColorIndex}
+        selectedSize={selectedSize}
         onSelectSizeAndConfirm={(chosenSize) => {
           setSelectedSize(chosenSize);
           setIsSizeModalOpen(false);
