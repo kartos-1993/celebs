@@ -190,9 +190,19 @@ export const productFilterSchema = z.object({
     .optional(),
   featured: z.boolean().optional(),
   vendorId: z.string().optional(),
-  cursor: z.string().optional(),
+  cursor: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9_.-]+$/, 'Invalid cursor format')
+    .optional(),
   page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().optional().default(10),
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(100, 'Limit cannot exceed 100')
+    .optional()
+    .default(10),
   sortBy: z.enum(['createdAt', 'price', 'name']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
