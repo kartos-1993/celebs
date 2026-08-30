@@ -46,20 +46,61 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 logger.info({ APP_ORIGIN_CONFIG: config.APP_ORIGIN }, 'CORS Origin Configuration');
+
+const allowedOriginsList = Array.isArray(config.APP_ORIGIN)
+  ? config.APP_ORIGIN
+  : [config.APP_ORIGIN];
+
 app.use(
   cors({
-    origin: config.APP_ORIGIN,
+    origin: (origin, callback) => {
+      // Native mobile clients (Expo / React Native via iOS NSURLSession & Android OkHttp)
+      // and server-to-server calls do not issue browser Origin headers. They are explicitly
+      // permitted here; security is enforced via JWT Bearer tokens and refresh rotation.
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOriginsList.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // In development, permit localhost, 127.0.0.1, and private LAN IP ranges
+      if (config.NODE_ENV === 'development') {
+        const isLocalDev =
+          /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
+            origin,
+          );
+        if (isLocalDev) {
+          return callback(null, true);
+        }
+      }
+
+      logger.warn({ origin, allowedOrigins: allowedOriginsList }, 'Origin blocked by CORS');
+      return callback(null, false);
+    },
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
       'x-session-id',
       'X-Session-Id',
-      'X-Requested-With',
       'x-requested-with',
+      'X-Requested-With',
+      'x-surface',
+      'X-Surface',
+      'x-request-id',
+      'X-Request-Id',
+      'x-refresh-token',
+      'X-Refresh-Token',
+      'idempotency-key',
+      'Idempotency-Key',
+      'x-test-rate-limit',
       'Accept',
       'Origin',
     ],
+    exposedHeaders: ['x-session-id', 'X-Session-Id', 'x-request-id', 'X-Request-Id'],
   }),
 );
 

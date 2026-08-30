@@ -17,14 +17,15 @@ import { productRejectionEmailTemplate } from '@/mailers/templates/product-revie
 export class ProductLifecycleService {
   async submitProductForReview(
     id: string,
-    vendorId: string,
+    vendorId?: string,
+    isPlatform = false,
   ): Promise<Record<string, unknown> | null> {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if (String(product.vendorId) !== String(vendorId)) {
+    if (!isPlatform && (!vendorId || product.vendorId !== vendorId)) {
       throw new AppError(
         'Forbidden: You do not own this product',
         HTTPSTATUS.FORBIDDEN,
@@ -105,7 +106,7 @@ export class ProductLifecycleService {
       await this.sendRejectionEmail(id, product, updated, args);
     }
 
-    return formatProductResponse(updated);
+    return formatProductResponse(updated, { isElevated: true });
   }
 
   private parseReviewArgs(
@@ -229,7 +230,7 @@ export class ProductLifecycleService {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if ((role === 'VENDOR' || role === 'STAFF') && String(product.vendorId) !== String(vendorId)) {
+    if ((role === 'VENDOR' || role === 'STAFF') && (!vendorId || product.vendorId !== vendorId)) {
       throw new AppError(
         'Forbidden: You do not own this product',
         HTTPSTATUS.FORBIDDEN,
@@ -269,7 +270,7 @@ export class ProductLifecycleService {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
 
-    if (!isPlatform && String(product.vendorId) !== String(vendorId)) {
+    if (!isPlatform && (!vendorId || product.vendorId !== vendorId)) {
       throw new AppError(
         'Forbidden: You do not own this product',
         HTTPSTATUS.FORBIDDEN,

@@ -51,11 +51,19 @@ export const PRODUCT_LIST_SELECT = {
       countryOfOrigin: true,
     },
   },
+  inventories: {
+    select: {
+      colorVariantName: true,
+      size: true,
+      quantity: true,
+      reservedQuantity: true,
+    },
+  },
 } as const;
 
 /**
  * Lightweight projection for high-traffic mobile and storefront browse feeds.
- * Omits heavy nested dynamicData and skus arrays to conserve network bandwidth and DB memory.
+ * Includes dynamicData and live inventories to ensure accurate color swatches, images, and OOS overlays.
  */
 export const PRODUCT_FEED_SELECT = {
   id: true,
@@ -69,6 +77,15 @@ export const PRODUCT_FEED_SELECT = {
   featured: true,
   mainImages: true,
   colorVariants: true,
+  dynamicData: true,
+  inventories: {
+    select: {
+      colorVariantName: true,
+      size: true,
+      quantity: true,
+      reservedQuantity: true,
+    },
+  },
   vendorId: true,
   vendorName: true,
   categoryId: true,
@@ -145,6 +162,14 @@ export const PRODUCT_DETAIL_INCLUDE = {
       tier: true,
       isGated: true,
       countryOfOrigin: true,
+    },
+  },
+  inventories: {
+    select: {
+      colorVariantName: true,
+      size: true,
+      quantity: true,
+      reservedQuantity: true,
     },
   },
 } as const;

@@ -63,7 +63,7 @@ describe('Multi-Device Session Isolation & Selective Logout Suite', () => {
     const testWebAfterLogout = await request(app)
       .get('/api/v1/session')
       .set('Authorization', `Bearer ${webAccessToken}`);
-    expect(testWebAfterLogout.status).toBe(404);
+    expect(testWebAfterLogout.status).toBe(401);
 
     // Mobile App Token must STILL be active and valid!
     const testMobileActive = await request(app)

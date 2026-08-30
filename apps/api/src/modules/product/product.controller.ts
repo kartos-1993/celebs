@@ -13,7 +13,13 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import { ProductService } from './product.service';
 import { PRODUCT_STATUS } from './product-status';
 
+import {
+  is1PVendor,
+  PLATFORM_VENDOR_ID,
+  PLATFORM_VENDOR_NAME,
+} from '@/common/constants/platform-vendor';
 import { isPlatformActor } from '@/common/context/actor-context';
+import { resolveTargetStoreId } from '@/common/guards/store.guards';
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -42,10 +48,10 @@ export class ProductController {
         initialStatus = PRODUCT_STATUS.PENDING_REVIEW;
       }
 
-      // Sellers are pre-validated by requireStoreState(['APPROVED']).
-      // Platform actors act under Celebs 1P: storeId stays null.
-      const effectiveVendorId = req.store?.id ?? null;
-      const effectiveVendorName = req.store?.shopName;
+      // Canonical store target resolution: sellers are scoped to their store; platform actors default to 1P (PLATFORM_VENDOR_ID)
+      const effectiveVendorId = resolveTargetStoreId(req, 'body') || PLATFORM_VENDOR_ID;
+      const effectiveVendorName =
+        req.store?.shopName || (is1PVendor(effectiveVendorId) ? PLATFORM_VENDOR_NAME : undefined);
 
       const product = await this.productService.createProduct(
         {
@@ -141,8 +147,9 @@ export class ProductController {
 
   submitProductForReview = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const isPlatform = isPlatformActor(req.actor);
       const storeId = req.store?.id;
-      if (!storeId) {
+      if (!storeId && !isPlatform) {
         throw new AppError(
           'This operation requires a seller store context',
           HTTPSTATUS.FORBIDDEN,
@@ -151,7 +158,7 @@ export class ProductController {
       }
 
       const { id } = idParamSchema.parse(req.params);
-      const product = await this.productService.submitProductForReview(id, storeId);
+      const product = await this.productService.submitProductForReview(id, storeId, isPlatform);
 
       res.status(HTTPSTATUS.OK).json({
         success: true,

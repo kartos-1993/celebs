@@ -7,13 +7,14 @@ import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
-import { requirePlatformActor } from '@/common/guards/store.guards';
+import { requirePlatformActor, requireStoreState } from '@/common/guards/store.guards';
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const orderRoutes = Router();
 const orderService = new OrderService();
 const controller = new OrderController(orderService);
+const approvedStore = requireStoreState(['APPROVED']);
 
 // --- CUSTOMER ADDRESS ROUTES ---
 orderRoutes.get('/addresses', authenticateJWT, controller.getUserAddresses);
@@ -32,13 +33,23 @@ orderRoutes.get(
   '/vendor/orders',
   authenticateJWT,
   asyncHandler(actorContext),
+  approvedStore,
   requirePermissions(Permission.ORDER_VIEW),
   controller.getVendorOrders,
+);
+orderRoutes.get(
+  '/vendor/orders/:orderId',
+  authenticateJWT,
+  asyncHandler(actorContext),
+  approvedStore,
+  requirePermissions(Permission.ORDER_VIEW),
+  controller.getVendorOrderById,
 );
 orderRoutes.patch(
   '/vendor/orders/items/:orderItemId/status',
   authenticateJWT,
   asyncHandler(actorContext),
+  approvedStore,
   requirePermissions(Permission.ORDER_MANAGE),
   controller.updateOrderItemStatus,
 );

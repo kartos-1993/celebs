@@ -7,12 +7,14 @@ import { HEX_COLOR_PATTERN, isFilledString } from './product-assets';
  * (`dynamicData.variants.colorMeta.<Key>`), falling back to the legacy
  * `colorVariants` column.
  *
- * CRITICAL FIX: Preserves the `stocks` array so mobile & web storefronts
- * can evaluate out-of-stock and inventory states without false in-stock claims.
+ * CRITICAL FIX: Preserves the `stocks` array and merges live Postgres
+ * `ProductInventory` quantities (quantity - reservedQuantity) so mobile & web
+ * storefronts evaluate real-time out-of-stock and inventory states accurately.
  */
 export const resolveStorefrontColorVariants = (
   legacyVariants: unknown,
   dynamicData: unknown,
+  inventories?: unknown,
 ): Array<{
   name: string;
   colorCode?: string;
@@ -31,6 +33,38 @@ export const resolveStorefrontColorVariants = (
     ? (legacyVariants as Array<Record<string, unknown>>)
     : [];
 
+  // Build live inventory lookup map if Postgres ProductInventory records are loaded
+  const inventoryMap = new Map<string, number>();
+  if (Array.isArray(inventories) && inventories.length > 0) {
+    for (const inv of inventories as Array<{
+      colorVariantName?: string;
+      size?: string;
+      quantity?: number;
+      reservedQuantity?: number;
+    }>) {
+      if (inv?.colorVariantName && inv?.size) {
+        const key = `${inv.colorVariantName.trim().toLowerCase()}|${inv.size.trim().toLowerCase()}`;
+        const available = Math.max(0, (inv.quantity ?? 0) - (inv.reservedQuantity ?? 0));
+        inventoryMap.set(key, available);
+      }
+    }
+  }
+
+  const applyLiveStock = (
+    variantName: string,
+    stockList: Array<{ size: string; quantity: number }>,
+  ): Array<{ size: string; quantity: number }> => {
+    if (inventoryMap.size === 0) return stockList;
+    return stockList.map((stk) => {
+      const key = `${variantName.trim().toLowerCase()}|${stk.size.trim().toLowerCase()}`;
+      const liveQty = inventoryMap.get(key);
+      return {
+        size: stk.size,
+        quantity: typeof liveQty === 'number' ? liveQty : stk.quantity,
+      };
+    });
+  };
+
   if (colorMetaMap && typeof colorMetaMap === 'object') {
     const derived = Object.entries(colorMetaMap)
       .filter(([, meta]) => meta && typeof meta === 'object')
@@ -46,11 +80,12 @@ export const resolveStorefrontColorVariants = (
             ? (metaObj.images as unknown[]).filter(isFilledString)
             : []),
         ];
-        const stocks = Array.isArray(metaObj.stocks)
+        const initialStocks = Array.isArray(metaObj.stocks)
           ? (metaObj.stocks as Array<{ size: string; quantity: number }>)
           : Array.isArray(matchingLegacy?.stocks)
             ? (matchingLegacy.stocks as Array<{ size: string; quantity: number }>)
             : [];
+        const stocks = applyLiveStock(name, initialStocks);
 
         return {
           name,
@@ -70,12 +105,14 @@ export const resolveStorefrontColorVariants = (
       const images = Array.isArray(variant.images)
         ? (variant.images as unknown[]).filter(isFilledString)
         : [];
-      const stocks = Array.isArray(variant.stocks)
+      const name = isFilledString(variant.name) ? variant.name : 'Variant';
+      const initialStocks = Array.isArray(variant.stocks)
         ? (variant.stocks as Array<{ size: string; quantity: number }>)
         : [];
+      const stocks = applyLiveStock(name, initialStocks);
 
       return {
-        name: isFilledString(variant.name) ? variant.name : 'Variant',
+        name,
         colorCode: isFilledString(variant.colorCode) ? variant.colorCode : undefined,
         swatch: isFilledString(variant.swatch) ? variant.swatch : images[0],
         images,
@@ -110,6 +147,21 @@ export const formatProductResponse = (
       ? (prod.brandRef as Record<string, unknown>)
       : null;
 
+  const colorVariants = resolveStorefrontColorVariants(
+    prod.colorVariants,
+    prod.dynamicData,
+    prod.inventories,
+  );
+
+  const hasTrackedStock = colorVariants.some(
+    (cv) => Array.isArray(cv.stocks) && cv.stocks.length > 0,
+  );
+  const inStock = hasTrackedStock
+    ? colorVariants.some(
+        (cv) => Array.isArray(cv.stocks) && cv.stocks.some((stk) => (stk.quantity ?? 0) > 0),
+      )
+    : true;
+
   const base: Record<string, unknown> = {
     ...prod,
     id: prod.id,
@@ -117,11 +169,15 @@ export const formatProductResponse = (
     brand: prod.brand || (brandRefObj ? brandRefObj.name : null),
     brandRef: brandRefObj,
     price: prod.price != null ? Number(prod.price) : 0,
-    colorVariants: resolveStorefrontColorVariants(prod.colorVariants, prod.dynamicData),
+    colorVariants,
+    inStock,
     discountedPrice: prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
     category: categoryObj || prod.categoryId,
     subcategory: subcategoryObj || prod.subcategoryId,
   };
+
+  // Strip raw relation objects that were only needed for computation
+  delete base.inventories;
 
   // Scrub internal staff moderation and audit fields on public / non-elevated calls
   if (!options?.isElevated) {

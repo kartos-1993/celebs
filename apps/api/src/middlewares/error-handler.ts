@@ -35,7 +35,8 @@ const formatZodError = (res: Response, error: z.ZodError) => {
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Response | void => {
   try {
-    const rawRequestId = res.getHeader('X-Request-Id');
+    const rawRequestId =
+      typeof res.getHeader === 'function' ? res.getHeader('X-Request-Id') : undefined;
     const requestId =
       typeof rawRequestId === 'string'
         ? rawRequestId

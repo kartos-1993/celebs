@@ -10,6 +10,7 @@ import { IPaymentGateway } from './adapters/payment-gateway.interface';
 import { StripePaymentAdapter } from './adapters/stripe-payment.adapter';
 import { orderRepository } from './order.repository';
 
+import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export class OrderService {
@@ -173,14 +174,7 @@ export class OrderService {
       const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
       subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);
 
-      const vendorId = product.vendorId ? String(product.vendorId) : '';
-      if (!vendorId) {
-        throw new AppError(
-          `Vendor not assigned for product: ${product.name}`,
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.INVALID_REQUEST,
-        );
-      }
+      const vendorId = product.vendorId || PLATFORM_VENDOR_ID;
 
       itemDetails.push({
         inventoryId: inv.id,
@@ -420,27 +414,68 @@ export class OrderService {
 
   // --- VENDOR FULFILLMENT ---
 
-  async getVendorOrders(vendorId: string, status?: string, page = 1, limit = 10) {
-    const whereCondition: Record<string, unknown> = { vendorId };
+  async getVendorOrders(
+    vendorId?: string,
+    status?: string,
+    page = 1,
+    limit = 10,
+    isPlatform = false,
+  ) {
+    if (!vendorId && !isPlatform) {
+      throw new AppError(
+        'Seller store context required',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.SELLER_CONTEXT_REQUIRED,
+      );
+    }
+
+    const whereCondition: Prisma.OrderItemWhereInput = {};
+    if (vendorId) {
+      whereCondition.vendorId = vendorId;
+    }
     if (status) {
-      whereCondition.itemStatus = status;
+      whereCondition.itemStatus = status as Prisma.EnumOrderItemStatusFilter['equals'];
     }
 
     return orderRepository.findVendorOrderItems(whereCondition, page, limit);
   }
 
+  async getVendorOrderById(orderId: string, vendorId?: string, isPlatform = false) {
+    if (!vendorId && !isPlatform) {
+      throw new AppError(
+        'Seller store context required',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.SELLER_CONTEXT_REQUIRED,
+      );
+    }
+
+    const order = await orderRepository.findVendorOrderWithItems(
+      orderId,
+      isPlatform ? undefined : vendorId,
+    );
+
+    if (!order || (Array.isArray(order.items) && order.items.length === 0)) {
+      throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    return order;
+  }
+
   async updateOrderItemStatus(
-    vendorId: string,
+    vendorId: string | undefined,
     orderItemId: string,
     itemStatus: 'PENDING' | 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED',
     trackingNumber?: string,
     courierPartner?: string,
+    isPlatform = false,
   ) {
-    const item = await orderRepository.findVendorOrderItemById(orderItemId, vendorId);
+    const item = isPlatform
+      ? await orderRepository.findOrderItemById(orderItemId)
+      : await orderRepository.findVendorOrderItemById(orderItemId, vendorId || '');
 
     if (!item) {
       throw new AppError(
-        'Order item not found for vendor',
+        isPlatform ? 'Order item not found' : 'Order item not found for vendor',
         HTTPSTATUS.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
       );
@@ -548,7 +583,7 @@ export class OrderService {
             title: eventTitle,
             ...(eventDescription ? { description: eventDescription } : {}),
             ...(courierPartner ? { location: courierPartner } : {}),
-            source: 'VENDOR',
+            source: isPlatform ? 'PLATFORM' : 'VENDOR',
           },
         });
       }

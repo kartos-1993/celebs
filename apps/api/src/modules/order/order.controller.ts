@@ -10,6 +10,8 @@ import { HTTPSTATUS } from '@celebs/shared-utils';
 
 import { OrderService } from './order.service';
 
+import { isPlatformActor } from '@/common/context/actor-context';
+
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
@@ -79,8 +81,14 @@ export class OrderController {
   // --- VENDOR FULFILLMENT HANDLERS ---
 
   getVendorOrders = async (req: Request, res: Response) => {
-    const vendorId = req.store?.id || req.user?.vendorProfile?.id || '';
-    if (!vendorId) {
+    const isPlatform = isPlatformActor(req.actor);
+    const vendorId = isPlatform
+      ? typeof req.query.vendorId === 'string' && req.query.vendorId.length > 0
+        ? req.query.vendorId
+        : undefined
+      : req.store?.id;
+
+    if (!vendorId && !isPlatform) {
       res
         .status(HTTPSTATUS.FORBIDDEN)
         .json({ success: false, message: 'Seller store context required' });
@@ -90,13 +98,41 @@ export class OrderController {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const result = await this.orderService.getVendorOrders(vendorId, status, page, limit);
+    const result = await this.orderService.getVendorOrders(
+      vendorId,
+      status,
+      page,
+      limit,
+      isPlatform,
+    );
     res.status(HTTPSTATUS.OK).json({ success: true, data: result });
   };
 
+  getVendorOrderById = async (req: Request, res: Response) => {
+    const isPlatform = isPlatformActor(req.actor);
+    const vendorId = isPlatform
+      ? typeof req.query.vendorId === 'string' && req.query.vendorId.length > 0
+        ? req.query.vendorId
+        : undefined
+      : req.store?.id;
+
+    if (!vendorId && !isPlatform) {
+      res
+        .status(HTTPSTATUS.FORBIDDEN)
+        .json({ success: false, message: 'Seller store context required' });
+      return;
+    }
+
+    const orderId = req.params.orderId || req.params.id || '';
+    const order = await this.orderService.getVendorOrderById(orderId, vendorId, isPlatform);
+    res.status(HTTPSTATUS.OK).json({ success: true, data: order });
+  };
+
   updateOrderItemStatus = async (req: Request, res: Response) => {
-    const vendorId = req.store?.id || req.user?.vendorProfile?.id || '';
-    if (!vendorId) {
+    const isPlatform = isPlatformActor(req.actor);
+    const vendorId = req.store?.id;
+
+    if (!vendorId && !isPlatform) {
       res
         .status(HTTPSTATUS.FORBIDDEN)
         .json({ success: false, message: 'Seller store context required' });
@@ -111,6 +147,7 @@ export class OrderController {
       validated.itemStatus,
       validated.trackingNumber,
       validated.courierPartner,
+      isPlatform,
     );
     res
       .status(HTTPSTATUS.OK)

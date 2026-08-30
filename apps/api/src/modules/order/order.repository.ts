@@ -111,6 +111,27 @@ export class OrderRepository {
     });
   }
 
+  async findOrderItemById(id: string) {
+    return prisma.orderItem.findUnique({
+      where: { id },
+      include: { order: { include: { items: true } } },
+    });
+  }
+
+  async findVendorOrderWithItems(orderId: string, vendorId?: string) {
+    return prisma.order.findFirst({
+      where: {
+        id: orderId,
+        ...(vendorId ? { items: { some: { vendorId } } } : {}),
+      },
+      include: {
+        items: vendorId ? { where: { vendorId } } : true,
+        address: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
   async findAdminOrders(status?: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const whereCondition: Prisma.OrderWhereInput = status ? { status: status as OrderStatus } : {};

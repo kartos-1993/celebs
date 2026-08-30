@@ -123,7 +123,7 @@ export function mapStoreStatusToError(status: StoreStatus): ForbiddenException {
  * - Sellers are ALWAYS scoped to their own store; client-supplied vendorId
  *   params are ignored (prevents cross-store targeting).
  * - Platform actors may pass ?vendorId= / body.vendorId explicitly;
- *   absent param → null → PLATFORM-owned scope (vendorId IS NULL rows).
+ *   absent param → null (unscoped / platform default).
  * Returns `string | null` only — repositories must never receive `undefined`.
  */
 export function resolveTargetStoreId(

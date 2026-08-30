@@ -74,8 +74,8 @@ export class ProductService {
 
   // --- LIFECYCLE DELEGATES ---
 
-  async submitProductForReview(id: string, vendorId: string) {
-    return this.lifecycleService.submitProductForReview(id, vendorId);
+  async submitProductForReview(id: string, vendorId?: string, isPlatform = false) {
+    return this.lifecycleService.submitProductForReview(id, vendorId, isPlatform);
   }
 
   async reviewProduct(
@@ -160,7 +160,18 @@ export class ProductService {
             input.skus,
             departmentHint,
           );
-          return product;
+
+          const inventories = await tx.productInventory.findMany({
+            where: { productId: product.id },
+            select: {
+              colorVariantName: true,
+              size: true,
+              quantity: true,
+              reservedQuantity: true,
+            },
+          });
+
+          return { ...product, inventories };
         });
 
         break;
@@ -264,7 +275,7 @@ export class ProductService {
     const isPublisher = can((role || 'STAFF') as Role, Permission.PRODUCT_PUBLISH, userPermissions);
 
     if (role === 'VENDOR' || role === 'STAFF') {
-      if (String(product.vendorId) !== String(vendorId)) {
+      if (!vendorId || product.vendorId !== vendorId) {
         throw new AppError(
           'Forbidden: You do not own this product',
           HTTPSTATUS.FORBIDDEN,
@@ -304,21 +315,21 @@ export class ProductService {
     },
   ) {
     return prisma.$transaction(async (tx) => {
+      if (updateData.colorVariants) {
+        await this.inventoryRepository.syncProductInventory(
+          tx,
+          id,
+          updateData.colorVariants,
+          updateData.skus,
+          opts.resolvedCategoryId,
+        );
+      }
+
       const p = await tx.product.update({
         where: { id },
         data: buildProductUpdateData(product, updateData, opts),
         include: PRODUCT_DETAIL_INCLUDE,
       });
-
-      if (updateData.colorVariants) {
-        await this.inventoryRepository.syncProductInventory(
-          tx,
-          p.id,
-          updateData.colorVariants,
-          updateData.skus,
-          p.categoryId,
-        );
-      }
 
       return p;
     });

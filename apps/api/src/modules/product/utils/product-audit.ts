@@ -2,6 +2,8 @@ import type { Product } from '@prisma/client';
 
 import type { CreateProductType } from '@celebs/shared-types';
 
+import { is1PVendor } from '@/common/constants/platform-vendor';
+
 /**
  * Product edit audit trail.
  *
@@ -134,7 +136,11 @@ export function isCrossStoreProductEdit(
   editorRole: string,
   productVendorId?: string | null,
 ): boolean {
-  return (editorRole === 'ADMIN' || editorRole === 'SUPERADMIN') && Boolean(productVendorId);
+  return (
+    (editorRole === 'ADMIN' || editorRole === 'SUPERADMIN') &&
+    Boolean(productVendorId) &&
+    !is1PVendor(productVendorId)
+  );
 }
 
 /** Appends an entry to an untyped persisted history array (JSON column). */

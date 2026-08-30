@@ -25,6 +25,7 @@ import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
 import { authCache } from '@/common/cache/auth-cache';
+import { ensurePlatformVendor } from '@/common/constants/platform-vendor';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { enqueueMail } from '@/common/services/mail.queue';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
@@ -538,6 +539,9 @@ export class AuthService {
         isEmailVerified: true,
       },
     });
+
+    // Provision or link canonical Platform VendorProfile for Celebs Official 1P
+    await ensurePlatformVendor(prisma, newUser.id);
 
     const { password: _, ...userWithoutPassword } = newUser;
     return {
