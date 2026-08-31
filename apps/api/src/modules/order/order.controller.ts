@@ -6,11 +6,12 @@ import {
   updateAddressSchema,
   updateOrderItemStatusSchema,
 } from '@celebs/shared-types';
-import { HTTPSTATUS } from '@celebs/shared-utils';
+import { ErrorCode, ForbiddenException } from '@celebs/shared-utils';
 
 import { OrderService } from './order.service';
 
 import { isPlatformActor } from '@/common/context/actor-context';
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 
 export class OrderController {
   constructor(private orderService: OrderService) {}
@@ -20,14 +21,14 @@ export class OrderController {
   getUserAddresses = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
     const addresses = await this.orderService.getUserAddresses(userId);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: addresses });
+    return sendSuccess(res, addresses, 'Addresses retrieved successfully');
   };
 
   createAddress = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
     const validated = addressSchema.parse(req.body);
     const address = await this.orderService.createAddress(userId, validated);
-    res.status(HTTPSTATUS.CREATED).json({ success: true, data: address });
+    return sendCreated(res, address, 'Address created successfully');
   };
 
   updateAddress = async (req: Request, res: Response) => {
@@ -35,14 +36,14 @@ export class OrderController {
     const addressId = req.params.addressId || '';
     const validated = updateAddressSchema.parse(req.body);
     const updated = await this.orderService.updateAddress(userId, addressId, validated);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: updated });
+    return sendSuccess(res, updated, 'Address updated successfully');
   };
 
   deleteAddress = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
     const addressId = req.params.addressId || '';
     await this.orderService.deleteAddress(userId, addressId);
-    res.status(HTTPSTATUS.OK).json({ success: true, message: 'Address deleted successfully' });
+    return sendSuccess(res, null, 'Address deleted successfully');
   };
 
   // --- CHECKOUT & ORDER HANDLERS ---
@@ -51,7 +52,7 @@ export class OrderController {
     const userId = req.user?.id || '';
     const validated = checkoutSchema.parse(req.body);
     const result = await this.orderService.checkout(userId, validated);
-    res.status(HTTPSTATUS.CREATED).json({ success: true, data: result });
+    return sendCreated(res, result, 'Order placed successfully');
   };
 
   getMyOrders = async (req: Request, res: Response) => {
@@ -59,23 +60,21 @@ export class OrderController {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const result = await this.orderService.getMyOrders(userId, page, limit);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: result });
+    return sendSuccess(res, result, 'Orders retrieved successfully');
   };
 
   getOrderById = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
     const orderId = req.params.orderId || '';
     const order = await this.orderService.getOrderById(userId, orderId);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: order });
+    return sendSuccess(res, order, 'Order retrieved successfully');
   };
 
   cancelOrder = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
     const orderId = req.params.orderId || '';
     const cancelled = await this.orderService.cancelOrder(userId, orderId);
-    res
-      .status(HTTPSTATUS.OK)
-      .json({ success: true, data: cancelled, message: 'Order cancelled successfully' });
+    return sendSuccess(res, cancelled, 'Order cancelled successfully');
   };
 
   // --- VENDOR FULFILLMENT HANDLERS ---
@@ -89,10 +88,10 @@ export class OrderController {
       : req.store?.id;
 
     if (!vendorId && !isPlatform) {
-      res
-        .status(HTTPSTATUS.FORBIDDEN)
-        .json({ success: false, message: 'Seller store context required' });
-      return;
+      throw new ForbiddenException(
+        'Seller store context required',
+        ErrorCode.SELLER_CONTEXT_REQUIRED,
+      );
     }
     const status = req.query.status as string | undefined;
     const page = parseInt(req.query.page as string) || 1;
@@ -105,7 +104,7 @@ export class OrderController {
       limit,
       isPlatform,
     );
-    res.status(HTTPSTATUS.OK).json({ success: true, data: result });
+    return sendSuccess(res, result, 'Vendor orders retrieved successfully');
   };
 
   getVendorOrderById = async (req: Request, res: Response) => {
@@ -117,15 +116,15 @@ export class OrderController {
       : req.store?.id;
 
     if (!vendorId && !isPlatform) {
-      res
-        .status(HTTPSTATUS.FORBIDDEN)
-        .json({ success: false, message: 'Seller store context required' });
-      return;
+      throw new ForbiddenException(
+        'Seller store context required',
+        ErrorCode.SELLER_CONTEXT_REQUIRED,
+      );
     }
 
     const orderId = req.params.orderId || req.params.id || '';
     const order = await this.orderService.getVendorOrderById(orderId, vendorId, isPlatform);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: order });
+    return sendSuccess(res, order, 'Vendor order retrieved successfully');
   };
 
   updateOrderItemStatus = async (req: Request, res: Response) => {
@@ -133,10 +132,10 @@ export class OrderController {
     const vendorId = req.store?.id;
 
     if (!vendorId && !isPlatform) {
-      res
-        .status(HTTPSTATUS.FORBIDDEN)
-        .json({ success: false, message: 'Seller store context required' });
-      return;
+      throw new ForbiddenException(
+        'Seller store context required',
+        ErrorCode.SELLER_CONTEXT_REQUIRED,
+      );
     }
     const orderItemId = req.params.orderItemId || '';
     const validated = updateOrderItemStatusSchema.parse(req.body);
@@ -149,9 +148,7 @@ export class OrderController {
       validated.courierPartner,
       isPlatform,
     );
-    res
-      .status(HTTPSTATUS.OK)
-      .json({ success: true, data: updated, message: 'Item status updated successfully' });
+    return sendSuccess(res, updated, 'Item status updated successfully');
   };
 
   // --- ADMIN OVERVIEW HANDLERS ---
@@ -162,6 +159,6 @@ export class OrderController {
     const limit = parseInt(req.query.limit as string) || 10;
 
     const result = await this.orderService.adminGetOrders(status, page, limit);
-    res.status(HTTPSTATUS.OK).json({ success: true, data: result });
+    return sendSuccess(res, result, 'Admin orders retrieved successfully');
   };
 }

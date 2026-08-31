@@ -17,16 +17,24 @@ const controller = new OrderController(orderService);
 const approvedStore = requireStoreState(['APPROVED']);
 
 // --- CUSTOMER ADDRESS ROUTES ---
-orderRoutes.get('/addresses', authenticateJWT, controller.getUserAddresses);
-orderRoutes.post('/addresses', authenticateJWT, controller.createAddress);
-orderRoutes.patch('/addresses/:addressId', authenticateJWT, controller.updateAddress);
-orderRoutes.delete('/addresses/:addressId', authenticateJWT, controller.deleteAddress);
+orderRoutes.get('/addresses', authenticateJWT, asyncHandler(controller.getUserAddresses));
+orderRoutes.post('/addresses', authenticateJWT, asyncHandler(controller.createAddress));
+orderRoutes.patch('/addresses/:addressId', authenticateJWT, asyncHandler(controller.updateAddress));
+orderRoutes.delete(
+  '/addresses/:addressId',
+  authenticateJWT,
+  asyncHandler(controller.deleteAddress),
+);
 
 // --- CUSTOMER CHECKOUT & ORDERS ---
-orderRoutes.post('/checkout', authenticateJWT, controller.checkout);
-orderRoutes.get('/my-orders', authenticateJWT, controller.getMyOrders);
-orderRoutes.get('/my-orders/:orderId', authenticateJWT, controller.getOrderById);
-orderRoutes.post('/my-orders/:orderId/cancel', authenticateJWT, controller.cancelOrder);
+orderRoutes.post('/checkout', authenticateJWT, asyncHandler(controller.checkout));
+orderRoutes.get('/my-orders', authenticateJWT, asyncHandler(controller.getMyOrders));
+orderRoutes.get('/my-orders/:orderId', authenticateJWT, asyncHandler(controller.getOrderById));
+orderRoutes.post(
+  '/my-orders/:orderId/cancel',
+  authenticateJWT,
+  asyncHandler(controller.cancelOrder),
+);
 
 // --- VENDOR FULFILLMENT ROUTES ---
 orderRoutes.get(
@@ -35,7 +43,7 @@ orderRoutes.get(
   asyncHandler(actorContext),
   approvedStore,
   requirePermissions(Permission.ORDER_VIEW),
-  controller.getVendorOrders,
+  asyncHandler(controller.getVendorOrders),
 );
 orderRoutes.get(
   '/vendor/orders/:orderId',
@@ -43,7 +51,7 @@ orderRoutes.get(
   asyncHandler(actorContext),
   approvedStore,
   requirePermissions(Permission.ORDER_VIEW),
-  controller.getVendorOrderById,
+  asyncHandler(controller.getVendorOrderById),
 );
 orderRoutes.patch(
   '/vendor/orders/items/:orderItemId/status',
@@ -51,7 +59,7 @@ orderRoutes.patch(
   asyncHandler(actorContext),
   approvedStore,
   requirePermissions(Permission.ORDER_MANAGE),
-  controller.updateOrderItemStatus,
+  asyncHandler(controller.updateOrderItemStatus),
 );
 
 // --- ADMIN OVERVIEW ---
@@ -61,7 +69,7 @@ orderRoutes.get(
   asyncHandler(actorContext),
   requirePlatformActor,
   requirePermissions(Permission.ORDER_VIEW),
-  controller.adminGetOrders,
+  asyncHandler(controller.adminGetOrders),
 );
 
 export default orderRoutes;

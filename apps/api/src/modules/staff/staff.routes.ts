@@ -24,13 +24,25 @@ staffRoutes.use(authenticateJWT);
 staffRoutes.use(asyncHandler(actorContext));
 staffRoutes.use(requireStoreState(['PENDING', 'UNDER_REVIEW', 'APPROVED']));
 
-staffRoutes.post('/', requirePermissions(Permission.STAFF_MANAGE), staffController.createStaff);
-staffRoutes.get('/', requirePermissions(Permission.STAFF_VIEW), staffController.getStaff);
-staffRoutes.patch('/:id', requirePermissions(Permission.STAFF_MANAGE), staffController.updateStaff);
+staffRoutes.post(
+  '/',
+  requirePermissions(Permission.STAFF_MANAGE),
+  asyncHandler(staffController.createStaff),
+);
+staffRoutes.get(
+  '/',
+  requirePermissions(Permission.STAFF_VIEW),
+  asyncHandler(staffController.getStaff),
+);
+staffRoutes.patch(
+  '/:id',
+  requirePermissions(Permission.STAFF_MANAGE),
+  asyncHandler(staffController.updateStaff),
+);
 staffRoutes.delete(
   '/:id',
   requirePermissions(Permission.STAFF_MANAGE),
-  staffController.deleteStaff,
+  asyncHandler(staffController.deleteStaff),
 );
 
 export default staffRoutes;

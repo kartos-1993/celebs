@@ -267,9 +267,9 @@ export class AuthService {
     };
   }
 
-  public async login(LoginData: loginType) {
+  public async login(LoginData: loginType, surface?: string) {
     const { email, password, userAgent } = LoginData;
-    logger.info(`Login attempt for email: ${email}`);
+    logger.info(`Login attempt for email: ${email}, surface: ${surface || 'default'}`);
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -296,6 +296,24 @@ export class AuthService {
         'Invalid email or password',
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
+    }
+
+    // Dynamic surface access check: If authentication is targeted for the admin surface,
+    // only platform administrators (ADMIN, SUPERADMIN) and sellers (VENDOR, STAFF) are allowed.
+    if (surface === 'admin') {
+      const isPlatform = user.role === 'ADMIN' || user.role === 'SUPERADMIN';
+      const isSeller = user.role === 'VENDOR' || user.role === 'STAFF';
+
+      if (!isPlatform && !isSeller) {
+        logger.warn(
+          { userId: user.id, role: user.role },
+          'Login rejected: Non-administrative user attempted to authenticate against admin surface',
+        );
+        throw new ForbiddenException(
+          'Access denied: Customer accounts cannot access the administrative portal.',
+          ErrorCode.PLATFORM_ACCESS_REQUIRED,
+        );
+      }
     }
 
     logger.info({ userId: user.id }, 'User authenticated successfully');

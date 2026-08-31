@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
 
 import {
   IApiResponse,
@@ -23,19 +22,7 @@ export class AuthController {
     this.authService = authService;
   }
   public register = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    let body;
-    try {
-      body = registerSchema.parse({
-        ...req.body,
-      });
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
-        const issues = (err as z.ZodError).issues;
-        const msg = issues?.[0]?.message || 'Validation failed';
-        throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-      }
-      throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
-    }
+    const body = registerSchema.parse(req.body);
     const { user } = await this.authService.register(body);
     const response: IApiResponse<typeof user> = {
       success: true,
@@ -46,19 +33,7 @@ export class AuthController {
   });
 
   public vendorRegister = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    let body;
-    try {
-      body = vendorRegisterSchema.parse({
-        ...req.body,
-      });
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
-        const issues = (err as z.ZodError).issues;
-        const msg = issues?.[0]?.message || 'Validation failed';
-        throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-      }
-      throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
-    }
+    const body = vendorRegisterSchema.parse(req.body);
     const { user } = await this.authService.vendorRegister(body);
     const response: IApiResponse<typeof user> = {
       success: true,
@@ -70,21 +45,12 @@ export class AuthController {
 
   public login = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userAgent = req.headers['user-agent'];
-    let body;
-    try {
-      body = loginSchema.parse({
-        ...req.body,
-        userAgent,
-      });
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
-        const issues = (err as z.ZodError).issues;
-        const msg = issues?.[0]?.message || 'Validation failed';
-        throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-      }
-      throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
-    }
-    const { user, accessToken, refreshToken } = await this.authService.login(body);
+    const surface = (req.headers['x-surface'] || req.body?.surface) as string | undefined;
+    const body = loginSchema.parse({
+      ...req.body,
+      userAgent,
+    });
+    const { user, accessToken, refreshToken } = await this.authService.login(body, surface);
     setAuthenticationCookies({ res, accessToken, refreshToken });
     const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> =
       {
@@ -127,17 +93,7 @@ export class AuthController {
 
   public resendVerification = asyncHandler(
     async (req: Request, res: Response): Promise<Response> => {
-      let body;
-      try {
-        body = resendVerificationSchema.parse(req.body);
-      } catch (err: unknown) {
-        if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
-          const issues = (err as z.ZodError).issues;
-          const msg = issues?.[0]?.message || 'Validation failed';
-          throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-        }
-        throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
-      }
+      const body = resendVerificationSchema.parse(req.body);
       const result = await this.authService.resendVerification(body);
       const response: IApiResponse<typeof result> = {
         success: true,
@@ -163,17 +119,7 @@ export class AuthController {
   });
 
   public setupSuperadmin = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-    let body;
-    try {
-      body = setupSuperadminSchema.parse(req.body);
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError || (err as { name?: string })?.name === 'ZodError') {
-        const issues = (err as z.ZodError).issues;
-        const msg = issues?.[0]?.message || 'Validation failed';
-        throw new BadRequestException(msg, ErrorCode.VALIDATION_ERROR);
-      }
-      throw new BadRequestException('Validation failed', ErrorCode.VALIDATION_ERROR);
-    }
+    const body = setupSuperadminSchema.parse(req.body);
     const { user } = await this.authService.setupSuperadmin(body);
     const response: IApiResponse<typeof user> = {
       success: true,
