@@ -1,12 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  addToWishlist,
-  getWishlist,
-  removeFromWishlist,
-  WISHLIST_QUERY_KEYS,
-} from '../api';
+import { addToWishlist, getWishlist, removeFromWishlist, WISHLIST_QUERY_KEYS } from '../api';
 import type { WishlistEntryView } from '../types';
 
 import { useAuth } from '@/features/auth/context/auth-context';

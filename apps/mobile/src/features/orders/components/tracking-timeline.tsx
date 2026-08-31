@@ -1,11 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
 
+import type { OrderStatus, OrderTrackingEventView } from '../utils/order-status';
+import { formatDateTime, getOrderStatusMeta } from '../utils/order-status';
+
 import { styles } from './tracking-timeline.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import type { OrderStatus, OrderTrackingEventView } from '../utils/order-status';
-import { formatDateTime, getOrderStatusMeta } from '../utils/order-status';
 
 interface TrackingTimelineProps {
   events: OrderTrackingEventView[];

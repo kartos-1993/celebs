@@ -3,9 +3,9 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  type TextStyle,
   TouchableOpacity,
   View,
-  type TextStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,16 +14,16 @@ import { ChevronLeft, ShoppingBag } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Palette } from '@/constants/theme';
+import { useAuth } from '@/features/auth/context/auth-context';
 import { OrderItemRow } from '@/features/orders/components/order-item-row';
 import { useMyOrders } from '@/features/orders/hooks/use-orders';
+import { styles } from '@/features/orders/styles/orders.styles';
 import type { OrderView } from '@/features/orders/utils/order-status';
 import {
   formatDate,
   getOrderStatusMeta,
   isActiveOrder,
 } from '@/features/orders/utils/order-status';
-import { useAuth } from '@/features/auth/context/auth-context';
-import { styles } from '@/features/orders/styles/orders.styles';
 
 const STATUS_STYLE: Record<string, TextStyle> = {
   active: styles.statusTextActive,

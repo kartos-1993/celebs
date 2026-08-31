@@ -1,7 +1,8 @@
-import globals from 'globals';
 import pluginQuery from '@tanstack/eslint-plugin-query';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import globals from 'globals';
+
 import base from '@celebs/eslint-config';
 
 export default [

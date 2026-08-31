@@ -3,13 +3,13 @@
  * staff member of that store — instantly, and permanently (reinstatement
  * must never resurrect pre-suspension tokens).
  */
-import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
+import { describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
-import prisma from '@/config/db.prisma';
 import { hashValue } from '@/common/utils/bcrypt';
 import { refreshTokenSignOptions, signJwtToken } from '@/common/utils/jwt';
+import prisma from '@/config/db.prisma';
 
 vi.mock('@/mailers/mailer', () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),

@@ -1,4 +1,4 @@
-import { test as base, Page } from '@playwright/test';
+import { Page,test as base } from '@playwright/test';
 
 export type AuthRole = 'SUPERADMIN' | 'ADMIN' | 'VENDOR' | 'STAFF' | 'CUSTOMER';
 

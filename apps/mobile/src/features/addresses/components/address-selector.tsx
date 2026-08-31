@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Check, Pencil, Plus } from 'lucide-react-native';
 
 import type { SavedAddress } from '../types';
+
 import { styles } from './address-selector.styles';
 
 import { ThemedText } from '@/components/themed-text';

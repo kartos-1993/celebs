@@ -20,9 +20,9 @@ import {
 } from '@celebs/shared-utils';
 
 import { storeLifecycle } from '../store/store-lifecycle.service';
-import { VendorService,vendorService as defaultVendorService } from '../vendor/vendor.service';
+import { VendorService, vendorService as defaultVendorService } from '../vendor/vendor.service';
 
-import { AuthRepository,authRepository } from './auth.repository';
+import { AuthRepository, authRepository } from './auth.repository';
 import {
   GoogleAuthService,
   googleAuthService as defaultGoogleAuthService,

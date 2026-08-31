@@ -2,12 +2,13 @@ import React from 'react';
 import { Image, Text, View } from 'react-native';
 import { ShoppingBag } from 'lucide-react-native';
 
+import type { OrderItemView } from '../utils/order-status';
+
 import { styles } from './order-item-row.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import { Palette } from '@/constants/theme';
 import { resolveImageUrl } from '@/constants/config';
-import type { OrderItemView } from '../utils/order-status';
+import { Palette } from '@/constants/theme';
 
 interface OrderItemRowProps {
   item: OrderItemView;

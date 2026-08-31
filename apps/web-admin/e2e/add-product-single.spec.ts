@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect,test } from '@playwright/test';
+
 import { authenticateAs } from './fixtures/auth.fixture';
 import { setupProductMocks } from './fixtures/product-mocks';
 
