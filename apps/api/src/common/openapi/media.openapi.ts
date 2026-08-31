@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { batchPresignSchema, confirmUploadSchema, presignFileSchema } from '@celebs/shared-types';
 
+import { withErrors } from './error.openapi';
 import { registry } from './registry';
 
 // Register Schemas
@@ -64,15 +65,7 @@ registry.registerPath({
         },
       },
     },
-    400: {
-      description: 'Validation error (invalid MIME type, oversized file, etc.)',
-    },
-    401: {
-      description: 'Unauthorized',
-    },
-    403: {
-      description: 'Forbidden (Unapproved vendor or missing product:create permission)',
-    },
+    ...withErrors(400, 401, 403),
   },
 });
 
@@ -104,12 +97,7 @@ registry.registerPath({
         },
       },
     },
-    400: {
-      description: 'Validation error',
-    },
-    401: {
-      description: 'Unauthorized',
-    },
+    ...withErrors(400, 401, 403),
   },
 });
 
@@ -141,11 +129,6 @@ registry.registerPath({
         },
       },
     },
-    400: {
-      description: 'Object not found in storage or validation error',
-    },
-    401: {
-      description: 'Unauthorized',
-    },
+    ...withErrors(400, 401, 403),
   },
 });

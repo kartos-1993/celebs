@@ -20,9 +20,16 @@ registry.registerComponent('securitySchemes', 'cookieAuth', {
   description: 'Express session ID cookie',
 });
 
-// Import endpoints to register them in the registry
+// Import endpoints and error schemas to register them in the registry
+import './error.openapi';
 import './auth.openapi';
 import './media.openapi';
+import './product.openapi';
+import './category.openapi';
+import './brand.openapi';
+import './cart.openapi';
+import './order.openapi';
+import './health.openapi';
 
 export function generateOpenAPIDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions);

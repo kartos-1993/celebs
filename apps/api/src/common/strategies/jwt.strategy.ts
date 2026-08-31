@@ -93,7 +93,33 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
 
 import { NextFunction, Request, Response } from 'express';
 
-export const authenticateJWT = passport.authenticate('jwt', { session: false });
+function extractAuthErrorMessage(info: unknown): string {
+  if (info instanceof Error) {
+    return info.message;
+  }
+  if (typeof info === 'object' && info !== null && 'message' in info) {
+    return String((info as { message: unknown }).message);
+  }
+  return 'Authentication required';
+}
+
+export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+  passport.authenticate(
+    'jwt',
+    { session: false },
+    (err: unknown, user: Express.User | false, info: unknown) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        const message = extractAuthErrorMessage(info);
+        return next(new UnauthorizedException(message, ErrorCode.AUTH_UNAUTHORIZED_ACCESS));
+      }
+      req.user = user;
+      next();
+    },
+  )(req, res, next);
+};
 
 export const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
   passport.authenticate('jwt', { session: false }, (_err: unknown, user: Express.User | false) => {

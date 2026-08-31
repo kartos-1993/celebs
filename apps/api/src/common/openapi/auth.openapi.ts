@@ -7,6 +7,7 @@ import {
   verificationEmailSchema,
 } from '@celebs/shared-types';
 
+import { withErrors } from './error.openapi';
 import { registry } from './registry';
 
 // We can register request/response bodies or schemas in components
@@ -54,9 +55,7 @@ registry.registerPath({
         },
       },
     },
-    400: {
-      description: 'Validation / duplicate email error',
-    },
+    ...withErrors(400),
   },
 });
 
@@ -93,9 +92,7 @@ registry.registerPath({
         },
       },
     },
-    400: {
-      description: 'Validation or duplicate field error',
-    },
+    ...withErrors(400),
   },
 });
 
@@ -136,9 +133,7 @@ registry.registerPath({
         },
       },
     },
-    401: {
-      description: 'Invalid credentials',
-    },
+    ...withErrors(400, 401),
   },
 });
 
@@ -161,9 +156,7 @@ registry.registerPath({
     200: {
       description: 'Email verified successfully',
     },
-    400: {
-      description: 'Invalid or expired verification code',
-    },
+    ...withErrors(400),
   },
 });
 
@@ -178,8 +171,6 @@ registry.registerPath({
     200: {
       description: 'Logged out successfully',
     },
-    401: {
-      description: 'Unauthorized',
-    },
+    ...withErrors(401),
   },
 });

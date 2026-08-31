@@ -9,7 +9,7 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 
-import { logger } from '@celebs/shared-utils';
+import { ErrorCode, logger, NotFoundException } from '@celebs/shared-utils';
 
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 import { config } from './config/app.config';
@@ -201,6 +201,10 @@ app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {
+  app.get(`${config.BASE_PATH}/docs.json`, (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(generateOpenAPIDocument());
+  });
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
 }
 
@@ -208,6 +212,16 @@ import healthRoutes from './modules/health/health.routes';
 
 app.use('/health', healthRoutes);
 app.use(`${config.BASE_PATH}/health`, healthRoutes);
+
+// 404 Catch-All Handler (Guarantees JSON response for unhandled routes instead of Express default HTML)
+app.use((req, _res, next) => {
+  next(
+    new NotFoundException(
+      `Route ${req.method} ${req.originalUrl} not found`,
+      ErrorCode.RESOURCE_NOT_FOUND,
+    ),
+  );
+});
 
 // Register error handler after all routes
 app.use(errorHandler);

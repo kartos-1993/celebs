@@ -1,56 +1,75 @@
 import { Response } from 'express';
 
-export interface ApiResponseEnvelope<T = unknown> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-    totalPages?: number;
-    timestamp: string;
-  };
-}
+import { IApiResponse } from '@celebs/shared-types';
 
-export const sendSuccess = <T>(
+/**
+ * Standardized success response envelope for all API endpoints.
+ * Automatically injects X-Request-Id and ISO timestamp.
+ */
+export function sendSuccess<T>(
   res: Response,
   data: T,
+  message = 'Success',
   statusCode = 200,
-  message?: string,
-  meta?: Omit<NonNullable<ApiResponseEnvelope['meta']>, 'timestamp'>,
-) => {
-  const payload: ApiResponseEnvelope<T> = {
+): Response {
+  const rawRequestId =
+    typeof res.getHeader === 'function' ? res.getHeader('X-Request-Id') : undefined;
+  const requestId =
+    typeof rawRequestId === 'string'
+      ? rawRequestId
+      : Array.isArray(rawRequestId)
+        ? rawRequestId[0]
+        : undefined;
+
+  const payload: IApiResponse<T> = {
     success: true,
     message,
     data,
-    meta: meta ? { ...meta, timestamp: new Date().toISOString() } : undefined,
+    requestId,
+    timestamp: new Date().toISOString(),
   };
-  return res.status(statusCode).json(payload);
-};
 
-export const sendError = (
-  res: Response,
-  statusCode: number,
-  code: string,
-  message: string,
-  details?: unknown,
-) => {
-  const payload: ApiResponseEnvelope = {
-    success: false,
-    error: {
-      code,
-      message,
-      details,
-    },
-    meta: {
-      timestamp: new Date().toISOString(),
-    },
-  };
   return res.status(statusCode).json(payload);
-};
+}
+
+/**
+ * Standardized 201 Created response helper.
+ */
+export function sendCreated<T>(res: Response, data: T, message = 'Created successfully'): Response {
+  return sendSuccess(res, data, message, 201);
+}
+
+/**
+ * Standardized paginated response envelope.
+ */
+export function sendPaginated<T>(
+  res: Response,
+  data: T[],
+  pagination: { page: number; limit: number; total: number },
+  message = 'Success',
+): Response {
+  const rawRequestId =
+    typeof res.getHeader === 'function' ? res.getHeader('X-Request-Id') : undefined;
+  const requestId =
+    typeof rawRequestId === 'string'
+      ? rawRequestId
+      : Array.isArray(rawRequestId)
+        ? rawRequestId[0]
+        : undefined;
+
+  const totalPages = Math.ceil(pagination.total / (pagination.limit || 1));
+
+  return res.status(200).json({
+    success: true,
+    message,
+    data,
+    meta: {
+      page: pagination.page,
+      limit: pagination.limit,
+      total: pagination.total,
+      totalPages,
+    },
+    requestId,
+    timestamp: new Date().toISOString(),
+  });
+}

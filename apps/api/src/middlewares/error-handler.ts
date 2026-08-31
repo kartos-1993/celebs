@@ -12,7 +12,24 @@ function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === 'object' && val !== null;
 }
 
-const formatZodError = (res: Response, error: z.ZodError) => {
+function buildErrorResponse(opts: {
+  message: string;
+  errorCode?: ErrorCode;
+  errors?: Array<{ field?: string; message: string }>;
+  requestId?: string;
+}): IApiResponse {
+  return {
+    success: false,
+    message: opts.message,
+    errorCode: opts.errorCode,
+    errors: opts.errors,
+    data: null,
+    requestId: opts.requestId,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+const formatZodError = (res: Response, error: z.ZodError, requestId?: string) => {
   const issues = Array.isArray(error?.issues) ? error.issues : [];
   const errors =
     issues.length > 0
@@ -22,13 +39,14 @@ const formatZodError = (res: Response, error: z.ZodError) => {
         }))
       : [{ message: error instanceof Error ? error.message : 'Validation failed' }];
 
-  const response: IApiResponse = {
-    success: false,
-    message: 'Validation failed',
-    errors: errors,
-    data: null,
+  const firstMessage = issues?.[0]?.message || 'Validation failed';
+
+  const response = buildErrorResponse({
+    message: firstMessage,
     errorCode: ErrorCode.VALIDATION_ERROR,
-  };
+    errors,
+    requestId,
+  });
 
   return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
 };
@@ -73,12 +91,11 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
 
     // Branch 1: SyntaxError (Invalid JSON body formatting from Express body-parser)
     if (error instanceof SyntaxError && (error as { status?: number })?.status === 400) {
-      const response: IApiResponse = {
-        success: false,
+      const response = buildErrorResponse({
         message: 'Invalid JSON format, please check your request body',
-        data: null,
         errorCode: ErrorCode.INVALID_JSON_FORMAT,
-      };
+        requestId,
+      });
       return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
     }
 
@@ -89,29 +106,26 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
       error?.constructor?.name === 'ZodError' ||
       (isRecord(error) && Array.isArray(error.issues))
     ) {
-      return formatZodError(res, error as z.ZodError);
+      return formatZodError(res, error as z.ZodError, requestId);
     }
 
     // Branch 3: AppError & Custom Domain Exceptions (BadRequest, Unauthorized, Forbidden, NotFound, Conflict)
     if (error instanceof AppError) {
-      const response: IApiResponse = {
-        success: false,
+      const response = buildErrorResponse({
         message: error.message || 'An error occurred',
         errorCode: error.errorCode as ErrorCode,
-        data: null,
         requestId,
-      };
+      });
       return res.status(error.statusCode || HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
     }
 
     if (isRecord(error) && typeof error.statusCode === 'number' && error.errorCode) {
       const statusCode = error.statusCode;
-      const response: IApiResponse = {
-        success: false,
+      const response = buildErrorResponse({
         message: typeof error.message === 'string' ? error.message : 'An error occurred',
         errorCode: error.errorCode as ErrorCode,
-        data: null,
-      };
+        requestId,
+      });
       return res.status(statusCode).json(response);
     }
 
@@ -126,63 +140,57 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
           } else if (typeof targetFields === 'string') {
             fieldName = targetFields.replace(/_key$/, '').replace(/^.*_/, '');
           }
-          const response: IApiResponse = {
-            success: false,
+          const response = buildErrorResponse({
             message: `A record with this ${fieldName} already exists. Please use a unique value.`,
-            data: null,
             errorCode: ErrorCode.VALIDATION_ERROR,
-          };
+            requestId,
+          });
           return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
         }
         case 'P2025': {
-          const response: IApiResponse = {
-            success: false,
+          const response = buildErrorResponse({
             message: 'The requested resource was not found',
-            data: null,
             errorCode: ErrorCode.RESOURCE_NOT_FOUND,
-          };
+            requestId,
+          });
           return res.status(HTTPSTATUS.NOT_FOUND).json(response);
         }
         case 'P2003': {
-          const response: IApiResponse = {
-            success: false,
+          const response = buildErrorResponse({
             message: 'Invalid reference: The associated resource does not exist',
-            data: null,
             errorCode: ErrorCode.INVALID_REQUEST,
-          };
+            requestId,
+          });
           return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
         }
         case 'P2014': {
-          const response: IApiResponse = {
-            success: false,
+          const response = buildErrorResponse({
             message: 'Cannot delete this item because it is referenced by active records',
-            data: null,
             errorCode: ErrorCode.INVALID_REQUEST,
-          };
+            requestId,
+          });
           return res.status(HTTPSTATUS.BAD_REQUEST).json(response);
         }
       }
     }
 
     // Branch 5: Unknown / Unexpected Internal Errors
-    const response: IApiResponse = {
-      success: false,
+    const response = buildErrorResponse({
       message: 'Internal Server Error',
-      data: null,
       errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
       requestId,
-    };
+    });
     return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
   } catch (fatalErr) {
     logger.error({ err: fatalErr }, 'Fatal error within errorHandler middleware');
     if (!res.headersSent) {
       res.setHeader('Content-Type', 'application/json');
-      return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: 'Internal Server Error',
-        data: null,
-        errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
-      });
+      return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json(
+        buildErrorResponse({
+          message: 'Internal Server Error',
+          errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
+        }),
+      );
     }
   }
 };
