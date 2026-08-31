@@ -5,16 +5,12 @@ import { asyncHandler } from '@celebs/shared-utils';
 
 import { userController } from '../user/user.controller';
 
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
+import { adminController } from './admin.controller';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requirePlatformActor } from '@/common/guards/store.guards';
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
-
-const adminService = new AdminService();
-const adminController = new AdminController(adminService);
 
 const adminRoutes = Router();
 

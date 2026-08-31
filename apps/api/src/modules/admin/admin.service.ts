@@ -5,53 +5,34 @@ import { NotFoundException } from '@celebs/shared-utils';
 import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
+import { adminRepository,IAdminRepository } from './admin.repository';
+
 import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
-import prisma from '@/config/db.prisma';
 import {} from '@/mailers/mailer';
 import {
   vendorApprovalTemplate,
   vendorRejectionTemplate,
 } from '@/mailers/templates/vendor-review.template';
 
+export interface AdminServiceDeps {
+  adminRepo?: IAdminRepository;
+}
+
 export class AdminService {
+  private adminRepo: IAdminRepository;
+
+  constructor(deps: AdminServiceDeps = {}) {
+    this.adminRepo = deps.adminRepo ?? adminRepository;
+  }
+
   // Vendor Management
   public async getAllVendors() {
-    return await prisma.vendorProfile.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isEmailVerified: true,
-            createdAt: true,
-          },
-        },
-        warehouses: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    return this.adminRepo.findAllVendors();
   }
 
   public async getVendorById(id: string) {
-    const vendor = await prisma.vendorProfile.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isEmailVerified: true,
-            createdAt: true,
-          },
-        },
-        warehouses: true,
-      },
-    });
+    const vendor = await this.adminRepo.findVendorById(id);
     if (!vendor) {
       throw new NotFoundException('Vendor profile not found');
     }
@@ -114,75 +95,42 @@ export class AdminService {
 
   // User Management (Superadmin only)
   public async getAllUsers() {
-    return await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isEmailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    return this.adminRepo.findAllUsers();
   }
 
   public async createUser(data: { name: string; email: string; password: string; role?: Role }) {
     const hashedPassword = await hashValue(data.password);
-    const user = await prisma.user.create({
-      data: {
-        name: data.name,
-        email: data.email.toLowerCase(),
-        password: hashedPassword,
-        role: data.role,
-        isEmailVerified: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isEmailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return this.adminRepo.createUser({
+      name: data.name,
+      email: data.email.toLowerCase(),
+      password: hashedPassword,
+      role: data.role,
+      isEmailVerified: true,
     });
-    return user;
   }
 
   public async deleteUser(id: string) {
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await this.adminRepo.findUserById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return await prisma.user.delete({ where: { id } });
+    return this.adminRepo.deleteUser(id);
   }
 
   public async updateUserRoleAndPermissions(
     id: string,
     data: { role?: Role; permissions?: string[] },
   ) {
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await this.adminRepo.findUserById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return await prisma.user.update({
-      where: { id },
-      data: {
-        role: data.role !== undefined ? data.role : user.role,
-        permissions: data.permissions !== undefined ? data.permissions : user.permissions,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        permissions: true,
-        isEmailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return this.adminRepo.updateUserRoleAndPermissions(id, {
+      role: data.role !== undefined ? data.role : user.role,
+      permissions: data.permissions !== undefined ? data.permissions : (user.permissions ?? []),
     });
   }
 }
+
+export const adminService = new AdminService();

@@ -3,13 +3,13 @@ import { Request, Response } from 'express';
 import { IApiResponse } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
 
-import { AdminService } from './admin.service';
+import { AdminService, adminService } from './admin.service';
 
 export class AdminController {
   private adminService: AdminService;
 
-  constructor(adminService: AdminService) {
-    this.adminService = adminService;
+  constructor(service: AdminService = adminService) {
+    this.adminService = service;
   }
 
   // Vendor Management
@@ -111,3 +111,5 @@ export class AdminController {
     res.status(HTTPSTATUS.OK).json(response);
   });
 }
+
+export const adminController = new AdminController();
