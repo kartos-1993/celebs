@@ -43,6 +43,7 @@ export * from './validators/layout.validator';
 export * from './validators/logistics.validator';
 export * from './validators/media.validator';
 export * from './validators/mfa.validator';
+export * from './validators/option-set.validator';
 export * from './validators/order.validator';
 export * from './validators/platform-settings.validator';
 export * from './validators/product.validator';

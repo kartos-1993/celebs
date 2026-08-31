@@ -1,70 +1,75 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 
-import { HTTPSTATUS } from '@celebs/shared-utils';
+import { createOptionSetSchema, IApiResponse, updateOptionSetSchema } from '@celebs/shared-types';
+import { asyncHandler, HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
 
-import { OptionSetService } from './option-set.service';
+import { type OptionSetService, optionSetService } from './option-set.service';
 
 export class OptionSetController {
-  constructor(private svc: OptionSetService) {}
+  private svc: OptionSetService;
 
-  list = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const type = (req.query.type as string | undefined) || undefined;
-      const data = await this.svc.list(type);
-      res.status(HTTPSTATUS.OK).json({ success: true, data });
-    } catch (err) {
-      next(err);
-    }
-  };
+  constructor(svc: OptionSetService = optionSetService) {
+    this.svc = svc;
+  }
 
-  getById = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const id = req.params.id || '';
-      const data = await this.svc.getById(id);
-      if (!data) {
-        res.status(HTTPSTATUS.NOT_FOUND).json({ success: false, message: 'Option set not found' });
-        return;
-      }
-      res.status(HTTPSTATUS.OK).json({ success: true, data });
-    } catch (err) {
-      next(err);
-    }
-  };
+  public list = asyncHandler(async (req: Request, res: Response) => {
+    const type = (req.query.type as string | undefined) || undefined;
+    const data = await this.svc.list(type);
+    const response: IApiResponse<typeof data> = {
+      success: true,
+      message: 'Option sets retrieved successfully',
+      data,
+    };
+    res.status(HTTPSTATUS.OK).json(response);
+  });
 
-  create = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { name, displayName, description, values } = req.body;
-      if (!name) {
-        res
-          .status(HTTPSTATUS.BAD_REQUEST)
-          .json({ success: false, message: 'Option set name is required' });
-        return;
-      }
-      const data = await this.svc.create({ name, displayName, description, values });
-      res.status(HTTPSTATUS.CREATED).json({ success: true, data });
-    } catch (err) {
-      next(err);
+  public getById = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id || '';
+    const data = await this.svc.getById(id);
+    if (!data) {
+      throw new NotFoundException('Option set not found');
     }
-  };
+    const response: IApiResponse<typeof data> = {
+      success: true,
+      message: 'Option set retrieved successfully',
+      data,
+    };
+    res.status(HTTPSTATUS.OK).json(response);
+  });
 
-  update = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const id = req.params.id || '';
-      const { name, displayName, description, values } = req.body;
-      const data = await this.svc.update(id, { name, displayName, description, values });
-      res.status(HTTPSTATUS.OK).json({ success: true, data });
-    } catch (err) {
-      next(err);
-    }
-  };
+  public create = asyncHandler(async (req: Request, res: Response) => {
+    const validated = createOptionSetSchema.parse(req.body);
+    const data = await this.svc.create(validated);
+    const response: IApiResponse<typeof data> = {
+      success: true,
+      message: 'Option set created successfully',
+      data,
+    };
+    res.status(HTTPSTATUS.CREATED).json(response);
+  });
 
-  delete = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const id = req.params.id || '';
-      const data = await this.svc.delete(id);
-      res.status(HTTPSTATUS.OK).json({ success: true, data });
-    } catch (err) {
-      next(err);
-    }
-  };
+  public update = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id || '';
+    const validated = updateOptionSetSchema.parse(req.body);
+    const data = await this.svc.update(id, validated);
+    const response: IApiResponse<typeof data> = {
+      success: true,
+      message: 'Option set updated successfully',
+      data,
+    };
+    res.status(HTTPSTATUS.OK).json(response);
+  });
+
+  public delete = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id || '';
+    const data = await this.svc.delete(id);
+    const response: IApiResponse<typeof data> = {
+      success: true,
+      message: 'Option set deleted successfully',
+      data,
+    };
+    res.status(HTTPSTATUS.OK).json(response);
+  });
 }
+
+export const optionSetController = new OptionSetController();
