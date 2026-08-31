@@ -2,9 +2,7 @@ import { HTMLAttributes, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Send } from 'lucide-react';
-import { z } from 'zod';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -19,122 +17,44 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import { login, resendVerification } from '../api';
+import { useLoginMutation } from '../hooks/use-auth-mutations';
+import { signInFormSchema, SignInFormValues } from '../types/sign-in.schema';
+import { handleSignInErrors } from '../utils/auth-error';
 
-import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
+import { SignInErrorBanner } from './sign-in-error-banner';
+
 import { getUserSession } from '@/features/account/api';
 import { ACCOUNT_QUERY_KEYS } from '@/features/account/api';
 import { cn } from '@/lib/utils';
 
 type SignInFormProps = HTMLAttributes<HTMLDivElement>;
 
-function ResendBannerButton({ email }: { email: string }) {
-  const [status, setStatus] = useState<{ loading: boolean; message?: string; error?: string }>({
-    loading: false,
-  });
-  const { secondsRemaining, isCoolingDown, startCooldown } = useResendCooldown(
-    'login_resend_cooldown',
-    60,
-  );
-
-  const handleResend = async () => {
-    if (!email || isCoolingDown) return;
-    setStatus({ loading: true });
-    try {
-      await resendVerification({ email });
-      startCooldown();
-      setStatus({
-        loading: false,
-        message: 'Fresh activation email sent! Please check your inbox.',
-      });
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Failed to resend email';
-      setStatus({ loading: false, error: msg });
-    }
-  };
-
-  if (status.message) {
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-success font-medium pt-1">
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        <span>{status.message}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="pt-1">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={status.loading || isCoolingDown || !email}
-        onClick={handleResend}
-        className="text-xs h-8 w-full gap-1.5"
-      >
-        {status.loading ? (
-          <>
-            <Spinner size="sm" /> Resending Link...
-          </>
-        ) : isCoolingDown ? (
-          <>Resend Link in {secondsRemaining}s...</>
-        ) : (
-          <>
-            <Send className="w-3.5 h-3.5" /> Resend Verification Link
-          </>
-        )}
-      </Button>
-      {status.error && <div className="text-xs text-destructive pt-1">{status.error}</div>}
-    </div>
-  );
-}
-
-const formSchema = z.object({
-  email: z
-    .string()
-    .min(1, { message: 'Please enter your email' })
-    .email({ message: 'Invalid email address' }),
-  password: z.string().min(1, {
-    message: 'Please enter your password',
-  }),
-});
-
 export function SignInForm({ className, ...props }: SignInFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = (location.state as { successMessage?: string } | null)?.successMessage;
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: login,
-    meta: { suppressErrorToast: true },
-  });
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  const { mutateAsync: loginMutate, isPending } = useLoginMutation();
+
+  const form = useForm<SignInFormValues>({
+    resolver: zodResolver(signInFormSchema),
+    defaultValues: { email: '', password: '' },
   });
 
   const queryClient = useQueryClient();
-
   const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
     const subscription = form.watch(() => {
-      if (serverError) {
-        setServerError(null);
-      }
+      if (serverError) setServerError(null);
     });
     return () => subscription.unsubscribe();
   }, [form, serverError]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: SignInFormValues) {
     setServerError(null);
     try {
-      const response = await mutateAsync(values);
+      const response = await loginMutate(values);
       if (response.data?.mfaRequired) {
         navigate(`/verify-mfa?email=${values.email}`);
         return;
@@ -146,24 +66,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
       const targetUrl = returnUrlParam ? decodeURIComponent(returnUrlParam) : '/';
       navigate(targetUrl, { replace: true });
     } catch (error: unknown) {
-      const errObj = error as {
-        message?: string;
-        errors?: Array<{ field?: keyof z.infer<typeof formSchema>; message?: string }>;
-      };
-      if (errObj?.errors && Array.isArray(errObj.errors) && errObj.errors.length > 0) {
-        errObj.errors.forEach((err) => {
-          if (err.field) {
-            form.setError(err.field, {
-              type: 'server',
-              message: err.message,
-            });
-          }
-        });
-      } else if (errObj?.message) {
-        setServerError(errObj.message);
-      } else {
-        setServerError('Invalid email or password');
-      }
+      handleSignInErrors(error, form.setError, setServerError);
     }
   }
 
@@ -175,13 +78,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
         </div>
       )}
       {serverError && (
-        <div className="bg-destructive/15 border border-destructive/30 text-destructive text-sm p-3 rounded-md mb-2 space-y-2">
-          <div>{serverError}</div>
-          {(serverError.toLowerCase().includes('verify') ||
-            serverError.toLowerCase().includes('unverified')) && (
-            <ResendBannerButton email={form.getValues('email')} />
-          )}
-        </div>
+        <SignInErrorBanner serverError={serverError} email={form.getValues('email')} />
       )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

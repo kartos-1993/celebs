@@ -23,6 +23,21 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     return <Navigate to={`${PATHS.AUTH.LOGIN}?returnUrl=${returnUrl}`} replace />;
   }
 
+  // Customer block: Customers are forbidden from the web-admin / seller portal.
+  if (user.role === 'CUSTOMER') {
+    return (
+      <Navigate
+        to={PATHS.ERRORS.FORBIDDEN}
+        replace
+        state={{
+          from: location.pathname,
+          userRole: 'CUSTOMER',
+          allowedRoles: ['SUPERADMIN', 'ADMIN', 'VENDOR', 'STAFF'],
+        }}
+      />
+    );
+  }
+
   // Vendor access gate: only APPROVED vendors reach the full AdminLayout.
   // All other statuses (PENDING, UNDER_REVIEW, REJECTED) are redirected to
   // /onboarding where the wizard decides what to render based on status.

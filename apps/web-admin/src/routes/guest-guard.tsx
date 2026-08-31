@@ -17,7 +17,7 @@ export const GuestGuard: React.FC<GuestGuardProps> = ({ children }) => {
     return <FullscreenLoader />;
   }
 
-  if (user) {
+  if (user && user.role !== 'CUSTOMER') {
     return <Navigate to={PATHS.DASHBOARD} replace />;
   }
 
