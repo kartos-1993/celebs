@@ -20,18 +20,12 @@ import {
 } from '@celebs/shared-utils';
 
 import { storeLifecycle } from '../store/store-lifecycle.service';
-import { VendorService,vendorService as defaultVendorService } from '../vendor/vendor.service';
+import { type VendorService, vendorService } from '../vendor/vendor.service';
 
-import { AuthRepository,authRepository } from './auth.repository';
-import {
-  GoogleAuthService,
-  googleAuthService as defaultGoogleAuthService,
-} from './google-auth.service';
-import { TokenService, tokenService as defaultTokenService } from './token.service';
-import {
-  VerificationService,
-  verificationService as defaultVerificationService,
-} from './verification.service';
+import { type AuthRepository, authRepository } from './auth.repository';
+import { type GoogleAuthService, googleAuthService } from './google-auth.service';
+import { type TokenService, tokenService } from './token.service';
+import { type VerificationService, verificationService } from './verification.service';
 
 import { authCache } from '@/common/cache/auth-cache';
 import { ensurePlatformVendor } from '@/common/constants/platform-vendor';
@@ -39,14 +33,28 @@ import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
 import prisma from '@/config/db.prisma';
 
+export interface AuthServiceDeps {
+  authRepo?: AuthRepository;
+  tokenService?: TokenService;
+  verificationService?: VerificationService;
+  googleAuthService?: GoogleAuthService;
+  vendorService?: VendorService;
+}
+
 export class AuthService {
-  constructor(
-    private authRepo: AuthRepository = authRepository,
-    private tokenService: TokenService = defaultTokenService,
-    private verificationService: VerificationService = defaultVerificationService,
-    private googleAuthService: GoogleAuthService = defaultGoogleAuthService,
-    private vendorService: VendorService = defaultVendorService,
-  ) {}
+  private authRepo: AuthRepository;
+  private tokenService: TokenService;
+  private verificationService: VerificationService;
+  private googleAuthService: GoogleAuthService;
+  private vendorService: VendorService;
+
+  constructor(deps: AuthServiceDeps = {}) {
+    this.authRepo = deps.authRepo ?? authRepository;
+    this.tokenService = deps.tokenService ?? tokenService;
+    this.verificationService = deps.verificationService ?? verificationService;
+    this.googleAuthService = deps.googleAuthService ?? googleAuthService;
+    this.vendorService = deps.vendorService ?? vendorService;
+  }
 
   public async register(registerData: registerType) {
     const { name, email, password } = registerData;
@@ -307,3 +315,5 @@ export class AuthService {
     };
   }
 }
+
+export const authService = new AuthService();
