@@ -19,15 +19,15 @@ import {
   UnauthorizedException,
 } from '@celebs/shared-utils';
 
-import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
+import { VendorService,vendorService as defaultVendorService } from '../vendor/vendor.service';
 
 import { AuthRepository,authRepository } from './auth.repository';
 import {
   GoogleAuthService,
   googleAuthService as defaultGoogleAuthService,
 } from './google-auth.service';
-import { TokenService,tokenService as defaultTokenService } from './token.service';
+import { TokenService, tokenService as defaultTokenService } from './token.service';
 import {
   VerificationService,
   verificationService as defaultVerificationService,
@@ -37,7 +37,7 @@ import { authCache } from '@/common/cache/auth-cache';
 import { ensurePlatformVendor } from '@/common/constants/platform-vendor';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
-import prisma, { Prisma } from '@/config/db.prisma';
+import prisma from '@/config/db.prisma';
 
 export class AuthService {
   constructor(
@@ -45,6 +45,7 @@ export class AuthService {
     private tokenService: TokenService = defaultTokenService,
     private verificationService: VerificationService = defaultVerificationService,
     private googleAuthService: GoogleAuthService = defaultGoogleAuthService,
+    private vendorService: VendorService = defaultVendorService,
   ) {}
 
   public async register(registerData: registerType) {
@@ -75,100 +76,7 @@ export class AuthService {
   }
 
   public async vendorRegister(registerData: vendorRegisterType) {
-    const {
-      name,
-      email,
-      password,
-      shopName,
-      shopDescription,
-      phoneNumber,
-      panNumber,
-      citizenshipNumber,
-      panDocumentUrl,
-      citizenshipDocumentUrl,
-      ownerPhotoUrl,
-    } = registerData;
-
-    const existingUser = await this.authRepo.findUserByEmail(email);
-    if (existingUser) {
-      throw new BadRequestException(
-        'User already exists with this email',
-        ErrorCode.AUTH_EMAIL_ALREADY_EXISTS,
-      );
-    }
-
-    const existingShop = await prisma.vendorProfile.findUnique({
-      where: { shopName },
-    });
-    if (existingShop) {
-      throw new BadRequestException('Shop name is already taken', ErrorCode.INVALID_REQUEST);
-    }
-
-    const existingPhone = await prisma.vendorProfile.findUnique({
-      where: { phoneNumber },
-    });
-    if (existingPhone) {
-      throw new BadRequestException(
-        'Phone number is already registered',
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
-
-    const existingPan = await prisma.vendorProfile.findUnique({
-      where: { panNumber },
-    });
-    if (existingPan) {
-      throw new BadRequestException('PAN number is already registered', ErrorCode.INVALID_REQUEST);
-    }
-
-    const existingCitizenship = await prisma.vendorProfile.findUnique({
-      where: { citizenshipNumber },
-    });
-    if (existingCitizenship) {
-      throw new BadRequestException(
-        'Citizenship number is already registered',
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
-
-    const hashedPassword = await hashValue(password);
-
-    const newUser = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          role: 'VENDOR',
-        },
-      });
-
-      const vendorProfile = await tx.vendorProfile.create({
-        data: {
-          userId: user.id,
-          phoneNumber,
-          shopName,
-          shopDescription,
-          panNumber,
-          citizenshipNumber,
-          panDocumentUrl,
-          citizenshipDocumentUrl,
-          ownerPhotoUrl,
-          status: 'PENDING',
-        },
-      });
-
-      return { user, vendorProfileId: vendorProfile.id };
-    });
-
-    await mediaRepository.ensureDefaultFolders(newUser.vendorProfileId);
-
-    const user = newUser.user;
-    logger.info(
-      { email: user.email, id: user.id, shopName },
-      'New vendor registered, profile pending approval',
-    );
-
+    const user = await this.vendorService.onboardVendor(registerData);
     await this.verificationService.sendVerificationEmail(user, { isVendor: true });
 
     return {
