@@ -1,8 +1,8 @@
-import { Prisma } from '@prisma/client';
-
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
-import prisma from '@/config/db.prisma';
+import { type QuickFilterRepository, quickFilterRepository } from './quick-filter.repository';
+
+import { Prisma } from '@/config/db.prisma';
 
 export interface CreateQuickFilterInput {
   categoryId: string;
@@ -53,7 +53,17 @@ interface QuickFilterConfig {
   isActive?: boolean;
 }
 
+export interface QuickFilterServiceDeps {
+  quickFilterRepo?: QuickFilterRepository;
+}
+
 export class QuickFilterService {
+  private quickFilterRepo: QuickFilterRepository;
+
+  constructor(deps: QuickFilterServiceDeps = {}) {
+    this.quickFilterRepo = deps.quickFilterRepo ?? quickFilterRepository;
+  }
+
   private formatFilter(qf: { id: string; filterConfig?: Prisma.JsonValue } | null) {
     if (!qf) return null;
     const config = (
@@ -73,18 +83,7 @@ export class QuickFilterService {
   }
 
   async getStorefrontConfigBySlug(slugOrId: string) {
-    const slugLower = slugOrId.toLowerCase();
-
-    const category = await prisma.category.findFirst({
-      where: {
-        OR: [
-          { id: slugOrId },
-          { slug: { equals: slugLower, mode: 'insensitive' } },
-          { path: { equals: slugLower, mode: 'insensitive' } },
-          { name: { equals: slugLower.replace(/-/g, ' '), mode: 'insensitive' } },
-        ],
-      },
-    });
+    const category = await this.quickFilterRepo.findCategoryBySlugOrId(slugOrId);
 
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
@@ -92,19 +91,10 @@ export class QuickFilterService {
 
     const categoryId = category.id;
 
-    let rawQuickFilters = await prisma.quickFilter.findMany({
-      where: { categoryId },
-      orderBy: { createdAt: 'asc' },
-    });
+    let rawQuickFilters = await this.quickFilterRepo.findByCategoryId(categoryId);
 
     if (rawQuickFilters.length === 0) {
-      const childCategories = await prisma.category.findMany({
-        where: {
-          parentCategory: categoryId,
-          isActive: true,
-        },
-        orderBy: { name: 'asc' },
-      });
+      const childCategories = await this.quickFilterRepo.findActiveChildCategories(categoryId);
 
       if (childCategories.length > 0) {
         rawQuickFilters = [
@@ -144,10 +134,7 @@ export class QuickFilterService {
       return config.type === 'subcategory' && config.autoPopulate !== false;
     });
     const autoPopulateChildren = needsAutoPopulate
-      ? await prisma.category.findMany({
-          where: { parentCategory: categoryId, isActive: true },
-          orderBy: { name: 'asc' },
-        })
+      ? await this.quickFilterRepo.findActiveChildCategories(categoryId)
       : [];
 
     const quickFilters = [];
@@ -199,37 +186,30 @@ export class QuickFilterService {
   }
 
   async getQuickFiltersForCategory(categoryId: string) {
-    const list = await prisma.quickFilter.findMany({
-      where: { categoryId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const list = await this.quickFilterRepo.findByCategoryId(categoryId);
     return list.map((item) => this.formatFilter(item));
   }
 
   async createQuickFilter(input: CreateQuickFilterInput) {
-    const category = await prisma.category.findUnique({
-      where: { id: input.categoryId },
-    });
+    const category = await this.quickFilterRepo.findCategoryById(input.categoryId);
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
     const slug = `${input.type}-${input.categoryId}-${Date.now()}`;
 
-    const created = await prisma.quickFilter.create({
-      data: {
-        title: input.type,
-        slug,
-        categoryId: input.categoryId,
-        filterConfig: {
-          type: input.type,
-          attributeId: input.attributeId || null,
-          displayAs: input.displayAs,
-          items: input.items || [],
-          autoPopulate: input.autoPopulate !== false,
-          displayOrder: input.displayOrder || 0,
-          isActive: input.isActive !== false,
-        },
+    const created = await this.quickFilterRepo.create({
+      title: input.type,
+      slug,
+      categoryId: input.categoryId,
+      filterConfig: {
+        type: input.type,
+        attributeId: input.attributeId || null,
+        displayAs: input.displayAs,
+        items: input.items || [],
+        autoPopulate: input.autoPopulate !== false,
+        displayOrder: input.displayOrder || 0,
+        isActive: input.isActive !== false,
       },
     });
 
@@ -237,7 +217,7 @@ export class QuickFilterService {
   }
 
   async updateQuickFilter(id: string, input: UpdateQuickFilterInput) {
-    const filter = await prisma.quickFilter.findUnique({ where: { id } });
+    const filter = await this.quickFilterRepo.findById(id);
     if (!filter) {
       throw new AppError(
         'Quick filter not found',
@@ -250,27 +230,22 @@ export class QuickFilterService {
       filter.filterConfig && typeof filter.filterConfig === 'object' ? filter.filterConfig : {}
     ) as QuickFilterConfig;
 
-    const updated = await prisma.quickFilter.update({
-      where: { id },
-      data: {
-        filterConfig: {
-          ...currentConfig,
-          ...(input.type ? { type: input.type } : {}),
-          ...(input.attributeId !== undefined ? { attributeId: input.attributeId } : {}),
-          ...(input.displayAs ? { displayAs: input.displayAs } : {}),
-          ...(input.items ? { items: input.items } : {}),
-          ...(input.autoPopulate !== undefined ? { autoPopulate: input.autoPopulate } : {}),
-          ...(input.displayOrder !== undefined ? { displayOrder: input.displayOrder } : {}),
-          ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-        },
-      },
+    const updated = await this.quickFilterRepo.update(id, {
+      ...currentConfig,
+      ...(input.type ? { type: input.type } : {}),
+      ...(input.attributeId !== undefined ? { attributeId: input.attributeId } : {}),
+      ...(input.displayAs ? { displayAs: input.displayAs } : {}),
+      ...(input.items ? { items: input.items } : {}),
+      ...(input.autoPopulate !== undefined ? { autoPopulate: input.autoPopulate } : {}),
+      ...(input.displayOrder !== undefined ? { displayOrder: input.displayOrder } : {}),
+      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
     });
 
     return this.formatFilter(updated);
   }
 
   async deleteQuickFilter(id: string): Promise<{ success: boolean }> {
-    const filter = await prisma.quickFilter.findUnique({ where: { id } });
+    const filter = await this.quickFilterRepo.findById(id);
     if (!filter) {
       throw new AppError(
         'Quick filter not found',
@@ -279,7 +254,9 @@ export class QuickFilterService {
       );
     }
 
-    await prisma.quickFilter.delete({ where: { id } });
+    await this.quickFilterRepo.delete(id);
     return { success: true };
   }
 }
+
+export const quickFilterService = new QuickFilterService();
