@@ -48,3 +48,14 @@ export interface UserData {
   vendorId?: string;
   vendorProfile?: VendorProfileData;
 }
+
+export interface AuthPrincipalData {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: string;
+  permissions: string[];
+  isEmailVerified: boolean;
+  vendorId: string | null;
+  vendorProfile: { id: string } | null;
+}

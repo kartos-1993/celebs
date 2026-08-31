@@ -3,6 +3,8 @@ import { Router } from 'express';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
 
+import { userController } from '../user/user.controller';
+
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 
@@ -51,17 +53,17 @@ adminRoutes.patch(
 );
 
 // User Management (requires USER_MANAGE permission, typically SUPERADMIN only)
-adminRoutes.get('/users', requirePermissions(Permission.USER_MANAGE), adminController.getAllUsers);
-adminRoutes.post('/users', requirePermissions(Permission.USER_MANAGE), adminController.createUser);
+adminRoutes.get('/users', requirePermissions(Permission.USER_MANAGE), userController.getAllUsers);
+adminRoutes.post('/users', requirePermissions(Permission.USER_MANAGE), userController.createUser);
 adminRoutes.put(
   '/users/:id/role-permissions',
   requirePermissions(Permission.USER_MANAGE),
-  adminController.updateUserRoleAndPermissions,
+  userController.updateUserRoleAndPermissions,
 );
 adminRoutes.delete(
   '/users/:id',
   requirePermissions(Permission.USER_MANAGE),
-  adminController.deleteUser,
+  userController.deleteUser,
 );
 
 export default adminRoutes;

@@ -36,6 +36,7 @@ import renderRoutes from './modules/product/product-render.routes';
 import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
 import sessionRoutes from './modules/session/session.routes';
 import staffRoutes from './modules/staff/staff.routes';
+import userRoutes from './modules/user/user.routes';
 import vendorRoutes from './modules/vendor/vendor.routes';
 import wishlistRoutes from './modules/wishlist/wishlist.routes';
 
@@ -189,6 +190,7 @@ app.use(`${config.BASE_PATH}/brands`, brandRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 app.use(`${config.BASE_PATH}/vendor`, vendorRoutes);
 app.use(`${config.BASE_PATH}/admin`, adminRoutes);
+app.use(`${config.BASE_PATH}/users`, userRoutes);
 app.use(`${config.BASE_PATH}/staff`, staffRoutes);
 app.use(`${config.BASE_PATH}/banners`, bannerRoutes);
 app.use(`${config.BASE_PATH}/cart`, cartRoutes);
