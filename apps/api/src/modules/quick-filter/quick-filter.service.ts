@@ -1,3 +1,8 @@
+import {
+  type QuickFilterDisplayAs,
+  type QuickFilterItem,
+  type QuickFilterType,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { type QuickFilterRepository, quickFilterRepository } from './quick-filter.repository';
@@ -6,48 +11,30 @@ import { Prisma } from '@/config/db.prisma';
 
 export interface CreateQuickFilterInput {
   categoryId: string;
-  type: string;
+  type: QuickFilterType | string;
   attributeId?: string | null;
-  displayAs: string;
-  items?: {
-    name: string;
-    image?: string | null;
-    slug?: string | null;
-    filterValue?: string | null;
-    displayOrder?: number;
-  }[];
+  displayAs: QuickFilterDisplayAs | string;
+  items?: QuickFilterItem[];
   autoPopulate?: boolean;
   displayOrder?: number;
   isActive?: boolean;
 }
 
 export interface UpdateQuickFilterInput {
-  type?: string;
+  type?: QuickFilterType | string;
   attributeId?: string | null;
-  displayAs?: string;
-  items?: {
-    name: string;
-    image?: string | null;
-    slug?: string | null;
-    filterValue?: string | null;
-    displayOrder?: number;
-  }[];
+  displayAs?: QuickFilterDisplayAs | string;
+  items?: QuickFilterItem[];
   autoPopulate?: boolean;
   displayOrder?: number;
   isActive?: boolean;
 }
 
 interface QuickFilterConfig {
-  type?: string;
+  type?: QuickFilterType | string;
   attributeId?: string | null;
-  displayAs?: string;
-  items?: Array<{
-    name: string;
-    image?: string | null;
-    slug?: string | null;
-    filterValue?: string | null;
-    displayOrder?: number;
-  }>;
+  displayAs?: QuickFilterDisplayAs | string;
+  items?: QuickFilterItem[];
   autoPopulate?: boolean;
   displayOrder?: number;
   isActive?: boolean;

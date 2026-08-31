@@ -32,6 +32,7 @@ import {
 } from './validators/vendor.validator';
 
 export * from './validators/auth.validator';
+export * from './validators/banner.validator';
 export * from './validators/brand.validator';
 export * from './validators/campaign.validator';
 export * from './validators/cart.validator';

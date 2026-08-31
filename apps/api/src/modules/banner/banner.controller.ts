@@ -1,11 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { updateBannersSchema } from '@celebs/shared-types';
+import { HTTPSTATUS } from '@celebs/shared-utils';
 
-import { BannerService } from './banner.service';
+import { BannerService,bannerService } from './banner.service';
 
 export class BannerController {
-  constructor(private bannerService: BannerService) {}
+  private bannerService: BannerService;
+
+  constructor(service: BannerService = bannerService) {
+    this.bannerService = service;
+  }
 
   /**
    * Get all active banners (Public)
@@ -44,16 +49,8 @@ export class BannerController {
    */
   updateBanners = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const bannersData = req.body.banners;
-      if (!bannersData || !Array.isArray(bannersData)) {
-        throw new AppError(
-          'Invalid banners data payload',
-          HTTPSTATUS.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR,
-        );
-      }
-
-      const updated = await this.bannerService.updateBanners(bannersData);
+      const validated = updateBannersSchema.parse(req.body);
+      const updated = await this.bannerService.updateBanners(validated.banners);
       res.status(HTTPSTATUS.OK).json({
         success: true,
         message: 'Banners updated successfully',
