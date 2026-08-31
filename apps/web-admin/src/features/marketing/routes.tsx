@@ -1,5 +1,7 @@
 import { lazy } from 'react';
-import { Navigate, RouteObject } from 'react-router-dom';
+import { Navigate, Outlet, RouteObject } from 'react-router-dom';
+
+import { RoleGuard } from '@/routes/role-guard';
 
 const CampaignListPage = lazy(() => import('./pages/campaign-list-page'));
 const CampaignFormPage = lazy(() => import('./pages/campaign-form-page'));
@@ -9,6 +11,11 @@ const SDUIPagePreview = lazy(() => import('./pages/sdui-preview-page'));
 
 export const marketingRoutes: RouteObject = {
   path: 'marketing',
+  element: (
+    <RoleGuard allowedRoles={['ADMIN', 'SUPERADMIN']}>
+      <Outlet />
+    </RoleGuard>
+  ),
   handle: { crumb: 'Marketing' },
   children: [
     { index: true, element: <Navigate to="campaigns" replace /> },

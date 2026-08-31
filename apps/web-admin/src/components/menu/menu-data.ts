@@ -102,7 +102,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     });
   }
 
-  // 4. Marketing & Promotions Group
+  // 4. Marketing & Promotions Group (Platform Admins only)
   const marketingSubmenus: Submenu[] = [
     { href: '/marketing/campaigns', label: 'Festival Campaigns' },
     { href: '/marketing/combos', label: 'Combo Bundles' },
@@ -110,10 +110,8 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   ];
 
   if (
-    hasPerm(Permission.PRODUCT_CREATE) ||
-    hasPerm(Permission.PRODUCT_EDIT) ||
     hasPerm(Permission.PLATFORM_MANAGE) ||
-    currentRole === 'VENDOR' ||
+    hasPerm(Permission.CATALOG_MANAGE) ||
     currentRole === 'ADMIN' ||
     currentRole === 'SUPERADMIN'
   ) {
