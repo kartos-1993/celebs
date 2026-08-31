@@ -3,15 +3,15 @@ import { Request, Response } from 'express';
 import { createStaffSchema, IApiResponse } from '@celebs/shared-types';
 import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-utils';
 
-import { StaffService } from './staff.service';
+import { StaffService, staffService } from './staff.service';
 
 import { resolveTargetStoreId } from '@/common/guards/store.guards';
 
 export class StaffController {
   private staffService: StaffService;
 
-  constructor(staffService: StaffService) {
-    this.staffService = staffService;
+  constructor(service: StaffService = staffService) {
+    this.staffService = service;
   }
 
   private getUserId(req: Request): string {
@@ -75,3 +75,5 @@ export class StaffController {
     res.status(HTTPSTATUS.OK).json(response);
   });
 }
+
+export const staffController = new StaffController();

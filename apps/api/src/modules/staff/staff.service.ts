@@ -8,12 +8,13 @@ import {
   NotFoundException,
 } from '@celebs/shared-utils';
 
+import { IStaffRepository, staffRepository } from './staff.repository';
+
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import { buildWebUrl } from '@/common/utils/url';
-import prisma from '@/config/db.prisma';
 import {} from '@/mailers/mailer';
 import { verifyEmailTemplate } from '@/mailers/templates/template';
 
@@ -67,53 +68,33 @@ function assertGrantablePermissions(
   }
 }
 
+export interface StaffServiceDeps {
+  staffRepo?: IStaffRepository;
+}
+
 export class StaffService {
+  private staffRepo: IStaffRepository;
+
+  constructor(deps: StaffServiceDeps = {}) {
+    this.staffRepo = deps.staffRepo ?? staffRepository;
+  }
+
   /**
    * Resolves vendorProfile and user info for a given userId.
    * Handles VENDOR owners, STAFF sub-users, and ADMIN/SUPERADMIN roles.
    */
   private async resolveUserAndVendor(userId: string, targetVendorId?: string | null) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        role: true,
-        vendorId: true,
-        permissions: true,
-        vendorProfile: {
-          select: { id: true, shopName: true },
-        },
-      },
-    });
+    const user = await this.staffRepo.findUserWithVendor(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const vendorProfileSelect = {
-      id: true,
-      userId: true,
-      shopName: true,
-      shopDescription: true,
-      phoneNumber: true,
-      panNumber: true,
-      citizenshipNumber: true,
-      status: true,
-      availableBalance: true,
-      withholdingEscrow: true,
-      currencyCode: true,
-      createdAt: true,
-      updatedAt: true,
-    };
-
     // 1. If explicit targetVendorId is passed (e.g. by admin via resolveTargetStoreId)
     // targetVendorId is already tenant-isolated via resolveTargetStoreId at controller layer:
     // sellers are forced to own storeId, platform may supply vendorId
     if (targetVendorId) {
-      const vendorProfile = await prisma.vendorProfile.findUnique({
-        where: { id: targetVendorId },
-        select: vendorProfileSelect,
-      });
+      const vendorProfile = await this.staffRepo.findVendorProfileById(targetVendorId);
       if (!vendorProfile) {
         throw new NotFoundException(`Vendor profile with ID ${targetVendorId} not found`);
       }
@@ -127,20 +108,14 @@ export class StaffService {
 
     // 3. Vendor staff sub-user (has vendorId set)
     if (user.vendorId) {
-      const vendorProfile = await prisma.vendorProfile.findUnique({
-        where: { id: user.vendorId },
-        select: vendorProfileSelect,
-      });
+      const vendorProfile = await this.staffRepo.findVendorProfileById(user.vendorId);
       if (vendorProfile) {
         return { user, vendorProfile };
       }
     }
 
     // 4. Fallback for vendor profile by userId
-    const vendorProfile = await prisma.vendorProfile.findUnique({
-      where: { userId },
-      select: vendorProfileSelect,
-    });
+    const vendorProfile = await this.staffRepo.findVendorProfileByUserId(userId);
 
     return { user, vendorProfile: vendorProfile || null };
   }
@@ -165,9 +140,7 @@ export class StaffService {
       throw new NotFoundException('Vendor profile not found for creator');
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: cleanData.email.toLowerCase() },
-    });
+    const existingUser = await this.staffRepo.findUserByEmail(cleanData.email);
     if (existingUser) {
       throw new BadRequestException(
         'A user account with this email address already exists. Please use a unique email address for the staff member.',
@@ -182,36 +155,25 @@ export class StaffService {
     }
 
     const hashedPassword = await hashValue(cleanData.password);
-    const staff = await prisma.user.create({
-      data: {
-        name: cleanData.name,
-        email: cleanData.email.toLowerCase(),
-        password: hashedPassword,
-        role: 'STAFF',
-        permissions: cleanData.permissions || [],
-        isEmailVerified: false,
-        vendorId: effectiveVendorId,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        permissions: true,
-        isEmailVerified: true,
-        vendorId: true,
-        createdAt: true,
-        updatedAt: true,
+    const staff = await this.staffRepo.createStaffUser({
+      name: cleanData.name,
+      email: cleanData.email.toLowerCase(),
+      password: hashedPassword,
+      role: 'STAFF',
+      permissions: cleanData.permissions || [],
+      isEmailVerified: false,
+      vendor: {
+        connect: { id: effectiveVendorId },
       },
     });
 
     // Generate verification code and send activation/invite email
-    const verification = await prisma.verificationCode.create({
-      data: {
-        userId: staff.id,
-        type: VerificationEnum.EMAIL_VERIFICATION,
-        expiresAt: fortyFiveMinutesFromNow(),
+    const verification = await this.staffRepo.createVerificationCode({
+      user: {
+        connect: { id: staff.id },
       },
+      type: VerificationEnum.EMAIL_VERIFICATION,
+      expiresAt: fortyFiveMinutesFromNow(),
     });
 
     const verificationUrl = buildWebUrl('/verify-email', { code: verification.code });
@@ -249,51 +211,14 @@ export class StaffService {
 
     // If Admin/Superadmin and no specific vendor profile found/requested, return all staff
     if (!vendorProfile && (user.role === 'SUPERADMIN' || user.role === 'ADMIN')) {
-      return await prisma.user.findMany({
-        where: {
-          role: 'STAFF',
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          permissions: true,
-          isEmailVerified: true,
-          vendorId: true,
-          vendor: {
-            select: {
-              id: true,
-              shopName: true,
-            },
-          },
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      return await this.staffRepo.findAllStaff();
     }
 
     if (!vendorProfile) {
       throw new NotFoundException('Vendor profile not found');
     }
 
-    return await prisma.user.findMany({
-      where: {
-        vendorId: vendorProfile.id,
-        role: 'STAFF',
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        permissions: true,
-        isEmailVerified: true,
-        vendorId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    return await this.staffRepo.findStaffByVendorId(vendorProfile.id);
   }
 
   public async deleteStaff(staffId: string, creatorUserId: string) {
@@ -306,9 +231,7 @@ export class StaffService {
 
     const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId);
 
-    const staffUser = await prisma.user.findUnique({
-      where: { id: staffId },
-    });
+    const staffUser = await this.staffRepo.findStaffById(staffId);
     if (!staffUser) {
       throw new NotFoundException('Staff user not found');
     }
@@ -321,9 +244,7 @@ export class StaffService {
       }
     }
 
-    await prisma.user.delete({
-      where: { id: staffId },
-    });
+    await this.staffRepo.deleteStaff(staffId);
 
     return { id: staffId };
   }
@@ -343,9 +264,7 @@ export class StaffService {
 
     const { user, vendorProfile } = await this.resolveUserAndVendor(creatorUserId);
 
-    const staffUser = await prisma.user.findUnique({
-      where: { id: staffId },
-    });
+    const staffUser = await this.staffRepo.findStaffById(staffId);
     if (!staffUser) {
       throw new NotFoundException('Staff user not found');
     }
@@ -364,25 +283,13 @@ export class StaffService {
       });
     }
 
-    const updated = await prisma.user.update({
-      where: { id: staffId },
-      data: {
-        ...(Array.isArray(data.permissions) ? { permissions: data.permissions } : {}),
-        ...(data.name ? { name: data.name } : {}),
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        permissions: true,
-        isEmailVerified: true,
-        vendorId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const updated = await this.staffRepo.updateStaff(staffId, {
+      ...(Array.isArray(data.permissions) ? { permissions: data.permissions } : {}),
+      ...(data.name ? { name: data.name } : {}),
     });
 
     return updated;
   }
 }
+
+export const staffService = new StaffService();
