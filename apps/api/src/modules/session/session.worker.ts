@@ -2,11 +2,9 @@ import { Job, Worker } from 'bullmq';
 
 import { logger } from '@celebs/shared-utils';
 
-import { SessionService } from './session.service';
+import { sessionService } from './session.service';
 
 import { redisConnection } from '@/common/services/queue.service';
-
-const sessionService = new SessionService();
 
 export const sessionWorker = new Worker(
   'session-maintenance',
