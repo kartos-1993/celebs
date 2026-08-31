@@ -1,21 +1,27 @@
 import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
-import { ForbiddenException } from '@celebs/shared-utils';
+import { ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
+import { type LogisticsRepository, logisticsRepository } from './logistics.repository';
 
-import prisma from '@/config/db.prisma';
+export interface LogisticsServiceDeps {
+  logisticsRepo?: LogisticsRepository;
+}
 
 export class LogisticsService {
+  private logisticsRepo: LogisticsRepository;
+
+  constructor(deps: LogisticsServiceDeps = {}) {
+    this.logisticsRepo = deps.logisticsRepo ?? logisticsRepository;
+  }
+
   async dispatchOrder(payload: DispatchOrderType, actorStoreId: string | null = null) {
-    const order = await prisma.order.findUnique({
-      where: { id: payload.orderId },
-      include: { address: true, items: { select: { vendorId: true } } },
-    });
+    const order = await this.logisticsRepo.findOrderForDispatch(payload.orderId);
 
     if (!order) {
-      throw new Error('Order not found');
+      throw new NotFoundException('Order not found');
     }
 
     // Tenant isolation: sellers can only dispatch orders that contain their own items
@@ -53,47 +59,22 @@ export class LogisticsService {
     const dispatchMode =
       payload.provider === 'MANUAL' ? DispatchMode.MANUAL : DispatchMode.AUTOMATED_3PL;
 
-    // Update order with 3PL details and log OrderTrackingEvent
-    const updatedOrder = await prisma.order.update({
-      where: { id: payload.orderId },
-      data: {
-        status: OrderStatus.HANDED_OVER,
-        dispatchMode,
-        courierProvider: payload.provider,
-        courierName,
-        trackingNumber,
-        trackingUrl,
-        codAmount: order.paymentMethod === 'COD' ? order.totalAmount : null,
-        codStatus,
-        estimatedDelivery,
-        trackingEvents: {
-          create: {
-            status: OrderStatus.HANDED_OVER,
-            title: `Handed over to ${courierName}`,
-            description:
-              payload.notes || `Dispatched via ${courierName}. Waybill: ${trackingNumber}`,
-            location: 'Kathmandu Fulfillment Center',
-            source: 'ADMIN',
-          },
-        },
-      },
-      include: {
-        trackingEvents: true,
-      },
+    return this.logisticsRepo.updateDispatchedOrder({
+      orderId: payload.orderId,
+      dispatchMode,
+      courierProvider: payload.provider,
+      courierName,
+      trackingNumber,
+      trackingUrl,
+      codAmount: order.paymentMethod === 'COD' ? order.totalAmount : null,
+      codStatus,
+      estimatedDelivery,
+      notes: payload.notes,
     });
-
-    return updatedOrder;
   }
 
   async markCodSettled(orderId: string, settlementReference: string) {
-    return prisma.order.update({
-      where: { id: orderId },
-      data: {
-        codStatus: CodStatus.COD_SETTLED,
-        codSettledAt: new Date(),
-        codReference: settlementReference,
-      },
-    });
+    return this.logisticsRepo.markCodSettled(orderId, settlementReference);
   }
 
   async addTrackingEvent(
@@ -103,16 +84,7 @@ export class LogisticsService {
     description?: string,
     location?: string,
   ) {
-    return prisma.orderTrackingEvent.create({
-      data: {
-        orderId,
-        status,
-        title,
-        description,
-        location,
-        source: 'ADMIN',
-      },
-    });
+    return this.logisticsRepo.addTrackingEvent(orderId, status, title, description, location);
   }
 }
 
