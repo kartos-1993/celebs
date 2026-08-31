@@ -6,6 +6,7 @@ export interface IApiResponse<T = unknown> {
   errorCode?: unknown;
   errors?: unknown[];
   requestId?: string;
+  timestamp?: string;
 }
 
 // Pagination response interface
