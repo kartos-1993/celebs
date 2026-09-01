@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { updateBannersSchema } from '@celebs/shared-types';
 import { HTTPSTATUS } from '@celebs/shared-utils';
 
-import { BannerService,bannerService } from './banner.service';
+import { BannerService, bannerService } from './banner.service';
 
 export class BannerController {
   private bannerService: BannerService;

@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@celebs/shared-utils';
 
-import { AuthRepository,authRepository } from './auth.repository';
+import { AuthRepository, authRepository } from './auth.repository';
 
 import { enqueueMail } from '@/common/services/mail.queue';
 import { buildWebUrl } from '@/common/utils/url';

@@ -1,6 +1,4 @@
-import {
-  AuthPrincipalData,
-} from '@celebs/shared-types';
+import { AuthPrincipalData } from '@celebs/shared-types';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 

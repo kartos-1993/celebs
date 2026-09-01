@@ -40,11 +40,11 @@
 
 Three layers, each answers a different question:
 
-| Layer | Question it answers | Tool |
-|---|---|---|
-| **Logging** | "What exactly happened inside my code?" | pino → Render logs → (drain) |
-| **Error tracking** | "Which errors happen, how often, which release introduced them?" | Sentry (recommended) |
-| **Monitoring/alerting** | "Is the service up right now? Did a deploy break it?" | Render events + uptime monitor + webhooks |
+| Layer                   | Question it answers                                              | Tool                                      |
+| ----------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
+| **Logging**             | "What exactly happened inside my code?"                          | pino → Render logs → (drain)              |
+| **Error tracking**      | "Which errors happen, how often, which release introduced them?" | Sentry (recommended)                      |
+| **Monitoring/alerting** | "Is the service up right now? Did a deploy break it?"            | Render events + uptime monitor + webhooks |
 
 ---
 
@@ -65,17 +65,27 @@ The logger lives in `packages/shared-utils/src/utils/logger.ts`:
 ### Reading a production log line
 
 ```json
-{"level":50,"time":1756102345678,"path":"/api/v1/orders","method":"POST","name":"PrismaClientKnownRequestError","message":"Invalid `prisma.order.create()`","errorCode":"INTERNAL_SERVER_ERROR","stack":"Error: ...\n    at ...","msg":"Unhandled error on PATH: /api/v1/orders"}
+{
+  "level": 50,
+  "time": 1756102345678,
+  "path": "/api/v1/orders",
+  "method": "POST",
+  "name": "PrismaClientKnownRequestError",
+  "message": "Invalid `prisma.order.create()`",
+  "errorCode": "INTERNAL_SERVER_ERROR",
+  "stack": "Error: ...\n    at ...",
+  "msg": "Unhandled error on PATH: /api/v1/orders"
+}
 ```
 
-| Field | Meaning |
-|---|---|
-| `level` | 10=trace 20=debug 30=info **40=warn 50=error** 60=fatal |
-| `time` | Unix ms timestamp |
-| `path` / `method` | HTTP route that produced the event |
+| Field                        | Meaning                                                                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `level`                      | 10=trace 20=debug 30=info **40=warn 50=error** 60=fatal                                                                 |
+| `time`                       | Unix ms timestamp                                                                                                       |
+| `path` / `method`            | HTTP route that produced the event                                                                                      |
 | `name` / `message` / `stack` | Exception details (stack only on unexpected errors — see `errorHandler` in `apps/api/src/middlewares/error-handler.ts`) |
-| `errorCode` | Your app-level error codes (`@celebs/shared-utils`) |
-| `msg` | Human-readable summary |
+| `errorCode`                  | Your app-level error codes (`@celebs/shared-utils`)                                                                     |
+| `msg`                        | Human-readable summary                                                                                                  |
 
 Worker lines carry no `path/method`; they identify themselves by message
 (e.g. `"BullMQ Worker is active..."`, job names like `purge-expired-sessions`).
@@ -112,13 +122,13 @@ for "customer says order #4821 failed last Tuesday". Fix: a **log drain** (§3) 
 
 ## 2. Render's built-in tools (free, use these first)
 
-| Tab | What it gives you |
-|---|---|
-| **Events** | Deploy history, crash/restart detection, suspend events. First stop for "did a deploy cause this?" |
-| **Logs** | Live-tail + search of everything above (limited retention) |
-| **Metrics** *(paid plans)* | CPU, Memory, HTTP request rate, **p95 latency**, bandwidth. Watch memory here — sharp image processing is the usual suspect for OOM restarts |
-| **Shell** *(paid plans)* | `bin/sh` into the running container to poke around live |
-| **Deploys → Rollback** | One-click revert to previous image. Fastest fix when a deploy breaks prod |
+| Tab                        | What it gives you                                                                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Events**                 | Deploy history, crash/restart detection, suspend events. First stop for "did a deploy cause this?"                                           |
+| **Logs**                   | Live-tail + search of everything above (limited retention)                                                                                   |
+| **Metrics** _(paid plans)_ | CPU, Memory, HTTP request rate, **p95 latency**, bandwidth. Watch memory here — sharp image processing is the usual suspect for OOM restarts |
+| **Shell** _(paid plans)_   | `bin/sh` into the running container to poke around live                                                                                      |
+| **Deploys → Rollback**     | One-click revert to previous image. Fastest fix when a deploy breaks prod                                                                    |
 
 ### Configure two things you don't have yet
 
@@ -134,8 +144,8 @@ Your endpoint already checks Postgres + Redis + returns memory stats
 HTTP 200 (`DEGRADED`), Postgres DOWN returns 503 — so a dead Redis won't flap the
 service, which is reasonable.
 
-**b) Notifications** — Dashboard → your team → **Notifications**: wire *Deploy failed*,
-*Service crashed*, *Autodeploy disabled* to email/Slack/Discord webhook. This is how
+**b) Notifications** — Dashboard → your team → **Notifications**: wire _Deploy failed_,
+_Service crashed_, _Autodeploy disabled_ to email/Slack/Discord webhook. This is how
 you learn about failures without watching the dashboard.
 
 ---
@@ -148,11 +158,11 @@ ingest URL from the provider. (May require a paid instance.)
 
 Budget options, all adequate at your scale:
 
-| Provider | Free tier | Notes |
-|---|---|---|
-| **Axiom** (axiom.co) | generous (~500GB/mo) | Best free value; SQL-like queries over JSON fields |
-| **Better Stack / Logtail** | ~1GB/mo | Very polished UI, also sells uptime monitoring in one place |
-| **Grafana Cloud (Loki)** | ~50GB/mo | Powerful, steeper learning curve |
+| Provider                   | Free tier            | Notes                                                       |
+| -------------------------- | -------------------- | ----------------------------------------------------------- |
+| **Axiom** (axiom.co)       | generous (~500GB/mo) | Best free value; SQL-like queries over JSON fields          |
+| **Better Stack / Logtail** | ~1GB/mo              | Very polished UI, also sells uptime monitoring in one place |
+| **Grafana Cloud (Loki)**   | ~50GB/mo             | Powerful, steeper learning curve                            |
 
 Since your logs are already JSON with stable field names, queries like
 `level >= 50 | group by path` or "all logs where `errorCode == AUTH_EMAIL_ALREADY_EXISTS`
@@ -188,10 +198,10 @@ In `apps/api/src/main.ts` (before anything else):
 import * as Sentry from '@sentry/node';
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,            // set in Render env vars
-  environment: process.env.NODE_ENV,      // 'staging' | 'production'
+  dsn: process.env.SENTRY_DSN, // set in Render env vars
+  environment: process.env.NODE_ENV, // 'staging' | 'production'
   release: process.env.RENDER_GIT_COMMIT, // Render injects this — enables release tracking
-  tracesSampleRate: 0.1,                  // 10% performance tracing (see §5)
+  tracesSampleRate: 0.1, // 10% performance tracing (see §5)
 });
 ```
 
@@ -210,7 +220,9 @@ Do the same `Sentry.init` in `worker-main.ts` plus:
 
 ```ts
 process.on('unhandledRejection', (err) => Sentry.captureException(err));
-process.on('uncaughtException', (err) => { Sentry.captureException(err); /* let Render restart */ });
+process.on('uncaughtException', (err) => {
+  Sentry.captureException(err); /* let Render restart */
+});
 ```
 
 ---
@@ -250,11 +262,11 @@ including queue jobs it spawned.
 
 ## 6. Uptime monitoring & alert routing
 
-| Layer | Tool | Config |
-|---|---|---|
-| Platform knows app is dead | Render health checks | `healthCheckPath: /health` (§2) |
+| Layer                                     | Tool                                                 | Config                                                                              |
+| ----------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Platform knows app is dead                | Render health checks                                 | `healthCheckPath: /health` (§2)                                                     |
 | **You** know app is down (within minutes) | **UptimeRobot** (free, 50 monitors) or Better Uptime | Monitor: HTTPS → `https://<your-host>/health`, every 5 min, alert via email/Discord |
-| Deploy/crash notifications | Render Notifications/Webhooks | Events → Discord webhook |
+| Deploy/crash notifications                | Render Notifications/Webhooks                        | Events → Discord webhook                                                            |
 
 Why an external monitor even though Render checks health: Render's checks control
 restart behavior; an external monitor controls **your awareness** — independent of
@@ -293,13 +305,13 @@ Debug toolkit, cheapest first:
 
 ## 8. Managed-service dashboards (where non-app problems live)
 
-| Service | Check when… | Where |
-|---|---|---|
-| **Supabase** | slow queries, connection exhaustion, disk near limit, migrations drifted | Dashboard → Database (Query performance, Backups), Logs (Postgres logs) |
-| **Upstash** | queue weirdness, latency, command quota | Console → your DB → Stats / Data Browser |
-| **Cloudflare R2** | upload failures, egress spikes | Dashboard → R2 → Metrics; S3 errors appear in API logs (`s3.client.ts`) |
-| **Brevo** | emails not arriving | Dashboard → Transactional → Logs (per-message status) |
-| **Google OAuth** | login failures with `redirect_uri_mismatch` | GCP Console → Credentials → authorized origins |
+| Service           | Check when…                                                              | Where                                                                   |
+| ----------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| **Supabase**      | slow queries, connection exhaustion, disk near limit, migrations drifted | Dashboard → Database (Query performance, Backups), Logs (Postgres logs) |
+| **Upstash**       | queue weirdness, latency, command quota                                  | Console → your DB → Stats / Data Browser                                |
+| **Cloudflare R2** | upload failures, egress spikes                                           | Dashboard → R2 → Metrics; S3 errors appear in API logs (`s3.client.ts`) |
+| **Brevo**         | emails not arriving                                                      | Dashboard → Transactional → Logs (per-message status)                   |
+| **Google OAuth**  | login failures with `redirect_uri_mismatch`                              | GCP Console → Credentials → authorized origins                          |
 
 Rule of thumb: **API logs first** (they usually contain the upstream error verbatim),
 then the vendor dashboard for account/quota/domain issues that never reach your code
@@ -327,15 +339,15 @@ Work top-down; stop when found:
 
 ### Common failure signatures (this repo's real history)
 
-| Log/deploy signature | Meaning | Fix pattern |
-|---|---|---|
-| `Cannot find module '...'` right after startup | Build/runtime dependency mismatch (e.g. linker config not in image) | Compare Dockerfile COPY list vs local `.npmrc`; ensure deps land in copied `node_modules` |
-| `Relative import paths need explicit file extensions` / relative module miss | Compiled output referencing paths outside `/app/dist` | Don't alias workspace packages to `src/` in the build tsconfig (see tsconfig.app.json fix) |
-| `P1001: Can't reach database server` at boot | Supabase paused (free tier inactivity) or wrong `DATABASE_URL` | Wake/restore project in Supabase dashboard |
-| `Redis Connection verification failed` | Wrong Upstash host/password/port or TLS mismatch | Env vars; TLS is auto-enabled for staging/prod (`queue.service.ts`) |
-| Repeated `Brevo API call failed` | Invalid/expired `SMTP_API_KEY`, unverified sender | Brevo dashboard; verify domain SPF/DKIM |
-| Memory metric climbing then restarts | sharp/large payload leak | Check Media module usage; consider raising plan RAM |
-| `No pending migrations` but runtime column errors | Schema drifted outside migrations | Regenerate a migration; never edit schema without `migrate dev` |
+| Log/deploy signature                                                         | Meaning                                                             | Fix pattern                                                                                |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `Cannot find module '...'` right after startup                               | Build/runtime dependency mismatch (e.g. linker config not in image) | Compare Dockerfile COPY list vs local `.npmrc`; ensure deps land in copied `node_modules`  |
+| `Relative import paths need explicit file extensions` / relative module miss | Compiled output referencing paths outside `/app/dist`               | Don't alias workspace packages to `src/` in the build tsconfig (see tsconfig.app.json fix) |
+| `P1001: Can't reach database server` at boot                                 | Supabase paused (free tier inactivity) or wrong `DATABASE_URL`      | Wake/restore project in Supabase dashboard                                                 |
+| `Redis Connection verification failed`                                       | Wrong Upstash host/password/port or TLS mismatch                    | Env vars; TLS is auto-enabled for staging/prod (`queue.service.ts`)                        |
+| Repeated `Brevo API call failed`                                             | Invalid/expired `SMTP_API_KEY`, unverified sender                   | Brevo dashboard; verify domain SPF/DKIM                                                    |
+| Memory metric climbing then restarts                                         | sharp/large payload leak                                            | Check Media module usage; consider raising plan RAM                                        |
+| `No pending migrations` but runtime column errors                            | Schema drifted outside migrations                                   | Regenerate a migration; never edit schema without `migrate dev`                            |
 
 ### Local reproduction against staging data (careful!)
 
@@ -348,6 +360,7 @@ prefer read-only operations. Never point local seeds/tests at staging DB
 ## 10. Recommended rollout by stage
 
 ### Stage 1 — now ($0/mo)
+
 - [x] Structured JSON logging (done — pino)
 - [ ] `LOG_LEVEL=info` in Render env vars
 - [ ] `healthCheckPath: /health` in render.yaml
@@ -356,6 +369,7 @@ prefer read-only operations. Never point local seeds/tests at staging DB
 - [ ] Sentry (error tracking + alerts) — biggest win, still free
 
 ### Stage 2 — ads are running (~$9/mo)
+
 - [ ] Sentry release tracking wired to `RENDER_GIT_COMMIT`
 - [ ] Request-ID middleware + surfaced in error responses (§5b)
 - [ ] Log drain to Axiom/Better Stack (needs paid Render instance anyway for stability)
@@ -363,6 +377,7 @@ prefer read-only operations. Never point local seeds/tests at staging DB
 - [ ] Brevo domain authentication (SPF/DKIM/DMARC for celebs.com.np)
 
 ### Stage 3 — scale (later)
+
 - [ ] Split worker into its own Render Background Worker (independent scaling/logs)
 - [ ] Bull Board behind admin auth
 - [ ] Sentry Performance sampling tuned; consider Grafana dashboards over drained logs
@@ -372,12 +387,12 @@ prefer read-only operations. Never point local seeds/tests at staging DB
 
 ## 11. Quick reference — URLs to bookmark
 
-| What | Where |
-|---|---|
-| Live logs / deploys / metrics | Render dashboard → service `celebs` |
-| Health endpoint | `https://<host>/health` (also `/api/v1/health`) |
-| Errors + alerts | sentry.io → celebs project |
-| Queue data / redis stats | upstash.com console |
-| DB perf, backups, logs | supabase.com dashboard |
-| Email delivery proof | Brevo → Transactional → Logs |
-| Upload/storage metrics | Cloudflare → R2 → Metrics |
+| What                          | Where                                           |
+| ----------------------------- | ----------------------------------------------- |
+| Live logs / deploys / metrics | Render dashboard → service `celebs`             |
+| Health endpoint               | `https://<host>/health` (also `/api/v1/health`) |
+| Errors + alerts               | sentry.io → celebs project                      |
+| Queue data / redis stats      | upstash.com console                             |
+| DB perf, backups, logs        | supabase.com dashboard                          |
+| Email delivery proof          | Brevo → Transactional → Logs                    |
+| Upload/storage metrics        | Cloudflare → R2 → Metrics                       |

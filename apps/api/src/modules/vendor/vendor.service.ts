@@ -1,10 +1,10 @@
 import { vendorRegisterType } from '@celebs/shared-types';
 import { BadRequestException, ErrorCode, logger, NotFoundException } from '@celebs/shared-utils';
 
-import { AuthRepository,authRepository } from '../auth/auth.repository';
+import { AuthRepository, authRepository } from '../auth/auth.repository';
 import { mediaRepository } from '../media/media.repository';
 
-import { VendorRepository,vendorRepository } from './vendor.repository';
+import { VendorRepository, vendorRepository } from './vendor.repository';
 
 import { hashValue } from '@/common/utils/bcrypt';
 

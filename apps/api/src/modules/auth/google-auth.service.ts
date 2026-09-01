@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
 } from '@celebs/shared-utils';
 
-import { AuthRepository,authRepository } from './auth.repository';
+import { AuthRepository, authRepository } from './auth.repository';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
