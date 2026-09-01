@@ -39,17 +39,17 @@ describe('BannerRepository & BannerService Clean Architecture Suite', () => {
 
       const replaced = await bannerRepository.replaceBanners(newBanners);
       expect(replaced.length).toBe(1);
-      expect(replaced[0].title).toBe('Monsoon Flash Sale');
+      expect(replaced[0]?.title).toBe('Monsoon Flash Sale');
 
       const all = await bannerRepository.findAllBanners();
       expect(all.length).toBe(1);
-      expect(all[0].title).toBe('Monsoon Flash Sale');
+      expect(all[0]?.title).toBe('Monsoon Flash Sale');
     });
   });
 
   describe('BannerService DI', () => {
     it('should retrieve active banners through injected mock repository', async () => {
-      const mockRepo = {
+      const mockRepo: Partial<BannerRepository> = {
         findActiveBanners: async () => [
           {
             id: 'mock-1',
@@ -57,11 +57,12 @@ describe('BannerRepository & BannerService Clean Architecture Suite', () => {
             imageUrl: 'https://cdn.example.com/mock.jpg',
             position: 'home_hero',
             isActive: true,
+            targetUrl: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           },
         ],
-        findAllBanners: async () => [],
-        replaceBanners: async () => [],
-      } as unknown as BannerRepository;
+      };
 
       const service = new BannerService({ bannerRepo: mockRepo });
       const result = await service.getActiveBanners();
@@ -74,10 +75,38 @@ describe('BannerRepository & BannerService Clean Architecture Suite', () => {
     it('should reject banner array with more than 3 items', async () => {
       const service = new BannerService();
       const fourBanners = [
-        { imageUrl: 'https://cdn.example.com/1.jpg', linkType: 'NONE' as const, order: 0 },
-        { imageUrl: 'https://cdn.example.com/2.jpg', linkType: 'NONE' as const, order: 1 },
-        { imageUrl: 'https://cdn.example.com/3.jpg', linkType: 'NONE' as const, order: 2 },
-        { imageUrl: 'https://cdn.example.com/4.jpg', linkType: 'NONE' as const, order: 3 },
+        {
+          title: 'Banner 1',
+          imageUrl: 'https://cdn.example.com/1.jpg',
+          linkType: 'NONE' as const,
+          linkValue: '',
+          order: 0,
+          isActive: true,
+        },
+        {
+          title: 'Banner 2',
+          imageUrl: 'https://cdn.example.com/2.jpg',
+          linkType: 'NONE' as const,
+          linkValue: '',
+          order: 1,
+          isActive: true,
+        },
+        {
+          title: 'Banner 3',
+          imageUrl: 'https://cdn.example.com/3.jpg',
+          linkType: 'NONE' as const,
+          linkValue: '',
+          order: 2,
+          isActive: true,
+        },
+        {
+          title: 'Banner 4',
+          imageUrl: 'https://cdn.example.com/4.jpg',
+          linkType: 'NONE' as const,
+          linkValue: '',
+          order: 3,
+          isActive: true,
+        },
       ];
 
       await expect(service.updateBanners(fourBanners)).rejects.toThrow(

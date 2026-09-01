@@ -42,15 +42,17 @@ describe('OptionSetRepository & OptionSetService Clean Architecture Suite', () =
 
   describe('OptionSetService DI', () => {
     it('should retrieve option set through injected mock repository', async () => {
-      const mockRepo = {
+      const mockRepo: Partial<OptionSetRepository> = {
         findById: async (id: string) => ({
           id,
           name: 'Mock Colors',
           displayName: 'Mock Colors',
           description: null,
           options: ['Red', 'Blue'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }),
-      } as unknown as OptionSetRepository;
+      };
 
       const service = new OptionSetService({ optionSetRepo: mockRepo });
       const result = await service.getById('mock-id-1');

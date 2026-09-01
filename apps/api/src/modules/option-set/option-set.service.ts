@@ -34,14 +34,14 @@ async function ensureDefaultsOnce(repo: OptionSetRepository): Promise<void> {
 }
 
 export interface OptionSetServiceDeps {
-  optionSetRepo?: OptionSetRepository;
+  optionSetRepo?: Partial<OptionSetRepository>;
 }
 
 export class OptionSetService {
   private optionSetRepo: OptionSetRepository;
 
   constructor(deps: OptionSetServiceDeps = {}) {
-    this.optionSetRepo = deps.optionSetRepo ?? optionSetRepository;
+    this.optionSetRepo = (deps.optionSetRepo ?? optionSetRepository) as OptionSetRepository;
   }
 
   async list(_type?: string): Promise<OptionSetType[]> {

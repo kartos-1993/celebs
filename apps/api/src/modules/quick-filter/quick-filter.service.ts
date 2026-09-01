@@ -41,14 +41,14 @@ interface QuickFilterConfig {
 }
 
 export interface QuickFilterServiceDeps {
-  quickFilterRepo?: QuickFilterRepository;
+  quickFilterRepo?: Partial<QuickFilterRepository>;
 }
 
 export class QuickFilterService {
   private quickFilterRepo: QuickFilterRepository;
 
   constructor(deps: QuickFilterServiceDeps = {}) {
-    this.quickFilterRepo = deps.quickFilterRepo ?? quickFilterRepository;
+    this.quickFilterRepo = (deps.quickFilterRepo ?? quickFilterRepository) as QuickFilterRepository;
   }
 
   private formatFilter(qf: { id: string; filterConfig?: Prisma.JsonValue } | null) {

@@ -1,20 +1,21 @@
+import { Role } from '@prisma/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { UserRepository, userRepository } from '../user.repository';
-import { UserService,userService } from '../user.service';
+import { UserService, userService } from '../user.service';
 
 import prisma from '@/config/db.prisma';
 
 describe('UserRepository & UserService Clean Architecture Suite', () => {
   let testUserId: string;
-  const testEmail = `user-test-${Date.now()}@example.com`;
+  const testEmail = `user-repo-${Date.now()}@example.com`;
 
   beforeEach(async () => {
     const user = await prisma.user.create({
       data: {
         name: 'User Repo Test',
         email: testEmail,
-        password: 'Password123!',
+        password: 'hashed-password-123',
         role: 'CUSTOMER',
         isEmailVerified: true,
       },
@@ -41,12 +42,19 @@ describe('UserRepository & UserService Clean Architecture Suite', () => {
 
   describe('UserService DI', () => {
     it('should delegate to injected mock repository', async () => {
-      const mockRepo = {
+      const mockRepo: Partial<UserRepository> = {
         findUserWithVendor: async () => ({
           id: 'mock-user-1',
           name: 'Mock User',
           email: 'mock@example.com',
+          password: 'hashed-password',
+          role: Role.ADMIN,
+          permissions: [],
+          isEmailVerified: true,
+          vendorId: null,
           vendorProfile: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }),
         findAuthPrincipal: async () => ({
           id: 'mock-user-1',
@@ -58,7 +66,7 @@ describe('UserRepository & UserService Clean Architecture Suite', () => {
           vendorId: null,
           vendorProfile: null,
         }),
-      } as unknown as UserRepository;
+      };
 
       const service = new UserService({ userRepo: mockRepo });
       const user = await service.findUserById('mock-user-1');
@@ -73,6 +81,7 @@ describe('UserRepository & UserService Clean Architecture Suite', () => {
         name: 'New Test User',
         email: `new-${Date.now()}@example.com`,
         password: 'Password123!',
+        role: 'CUSTOMER',
       });
       expect(created.id).toBeDefined();
       expect(created.name).toBe('New Test User');

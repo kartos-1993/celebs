@@ -123,12 +123,13 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
       ],
     };
 
-    const originalTransaction = prisma.$transaction;
-    prisma.$transaction = vi
-      .fn()
-      .mockRejectedValueOnce(
-        new Error('PostgreSQL Database Failure'),
-      ) as unknown as typeof prisma.$transaction;
+    const originalTransaction = prisma.$transaction.bind(prisma);
+    const mockTx = vi.fn().mockRejectedValueOnce(new Error('PostgreSQL Database Failure'));
+    Object.defineProperty(prisma, '$transaction', {
+      value: mockTx,
+      writable: true,
+      configurable: true,
+    });
 
     await expect(
       productService.createProduct(input, 'user-id-123', mockVendor.id, 'Fail Store'),
@@ -139,7 +140,11 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     });
     expect(rolledBackProduct).toBeNull();
 
-    prisma.$transaction = originalTransaction;
+    Object.defineProperty(prisma, '$transaction', {
+      value: originalTransaction,
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('should submit a product draft for review successfully', async () => {

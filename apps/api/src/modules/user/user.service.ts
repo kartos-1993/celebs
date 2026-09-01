@@ -11,14 +11,14 @@ import { type UserRepository, userRepository } from './user.repository';
 import { hashValue } from '@/common/utils/bcrypt';
 
 export interface UserServiceDeps {
-  userRepo?: UserRepository;
+  userRepo?: Partial<UserRepository>;
 }
 
 export class UserService {
   private userRepo: UserRepository;
 
   constructor(deps: UserServiceDeps = {}) {
-    this.userRepo = deps.userRepo ?? userRepository;
+    this.userRepo = (deps.userRepo ?? userRepository) as UserRepository;
   }
 
   public async findUserById(userId: string) {

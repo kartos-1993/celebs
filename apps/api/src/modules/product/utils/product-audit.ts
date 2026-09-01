@@ -105,7 +105,7 @@ function isAuditDifferent(prev: unknown, next: unknown): boolean {
  */
 export function buildProductAuditDiff(
   before: Product | AuditedProductSnapshot,
-  after: Partial<Pick<CreateProductType, AuditedProductField>>,
+  after: Partial<Pick<CreateProductType, AuditedProductField>> & Record<string, unknown>,
 ): ProductAuditChange[] {
   const changes: ProductAuditChange[] = [];
 

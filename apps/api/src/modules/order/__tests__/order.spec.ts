@@ -62,7 +62,7 @@ describe('Order & Checkout Validation Rules', () => {
     const khaltiRes = checkoutSchema.safeParse(khaltiCheckout);
     expect(khaltiRes.success).toBe(false);
     if (!khaltiRes.success) {
-      expect(khaltiRes.error.issues[0].message).toContain(
+      expect(khaltiRes.error.issues[0]?.message).toContain(
         'KHALTI and ESEWA payments are not supported yet',
       );
     }
@@ -70,7 +70,7 @@ describe('Order & Checkout Validation Rules', () => {
     const esewaRes = checkoutSchema.safeParse(esewaCheckout);
     expect(esewaRes.success).toBe(false);
     if (!esewaRes.success) {
-      expect(esewaRes.error.issues[0].message).toContain(
+      expect(esewaRes.error.issues[0]?.message).toContain(
         'KHALTI and ESEWA payments are not supported yet',
       );
     }

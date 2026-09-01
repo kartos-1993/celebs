@@ -389,7 +389,7 @@ export class CategoryService {
     }));
 
     await this.categoryRepository.updateById(categoryId, {
-      attributes: formattedAttributes as unknown as Prisma.InputJsonValue,
+      attributes: formattedAttributes as Prisma.InputJsonValue,
     });
   }
 
@@ -418,7 +418,7 @@ export class CategoryService {
       path: Array.isArray(categoryData.path) ? categoryData.path.join('/') : categoryData.path,
       level: categoryData.level,
       parentCategory: categoryData.parentCategory ? String(categoryData.parentCategory) : null,
-      attributes: (categoryData.attributes || []) as unknown as Prisma.InputJsonValue,
+      attributes: (categoryData.attributes || []) as Prisma.InputJsonValue,
       imageUrl: categoryData.imageUrl || null,
       sizeChartColumns: categoryData.sizeChartColumns || [],
       bodyChartColumns: categoryData.bodyChartColumns || [],

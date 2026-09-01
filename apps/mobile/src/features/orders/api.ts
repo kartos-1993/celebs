@@ -23,11 +23,9 @@ export async function getMyOrders(page = 1, limit = PAGE_SIZE): Promise<OrderVie
 }
 
 export async function getOrderById(orderId: string): Promise<OrderView> {
-  const response = await apiClient.get<{ data?: Record<string, unknown> }>(
-    `/orders/my-orders/${orderId}`,
-  );
+  const response = await apiClient.get<{ data?: RawOrder }>(`/orders/my-orders/${orderId}`);
   if (!response.data?.data) {
     throw new Error('Order not found');
   }
-  return mapOrder(response.data.data as unknown as RawOrder);
+  return mapOrder(response.data.data);
 }

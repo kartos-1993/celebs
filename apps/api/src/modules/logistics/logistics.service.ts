@@ -7,14 +7,14 @@ import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 import { type LogisticsRepository, logisticsRepository } from './logistics.repository';
 
 export interface LogisticsServiceDeps {
-  logisticsRepo?: LogisticsRepository;
+  logisticsRepo?: Partial<LogisticsRepository>;
 }
 
 export class LogisticsService {
   private logisticsRepo: LogisticsRepository;
 
   constructor(deps: LogisticsServiceDeps = {}) {
-    this.logisticsRepo = deps.logisticsRepo ?? logisticsRepository;
+    this.logisticsRepo = (deps.logisticsRepo ?? logisticsRepository) as LogisticsRepository;
   }
 
   async dispatchOrder(payload: DispatchOrderType, actorStoreId: string | null = null) {

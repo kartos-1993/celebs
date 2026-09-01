@@ -51,12 +51,11 @@ describe('buildProductAuditDiff', () => {
 
   it('ignores fields outside the audit whitelist even when changed', () => {
     // slug is not in AUDITED_PRODUCT_FIELDS — passing it must not be recorded.
-    const payload = { name: 'New Name' } as unknown as Partial<{ name: string; slug: string }> &
-      Parameters<typeof buildProductAuditDiff>[1];
+    const payload = { name: 'New Name', slug: 'ignored-slug' };
     const changes = buildProductAuditDiff(makeSnapshot(), payload);
 
     expect(changes).toHaveLength(1);
-    expect(changes[0].field).toBe('name');
+    expect(changes[0]?.field).toBe('name');
   });
 
   it('summarizes array and object fields instead of dumping raw JSON', () => {

@@ -56,18 +56,28 @@ describe('Vendor Onboarding Default Mappers', () => {
     });
 
     it('falls back to vendor phoneNumber if warehouse contactPhone is absent', () => {
-      const mockProfile = {
+      const mockProfile: Partial<VendorProfileData> = {
         phoneNumber: '9811111111',
         warehouses: [
           {
+            id: 'wh-1',
             label: 'Central Hub',
             addressLine1: 'Main Street',
             city: 'Kathmandu',
             district: 'Kathmandu',
             province: 'Bagmati',
+            country: 'Nepal',
+            contactName: '',
+            contactPhone: '',
+            addressLine2: null,
+            postalCode: null,
+            isBusinessAddress: false,
+            vendorProfileId: 'vp-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           },
         ],
-      } as unknown as VendorProfileData;
+      };
 
       const defaults = getWarehouseDefaultValues(mockProfile, 'FallBack User');
       expect(defaults.label).toBe('Central Hub');
@@ -77,10 +87,11 @@ describe('Vendor Onboarding Default Mappers', () => {
     });
 
     it('uses primary warehouse details when available', () => {
-      const mockProfile = {
+      const mockProfile: Partial<VendorProfileData> = {
         phoneNumber: '9800000000',
         warehouses: [
           {
+            id: 'wh-2',
             label: 'East Warehouse',
             contactName: 'Warehouse Manager',
             contactPhone: '9822222222',
@@ -90,9 +101,14 @@ describe('Vendor Onboarding Default Mappers', () => {
             district: 'Morang',
             province: 'Koshi',
             postalCode: '56600',
+            country: 'Nepal',
+            isBusinessAddress: false,
+            vendorProfileId: 'vp-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           },
         ],
-      } as unknown as VendorProfileData;
+      };
 
       const defaults = getWarehouseDefaultValues(mockProfile, 'Ignore Me');
       expect(defaults).toEqual({

@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { SessionRepository, sessionRepository } from '../session.repository';
@@ -61,7 +62,7 @@ describe('SessionRepository & SessionService Clean Architecture Suite', () => {
           id: 'mock-user-id',
           name: 'Mock User',
           email: 'mock@example.com',
-          role: 'ADMIN',
+          role: Role.ADMIN,
           permissions: [],
           isEmailVerified: true,
           createdAt: new Date(),
@@ -72,10 +73,10 @@ describe('SessionRepository & SessionService Clean Architecture Suite', () => {
         },
       };
 
-      const mockRepo = {
+      const mockRepo: Partial<SessionRepository> = {
         findSessionWithUser: async () => mockSession,
         deleteExpiredSessions: async () => 0,
-      } as unknown as SessionRepository;
+      };
 
       const service = new SessionService({ sessionRepo: mockRepo });
       const result = await service.getSessionById('mock-session-id', 'mock-user-id');

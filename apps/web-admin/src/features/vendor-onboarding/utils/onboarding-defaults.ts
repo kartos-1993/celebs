@@ -10,7 +10,9 @@ import type {
  * Resolves Step 1 (Store Profile) default values with fallbacks.
  * Pure function with CC: 1.
  */
-export function getProfileDefaultValues(profile?: VendorProfileData | null): vendorProfileType {
+export function getProfileDefaultValues(
+  profile?: Partial<VendorProfileData> | null,
+): vendorProfileType {
   return {
     shopDescription: profile?.shopDescription || '',
     phoneNumber: profile?.phoneNumber || '',
@@ -23,7 +25,7 @@ export function getProfileDefaultValues(profile?: VendorProfileData | null): ven
  * Pure function with CC: 2.
  */
 export function getWarehouseDefaultValues(
-  profile?: VendorProfileData | null,
+  profile?: Partial<VendorProfileData> | null,
   fallbackContactName = '',
 ): warehouseType {
   const primaryWarehouse = profile?.warehouses?.[0];
@@ -46,7 +48,9 @@ export function getWarehouseDefaultValues(
  * Resolves Step 3 (KYC Documents) default values with fallbacks.
  * Pure function with CC: 1.
  */
-export function getDocumentsDefaultValues(profile?: VendorProfileData | null): vendorDocumentsType {
+export function getDocumentsDefaultValues(
+  profile?: Partial<VendorProfileData> | null,
+): vendorDocumentsType {
   return {
     panDocumentUrl: profile?.panDocumentUrl || '',
     citizenshipDocumentUrl: profile?.citizenshipDocumentUrl || '',
@@ -61,7 +65,7 @@ export function getDocumentsDefaultValues(profile?: VendorProfileData | null): v
  * Pure function with CC: 2.
  */
 export function getBusinessInfoDefaultValues(
-  profile?: VendorProfileData | null,
+  profile?: Partial<VendorProfileData> | null,
 ): vendorBusinessInfoType {
   const fallbackPhone = profile?.phoneNumber || '';
 

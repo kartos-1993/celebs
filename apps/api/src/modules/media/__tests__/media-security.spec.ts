@@ -38,6 +38,7 @@ describe('Media Upload Security Unit & Integration Rules', () => {
           key: '../../etc/passwd',
           originalname: 'hack.jpg',
           mimeType: 'image/jpeg',
+          scope: 'PRODUCT',
         }),
       ).rejects.toThrow('Invalid object key');
     });
@@ -48,6 +49,7 @@ describe('Media Upload Security Unit & Integration Rules', () => {
           key: '\\Windows\\System32\\cmd.exe',
           originalname: 'hack.jpg',
           mimeType: 'image/jpeg',
+          scope: 'PRODUCT',
         }),
       ).rejects.toThrow('Invalid object key');
     });
@@ -58,6 +60,7 @@ describe('Media Upload Security Unit & Integration Rules', () => {
           key: 'celebs/secrets/admin.jpg',
           originalname: 'admin.jpg',
           mimeType: 'image/jpeg',
+          scope: 'PRODUCT',
         }),
       ).rejects.toThrow('Invalid object key prefix');
     });
@@ -102,6 +105,7 @@ describe('Media Upload Security Unit & Integration Rules', () => {
         originalname: 'summer_dress.webp',
         mimeType: 'image/webp',
         size: 204800,
+        scope: 'PRODUCT',
         folder: 'celebs/products',
       });
 

@@ -14,12 +14,10 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export class OrderService {
-  private getPaymentGateway(method: 'COD' | 'STRIPE' | 'KHALTI' | 'ESEWA'): IPaymentGateway {
+  private getPaymentGateway(method: 'STRIPE' | 'KHALTI' | 'ESEWA'): IPaymentGateway {
     switch (method) {
       case 'STRIPE':
         return new StripePaymentAdapter();
-      case 'COD':
-        return null as unknown as IPaymentGateway;
       default:
         throw new AppError(
           `Payment gateway for ${method} is not configured`,
@@ -308,7 +306,7 @@ export class OrderService {
 
     // Initialize Payment Intent for online payments
     let paymentResult = null;
-    if (!isCOD) {
+    if (paymentMethod !== 'COD') {
       const adapter = this.getPaymentGateway(paymentMethod);
       paymentResult = await adapter.createPaymentIntent(
         order.id,

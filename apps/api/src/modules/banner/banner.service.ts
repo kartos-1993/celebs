@@ -4,14 +4,14 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import { type BannerRepository, bannerRepository } from './banner.repository';
 
 export interface BannerServiceDeps {
-  bannerRepo?: BannerRepository;
+  bannerRepo?: Partial<BannerRepository>;
 }
 
 export class BannerService {
   private bannerRepo: BannerRepository;
 
   constructor(deps: BannerServiceDeps = {}) {
-    this.bannerRepo = deps.bannerRepo ?? bannerRepository;
+    this.bannerRepo = (deps.bannerRepo ?? bannerRepository) as BannerRepository;
   }
 
   private formatBanner<T extends Record<string, unknown>>(banner: T | null) {

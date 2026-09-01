@@ -3,14 +3,14 @@ import { ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 import { type SessionRepository, sessionRepository } from './session.repository';
 
 export interface SessionServiceDeps {
-  sessionRepo?: SessionRepository;
+  sessionRepo?: Partial<SessionRepository>;
 }
 
 export class SessionService {
   private sessionRepo: SessionRepository;
 
   constructor(deps: SessionServiceDeps = {}) {
-    this.sessionRepo = deps.sessionRepo ?? sessionRepository;
+    this.sessionRepo = (deps.sessionRepo ?? sessionRepository) as SessionRepository;
   }
 
   public async getSessionById(sessionId: string, actorUserId?: string) {
