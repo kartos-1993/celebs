@@ -64,7 +64,8 @@ const tcpAdapter: CacheClient = {
       try {
         return JSON.parse(raw) as T;
       } catch {
-        return raw as unknown as T;
+        const fallback: unknown = raw;
+        return fallback as T;
       }
     } catch (err) {
       wrapError('tcp.get', err);

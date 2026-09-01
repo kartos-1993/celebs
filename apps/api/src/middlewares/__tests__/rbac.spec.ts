@@ -110,7 +110,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
         .post('/api/v1/auth/verify-email')
         .send({ code: codeRecord!.code });
 
-      const authCookie = verifyRes.headers['set-cookie'];
+      const authCookie = (verifyRes.headers['set-cookie'] ?? []) as string[];
 
       // Suspend via the lifecycle service (the only sanctioned mutation path):
       // flips status AND revokes every session of the store owner + staff.
@@ -139,7 +139,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
         .post('/api/v1/auth/verify-email')
         .send({ code: codeRecord!.code });
 
-      const authCookie = verifyRes.headers['set-cookie'];
+      const authCookie = (verifyRes.headers['set-cookie'] ?? []) as string[];
 
       // Customer attempts to create a category
       const res = await request(app)
@@ -160,7 +160,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
         .post('/api/v1/auth/verify-email')
         .send({ code: codeRecord!.code });
 
-      const authCookie = verifyRes.headers['set-cookie'];
+      const authCookie = (verifyRes.headers['set-cookie'] ?? []) as string[];
 
       // Vendor attempts to create a category
       const res = await request(app)
@@ -180,7 +180,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
         .post('/api/v1/auth/verify-email')
         .send({ code: codeRecord!.code });
 
-      const authCookie = verifyRes.headers['set-cookie'];
+      const authCookie = (verifyRes.headers['set-cookie'] ?? []) as string[];
 
       const user = await prisma.user.findFirst({
         where: { email: customerPayload.email.toLowerCase() },

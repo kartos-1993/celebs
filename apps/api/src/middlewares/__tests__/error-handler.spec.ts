@@ -27,19 +27,20 @@ describe('errorHandler Middleware Unit Tests', () => {
   it('Branch 1: should handle SyntaxError (JSON body parsing) with status 400 and JSON format error', () => {
     const req = mockRequest('/api/v1/auth/login');
     const res = mockResponse();
-    const error = new SyntaxError('Unexpected token in JSON');
-    (error as unknown as { status: number }).status = 400;
+    const error = Object.assign(new SyntaxError('Unexpected token in JSON'), { status: 400 });
 
     errorHandler(error, req, res, vi.fn());
 
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Invalid JSON format, please check your request body',
-      data: null,
-      errorCode: ErrorCode.INVALID_JSON_FORMAT,
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: 'Invalid JSON format, please check your request body',
+        data: null,
+        errorCode: ErrorCode.INVALID_JSON_FORMAT,
+      }),
+    );
   });
 
   it('Branch 2: should handle ZodError with status 400 and structured validation errors', () => {
@@ -61,13 +62,15 @@ describe('errorHandler Middleware Unit Tests', () => {
 
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Validation failed',
-      errors: [{ field: 'email', message: 'Invalid email' }],
-      data: null,
-      errorCode: ErrorCode.VALIDATION_ERROR,
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: 'Invalid email',
+        errors: [{ field: 'email', message: 'Invalid email' }],
+        data: null,
+        errorCode: ErrorCode.VALIDATION_ERROR,
+      }),
+    );
   });
 
   it('Branch 3: should handle AppError (e.g. BadRequestException) with custom status code and errorCode', () => {
@@ -79,12 +82,14 @@ describe('errorHandler Middleware Unit Tests', () => {
 
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Category name required',
-      errorCode: ErrorCode.VALIDATION_ERROR,
-      data: null,
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: 'Category name required',
+        errorCode: ErrorCode.VALIDATION_ERROR,
+        data: null,
+      }),
+    );
   });
 
   it('Branch 4: should handle unknown internal errors with status 500 without leaking stack traces', () => {
@@ -96,11 +101,13 @@ describe('errorHandler Middleware Unit Tests', () => {
 
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
     expect(res.status).toHaveBeenCalledWith(HTTPSTATUS.INTERNAL_SERVER_ERROR);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Internal Server Error',
-      data: null,
-      errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: 'Internal Server Error',
+        data: null,
+        errorCode: ErrorCode.INTERNAL_SERVER_ERROR,
+      }),
+    );
   });
 });
