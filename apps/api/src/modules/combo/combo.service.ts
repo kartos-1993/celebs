@@ -2,7 +2,7 @@ import { ComboDiscountType } from '@prisma/client';
 
 import { CreateComboType } from '@celebs/shared-types';
 
-import { ComboRepository, comboRepository } from './combo.repository';
+import { type ComboRepository, comboRepository } from './combo.repository';
 
 import { TtlCache } from '@/common/utils/ttl-cache';
 
@@ -21,11 +21,15 @@ type HydratedCombo = Record<string, unknown>;
 const activeCombosCache = new TtlCache<HydratedCombo[]>('combos:active');
 const allCombosCache = new TtlCache<HydratedCombo[]>('combos:all');
 
+export interface ComboServiceDeps {
+  comboRepository?: Partial<ComboRepository>;
+}
+
 export class ComboService {
   private comboRepository: ComboRepository;
 
-  constructor(repository: ComboRepository = comboRepository) {
-    this.comboRepository = repository;
+  constructor(deps: ComboServiceDeps = {}) {
+    this.comboRepository = (deps.comboRepository ?? comboRepository) as ComboRepository;
   }
 
   private async attachProductDetails(combos: ComboInput[]) {
