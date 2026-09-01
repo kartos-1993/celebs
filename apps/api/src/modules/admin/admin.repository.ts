@@ -98,27 +98,4 @@ export class AdminRepository {
   }
 }
 
-export type AdminVendorListRecord = Prisma.PromiseReturnType<AdminRepository['findAllVendors']>;
-export type AdminVendorItem = AdminVendorListRecord[number];
-export type AdminVendorRecord = Prisma.PromiseReturnType<AdminRepository['findVendorById']>;
-export type AdminUserListRecord = Prisma.PromiseReturnType<AdminRepository['findAllUsers']>;
-export type AdminUserRecord = Prisma.PromiseReturnType<AdminRepository['findUserById']>;
-export type AdminUserCreatedRecord = Prisma.PromiseReturnType<AdminRepository['createUser']>;
-export type AdminUserUpdatedRecord = Prisma.PromiseReturnType<
-  AdminRepository['updateUserRoleAndPermissions']
->;
-
-export interface IAdminRepository {
-  findAllVendors(): Promise<AdminVendorListRecord>;
-  findVendorById(id: string): Promise<AdminVendorRecord>;
-  findAllUsers(): Promise<AdminUserListRecord>;
-  createUser(data: Prisma.UserCreateInput): Promise<AdminUserCreatedRecord>;
-  findUserById(id: string): Promise<AdminUserRecord>;
-  deleteUser(id: string): Promise<unknown>;
-  updateUserRoleAndPermissions(
-    id: string,
-    data: Prisma.UserUpdateInput,
-  ): Promise<AdminUserUpdatedRecord>;
-}
-
-export const adminRepository: IAdminRepository = new AdminRepository();
+export const adminRepository = new AdminRepository();

@@ -5,7 +5,7 @@ import { NotFoundException } from '@celebs/shared-utils';
 import { mediaRepository } from '../media/media.repository';
 import { storeLifecycle } from '../store/store-lifecycle.service';
 
-import { adminRepository,IAdminRepository } from './admin.repository';
+import { type AdminRepository, adminRepository } from './admin.repository';
 
 import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
@@ -16,14 +16,14 @@ import {
 } from '@/mailers/templates/vendor-review.template';
 
 export interface AdminServiceDeps {
-  adminRepo?: IAdminRepository;
+  adminRepo?: Partial<AdminRepository>;
 }
 
 export class AdminService {
-  private adminRepo: IAdminRepository;
+  private adminRepo: AdminRepository;
 
   constructor(deps: AdminServiceDeps = {}) {
-    this.adminRepo = deps.adminRepo ?? adminRepository;
+    this.adminRepo = (deps.adminRepo ?? adminRepository) as AdminRepository;
   }
 
   // Vendor Management

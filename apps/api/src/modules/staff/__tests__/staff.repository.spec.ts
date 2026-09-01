@@ -1,32 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { IStaffRepository, staffRepository } from '../staff.repository';
+import { StaffRepository, staffRepository } from '../staff.repository';
 import { StaffService } from '../staff.service';
 
 import prisma from '@/config/db.prisma';
-
-const createMockStaffRepository = (
-  overrides: Partial<IStaffRepository> = {},
-): IStaffRepository => ({
-  findUserWithVendor: async () => null,
-  findVendorProfileById: async () => null,
-  findVendorProfileByUserId: async () => null,
-  findUserByEmail: async () => null,
-  createStaffUser: async () => {
-    throw new Error('Not implemented in mock');
-  },
-  createVerificationCode: async () => {
-    throw new Error('Not implemented in mock');
-  },
-  findAllStaff: async () => [],
-  findStaffByVendorId: async () => [],
-  findStaffById: async () => null,
-  deleteStaff: async () => ({ id: '' }),
-  updateStaff: async () => {
-    throw new Error('Not implemented in mock');
-  },
-  ...overrides,
-});
 
 describe('StaffRepository & StaffService Clean Architecture Suite', () => {
   let testVendorUserId: string;
@@ -108,11 +85,11 @@ describe('StaffRepository & StaffService Clean Architecture Suite', () => {
   });
 
   describe('StaffService DI', () => {
-    it('should retrieve staff through injected mock repository without type casting', async () => {
-      const mockRepo = createMockStaffRepository({
+    it('should retrieve staff through injected mock repository', async () => {
+      const mockRepo: Partial<StaffRepository> = {
         findUserWithVendor: async () => ({
           id: 'mock-vendor-user',
-          role: 'VENDOR',
+          role: 'VENDOR' as const,
           vendorId: null,
           permissions: [],
           vendorProfile: { id: 'mock-vendor-profile-id', shopName: 'Mock Shop' },
@@ -122,7 +99,7 @@ describe('StaffRepository & StaffService Clean Architecture Suite', () => {
             id: 'mock-staff-1',
             name: 'Mock Staff 1',
             email: 'mock1@example.com',
-            role: 'STAFF',
+            role: 'STAFF' as const,
             permissions: ['PRODUCT_VIEW'],
             isEmailVerified: true,
             vendorId: 'mock-vendor-profile-id',
@@ -130,7 +107,7 @@ describe('StaffRepository & StaffService Clean Architecture Suite', () => {
             updatedAt: new Date(),
           },
         ],
-      });
+      };
 
       const service = new StaffService({ staffRepo: mockRepo });
       const staffList = await service.getStaff('mock-vendor-user');
@@ -139,9 +116,9 @@ describe('StaffRepository & StaffService Clean Architecture Suite', () => {
     });
 
     it('should throw NotFoundException if user is not found during staff retrieval', async () => {
-      const mockRepo = createMockStaffRepository({
+      const mockRepo: Partial<StaffRepository> = {
         findUserWithVendor: async () => null,
-      });
+      };
 
       const service = new StaffService({ staffRepo: mockRepo });
       await expect(service.getStaff('non-existent-user')).rejects.toThrow('User not found');

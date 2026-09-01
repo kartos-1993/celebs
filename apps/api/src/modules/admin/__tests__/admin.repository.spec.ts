@@ -1,70 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  adminRepository,
-  AdminUserCreatedRecord,
-  AdminVendorItem,
-  IAdminRepository,
-} from '../admin.repository';
+import { AdminRepository, adminRepository } from '../admin.repository';
 import { AdminService } from '../admin.service';
 
 import prisma, { Prisma } from '@/config/db.prisma';
-
-const createMockVendorProfile = (overrides: Partial<AdminVendorItem> = {}): AdminVendorItem => ({
-  id: 'mock-vendor-id-1',
-  userId: 'mock-user-1',
-  phoneNumber: '9800000000',
-  shopName: 'Mock Electronics',
-  shopDescription: null,
-  panNumber: '123456789',
-  citizenshipNumber: '11-22-33',
-  panDocumentUrl: null,
-  citizenshipDocumentUrl: null,
-  ownerPhotoUrl: null,
-  payoutDetails: null,
-  status: 'APPROVED',
-  availableBalance: new Prisma.Decimal(0),
-  withholdingEscrow: new Prisma.Decimal(0),
-  currencyCode: 'NPR',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  storeLogo: null,
-  businessName: null,
-  businessRegNumber: null,
-  businessPhoneNumber: null,
-  vatDocumentUrl: null,
-  businessRegDocumentUrl: null,
-  holidayMode: false,
-  onboardingStep: 1,
-  rejectionReason: null,
-  recentCategories: [],
-  user: {
-    id: 'mock-user-1',
-    name: 'Mock User',
-    email: 'mock@example.com',
-    isEmailVerified: true,
-    createdAt: new Date(),
-  },
-  warehouses: [],
-  ...overrides,
-});
-
-const createMockAdminRepository = (
-  overrides: Partial<IAdminRepository> = {},
-): IAdminRepository => ({
-  findAllVendors: async () => [],
-  findVendorById: async () => null,
-  findAllUsers: async () => [],
-  createUser: async () => {
-    throw new Error('Not implemented in mock');
-  },
-  findUserById: async () => null,
-  deleteUser: async () => ({ id: '' }),
-  updateUserRoleAndPermissions: async () => {
-    throw new Error('Not implemented in mock');
-  },
-  ...overrides,
-});
 
 describe('AdminRepository & AdminService Clean Architecture Suite', () => {
   let testUserId: string;
@@ -129,10 +68,48 @@ describe('AdminRepository & AdminService Clean Architecture Suite', () => {
   });
 
   describe('AdminService DI', () => {
-    it('should retrieve vendors using injected mock repository without type casting', async () => {
-      const mockRepo = createMockAdminRepository({
-        findAllVendors: async () => [createMockVendorProfile()],
-      });
+    it('should retrieve vendors using injected mock repository', async () => {
+      const mockRepo: Partial<AdminRepository> = {
+        findAllVendors: async () => [
+          {
+            id: 'mock-vendor-id-1',
+            userId: 'mock-user-1',
+            shopName: 'Mock Electronics',
+            shopDescription: null,
+            phoneNumber: '9800000000',
+            panNumber: '123456789',
+            citizenshipNumber: '11-22-33',
+            panDocumentUrl: null,
+            citizenshipDocumentUrl: null,
+            ownerPhotoUrl: null,
+            payoutDetails: null,
+            status: 'APPROVED',
+            availableBalance: new Prisma.Decimal(0),
+            withholdingEscrow: new Prisma.Decimal(0),
+            currencyCode: 'NPR',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            storeLogo: null,
+            businessName: null,
+            businessRegNumber: null,
+            businessPhoneNumber: null,
+            vatDocumentUrl: null,
+            businessRegDocumentUrl: null,
+            holidayMode: false,
+            onboardingStep: 1,
+            rejectionReason: null,
+            recentCategories: [],
+            user: {
+              id: 'mock-user-1',
+              name: 'Mock User',
+              email: 'mock@example.com',
+              isEmailVerified: true,
+              createdAt: new Date(),
+            },
+            warehouses: [],
+          },
+        ],
+      };
 
       const service = new AdminService({ adminRepo: mockRepo });
       const vendors = await service.getAllVendors();
@@ -141,9 +118,9 @@ describe('AdminRepository & AdminService Clean Architecture Suite', () => {
     });
 
     it('should throw NotFoundException when getting non-existent vendor by id', async () => {
-      const mockRepo = createMockAdminRepository({
+      const mockRepo: Partial<AdminRepository> = {
         findVendorById: async () => null,
-      });
+      };
 
       const service = new AdminService({ adminRepo: mockRepo });
       await expect(service.getVendorById('missing-vendor-id')).rejects.toThrow(
@@ -152,19 +129,17 @@ describe('AdminRepository & AdminService Clean Architecture Suite', () => {
     });
 
     it('should create user through injected mock repository', async () => {
-      const mockCreatedUser: AdminUserCreatedRecord = {
-        id: 'created-user-id',
-        name: 'Created Admin',
-        email: 'created@example.com',
-        role: 'ADMIN',
-        isEmailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const mockRepo: Partial<AdminRepository> = {
+        createUser: async () => ({
+          id: 'created-user-id',
+          name: 'Created Admin',
+          email: 'created@example.com',
+          role: 'ADMIN' as const,
+          isEmailVerified: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
       };
-
-      const mockRepo = createMockAdminRepository({
-        createUser: async () => mockCreatedUser,
-      });
 
       const service = new AdminService({ adminRepo: mockRepo });
       const result = await service.createUser({

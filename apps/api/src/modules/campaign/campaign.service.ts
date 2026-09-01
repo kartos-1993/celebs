@@ -1,10 +1,7 @@
 import type { UpdateCampaignType } from '@celebs/shared-types';
 import { createCampaignSchema } from '@celebs/shared-types';
 
-import {
-  campaignRepository as defaultCampaignRepository,
-  ICampaignRepository,
-} from './campaign.repository';
+import { type CampaignRepository, campaignRepository } from './campaign.repository';
 
 import { TtlCache } from '@/common/utils/ttl-cache';
 
@@ -17,14 +14,14 @@ interface ProductItem {
 const activeCampaignsCache = new TtlCache<unknown[]>('campaigns:active');
 
 export interface CampaignServiceDeps {
-  campaignRepository?: ICampaignRepository;
+  campaignRepository?: Partial<CampaignRepository>;
 }
 
 export class CampaignService {
-  private campaignRepository: ICampaignRepository;
+  private campaignRepository: CampaignRepository;
 
   constructor(deps: CampaignServiceDeps = {}) {
-    this.campaignRepository = deps.campaignRepository ?? defaultCampaignRepository;
+    this.campaignRepository = (deps.campaignRepository ?? campaignRepository) as CampaignRepository;
   }
 
   async getActiveCampaigns() {

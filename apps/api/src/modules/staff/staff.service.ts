@@ -8,7 +8,7 @@ import {
   NotFoundException,
 } from '@celebs/shared-utils';
 
-import { IStaffRepository, staffRepository } from './staff.repository';
+import { type StaffRepository, staffRepository } from './staff.repository';
 
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { enqueueMail } from '@/common/services/mail.queue';
@@ -69,14 +69,14 @@ function assertGrantablePermissions(
 }
 
 export interface StaffServiceDeps {
-  staffRepo?: IStaffRepository;
+  staffRepo?: Partial<StaffRepository>;
 }
 
 export class StaffService {
-  private staffRepo: IStaffRepository;
+  private staffRepo: StaffRepository;
 
   constructor(deps: StaffServiceDeps = {}) {
-    this.staffRepo = deps.staffRepo ?? staffRepository;
+    this.staffRepo = (deps.staffRepo ?? staffRepository) as StaffRepository;
   }
 
   /**

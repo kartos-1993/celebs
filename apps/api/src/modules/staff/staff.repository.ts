@@ -151,33 +151,4 @@ export class StaffRepository {
   }
 }
 
-export type StaffUserWithVendor = Prisma.PromiseReturnType<StaffRepository['findUserWithVendor']>;
-export type StaffVendorProfile = Prisma.PromiseReturnType<StaffRepository['findVendorProfileById']>;
-export type StaffUserRecord = Prisma.PromiseReturnType<StaffRepository['findStaffById']>;
-export type StaffCreatedRecord = Prisma.PromiseReturnType<StaffRepository['createStaffUser']>;
-export type StaffVerificationRecord = Prisma.PromiseReturnType<
-  StaffRepository['createVerificationCode']
->;
-export type StaffListRecord = Prisma.PromiseReturnType<StaffRepository['findAllStaff']>;
-export type StaffVendorListRecord = Prisma.PromiseReturnType<
-  StaffRepository['findStaffByVendorId']
->;
-export type StaffUpdatedRecord = Prisma.PromiseReturnType<StaffRepository['updateStaff']>;
-
-export interface IStaffRepository {
-  findUserWithVendor(userId: string): Promise<StaffUserWithVendor>;
-  findVendorProfileById(id: string): Promise<StaffVendorProfile>;
-  findVendorProfileByUserId(userId: string): Promise<StaffVendorProfile>;
-  findUserByEmail(email: string): Promise<StaffUserRecord>;
-  createStaffUser(data: Prisma.UserCreateInput): Promise<StaffCreatedRecord>;
-  createVerificationCode(
-    data: Prisma.VerificationCodeCreateInput,
-  ): Promise<StaffVerificationRecord>;
-  findAllStaff(): Promise<StaffListRecord>;
-  findStaffByVendorId(vendorId: string): Promise<StaffVendorListRecord>;
-  findStaffById(id: string): Promise<StaffUserRecord>;
-  deleteStaff(id: string): Promise<{ id: string }>;
-  updateStaff(id: string, data: Prisma.UserUpdateInput): Promise<StaffUpdatedRecord>;
-}
-
-export const staffRepository: IStaffRepository = new StaffRepository();
+export const staffRepository = new StaffRepository();
