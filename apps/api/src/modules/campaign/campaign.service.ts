@@ -1,7 +1,10 @@
 import type { UpdateCampaignType } from '@celebs/shared-types';
 import { createCampaignSchema } from '@celebs/shared-types';
 
-import { CampaignRepository } from './campaign.repository';
+import {
+  campaignRepository as defaultCampaignRepository,
+  ICampaignRepository,
+} from './campaign.repository';
 
 import { TtlCache } from '@/common/utils/ttl-cache';
 
@@ -13,8 +16,16 @@ interface ProductItem {
 // Public storefront reads — cached 60s L1 / 5min L2, busted on any mutation.
 const activeCampaignsCache = new TtlCache<unknown[]>('campaigns:active');
 
+export interface CampaignServiceDeps {
+  campaignRepository?: ICampaignRepository;
+}
+
 export class CampaignService {
-  constructor(private campaignRepository: CampaignRepository = new CampaignRepository()) {}
+  private campaignRepository: ICampaignRepository;
+
+  constructor(deps: CampaignServiceDeps = {}) {
+    this.campaignRepository = deps.campaignRepository ?? defaultCampaignRepository;
+  }
 
   async getActiveCampaigns() {
     const now = new Date();
@@ -108,3 +119,5 @@ export class CampaignService {
     return updated;
   }
 }
+
+export const campaignService = new CampaignService();
