@@ -76,5 +76,6 @@ projects:
             region: singapore
             dockerContext: .
             dockerfilePath: Dockerfile
-            autoDeployTrigger: commit
+            autoDeployTrigger: off
+            autoDeploy: false
             rootDir: .
