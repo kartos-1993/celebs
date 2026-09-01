@@ -5,22 +5,30 @@ import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/them
 export const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Palette.gray200,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Palette.gray100,
     gap: Spacing.md,
   },
   thumbnail: {
-    width: 68,
-    height: 68,
-    borderRadius: Radius.sm,
+    width: 64,
+    height: 64,
+    borderRadius: Radius.md,
     backgroundColor: Palette.gray100,
   },
   headerInfo: {
     flex: 1,
     gap: Spacing.xxs,
+    justifyContent: 'center',
+  },
+  productName: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.semibold,
+    color: Palette.gray800,
+    marginBottom: 2,
   },
   priceRow: {
     flexDirection: 'row',
@@ -28,23 +36,27 @@ export const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   currentPrice: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.black,
-    color: Palette.danger,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.extrabold,
+    color: Palette.gray900,
   },
   originalPrice: {
-    fontSize: FontSize.small,
+    fontSize: FontSize.caption,
     color: Palette.gray400,
     textDecorationLine: 'line-through',
   },
   selectedVariantText: {
     fontSize: FontSize.caption,
     fontWeight: FontWeight.medium,
-    color: Palette.gray600,
+    color: Palette.gray500,
   },
   closeBtn: {
-    padding: Spacing.xs,
-    alignSelf: 'flex-start',
+    width: 32,
+    height: 32,
+    borderRadius: Radius.pill,
+    backgroundColor: Palette.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   content: {
@@ -77,17 +89,17 @@ export const styles = StyleSheet.create({
   sizePillsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm + 2,
-    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   sizePill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.lg,
-    height: 38,
-    borderRadius: Radius.sm,
-    minWidth: 54,
+    height: 42,
+    borderRadius: Radius.md,
+    minWidth: 56,
     borderWidth: 1.5,
   },
   sizePillSelected: {
@@ -96,16 +108,16 @@ export const styles = StyleSheet.create({
   },
   sizePillUnselected: {
     backgroundColor: Palette.white,
-    borderColor: Palette.gray300,
+    borderColor: Palette.gray200,
   },
   sizePillDisabled: {
-    backgroundColor: Palette.gray100,
+    backgroundColor: Palette.gray50,
     borderColor: Palette.gray200,
-    opacity: 0.45,
+    opacity: 0.4,
   },
 
   sizeText: {
-    fontSize: FontSize.footnote,
+    fontSize: FontSize.small,
     fontWeight: FontWeight.bold,
   },
   sizeTextSelected: {
@@ -120,20 +132,25 @@ export const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
 
+  footerContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xs,
+  },
   confirmBtn: {
     backgroundColor: Palette.gray900,
     borderRadius: Radius.pill,
-    height: 48,
+    height: 50,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: Spacing.lg,
+    gap: Spacing.sm,
   },
   confirmBtnDisabled: {
     opacity: 0.4,
   },
   confirmBtnText: {
     color: Palette.white,
-    fontSize: FontSize.md,
+    fontSize: FontSize.body,
     fontWeight: FontWeight.bold,
   },
 });

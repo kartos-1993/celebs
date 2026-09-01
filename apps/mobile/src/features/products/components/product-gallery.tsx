@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Modal,
@@ -28,29 +28,35 @@ interface ProductGalleryProps {
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productName }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [prevImages, setPrevImages] = useState(images);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Reset scroll position and active index when image list changes (e.g., color selection change)
-  useEffect(() => {
+  if (images !== prevImages) {
+    setPrevImages(images);
     setActiveIndex(0);
+  }
+
+  useEffect(() => {
     scrollViewRef.current?.scrollTo({ x: 0, animated: false });
   }, [images]);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slide = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (slide !== activeIndex) {
-      setActiveIndex(slide);
-    }
-  };
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const slide = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+      if (slide !== activeIndex) {
+        setActiveIndex(slide);
+      }
+    },
+    [activeIndex],
+  );
 
   const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
   const galleryImages = images.length > 0 ? images : ['https://via.placeholder.com/600x800'];
 
   return (
     <View style={styles.container}>
-      {/* Scrollable Main Images */}
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -87,7 +93,6 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
         })}
       </ScrollView>
 
-      {/* Pagination Indicator Dots */}
       {galleryImages.length > 1 && (
         <View style={styles.indicatorContainer}>
           {galleryImages.map((_, idx) => (
@@ -99,7 +104,6 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
         </View>
       )}
 
-      {/* Fullscreen Zoom Modal */}
       <Modal
         visible={isZoomModalOpen}
         transparent

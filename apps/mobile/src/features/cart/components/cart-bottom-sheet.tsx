@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -35,28 +35,34 @@ export function CartBottomSheet({ visible, onClose }: CartBottomSheetProps) {
   } = useCart();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const handleUpdateQuantity = async (itemId: string, quantity: number) => {
-    setUpdatingId(itemId);
-    try {
-      await updateQuantity(itemId, quantity);
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+  const handleUpdateQuantity = useCallback(
+    async (itemId: string, quantity: number) => {
+      setUpdatingId(itemId);
+      try {
+        await updateQuantity(itemId, quantity);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [updateQuantity],
+  );
 
-  const handleRemoveItem = async (itemId: string) => {
-    setUpdatingId(itemId);
-    try {
-      await removeItem(itemId);
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+  const handleRemoveItem = useCallback(
+    async (itemId: string) => {
+      setUpdatingId(itemId);
+      try {
+        await removeItem(itemId);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [removeItem],
+  );
 
-  const handleCheckout = () => {
+  const handleCheckout = useCallback(() => {
     onClose();
     router.push('/checkout');
-  };
+  }, [onClose, router]);
 
   const footer = useMemo(
     () => (
@@ -82,6 +88,7 @@ export function CartBottomSheet({ visible, onClose }: CartBottomSheetProps) {
       selectedOriginalSubtotal,
       selectedCount,
       selectedItems.length,
+      handleCheckout,
     ],
   );
 

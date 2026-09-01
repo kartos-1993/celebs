@@ -16,6 +16,14 @@ interface PaymentMethodSelectorProps {
   onSelectPaymentMethod: (method: 'COD' | 'STRIPE') => void;
 }
 
+interface PaymentRowOption {
+  key: 'COD' | 'STRIPE' | 'WALLET';
+  name: string;
+  desc: string;
+  disabled?: boolean;
+  comingSoonTag?: string;
+}
+
 export function PaymentMethodSelector({
   paymentMethod,
   isCodDisabled,
@@ -23,13 +31,7 @@ export function PaymentMethodSelector({
   codMaxLimit,
   onSelectPaymentMethod,
 }: PaymentMethodSelectorProps) {
-  const paymentRows: Array<{
-    key: 'COD' | 'STRIPE' | 'WALLET';
-    name: string;
-    desc: string;
-    disabled?: boolean;
-    comingSoonTag?: string;
-  }> = [
+  const paymentRows: PaymentRowOption[] = [
     {
       key: 'COD',
       name: 'Cash on Delivery',

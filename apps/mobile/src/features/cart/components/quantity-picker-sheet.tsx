@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,9 +28,9 @@ export function QuantityPickerSheet({
   const insets = useSafeAreaInsets();
   const [lastItem, setLastItem] = useState<CartItemHydrated | null>(item);
 
-  useEffect(() => {
-    if (item) setLastItem(item);
-  }, [item]);
+  if (item && item !== lastItem) {
+    setLastItem(item);
+  }
 
   const data = item ?? lastItem;
   if (!data) return null;

@@ -14,12 +14,17 @@ export function CampaignCountdownBanner() {
   const { activeCampaign } = useActiveCampaign();
   const campaign = activeCampaign || FALLBACK_CAMPAIGN;
 
+  const [prevEndDate, setPrevEndDate] = useState(campaign.endDate);
   const [timeRemaining, setTimeRemaining] = useState(() =>
     calculateTimeRemaining(campaign.endDate),
   );
 
-  useEffect(() => {
+  if (campaign.endDate !== prevEndDate) {
+    setPrevEndDate(campaign.endDate);
     setTimeRemaining(calculateTimeRemaining(campaign.endDate));
+  }
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setTimeRemaining(calculateTimeRemaining(campaign.endDate));
     }, 1000);

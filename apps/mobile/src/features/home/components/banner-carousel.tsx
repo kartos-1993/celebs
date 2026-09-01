@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -27,7 +27,14 @@ export function BannerCarousel() {
   const { banners, loading } = useBanners();
   const hasBanners = banners.length > 0;
 
-  const startAutoPlay = () => {
+  const stopAutoPlay = useCallback(() => {
+    if (autoPlayTimer.current) {
+      clearInterval(autoPlayTimer.current);
+      autoPlayTimer.current = null;
+    }
+  }, []);
+
+  const startAutoPlay = useCallback(() => {
     stopAutoPlay();
     if (banners.length <= 1) return;
 
@@ -39,27 +46,20 @@ export function BannerCarousel() {
         animated: true,
       });
     }, 4000);
-  };
-
-  const stopAutoPlay = () => {
-    if (autoPlayTimer.current) {
-      clearInterval(autoPlayTimer.current);
-      autoPlayTimer.current = null;
-    }
-  };
+  }, [activeIndex, banners.length, stopAutoPlay]);
 
   useEffect(() => {
     return () => stopAutoPlay();
-  }, []);
+  }, [stopAutoPlay]);
 
   useEffect(() => {
     if (banners.length > 0) {
       startAutoPlay();
     }
     return () => stopAutoPlay();
-  }, [banners, activeIndex]);
+  }, [banners, activeIndex, startAutoPlay, stopAutoPlay]);
 
-  const handleBannerPress = (banner: Banner) => {
+  const handleBannerPress = useCallback((banner: Banner) => {
     if (banner.linkType === 'NONE') return;
 
     if (banner.linkType === 'EXTERNAL' && banner.linkValue) {
@@ -69,16 +69,19 @@ export function BannerCarousel() {
     } else {
       showToast(`Navigating to ${banner.linkType.toLowerCase()}`, { type: 'info' });
     }
-  };
+  }, []);
 
-  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slideSize = event.nativeEvent.layoutMeasurement.width;
-    const index = event.nativeEvent.contentOffset.x / slideSize;
-    const roundIndex = Math.round(index);
-    if (roundIndex !== activeIndex) {
-      setActiveIndex(roundIndex);
-    }
-  };
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const slideSize = event.nativeEvent.layoutMeasurement.width;
+      const index = event.nativeEvent.contentOffset.x / slideSize;
+      const roundIndex = Math.round(index);
+      if (roundIndex !== activeIndex) {
+        setActiveIndex(roundIndex);
+      }
+    },
+    [activeIndex],
+  );
 
   return (
     <View style={styles.carouselContainer}>

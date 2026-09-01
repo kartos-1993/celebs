@@ -1,5 +1,5 @@
-import { TouchableOpacity, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { StyleProp, TouchableOpacity, View, ViewStyle } from 'react-native';
+import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Search, Share2, ShoppingBag } from 'lucide-react-native';
@@ -12,8 +12,7 @@ import { Palette } from '@/constants/theme';
 interface ProductDetailHeaderProps {
   itemCount: number;
   topCartBtnRef: React.RefObject<View | null>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  animatedTopCartStyle?: any;
+  animatedTopCartStyle?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
   onLayoutCartIcon: () => void;
   onOpenCart: () => void;
   onShare: () => void;
