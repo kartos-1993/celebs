@@ -20,6 +20,7 @@ export const SCOPE_MAX_BYTES: Record<z.infer<typeof mediaScopeSchema>, number> =
 };
 
 const presignFileBaseSchema = z.object({
+  key: z.string().trim().optional(),
   originalname: z.string().trim().min(1, 'originalname is required').max(120),
   mimeType: z.enum(ALLOWED_IMAGE_MIME_TYPES, {
     errorMap: () => ({ message: 'Invalid file type. Allowed: jpeg, png, webp, avif, pdf' }),
@@ -111,8 +112,14 @@ export const deleteUnusedMediaSchema = z.object({
   assetIds: z.array(z.string().uuid()).min(1, 'At least one asset ID must be provided'),
 });
 
+export const moveMediaSchema = z.object({
+  assetIds: z.array(z.string().uuid()).min(1, 'Select at least one asset'),
+  targetFolderId: z.string().uuid().nullable(),
+});
+
 export type MediaScopeType = z.infer<typeof mediaScopeSchema>;
 export type CreateMediaFolderType = z.infer<typeof createMediaFolderSchema>;
 export type UpdateMediaFolderType = z.infer<typeof updateMediaFolderSchema>;
 export type MediaAssetFilterType = z.infer<typeof mediaAssetFilterSchema>;
 export type DeleteUnusedMediaType = z.infer<typeof deleteUnusedMediaSchema>;
+export type MoveMediaType = z.infer<typeof moveMediaSchema>;
