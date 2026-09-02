@@ -241,19 +241,34 @@ router.post(
       scope: rawBody.scope || 'PRODUCT',
     });
 
-    // Enqueue BullMQ optimization job asynchronously
-    assetQueue
-      .add('optimize', {
-        key: result.key,
-        originalname: result.originalname,
-        mimeType: result.contentType,
-      })
-      .catch((err) => {
-        logger.warn(
-          { error: err.message, key: result.key },
-          'Failed to enqueue asset optimization job',
-        );
-      });
+    // Enqueue BullMQ optimization ONLY for PRODUCT scope images (3:4 portrait derivatives)
+    const confirmScope = (rawBody.scope as MediaScope) || 'PRODUCT';
+    const resultMime =
+      result.contentType ?? (result as unknown as { mimeType?: string }).mimeType ?? '';
+    const isProductImage =
+      confirmScope === 'PRODUCT' &&
+      resultMime !== 'application/pdf' &&
+      resultMime.startsWith('image/');
+    if (isProductImage) {
+      assetQueue
+        .add('optimize', {
+          key: result.key,
+          originalname: result.originalname,
+          mimeType: resultMime,
+          scope: confirmScope,
+        })
+        .catch((err) => {
+          logger.warn(
+            { error: err.message, key: result.key },
+            'Failed to enqueue asset optimization job',
+          );
+        });
+    } else {
+      logger.info(
+        { key: result.key, scope: confirmScope, mimeType: resultMime },
+        'Skipped asset optimization for non-PRODUCT scope',
+      );
+    }
 
     return res.json({ success: true, data: result });
   }),

@@ -231,7 +231,7 @@ export class MediaRepository {
 
   // ── Folders ──
 
-  static readonly DEFAULT_VENDOR_FOLDERS = ['Products', 'Banners', 'Marketing', 'Documents'];
+  static readonly DEFAULT_VENDOR_FOLDERS = ['Main Catalog', 'Color Swatches', 'Lookbooks'];
 
   async ensureDefaultFolders(vendorId?: string | null) {
     try {

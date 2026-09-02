@@ -6,13 +6,13 @@
  * A regression anywhere in jwt.strategy, context middleware, guards, or route
  * wiring shifts a cell and fails this suite with the offending response body.
  */
-import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
+import { describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
-import prisma from '@/config/db.prisma';
 import { hashValue } from '@/common/utils/bcrypt';
 import { signJwtToken } from '@/common/utils/jwt';
+import prisma from '@/config/db.prisma';
 
 vi.mock('@/mailers/mailer', () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),
@@ -290,8 +290,8 @@ describe('Access Control Matrix', () => {
         const url = typeof c.url === 'function' ? await c.url() : c.url;
         const payload = typeof c.body === 'function' ? c.body() : (c.body ?? {});
 
-        const res = await request(app)
-          [c.method](url)
+        const agent = request(app);
+        const res = await agent[c.method](url)
           .set(tokens[actor] ? { Authorization: `Bearer ${tokens[actor]}` } : {})
           .send(payload);
 
