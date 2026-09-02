@@ -17,6 +17,7 @@ export interface AssetJobPayload {
   key: string;
   originalname?: string;
   mimeType?: string;
+  scope?: string;
 }
 
 async function getS3ObjectBuffer(key: string): Promise<Buffer> {
@@ -38,11 +39,29 @@ async function getS3ObjectBuffer(key: string): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
+const ALLOWED_IMAGE_WORKER_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+
 export const assetWorker = new Worker<AssetJobPayload>(
   'asset-processing',
   async (job: Job<AssetJobPayload>) => {
-    const { mediaId, key } = job.data;
-    logger.info({ jobId: job.id, mediaId, key }, 'Starting asset optimization job');
+    const { mediaId, key, mimeType, scope } = job.data;
+    logger.info(
+      { jobId: job.id, mediaId, key, scope, mimeType },
+      'Starting asset optimization job',
+    );
+
+    // Safety: skip non-PRODUCT or non-image jobs that slipped through (defense in depth)
+    if (scope && scope !== 'PRODUCT') {
+      logger.info({ jobId: job.id, scope }, 'Skipping asset optimization for non-PRODUCT scope');
+      return { skipped: true, reason: 'non-product-scope', scope };
+    }
+    if (
+      mimeType &&
+      (mimeType === 'application/pdf' || !ALLOWED_IMAGE_WORKER_MIME.has(mimeType.toLowerCase()))
+    ) {
+      logger.info({ jobId: job.id, mimeType }, 'Skipping asset optimization for non-image mime');
+      return { skipped: true, reason: 'non-image-mime', mimeType };
+    }
 
     try {
       const originalBuffer = await getS3ObjectBuffer(key);

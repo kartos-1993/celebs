@@ -76,6 +76,16 @@ export class VendorRepository {
         },
       });
 
+      // Provision default product albums on vendor registration
+      await tx.mediaFolder.createMany({
+        data: [
+          { vendorId: vendorProfile.id, name: 'Main Catalog', parentId: null },
+          { vendorId: vendorProfile.id, name: 'Color Swatches', parentId: null },
+          { vendorId: vendorProfile.id, name: 'Lookbooks', parentId: null },
+        ],
+        skipDuplicates: true,
+      });
+
       return { user, vendorProfileId: vendorProfile.id };
     });
   }

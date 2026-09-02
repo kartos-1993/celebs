@@ -74,7 +74,24 @@ describe('Media Upload Security Unit & Integration Rules', () => {
           mimeType: 'image/jpeg',
           size: MAX_UPLOAD_BYTES + 1,
         }),
-      ).toThrow(`Each image must be <= ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
+      ).toThrow(/must be <=/);
+      // Scope-specific limits
+      expect(() =>
+        assertUploadMeta({
+          originalname: 'kyc.pdf',
+          mimeType: 'application/pdf',
+          size: 3 * 1024 * 1024,
+          scope: 'KYC',
+        }),
+      ).toThrow('KYC files must be <= 2MB');
+      expect(() =>
+        assertUploadMeta({
+          originalname: 'product.jpg',
+          mimeType: 'image/jpeg',
+          size: 6 * 1024 * 1024,
+          scope: 'PRODUCT',
+        }),
+      ).toThrow('PRODUCT files must be <= 5MB');
     });
 
     it('should reject unaccepted MIME types', () => {

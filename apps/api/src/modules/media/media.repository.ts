@@ -14,16 +14,15 @@ export class MediaRepository {
     limit: number;
   }) {
     const { vendorId, folderId, scope, search, unusedOnly, mimeType, page, limit } = params;
-    const where: Prisma.MediaAssetWhereInput = {};
+    const where: Prisma.MediaAssetWhereInput = {
+      scope: scope || 'PRODUCT',
+    };
 
     if (vendorId !== undefined) {
       where.vendorId = vendorId;
     }
     if (folderId) {
       where.folderId = folderId;
-    }
-    if (scope) {
-      where.scope = scope;
     }
     if (mimeType) {
       where.mimeType = { startsWith: mimeType };
@@ -87,12 +86,16 @@ export class MediaRepository {
     return prisma.mediaAsset.upsert({
       where: { key: data.key },
       update: {
+        originalName: data.originalName,
+        url: data.url,
         folderId: data.folderId,
         sizeBytes: data.sizeBytes,
         mimeType: data.mimeType,
         width: data.width,
         height: data.height,
         aspectRatio: data.aspectRatio,
+        hashSha256: data.hashSha256,
+        updatedAt: new Date(),
       },
       create: {
         vendorId: data.vendorId || null,
@@ -110,6 +113,36 @@ export class MediaRepository {
         isPrivate: data.isPrivate || false,
       },
     });
+  }
+
+  /**
+   * When an asset is modified, propagate its updated cache-busted URL
+   * to all products referencing this asset key in their mainImages array.
+   */
+  async propagateAssetUrlUpdate(key: string, newUrl: string) {
+    try {
+      const keySuffix = key.split('/').pop() || key;
+      const candidateProducts = await prisma.product.findMany({
+        select: { id: true, mainImages: true },
+        take: 200,
+      });
+
+      await Promise.all(
+        candidateProducts
+          .filter((p) => p.mainImages && p.mainImages.some((img) => img.includes(keySuffix)))
+          .map((p) => {
+            const updatedImages = p.mainImages.map((img) =>
+              img.includes(keySuffix) ? newUrl : img,
+            );
+            return prisma.product.update({
+              where: { id: p.id },
+              data: { mainImages: updatedImages },
+            });
+          }),
+      );
+    } catch {
+      // Best-effort propagation
+    }
   }
 
   async deleteAsset(id: string, vendorId?: string | null) {
@@ -197,8 +230,10 @@ export class MediaRepository {
   }
 
   async getQuota(vendorId?: string | null) {
-    const whereCondition: Prisma.MediaAssetWhereInput =
-      vendorId !== undefined ? { vendorId: vendorId ?? null } : {};
+    const whereCondition: Prisma.MediaAssetWhereInput = {
+      scope: 'PRODUCT',
+      ...(vendorId !== undefined ? { vendorId: vendorId ?? null } : {}),
+    };
     const [aggregate, unlinkedAggregate] = await Promise.all([
       prisma.mediaAsset.aggregate({
         where: whereCondition,
@@ -231,7 +266,7 @@ export class MediaRepository {
 
   // ── Folders ──
 
-  static readonly DEFAULT_VENDOR_FOLDERS = ['Products', 'Banners', 'Marketing', 'Documents'];
+  static readonly DEFAULT_VENDOR_FOLDERS = ['Main Catalog', 'Color Swatches', 'Lookbooks'];
 
   async ensureDefaultFolders(vendorId?: string | null) {
     try {
@@ -259,9 +294,14 @@ export class MediaRepository {
     }
   }
 
-  async findFolders(vendorId?: string | null) {
-    const existing = await prisma.mediaFolder.findMany({
-      where: { vendorId: vendorId ?? null },
+  async findFolders(vendorId?: string | null, parentId?: string | null) {
+    const where: Prisma.MediaFolderWhereInput = {
+      vendorId: vendorId ?? null,
+      ...(parentId !== undefined ? { parentId: parentId ?? null } : {}),
+    };
+
+    return prisma.mediaFolder.findMany({
+      where,
       include: {
         _count: {
           select: { assets: true },
@@ -269,21 +309,6 @@ export class MediaRepository {
       },
       orderBy: { name: 'asc' },
     });
-
-    if (existing.length === 0) {
-      await this.ensureDefaultFolders(vendorId);
-      return prisma.mediaFolder.findMany({
-        where: { vendorId: vendorId ?? null },
-        include: {
-          _count: {
-            select: { assets: true },
-          },
-        },
-        orderBy: { name: 'asc' },
-      });
-    }
-
-    return existing;
   }
 
   async createFolder(vendorId: string | null | undefined, name: string, parentId?: string | null) {
@@ -314,6 +339,27 @@ export class MediaRepository {
     }
     return prisma.mediaFolder.deleteMany({
       where,
+    });
+  }
+
+  async moveAssets(params: {
+    assetIds: string[];
+    vendorId?: string | null;
+    targetFolderId: string | null;
+  }) {
+    const { assetIds, vendorId, targetFolderId } = params;
+    const where: Prisma.MediaAssetWhereInput = { id: { in: assetIds } };
+    if (vendorId !== undefined) where.vendorId = vendorId;
+    // Validate target folder belongs to vendor if provided
+    if (targetFolderId) {
+      const folder = await prisma.mediaFolder.findFirst({
+        where: { id: targetFolderId, vendorId: vendorId ?? null },
+      });
+      if (!folder) throw new Error('Target folder not found');
+    }
+    return prisma.mediaAsset.updateMany({
+      where,
+      data: { folderId: targetFolderId },
     });
   }
 }

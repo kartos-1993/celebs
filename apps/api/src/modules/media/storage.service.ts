@@ -1,4 +1,9 @@
-import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,6 +15,7 @@ import {
   MediaScope,
   PresignFileInput,
   PresignFileResponse,
+  SCOPE_MAX_BYTES,
 } from '@celebs/shared-types';
 import { BadRequestException } from '@celebs/shared-utils';
 
@@ -92,10 +98,12 @@ export function assertUploadMeta(input: {
   originalname?: string;
   mimeType?: string;
   size?: number;
+  scope?: MediaScope;
 }): { originalname: string; mimeType: string; size: number } {
   const originalname = (input.originalname || 'image').trim();
   const mimeType = (input.mimeType || '').trim().toLowerCase();
   const size = Number(input.size ?? 0);
+  const scope = (input.scope as MediaScope) || 'PRODUCT';
 
   if (!originalname) {
     throw new BadRequestException('originalname is required');
@@ -105,6 +113,10 @@ export function assertUploadMeta(input: {
   }
   if (!Number.isFinite(size) || size <= 0) {
     throw new BadRequestException('size must be a positive number');
+  }
+  const scopeLimit = SCOPE_MAX_BYTES[scope] ?? MAX_UPLOAD_BYTES;
+  if (size > scopeLimit) {
+    throw new BadRequestException(`${scope} files must be <= ${scopeLimit / (1024 * 1024)}MB`);
   }
   if (size > MAX_UPLOAD_BYTES) {
     throw new BadRequestException(`Each image must be <= ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
@@ -159,6 +171,7 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
     originalname: input.originalname,
     mimeType: input.mimeType,
     size: input.buffer.length || 1,
+    scope: 'PRODUCT',
   });
 
   if (!validateImageMagicBytes(input.buffer)) {
@@ -216,7 +229,10 @@ export async function putImage(input: PutImageInput): Promise<PutImageResult> {
 export async function createPresignedPut(
   input: PresignFileInput & { vendorId?: string },
 ): Promise<PresignFileResult> {
-  const { originalname, mimeType, size } = assertUploadMeta(input);
+  const { originalname, mimeType, size } = assertUploadMeta({
+    ...input,
+    scope: (input.scope as MediaScope) || 'PRODUCT',
+  });
 
   // Quota enforcement for vendors
   if (input.vendorId) {
@@ -228,12 +244,14 @@ export async function createPresignedPut(
     }
   }
 
-  const key = buildVendorObjectKey({
-    vendorId: input.vendorId,
-    scope: (input.scope as MediaScope) || 'PRODUCT',
-    originalname,
-    folder: input.folder,
-  });
+  const key = input.key
+    ? validateObjectKey(input.key)
+    : buildVendorObjectKey({
+        vendorId: input.vendorId,
+        scope: (input.scope as MediaScope) || 'PRODUCT',
+        originalname,
+        folder: input.folder,
+      });
 
   // Fail fast: reject disallowed prefixes/traversal BEFORE the browser
   // uploads bytes, so bad requests never produce orphaned R2 objects.
@@ -278,6 +296,7 @@ export async function confirmUploadedObject(
     originalname: input.originalname,
     mimeType: input.mimeType,
     size: input.size && input.size > 0 ? input.size : 1,
+    scope: input.scope || 'PRODUCT',
   });
 
   const head = await s3Client.send(
@@ -288,11 +307,19 @@ export async function confirmUploadedObject(
   );
 
   const bytes = Number(head.ContentLength ?? input.size ?? 0);
+  const effectiveScope = (input.scope as MediaScope) || 'PRODUCT';
+  const scopeLimit = SCOPE_MAX_BYTES[effectiveScope] ?? MAX_UPLOAD_BYTES;
+  if (bytes > scopeLimit) {
+    throw new BadRequestException(
+      `${effectiveScope} files must be <= ${scopeLimit / (1024 * 1024)}MB`,
+    );
+  }
   if (bytes > MAX_UPLOAD_BYTES) {
     throw new BadRequestException(`Uploaded object exceeds ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
   }
 
-  const publicUrl = buildPublicObjectUrl(key);
+  const timestamp = Date.now();
+  const publicUrl = `${buildPublicObjectUrl(key)}?v=${timestamp}`;
 
   // Catalog asset into PostgreSQL DAM
   await mediaRepository.createAsset({
@@ -306,6 +333,8 @@ export async function confirmUploadedObject(
     scope: input.scope || 'PRODUCT',
     isPrivate: input.scope === 'KYC',
   });
+
+  await mediaRepository.propagateAssetUrlUpdate(key, publicUrl);
 
   return {
     key,
@@ -331,4 +360,21 @@ export async function deleteS3Object(key: string): Promise<void> {
   } catch (error) {
     console.warn(`Failed to delete S3 object: ${key}`, error);
   }
+}
+
+/**
+ * Retrieve an object stream from S3/R2 storage for CORS proxying.
+ */
+export async function getS3ObjectStream(key: string) {
+  validateObjectKey(key);
+  const command = new GetObjectCommand({
+    Bucket: config.S3.BUCKET_NAME,
+    Key: key,
+  });
+  const response = await s3Client.send(command);
+  return {
+    stream: response.Body,
+    contentType: response.ContentType || 'image/webp',
+    contentLength: response.ContentLength,
+  };
 }

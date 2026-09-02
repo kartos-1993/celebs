@@ -7,6 +7,7 @@ import type {
   MediaAssetFilterType,
   MediaFolder,
   MediaQuota,
+  MoveMediaType,
   PresignFileInput,
   PresignFileResponse,
 } from '@celebs/shared-types';
@@ -98,5 +99,15 @@ export async function confirmMediaUpload(
   data: ConfirmUploadInput,
 ): Promise<IApiResponse<MediaAsset>> {
   const response = await axiosClient.post<IApiResponse<MediaAsset>>(`${BASE_PATH}/confirm`, data);
+  return response.data;
+}
+
+export async function moveMediaAssets(
+  data: MoveMediaType,
+): Promise<IApiResponse<{ movedCount: number }>> {
+  const response = await axiosClient.post<IApiResponse<{ movedCount: number }>>(
+    `${BASE_PATH}/assets/move`,
+    data,
+  );
   return response.data;
 }

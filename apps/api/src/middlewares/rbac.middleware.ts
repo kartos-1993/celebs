@@ -25,3 +25,24 @@ export const requirePermissions = (...requiredPermissions: Permission[]) => {
     next();
   };
 };
+
+export const requireAnyPermission = (...requiredPermissions: Permission[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const actor = req.actor;
+    const role = actor?.role ?? req.user?.role;
+    const permissions =
+      actor?.permissions ?? (req.user as { permissions?: string[] } | undefined)?.permissions;
+
+    if (!role) {
+      return next(new UnauthorizedException('Authentication required'));
+    }
+
+    const hasPermission = requiredPermissions.some((p) => can(role as string, p, permissions));
+
+    if (!hasPermission) {
+      return next(new ForbiddenException('Forbidden: Insufficient permissions'));
+    }
+
+    next();
+  };
+};

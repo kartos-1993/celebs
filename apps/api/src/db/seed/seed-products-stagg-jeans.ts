@@ -104,6 +104,14 @@ export async function seedProductsStaggJeans(): Promise<void> {
       });
       // Link user.vendorId for staff scoping
       await prisma.user.update({ where: { id: user.id }, data: { vendorId: vendor.id } });
+      await prisma.mediaFolder.createMany({
+        data: [
+          { vendorId: vendor.id, name: 'Main Catalog', parentId: null },
+          { vendorId: vendor.id, name: 'Color Swatches', parentId: null },
+          { vendorId: vendor.id, name: 'Lookbooks', parentId: null },
+        ],
+        skipDuplicates: true,
+      });
       console.log(
         `  └─ Created synthetic STAGG vendor ${vendor.shopName} (${vendor.id}) user=${email}`,
       );
