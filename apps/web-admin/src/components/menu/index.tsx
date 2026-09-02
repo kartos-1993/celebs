@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronUp, LayoutGrid, LogOut, Moon, Sun, User } from 'lucide-react';
+import { ChevronUp } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -187,34 +186,25 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                 side={isCollapsed ? 'right' : 'top'}
                 align={isCollapsed ? 'start' : 'end'}
                 sideOffset={8}
-                className="w-56"
+                className="w-52"
               >
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
-                      {user?.role && (
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
-                          {user.role}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{user?.email || ''}</p>
-                  </div>
-                </DropdownMenuLabel>
-
-                <DropdownMenuSeparator />
+                {user?.email && (
+                  <>
+                    <DropdownMenuLabel className="font-normal py-1.5 px-2">
+                      <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
 
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild>
-                    <Link to="/account/profile" className="flex items-center cursor-pointer">
-                      <User className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <Link to="/account/profile" className="cursor-pointer">
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="flex items-center cursor-pointer">
-                      <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <Link to="/dashboard" className="cursor-pointer">
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
@@ -227,11 +217,6 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                   className="cursor-pointer"
                 >
-                  {theme === 'dark' ? (
-                    <Sun className="w-4 h-4 mr-3 text-muted-foreground" />
-                  ) : (
-                    <Moon className="w-4 h-4 mr-3 text-muted-foreground" />
-                  )}
                   {theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 </DropdownMenuItem>
 
@@ -243,11 +228,6 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                   onClick={() => logout()}
                   disabled={isLoggingOut}
                 >
-                  {isLoggingOut ? (
-                    <Spinner size="sm" className="w-4 h-4 mr-3" />
-                  ) : (
-                    <LogOut className="w-4 h-4 mr-3" />
-                  )}
                   {isLoggingOut ? 'Signing out...' : 'Sign out'}
                 </DropdownMenuItem>
               </DropdownMenuContent>

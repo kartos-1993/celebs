@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LayoutGrid, LogOut, User } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -12,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@celebs/shared-ui/components/dropdown-menu';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -73,48 +71,29 @@ export function UserNav() {
         </Tooltip>
       </TooltipProvider>
 
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
-              {user?.role && (
-                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
-                  {user.role}
-                </span>
-              )}
-            </div>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email || 'email@example.com'}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent className="w-52" align="end" forceMount>
+        {user?.email && (
+          <>
+            <DropdownMenuLabel className="font-normal py-1.5 px-2">
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuGroup>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>
-            <Link to="/dashboard" className="flex items-center">
-              <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
-              Dashboard
-            </Link>
+            <Link to="/dashboard">Dashboard</Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>
-            <Link to="/account" className="flex items-center">
-              <User className="w-4 h-4 mr-3 text-muted-foreground" />
-              Account
-            </Link>
+            <Link to="/account/profile">Profile</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="hover:cursor-pointer"
+          className="hover:cursor-pointer text-destructive focus:text-destructive"
           onClick={() => mutate()}
           disabled={isLoggingOut}
         >
-          {isLoggingOut ? (
-            <Spinner size="sm" className="w-4 h-4 mr-3 text-muted-foreground" />
-          ) : (
-            <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
-          )}
           {isLoggingOut ? 'Signing out...' : 'Sign out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
