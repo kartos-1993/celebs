@@ -41,24 +41,63 @@ export function extractApiErrorMessage(error: unknown, fallback: string): string
 }
 
 /**
+ * Encodes an image File to WebP in the browser (Daraz/Shein-style).
+ * PDF files are preserved; failures fall back to the original file.
+ */
+export async function encodeToWebP(
+  file: File,
+): Promise<{ file: File; mimeType: string; originalName: string }> {
+  if (file.type === 'application/pdf') {
+    return { file, mimeType: file.type, originalName: file.name };
+  }
+  if (!file.type.startsWith('image/')) {
+    return { file, mimeType: (file.type || 'image/jpeg') as string, originalName: file.name };
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('no 2d context');
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const webpBlob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, 'image/webp', 0.82),
+    );
+    if (!webpBlob) throw new Error('canvas.toBlob returned null');
+    const webpName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+    const webpFile = new File([webpBlob], webpName, { type: 'image/webp' });
+    return { file: webpFile, mimeType: 'image/webp', originalName: webpName };
+  } catch {
+    return { file, mimeType: (file.type || 'image/jpeg') as string, originalName: file.name };
+  }
+}
+
+/**
  * Uploads a single file directly to Cloudflare R2 via a presigned PUT URL,
  * then confirms the upload with the backend to enqueue optimization.
+ * Images are browser-encoded to WebP before presign (zero API impact).
  */
 export async function directUploadFile(
   file: File,
   folder = 'celebs/products',
   scope: ConfirmUploadInput['scope'] = 'PRODUCT',
 ): Promise<string> {
-  const mimeType = (file.type || 'image/jpeg') as PresignFileInput['mimeType'];
+  const encoded = await encodeToWebP(file);
+  const uploadFile = encoded.file;
+  const mimeType = encoded.mimeType as PresignFileInput['mimeType'];
+  const originalName = encoded.originalName;
 
-  // 1. Get presigned PUT URL
+  // 1. Get presigned PUT URL (scope-aware, WebP-encoded)
   let presignData: PresignFileResponse | undefined;
   try {
     const presignRes = await axiosClient.post<ApiResponse<PresignFileResponse>>('/media/presign', {
-      originalname: file.name,
+      originalname: originalName,
       mimeType,
-      size: file.size,
+      size: uploadFile.size,
       folder,
+      scope,
     });
     presignData = presignRes.data?.data;
   } catch (error) {
@@ -74,7 +113,7 @@ export async function directUploadFile(
   // 2. Direct binary upload to Cloudflare R2
   const putRes = await fetch(presignData.uploadUrl, {
     method: 'PUT',
-    body: file,
+    body: uploadFile,
     headers: {
       'Content-Type': mimeType,
     },
@@ -87,9 +126,9 @@ export async function directUploadFile(
   // 3. Confirm upload with backend
   const confirmPayload: ConfirmUploadInput = {
     key: presignData.key,
-    originalname: file.name,
+    originalname: originalName,
     mimeType,
-    size: file.size,
+    size: uploadFile.size,
     scope,
   };
 
@@ -141,12 +180,16 @@ async function directUploadChunk(
   folder: string,
   scope: ConfirmUploadInput['scope'],
 ): Promise<string[]> {
+  // Browser-encode all images to WebP before presign (parallel)
+  const encodedFiles = await Promise.all(files.map((f) => encodeToWebP(f)));
+
   const presignPayload = {
-    files: files.map((file) => ({
-      originalname: file.name,
-      mimeType: (file.type || 'image/jpeg') as PresignFileInput['mimeType'],
+    files: encodedFiles.map(({ file, mimeType, originalName }) => ({
+      originalname: originalName,
+      mimeType: mimeType as PresignFileInput['mimeType'],
       size: file.size,
       folder,
+      scope,
     })),
   };
 
@@ -162,40 +205,41 @@ async function directUploadChunk(
     throw new Error(extractApiErrorMessage(error, 'The server rejected this upload batch'));
   }
 
-  // 2. Parallel upload and confirmation
-  const uploadPromises = files.map(async (file, idx) => {
-    const item = presignItems[idx];
-    if (!item) throw new Error(`"${file.name}" was not accepted for upload`);
+  // 2. Parallel upload and confirmation (using WebP-encoded files)
+  const uploadPromises = encodedFiles.map(
+    async ({ file: encFile, mimeType, originalName }, idx) => {
+      const item = presignItems[idx];
+      const origName = files[idx]?.name ?? originalName;
+      if (!item) throw new Error(`"${origName}" was not accepted for upload`);
 
-    const mimeType = (file.type || 'image/jpeg') as PresignFileInput['mimeType'];
-
-    const putRes = await fetch(item.uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': mimeType,
-      },
-    });
-
-    if (!putRes.ok) {
-      throw new Error(`"${file.name}" failed to transfer (status ${putRes.status})`);
-    }
-
-    try {
-      const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>('/media/confirm', {
-        key: item.key,
-        originalname: file.name,
-        mimeType,
-        size: file.size,
-        scope,
+      const putRes = await fetch(item.uploadUrl, {
+        method: 'PUT',
+        body: encFile,
+        headers: {
+          'Content-Type': mimeType,
+        },
       });
-      return confirmRes.data?.data?.url || item.publicUrl;
-    } catch (error) {
-      throw new Error(
-        `"${file.name}" uploaded but registration failed — ${extractApiErrorMessage(error, 'try again')}`,
-      );
-    }
-  });
+
+      if (!putRes.ok) {
+        throw new Error(`"${origName}" failed to transfer (status ${putRes.status})`);
+      }
+
+      try {
+        const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>('/media/confirm', {
+          key: item.key,
+          originalname: originalName,
+          mimeType: mimeType as PresignFileInput['mimeType'],
+          size: encFile.size,
+          scope,
+        });
+        return confirmRes.data?.data?.url || item.publicUrl;
+      } catch (error) {
+        throw new Error(
+          `"${origName}" uploaded but registration failed — ${extractApiErrorMessage(error, 'try again')}`,
+        );
+      }
+    },
+  );
 
   return Promise.all(uploadPromises);
 }

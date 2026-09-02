@@ -19,9 +19,12 @@ import {
 import { MEDIA_QUERY_KEYS } from '../media-query-keys';
 
 export function useMediaAssets(filters?: Partial<MediaAssetFilterType>) {
+  const normalized: Partial<MediaAssetFilterType> = { scope: 'PRODUCT', ...filters };
+  // Media Center is product-only (Daraz-style); other scopes live in their domain pages
+  if (!normalized.scope) normalized.scope = 'PRODUCT' as MediaAssetFilterType['scope'];
   return useQuery({
-    queryKey: MEDIA_QUERY_KEYS.assets(filters),
-    queryFn: () => getMediaAssets(filters),
+    queryKey: MEDIA_QUERY_KEYS.assets(normalized),
+    queryFn: () => getMediaAssets(normalized),
     select: (res) => res.data,
     // Keep the previous grid visible while filters/search change
     placeholderData: keepPreviousData,
