@@ -8,11 +8,18 @@ export const ALLOWED_IMAGE_MIME_TYPES = [
   'application/pdf',
 ] as const;
 
-export const MAX_MEDIA_FILE_BYTES = 10 * 1024 * 1024; // 10MB
+export const MAX_MEDIA_FILE_BYTES = 10 * 1024 * 1024; // 10MB absolute ceiling
 
 export const mediaScopeSchema = z.enum(['PRODUCT', 'BRANDING', 'KYC', 'MARKETING']);
 
-export const presignFileSchema = z.object({
+export const SCOPE_MAX_BYTES: Record<z.infer<typeof mediaScopeSchema>, number> = {
+  PRODUCT: 5 * 1024 * 1024,
+  BRANDING: 5 * 1024 * 1024,
+  KYC: 2 * 1024 * 1024,
+  MARKETING: 5 * 1024 * 1024,
+};
+
+const presignFileBaseSchema = z.object({
   originalname: z.string().trim().min(1, 'originalname is required').max(120),
   mimeType: z.enum(ALLOWED_IMAGE_MIME_TYPES, {
     errorMap: () => ({ message: 'Invalid file type. Allowed: jpeg, png, webp, avif, pdf' }),
@@ -27,6 +34,18 @@ export const presignFileSchema = z.object({
   folder: z.string().trim().optional(),
 });
 
+export const presignFileSchema = presignFileBaseSchema.superRefine((data, ctx) => {
+  const scope = (data.scope as keyof typeof SCOPE_MAX_BYTES) || 'PRODUCT';
+  const limit = SCOPE_MAX_BYTES[scope] ?? MAX_MEDIA_FILE_BYTES;
+  if (data.size > limit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['size'],
+      message: `${scope} files must be <= ${limit / (1024 * 1024)}MB`,
+    });
+  }
+});
+
 export const batchPresignSchema = z.object({
   files: z
     .array(presignFileSchema)
@@ -34,7 +53,7 @@ export const batchPresignSchema = z.object({
     .max(12, 'Maximum 12 files at once'),
 });
 
-export const confirmUploadSchema = z.object({
+const confirmUploadBaseSchema = z.object({
   key: z.string().trim().min(1, 'key is required'),
   originalname: z.string().trim().min(1, 'originalname is required'),
   mimeType: z.enum(ALLOWED_IMAGE_MIME_TYPES, {
@@ -43,6 +62,19 @@ export const confirmUploadSchema = z.object({
   size: z.number().int().positive().optional(),
   folderId: z.string().uuid().optional().nullable(),
   scope: mediaScopeSchema.optional().default('PRODUCT'),
+});
+
+export const confirmUploadSchema = confirmUploadBaseSchema.superRefine((data, ctx) => {
+  if (data.size === undefined) return;
+  const scope = (data.scope as keyof typeof SCOPE_MAX_BYTES) || 'PRODUCT';
+  const limit = SCOPE_MAX_BYTES[scope] ?? MAX_MEDIA_FILE_BYTES;
+  if (data.size > limit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['size'],
+      message: `${scope} files must be <= ${limit / (1024 * 1024)}MB`,
+    });
+  }
 });
 
 export const createMediaFolderSchema = z.object({
