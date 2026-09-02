@@ -7,7 +7,10 @@ import { Dialog, DialogContent, DialogTitle } from '@celebs/shared-ui/components
 
 import { formatBytes } from './format-bytes';
 
-type PendingConfirm = { kind: 'delete-asset'; asset: MediaAsset } | { kind: 'cleanup-unused' };
+export type PendingConfirm =
+  | { kind: 'delete-asset'; asset: MediaAsset }
+  | { kind: 'delete-selected' }
+  | { kind: 'cleanup-unused' };
 
 interface Props {
   previewAsset: MediaAsset | null;
@@ -72,12 +75,16 @@ export function MediaCenterDialogs({
         title={
           pendingConfirm?.kind === 'delete-asset'
             ? `Delete "${pendingConfirm.asset.originalName}"?`
-            : `Clean up ${quota?.unlinkedAssetCount ?? 0} unused assets?`
+            : pendingConfirm?.kind === 'delete-selected'
+              ? `Delete selected images?`
+              : `Clean up ${quota?.unlinkedAssetCount ?? 0} unused assets?`
         }
         description={
           pendingConfirm?.kind === 'delete-asset'
             ? 'This permanently removes the file from cloud storage. This action cannot be undone.'
-            : `${formatBytes(quota?.unlinkedSizeBytes ?? 0)} of unlinked files will be permanently deleted. This action cannot be undone.`
+            : pendingConfirm?.kind === 'delete-selected'
+              ? 'Selected unlinked images will be permanently deleted. Linked images will be skipped.'
+              : `${formatBytes(quota?.unlinkedSizeBytes ?? 0)} of unlinked files will be permanently deleted. This action cannot be undone.`
         }
         onConfirm={onConfirm}
       />

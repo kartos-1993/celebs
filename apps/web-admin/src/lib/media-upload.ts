@@ -83,6 +83,7 @@ export async function directUploadFile(
   file: File,
   folder = 'celebs/products',
   scope: ConfirmUploadInput['scope'] = 'PRODUCT',
+  existingKey?: string,
 ): Promise<string> {
   const encoded = await encodeToWebP(file);
   const uploadFile = encoded.file;
@@ -93,6 +94,7 @@ export async function directUploadFile(
   let presignData: PresignFileResponse | undefined;
   try {
     const presignRes = await axiosClient.post<ApiResponse<PresignFileResponse>>('/media/presign', {
+      key: existingKey,
       originalname: originalName,
       mimeType,
       size: uploadFile.size,

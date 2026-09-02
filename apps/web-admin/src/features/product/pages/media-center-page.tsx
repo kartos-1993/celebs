@@ -1,31 +1,40 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import type { MediaAsset } from '@celebs/shared-types';
 
+import { copyToClipboard } from '../components/media-center/media-asset-actions';
+import { MediaBatchBar } from '../components/media-center/media-batch-bar';
 import { MediaCenterDialogs } from '../components/media-center/media-center-dialogs';
 import { MediaCenterGrid } from '../components/media-center/media-center-grid';
 import { MediaCenterHeader } from '../components/media-center/media-center-header';
 import { MediaCenterToolbar } from '../components/media-center/media-center-toolbar';
+import { MediaCreateFolderDialog } from '../components/media-center/media-create-folder-dialog';
+import { MediaFolderStrip } from '../components/media-center/media-folder-strip';
+import { MediaMoveDialog } from '../components/media-center/media-move-dialog';
+import { MediaCropDialog } from '../components/media-crop-dialog';
 import { StorageQuotaBar } from '../components/storage-quota-bar';
 import {
-  useCleanupUnusedMedia,
-  useDeleteMediaAsset,
+  useCreateMediaFolder,
   useMediaAssets,
+  useMediaFolders,
   useMediaQuota,
 } from '../hooks/use-media-assets';
+import { useMediaBatchActions } from '../hooks/use-media-batch-actions';
+import { useMediaDeleteCleanup } from '../hooks/use-media-delete-cleanup';
+import { useMediaUploadCrop } from '../hooks/use-media-upload-crop';
 
 import { useDebounce } from '@/hooks/use-debounce';
-import { toast } from '@/hooks/use-toast';
-import { directUploadBatch, extractApiErrorMessage } from '@/lib/media-upload';
 
-/** Product-only Media Center — folder-less, flat product library. */
+/** Daraz-style Media Center — albums + bulk select + move + export */
 const MediaCenterPage = memo(function MediaCenterPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [unusedOnly, setUnusedOnly] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  type PC = { kind: 'delete-asset'; asset: MediaAsset } | { kind: 'cleanup-unused' };
-  const [pendingConfirm, setPendingConfirm] = useState<PC | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+
   const debounced = useDebounce(searchTerm, 350);
   const {
     data: assetsData,
@@ -33,62 +42,40 @@ const MediaCenterPage = memo(function MediaCenterPage() {
     refetch,
   } = useMediaAssets({
     search: debounced || undefined,
+    folderId: selectedFolderId || undefined,
     scope: 'PRODUCT',
     unusedOnly: unusedOnly || undefined,
     limit: 48,
   });
   const { data: quota, isLoading: isLoadingQuota } = useMediaQuota();
-  const deleteAssetMut = useDeleteMediaAsset();
-  const cleanupMut = useCleanupUnusedMedia();
+  const { data: folders = [] } = useMediaFolders();
+  const createFolderMut = useCreateMediaFolder();
+
   const assets = useMemo(() => assetsData?.items || [], [assetsData]);
-  const handleUpload = useCallback(
-    async (files: FileList | File[]) => {
-      const arr = Array.from(files);
-      if (!arr.length) return;
-      setIsUploading(true);
-      try {
-        await directUploadBatch(arr, 'celebs/products', 'PRODUCT');
-        refetch();
-        toast({ title: 'Uploaded', description: `${arr.length} file(s) added` });
-      } catch (e: unknown) {
-        toast({
-          title: 'Upload failed',
-          description: extractApiErrorMessage(e, 'Failed'),
-          variant: 'destructive',
-        });
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [refetch],
-  );
-  const copy = useCallback((u: string) => {
-    navigator.clipboard.writeText(u);
-    toast({ title: 'Copied', description: 'CDN URL copied' });
-  }, []);
-  const isDeleting = useCallback(
-    (id?: string) => Boolean(id) && deleteAssetMut.isPending && deleteAssetMut.variables === id,
-    [deleteAssetMut.isPending, deleteAssetMut.variables],
-  );
-  const runConfirm = useCallback(async () => {
-    if (!pendingConfirm) return;
-    if (pendingConfirm.kind === 'delete-asset') {
-      await deleteAssetMut.mutateAsync(pendingConfirm.asset.id as string);
-      toast({ title: 'Deleted', description: pendingConfirm.asset.originalName });
-      return;
-    }
-    const unused = assets
-      .filter((a) => (a.usageCount ?? 0) === 0)
-      .map((a) => a.id)
-      .filter((id): id is string => Boolean(id));
-    await cleanupMut.mutateAsync({ assetIds: unused });
-    toast({ title: 'Success', description: `Cleaned up ${unused.length} assets` });
-  }, [pendingConfirm, deleteAssetMut, cleanupMut, assets]);
+  const batch = useMediaBatchActions(assets);
+  const uploadCrop = useMediaUploadCrop();
+  const deleteCleanup = useMediaDeleteCleanup(assets, batch.handleBulkDelete);
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    await createFolderMut.mutateAsync({ name: newFolderName.trim() });
+    setNewFolderName('');
+    setIsCreateOpen(false);
+  };
 
   return (
     <div className="space-y-6">
-      <MediaCenterHeader isUploading={isUploading} onUpload={handleUpload} />
+      <MediaCenterHeader
+        isUploading={uploadCrop.isUploading}
+        onUpload={uploadCrop.handleUpload}
+        onCreateFolder={() => setIsCreateOpen(true)}
+      />
       <StorageQuotaBar quota={quota} isLoading={isLoadingQuota} />
+      <MediaFolderStrip
+        folders={folders}
+        selectedFolderId={selectedFolderId}
+        onSelect={setSelectedFolderId}
+      />
       <div className="flex flex-col gap-4">
         <MediaCenterToolbar
           searchTerm={searchTerm}
@@ -96,8 +83,8 @@ const MediaCenterPage = memo(function MediaCenterPage() {
           unusedOnly={unusedOnly}
           onToggleUnused={() => setUnusedOnly((v) => !v)}
           quota={quota}
-          onCleanup={() => setPendingConfirm({ kind: 'cleanup-unused' })}
-          isCleaning={cleanupMut.isPending}
+          onCleanup={() => deleteCleanup.setPendingConfirm({ kind: 'cleanup-unused' })}
+          isCleaning={deleteCleanup.isCleaning}
           onRefresh={() => refetch()}
         />
         <MediaCenterGrid
@@ -105,33 +92,56 @@ const MediaCenterPage = memo(function MediaCenterPage() {
           isLoading={isLoading}
           debouncedSearch={debounced}
           unusedOnly={unusedOnly}
+          selectedIds={batch.selectedIds}
+          onToggleSelect={batch.toggleSelect}
           onPreview={setPreviewAsset}
-          onCopy={copy}
-          onDelete={(a) => {
-            if ((a.usageCount ?? 0) > 0) {
-              toast({
-                title: 'Action Blocked',
-                description: `Used in ${a.usageCount} products`,
-                variant: 'destructive',
-              });
-              return;
-            }
-            if (!a.id) return;
-            setPendingConfirm({ kind: 'delete-asset', asset: a });
-          }}
-          isDeleting={isDeleting}
+          onCopy={copyToClipboard}
+          onEdit={uploadCrop.handleEdit}
+          onDelete={deleteCleanup.requestDeleteAsset}
+          isDeleting={deleteCleanup.isDeleting}
+        />
+        <MediaBatchBar
+          selectedCount={batch.selectedIds.size}
+          hasSelection={batch.selectedIds.size > 0}
+          onSelectAll={batch.handleSelectAll}
+          onClear={batch.handleClear}
+          onExport={batch.handleExport}
+          onMove={() => setIsMoveOpen(true)}
+          onDelete={() => deleteCleanup.setPendingConfirm({ kind: 'delete-selected' })}
         />
       </div>
       <MediaCenterDialogs
         previewAsset={previewAsset}
         onPreviewChange={setPreviewAsset}
-        onCopy={copy}
-        pendingConfirm={pendingConfirm}
-        onConfirmChange={setPendingConfirm}
-        onConfirm={runConfirm}
+        onCopy={copyToClipboard}
+        pendingConfirm={deleteCleanup.pendingConfirm}
+        onConfirmChange={deleteCleanup.setPendingConfirm}
+        onConfirm={deleteCleanup.runConfirm}
         quota={quota}
+      />
+      <MediaCropDialog
+        open={uploadCrop.cropTarget !== null}
+        target={uploadCrop.cropTarget}
+        onCropComplete={uploadCrop.handleCropComplete}
+        onCancel={() => uploadCrop.setCropTarget(null)}
+      />
+      <MediaMoveDialog
+        open={isMoveOpen}
+        onOpenChange={setIsMoveOpen}
+        folders={folders}
+        onMove={batch.handleMove}
+        isMoving={batch.isMoving}
+      />
+      <MediaCreateFolderDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        folderName={newFolderName}
+        onFolderNameChange={setNewFolderName}
+        onCreate={handleCreateFolder}
+        isPending={createFolderMut.isPending}
       />
     </div>
   );
 });
+
 export default MediaCenterPage;

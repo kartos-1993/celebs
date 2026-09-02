@@ -3,7 +3,9 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import type {
   CreateMediaFolderType,
   DeleteUnusedMediaType,
+  IApiResponse,
   MediaAssetFilterType,
+  MoveMediaType,
 } from '@celebs/shared-types';
 
 import type { PaginatedMediaAssetsResponse } from '../media-api';
@@ -15,6 +17,7 @@ import {
   getMediaAssets,
   getMediaFolders,
   getMediaQuota,
+  moveMediaAssets,
 } from '../media-api';
 import { MEDIA_QUERY_KEYS } from '../media-query-keys';
 
@@ -71,9 +74,7 @@ export function useDeleteMediaFolder() {
 }
 
 /**
- * Deletes a single asset with an OPTIMISTIC update: the tile disappears
- * instantly, only that tile is affected, and the list rolls back if the
- * server rejects the delete. Quota is refreshed in the background.
+ * Deletes a single asset with safe optimistic cache update and query invalidation.
  */
 export function useDeleteMediaAsset() {
   const queryClient = useQueryClient();
@@ -82,34 +83,38 @@ export function useDeleteMediaAsset() {
     mutationFn: (id: string) => deleteMediaAsset(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
-      const previous = queryClient.getQueriesData<PaginatedMediaAssetsResponse>({
-        queryKey: MEDIA_QUERY_KEYS.assetsRoot,
-      });
-      queryClient.setQueriesData<PaginatedMediaAssetsResponse>(
+      const previous = queryClient.getQueriesData({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
+      queryClient.setQueriesData<IApiResponse<PaginatedMediaAssetsResponse>>(
         { queryKey: MEDIA_QUERY_KEYS.assetsRoot },
-        (old) =>
-          old
-            ? {
-                ...old,
-                items: old.items.filter((asset) => asset.id !== id),
-                total: Math.max(0, old.total - 1),
-              }
-            : old,
+        (old) => {
+          if (!old) return old;
+          if (old.data && Array.isArray(old.data.items)) {
+            return {
+              ...old,
+              data: {
+                ...old.data,
+                items: old.data.items.filter((asset) => asset.id !== id),
+                total: Math.max(0, old.data.total - 1),
+              },
+            };
+          }
+          return old;
+        },
       );
       return { previous };
     },
     onError: (_error, _id, context) => {
-      context?.previous.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      context?.previous?.forEach(([key, value]) => queryClient.setQueryData(key, value));
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
       queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.quota() });
     },
   });
 }
 
 /**
- * Bulk-removes unused assets optimistically (same rollback semantics as
- * single delete).
+ * Bulk-removes unused assets optimistically with safe rollback and invalidation.
  */
 export function useCleanupUnusedMedia() {
   const queryClient = useQueryClient();
@@ -119,26 +124,43 @@ export function useCleanupUnusedMedia() {
     onMutate: async ({ assetIds }) => {
       await queryClient.cancelQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
       const ids = new Set(assetIds);
-      const previous = queryClient.getQueriesData<PaginatedMediaAssetsResponse>({
-        queryKey: MEDIA_QUERY_KEYS.assetsRoot,
-      });
-      queryClient.setQueriesData<PaginatedMediaAssetsResponse>(
+      const previous = queryClient.getQueriesData({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
+      queryClient.setQueriesData<IApiResponse<PaginatedMediaAssetsResponse>>(
         { queryKey: MEDIA_QUERY_KEYS.assetsRoot },
-        (old) =>
-          old
-            ? {
-                ...old,
-                items: old.items.filter((asset) => !ids.has(asset.id ?? '')),
-              }
-            : old,
+        (old) => {
+          if (!old) return old;
+          if (old.data && Array.isArray(old.data.items)) {
+            return {
+              ...old,
+              data: {
+                ...old.data,
+                items: old.data.items.filter((asset) => !ids.has(asset.id ?? '')),
+                total: Math.max(0, old.data.total - ids.size),
+              },
+            };
+          }
+          return old;
+        },
       );
       return { previous };
     },
     onError: (_error, _vars, context) => {
-      context?.previous.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      context?.previous?.forEach(([key, value]) => queryClient.setQueryData(key, value));
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
       queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.quota() });
+    },
+  });
+}
+
+export function useMoveMediaAssets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: MoveMediaType) => moveMediaAssets(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
+      queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.folders() });
     },
   });
 }
