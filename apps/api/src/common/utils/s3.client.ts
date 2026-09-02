@@ -36,6 +36,9 @@ export async function verifyS3Connection(): Promise<void> {
   try {
     await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
     logger.info({ bucket }, 'S3/MinIO Connected and bucket verified successfully');
+    if (isDev) {
+      await ensureDevPublicReadAccess();
+    }
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     if (isDev) {

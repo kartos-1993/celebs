@@ -1,4 +1,9 @@
-import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
@@ -239,12 +244,14 @@ export async function createPresignedPut(
     }
   }
 
-  const key = buildVendorObjectKey({
-    vendorId: input.vendorId,
-    scope: (input.scope as MediaScope) || 'PRODUCT',
-    originalname,
-    folder: input.folder,
-  });
+  const key = input.key
+    ? validateObjectKey(input.key)
+    : buildVendorObjectKey({
+        vendorId: input.vendorId,
+        scope: (input.scope as MediaScope) || 'PRODUCT',
+        originalname,
+        folder: input.folder,
+      });
 
   // Fail fast: reject disallowed prefixes/traversal BEFORE the browser
   // uploads bytes, so bad requests never produce orphaned R2 objects.
@@ -311,7 +318,8 @@ export async function confirmUploadedObject(
     throw new BadRequestException(`Uploaded object exceeds ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
   }
 
-  const publicUrl = buildPublicObjectUrl(key);
+  const timestamp = Date.now();
+  const publicUrl = `${buildPublicObjectUrl(key)}?v=${timestamp}`;
 
   // Catalog asset into PostgreSQL DAM
   await mediaRepository.createAsset({
@@ -325,6 +333,8 @@ export async function confirmUploadedObject(
     scope: input.scope || 'PRODUCT',
     isPrivate: input.scope === 'KYC',
   });
+
+  await mediaRepository.propagateAssetUrlUpdate(key, publicUrl);
 
   return {
     key,
@@ -350,4 +360,21 @@ export async function deleteS3Object(key: string): Promise<void> {
   } catch (error) {
     console.warn(`Failed to delete S3 object: ${key}`, error);
   }
+}
+
+/**
+ * Retrieve an object stream from S3/R2 storage for CORS proxying.
+ */
+export async function getS3ObjectStream(key: string) {
+  validateObjectKey(key);
+  const command = new GetObjectCommand({
+    Bucket: config.S3.BUCKET_NAME,
+    Key: key,
+  });
+  const response = await s3Client.send(command);
+  return {
+    stream: response.Body,
+    contentType: response.ContentType || 'image/webp',
+    contentLength: response.ContentLength,
+  };
 }
