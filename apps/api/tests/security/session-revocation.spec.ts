@@ -6,6 +6,8 @@
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
+import { Permission } from '@celebs/rbac';
+
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
 import { refreshTokenSignOptions, signJwtToken } from '@/common/utils/jwt';
@@ -47,6 +49,7 @@ async function seedApprovedStoreWithStaff() {
       email: `${uniq('stf')}@revocation.test`,
       password: await hashValue(PASSWORD),
       role: 'STAFF',
+      permissions: [Permission.MEDIA_VIEW],
       isEmailVerified: true,
       vendorId: store.id,
     },

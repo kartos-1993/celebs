@@ -9,7 +9,7 @@ import { actorContext } from '@/common/context/actor-context.middleware';
 import { requireStoreState } from '@/common/guards/store.guards';
 import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
-import { requirePermissions } from '@/middlewares/rbac.middleware';
+import { requireAnyPermission, requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
 router.use(uploadRateLimiter);
@@ -29,7 +29,12 @@ router.use(requireStoreState(['PENDING', 'UNDER_REVIEW', 'REJECTED', 'APPROVED']
  */
 router.get(
   '/assets',
-  requirePermissions(Permission.MEDIA_VIEW),
+  requireAnyPermission(
+    Permission.MEDIA_VIEW,
+    Permission.MEDIA_MANAGE,
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
+  ),
   asyncHandler((req, res) => mediaController.getAssets(req, res)),
 );
 
@@ -39,7 +44,12 @@ router.get(
  */
 router.get(
   '/quota',
-  requirePermissions(Permission.MEDIA_VIEW),
+  requireAnyPermission(
+    Permission.MEDIA_VIEW,
+    Permission.MEDIA_MANAGE,
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
+  ),
   asyncHandler((req, res) => mediaController.getQuota(req, res)),
 );
 
@@ -49,7 +59,12 @@ router.get(
  */
 router.get(
   '/folders',
-  requirePermissions(Permission.MEDIA_VIEW),
+  requireAnyPermission(
+    Permission.MEDIA_VIEW,
+    Permission.MEDIA_MANAGE,
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
+  ),
   asyncHandler((req, res) => mediaController.getFolders(req, res)),
 );
 
@@ -59,7 +74,7 @@ router.get(
  */
 router.post(
   '/folders',
-  requirePermissions(Permission.MEDIA_MANAGE),
+  requireAnyPermission(Permission.MEDIA_MANAGE, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT),
   asyncHandler((req, res) => mediaController.createFolder(req, res)),
 );
 
@@ -69,7 +84,7 @@ router.post(
  */
 router.post(
   '/presign',
-  requirePermissions(Permission.MEDIA_MANAGE),
+  requireAnyPermission(Permission.MEDIA_MANAGE, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT),
   asyncHandler((req, res) => mediaController.presign(req, res)),
 );
 
@@ -79,7 +94,7 @@ router.post(
  */
 router.post(
   ['/batch-presign', '/presign-batch'],
-  requirePermissions(Permission.MEDIA_MANAGE),
+  requireAnyPermission(Permission.MEDIA_MANAGE, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT),
   asyncHandler((req, res) => mediaController.presignBatch(req, res)),
 );
 
@@ -89,7 +104,7 @@ router.post(
  */
 router.post(
   '/confirm',
-  requirePermissions(Permission.MEDIA_MANAGE),
+  requireAnyPermission(Permission.MEDIA_MANAGE, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT),
   asyncHandler((req, res) => mediaController.confirmUpload(req, res)),
 );
 
@@ -99,34 +114,40 @@ router.post(
  */
 router.post(
   '/assets/move',
-  requirePermissions(Permission.MEDIA_MANAGE),
+  requireAnyPermission(Permission.MEDIA_MANAGE, Permission.PRODUCT_CREATE, Permission.PRODUCT_EDIT),
   asyncHandler((req, res) => mediaController.moveAssets(req, res)),
 );
 
 /**
  * GET /api/v1/media/proxy
- * Proxies media assets with CORS headers for canvas and crop operations.
+ * Safe streaming proxy for remote CDN images to prevent canvas tainting.
  */
 router.get(
   '/proxy',
+  requireAnyPermission(
+    Permission.MEDIA_VIEW,
+    Permission.MEDIA_MANAGE,
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
+  ),
   asyncHandler((req, res) => mediaController.proxyMedia(req, res)),
 );
 
 /**
  * DELETE /api/v1/media/assets/:id
- * Safe asset deletion.
+ * Delete a media asset from storage and database.
  */
 router.delete(
   '/assets/:id',
-  requirePermissions(Permission.MEDIA_MANAGE),
+  requireAnyPermission(Permission.MEDIA_MANAGE, Permission.PRODUCT_DELETE, Permission.PRODUCT_EDIT),
   asyncHandler((req, res) => mediaController.deleteAsset(req, res)),
 );
 
 /**
- * POST /api/v1/media/cleanup-unused
- * Bulk delete unlinked draft assets (strictly manual seller opt-in).
+ * DELETE /api/v1/media/cleanup-unused
+ * Batch garbage collection for unlinked media assets.
  */
-router.post(
+router.delete(
   '/cleanup-unused',
   requirePermissions(Permission.MEDIA_MANAGE),
   asyncHandler((req, res) => mediaController.cleanupUnused(req, res)),
