@@ -137,7 +137,7 @@ export function PreviewModal({
                 <h2 className="text-xl font-semibold tracking-tight">{product.name}</h2>
                 <QualityBadge score={product.qualityScore} />
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
                 <span>
                   Vendor:{' '}
                   <strong className="text-foreground">{product.vendorName || 'Independent'}</strong>
@@ -182,7 +182,7 @@ export function PreviewModal({
           {/* ── Tab navigation ─────────────────────────────────────── */}
           <div className="border-b bg-background px-4">
             <Tabs value={previewTab} onValueChange={(v: string) => setPreviewTab(v as PreviewTab)}>
-              <TabsList className="bg-transparent h-auto w-full justify-start gap-1 rounded-none p-0 overflow-x-auto">
+              <TabsList className="no-scrollbar bg-transparent h-auto w-full justify-start gap-1 rounded-none p-0 overflow-x-auto">
                 {PREVIEW_TABS.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -200,7 +200,7 @@ export function PreviewModal({
           </div>
 
           {/* ── Tab body ───────────────────────────────────────────── */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* 1. Live PDP preview */}
             {previewTab === 'overview' && (
               <div
@@ -380,7 +380,7 @@ export function PreviewModal({
                   Attributes
                 </h4>
                 {specEntries.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {specEntries.map(([key, value]) => (
                       <div key={key} className="p-3 bg-muted/30 rounded-lg border min-w-0">
                         <span className="text-xs font-medium text-muted-foreground capitalize block">
@@ -411,7 +411,7 @@ export function PreviewModal({
                     {(product.sizes ?? []).map((size, index) => (
                       <Card key={index}>
                         <CardHeader className="py-3 bg-muted/20">
-                          <CardTitle className="text-sm font-bold flex items-center gap-2">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             Size: <Badge variant="secondary">{size.name}</Badge>
                           </CardTitle>
                         </CardHeader>
@@ -515,7 +515,7 @@ export function PreviewModal({
                               />
                             )}
                             <div>
-                              <h5 className="font-bold text-sm text-foreground">{variant.name}</h5>
+                              <h5 className="text-sm font-semibold text-foreground">{variant.name}</h5>
                               <span className="text-xs text-muted-foreground">
                                 {isMulti ? 'Multicolor / Fabric Pattern' : `Color Code: ${safeBg}`}
                               </span>
@@ -554,7 +554,7 @@ export function PreviewModal({
             {/* 5. QC scorecard */}
             {previewTab === 'qc' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/30 border rounded-xl">
+                <div className="flex flex-col items-stretch gap-3 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                       <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality Score
@@ -683,8 +683,13 @@ export function PreviewModal({
           </div>
 
           {/* ── Footer actions ─────────────────────────────────────── */}
-          <div className="p-4 border-t bg-muted/10 flex justify-end gap-3 mt-auto">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+          <div className="mt-auto flex flex-col-reverse gap-2 border-t bg-muted/10 p-4 sm:flex-row sm:justify-end sm:gap-3">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
             {product.status === 'pending_review' && (
@@ -693,13 +698,13 @@ export function PreviewModal({
                   variant="destructive"
                   onClick={() => onReject(product)}
                   disabled={isSubmitting}
-                  className="gap-1"
+                  className="w-full gap-1 sm:w-auto"
                 >
                   {isSubmitting ? <Spinner size="sm" /> : <X className="w-4 h-4" />} Reject Listing
                 </Button>
                 <Button
                   variant="default"
-                  className="bg-success hover:bg-success/90 text-success-foreground gap-1"
+                  className="w-full gap-1 bg-success text-success-foreground hover:bg-success/90 sm:w-auto"
                   onClick={() => onApprove(product.id)}
                   disabled={isSubmitting}
                 >
