@@ -2,7 +2,6 @@ import { MailWarning, Pencil, Trash2 } from 'lucide-react';
 
 import type { UserData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
-import { Button } from '@celebs/shared-ui/components/button';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Table,
@@ -12,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
+
+import { RowActionsMenu } from '@/components/row-actions-menu';
 
 interface StaffTableProps {
   staff: UserData[];
@@ -98,23 +99,19 @@ export function StaffTable({
                         {renderResendInvite(member.email)}
                       </div>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onEdit(member)}
-                      className="h-8 gap-1"
-                    >
-                      <Pencil aria-hidden="true" className="h-3.5 w-3.5" /> Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => onDelete(member)}
-                      disabled={isDeletePending}
-                      className="h-8 gap-1"
-                    >
-                      <Trash2 aria-hidden="true" className="h-3.5 w-3.5" /> Delete
-                    </Button>
+                    <RowActionsMenu
+                      label={`Actions for ${member.name}`}
+                      items={[
+                        { label: 'Edit permissions', icon: Pencil, onSelect: () => onEdit(member) },
+                        {
+                          label: 'Delete staff',
+                          icon: Trash2,
+                          onSelect: () => onDelete(member),
+                          disabled: isDeletePending,
+                          destructive: true,
+                        },
+                      ]}
+                    />
                   </div>
                 </TableCell>
               </TableRow>
