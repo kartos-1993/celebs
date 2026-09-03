@@ -21,7 +21,6 @@ type Submenu = {
 interface CollapseMenuButtonProps {
   icon: LucideIcon;
   label: string;
-  active: boolean;
   submenus: Submenu[];
   isOpen: boolean | undefined;
 }
@@ -33,7 +32,6 @@ const FLYOUT_CLOSE_DELAY_MS = 150;
 export function CollapseMenuButton({
   icon: Icon,
   label,
-  active: _active,
   submenus,
   isOpen,
 }: CollapseMenuButtonProps) {
@@ -85,13 +83,21 @@ export function CollapseMenuButton({
                 >
                   <Icon size={18} />
                 </span>
-                <span className="max-w-[150px] truncate py-0.5 text-sm font-medium text-foreground/90">
+                <span
+                  className={cn(
+                    'max-w-[150px] truncate py-0.5 text-sm font-medium',
+                    isSubmenuActive ? 'text-foreground' : 'text-muted-foreground',
+                  )}
+                >
                   {label}
                 </span>
               </div>
               <ChevronDown
                 size={15}
-                className="ml-2 shrink-0 text-muted-foreground transition-transform duration-200"
+                className={cn(
+                  'ml-2 shrink-0 transition-transform duration-200',
+                  isSubmenuActive ? 'text-foreground' : 'text-muted-foreground',
+                )}
               />
             </div>
           </Button>
@@ -138,7 +144,12 @@ export function CollapseMenuButton({
             className="w-full justify-center h-10 mb-1 px-0 pointer-events-none"
             tabIndex={-1}
           >
-            <span className="flex items-center justify-center">
+            <span
+              className={cn(
+                'flex items-center justify-center',
+                isSubmenuActive ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
               <Icon size={18} />
             </span>
           </Button>
@@ -156,7 +167,7 @@ export function CollapseMenuButton({
           className="z-50 w-48 rounded-xl border border-border/70 bg-popover p-0 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2"
         >
           {/* Section label */}
-          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b">
+          <div className="border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </div>
           {/* Submenu links */}
@@ -169,7 +180,7 @@ export function CollapseMenuButton({
                 className={cn(
                   'flex items-center px-3 py-2 text-sm transition-colors',
                   (active === undefined && pathname === href) || active
-                    ? 'bg-secondary text-secondary-foreground font-medium text-foreground'
+                    ? 'bg-secondary font-medium text-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >

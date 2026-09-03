@@ -116,7 +116,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                                     'max-w-[200px] truncate py-0.5 text-sm',
                                     (active === undefined && pathname.startsWith(href)) || active
                                       ? 'font-medium text-foreground'
-                                      : 'text-foreground/80',
+                                      : 'text-muted-foreground',
                                   )}
                                 >
                                   {label}
@@ -134,7 +134,6 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                     <CollapseMenuButton
                       icon={Icon}
                       label={label}
-                      active={active === undefined ? pathname.startsWith(href) : active}
                       submenus={submenus}
                       isOpen={isSidebarOpen}
                     />
