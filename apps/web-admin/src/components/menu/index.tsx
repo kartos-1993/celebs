@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronUp } from 'lucide-react';
@@ -60,6 +61,30 @@ export function Menu({ isSidebarOpen }: MenuProps) {
 
   const isCollapsed = isSidebarOpen === false;
 
+  // Single-open accordion: at most one submenu group expanded, so the
+  // sidebar never grows beyond the viewport and needs no scrollbar.
+  const findActiveGroup = (path: string): string | null => {
+    for (const group of menuList) {
+      for (const menu of group.menus) {
+        const subs = menu.submenus ?? [];
+        if (subs.some((s) => (s.active === undefined ? s.href === path : s.active))) {
+          return menu.label;
+        }
+      }
+    }
+    return null;
+  };
+
+  const [expandedLabel, setExpandedLabel] = useState<string | null>(() =>
+    findActiveGroup(pathname),
+  );
+
+  useEffect(() => {
+    const activeGroup = findActiveGroup(pathname);
+    if (activeGroup) setExpandedLabel(activeGroup);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const initials = user?.name
     ? user.name
         .split(' ')
@@ -71,7 +96,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <nav className="mt-6 w-full flex-1">
+      <nav className="mt-4 w-full min-h-0 flex-1">
         <ul className="flex h-full flex-col items-start space-y-1 px-2">
           {menuList.map(({ menus }, index) => (
             <li className={cn('w-full')} key={index}>
@@ -136,6 +161,10 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                       label={label}
                       submenus={submenus}
                       isOpen={isSidebarOpen}
+                      expanded={expandedLabel === label}
+                      onToggle={() =>
+                        setExpandedLabel((prev) => (prev === label ? null : label))
+                      }
                     />
                   </div>
                 ),

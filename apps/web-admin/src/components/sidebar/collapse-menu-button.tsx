@@ -23,6 +23,8 @@ interface CollapseMenuButtonProps {
   label: string;
   submenus: Submenu[];
   isOpen: boolean | undefined;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
 /** Grace period before the flyout closes so crossing the gap to the
@@ -34,6 +36,8 @@ export function CollapseMenuButton({
   label,
   submenus,
   isOpen,
+  expanded,
+  onToggle,
 }: CollapseMenuButtonProps) {
   const location = useLocation();
   const pathname = location.pathname;
@@ -41,7 +45,6 @@ export function CollapseMenuButton({
   const isSubmenuActive = submenus.some((submenu) =>
     submenu.active === undefined ? submenu.href === pathname : submenu.active,
   );
-  const [isExpanded, setIsExpanded] = useState<boolean>(isSubmenuActive);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -61,10 +64,10 @@ export function CollapseMenuButton({
     }, FLYOUT_CLOSE_DELAY_MS);
   }, []);
 
-  // ── Expanded sidebar: collapsible tree ──────────────────────────────────
+  // ── Expanded sidebar: single-open accordion row ───────────────────────
   if (!isCollapsed) {
     return (
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
+      <Collapsible open={expanded} onOpenChange={onToggle} className="w-full">
         <CollapsibleTrigger
           className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1 w-full"
           asChild

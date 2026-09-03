@@ -22,7 +22,7 @@ const Sidebar = () => {
       <div
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
-        className="relative flex h-full flex-col overflow-y-auto overflow-x-hidden px-3 py-4"
+        className="relative flex h-full flex-col overflow-hidden px-3 py-4"
       >
         <Button
           className={cn(
