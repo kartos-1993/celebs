@@ -26,6 +26,7 @@ import type { Category } from '../../category/types';
 import { ProductApiService } from '../../product/api';
 import { Banner, PlatformSettingsApiService } from '../api';
 
+import { DeviceFrame } from '@/components/device-frame';
 import { PageLoader } from '@/components/page-loader';
 import { CategoryApiService } from '@/features/category/api';
 import { useToast } from '@/hooks/use-toast';
@@ -343,15 +344,12 @@ const Banners: React.FC = () => {
               </div>
             </div>
 
-            {/* Smart Phone Frame */}
-            <div className="relative mx-auto w-[290px] h-[580px] bg-zinc-950 rounded-[40px] border-[8px] border-zinc-800 shadow-2xl overflow-hidden flex flex-col">
-              {/* Phone Speaker & Notch */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-zinc-900 rounded-b-2xl z-30 flex items-center justify-center">
-                <div className="w-12 h-1 bg-black rounded-full mb-1"></div>
-              </div>
-
+            {/* Smart Phone Frame (shared DeviceFrame chrome) */}
+            <DeviceFrame
+              className="mx-auto w-[290px]"
+              screenClassName="flex h-[548px] flex-col overflow-hidden bg-zinc-900"
+            >
               {/* Mobile Content Screen */}
-              <div className="flex-1 bg-zinc-900 flex flex-col relative">
                 {/* Apple Immersive Slider Screen Area */}
                 <div className="relative h-[220px] w-full bg-zinc-800 overflow-hidden">
                   {banners[activePreviewIndex]?.imageUrl ? (
@@ -431,8 +429,7 @@ const Banners: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+            </DeviceFrame>
           </div>
         </div>
       </div>
