@@ -40,13 +40,11 @@ export function SheetMenu() {
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <PanelsTopLeft className="h-4 w-4" />
             </span>
-            <SheetTitle className="text-sm font-semibold tracking-tight">
-              Seller Center
-            </SheetTitle>
+            <SheetTitle className="text-sm font-semibold tracking-tight">Seller Center</SheetTitle>
           </Link>
           <SheetDescription className="sr-only">Main navigation</SheetDescription>
         </SheetHeader>
-        <div className="min-h-0 flex-1 px-2 py-3">
+        <div className="flex min-h-0 flex-1 flex-col px-2 py-3">
           <Menu isSidebarOpen={true} />
         </div>
       </SheetContent>
