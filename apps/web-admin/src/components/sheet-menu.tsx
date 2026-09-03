@@ -31,7 +31,7 @@ export function SheetMenu() {
         </Button>
       </SheetTrigger>
       <SheetContent
-        className="w-72 gap-0 overflow-y-auto p-0"
+        className="flex w-72 flex-col gap-0 overflow-hidden p-0"
         aria-describedby="sheet-menu-description"
         side="left"
       >
@@ -46,7 +46,7 @@ export function SheetMenu() {
           </Link>
           <SheetDescription className="sr-only">Main navigation</SheetDescription>
         </SheetHeader>
-        <div className="px-2 py-3">
+        <div className="min-h-0 flex-1 px-2 py-3">
           <Menu isSidebarOpen={true} />
         </div>
       </SheetContent>
