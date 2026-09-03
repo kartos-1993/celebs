@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Archive, Pencil } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -98,12 +97,10 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
             items={[
               {
                 label: 'Edit',
-                icon: Pencil,
                 onSelect: () => navigate(`/products/edit/${productId}`),
               },
               {
                 label: 'Archive (Delete)',
-                icon: Archive,
                 onSelect: () => onSetArchiveTarget(product),
                 destructive: true,
               },

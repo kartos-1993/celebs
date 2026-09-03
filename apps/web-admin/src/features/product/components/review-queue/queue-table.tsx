@@ -1,4 +1,4 @@
-import { Check, Eye, Store, X } from 'lucide-react';
+import { Store } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import {
@@ -122,18 +122,16 @@ export function QueueTable({
                 <RowActionsMenu
                   label={`Actions for ${product.name}`}
                   items={[
-                    { label: 'Preview listing', icon: Eye, onSelect: () => onPreview(product) },
+                    { label: 'Preview listing', onSelect: () => onPreview(product) },
                     ...(activeTab === 'pending'
                       ? [
                           {
                             label: 'Approve & publish',
-                            icon: Check,
                             onSelect: () => onApprove(product.id),
                             disabled: isReviewPending,
                           },
                           {
                             label: 'Reject listing',
-                            icon: X,
                             onSelect: () => onReject(product),
                             disabled: isReviewPending,
                             destructive: true,

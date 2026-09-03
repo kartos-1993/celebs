@@ -12,7 +12,7 @@ import {
   getExpandedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronRight, Edit, Folder, FolderOpen, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import {
@@ -254,15 +254,13 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
               <RowActionsMenu
                 label={`Actions for ${category.name}`}
                 items={[
-                  { label: 'Edit Category', icon: Edit, onSelect: () => onEdit(category) },
+                  { label: 'Edit Category', onSelect: () => onEdit(category) },
                   {
                     label: 'Add Subcategory',
-                    icon: Plus,
                     onSelect: () => onAddSubcategory(category.id),
                   },
                   {
                     label: 'Delete Category',
-                    icon: Trash2,
                     onSelect: () => onDelete(category.id),
                     destructive: true,
                   },

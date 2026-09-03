@@ -1,4 +1,3 @@
-import type { ComponentType } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
@@ -13,7 +12,6 @@ import { cn } from '@/lib/utils';
 
 export interface RowActionItem {
   label: string;
-  icon?: ComponentType<{ className?: string }>;
   onSelect: () => void;
   disabled?: boolean;
   destructive?: boolean;
@@ -40,20 +38,16 @@ export function RowActionsMenu({ items, label = 'Row actions', align = 'end' }: 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <DropdownMenuItem
-              key={item.label}
-              onClick={item.onSelect}
-              disabled={item.disabled}
-              className={cn(item.destructive && 'text-destructive focus:bg-destructive/10 focus:text-destructive')}
-            >
-              {Icon ? <Icon aria-hidden="true" className="mr-2 h-4 w-4" /> : null}
-              {item.label}
-            </DropdownMenuItem>
-          );
-        })}
+        {items.map((item) => (
+          <DropdownMenuItem
+            key={item.label}
+            onClick={item.onSelect}
+            disabled={item.disabled}
+            className={cn(item.destructive && 'text-destructive focus:bg-destructive/10 focus:text-destructive')}
+          >
+            {item.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

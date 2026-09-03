@@ -1,4 +1,4 @@
-import { MailWarning, Pencil, Trash2 } from 'lucide-react';
+import { MailWarning } from 'lucide-react';
 
 import type { UserData } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -102,10 +102,9 @@ export function StaffTable({
                     <RowActionsMenu
                       label={`Actions for ${member.name}`}
                       items={[
-                        { label: 'Edit permissions', icon: Pencil, onSelect: () => onEdit(member) },
+                        { label: 'Edit permissions', onSelect: () => onEdit(member) },
                         {
                           label: 'Delete staff',
-                          icon: Trash2,
                           onSelect: () => onDelete(member),
                           disabled: isDeletePending,
                           destructive: true,

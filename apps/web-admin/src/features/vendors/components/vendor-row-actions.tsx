@@ -1,5 +1,3 @@
-import { Check, Eye, X } from 'lucide-react';
-
 import { RowActionsMenu } from '@/components/row-actions-menu';
 
 interface VendorRowActionsProps {
@@ -24,12 +22,11 @@ export function VendorRowActions({
     <RowActionsMenu
       label={`Actions for ${shopName}`}
       items={[
-        { label: 'Inspect documents', icon: Eye, onSelect: onInspect },
+        { label: 'Inspect documents', onSelect: onInspect },
         ...(status !== 'APPROVED'
           ? [
               {
                 label: 'Approve vendor',
-                icon: Check,
                 onSelect: onApprove,
                 disabled: isActionPending,
               },
@@ -39,7 +36,6 @@ export function VendorRowActions({
           ? [
               {
                 label: 'Reject vendor',
-                icon: X,
                 onSelect: onReject,
                 disabled: isActionPending,
                 destructive: true,
