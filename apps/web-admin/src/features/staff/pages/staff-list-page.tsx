@@ -5,16 +5,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Layers,
-  MailWarning,
   Package,
-  Pencil,
   Receipt,
   Send,
   Shield,
   ShieldCheck,
   ShoppingCart,
   Store,
-  Trash2,
   Truck,
   UserPlus,
 } from 'lucide-react';
@@ -23,7 +20,6 @@ import { z } from 'zod';
 import { getGroupedPermissions, Permission, STAFF_ROLE_PRESETS } from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
 import { createStaffSchema } from '@celebs/shared-types';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
@@ -34,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
   FormControl,
@@ -55,17 +50,11 @@ import {
   SelectValue,
 } from '@celebs/shared-ui/components/select';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@celebs/shared-ui/components/table';
 
 import { createStaff, deleteStaff, getStaff, updateStaff } from '../api';
 import { STAFF_QUERY_KEYS } from '../api';
+import { StaffCards } from '../components/staff-cards';
+import { StaffTable } from '../components/staff-table';
 
 import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
 import { PageLoader } from '@/components/page-loader';
@@ -406,7 +395,7 @@ export default function StaffList() {
 
       {showCreateModal && (
         <Dialog open onOpenChange={(open) => !open && setShowCreateModal(false)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add Vendor Staff Account</DialogTitle>
               <DialogDescription>
@@ -586,7 +575,7 @@ export default function StaffList() {
       {/* Edit Staff Permissions Modal */}
       {editingStaff && (
         <Dialog open onOpenChange={(open) => !open && setEditingStaff(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Edit Staff Permissions</DialogTitle>
               <DialogDescription>
@@ -627,99 +616,32 @@ export default function StaffList() {
         </Dialog>
       )}
 
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Staff Name</TableHead>
-              <TableHead>Email Address</TableHead>
-              {isAdminOrSuperAdmin && <TableHead>Associated Shop</TableHead>}
-              <TableHead>Assigned Permissions</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {staff.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={isAdminOrSuperAdmin ? 5 : 4}>
-                  <EmptyState
-                    title="No staff sub-accounts found."
-                    description={'Click "Add Sub-Account" to delegate employee access.'}
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              staff.map((member: UserData) => (
-                <TableRow key={member.id} className="hover:bg-muted/30">
-                  <TableCell className="font-semibold text-foreground">{member.name}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground">{member.email}</TableCell>
-                  {isAdminOrSuperAdmin && (
-                    <TableCell className="font-medium text-foreground">
-                      {member.vendorProfile?.shopName || 'Vendor Shop'}
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
-                        member.permissions.slice(0, 4).map((perm: string) => (
-                          <Badge key={perm} variant="outline" className="py-0 px-1.5 font-mono">
-                            {perm}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="secondary" className="font-normal">
-                          Staff Sub-User
-                        </Badge>
-                      )}
-                      {Array.isArray(member.permissions) && member.permissions.length > 4 && (
-                        <Badge variant="secondary" className="py-0 px-1 font-mono">
-                          +{member.permissions.length - 4} more
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {!member.isEmailVerified && (
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="warning">
-                            <MailWarning className="w-3 h-3 mr-1 inline" /> Unverified
-                          </Badge>
-                          <ResendStaffInviteButton email={member.email} />
-                        </div>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingStaff(member);
-                          setEditPermissions(
-                            Array.isArray(member.permissions)
-                              ? (member.permissions as string[])
-                              : [],
-                          );
-                        }}
-                        className="h-8 gap-1"
-                      >
-                        <Pencil className="w-3.5 h-3.5" /> Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => setStaffToDelete(member)}
-                        disabled={deleteMutation.isPending}
-                        className="h-8 gap-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <StaffTable
+        staff={staff}
+        isAdminOrSuperAdmin={isAdminOrSuperAdmin}
+        onEdit={(member) => {
+          setEditingStaff(member);
+          setEditPermissions(
+            Array.isArray(member.permissions) ? (member.permissions as string[]) : [],
+          );
+        }}
+        onDelete={(member) => setStaffToDelete(member)}
+        isDeletePending={deleteMutation.isPending}
+        renderResendInvite={(email) => <ResendStaffInviteButton email={email} />}
+      />
+      <StaffCards
+        staff={staff}
+        isAdminOrSuperAdmin={isAdminOrSuperAdmin}
+        onEdit={(member) => {
+          setEditingStaff(member);
+          setEditPermissions(
+            Array.isArray(member.permissions) ? (member.permissions as string[]) : [],
+          );
+        }}
+        onDelete={(member) => setStaffToDelete(member)}
+        isDeletePending={deleteMutation.isPending}
+        renderResendInvite={(email) => <ResendStaffInviteButton email={email} />}
+      />
 
       <ConfirmDialog
         open={staffToDelete !== null}

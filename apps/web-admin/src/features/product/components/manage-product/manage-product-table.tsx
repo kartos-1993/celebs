@@ -13,6 +13,7 @@ import {
 
 import type { ProductListItem } from '../../types';
 
+import { ManageProductCards } from './manage-product-cards';
 import { ManageProductPagination } from './manage-product-pagination';
 import { ManageProductTableRow } from './manage-product-table-row';
 
@@ -83,7 +84,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
     <div
       className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'}
     >
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+      <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -120,6 +121,23 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
           </TableBody>
         </Table>
       </div>
+
+      <ManageProductCards
+        products={products}
+        isLoading={false}
+        isFetching={isFetching && !isLoading}
+        selectedProducts={selectedProducts}
+        onSelectProduct={onSelectProduct}
+        isSellerOrStaff={isSellerOrStaff}
+        canCreate={canCreate}
+        canEdit={canEdit}
+        onSubmit={onSubmit}
+        isSubmitPending={isSubmitPending}
+        onToggleActivation={onToggleActivation}
+        isTogglePending={isTogglePending}
+        onSetArchiveTarget={onSetArchiveTarget}
+        searchQuery={searchQuery}
+      />
 
       <ManageProductPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
     </div>

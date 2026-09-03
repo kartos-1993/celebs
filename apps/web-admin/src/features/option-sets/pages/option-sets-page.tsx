@@ -347,7 +347,7 @@ export default function OptionSetsPage() {
 
       {/* Delete Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Option Set</DialogTitle>
             <DialogDescription>

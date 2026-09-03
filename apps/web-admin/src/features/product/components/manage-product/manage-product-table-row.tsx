@@ -15,6 +15,8 @@ import { TableCell, TableRow } from '@celebs/shared-ui/components/table';
 
 import type { ProductListItem } from '../../types';
 
+import { statusBadgeVariant, statusLabels } from './product-status';
+
 interface ManageProductTableRowProps {
   product: ProductListItem;
   isSelected: boolean;
@@ -28,23 +30,6 @@ interface ManageProductTableRowProps {
   isTogglePending: boolean;
   onSetArchiveTarget: (product: ProductListItem) => void;
 }
-
-const statusBadgeVariant = (
-  status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' => {
-  if (status === 'published') return 'default';
-  if (status === 'pending_review') return 'secondary';
-  if (status === 'rejected') return 'destructive';
-  return 'outline';
-};
-
-const statusLabels: Record<string, string> = {
-  draft: 'Draft',
-  pending_review: 'Pending Review',
-  published: 'Published',
-  rejected: 'Rejected',
-  deactivated: 'Deactivated',
-};
 
 export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   product,

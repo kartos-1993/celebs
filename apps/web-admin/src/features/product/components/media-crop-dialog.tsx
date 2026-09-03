@@ -117,7 +117,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
         <MediaCropHeader editedName={editedName} onNameChange={setEditedName} />
         <div className="flex flex-col items-center gap-3 bg-muted/10 p-4">
           <MediaCropViewport

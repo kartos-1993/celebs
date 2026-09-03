@@ -89,7 +89,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="flex max-h-[90vh] flex-col p-0 sm:max-w-3xl">
         <DialogHeader className="p-6 pb-2 border-b">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">

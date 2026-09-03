@@ -299,8 +299,8 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
   });
 
   return (
-    <div className="rounded-md border border-border overflow-hidden bg-card shadow-sm">
-      <Table>
+    <div className="overflow-x-auto rounded-md border border-border bg-card shadow-sm">
+      <Table className="min-w-[640px]">
         <TableHeader className="bg-muted/50">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border">

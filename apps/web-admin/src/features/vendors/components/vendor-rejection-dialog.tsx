@@ -37,7 +37,7 @@ export const VendorRejectionDialog: React.FC<VendorRejectionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-destructive flex items-center gap-2">
             Reject Vendor Application

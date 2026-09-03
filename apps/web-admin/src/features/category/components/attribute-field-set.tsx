@@ -494,7 +494,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="max-w-xs">
+        <DialogContent className="sm:max-w-xs">
           <DialogHeader>
             <DialogTitle>Delete Attribute</DialogTitle>
             <DialogDescription className="py-2 text-sm text-muted-foreground">

@@ -43,7 +43,7 @@ export const ManageProductDialogs: React.FC<ManageProductDialogsProps> = ({
         open={Boolean(archiveTarget)}
         onOpenChange={(open) => !open && onCloseArchiveTarget()}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />
@@ -71,7 +71,7 @@ export const ManageProductDialogs: React.FC<ManageProductDialogsProps> = ({
       </Dialog>
 
       <Dialog open={isBatchArchiveOpen} onOpenChange={(open) => !open && onCloseBatchArchive()}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />

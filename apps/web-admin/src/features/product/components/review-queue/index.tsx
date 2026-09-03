@@ -1,25 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Check, Eye, ShieldCheck, ShoppingBag, Store, X } from 'lucide-react';
+import { ShieldCheck, ShoppingBag } from 'lucide-react';
 
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@celebs/shared-ui/components/card';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@celebs/shared-ui/components/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@celebs/shared-ui/components/tooltip';
 
 import type { ProductFilterRequest, ReviewProductRequestPayload } from '../../api';
 import {
@@ -27,10 +12,10 @@ import {
   useProductsQuery,
   useReviewQueueQuery,
 } from '../../hooks/use-product-queries';
-import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
 
 import { PreviewModal } from './preview-modal';
-import { QualityBadge } from './quality-badge';
+import { QueueCards } from './queue-cards';
+import { QueueTable } from './queue-table';
 import { RejectionDialog } from './rejection-dialog';
 import type { ProductQueueItem } from './types';
 
@@ -169,150 +154,26 @@ export default function ReviewProductQueue() {
               }
             />
           ) : (
-            <div
-              className={`overflow-x-auto rounded-xl border bg-card shadow-sm transition-opacity ${activeQuery.isFetching ? 'opacity-60' : ''}`}
-            >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>QC Score</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    {activeTab === 'rejected' && <TableHead>Rejection Reason</TableHead>}
-                    <TableHead className="text-right">Actions</TableHead>{' '}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={product.mainImages?.[0] || '/placeholder.svg'}
-                            alt={product.name}
-                            className="h-12 w-12 rounded object-cover border bg-muted"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.onerror = null;
-                              target.src = '/placeholder.svg';
-                            }}
-                          />
-                          <div>
-                            <span className="font-semibold block max-w-xs truncate text-foreground">
-                              {product.name}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Brand:{' '}
-                              <strong className="text-foreground">{product.brand || 'N/A'}</strong>
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <QualityBadge score={product.qualityScore} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm font-medium">
-                          <Store className="w-3.5 h-3.5 text-muted-foreground" />
-                          {product.vendorName || 'Independent Seller'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="text-xs max-w-[220px] truncate block"
-                          title={formatProductCategoryBreadcrumb(product)}
-                        >
-                          {formatProductCategoryBreadcrumb(product)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        <div>Rs. {product.price.toLocaleString()}</div>
-                        {product.discountedPrice && (
-                          <div className="text-xs text-success font-normal">
-                            Disc: Rs. {product.discountedPrice.toLocaleString()}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {product.createdAt
-                          ? new Date(product.createdAt).toLocaleDateString()
-                          : 'Recent'}
-                      </TableCell>
-                      {activeTab === 'rejected' && (
-                        <TableCell className="max-w-xs truncate">
-                          <div className="text-xs text-destructive font-medium">
-                            {product.rejectionReasonCategory || 'General QC Issue'}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {product.reviewNote || 'No detailed note provided'}
-                          </div>
-                        </TableCell>
-                      )}
-                      <TableCell className="text-right">
-                        <TooltipProvider>
-                          <div className="flex items-center justify-end gap-0.5">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                                  onClick={() => openPreview(product)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  <span className="sr-only">Preview listing</span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Preview listing</TooltipContent>
-                            </Tooltip>
-
-                            {isPendingTab && (
-                              <>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 text-success hover:bg-success/10 hover:text-success"
-                                      onClick={() => handleApprove(product.id)}
-                                      disabled={review.isPending}
-                                    >
-                                      <Check className="h-4 w-4" />
-                                      <span className="sr-only">Approve and publish</span>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Approve &amp; publish</TooltipContent>
-                                </Tooltip>
-
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                      onClick={() => openReject(product)}
-                                      disabled={review.isPending}
-                                    >
-                                      <X className="h-4 w-4" />
-                                      <span className="sr-only">Reject listing</span>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Reject listing</TooltipContent>
-                                </Tooltip>
-                              </>
-                            )}
-                          </div>
-                        </TooltipProvider>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              <QueueTable
+                products={products}
+                activeTab={activeTab}
+                isFetching={activeQuery.isFetching}
+                isReviewPending={review.isPending}
+                onPreview={openPreview}
+                onApprove={handleApprove}
+                onReject={openReject}
+              />
+              <QueueCards
+                products={products}
+                activeTab={activeTab}
+                isFetching={activeQuery.isFetching}
+                isReviewPending={review.isPending}
+                onPreview={openPreview}
+                onApprove={handleApprove}
+                onReject={openReject}
+              />
+            </>
           )}
 
           {/* Pagination */}
