@@ -1,7 +1,6 @@
 import { Check, Eye, Store, X } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
-import { Button } from '@celebs/shared-ui/components/button';
 import {
   Table,
   TableBody,
@@ -10,17 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from '@celebs/shared-ui/components/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@celebs/shared-ui/components/tooltip';
 
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
 
 import { QualityBadge } from './quality-badge';
 import type { ProductQueueItem } from './types';
+
+import { RowActionsMenu } from '@/components/row-actions-menu';
 
 interface QueueTableProps {
   products: ProductQueueItem[];
@@ -124,60 +119,29 @@ export function QueueTable({
                 </TableCell>
               )}
               <TableCell className="text-right">
-                <TooltipProvider>
-                  <div className="flex items-center justify-end gap-0.5">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                          onClick={() => onPreview(product)}
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Preview listing</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Preview listing</TooltipContent>
-                    </Tooltip>
-
-                    {activeTab === 'pending' && (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-success hover:bg-success/10 hover:text-success"
-                              onClick={() => onApprove(product.id)}
-                              disabled={isReviewPending}
-                            >
-                              <Check className="h-4 w-4" />
-                              <span className="sr-only">Approve and publish</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Approve &amp; publish</TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => onReject(product)}
-                              disabled={isReviewPending}
-                            >
-                              <X className="h-4 w-4" />
-                              <span className="sr-only">Reject listing</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Reject listing</TooltipContent>
-                        </Tooltip>
-                      </>
-                    )}
-                  </div>
-                </TooltipProvider>
+                <RowActionsMenu
+                  label={`Actions for ${product.name}`}
+                  items={[
+                    { label: 'Preview listing', icon: Eye, onSelect: () => onPreview(product) },
+                    ...(activeTab === 'pending'
+                      ? [
+                          {
+                            label: 'Approve & publish',
+                            icon: Check,
+                            onSelect: () => onApprove(product.id),
+                            disabled: isReviewPending,
+                          },
+                          {
+                            label: 'Reject listing',
+                            icon: X,
+                            onSelect: () => onReject(product),
+                            disabled: isReviewPending,
+                            destructive: true,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               </TableCell>
             </TableRow>
           ))}
