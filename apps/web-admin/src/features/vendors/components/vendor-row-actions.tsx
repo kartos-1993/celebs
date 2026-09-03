@@ -1,14 +1,9 @@
 import { Check, Eye, X } from 'lucide-react';
 
-import { Button } from '@celebs/shared-ui/components/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@celebs/shared-ui/components/tooltip';
+import { RowActionsMenu } from '@/components/row-actions-menu';
 
 interface VendorRowActionsProps {
+  shopName: string;
   status: string;
   onInspect: () => void;
   onApprove: () => void;
@@ -16,8 +11,9 @@ interface VendorRowActionsProps {
   isActionPending: boolean;
 }
 
-/** Icon-only approve/inspect/reject actions shared by table and cards. */
+/** Kebab row actions shared by vendor table (desktop). */
 export function VendorRowActions({
+  shopName,
   status,
   onInspect,
   onApprove,
@@ -25,59 +21,32 @@ export function VendorRowActions({
   isActionPending,
 }: VendorRowActionsProps) {
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-0.5 md:justify-end">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              onClick={onInspect}
-            >
-              <Eye className="h-4 w-4" />
-              <span className="sr-only">Inspect documents</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Inspect documents</TooltipContent>
-        </Tooltip>
-
-        {status !== 'APPROVED' && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-success hover:bg-success/10 hover:text-success"
-                onClick={onApprove}
-                disabled={isActionPending}
-              >
-                <Check className="h-4 w-4" />
-                <span className="sr-only">Approve vendor</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Approve vendor</TooltipContent>
-          </Tooltip>
-        )}
-
-        {status !== 'REJECTED' && status !== 'APPROVED' && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={onReject}
-                disabled={isActionPending}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Reject vendor</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reject vendor</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-    </TooltipProvider>
+    <RowActionsMenu
+      label={`Actions for ${shopName}`}
+      items={[
+        { label: 'Inspect documents', icon: Eye, onSelect: onInspect },
+        ...(status !== 'APPROVED'
+          ? [
+              {
+                label: 'Approve vendor',
+                icon: Check,
+                onSelect: onApprove,
+                disabled: isActionPending,
+              },
+            ]
+          : []),
+        ...(status !== 'REJECTED' && status !== 'APPROVED'
+          ? [
+              {
+                label: 'Reject vendor',
+                icon: X,
+                onSelect: onReject,
+                disabled: isActionPending,
+                destructive: true,
+              },
+            ]
+          : []),
+      ]}
+    />
   );
 }

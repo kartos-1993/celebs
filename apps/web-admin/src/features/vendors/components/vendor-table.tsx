@@ -69,6 +69,7 @@ export function VendorTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <VendorRowActions
+                    shopName={vendor.shopName}
                     status={vendor.status}
                     onInspect={() => onInspect(vendor.id)}
                     onApprove={() => onApprove(vendor.id)}
