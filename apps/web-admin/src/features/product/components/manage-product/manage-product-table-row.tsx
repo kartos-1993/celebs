@@ -1,21 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { MoreHorizontal } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Archive, Pencil } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@celebs/shared-ui/components/dropdown-menu';
 import { TableCell, TableRow } from '@celebs/shared-ui/components/table';
 
 import type { ProductListItem } from '../../types';
 
 import { statusBadgeVariant, statusLabels } from './product-status';
+
+import { RowActionsMenu } from '@/components/row-actions-menu';
 
 interface ManageProductTableRowProps {
   product: ProductListItem;
@@ -44,6 +40,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   isTogglePending,
   onSetArchiveTarget,
 }) => {
+  const navigate = useNavigate();
   if (!product.id) return null;
   const productId = product.id;
   const price = Number(product.price ?? 0);
@@ -96,22 +93,22 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
               {status === 'published' ? 'Deactivate' : 'Activate'}
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open actions menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to={`/products/edit/${productId}`}>Edit</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSetArchiveTarget(product)}>
-                Archive (Delete)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActionsMenu
+            label={`Actions for ${product.name ?? 'product'}`}
+            items={[
+              {
+                label: 'Edit',
+                icon: Pencil,
+                onSelect: () => navigate(`/products/edit/${productId}`),
+              },
+              {
+                label: 'Archive (Delete)',
+                icon: Archive,
+                onSelect: () => onSetArchiveTarget(product),
+                destructive: true,
+              },
+            ]}
+          />
         </div>
       </TableCell>
     </TableRow>
