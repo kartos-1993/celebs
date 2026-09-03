@@ -159,7 +159,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                         )}
                       >
                         {isCollapsed ? (
-                          <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                          <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                             {initials}
                           </span>
                         ) : (

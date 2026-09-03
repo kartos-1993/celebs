@@ -212,7 +212,7 @@ export default function OptionSetsPage() {
             >
               <div className="flex items-start justify-between gap-2 border-b pb-3">
                 <div>
-                  <h3 className="font-bold text-base text-foreground">
+                  <h3 className="text-base font-semibold text-foreground">
                     {set.displayName || set.name}
                   </h3>
                   <span className="text-xs text-muted-foreground font-mono">Key: {set.name}</span>

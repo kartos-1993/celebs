@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
+import { focusRing } from '../lib/focus-ring';
+
 import { Button } from './button';
 
 import { cn } from '@/lib/utils';
@@ -14,7 +16,10 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
       <div className={cn('relative rounded-md', className)}>
         <input
           type={showPassword ? 'text' : 'password'}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(
+            'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+            focusRing,
+          )}
           ref={ref}
           disabled={disabled}
           {...props}

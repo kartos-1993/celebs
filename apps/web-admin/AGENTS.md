@@ -47,3 +47,22 @@
 - MSW Mandate: Intercept API interactions in integration tests using MSW.
 - Component Testing over E2E: Use Vitest + React Testing Library for unit/integration testing.
 - Deterministic Mocks: Generate test fixtures with seeded values.
+
+## 7. Typography, Whitespace & Focus Standards
+
+- Type Scale (only these pairings; do not invent sizes or weights):
+  - Page title (h1): `text-2xl font-semibold tracking-tight text-foreground`
+  - Section title (h2, dialog/sheet titles): `text-lg font-semibold tracking-tight`
+  - Subsection (h3): `text-base font-semibold`
+  - Item title (h4): `text-sm font-semibold`
+  - Eyebrow: `text-xs font-medium uppercase tracking-wide text-muted-foreground`
+  - Body: `text-sm` (`font-medium` to emphasize, `font-semibold` max for strong)
+  - Meta/caption: `text-xs text-muted-foreground`
+  - Mono data (order #, tracking, counts): `font-mono text-xs` (+ `tabular-nums` for numerals)
+- Floor: never go below `text-xs` in admin UI copy. No `text-[8/9/10/11px]` and no `text-[15px]` (use `text-sm`).
+- Weights: `normal` / `medium` / `semibold` / `bold` only. No `extrabold` / `black` in admin chrome.
+- Leading: `leading-none` on display/alert titles, `leading-tight` on item titles, `leading-relaxed` on long helper prose, Tailwind defaults elsewhere.
+- Never override primitive type defaults (`DialogTitle`, `Button`, `Input`, `Badge`) with ad-hoc `text-*`/`font-*` classes — fix the primitive instead.
+- Spacing rhythm: page `space-y-6`, sections `space-y-4`, field groups `space-y-1.5`/`space-y-2`, tight meta `space-y-1`/`space-y-0.5`; inline `gap-1`/`1.5`/`2`; cards `p-3 sm:p-4`, large containers `p-6`.
+- Focus: all interactives use the shared `focusRing` token (`packages/shared-ui/src/lib/focus-ring.ts`) — `ring-2` + offset, `focus-visible` only.
+- Exemptions (documented, do not "fix"): storefront preview canvases (`widget-preview-boundary`, product preview sections) follow shop styling, not this scale; fixed-size glyph contexts (avatar initials, swatch placeholders, thumbnail overlays) may go below the floor.

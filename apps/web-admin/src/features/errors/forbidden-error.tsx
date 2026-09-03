@@ -36,7 +36,7 @@ export default function ForbiddenError() {
         <ShieldAlert className="h-8 w-8" />
       </div>
 
-      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">403 - Access Denied</h1>
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">403 - Access Denied</h1>
       <p className="mt-2 text-sm text-muted-foreground max-w-md">
         You do not have the required permissions to access this module or perform this action.
       </p>

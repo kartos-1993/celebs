@@ -268,13 +268,13 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
             />
           ) : null}
           {!canAddMore ? (
-            <span className="text-[11px] text-muted-foreground">Max {maxImages} reached</span>
+            <span className="text-xs text-muted-foreground">Max {maxImages} reached</span>
           ) : null}
         </div>
 
         {/* Meta */}
         <div className="ml-auto shrink-0">
-          <span className="text-[11px] tabular-nums text-muted-foreground">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {images.length}
             {maxImages != null ? ` / ${maxImages}` : ''}
           </span>

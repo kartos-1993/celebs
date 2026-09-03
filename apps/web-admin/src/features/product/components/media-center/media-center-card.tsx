@@ -94,7 +94,7 @@ export function MediaCenterCard({
           <span className="truncate text-xs font-medium text-foreground" title={asset.originalName}>
             {asset.originalName}
           </span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {formatBytes(asset.sizeBytes ?? 0)} • Product
           </span>
         </div>

@@ -34,7 +34,7 @@ export function MediaCropHeader({ editedName, onNameChange }: Props) {
             className="h-8 pr-16 text-xs"
             maxLength={40}
           />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] tabular-nums text-muted-foreground">
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs tabular-nums text-muted-foreground">
             {editedName.length}/40
           </span>
         </div>

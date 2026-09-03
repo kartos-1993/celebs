@@ -40,7 +40,7 @@ export function SheetMenu() {
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <PanelsTopLeft className="h-4 w-4" />
             </span>
-            <SheetTitle className="text-[15px] font-semibold tracking-tight">
+            <SheetTitle className="text-sm font-semibold tracking-tight">
               Seller Center
             </SheetTitle>
           </Link>

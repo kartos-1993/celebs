@@ -402,7 +402,7 @@ function VariantFieldSlot({ field, control }: { field: FieldSpec; control: Contr
     <div className="relative">
       <Comp field={field} control={control} />
       {count > 0 ? (
-        <span className="absolute right-0 top-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
+        <span className="absolute right-0 top-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium tabular-nums text-primary">
           {count} selected
         </span>
       ) : null}

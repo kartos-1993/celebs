@@ -38,7 +38,7 @@ const Sidebar = () => {
             </span>
             <h1
               className={cn(
-                'whitespace-nowrap text-[15px] font-semibold tracking-tight text-foreground transition-[transform,opacity,display] ease-in-out duration-300',
+                'whitespace-nowrap text-sm font-semibold tracking-tight text-foreground transition-[transform,opacity,display] ease-in-out duration-300',
                 !isSidebarOpen ? 'hidden -translate-x-96 opacity-0' : 'translate-x-0 opacity-100',
               )}
             >

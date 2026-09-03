@@ -2,10 +2,15 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+import { focusWithinRing } from '../lib/focus-ring';
+
 import { cn } from '@/lib/utils';
 
 const numberInputVariants = cva(
-  'relative flex w-full items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring disabled:opacity-50 disabled:cursor-not-allowed',
+  cn(
+    'relative flex w-full items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+    focusWithinRing,
+  ),
   {
     variants: {
       size: {

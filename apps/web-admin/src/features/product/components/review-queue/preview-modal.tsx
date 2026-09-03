@@ -134,7 +134,7 @@ export function PreviewModal({
           <div className="p-4 border-b bg-muted/20 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold">{product.name}</h2>
+                <h2 className="text-xl font-semibold tracking-tight">{product.name}</h2>
                 <QualityBadge score={product.qualityScore} />
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
@@ -556,7 +556,7 @@ export function PreviewModal({
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-muted/30 border rounded-xl">
                   <div>
-                    <h4 className="font-bold text-lg flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                       <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality Score
                     </h4>
                     <p className="text-xs text-muted-foreground">

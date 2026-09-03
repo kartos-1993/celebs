@@ -138,7 +138,7 @@ function GroupedPermissionSelector({
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-foreground">{group.module.label}</h4>
-                  <p className="text-[10px] text-muted-foreground">{group.module.description}</p>
+                  <p className="text-xs text-muted-foreground">{group.module.description}</p>
                 </div>
               </div>
               <Button
@@ -146,7 +146,7 @@ function GroupedPermissionSelector({
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleGroup(groupPerms)}
-                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
               >
                 {allGroupSelected ? 'Deselect All' : 'Select All'}
               </Button>
@@ -173,7 +173,7 @@ function GroupedPermissionSelector({
                       <span className="font-medium text-foreground block leading-none">
                         {label}
                       </span>
-                      <span className="text-[10px] text-muted-foreground block leading-tight">
+                      <span className="block text-xs leading-tight text-muted-foreground">
                         {description}
                       </span>
                     </div>
@@ -533,10 +533,10 @@ export default function StaffList() {
                               <PresetIcon className="w-4 h-4" />
                             </div>
                             <div className="space-y-0.5">
-                              <span className="font-bold text-foreground block">
+                              <span className="block text-sm font-semibold text-foreground">
                                 {preset.label}
                               </span>
-                              <span className="text-[11px] text-muted-foreground leading-tight block">
+                              <span className="block text-xs leading-tight text-muted-foreground">
                                 {preset.description}
                               </span>
                             </div>
@@ -553,7 +553,7 @@ export default function StaffList() {
                   <div className="border-t pt-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="block font-semibold">Granular Capability Selection</Label>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {selectedPermissions.length} capabilities selected
                       </span>
                     </div>
@@ -597,7 +597,7 @@ export default function StaffList() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="block font-semibold">Assigned Granular Capabilities</Label>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {editPermissions.length} capabilities active
                 </span>
               </div>

@@ -326,13 +326,13 @@ export function ColorMetaItem({
             />
           ) : null}
           {!canAddMore ? (
-            <span className="text-[11px] text-muted-foreground">Max {maxImages} reached</span>
+            <span className="text-xs text-muted-foreground">Max {maxImages} reached</span>
           ) : null}
         </div>
 
         {/* Meta */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <span className="text-[11px] tabular-nums text-muted-foreground">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {imagesVal.length}
             {maxImages != null ? ` / ${maxImages}` : ''}
           </span>
