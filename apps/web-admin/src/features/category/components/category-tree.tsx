@@ -26,6 +26,8 @@ import {
 
 import { CategoryTreeNode } from '../types';
 
+import { RowActionsMenu } from '@/components/row-actions-menu';
+
 interface CategoryTreeProps {
   categoryTree: CategoryTreeNode[];
   onEdit: (category: CategoryTreeNode) => void;
@@ -248,36 +250,24 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({
           const category = row.original;
 
           return (
-            <div className="flex gap-2 justify-end pr-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
-                onClick={() => onEdit(category)}
-                title="Edit Category"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
-                onClick={() => onAddSubcategory(category.id)}
-                title="Add Subcategory"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                onClick={() => onDelete(category.id)}
-                title="Delete Category"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <div className="flex justify-end pr-2">
+              <RowActionsMenu
+                label={`Actions for ${category.name}`}
+                items={[
+                  { label: 'Edit Category', icon: Edit, onSelect: () => onEdit(category) },
+                  {
+                    label: 'Add Subcategory',
+                    icon: Plus,
+                    onSelect: () => onAddSubcategory(category.id),
+                  },
+                  {
+                    label: 'Delete Category',
+                    icon: Trash2,
+                    onSelect: () => onDelete(category.id),
+                    destructive: true,
+                  },
+                ]}
+              />
             </div>
           );
         },
