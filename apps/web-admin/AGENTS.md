@@ -65,4 +65,5 @@
 - Never override primitive type defaults (`DialogTitle`, `Button`, `Input`, `Badge`) with ad-hoc `text-*`/`font-*` classes — fix the primitive instead.
 - Spacing rhythm: page `space-y-6`, sections `space-y-4`, field groups `space-y-1.5`/`space-y-2`, tight meta `space-y-1`/`space-y-0.5`; inline `gap-1`/`1.5`/`2`; cards `p-3 sm:p-4`, large containers `p-6`.
 - Focus: all interactives use the shared `focusRing` token (`packages/shared-ui/src/lib/focus-ring.ts`) — `ring-2` + offset, `focus-visible` only.
+- List headers: every list page uses `PageHeader` (title + description + `actions`) followed by the shared `FilterBar` (`@/components/filter-bar`) — `FilterSearch` left, `SegmentedTabs`/filters right, stacks on mobile. Never hand-roll a filter row or flip the order.
 - Exemptions (documented, do not "fix"): storefront preview canvases (`widget-preview-boundary`, product preview sections) follow shop styling, not this scale; fixed-size glyph contexts (avatar initials, swatch placeholders, thumbnail overlays) may go below the floor.
