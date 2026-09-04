@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Calendar } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -7,6 +8,13 @@ import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { TableCell, TableRow } from '@celebs/shared-ui/components/table';
 
 import type { ProductListItem } from '../../types';
+import {
+  formatShortDate,
+  getCategoryName,
+  getInitials,
+  getProductStock,
+  getVendorDisplay,
+} from '../../utils/product-table-helpers';
 
 import { statusBadgeVariant, statusLabels } from './product-status';
 
@@ -44,9 +52,15 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   const productId = product.id;
   const price = Number(product.price ?? 0);
   const status = product.status ?? 'draft';
+  const vendor = getVendorDisplay(product);
+  const stock = getProductStock(product);
+  const updated = formatShortDate(
+    (product as { updatedAt?: unknown }).updatedAt ??
+      (product as { createdAt?: unknown }).createdAt,
+  );
 
   return (
-    <TableRow>
+    <TableRow data-state={isSelected ? 'selected' : undefined}>
       <TableCell>
         <Checkbox checked={isSelected} onCheckedChange={(checked) => onSelect(!!checked)} />
       </TableCell>
@@ -55,7 +69,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
           <img
             src={product.mainImages?.[0] || '/placeholder.svg'}
             alt={product.name ?? 'Product'}
-            className="h-12 w-12 rounded object-cover border bg-muted"
+            className="h-10 w-10 shrink-0 rounded-lg border bg-muted object-cover"
             onError={(e) => {
               const target = e.currentTarget;
               target.onerror = null;
@@ -63,22 +77,48 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
             }}
           />
           <div className="min-w-0">
-            <div className="font-medium max-w-xs truncate">{product.name ?? 'Untitled'}</div>
+            <div className="max-w-55 truncate text-sm font-medium leading-tight">
+              {product.name ?? 'Untitled'}
+            </div>
             {product.brand && (
-              <div className="text-xs text-muted-foreground truncate">Brand: {product.brand}</div>
+              <div className="truncate text-xs text-muted-foreground">{product.brand}</div>
             )}
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-right font-semibold">Rs. {price.toLocaleString()}</TableCell>
       <TableCell>
-        <Badge variant={statusBadgeVariant(status)}>{statusLabels[status] ?? status}</Badge>
+        <div className="flex flex-wrap items-center gap-1">
+          <Badge variant="secondary">{getCategoryName(product)}</Badge>
+          <Badge variant={statusBadgeVariant(status)}>{statusLabels[status] ?? status}</Badge>
+        </div>
       </TableCell>
-      <TableCell className="text-sm">{product.vendorName || 'Independent Seller'}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            {getInitials(vendor)}
+          </span>
+          <span className="max-w-32 truncate text-sm">{vendor}</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm tabular-nums">{stock}</TableCell>
+      <TableCell className="text-right font-mono text-sm tabular-nums">
+        Rs. {price.toLocaleString()}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+          <span className="whitespace-nowrap">{updated}</span>
+        </div>
+      </TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
           {isSellerOrStaff && canCreate && (status === 'draft' || status === 'rejected') && (
-            <Button size="sm" disabled={isSubmitPending} onClick={() => onSubmit(productId)}>
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={isSubmitPending}
+              onClick={() => onSubmit(productId)}
+            >
               Submit
             </Button>
           )}
@@ -86,6 +126,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
             <Button
               size="sm"
               variant="outline"
+              className="h-7 px-2 text-xs"
               disabled={isTogglePending}
               onClick={() => onToggleActivation(productId)}
             >
@@ -95,10 +136,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
           <RowActionsMenu
             label={`Actions for ${product.name ?? 'product'}`}
             items={[
-              {
-                label: 'Edit',
-                onSelect: () => navigate(`/products/edit/${productId}`),
-              },
+              { label: 'Edit', onSelect: () => navigate(`/products/edit/${productId}`) },
               {
                 label: 'Archive (Delete)',
                 onSelect: () => onSetArchiveTarget(product),

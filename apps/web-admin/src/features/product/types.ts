@@ -96,4 +96,17 @@ export interface ProductDraft {
 
 export type ProductListItem = ProductRecord;
 
+// ── Manage list UI state ────────────────────────────────────────────────
+export type ProductSortKey = 'newest' | 'price-asc' | 'price-desc' | 'name-asc';
+
+export type StockState = 'in' | 'low' | 'out';
+
+export type PreviewStockFilter = 'all' | StockState;
+
+export interface PreviewFilters {
+  vendor: string;
+  category: string;
+  stock: PreviewStockFilter;
+}
+
 export type { DropdownCategory, RecentCategory } from '@celebs/shared-types';
