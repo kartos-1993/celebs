@@ -23,7 +23,7 @@ export function getCategoryName(product: ProductListItem): string {
   return category?.name ?? 'Uncategorized';
 }
 
-export function getVendorDisplay(product: ProductListItem): string {
+export function getVendorDisplay(product: { vendorName?: string | null }): string {
   return product.vendorName || 'Independent Seller';
 }
 

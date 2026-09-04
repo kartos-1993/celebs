@@ -15,7 +15,7 @@ import {
 import { PRODUCT_STATUS_TABS } from '../../hooks/use-manage-product-state';
 import type { PreviewStockFilter, ProductSortKey } from '../../types';
 
-import { cn } from '@/lib/utils';
+import { UnderlineTabs } from '@/components/underline-tabs';
 
 interface ManageProductFilterBarProps {
   searchInput: string;
@@ -57,32 +57,11 @@ export const ManageProductFilterBar: React.FC<ManageProductFilterBarProps> = ({
   return (
     <div className="rounded-xl border border-border bg-card px-4 pt-3 shadow-sm">
       <div className="flex flex-col gap-3 pb-3 lg:flex-row lg:items-center lg:justify-between">
-        <div
-          role="tablist"
-          aria-label="Status filter"
-          className="no-scrollbar flex items-center gap-5 overflow-x-auto"
-        >
-          {PRODUCT_STATUS_TABS.map((tab) => {
-            const isActive = tab.id === filterStatus;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onStatus(tab.id)}
-                className={cn(
-                  'shrink-0 border-b-2 pb-2 text-sm whitespace-nowrap transition-colors',
-                  isActive
-                    ? 'border-primary font-medium text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <UnderlineTabs
+          options={PRODUCT_STATUS_TABS.map((tab) => ({ value: tab.id, label: tab.label }))}
+          value={filterStatus}
+          onChange={onStatus}
+        />
 
         <div className="relative w-full lg:w-56 lg:shrink-0">
           <Search

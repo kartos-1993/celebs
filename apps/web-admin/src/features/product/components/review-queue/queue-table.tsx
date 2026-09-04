@@ -1,5 +1,3 @@
-import { Store } from 'lucide-react';
-
 import { Badge } from '@celebs/shared-ui/components/badge';
 import {
   Table,
@@ -11,6 +9,7 @@ import {
 } from '@celebs/shared-ui/components/table';
 
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
+import { formatShortDate, getInitials, getVendorDisplay } from '../../utils/product-table-helpers';
 
 import { QualityBadge } from './quality-badge';
 import type { ProductQueueItem } from './types';
@@ -57,24 +56,24 @@ export function QueueTable({
         <TableBody>
           {products.map((product) => (
             <TableRow key={product.id} className="hover:bg-muted/50">
-              <TableCell className="font-medium">
+              <TableCell>
                 <div className="flex items-center gap-3">
                   <img
                     src={product.mainImages?.[0] || '/placeholder.svg'}
                     alt={product.name}
-                    className="h-12 w-12 rounded border bg-muted object-cover"
+                    className="h-10 w-10 shrink-0 rounded-lg border bg-muted object-cover"
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.onerror = null;
                       target.src = '/placeholder.svg';
                     }}
                   />
-                  <div>
-                    <span className="block max-w-xs truncate font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <span className="block max-w-xs truncate text-sm font-medium leading-tight">
                       {product.name}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      Brand: <strong className="text-foreground">{product.brand || 'N/A'}</strong>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {product.brand || 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -83,30 +82,34 @@ export function QueueTable({
                 <QualityBadge score={product.qualityScore} />
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1 text-sm font-medium">
-                  <Store aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
-                  {product.vendorName || 'Independent Seller'}
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                    {getInitials(getVendorDisplay(product))}
+                  </span>
+                  <span className="max-w-32 truncate text-sm">
+                    {product.vendorName || 'Independent Seller'}
+                  </span>
                 </div>
               </TableCell>
               <TableCell>
                 <Badge
-                  variant="outline"
+                  variant="secondary"
                   className="block max-w-[220px] truncate text-xs"
                   title={formatProductCategoryBreadcrumb(product)}
                 >
                   {formatProductCategoryBreadcrumb(product)}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right font-medium">
-                <div className="text-sm text-foreground">Rs. {product.price.toLocaleString()}</div>
+              <TableCell className="text-right font-mono text-sm tabular-nums">
+                <div>Rs. {product.price.toLocaleString()}</div>
                 {product.discountedPrice && (
-                  <div className="text-xs font-normal text-success">
+                  <div className="font-mono text-xs font-normal tabular-nums text-success">
                     Disc: Rs. {product.discountedPrice.toLocaleString()}
                   </div>
                 )}
               </TableCell>
               <TableCell className="text-xs text-muted-foreground">
-                {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'Recent'}
+                {formatShortDate(product.createdAt)}
               </TableCell>
               {activeTab === 'rejected' && (
                 <TableCell className="max-w-xs truncate">

@@ -1,10 +1,9 @@
-import { Store } from 'lucide-react';
-
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card } from '@celebs/shared-ui/components/card';
 
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
+import { formatShortDate } from '../../utils/product-table-helpers';
 
 import { QualityBadge } from './quality-badge';
 import type { ProductQueueItem } from './types';
@@ -45,13 +44,8 @@ export function QueueCards({
               }}
             />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-foreground">
-                {product.name}
-              </div>
-              <div className="truncate text-xs text-muted-foreground">
-                Brand:{' '}
-                <span className="font-medium text-foreground">{product.brand || 'N/A'}</span>
-              </div>
+              <div className="truncate text-sm font-medium leading-tight">{product.name}</div>
+              <div className="truncate text-xs text-muted-foreground">{product.brand || 'N/A'}</div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <QualityBadge score={product.qualityScore} />
               </div>
@@ -59,12 +53,9 @@ export function QueueCards({
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-              <Store aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
-              {product.vendorName || 'Independent Seller'}
-            </span>
+            <span className="truncate text-sm">{product.vendorName || 'Independent Seller'}</span>
             <Badge
-              variant="outline"
+              variant="secondary"
               className="max-w-full truncate text-xs"
               title={formatProductCategoryBreadcrumb(product)}
             >
@@ -73,15 +64,15 @@ export function QueueCards({
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-semibold text-foreground">
+            <div className="font-mono text-sm tabular-nums">
               Rs. {product.price.toLocaleString()}
             </div>
             <span className="text-xs text-muted-foreground">
-              {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'Recent'}
+              {formatShortDate(product.createdAt)}
             </span>
           </div>
           {product.discountedPrice && (
-            <div className="-mt-2 text-xs font-normal text-success">
+            <div className="-mt-2 font-mono text-xs font-normal tabular-nums text-success">
               Disc: Rs. {product.discountedPrice.toLocaleString()}
             </div>
           )}

@@ -12,7 +12,7 @@ import {
 
 import { cn } from '@/lib/utils';
 
-interface ManageProductPaginationProps {
+export interface DataTablePaginationProps {
   page: number;
   totalPages: number;
   total: number;
@@ -24,6 +24,11 @@ interface ManageProductPaginationProps {
 
 type PageItem = number | 'ellipsis-start' | 'ellipsis-end';
 
+/**
+ * Shared list pagination: rows-per-page left, `1 - 10 of 200` + numbered
+ * pages with ellipsis right. Numbers use the app-wide numeral token
+ * (`font-mono text-sm tabular-nums`) to match table cells.
+ */
 function pageItems(page: number, totalPages: number): PageItem[] {
   if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -38,7 +43,7 @@ function pageItems(page: number, totalPages: number): PageItem[] {
   return items;
 }
 
-export const ManageProductPagination: React.FC<ManageProductPaginationProps> = ({
+export const DataTablePagination: React.FC<DataTablePaginationProps> = ({
   page,
   totalPages,
   total,

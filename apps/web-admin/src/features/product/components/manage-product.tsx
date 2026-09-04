@@ -12,9 +12,9 @@ import { ManageProductBatchBar } from './manage-product/manage-product-batch-bar
 import { ManageProductDialogs } from './manage-product/manage-product-dialogs';
 import { ManageProductFilterBar } from './manage-product/manage-product-filter-bar';
 import { ManageProductHeader } from './manage-product/manage-product-header';
-import { ManageProductPagination } from './manage-product/manage-product-pagination';
 import { ManageProductTable } from './manage-product/manage-product-table';
 
+import { DataTablePagination } from '@/components/data-table-pagination';
 import { useAuthContext } from '@/context/auth-provider';
 
 export const ManageProduct: React.FC = () => {
@@ -130,7 +130,7 @@ export const ManageProduct: React.FC = () => {
           searchQuery={state.debouncedSearch}
         />
 
-        <ManageProductPagination
+        <DataTablePagination
           page={state.page}
           totalPages={totalPages}
           total={total}
