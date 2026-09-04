@@ -12,7 +12,7 @@ type SibarToggleProps = {
 
 const SidebarToggle = ({ isOpen, setIsOpen }: SibarToggleProps) => {
   return (
-    <div className="hidden lg:flex absolute top-[56px] -right-[12px] z-30">
+    <div className="hidden md:flex absolute top-[56px] -right-[12px] z-40">
       <Button
         onClick={() => setIsOpen && setIsOpen(!isOpen)}
         className="rounded-full w-6 h-6 shadow-md"

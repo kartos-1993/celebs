@@ -13,7 +13,7 @@ const Main = ({ children }: MainProps) => {
     <main
       className={cn(
         'min-h-[calc(100vh-48px)] bg-muted/40 px-4 py-6 transition-[margin-left] ease-in-out duration-300 md:px-6',
-        isSidebarOpen ? 'md:ml-[76px] lg:ml-64' : 'md:ml-[76px]',
+        isSidebarOpen ? 'md:ml-64' : 'md:ml-[76px]',
       )}
     >
       {children}
