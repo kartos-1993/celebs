@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import type { ProductFilterRequest, ReviewProductRequestPayload } from '../api';
 import type { ProductQueueItem } from '../components/review-queue/types';
+import type { ProductFilterRequest, ReviewProductRequestPayload } from '../types';
 
 import { useProductMutations, useProductsQuery, useReviewQueueQuery } from './use-product-queries';
 

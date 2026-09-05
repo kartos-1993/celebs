@@ -21,8 +21,13 @@ import {
 } from '@celebs/shared-ui/components/select';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import type { OrderItemStatus, OrderItemUI } from '../api';
-import { ALLOWED_TRANSITIONS, COURIER_OPTIONS, ITEM_STATUS_HINTS, ITEM_STATUS_LABELS } from '../lib/order-constants';
+import {
+  ALLOWED_TRANSITIONS,
+  COURIER_OPTIONS,
+  ITEM_STATUS_HINTS,
+  ITEM_STATUS_LABELS,
+} from '../lib/order-constants';
+import type { OrderItemStatus, OrderItemUI } from '../types';
 
 interface FulfillmentDialogProps {
   open: boolean;
@@ -88,8 +93,8 @@ export function FulfillmentDialog({
               <div className="text-sm font-semibold text-foreground">{item.productName}</div>
               <div className="text-sm text-muted-foreground">
                 Variant:{' '}
-                <span className="font-medium text-foreground">{item.colorVariantName}</span> |
-                Size: <span className="font-medium text-foreground">{item.size}</span> | Qty:{' '}
+                <span className="font-medium text-foreground">{item.colorVariantName}</span> | Size:{' '}
+                <span className="font-medium text-foreground">{item.size}</span> | Qty:{' '}
                 {item.quantity}
               </div>
               <div className="text-xs text-muted-foreground">
@@ -150,9 +155,7 @@ export function FulfillmentDialog({
                         <Button
                           type="button"
                           variant="outline"
-                          disabled={
-                            !canManage || dispatchPending || newStatus !== 'HANDED_OVER'
-                          }
+                          disabled={!canManage || dispatchPending || newStatus !== 'HANDED_OVER'}
                           onClick={onDispatch}
                           className="gap-1.5 sm:shrink-0"
                         >

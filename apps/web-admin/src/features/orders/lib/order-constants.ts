@@ -1,5 +1,4 @@
-import type { OrderItemStatus } from '../api';
-import type { StatusTab } from '../types';
+import type { OrderItemStatus, StatusTab } from '../types';
 
 export const PAGE_LIMIT = 10;
 
@@ -50,9 +49,4 @@ export const ALLOWED_TRANSITIONS: Record<OrderItemStatus, OrderItemStatus[]> = {
 
 export const DEFAULT_COURIER = 'Nepal Can Move';
 
-export const COURIER_OPTIONS = [
-  'Upaya Logistics',
-  'Nepal Can Move',
-  'PATHAO',
-  'MANUAL',
-] as const;
+export const COURIER_OPTIONS = ['Upaya Logistics', 'Nepal Can Move', 'PATHAO', 'MANUAL'] as const;

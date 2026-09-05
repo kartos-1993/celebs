@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import type { OrderItemStatus, OrderItemUI } from '../api';
 import { DEFAULT_COURIER } from '../lib/order-constants';
+import type { OrderItemStatus, OrderItemUI } from '../types';
 
 export function useFulfillmentDialog() {
   const [selectedItem, setSelectedItem] = useState<OrderItemUI | null>(null);

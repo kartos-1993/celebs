@@ -4,19 +4,13 @@ import type {
   CreateProductRequest,
   ProductFilterRequest,
   ProductRecord,
+  ReviewProductRequestPayload,
   UpdateProductRequest,
 } from './types';
 
 import { axiosClient } from '@/lib/axios/axios-client';
 import { directUploadBatch } from '@/lib/media-upload';
 
-// Public type aliases — required by manage-product, use-product-queries, add-product
-export type {
-  CreateProductRequest,
-  ProductFilterRequest,
-  ProductRecord,
-  UpdateProductRequest,
-} from './types';
 export type ProductApiResponse<T> = IApiResponse<T>;
 
 export interface PaginatedProductsResponse {
@@ -26,14 +20,6 @@ export interface PaginatedProductsResponse {
   limit?: number;
   nextCursor?: string;
   hasMore?: boolean;
-}
-
-export interface ReviewProductRequestPayload {
-  action: 'approve' | 'reject';
-  note?: string;
-  rejectionCategory?: string;
-  rejectionSubcategories?: string[];
-  rejectionFields?: string[];
 }
 
 const BASE_PATH = '/products';

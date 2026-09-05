@@ -10,12 +10,11 @@ import {
   archiveProduct,
   getProductReviewQueue,
   getProducts,
-  type ProductFilterRequest,
   reviewProduct,
-  type ReviewProductRequestPayload,
   submitProductForReview,
   toggleProductActivation,
 } from '../api';
+import type { ProductFilterRequest, ReviewProductRequestPayload } from '../types';
 
 import { useToast } from '@/hooks/use-toast';
 

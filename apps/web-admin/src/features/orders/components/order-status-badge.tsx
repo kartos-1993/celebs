@@ -1,7 +1,7 @@
 import { Badge } from '@celebs/shared-ui/components/badge';
 
-import type { OrderItemStatus } from '../api';
 import { ITEM_STATUS_LABELS } from '../lib/order-constants';
+import type { OrderItemStatus } from '../types';
 
 export function OrderStatusBadge({ status }: { status: OrderItemStatus }) {
   switch (status) {

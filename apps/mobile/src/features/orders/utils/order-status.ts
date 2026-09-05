@@ -1,14 +1,6 @@
-export type OrderStatus =
-  | 'PENDING_PAYMENT'
-  | 'CONFIRMED'
-  | 'PACKED'
-  | 'HANDED_OVER'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'RETURNED';
+import type { OrderItemStatus, OrderStatus } from '@celebs/shared-types';
 
-export type OrderItemStatus = 'PENDING' | 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED';
+export type { OrderItemStatus, OrderStatus };
 
 export interface OrderItemView {
   id: string;

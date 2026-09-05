@@ -1,9 +1,8 @@
 import { useCallback, useState } from 'react';
 
-import { can, Permission } from '@celebs/rbac';
+import { Permission } from '@celebs/rbac';
 
-import type { OrderItemStatus } from '../api';
-import type { Mode } from '../types';
+import type { Mode, OrderItemStatus } from '../types';
 
 import { useFulfillmentDialog } from './use-fulfillment-dialog';
 import {
@@ -14,6 +13,7 @@ import {
 import { useOrdersList } from './use-orders-list';
 
 import { useAuthContext } from '@/context/auth-provider';
+import { usePermission } from '@/hooks/use-permission';
 import { useToast } from '@/hooks/use-toast';
 
 export function useOrdersPage() {
@@ -25,12 +25,13 @@ export function useOrdersPage() {
   const [activeTab, setActiveTab] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSizeState] = useState(10);
 
-  const list = useOrdersList({ mode, activeTab, page, searchQuery });
+  const list = useOrdersList({ mode, activeTab, page, pageSize, searchQuery });
   const dialog = useFulfillmentDialog();
 
-  const canManage = can(user?.role ?? '', Permission.ORDER_MANAGE, user?.permissions);
-  const canSettleFinance = can(user?.role ?? '', Permission.FINANCE_MANAGE, user?.permissions);
+  const canManage = usePermission(Permission.ORDER_MANAGE);
+  const canSettleFinance = usePermission(Permission.FINANCE_MANAGE);
 
   const fulfillmentMutation = useUpdateFulfillmentMutation(list.activeListKey, {
     onSuccess: () => {
@@ -83,6 +84,16 @@ export function useOrdersPage() {
     setPage(1);
   }, []);
 
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  }, []);
+
+  const setPageSize = useCallback((size: number) => {
+    setPageSizeState(size);
+    setPage(1);
+  }, []);
+
   const handleFulfill = useCallback(() => {
     if (!dialog.selectedItem) return;
     fulfillmentMutation.mutate([
@@ -93,7 +104,13 @@ export function useOrdersPage() {
         ...(dialog.courier ? { courierPartner: dialog.courier } : {}),
       },
     ]);
-  }, [dialog.selectedItem, dialog.newStatus, dialog.trackingNo, dialog.courier, fulfillmentMutation]);
+  }, [
+    dialog.selectedItem,
+    dialog.newStatus,
+    dialog.trackingNo,
+    dialog.courier,
+    fulfillmentMutation,
+  ]);
 
   const handleDispatch = useCallback(() => {
     if (!dialog.selectedItem) return;
@@ -116,8 +133,11 @@ export function useOrdersPage() {
     activeTab,
     searchQuery,
     setSearchQuery,
+    handleSearchChange,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     list,
     dialog,
     canManage,

@@ -22,7 +22,7 @@ import {
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 
-import type { ReviewProductRequestPayload } from '../../api';
+import type { ReviewProductRequestPayload } from '../../types';
 
 import { FLAGGED_FIELDS_OPTIONS, REJECTION_CATEGORIES } from './constants';
 

@@ -8,13 +8,13 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Form } from '@celebs/shared-ui/components/form';
 import { logger } from '@celebs/shared-utils';
 
-import { createProduct, type CreateProductRequest, updateProduct } from '../../api';
+import { createProduct, updateProduct } from '../../api';
 import { extractVariantsMeta } from '../../fields/variant-utils';
 import { useProductDraft } from '../../hooks/use-product-draft';
 import { type ProductFormValues, useProductForm } from '../../hooks/use-product-form';
 import { useProductSchema } from '../../hooks/use-product-schema';
 import { useSubmissionState } from '../../hooks/use-submission-state';
-import type { FieldSpec } from '../../types';
+import type { CreateProductRequest, FieldSpec } from '../../types';
 import {
   isFieldFilled,
   MANAGE_PRODUCTS_PATH,
@@ -135,7 +135,7 @@ const AddProduct = () => {
         productId={id}
         isEditMode={isEditMode}
         role={role}
-        userPermissions={(user as { permissions?: string[] })?.permissions}
+        userPermissions={user?.permissions}
         form={form}
         schemaFields={schemaFields}
         isSchemaLoading={isSchemaLoading}

@@ -37,6 +37,14 @@ export type ProductStatus =
   | 'deactivated'
   | 'archived';
 
+export interface ReviewProductRequestPayload {
+  action: 'approve' | 'reject';
+  note?: string;
+  rejectionCategory?: string;
+  rejectionSubcategories?: string[];
+  rejectionFields?: string[];
+}
+
 // ── Dynamic form schema ─────────────────────────────────────────────────────
 export type UiType =
   | 'input'

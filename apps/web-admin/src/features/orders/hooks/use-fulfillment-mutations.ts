@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   dispatch3PLOrder,
+  type Dispatch3PLResponse,
   settleCodOrder,
   updateOrderItemStatusApi,
 } from '../api';
@@ -20,8 +21,7 @@ export function useUpdateFulfillmentMutation(
 ) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ([itemId, body]: FulfillmentVariables) =>
-      updateOrderItemStatusApi(itemId, body),
+    mutationFn: ([itemId, body]: FulfillmentVariables) => updateOrderItemStatusApi(itemId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: activeListKey });
       callbacks?.onSuccess?.();
@@ -30,17 +30,13 @@ export function useUpdateFulfillmentMutation(
   });
 }
 
-export interface DispatchResult {
-  data?: { trackingNumber?: string; provider?: string };
-}
-
 /** 3PL dispatch — returns tracking so the dialog can record the handover. */
 export function useDispatch3PLMutation(callbacks?: {
-  onSuccess?: (res: DispatchResult) => void;
+  onSuccess?: (res: Dispatch3PLResponse) => void;
   onError?: (err: Error) => void;
 }) {
   return useMutation({
-    mutationFn: (orderId: string) => dispatch3PLOrder({ orderId }) as Promise<DispatchResult>,
+    mutationFn: (orderId: string) => dispatch3PLOrder({ orderId }),
     onSuccess: (res) => callbacks?.onSuccess?.(res),
     onError: (err: Error) => callbacks?.onError?.(err),
   });

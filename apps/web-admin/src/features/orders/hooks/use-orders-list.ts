@@ -5,24 +5,30 @@ import {
   type AdminOrdersResponse,
   getAdminOrders,
   getVendorOrders,
-  mapAdminOrdersToRows,
-  mapVendorItemsToRows,
   ORDERS_QUERY_KEYS,
   type VendorOrdersResponse,
 } from '../api';
 import { PAGE_LIMIT } from '../lib/order-constants';
+import { mapAdminOrdersToRows, mapVendorItemsToRows } from '../lib/order-mappers';
 import type { Mode } from '../types';
 
 interface UseOrdersListParams {
   mode: Mode;
   activeTab: string;
   page: number;
+  pageSize?: number;
   searchQuery: string;
 }
 
-export function useOrdersList({ mode, activeTab, page, searchQuery }: UseOrdersListParams) {
+export function useOrdersList({
+  mode,
+  activeTab,
+  page,
+  pageSize = PAGE_LIMIT,
+  searchQuery,
+}: UseOrdersListParams) {
   const statusParam = activeTab === 'ALL' ? undefined : activeTab;
-  const queryParams = { status: statusParam, page, limit: PAGE_LIMIT };
+  const queryParams = { status: statusParam, page, limit: pageSize };
 
   const listQuery = useQuery<VendorOrdersResponse | AdminOrdersResponse>({
     queryKey:
@@ -34,7 +40,7 @@ export function useOrdersList({ mode, activeTab, page, searchQuery }: UseOrdersL
 
   const rows = useMemo(() => {
     const data = listQuery.data;
-    if (!data) return [];
+    if (!data?.data) return [];
     return 'items' in data.data
       ? mapVendorItemsToRows(data.data.items)
       : mapAdminOrdersToRows(data.data.orders);
@@ -53,7 +59,7 @@ export function useOrdersList({ mode, activeTab, page, searchQuery }: UseOrdersL
   }, [rows, searchQuery]);
 
   const total = listQuery.data?.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_LIMIT));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return {
     isLoading: listQuery.isLoading,
