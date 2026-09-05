@@ -23,6 +23,7 @@
     "seed:1p": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-platform-vendor.ts",
     "seed:vendors": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-test-vendors.ts",
     "r2:orphans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/r2-orphan-reaper.ts",
+    "clean:catalog": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/clear-products-and-orders.ts",
     "seed:reset": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
     "seed:brands": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-brands.ts",
     "seed:staging": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
