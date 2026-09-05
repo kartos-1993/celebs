@@ -37,11 +37,8 @@ export function FullscreenLoader() {
 
         {/* Center Spinner Area */}
         <main className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center justify-center">
             <Spinner size="lg" className="text-primary" />
-            <span className="text-xs text-muted-foreground animate-pulse">
-              Initializing session...
-            </span>
           </div>
         </main>
       </div>
