@@ -12,8 +12,8 @@ import { CartApiService } from '../services/cart-service';
  * SecureStore has a strict 2KB limit on Android that crashes when carts contain
  * multiple items with rich metadata (names, images, variant descriptions).
  */
-const CART_STORAGE_KEY = 'celebs_cart_storage_v1';
-const GUEST_SESSION_KEY = 'celebs_guest_session_id_v1';
+const CART_STORAGE_KEY = 'celebs_cart_storage_v2';
+const GUEST_SESSION_KEY = 'celebs_guest_session_id_v2';
 
 interface SelectionSlice {
   selectedItemIds: string[];

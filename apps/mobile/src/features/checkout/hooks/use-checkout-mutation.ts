@@ -7,6 +7,7 @@ import { showToast } from '@/components/toast/toast';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useCart } from '@/features/cart/context/cart-context';
 import { ORDER_QUERY_KEYS } from '@/features/orders/api';
+import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
 
 export { CHECKOUT_QUERY_KEYS } from '../api';
 
@@ -28,6 +29,7 @@ export function useCheckoutMutation() {
       await clearCart();
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: CHECKOUT_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
 
       showToast(
         placedOrderNumber

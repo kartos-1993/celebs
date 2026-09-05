@@ -29,6 +29,15 @@ export default function RootLayout() {
               if (rootKey === 'wishlist' || rootKey === 'orders' || rootKey === 'addresses') {
                 return false;
               }
+              // Only persist the default homefeed and categories/sdui layout for 0ms cold-start.
+              // Deep product searches, filtered lists, and PDP details stay in RAM to prevent disk bloat.
+              if (rootKey === 'products') {
+                const isList = query.queryKey[1] === 'list';
+                const filterArg = query.queryKey[2];
+                const isDefaultHomeFeed =
+                  isList && (!filterArg || Object.keys(filterArg as object).length === 0);
+                return isDefaultHomeFeed;
+              }
               return true;
             },
           },
