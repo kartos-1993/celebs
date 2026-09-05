@@ -12,8 +12,7 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
-import type { OrderItemUI } from '../api';
-import type { Mode } from '../types';
+import type { Mode, OrderItemUI } from '../types';
 
 import { OrderStatusBadge } from './order-status-badge';
 
@@ -30,9 +29,7 @@ interface OrderTableProps {
 function PaymentCell({ row }: { row: OrderItemUI }) {
   return (
     <>
-      <div className="text-sm font-semibold text-foreground">
-        Rs. {row.totalAmount.toLocaleString()}
-      </div>
+      <div className="font-mono text-sm tabular-nums">Rs. {row.totalAmount.toLocaleString()}</div>
       <div className="mt-0.5 flex items-center gap-1.5">
         <Badge variant="secondary" className="font-mono">
           {row.paymentMethod}
@@ -91,7 +88,7 @@ export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: Orde
           ) : (
             rows.map((ord) => (
               <TableRow key={ord.id} className="transition-colors hover:bg-muted/50">
-                <TableCell className="font-mono text-xs font-semibold text-foreground">
+                <TableCell className="font-mono text-sm tabular-nums">
                   {ord.orderNumber}
                   <div className="mt-0.5 font-sans text-xs font-normal text-muted-foreground">
                     {new Date(ord.createdAt).toLocaleDateString()}
@@ -111,7 +108,7 @@ export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: Orde
                     Color:{' '}
                     <span className="font-medium text-foreground">{ord.colorVariantName}</span> |
                     Size: <span className="font-medium text-foreground">{ord.size}</span> | Qty:{' '}
-                    {ord.quantity}
+                    <span className="font-mono tabular-nums">{ord.quantity}</span>
                   </div>
                 </TableCell>
                 <TableCell>

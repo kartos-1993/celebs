@@ -5,8 +5,7 @@ import { Button } from '@celebs/shared-ui/components/button';
 import { Card } from '@celebs/shared-ui/components/card';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 
-import type { OrderItemUI } from '../api';
-import type { Mode } from '../types';
+import type { Mode, OrderItemUI } from '../types';
 
 import { OrderStatusBadge } from './order-status-badge';
 
@@ -50,9 +49,7 @@ export function OrderCards({ rows, isLoading, isFetching, mode, onUpdate }: Orde
         <Card key={ord.id} className="space-y-3 p-4 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="font-mono text-xs font-semibold text-foreground">
-                {ord.orderNumber}
-              </div>
+              <div className="font-mono text-sm tabular-nums">{ord.orderNumber}</div>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 {new Date(ord.createdAt).toLocaleDateString()}
               </div>
@@ -77,7 +74,7 @@ export function OrderCards({ rows, isLoading, isFetching, mode, onUpdate }: Orde
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-semibold text-foreground">
+            <div className="font-mono text-sm tabular-nums">
               Rs. {ord.totalAmount.toLocaleString()}
             </div>
             <div className="flex items-center gap-1.5">

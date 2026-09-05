@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { can, Permission } from '@celebs/rbac';
+import { Permission } from '@celebs/rbac';
 
 import { useManageProductState } from '../hooks/use-manage-product-state';
 import { useProductBatchMutations } from '../hooks/use-product-batch-mutations';
@@ -16,27 +16,15 @@ import { ManageProductTable } from './manage-product/manage-product-table';
 
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { useAuthContext } from '@/context/auth-provider';
+import { usePermission } from '@/hooks/use-permission';
 
 export const ManageProduct: React.FC = () => {
   const { user } = useAuthContext();
-  const userPermissions = (user as { permissions?: string[] })?.permissions;
   const isSellerOrStaff =
     user?.role === 'VENDOR' || (user?.role === 'STAFF' && Boolean(user?.vendorId));
-  const canCreate = can(
-    user?.role as Parameters<typeof can>[0],
-    Permission.PRODUCT_CREATE,
-    userPermissions,
-  );
-  const canEdit = can(
-    user?.role as Parameters<typeof can>[0],
-    Permission.PRODUCT_EDIT,
-    userPermissions,
-  );
-  const canDelete = can(
-    user?.role as Parameters<typeof can>[0],
-    Permission.PRODUCT_DELETE,
-    userPermissions,
-  );
+  const canCreate = usePermission(Permission.PRODUCT_CREATE);
+  const canEdit = usePermission(Permission.PRODUCT_EDIT);
+  const canDelete = usePermission(Permission.PRODUCT_DELETE);
 
   const state = useManageProductState();
   const { data, isLoading, isFetching } = useProductsQuery(state.filterParams);
@@ -87,6 +75,7 @@ export const ManageProduct: React.FC = () => {
           onStock={state.setPreviewStock}
           previewActive={state.previewActive}
           onResetPreview={state.resetPreviewFilters}
+          showVendorFilter={!isSellerOrStaff}
         />
 
         <ManageProductBatchBar

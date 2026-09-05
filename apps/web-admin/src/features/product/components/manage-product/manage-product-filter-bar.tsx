@@ -34,6 +34,7 @@ interface ManageProductFilterBarProps {
   onStock: (value: PreviewStockFilter) => void;
   previewActive: boolean;
   onResetPreview: () => void;
+  showVendorFilter?: boolean;
 }
 
 export const ManageProductFilterBar: React.FC<ManageProductFilterBarProps> = ({
@@ -53,6 +54,7 @@ export const ManageProductFilterBar: React.FC<ManageProductFilterBarProps> = ({
   onStock,
   previewActive,
   onResetPreview,
+  showVendorFilter = true,
 }) => {
   return (
     <div className="rounded-xl border border-border bg-card px-4 pt-3 shadow-sm">
@@ -98,22 +100,24 @@ export const ManageProductFilterBar: React.FC<ManageProductFilterBarProps> = ({
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Filter
         </span>
-        <Select value={vendor} onValueChange={onVendor}>
-          <SelectTrigger
-            className="h-8 w-[140px] rounded-full text-xs"
-            aria-label="Filter by vendor"
-          >
-            <SelectValue placeholder="All vendors" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All vendors</SelectItem>
-            {vendorOptions.map((name) => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {showVendorFilter && (
+          <Select value={vendor} onValueChange={onVendor}>
+            <SelectTrigger
+              className="h-8 w-[140px] rounded-full text-xs"
+              aria-label="Filter by vendor"
+            >
+              <SelectValue placeholder="All vendors" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All vendors</SelectItem>
+              {vendorOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Select value={category} onValueChange={onCategory}>
           <SelectTrigger
