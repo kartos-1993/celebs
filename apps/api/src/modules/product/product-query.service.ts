@@ -177,7 +177,7 @@ export class ProductQueryService {
     const isElevated =
       opts.isElevated ?? (isPlatform || (Boolean(opts.actor) && Boolean(opts.isStoreManagement)));
 
-    if (opts.storeId && opts.isStoreManagement) {
+    if (!isPlatform && opts.storeId && opts.isStoreManagement) {
       where.vendorId = opts.storeId;
     } else if (filters.vendorId) {
       where.vendorId = filters.vendorId;
@@ -186,7 +186,7 @@ export class ProductQueryService {
     if (isElevated) {
       if (filters.status) {
         where.status = filters.status;
-      } else if (where.vendorId) {
+      } else if (isPlatform || where.vendorId) {
         where.status = { not: PRODUCT_STATUS.ARCHIVED };
       } else {
         where.status = PRODUCT_STATUS.PUBLISHED;

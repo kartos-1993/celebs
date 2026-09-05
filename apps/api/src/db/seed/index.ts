@@ -1,3 +1,5 @@
+import { ensurePlatformVendor } from '../../common/constants/platform-vendor';
+import prisma from '../../config/db.prisma';
 import { connectDb, disconnectDb } from './config';
 import { seedBrands } from './seed-brands';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
@@ -18,7 +20,9 @@ export async function runMasterSeed(): Promise<void> {
   await connectDb();
 
   try {
-    // Step 0: Brand Registry (1P, Gated Global & Generic)
+    // Step 0: 1P Canonical Platform Store & Brand Registry
+    console.log('\n🏪 Ensuring 1P Platform Vendor Profile...');
+    await ensurePlatformVendor(prisma);
     await seedBrands();
 
     // Step 1: Option Sets (Colors, Sizes, Shoe Sizes)

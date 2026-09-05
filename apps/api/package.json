@@ -20,6 +20,7 @@
     "prisma:studio": "dotenv -e .env.development -- npx prisma studio --schema=src/db/schema.prisma --config=../../prisma.config.ts",
     "//_SEEDING": "=== Database Seeding ===",
     "seed": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
+    "seed:1p": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-platform-vendor.ts",
     "seed:vendors": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-test-vendors.ts",
     "r2:orphans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/r2-orphan-reaper.ts",
     "seed:reset": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
