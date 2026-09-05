@@ -29,6 +29,7 @@ type Menu = {
 };
 
 type Group = {
+  label?: string;
   menus: Menu[];
 };
 
@@ -40,7 +41,13 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     return can(currentRole, perm, userPermissions);
   };
 
-  // 1. Products Operations Group
+  const pushGroup = (label: string, menus: Menu[]) => {
+    if (menus.length > 0) list.push({ label, menus });
+  };
+
+  // 1. Operations: products, catalog, orders
+  const operations: Menu[] = [];
+
   const productSubmenus: Submenu[] = [];
   if (hasPerm(Permission.PRODUCT_VIEW) || hasPerm(Permission.PRODUCT_CREATE)) {
     productSubmenus.push({ href: '/products/manage', label: 'Manage Product' });
@@ -50,163 +57,102 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   if (hasPerm(Permission.PRODUCT_REVIEW)) {
     productSubmenus.push({ href: '/products/review-product-queue', label: 'Review Queue' });
   }
-
   if (productSubmenus.length > 0) {
-    list.push({
-      menus: [
-        {
-          href: '',
-          label: 'Products',
-          icon: ShoppingBag,
-          submenus: productSubmenus,
-        },
-      ],
-    });
+    operations.push({ href: '', label: 'Products', icon: ShoppingBag, submenus: productSubmenus });
   }
 
-  // 2. Catalog & Taxonomy Architecture Group
-  const catalogSubmenus: Submenu[] = [];
   if (hasPerm(Permission.CATALOG_MANAGE)) {
-    catalogSubmenus.push({ href: '/categories', label: 'Categories' });
-    catalogSubmenus.push({ href: '/option-sets', label: 'Option Sets' });
-  }
-
-  if (catalogSubmenus.length > 0) {
-    list.push({
-      menus: [
-        {
-          href: '',
-          label: 'Catalog Setup',
-          icon: FolderTree,
-          submenus: catalogSubmenus,
-        },
+    operations.push({
+      href: '',
+      label: 'Catalog Setup',
+      icon: FolderTree,
+      submenus: [
+        { href: '/categories', label: 'Categories' },
+        { href: '/option-sets', label: 'Option Sets' },
       ],
     });
   }
 
-  // 3. Orders & Reviews Group
   if (hasPerm(Permission.ORDER_VIEW)) {
-    list.push({
-      menus: [
-        {
-          href: '',
-          label: 'Orders & Reviews',
-          icon: ListOrdered,
-          submenus: [
-            { href: '/orders', label: 'Orders' },
-            { href: '/orders/return', label: 'Return Orders' },
-            { href: '/orders/reviews', label: 'Reviews' },
-          ],
-        },
+    operations.push({
+      href: '',
+      label: 'Orders & Reviews',
+      icon: ListOrdered,
+      submenus: [
+        { href: '/orders', label: 'Orders' },
+        { href: '/orders/return', label: 'Return Orders' },
+        { href: '/orders/reviews', label: 'Reviews' },
       ],
     });
   }
 
-  // 4. Marketing & Promotions Group (Platform Admins only)
-  const marketingSubmenus: Submenu[] = [
-    { href: '/marketing/campaigns', label: 'Festival Campaigns' },
-    { href: '/marketing/combos', label: 'Combo Bundles' },
-    { href: '/marketing/preview', label: 'SDUI Storefront Preview' },
-  ];
+  pushGroup('Operations', operations);
 
+  // 2. Growth: marketing & promotions (platform admins only)
   if (
     hasPerm(Permission.PLATFORM_MANAGE) ||
     hasPerm(Permission.CATALOG_MANAGE) ||
     currentRole === 'ADMIN' ||
     currentRole === 'SUPERADMIN'
   ) {
-    list.push({
-      menus: [
-        {
-          href: '',
-          label: 'Marketing & SDUI',
-          icon: Megaphone,
-          submenus: marketingSubmenus,
-        },
-      ],
-    });
-  }
-
-  // 5. Vendor Management (Admin & SuperAdmin)
-  if (hasPerm(Permission.VENDOR_MANAGE) || hasPerm(Permission.VENDOR_VIEW)) {
-    list.push({
-      menus: [
-        {
-          href: '/vendors',
-          label: 'Vendor Management',
-          icon: Store,
-        },
-      ],
-    });
-  }
-
-  // 6. User Management (SuperAdmin only)
-  if (hasPerm(Permission.USER_MANAGE) || hasPerm(Permission.USER_VIEW)) {
-    list.push({
-      menus: [
-        {
-          href: '/users',
-          label: 'User Management',
-          icon: UserCog,
-        },
-      ],
-    });
-  }
-
-  // 7. Staff & Team Management (Vendor Owners, Vendor Staff & SuperAdmin)
-  if (hasPerm(Permission.STAFF_MANAGE) || hasPerm(Permission.STAFF_VIEW)) {
-    list.push({
-      menus: [
-        {
-          href: '/staff',
-          label: 'Staff & Team',
-          icon: Users,
-        },
-      ],
-    });
-  }
-
-  // 8. Finance Group
-  if (hasPerm(Permission.FINANCE_VIEW)) {
-    list.push({
-      menus: [
-        {
-          href: '',
-          label: 'Finance',
-          icon: IndianRupee,
-          submenus: [{ href: '/finance', label: 'Finance' }],
-        },
-      ],
-    });
-  }
-
-  // 9. Platform Settings & Mobile Banners (Platform Admins only)
-  if (hasPerm(Permission.PLATFORM_MANAGE)) {
-    list.push({
-      menus: [
-        {
-          href: '',
-          label: 'Platform Layout',
-          icon: LayoutTemplate,
-          submenus: [
-            { href: '/platform-settings/banners', label: 'Mobile Banner Slider' },
-            { href: '/platform-settings/layout', label: 'Home Layout Editor' },
-          ],
-        },
-      ],
-    });
-  }
-
-  // 10. My Account Group (All roles)
-  list.push({
-    menus: [
+    pushGroup('Growth', [
       {
-        href: '/account/profile',
-        label: 'My Account',
-        icon: UserPen,
+        href: '',
+        label: 'Marketing & SDUI',
+        icon: Megaphone,
+        submenus: [
+          { href: '/marketing/campaigns', label: 'Festival Campaigns' },
+          { href: '/marketing/combos', label: 'Combo Bundles' },
+          { href: '/marketing/preview', label: 'SDUI Storefront Preview' },
+        ],
       },
-    ],
-  });
+    ]);
+  }
+
+  // 3. Management: vendors, users, staff, finance
+  const management: Menu[] = [];
+
+  if (hasPerm(Permission.VENDOR_MANAGE) || hasPerm(Permission.VENDOR_VIEW)) {
+    management.push({ href: '/vendors', label: 'Vendor Management', icon: Store });
+  }
+
+  if (hasPerm(Permission.USER_MANAGE) || hasPerm(Permission.USER_VIEW)) {
+    management.push({ href: '/users', label: 'User Management', icon: UserCog });
+  }
+
+  if (hasPerm(Permission.STAFF_MANAGE) || hasPerm(Permission.STAFF_VIEW)) {
+    management.push({ href: '/staff', label: 'Staff & Team', icon: Users });
+  }
+
+  if (hasPerm(Permission.FINANCE_VIEW)) {
+    management.push({
+      href: '',
+      label: 'Finance',
+      icon: IndianRupee,
+      submenus: [{ href: '/finance', label: 'Finance' }],
+    });
+  }
+
+  pushGroup('Management', management);
+
+  // 4. System: platform layout + account (account visible to all roles)
+  const system: Menu[] = [];
+
+  if (hasPerm(Permission.PLATFORM_MANAGE)) {
+    system.push({
+      href: '',
+      label: 'Platform Layout',
+      icon: LayoutTemplate,
+      submenus: [
+        { href: '/platform-settings/banners', label: 'Mobile Banner Slider' },
+        { href: '/platform-settings/layout', label: 'Home Layout Editor' },
+      ],
+    });
+  }
+
+  system.push({ href: '/account/profile', label: 'My Account', icon: UserPen });
+
+  pushGroup('System', system);
 
   return list;
 }

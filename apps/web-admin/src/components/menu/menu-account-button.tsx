@@ -50,7 +50,7 @@ export function MenuAccountButton({ isCollapsed }: MenuAccountButtonProps) {
               <Button
                 variant="ghost"
                 className={cn(
-                  'h-10 w-full',
+                  'h-9 w-full',
                   isCollapsed ? 'justify-center px-0' : 'justify-between px-3',
                 )}
               >
@@ -61,7 +61,7 @@ export function MenuAccountButton({ isCollapsed }: MenuAccountButtonProps) {
                 ) : (
                   <>
                     <span className="flex min-w-0 flex-col items-start leading-tight">
-                      <span className="max-w-[140px] truncate text-sm font-medium">
+                      <span className="max-w-[140px] truncate text-xs font-medium">
                         {user?.name || 'My Account'}
                       </span>
                       <span className="max-w-[140px] truncate text-xs text-muted-foreground">
@@ -95,12 +95,12 @@ export function MenuAccountButton({ isCollapsed }: MenuAccountButtonProps) {
 
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link to="/account/profile" className="cursor-pointer">
+            <Link to="/account/profile" className="cursor-pointer py-1 text-xs">
               Profile
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/dashboard" className="cursor-pointer">
+            <Link to="/dashboard" className="cursor-pointer py-1 text-xs">
               Dashboard
             </Link>
           </DropdownMenuItem>
@@ -111,7 +111,7 @@ export function MenuAccountButton({ isCollapsed }: MenuAccountButtonProps) {
         {/* Theme toggle */}
         <DropdownMenuItem
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="cursor-pointer"
+          className="cursor-pointer py-1 text-xs"
         >
           {theme === 'dark' ? 'Light mode' : 'Dark mode'}
         </DropdownMenuItem>
@@ -120,7 +120,7 @@ export function MenuAccountButton({ isCollapsed }: MenuAccountButtonProps) {
 
         {/* Logout */}
         <DropdownMenuItem
-          className="cursor-pointer text-destructive focus:text-destructive"
+          className="cursor-pointer py-1 text-xs text-destructive focus:text-destructive"
           onClick={() => logout()}
           disabled={isLoggingOut}
         >

@@ -55,76 +55,86 @@ export function Menu({ isSidebarOpen }: MenuProps) {
     <div className="flex min-h-0 flex-1 flex-col">
       {/* ── Middle: Scrollable Menu Items only ────────────────────────── */}
       <nav className="mt-4 w-full min-h-0 flex-1 overflow-y-auto no-scrollbar">
-        <ul className="flex flex-col items-start space-y-1 px-2 pb-2">
-          {menuList.map(({ menus }, index) => (
-            <li className={cn('w-full')} key={index}>
-              {menus.map(({ href, label, icon: Icon, active, submenus }, index) =>
-                !submenus || submenus.length === 0 ? (
-                  <div className="w-full" key={index}>
-                    <TooltipProvider disableHoverableContent>
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={
-                              (active === undefined && pathname.startsWith(href)) || active
-                                ? 'secondary'
-                                : 'ghost'
-                            }
-                            className={cn(
-                              'mb-1 h-9 w-full rounded-lg',
-                              isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
-                            )}
-                            asChild
-                          >
-                            <Link
-                              to={href}
+        <ul className="flex flex-col items-start px-2 pb-2">
+          {menuList.map(({ label, menus }, groupIndex) => (
+            <li
+              className={cn('w-full', groupIndex > 0 && (isCollapsed ? 'mt-1' : 'mt-4'))}
+              key={label ?? groupIndex}
+            >
+              {!isCollapsed && label ? (
+                <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {label}
+                </div>
+              ) : null}
+              <div className="flex flex-col items-start space-y-1">
+                {menus.map(({ href, label, icon: Icon, active, submenus }, index) =>
+                  !submenus || submenus.length === 0 ? (
+                    <div className="w-full" key={index}>
+                      <TooltipProvider disableHoverableContent>
+                        <Tooltip delayDuration={100}>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={
+                                (active === undefined && pathname.startsWith(href)) || active
+                                  ? 'secondary'
+                                  : 'ghost'
+                              }
                               className={cn(
-                                'flex w-full items-center',
-                                isCollapsed ? 'justify-center' : 'gap-3',
+                                'mb-1 h-9 w-full rounded-lg',
+                                isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
                               )}
+                              asChild
                             >
-                              <span
+                              <Link
+                                to={href}
                                 className={cn(
-                                  'flex shrink-0 items-center justify-center',
-                                  (active === undefined && pathname.startsWith(href)) || active
-                                    ? 'text-primary'
-                                    : 'text-muted-foreground',
+                                  'flex w-full items-center',
+                                  isCollapsed ? 'justify-center' : 'gap-3',
                                 )}
                               >
-                                <Icon size={18} />
-                              </span>
-                              {!isCollapsed && (
                                 <span
                                   className={cn(
-                                    'max-w-[200px] truncate py-0.5 text-sm',
+                                    'flex shrink-0 items-center justify-center',
                                     (active === undefined && pathname.startsWith(href)) || active
-                                      ? 'font-medium text-foreground'
+                                      ? 'text-primary'
                                       : 'text-muted-foreground',
                                   )}
                                 >
-                                  {label}
+                                  <Icon size={18} />
                                 </span>
-                              )}
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        {isCollapsed && <TooltipContent side="right">{label}</TooltipContent>}
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                ) : (
-                  <div className="w-full" key={index}>
-                    <CollapseMenuButton
-                      icon={Icon}
-                      label={label}
-                      submenus={submenus}
-                      isOpen={isSidebarOpen}
-                      expanded={expandedLabel === label}
-                      onToggle={() => setExpandedLabel((prev) => (prev === label ? null : label))}
-                    />
-                  </div>
-                ),
-              )}
+                                {!isCollapsed && (
+                                  <span
+                                    className={cn(
+                                      'max-w-[200px] truncate py-0.5 text-xs',
+                                      (active === undefined && pathname.startsWith(href)) || active
+                                        ? 'font-medium text-foreground'
+                                        : 'text-muted-foreground',
+                                    )}
+                                  >
+                                    {label}
+                                  </span>
+                                )}
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          {isCollapsed && <TooltipContent side="right">{label}</TooltipContent>}
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  ) : (
+                    <div className="w-full" key={index}>
+                      <CollapseMenuButton
+                        icon={Icon}
+                        label={label}
+                        submenus={submenus}
+                        isOpen={isSidebarOpen}
+                        expanded={expandedLabel === label}
+                        onToggle={() => setExpandedLabel((prev) => (prev === label ? null : label))}
+                      />
+                    </div>
+                  ),
+                )}
+              </div>
             </li>
           ))}
         </ul>

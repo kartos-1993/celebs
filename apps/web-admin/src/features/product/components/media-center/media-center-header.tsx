@@ -28,7 +28,7 @@ export function MediaCenterHeader({ isUploading, onUpload, onCreateFolder }: Pro
                 if (e.target.files) onUpload(e.target.files);
               }}
             />
-            <Button size="sm" disabled={isUploading} className="pointer-events-none cursor-pointer">
+            <Button size="sm" disabled={isUploading}>
               {isUploading ? (
                 <>
                   <Spinner size="sm" className="mr-1.5" /> Uploading…
@@ -44,7 +44,7 @@ export function MediaCenterHeader({ isUploading, onUpload, onCreateFolder }: Pro
             size="sm"
             variant="outline"
             onClick={onCreateFolder}
-            className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            className="border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
           >
             <FolderPlus className="mr-1.5 h-4 w-4" /> Create new folder
           </Button>

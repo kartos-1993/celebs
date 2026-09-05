@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { LucideIcon } from 'lucide-react';
@@ -19,7 +19,7 @@ interface CollapseMenuFlyoutProps {
   submenus: Submenu[];
 }
 
-const FLYOUT_CLOSE_DELAY_MS = 150;
+const FLYOUT_CLOSE_DELAY_MS = 80;
 
 export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenuFlyoutProps) {
   const location = useLocation();
@@ -29,6 +29,11 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
   );
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Never leave a stale flyout open after navigation (e.g. keyboard nav).
+  useEffect(() => {
+    setFlyoutOpen(false);
+  }, [pathname]);
 
   const openFlyout = useCallback(() => {
     if (closeTimer.current) {
@@ -90,7 +95,7 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
                 to={href}
                 onClick={closeFlyout}
                 className={cn(
-                  'flex items-center px-3 py-2 text-sm transition-colors',
+                  'flex items-center px-3 py-2 text-xs transition-colors',
                   (active === undefined && pathname === href) || active
                     ? 'bg-secondary font-medium text-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',

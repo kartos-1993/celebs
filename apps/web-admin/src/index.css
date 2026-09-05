@@ -259,6 +259,12 @@
   textarea {
     font-family: var(--font-sans);
   }
+  /* Tailwind v4 no longer puts pointer cursors on native buttons — restore
+     app-wide so icon buttons, tabs, and dialog buttons all afford clicking. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
   html {
     overflow-x: hidden;
   }

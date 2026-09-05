@@ -66,7 +66,7 @@ export function CollapseMenuButton({
               </span>
               <span
                 className={cn(
-                  'max-w-[150px] truncate py-0.5 text-sm font-medium',
+                  'max-w-[150px] truncate py-0.5 text-xs font-medium',
                   isSubmenuActive ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
@@ -97,7 +97,7 @@ export function CollapseMenuButton({
               <Link to={href} className="flex w-full items-center">
                 <span
                   className={cn(
-                    'truncate py-0.5 text-sm',
+                    'truncate py-0.5 text-xs',
                     isActive ? 'font-medium text-foreground' : 'text-muted-foreground',
                   )}
                 >
