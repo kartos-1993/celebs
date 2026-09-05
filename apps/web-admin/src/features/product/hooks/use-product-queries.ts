@@ -27,6 +27,9 @@ export const PRODUCT_QUERY_KEYS = {
     [...PRODUCT_QUERY_KEYS.all, 'review-queue', { page, limit }] as const,
   details: () => [...PRODUCT_QUERY_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', id] as const,
+  categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
+  categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
+  categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
 };
 
 export function useProductsQuery(filters: ProductFilterRequest, enabled = true) {

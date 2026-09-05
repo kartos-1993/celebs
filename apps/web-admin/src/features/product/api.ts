@@ -1,12 +1,15 @@
 import type { IApiResponse } from '@celebs/shared-types';
+import type { CategoryAttributeType, CategoryTreeNode, RecentCategory } from '@celebs/shared-types';
 
 import type {
   CreateProductRequest,
+  DropdownCategory,
   ProductFilterRequest,
   ProductRecord,
   ReviewProductRequestPayload,
   UpdateProductRequest,
 } from './types';
+export type { ReviewProductRequestPayload } from './types';
 
 import { axiosClient } from '@/lib/axios/axios-client';
 import { directUploadBatch } from '@/lib/media-upload';
@@ -127,6 +130,86 @@ export async function uploadFiles(
   return [...existingUrls, ...uploadedUrls];
 }
 
+/**
+ * Product-side category read client. The category backend routes are the
+ * shared contract; each feature colocates its own thin client instead of
+ * importing across features (see FSD mandates).
+ */
+const CATEGORY_BASE_PATH = '/category';
+
+export async function getDropdownCategoryTree(): Promise<ProductApiResponse<CategoryTreeNode[]>> {
+  const response = await axiosClient.get<ProductApiResponse<CategoryTreeNode[]>>(
+    `${CATEGORY_BASE_PATH}/tree-with-attributes`,
+  );
+  return response.data;
+}
+
+interface CategorySearchResultItem {
+  id: string;
+  name: string;
+  parentCategory?: string | null;
+  hasChildren?: boolean;
+  level?: number;
+  path?: string[] | string;
+  slug?: string;
+}
+
+export async function searchDropdownCategories(query: string): Promise<DropdownCategory[]> {
+  const response = await axiosClient.get(`${CATEGORY_BASE_PATH}/search`, {
+    params: { q: query, limit: 20 },
+  });
+  const items: CategorySearchResultItem[] = response.data?.data ?? response.data ?? [];
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    parentCategory: item.parentCategory ?? null,
+    hasChildren: Boolean(item.hasChildren),
+    level:
+      item.level ??
+      (Array.isArray(item.path)
+        ? item.path.length - 1
+        : typeof item.path === 'string'
+          ? item.path.split('/').length - 1
+          : 0),
+    path: Array.isArray(item.path)
+      ? item.path
+      : typeof item.path === 'string'
+        ? item.path.split('/')
+        : [item.name],
+    slug: item.slug,
+  }));
+}
+
+export async function getDropdownRecentCategories(): Promise<ProductApiResponse<RecentCategory[]>> {
+  const response = await axiosClient.get<ProductApiResponse<RecentCategory[]>>(
+    `${CATEGORY_BASE_PATH}/recent`,
+  );
+  return response.data;
+}
+
+export async function recordDropdownRecentCategory(
+  categoryId: string,
+): Promise<ProductApiResponse<RecentCategory[]>> {
+  const response = await axiosClient.post<ProductApiResponse<RecentCategory[]>>(
+    `${CATEGORY_BASE_PATH}/recent`,
+    { categoryId },
+  );
+  return response.data;
+}
+
+export interface DropdownCategoryDetail {
+  attributes?: CategoryAttributeType[];
+}
+
+export async function getDropdownCategoryById(
+  id: string,
+): Promise<ProductApiResponse<DropdownCategoryDetail>> {
+  const response = await axiosClient.get<ProductApiResponse<DropdownCategoryDetail>>(
+    `${CATEGORY_BASE_PATH}/${id}`,
+  );
+  return response.data;
+}
+
 export const ProductApiService = {
   createProduct,
   getProducts,
@@ -138,4 +221,9 @@ export const ProductApiService = {
   archiveProduct,
   toggleProductActivation,
   uploadFiles,
+  getDropdownCategoryTree,
+  getDropdownCategoryById,
+  searchDropdownCategories,
+  getDropdownRecentCategories,
+  recordDropdownRecentCategory,
 };

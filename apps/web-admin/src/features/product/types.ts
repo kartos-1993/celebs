@@ -104,6 +104,13 @@ export interface ProductDraft {
 
 export type ProductListItem = ProductRecord;
 
+// ── Cascading category dropdown UI state ────────────────────────────────
+export interface DropdownColumn {
+  parentId: string | null;
+  parentName: string;
+  searchQuery: string;
+}
+
 // ── Manage list UI state ────────────────────────────────────────────────
 export type ProductSortKey = 'newest' | 'price-asc' | 'price-desc' | 'name-asc';
 

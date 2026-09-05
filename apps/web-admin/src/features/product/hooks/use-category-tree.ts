@@ -1,13 +1,20 @@
 /**
  * Category tree and recent categories data for the product form.
- * Decoupled from features/category using shared contracts & TanStack Query.
+ * Reads through the product-side category client (product/api.ts) —
+ * never across features.
  */
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { CategoryTreeNode, DropdownCategory, RecentCategory } from '@celebs/shared-types';
 
-import { CATEGORY_QUERY_KEYS, CategoryApiService } from '@/features/category/api';
+import {
+  getDropdownCategoryTree,
+  getDropdownRecentCategories,
+  recordDropdownRecentCategory,
+} from '../api';
+
+import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 
 /** Flatten a category tree into the lightweight dropdown shape. */
 function flattenTree(nodes: CategoryTreeNode[]): DropdownCategory[] {
@@ -36,25 +43,25 @@ export const useCategoryTree = () => {
   const queryClient = useQueryClient();
 
   const { data: treeResponse, isLoading: isLoadingTree } = useQuery({
-    queryKey: CATEGORY_QUERY_KEYS.tree(),
-    queryFn: CategoryApiService.getCategoryTree,
+    queryKey: PRODUCT_QUERY_KEYS.categoryTree(),
+    queryFn: getDropdownCategoryTree,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: recentResponse } = useQuery({
-    queryKey: CATEGORY_QUERY_KEYS.recent(),
-    queryFn: CategoryApiService.getRecentCategories,
+    queryKey: PRODUCT_QUERY_KEYS.categoryRecent(),
+    queryFn: getDropdownRecentCategories,
     staleTime: 60 * 1000,
     retry: false,
   });
 
   const { mutate: recordRecent } = useMutation({
-    mutationFn: CategoryApiService.recordRecentCategory,
+    mutationFn: recordDropdownRecentCategory,
     onSuccess: (response) => {
       if (response?.data) {
-        queryClient.setQueryData(CATEGORY_QUERY_KEYS.recent(), response);
+        queryClient.setQueryData(PRODUCT_QUERY_KEYS.categoryRecent(), response);
       } else {
-        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.recent() });
+        queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.categoryRecent() });
       }
     },
   });
@@ -65,8 +72,7 @@ export const useCategoryTree = () => {
   }, [treeResponse]);
 
   const recentCategories: RecentCategory[] = useMemo(() => {
-    const list = recentResponse?.data ?? [];
-    return list;
+    return recentResponse?.data ?? [];
   }, [recentResponse]);
 
   const getRootCategories = useCallback(
