@@ -14,21 +14,23 @@ import {
 
 import { can, Permission, type Role } from '@celebs/rbac';
 
-type Submenu = {
+export type Submenu = {
   href: string;
   label: string;
   active?: boolean;
+  badge?: string | number;
 };
 
-type Menu = {
+export type Menu = {
   href: string;
   label: string;
   active?: boolean;
   icon: LucideIcon;
+  badge?: string | number;
   submenus?: Submenu[];
 };
 
-type Group = {
+export type Group = {
   label?: string;
   menus: Menu[];
 };

@@ -53,35 +53,31 @@ export function Menu({ isSidebarOpen }: MenuProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* ── Middle: Scrollable Menu Items only ────────────────────────── */}
-      <nav className="mt-4 w-full min-h-0 flex-1 overflow-y-auto no-scrollbar">
-        <ul className="flex flex-col items-start px-2 pb-2">
+      <nav className="mt-2 w-full min-h-0 flex-1 overflow-y-auto no-scrollbar">
+        <ul className="flex flex-col items-start px-1 pb-2">
           {menuList.map(({ label, menus }, groupIndex) => (
             <li
               className={cn('w-full', groupIndex > 0 && (isCollapsed ? 'mt-1' : 'mt-4'))}
               key={label ?? groupIndex}
             >
               {!isCollapsed && label ? (
-                <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <div className="px-2 pb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {label}
                 </div>
               ) : null}
-              <div className="flex flex-col items-start space-y-1">
-                {menus.map(({ href, label, icon: Icon, active, submenus }, index) =>
-                  !submenus || submenus.length === 0 ? (
+              <div className="flex flex-col items-start gap-0.5">
+                {menus.map(({ href, label, icon: Icon, active, badge, submenus }, index) => {
+                  const isActive = (active === undefined && pathname.startsWith(href)) || active;
+                  return !submenus || submenus.length === 0 ? (
                     <div className="w-full" key={index}>
                       <TooltipProvider disableHoverableContent>
                         <Tooltip delayDuration={100}>
                           <TooltipTrigger asChild>
                             <Button
-                              variant={
-                                (active === undefined && pathname.startsWith(href)) || active
-                                  ? 'secondary'
-                                  : 'ghost'
-                              }
+                              variant={isActive ? 'secondary' : 'ghost'}
                               className={cn(
-                                'mb-1 h-9 w-full rounded-lg',
-                                isCollapsed ? 'justify-center px-0' : 'justify-start px-3',
+                                'h-8 w-full rounded-md',
+                                isCollapsed ? 'justify-center px-0' : 'justify-start px-2',
                               )}
                               asChild
                             >
@@ -89,29 +85,32 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                                 to={href}
                                 className={cn(
                                   'flex w-full items-center',
-                                  isCollapsed ? 'justify-center' : 'gap-3',
+                                  isCollapsed ? 'justify-center' : 'gap-2',
                                 )}
                               >
                                 <span
                                   className={cn(
                                     'flex shrink-0 items-center justify-center',
-                                    (active === undefined && pathname.startsWith(href)) || active
-                                      ? 'text-primary'
-                                      : 'text-muted-foreground',
+                                    isActive ? 'text-primary' : 'text-muted-foreground',
                                   )}
                                 >
-                                  <Icon size={18} />
+                                  <Icon size={16} />
                                 </span>
                                 {!isCollapsed && (
                                   <span
                                     className={cn(
-                                      'max-w-[200px] truncate py-0.5 text-xs',
-                                      (active === undefined && pathname.startsWith(href)) || active
+                                      'min-w-0 flex-1 truncate text-sm leading-tight',
+                                      isActive
                                         ? 'font-medium text-foreground'
-                                        : 'text-muted-foreground',
+                                        : 'font-normal text-muted-foreground',
                                     )}
                                   >
                                     {label}
+                                  </span>
+                                )}
+                                {!isCollapsed && badge !== undefined && (
+                                  <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                                    {badge}
                                   </span>
                                 )}
                               </Link>
@@ -126,14 +125,15 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                       <CollapseMenuButton
                         icon={Icon}
                         label={label}
+                        badge={badge}
                         submenus={submenus}
                         isOpen={isSidebarOpen}
                         expanded={expandedLabel === label}
                         onToggle={() => setExpandedLabel((prev) => (prev === label ? null : label))}
                       />
                     </div>
-                  ),
-                )}
+                  );
+                })}
               </div>
             </li>
           ))}

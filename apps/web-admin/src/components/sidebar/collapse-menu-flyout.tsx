@@ -11,6 +11,7 @@ export type Submenu = {
   href: string;
   label: string;
   active?: boolean;
+  badge?: string | number;
 };
 
 interface CollapseMenuFlyoutProps {
@@ -58,7 +59,7 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
           <Button
             variant={isSubmenuActive ? 'secondary' : 'ghost'}
             className={cn(
-              'mb-1 h-9 w-full justify-center rounded-lg px-0 transition-colors',
+              'h-8 w-full justify-center rounded-md px-0 transition-colors',
               flyoutOpen && 'bg-accent text-accent-foreground',
             )}
             tabIndex={-1}
@@ -69,7 +70,7 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
                 isSubmenuActive || flyoutOpen ? 'text-primary' : 'text-muted-foreground',
               )}
             >
-              <Icon size={18} />
+              <Icon size={16} />
             </span>
           </Button>
         </div>
@@ -85,7 +86,7 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
           onOpenAutoFocus={(e) => e.preventDefault()}
           className="z-50 w-48 rounded-xl border border-border/70 bg-popover p-0 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2"
         >
-          <div className="border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="border-b px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {label}
           </div>
           <div className="py-1">
@@ -95,10 +96,10 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
                 to={href}
                 onClick={closeFlyout}
                 className={cn(
-                  'flex items-center px-3 py-2 text-xs transition-colors',
+                  'flex h-8 items-center px-2 text-sm leading-tight transition-colors',
                   (active === undefined && pathname === href) || active
                     ? 'bg-secondary font-medium text-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    : 'font-normal text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
                 {subLabel}

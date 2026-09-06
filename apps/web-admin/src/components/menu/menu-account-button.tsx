@@ -50,18 +50,18 @@ export function MenuAccountButton({ isCollapsed }: MenuAccountButtonProps) {
               <Button
                 variant="ghost"
                 className={cn(
-                  'h-9 w-full',
-                  isCollapsed ? 'justify-center px-0' : 'justify-between px-3',
+                  'h-8 w-full rounded-md',
+                  isCollapsed ? 'justify-center px-0' : 'justify-between px-2',
                 )}
               >
                 {isCollapsed ? (
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                     {initials}
                   </span>
                 ) : (
                   <>
                     <span className="flex min-w-0 flex-col items-start leading-tight">
-                      <span className="max-w-[140px] truncate text-xs font-medium">
+                      <span className="max-w-[140px] truncate text-sm font-medium leading-tight">
                         {user?.name || 'My Account'}
                       </span>
                       <span className="max-w-[140px] truncate text-xs text-muted-foreground">

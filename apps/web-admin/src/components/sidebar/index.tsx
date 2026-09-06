@@ -22,17 +22,17 @@ const Sidebar = () => {
       <div
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
-        className="relative flex h-full flex-col overflow-hidden px-3 py-4"
+        className="relative flex h-full flex-col overflow-hidden px-2 py-3"
       >
         <Button
           className={cn(
-            'mb-2 h-auto justify-start px-1 py-1 transition-transform ease-in-out duration-300',
+            'mb-1 h-auto justify-start px-2 py-1 transition-transform ease-in-out duration-300',
             !isSidebarOpen ? 'translate-x-1' : 'translate-x-0',
           )}
           variant="link"
           asChild
         >
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <PanelsTopLeft className="h-4 w-4" />
             </span>
