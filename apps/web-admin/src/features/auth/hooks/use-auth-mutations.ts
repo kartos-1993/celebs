@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { login, logout, resendVerification } from '../api';
+import { AUTH_QUERY_KEYS, login, logout, resendVerification, setupSuperadmin } from '../api';
 
 export function useLoginMutation() {
   return useMutation({
@@ -18,5 +18,17 @@ export function useLogoutMutation() {
 export function useResendVerificationMutation() {
   return useMutation({
     mutationFn: resendVerification,
+  });
+}
+
+export function useSetupSuperadminMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: setupSuperadmin,
+    meta: { suppressErrorToast: true },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.setupStatus() });
+    },
   });
 }

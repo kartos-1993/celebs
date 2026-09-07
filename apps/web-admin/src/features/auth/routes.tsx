@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { RouteObject } from 'react-router-dom';
+import { Navigate, RouteObject } from 'react-router-dom';
 
 const SignInPage = lazy(() => import('./pages/sign-in-page'));
 const SetupSuperadminPage = lazy(() => import('./pages/setup-superadmin-page'));
@@ -13,6 +13,10 @@ export const authRoutes: RouteObject[] = [
   {
     path: '/setup-superadmin',
     element: <SetupSuperadminPage />,
+  },
+  {
+    path: '/setup-admin',
+    element: <Navigate to="/setup-superadmin" replace />,
   },
   {
     path: '/vendor/register',

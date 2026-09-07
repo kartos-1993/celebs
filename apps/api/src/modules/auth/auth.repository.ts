@@ -1,5 +1,6 @@
 import { Session, User, VerificationCode } from '@prisma/client';
 
+import { PLATFORM_SYSTEM_EMAIL } from '@/common/constants/platform-vendor';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import prisma, { Prisma } from '@/config/db.prisma';
@@ -45,7 +46,10 @@ export class AuthRepository {
 
   public async findSuperadmin(): Promise<User | null> {
     return prisma.user.findFirst({
-      where: { role: 'SUPERADMIN' },
+      where: {
+        role: 'SUPERADMIN',
+        email: { not: PLATFORM_SYSTEM_EMAIL },
+      },
     });
   }
 

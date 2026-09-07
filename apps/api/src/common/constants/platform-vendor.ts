@@ -1,5 +1,4 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
 
 export const PLATFORM_VENDOR_ID = '00000000-0000-0000-0000-000000000001';
 export const PLATFORM_VENDOR_NAME = 'Celebs Official';
@@ -37,26 +36,16 @@ export async function ensurePlatformVendor(
     let userId = superadminUserId;
     if (!userId) {
       const existingAdmin = await client.user.findFirst({
-        where: { role: 'SUPERADMIN' },
+        where: {
+          role: 'SUPERADMIN',
+          email: { not: PLATFORM_SYSTEM_EMAIL },
+        },
       });
       if (existingAdmin) {
         userId = existingAdmin.id;
       } else {
-        let platformUser = await client.user.findFirst({
-          where: { email: PLATFORM_SYSTEM_EMAIL },
-        });
-        if (!platformUser) {
-          platformUser = await client.user.create({
-            data: {
-              name: 'Celebs Platform System',
-              email: PLATFORM_SYSTEM_EMAIL,
-              password: randomUUID(),
-              role: 'SUPERADMIN',
-              isEmailVerified: true,
-            },
-          });
-        }
-        userId = platformUser.id;
+        // No real superadmin exists yet. Defer 1P platform vendor provisioning until initial superadmin setup.
+        return null;
       }
     }
 
@@ -76,30 +65,38 @@ export async function ensurePlatformVendor(
       },
       update: {
         status: 'APPROVED',
+        userId,
       },
+    });
+  } else if (superadminUserId && vendor.userId !== superadminUserId) {
+    vendor = await client.vendorProfile.update({
+      where: { id: PLATFORM_VENDOR_ID },
+      data: { userId: superadminUserId },
     });
   }
 
   // Ensure 1P Primary Warehouse exists for fulfillment & logistics
-  const existingWarehouse = await client.warehouse.findFirst({
-    where: { vendorProfileId: PLATFORM_VENDOR_ID },
-  });
-  if (!existingWarehouse) {
-    await client.warehouse.create({
-      data: {
-        vendorProfileId: PLATFORM_VENDOR_ID,
-        label: 'Celebs Central Fulfillment Center',
-        contactName: 'Celebs Operations',
-        contactPhone: PLATFORM_COMPANY_DETAILS.phoneNumber,
-        addressLine1: 'Durbar Marg, Ward 1',
-        city: 'Kathmandu',
-        district: 'Kathmandu',
-        province: 'Bagmati Province',
-        country: 'Nepal',
-        isBusinessAddress: true,
-        isReturnAddress: true,
-      },
+  if (vendor) {
+    const existingWarehouse = await client.warehouse.findFirst({
+      where: { vendorProfileId: PLATFORM_VENDOR_ID },
     });
+    if (!existingWarehouse) {
+      await client.warehouse.create({
+        data: {
+          vendorProfileId: PLATFORM_VENDOR_ID,
+          label: 'Celebs Central Fulfillment Center',
+          contactName: 'Celebs Operations',
+          contactPhone: PLATFORM_COMPANY_DETAILS.phoneNumber,
+          addressLine1: 'Durbar Marg, Ward 1',
+          city: 'Kathmandu',
+          district: 'Kathmandu',
+          province: 'Bagmati Province',
+          country: 'Nepal',
+          isBusinessAddress: true,
+          isReturnAddress: true,
+        },
+      });
+    }
   }
 
   return vendor;

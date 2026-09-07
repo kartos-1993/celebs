@@ -21,6 +21,7 @@ import { useLoginMutation } from '../hooks/use-auth-mutations';
 import { signInFormSchema, SignInFormValues } from '../types/sign-in.schema';
 import { handleSignInErrors } from '../utils/auth-error';
 
+import { SetupRequiredBanner } from './setup-required-banner';
 import { SignInErrorBanner } from './sign-in-error-banner';
 
 import { getUserSession } from '@/features/account/api';
@@ -77,6 +78,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
+      <SetupRequiredBanner />
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success p-3 rounded-md text-sm mb-2">
           {successMessage}
