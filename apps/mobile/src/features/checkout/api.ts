@@ -1,3 +1,5 @@
+import type { CheckoutPaymentMethod } from './components/payment-method-selector';
+
 import { apiClient } from '@/api/client';
 
 export const CHECKOUT_QUERY_KEYS = {
@@ -7,8 +9,18 @@ export const CHECKOUT_QUERY_KEYS = {
 
 export interface CheckoutRequest {
   addressId: string;
-  paymentMethod: 'COD' | 'STRIPE';
+  paymentMethod: CheckoutPaymentMethod;
   idempotencyKey: string;
+  /**
+   * API origin the phone's browser can reach (LAN IP / tunnel / staging).
+   * The backend builds wallet redirect targets from it after allowlisting.
+   */
+  callbackBase?: string;
+}
+
+export interface CheckoutPayment {
+  paymentId?: string;
+  redirectUrl?: string;
 }
 
 export interface CheckoutResponse {
@@ -19,6 +31,7 @@ export interface CheckoutResponse {
       id?: string;
       orderNumber?: string;
     };
+    payment?: CheckoutPayment | null;
   };
 }
 

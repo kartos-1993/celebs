@@ -27,6 +27,7 @@ export function mapItem(raw: Record<string, unknown>): OrderItemView {
     unitPrice: toNumber(raw.unitPrice),
     subtotal: toNumber(raw.subtotal),
     itemStatus: (raw.itemStatus as OrderItemStatus) ?? 'PENDING',
+    imageUrl: (raw.imageUrl as string) || (raw.image as string) || null,
     ...(raw.trackingNumber ? { trackingNumber: String(raw.trackingNumber) } : {}),
     ...(raw.courierPartner ? { courierPartner: String(raw.courierPartner) } : {}),
   };

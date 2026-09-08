@@ -11,6 +11,7 @@ export interface OrderItemView {
   unitPrice: number;
   subtotal: number;
   itemStatus: OrderItemStatus;
+  imageUrl?: string | null;
   trackingNumber?: string | null;
   courierPartner?: string | null;
 }
@@ -72,15 +73,60 @@ export interface StatusMeta {
 }
 
 const STATUS_META: Record<OrderStatus, StatusMeta> = {
-  PENDING_PAYMENT: { label: 'Pending Payment', tone: 'warning' },
-  CONFIRMED: { label: 'Confirmed', tone: 'active' },
+  PENDING_PAYMENT: { label: 'To Pay', tone: 'warning' },
+  CONFIRMED: { label: 'To Ship', tone: 'active' },
   PACKED: { label: 'Packed', tone: 'active' },
-  HANDED_OVER: { label: 'In Transit', tone: 'active' },
+  HANDED_OVER: { label: 'To Receive', tone: 'active' },
   OUT_FOR_DELIVERY: { label: 'Out for Delivery', tone: 'active' },
   DELIVERED: { label: 'Delivered', tone: 'success' },
   CANCELLED: { label: 'Cancelled', tone: 'danger' },
   RETURNED: { label: 'Returned', tone: 'danger' },
 };
+
+export type OrderFilterTab =
+  | 'ALL'
+  | 'TO_PAY'
+  | 'TO_SHIP'
+  | 'TO_RECEIVE'
+  | 'DELIVERED'
+  | 'CANCELLED';
+
+export interface OrderFilterTabOption {
+  key: OrderFilterTab;
+  label: string;
+}
+
+export const ORDER_FILTER_TABS: OrderFilterTabOption[] = [
+  { key: 'ALL', label: 'All' },
+  { key: 'TO_PAY', label: 'To Pay' },
+  { key: 'TO_SHIP', label: 'To Ship' },
+  { key: 'TO_RECEIVE', label: 'To Receive' },
+  { key: 'DELIVERED', label: 'Delivered' },
+  { key: 'CANCELLED', label: 'Cancelled' },
+];
+
+export function matchesOrderFilter(order: OrderView, filter: OrderFilterTab): boolean {
+  if (filter === 'ALL') return true;
+  if (filter === 'TO_PAY') {
+    return order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT';
+  }
+  if (filter === 'TO_SHIP') {
+    return (
+      (order.status === 'CONFIRMED' || order.status === 'PACKED') &&
+      order.paymentStatus !== 'PENDING'
+    );
+  }
+  if (filter === 'TO_RECEIVE') {
+    return order.status === 'HANDED_OVER' || order.status === 'OUT_FOR_DELIVERY';
+  }
+  if (filter === 'DELIVERED') {
+    return order.status === 'DELIVERED';
+  }
+  if (filter === 'CANCELLED') {
+    return order.status === 'CANCELLED' || order.status === 'RETURNED';
+  }
+  return true;
+}
 
 export function getOrderStatusMeta(status: OrderStatus): StatusMeta {
   return STATUS_META[status] ?? { label: status.replace(/_/g, ' '), tone: 'neutral' };

@@ -5,7 +5,7 @@ import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/them
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Palette.white,
+    backgroundColor: '#F8FAFC',
   },
   headerBar: {
     flexDirection: 'row',
@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.sm + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Palette.gray100,
+    borderBottomColor: Palette.gray200,
   },
   headerIconSlot: {
     width: 32,
@@ -28,112 +28,9 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
-  sectionBand: {
-    height: Spacing.sm,
-    backgroundColor: Palette.gray100,
-  },
-
-  /* ---------- Order card ---------- */
-  orderCard: {
-    backgroundColor: Palette.white,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.xs,
-  },
-  statusTextActive: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-  },
-  statusTextSuccess: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.success,
-  },
-  statusTextWarning: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.warning,
-  },
-  statusTextDanger: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.danger,
-  },
-  statusTextNeutral: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray700,
-  },
-  dateText: {
-    fontSize: FontSize.caption,
-    color: Palette.gray500,
-  },
-
-  /* ---------- Footer ---------- */
-  cardFooter: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Palette.gray100,
-    paddingTop: Spacing.sm,
-    marginTop: Spacing.xxs,
-    gap: Spacing.sm,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  totalLabel: {
-    fontSize: FontSize.caption,
-    color: Palette.gray600,
-  },
-  totalValue: {
-    fontSize: FontSize.body,
-    fontWeight: FontWeight.extrabold,
-    color: Palette.danger,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
-  },
-  liveHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xxs + 1,
-    flex: 1,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: Radius.pill,
-    backgroundColor: Palette.success,
-  },
-  liveHintText: {
-    fontSize: FontSize.micro,
-    color: Palette.success,
-    fontWeight: FontWeight.semibold,
-  },
-  trackBtn: {
-    borderWidth: 1,
-    borderColor: Palette.gray900,
-    borderRadius: Radius.pill,
-    paddingVertical: Spacing.sm - 1,
-    paddingHorizontal: Spacing.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trackBtnText: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
+  listContent: {
+    paddingVertical: Spacing.sm,
+    flexGrow: 1,
   },
 
   /* ---------- States ---------- */
@@ -166,21 +63,23 @@ export const styles = StyleSheet.create({
     color: Palette.gray900,
   },
   emptyIconCircle: {
-    width: 88,
-    height: 88,
+    width: 72,
+    height: 72,
     borderRadius: Radius.pill,
-    backgroundColor: Palette.gray100,
+    backgroundColor: Palette.white,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Palette.gray200,
     marginBottom: Spacing.xs,
   },
   emptyTitle: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
   emptySub: {
-    fontSize: FontSize.small,
+    fontSize: FontSize.caption,
     color: Palette.gray500,
     textAlign: 'center',
     lineHeight: 18,
@@ -188,8 +87,8 @@ export const styles = StyleSheet.create({
   shopNowBtn: {
     backgroundColor: Palette.gray900,
     borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.xxl,
-    minHeight: 44,
+    paddingHorizontal: Spacing.xl,
+    minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.xs,

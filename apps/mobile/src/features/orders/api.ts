@@ -29,3 +29,7 @@ export async function getOrderById(orderId: string): Promise<OrderView> {
   }
   return mapOrder(response.data.data);
 }
+
+export async function cancelOrderApi(orderId: string): Promise<void> {
+  await apiClient.post(`/orders/my-orders/${orderId}/cancel`);
+}

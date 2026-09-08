@@ -83,7 +83,6 @@ export function CartItemCard({
         </View>
 
         <View style={styles.variantRow}>
-          <View style={[styles.colorDot, { backgroundColor: item.colorCode || Palette.gray300 }]} />
           <ThemedText style={styles.variantText} numberOfLines={1}>
             {variantLabel}
           </ThemedText>

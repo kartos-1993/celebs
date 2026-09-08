@@ -27,7 +27,18 @@ export function useMyOrders(enabled: boolean = true) {
       if (lastPage.length < PAGE_SIZE) return undefined;
       return allPages.length + 1;
     },
-    staleTime: 1000 * 15,
+    staleTime: 1000 * 5,
+    refetchInterval: (query) => {
+      const orders = query.state.data?.pages.flat() ?? [];
+      const hasPendingOrActive = orders.some(
+        (o) =>
+          o.paymentStatus === 'PENDING' ||
+          o.status === 'PENDING_PAYMENT' ||
+          isActiveOrder(o.status),
+      );
+      return hasPendingOrActive ? LIVE_POLL_INTERVAL_MS : false;
+    },
+    refetchIntervalInBackground: false,
   });
 
   const orders = query.data?.pages.flat() ?? [];
