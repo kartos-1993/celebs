@@ -7,11 +7,10 @@ import {
 } from '@/common/constants/platform-vendor';
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
-import { OrderService } from '@/modules/order/order.service';
+import { checkoutService } from '@/modules/order/checkout/checkout.service';
+import { fulfillmentService } from '@/modules/order/fulfillment/fulfillment.service';
 
 describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
-  const orderService = new OrderService();
-
   let customerId: string;
   let customerAddressId: string;
   let vendorAProfileId: string;
@@ -198,7 +197,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
 
   it('should successfully place a mixed cart order (1P + 3P) with non-null foreign keys', async () => {
     await populateCart();
-    const result = await orderService.checkout(customerId, {
+    const result = await checkoutService.checkout(customerId, {
       addressId: customerAddressId,
       paymentMethod: 'COD',
       idempotencyKey: `idemp-${Date.now()}-${Math.random()}`,
@@ -222,7 +221,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
 
   it('should redact items belonging to other vendors when 3P vendor accesses mixed order', async () => {
     await populateCart();
-    const result = await orderService.checkout(customerId, {
+    const result = await checkoutService.checkout(customerId, {
       addressId: customerAddressId,
       paymentMethod: 'COD',
       idempotencyKey: `idemp-${Date.now()}-${Math.random()}`,
@@ -230,7 +229,10 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
     placedOrderId = result.order.id;
 
     // Vendor A queries the order
-    const vendorAOrder = await orderService.getVendorOrderById(placedOrderId, vendorAProfileId);
+    const vendorAOrder = await fulfillmentService.getVendorOrderById(
+      placedOrderId,
+      vendorAProfileId,
+    );
 
     expect(vendorAOrder).toBeDefined();
     expect(vendorAOrder.id).toBe(placedOrderId);
@@ -242,7 +244,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
 
   it('should reject third-party Vendor B who has no items in the order with 404 Not Found', async () => {
     await populateCart();
-    const result = await orderService.checkout(customerId, {
+    const result = await checkoutService.checkout(customerId, {
       addressId: customerAddressId,
       paymentMethod: 'COD',
       idempotencyKey: `idemp-${Date.now()}-${Math.random()}`,
@@ -250,14 +252,14 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
     placedOrderId = result.order.id;
 
     // Vendor B queries the order -> Expected 404
-    await expect(orderService.getVendorOrderById(placedOrderId, vendorBProfileId)).rejects.toThrow(
-      /Order not found/i,
-    );
+    await expect(
+      fulfillmentService.getVendorOrderById(placedOrderId, vendorBProfileId),
+    ).rejects.toThrow(/Order not found/i);
   });
 
   it('should return all items when platform admin queries mixed order', async () => {
     await populateCart();
-    const result = await orderService.checkout(customerId, {
+    const result = await checkoutService.checkout(customerId, {
       addressId: customerAddressId,
       paymentMethod: 'COD',
       idempotencyKey: `idemp-${Date.now()}-${Math.random()}`,
@@ -265,7 +267,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
     placedOrderId = result.order.id;
 
     // Platform admin queries the order with isPlatform: true
-    const adminOrder = await orderService.getVendorOrderById(placedOrderId, undefined, true);
+    const adminOrder = await fulfillmentService.getVendorOrderById(placedOrderId, undefined, true);
 
     expect(adminOrder).toBeDefined();
     expect(adminOrder.items).toHaveLength(2);
@@ -280,7 +282,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
       data: { cartId: cart3P.id, inventoryId: inventory3PAId, quantity: 1 },
     });
 
-    const res3P = await orderService.checkout(customerId, {
+    const res3P = await checkoutService.checkout(customerId, {
       addressId: customerAddressId,
       paymentMethod: 'COD',
       idempotencyKey: `idemp-3p-${Date.now()}-${Math.random()}`,
@@ -291,7 +293,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
     const item3P = await prisma.orderItem.findFirst({ where: { orderId: order3PId } });
     expect(item3P).not.toBeNull();
 
-    await orderService.updateOrderItemStatus(
+    await fulfillmentService.updateOrderItemStatus(
       vendorAProfileId,
       item3P!.id,
       'PACKED',
@@ -313,7 +315,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
       data: { cartId: cart1P.id, inventoryId: inventory1PId, quantity: 1 },
     });
 
-    const res1P = await orderService.checkout(customerId, {
+    const res1P = await checkoutService.checkout(customerId, {
       addressId: customerAddressId,
       paymentMethod: 'COD',
       idempotencyKey: `idemp-1p-${Date.now()}-${Math.random()}`,
@@ -323,7 +325,7 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
     const item1P = await prisma.orderItem.findFirst({ where: { orderId: order1PId } });
     expect(item1P).not.toBeNull();
 
-    await orderService.updateOrderItemStatus(
+    await fulfillmentService.updateOrderItemStatus(
       undefined,
       item1P!.id,
       'PACKED',

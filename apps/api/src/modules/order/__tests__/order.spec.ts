@@ -47,32 +47,17 @@ describe('Order & Checkout Validation Rules', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects KHALTI and ESEWA payment methods in checkout schema until adapters are available', () => {
-    const khaltiCheckout = {
+  it('accepts COD, ESEWA and KHALTI wallets and rejects retired STRIPE', () => {
+    const base = {
       addressId: '123e4567-e89b-12d3-a456-426614174000',
-      paymentMethod: 'KHALTI',
-      idempotencyKey: 'idemp_key_9876543210',
-    };
-    const esewaCheckout = {
-      addressId: '123e4567-e89b-12d3-a456-426614174000',
-      paymentMethod: 'ESEWA',
       idempotencyKey: 'idemp_key_9876543210',
     };
 
-    const khaltiRes = checkoutSchema.safeParse(khaltiCheckout);
-    expect(khaltiRes.success).toBe(false);
-    if (!khaltiRes.success) {
-      expect(khaltiRes.error.issues[0]?.message).toContain(
-        'KHALTI and ESEWA payments are not supported yet',
-      );
+    for (const paymentMethod of ['COD', 'ESEWA', 'KHALTI']) {
+      expect(checkoutSchema.safeParse({ ...base, paymentMethod }).success).toBe(true);
     }
 
-    const esewaRes = checkoutSchema.safeParse(esewaCheckout);
-    expect(esewaRes.success).toBe(false);
-    if (!esewaRes.success) {
-      expect(esewaRes.error.issues[0]?.message).toContain(
-        'KHALTI and ESEWA payments are not supported yet',
-      );
-    }
+    const stripeRes = checkoutSchema.safeParse({ ...base, paymentMethod: 'STRIPE' });
+    expect(stripeRes.success).toBe(false);
   });
 });

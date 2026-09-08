@@ -2,11 +2,9 @@ import { Job, Worker } from 'bullmq';
 
 import { logger } from '@celebs/shared-utils';
 
-import { OrderService } from './order.service';
+import { checkoutService } from './checkout/checkout.service';
 
 import { redisConnection } from '@/common/services/queue.service';
-
-const orderService = new OrderService();
 
 export const orderReservationWorker = new Worker(
   'order-maintenance',
@@ -14,7 +12,7 @@ export const orderReservationWorker = new Worker(
     if (job.name === 'release-stale-reservations') {
       logger.info('Starting scheduled stale order reservation release...');
       try {
-        const result = await orderService.releaseStaleReservations();
+        const result = await checkoutService.releaseStaleReservations();
         logger.info(
           { cancelledOrders: result.cancelledOrders },
           'Stale order reservation release completed successfully',
