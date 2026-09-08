@@ -17,7 +17,7 @@ export const updateAddressSchema = addressSchema.partial();
 
 export const COD_MAX_LIMIT = 5000;
 
-export const PAYMENT_METHODS = ['COD', 'STRIPE', 'KHALTI', 'ESEWA'] as const;
+export const PAYMENT_METHODS = ['COD', 'KHALTI', 'ESEWA'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const ORDER_STATUSES = [
@@ -47,11 +47,16 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 export const checkoutSchema = z.object({
   addressId: z.string().uuid('Valid shipping address ID is required').optional(),
   shippingAddress: addressSchema.optional(),
-  paymentMethod: z.enum(PAYMENT_METHODS).refine((m) => m === 'COD' || m === 'STRIPE', {
-    message: 'KHALTI and ESEWA payments are not supported yet',
-  }),
+  paymentMethod: z.enum(PAYMENT_METHODS),
   idempotencyKey: z.string().min(8, 'Idempotency key is required'),
   notes: z.string().optional(),
+  /**
+   * Origin (scheme + host + optional port, no path) the customer's browser can
+   * reach the API at — e.g. the phone's LAN URL for the dev machine. Used to
+   * build wallet redirect targets per order. Server allowlists it; anything
+   * untrusted falls back to the static env URLs.
+   */
+  callbackBase: z.string().url('callbackBase must be a valid URL').max(120).optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
@@ -64,8 +69,14 @@ export const updateOrderItemStatusSchema = z.object({
   courierPartner: z.string().optional(),
 });
 
+export const updatePaymentStatusSchema = z.object({
+  status: z.enum(['COMPLETED', 'FAILED', 'REFUNDED']),
+  reference: z.string().min(2, 'Payment reference is required for audit'),
+});
+
 export type AddressInput = z.infer<typeof addressSchema>;
 export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
 export type UpdateOrderItemStatusInput = z.infer<typeof updateOrderItemStatusSchema>;
+export type UpdatePaymentStatusInput = z.infer<typeof updatePaymentStatusSchema>;
