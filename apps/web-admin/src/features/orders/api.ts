@@ -1,4 +1,8 @@
-import type { IApiResponse, UpdateOrderItemStatusInput } from '@celebs/shared-types';
+import type {
+  IApiResponse,
+  UpdateOrderItemStatusInput,
+  UpdatePaymentStatusInput,
+} from '@celebs/shared-types';
 
 import type { AdminOrderDto, LogisticsProvider, VendorOrderItemDto } from './types';
 
@@ -106,5 +110,25 @@ export async function settleCodOrder({
   const response = await axiosClient.post<SettleCodResponse>(`/logistics/settle-cod/${orderId}`, {
     reference,
   });
+  return response.data;
+}
+
+// --- Admin payment endpoints (FINANCE_MANAGE) ---
+
+export interface UpdatePaymentStatusParams {
+  orderId: string;
+  body: UpdatePaymentStatusInput;
+}
+
+export type UpdatePaymentStatusResponse = IApiResponse<AdminOrderDto>;
+
+export async function updateOrderPaymentStatus({
+  orderId,
+  body,
+}: UpdatePaymentStatusParams): Promise<UpdatePaymentStatusResponse> {
+  const response = await axiosClient.patch<UpdatePaymentStatusResponse>(
+    `/orders/admin/orders/${orderId}/payment`,
+    body,
+  );
   return response.data;
 }

@@ -9,6 +9,7 @@ export function useFulfillmentDialog() {
   const [newStatus, setNewStatus] = useState<OrderItemStatus>('PACKED');
   const [courier, setCourier] = useState(DEFAULT_COURIER);
   const [trackingNo, setTrackingNo] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
 
   const openFor = useCallback((item: OrderItemUI) => {
     setSelectedItem(item);
@@ -19,6 +20,7 @@ export function useFulfillmentDialog() {
     );
     setCourier(item.courierPartner || DEFAULT_COURIER);
     setTrackingNo(item.trackingNumber || '');
+    setPaymentReference('');
     setIsOpen(true);
   }, []);
 
@@ -38,6 +40,8 @@ export function useFulfillmentDialog() {
     setCourier,
     trackingNo,
     setTrackingNo,
+    paymentReference,
+    setPaymentReference,
     openFor,
     applyDispatchResult,
   };

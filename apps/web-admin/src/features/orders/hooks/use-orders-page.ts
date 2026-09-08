@@ -9,6 +9,7 @@ import {
   useDispatch3PLMutation,
   useSettleCodMutation,
   useUpdateFulfillmentMutation,
+  useUpdatePaymentStatusMutation,
 } from './use-fulfillment-mutations';
 import { useOrdersList } from './use-orders-list';
 
@@ -79,6 +80,19 @@ export function useOrdersPage() {
       }),
   });
 
+  const paymentStatusMutation = useUpdatePaymentStatusMutation(list.activeListKey, {
+    onSuccess: () => {
+      dialog.setIsOpen(false);
+      toast({ title: 'Payment updated', description: 'Payment status recorded with audit.' });
+    },
+    onError: (err) =>
+      toast({
+        variant: 'destructive',
+        title: 'Payment update failed',
+        description: err?.message || 'Please try again later.',
+      }),
+  });
+
   const handleTabChange = useCallback((id: string) => {
     setActiveTab(id);
     setPage(1);
@@ -117,10 +131,39 @@ export function useOrdersPage() {
     dispatchMutation.mutate(dialog.selectedItem.orderId);
   }, [dialog.selectedItem, dispatchMutation]);
 
+  const resolveReference = useCallback(
+    (fallbackPrefix: string) => {
+      const trimmed = dialog.paymentReference.trim();
+      return trimmed.length >= 2 ? trimmed : `${fallbackPrefix}-${Date.now()}`;
+    },
+    [dialog.paymentReference],
+  );
+
   const handleSettle = useCallback(() => {
     if (!dialog.selectedItem) return;
-    settleCodMutation.mutate(dialog.selectedItem.orderId);
-  }, [dialog.selectedItem, settleCodMutation]);
+    settleCodMutation.mutate({
+      orderId: dialog.selectedItem.orderId,
+      reference: resolveReference('VOUCHER'),
+    });
+  }, [dialog.selectedItem, settleCodMutation, resolveReference]);
+
+  const handleMarkPaid = useCallback(() => {
+    if (!dialog.selectedItem) return;
+    paymentStatusMutation.mutate({
+      orderId: dialog.selectedItem.orderId,
+      status: 'COMPLETED',
+      reference: resolveReference('MANUAL'),
+    });
+  }, [dialog.selectedItem, paymentStatusMutation, resolveReference]);
+
+  const handleMarkFailed = useCallback(() => {
+    if (!dialog.selectedItem) return;
+    paymentStatusMutation.mutate({
+      orderId: dialog.selectedItem.orderId,
+      status: 'FAILED',
+      reference: resolveReference('MANUAL'),
+    });
+  }, [dialog.selectedItem, paymentStatusMutation, resolveReference]);
 
   const { setNewStatus } = dialog;
   const handleNewStatusChange = useCallback(
@@ -145,10 +188,13 @@ export function useOrdersPage() {
     fulfillmentMutation,
     dispatchMutation,
     settleCodMutation,
+    paymentStatusMutation,
     handleTabChange,
     handleFulfill,
     handleDispatch,
     handleSettle,
+    handleMarkPaid,
+    handleMarkFailed,
     handleNewStatusChange,
   };
 }

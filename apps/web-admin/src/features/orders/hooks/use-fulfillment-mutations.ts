@@ -5,6 +5,7 @@ import {
   type Dispatch3PLResponse,
   settleCodOrder,
   updateOrderItemStatusApi,
+  updateOrderPaymentStatus,
 } from '../api';
 
 interface MutationCallbacks {
@@ -49,8 +50,32 @@ export function useSettleCodMutation(
 ) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) =>
-      settleCodOrder({ orderId, reference: `VOUCHER-${Date.now()}` }),
+    mutationFn: (params: { orderId: string; reference: string }) =>
+      settleCodOrder({ orderId: params.orderId, reference: params.reference }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: activeListKey });
+      callbacks?.onSuccess?.();
+    },
+    onError: (err: Error) => callbacks?.onError?.(err),
+  });
+}
+
+/** Admin manual payment-status update (FINANCE_MANAGE). */
+export function useUpdatePaymentStatusMutation(
+  activeListKey: readonly unknown[],
+  callbacks?: MutationCallbacks,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      orderId: string;
+      status: 'COMPLETED' | 'FAILED' | 'REFUNDED';
+      reference: string;
+    }) =>
+      updateOrderPaymentStatus({
+        orderId: params.orderId,
+        body: { status: params.status, reference: params.reference },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: activeListKey });
       callbacks?.onSuccess?.();

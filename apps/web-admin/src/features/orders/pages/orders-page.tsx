@@ -57,14 +57,19 @@ const Orders: React.FC = () => {
         onCourierChange={s.dialog.setCourier}
         trackingNo={s.dialog.trackingNo}
         onTrackingChange={s.dialog.setTrackingNo}
+        paymentReference={s.dialog.paymentReference}
+        onReferenceChange={s.dialog.setPaymentReference}
         canManage={s.canManage}
         canSettleFinance={s.canSettleFinance}
         fulfillmentPending={s.fulfillmentMutation.isPending}
         dispatchPending={s.dispatchMutation.isPending}
         settlePending={s.settleCodMutation.isPending}
+        paymentPending={s.paymentStatusMutation.isPending}
         onFulfill={s.handleFulfill}
         onDispatch={s.handleDispatch}
         onSettle={s.handleSettle}
+        onMarkPaid={s.handleMarkPaid}
+        onMarkFailed={s.handleMarkFailed}
       />
     </div>
   );
