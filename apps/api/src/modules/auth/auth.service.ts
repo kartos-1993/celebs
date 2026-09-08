@@ -210,10 +210,14 @@ export class AuthService {
       throw new ForbiddenException('Setup secret is not configured on the server');
     }
 
-    const userSecretHash = createHash('sha256')
-      .update(setupSecret || '')
-      .digest();
-    const expectedSecretHash = createHash('sha256').update(config.SETUP_SECRET).digest();
+    const userSecretHash = new Uint8Array(
+      createHash('sha256')
+        .update(setupSecret || '')
+        .digest(),
+    );
+    const expectedSecretHash = new Uint8Array(
+      createHash('sha256').update(config.SETUP_SECRET).digest(),
+    );
 
     if (!timingSafeEqual(userSecretHash, expectedSecretHash)) {
       throw new ForbiddenException('Invalid setup secret key');

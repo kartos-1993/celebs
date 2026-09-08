@@ -60,6 +60,15 @@ export class LogisticsRepository {
         codStatus: CodStatus.COD_SETTLED,
         codSettledAt: new Date(),
         codReference: settlementReference,
+        paymentStatus: 'COMPLETED',
+        trackingEvents: {
+          create: {
+            status: OrderStatus.DELIVERED,
+            title: 'COD Payment Settled',
+            description: `Cash reconciled against courier deposit. Ref: ${settlementReference}`,
+            source: 'PLATFORM',
+          },
+        },
       },
     });
   }
