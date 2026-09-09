@@ -311,19 +311,19 @@ export class MediaRepository {
     });
   }
 
-  async createFolder(vendorId: string | null | undefined, name: string, parentId?: string | null) {
+  async createFolder(vendorId: string | null, name: string, parentId?: string | null) {
     return prisma.mediaFolder.create({
       data: {
-        vendorId: vendorId ?? null,
+        vendorId,
         name,
         parentId: parentId || null,
       },
     });
   }
 
-  async updateFolder(id: string, vendorId: string | null | undefined, name: string) {
+  async updateFolder(id: string, vendorId: string | null, name: string) {
     const where: Prisma.MediaFolderWhereInput = { id };
-    if (vendorId !== undefined) {
+    if (vendorId !== null) {
       where.vendorId = vendorId;
     }
     return prisma.mediaFolder.updateMany({
