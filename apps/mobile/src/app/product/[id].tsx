@@ -86,10 +86,10 @@ export default function ProductDetailScreen() {
     return <ProductDetailState loading={loading} error={error} onBack={() => router.back()} />;
   }
 
+  const selectedVariantImages = product.colorVariants?.[selectedColorIndex]?.images;
   const galleryImages =
-    product.colorVariants?.[selectedColorIndex]?.images &&
-    product.colorVariants[selectedColorIndex].images!.length > 0
-      ? product.colorVariants[selectedColorIndex].images!
+    Array.isArray(selectedVariantImages) && selectedVariantImages.length > 0
+      ? selectedVariantImages
       : product.mainImages || [];
 
   return (

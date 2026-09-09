@@ -348,13 +348,18 @@ export class CategoryService {
     categoryId: string,
     existingCategory: CategoryEntity,
   ): Promise<void> {
+    const name = updateData.name;
+    if (!name) {
+      return;
+    }
+
     const parentVal =
       updateData.parentCategory !== undefined
         ? updateData.parentCategory
         : existingCategory.parentCategory;
 
     const duplicateCategory = await this.categoryRepository.findOne({
-      name: updateData.name,
+      name,
       parentCategory: parentVal ? String(parentVal) : null,
     });
 
@@ -366,7 +371,7 @@ export class CategoryService {
       );
     }
 
-    updateData.slug = slugify(updateData.name!, { lower: true, strict: true });
+    updateData.slug = slugify(name, { lower: true, strict: true });
   }
 
   public async updateCategoryAttributes(

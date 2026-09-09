@@ -52,6 +52,16 @@ interface KhaltiLookupResponse {
   refunded: boolean;
 }
 
+function extractKhaltiErrorDetail(payload: unknown, fallback: string): string {
+  if (typeof payload === 'object' && payload !== null && 'detail' in payload) {
+    const detail = (payload as Record<string, unknown>).detail;
+    if (typeof detail === 'string' && detail.trim().length > 0) {
+      return detail;
+    }
+  }
+  return fallback;
+}
+
 /**
  * Khalti ePayment v2 adapter (redirect flow).
  * paymentId is the Khalti pidx, saved to Payment.transactionId at initiate time
@@ -59,16 +69,14 @@ interface KhaltiLookupResponse {
  * The redirect query params are never trusted — lookup is authoritative.
  */
 export class KhaltiAdapter implements IPaymentGateway {
-  private config: KhaltiConfig;
+  readonly method = 'KHALTI';
+  private readonly config: KhaltiConfig;
 
-  constructor(config: Partial<KhaltiConfig> = {}) {
+  constructor(config?: Partial<KhaltiConfig>) {
     this.config = { ...resolveKhaltiConfig(), ...config };
   }
 
   private get headers(): Record<string, string> {
-    if (!this.config.secretKey) {
-      throw new Error('KHALTI_SECRET_KEY is required');
-    }
     return {
       Authorization: `Key ${this.config.secretKey}`,
       'Content-Type': 'application/json',
@@ -81,10 +89,15 @@ export class KhaltiAdapter implements IPaymentGateway {
     _currency = 'NPR',
     metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {
+    if (!this.config.secretKey) {
+      throw new Error('KHALTI_SECRET_KEY is required');
+    }
+
     const returnUrl =
       typeof metadata.returnUrl === 'string' && metadata.returnUrl.length > 0
         ? metadata.returnUrl
         : this.config.returnUrl;
+
     const body = {
       return_url: returnUrl,
       website_url: this.config.websiteUrl,
@@ -101,11 +114,10 @@ export class KhaltiAdapter implements IPaymentGateway {
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(10000),
       });
+
       data = (await response.json()) as KhaltiInitiateResponse;
       if (!response.ok || !data.pidx || !data.payment_url) {
-        throw new Error(
-          (data as unknown as { detail?: string }).detail || 'Khalti initiate failed',
-        );
+        throw new Error(extractKhaltiErrorDetail(data, 'Khalti initiate failed'));
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -134,7 +146,7 @@ export class KhaltiAdapter implements IPaymentGateway {
       });
       data = (await response.json()) as KhaltiLookupResponse;
       if (!response.ok) {
-        throw new Error((data as unknown as { detail?: string }).detail || 'Khalti lookup failed');
+        throw new Error(extractKhaltiErrorDetail(data, 'Khalti lookup failed'));
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);

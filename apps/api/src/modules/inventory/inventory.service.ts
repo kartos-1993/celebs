@@ -46,11 +46,12 @@ export class InventoryService {
       RETURNING "id", "quantity"
     `;
 
-    if (!updatedRows || updatedRows.length === 0) {
+    const firstRow = updatedRows[0];
+    if (!firstRow) {
       throw new OutOfStockError(`Insufficient stock available for inventory item ${inventoryId}`);
     }
 
-    return updatedRows[0]!;
+    return firstRow;
   }
 
   /**

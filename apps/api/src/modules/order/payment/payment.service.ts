@@ -158,9 +158,20 @@ export class PaymentService {
     }
 
     const latest = order.payments[0];
-    const stored = (latest?.rawResponse as Record<string, unknown> | undefined) || {};
+    if (!latest) {
+      throw new AppError(
+        'No pending eSewa intent for this order',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
 
-    if (latest?.status !== 'PENDING' || typeof stored.signature !== 'string') {
+    const stored =
+      typeof latest.rawResponse === 'object' && latest.rawResponse !== null
+        ? (latest.rawResponse as Record<string, unknown>)
+        : {};
+
+    if (latest.status !== 'PENDING' || typeof stored.signature !== 'string') {
       throw new AppError(
         'No pending eSewa intent for this order',
         HTTPSTATUS.BAD_REQUEST,

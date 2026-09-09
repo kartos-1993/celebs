@@ -451,7 +451,11 @@ export class CartService {
     // 4. Cart + existing items in two round trips.
     const cartRecord = await this.getOrCreateCartRecord(userId, undefined);
     const wantedInventoryIds = Array.from(
-      new Set(Array.from(mergedRequests.values()).map((r) => r.inventoryId!)),
+      new Set(
+        Array.from(mergedRequests.values())
+          .map((r) => r.inventoryId)
+          .filter((id): id is string => Boolean(id)),
+      ),
     );
     const existingItems = await prisma.cartItem.findMany({
       where: { cartId: cartRecord.id, inventoryId: { in: wantedInventoryIds } },
@@ -462,9 +466,11 @@ export class CartService {
     // 5. Stock-check merges; skip items that would exceed availability.
     const upserts: Array<{ inventoryId: string; quantity: number }> = [];
     for (const req of mergedRequests.values()) {
-      const targetQuantity = (existingQty.get(req.inventoryId!) ?? 0) + req.requestedQuantity;
+      if (!req.inventoryId) continue;
+      const invId = req.inventoryId;
+      const targetQuantity = (existingQty.get(invId) ?? 0) + req.requestedQuantity;
       if ((req.availableQuantity ?? 0) < targetQuantity || targetQuantity <= 0) continue;
-      upserts.push({ inventoryId: req.inventoryId!, quantity: targetQuantity });
+      upserts.push({ inventoryId: invId, quantity: targetQuantity });
     }
 
     // 6. One statement writes every accepted item.

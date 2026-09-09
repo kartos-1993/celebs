@@ -61,8 +61,8 @@ export function verifyEsewaCallbackSignature(
   secretKey: string,
 ): boolean {
   const signedNames = payload.signed_field_names.split(',').map((s) => s.trim());
-  const record = payload as unknown as Record<string, string>;
-  const message = signedNames.map((name) => `${name}=${record[name] ?? ''}`).join(',');
+  const record: Record<string, unknown> = { ...payload };
+  const message = signedNames.map((name) => `${name}=${String(record[name] ?? '')}`).join(',');
   const expected = crypto.createHmac('sha256', secretKey).update(message).digest('base64');
   const a = Buffer.from(expected);
   const b = Buffer.from(payload.signature || '');
