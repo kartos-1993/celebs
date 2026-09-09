@@ -42,13 +42,13 @@ model User {
   verificationCodes VerificationCode[]
   sessions          Session[]
 
-  vendorId          String?
-  vendor            VendorProfile?     @relation("VendorStaff", fields: [vendorId], references: [id], onDelete: SetNull)
-  cart              Cart?
-  addresses         Address[]
-  orders            Order[]
-  reviews           Review[]
-  wishlistItems     WishlistItem[]
+  vendorId      String?
+  vendor        VendorProfile? @relation("VendorStaff", fields: [vendorId], references: [id], onDelete: SetNull)
+  cart          Cart?
+  addresses     Address[]
+  orders        Order[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
 
   @@index([vendorId])
 }
@@ -80,20 +80,22 @@ model VendorProfile {
   businessPhoneNumber    String?
   vatDocumentUrl         String?
   businessRegDocumentUrl String?
-  holidayMode            Boolean  @default(false)
-  onboardingStep         Int      @default(1)
+  holidayMode            Boolean @default(false)
+  onboardingStep         Int     @default(1)
   rejectionReason        String?
-  recentCategories       Json?    @default("[]")
+  recentCategories       Json?   @default("[]")
 
   // Relations
-  warehouses             Warehouse[]
-  staff                  User[]                     @relation("VendorStaff")
-  orderItems             OrderItem[]
-  products               Product[]
-  ownedBrands            Brand[]                    @relation("OwnedBrands")
-  brandAuthorizations    VendorBrandAuthorization[]
-  mediaFolders           MediaFolder[]
-  mediaAssets            MediaAsset[]
+  warehouses          Warehouse[]
+  staff               User[]                     @relation("VendorStaff")
+  orderItems          OrderItem[]
+  products            Product[]
+  ownedBrands         Brand[]                    @relation("OwnedBrands")
+  brandAuthorizations VendorBrandAuthorization[]
+  mediaFolders        MediaFolder[]
+  mediaAssets         MediaAsset[]
+
+  @@index([status])
 }
 
 model IdempotencyKey {
@@ -109,13 +111,13 @@ model IdempotencyKey {
 }
 
 model UserPreference {
-  id                String   @id @default(uuid())
-  enable2FA         Boolean  @default(false)
-  emailNotification Boolean  @default(true)
+  id                String  @id @default(uuid())
+  enable2FA         Boolean @default(false)
+  emailNotification Boolean @default(true)
   twoFactorSecret   String?
-  recentCategories  Json?    @default("[]")
-  userId            String   @unique
-  user              User     @relation("UserToUserPreference", fields: [userId], references: [id], onDelete: Cascade)
+  recentCategories  Json?   @default("[]")
+  userId            String  @unique
+  user              User    @relation("UserToUserPreference", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationCode {
@@ -156,33 +158,33 @@ model Warehouse {
   district          String
   province          String
   postalCode        String?
-  country           String        @default("Nepal")
-  isBusinessAddress Boolean       @default(false)
-  isReturnAddress   Boolean       @default(false)
+  country           String  @default("Nepal")
+  isBusinessAddress Boolean @default(false)
+  isReturnAddress   Boolean @default(false)
 
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  inventories       ProductInventory[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  inventories ProductInventory[]
 
   @@index([vendorProfileId])
 }
 
 model ProductInventory {
-  id               String      @id @default(uuid())
-  productId        String      @map("product_id")
-  colorVariantName String      @map("color_variant_name")
+  id               String     @id @default(uuid())
+  productId        String     @map("product_id")
+  colorVariantName String     @map("color_variant_name")
   size             String
-  sku              String      @unique
-  quantity         Int         @default(0)
-  reservedQuantity Int         @default(0) @map("reserved_quantity")
-  warehouseId      String?     @map("warehouse_id")
-  warehouse        Warehouse?  @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  product          Product?    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku              String     @unique
+  quantity         Int        @default(0)
+  reservedQuantity Int        @default(0) @map("reserved_quantity")
+  warehouseId      String?    @map("warehouse_id")
+  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  product          Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  cartItems        CartItem[]
-  orderItems       OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@unique([productId, colorVariantName, size])
   @@index([productId])
@@ -190,15 +192,15 @@ model ProductInventory {
 }
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String?    @unique @map("user_id")
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionId String?    @unique @map("session_id")
+  id        String  @id @default(uuid())
+  userId    String? @unique @map("user_id")
+  user      User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String? @unique @map("session_id")
 
-  items     CartItem[]
+  items CartItem[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([sessionId])
@@ -206,23 +208,24 @@ model Cart {
 }
 
 model CartItem {
-  id                 String           @id @default(uuid())
-  cartId             String           @map("cart_id")
-  cart               Cart             @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  cartId String @map("cart_id")
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
-  inventoryId        String           @map("inventory_id")
-  inventory          ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  inventoryId String           @map("inventory_id")
+  inventory   ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
 
-  quantity           Int              @default(1)
-  comboBundleId      String?          @map("combo_bundle_id")
-  comboBundle        ComboBundle?     @relation(fields: [comboBundleId], references: [id], onDelete: SetNull)
-  appliedDiscount    Decimal?         @map("applied_discount") @db.Decimal(10, 2)
-  discountSource     String?          @map("discount_source")
+  quantity        Int          @default(1)
+  comboBundleId   String?      @map("combo_bundle_id")
+  comboBundle     ComboBundle? @relation(fields: [comboBundleId], references: [id], onDelete: SetNull)
+  appliedDiscount Decimal?     @map("applied_discount") @db.Decimal(10, 2)
+  discountSource  String?      @map("discount_source")
 
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([cartId, inventoryId])
+  @@index([inventoryId])
 }
 
 enum OrderStatus {
@@ -258,44 +261,44 @@ enum PaymentStatus {
 }
 
 model Address {
-  id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label         String   @default("Home")
-  fullName      String   @map("full_name")
+  id            String  @id @default(uuid())
+  userId        String  @map("user_id")
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String  @default("Home")
+  fullName      String  @map("full_name")
   phone         String
-  altPhone      String?  @map("alt_phone")
+  altPhone      String? @map("alt_phone")
   province      String
   district      String
-  cityArea      String   @map("city_area")
-  streetAddress String   @map("street_address")
+  cityArea      String  @map("city_area")
+  streetAddress String  @map("street_address")
   landmark      String?
-  isDefault     Boolean  @default(false) @map("is_default")
+  isDefault     Boolean @default(false) @map("is_default")
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  orders        Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
 
   @@index([userId])
 }
 
 model Order {
-  id             String        @id @default(uuid())
-  orderNumber    String        @unique @map("order_number")
-  userId         String        @map("user_id")
-  user           User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  addressId      String        @map("address_id")
-  address        Address       @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  id          String  @id @default(uuid())
+  orderNumber String  @unique @map("order_number")
+  userId      String  @map("user_id")
+  user        User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  addressId   String  @map("address_id")
+  address     Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
 
-  subtotal       Decimal       @db.Decimal(12, 2)
-  shippingFee    Decimal       @default(0) @map("shipping_fee") @db.Decimal(12, 2)
-  discountAmount Decimal       @default(0) @map("discount_amount") @db.Decimal(12, 2)
-  totalAmount    Decimal       @map("total_amount") @db.Decimal(12, 2)
+  subtotal       Decimal @db.Decimal(12, 2)
+  shippingFee    Decimal @default(0) @map("shipping_fee") @db.Decimal(12, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount    Decimal @map("total_amount") @db.Decimal(12, 2)
 
-  status         OrderStatus   @default(PENDING_PAYMENT)
-  paymentMethod  PaymentMethod @map("payment_method")
-  paymentStatus  PaymentStatus @default(PENDING) @map("payment_status")
-  paymentId      String?       @map("payment_id")
+  status        OrderStatus   @default(PENDING_PAYMENT)
+  paymentMethod PaymentMethod @map("payment_method")
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+  paymentId     String?       @map("payment_id")
 
   items          OrderItem[]
   payments       Payment[]
@@ -305,15 +308,15 @@ model Order {
   courierName       String?
   trackingNumber    String?
   trackingUrl       String?
-  dispatchMode      DispatchMode  @default(MANUAL)
-  codAmount         Decimal?      @db.Decimal(10, 2)
-  codStatus         CodStatus     @default(NOT_APPLICABLE)
+  dispatchMode      DispatchMode @default(MANUAL)
+  codAmount         Decimal?     @db.Decimal(10, 2)
+  codStatus         CodStatus    @default(NOT_APPLICABLE)
   codSettledAt      DateTime?
   codReference      String?
   estimatedDelivery DateTime?
 
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([orderNumber])
@@ -423,50 +426,52 @@ enum CampaignType {
 }
 
 model OrderItem {
-  id               String           @id @default(uuid())
-  orderId          String           @map("order_id")
-  order            Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  inventoryId      String           @map("inventory_id")
-  inventory        ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  inventoryId String           @map("inventory_id")
+  inventory   ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
 
-  vendorId         String           @map("vendor_id")
-  vendor           VendorProfile    @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  vendorId String        @map("vendor_id")
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Restrict)
 
-  productName      String           @map("product_name")
-  colorVariantName String           @map("color_variant_name")
+  productName      String  @map("product_name")
+  colorVariantName String  @map("color_variant_name")
   size             String
-  unitPrice        Decimal          @map("unit_price") @db.Decimal(12, 2)
+  unitPrice        Decimal @map("unit_price") @db.Decimal(12, 2)
   quantity         Int
-  subtotal         Decimal          @db.Decimal(12, 2)
+  subtotal         Decimal @db.Decimal(12, 2)
 
-  itemStatus       OrderItemStatus  @default(PENDING) @map("item_status")
-  trackingNumber   String?          @map("tracking_number")
-  courierPartner   String?          @map("courier_partner")
+  itemStatus     OrderItemStatus @default(PENDING) @map("item_status")
+  trackingNumber String?         @map("tracking_number")
+  courierPartner String?         @map("courier_partner")
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([vendorId])
   @@index([inventoryId])
+  @@index([vendorId, itemStatus])
+  @@index([vendorId, createdAt])
 }
 
 model Payment {
-  id             String        @id @default(uuid())
-  orderId        String        @map("order_id")
-  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  userId         String        @map("user_id")
+  id      String @id @default(uuid())
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId  String @map("user_id")
 
-  amount         Decimal       @db.Decimal(12, 2)
-  currency       String        @default("NPR")
-  gateway        PaymentMethod
-  transactionId  String?       @unique @map("transaction_id")
-  status         PaymentStatus @default(PENDING)
-  rawResponse    Json?         @map("raw_response")
+  amount        Decimal       @db.Decimal(12, 2)
+  currency      String        @default("NPR")
+  gateway       PaymentMethod
+  transactionId String?       @unique @map("transaction_id")
+  status        PaymentStatus @default(PENDING)
+  rawResponse   Json?         @map("raw_response")
 
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([userId])
@@ -480,28 +485,28 @@ enum OutboxStatus {
 }
 
 model OutboxEvent {
-  id          String       @id @default(uuid())
-  aggregate   String       // e.g., "PRODUCT"
-  eventType   String       // e.g., "PRODUCT_CATALOG_SYNC"
-  payload     Json         // Product payload JSON
-  status      OutboxStatus @default(PENDING)
-  retryCount  Int          @default(0)
-  lastError   String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id         String       @id @default(uuid())
+  aggregate  String // e.g., "PRODUCT"
+  eventType  String // e.g., "PRODUCT_CATALOG_SYNC"
+  payload    Json // Product payload JSON
+  status     OutboxStatus @default(PENDING)
+  retryCount Int          @default(0)
+  lastError  String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   @@index([status, createdAt])
 }
 
 model StockReservationLedger {
-  id          String   @id @default(uuid())
-  cartId      String   @map("cart_id")
-  userId      String?  @map("user_id")
-  sku         String
-  quantity    Int
-  expiresAt   DateTime @map("expires_at")
-  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, CONSUMED
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  cartId    String   @map("cart_id")
+  userId    String?  @map("user_id")
+  sku       String
+  quantity  Int
+  expiresAt DateTime @map("expires_at")
+  status    String   @default("ACTIVE") // ACTIVE, EXPIRED, CONSUMED
+  createdAt DateTime @default(now())
 
   @@index([sku, status])
   @@index([expiresAt])
@@ -512,10 +517,10 @@ model StockReservationLedger {
 // ==========================================
 
 enum BrandTier {
-  FIRST_PARTY       // Celebs private label (Celebs Official, Celebs Denim)
-  GATED_GLOBAL      // Nike, Adidas, Zara, Levi's (Requires approved LOA)
+  FIRST_PARTY // Celebs private label (Celebs Official, Celebs Denim)
+  GATED_GLOBAL // Nike, Adidas, Zara, Levi's (Requires approved LOA)
   REGISTERED_VENDOR // Vendor trademarked brand
-  OPEN_GENERIC      // Open to all sellers
+  OPEN_GENERIC // Open to all sellers
 }
 
 enum BrandAuthStatus {
@@ -528,52 +533,52 @@ enum BrandAuthStatus {
 }
 
 model Brand {
-  id               String                     @id @default(uuid())
-  name             String                     @unique
-  slug             String                     @unique
-  logoUrl          String?                    @map("logo_url")
-  bannerUrl        String?                    @map("banner_url")
-  description      String?
-  story            String?
-  countryOfOrigin  String                     @default("Nepal") @map("country_of_origin")
+  id              String  @id @default(uuid())
+  name            String  @unique
+  slug            String  @unique
+  logoUrl         String? @map("logo_url")
+  bannerUrl       String? @map("banner_url")
+  description     String?
+  story           String?
+  countryOfOrigin String  @default("Nepal") @map("country_of_origin")
 
-  tier             BrandTier                  @default(OPEN_GENERIC)
-  isGated          Boolean                    @default(false) @map("is_gated")
+  tier    BrandTier @default(OPEN_GENERIC)
+  isGated Boolean   @default(false) @map("is_gated")
 
-  ownerVendorId    String?                    @map("owner_vendor_id")
-  ownerVendor      VendorProfile?             @relation("OwnedBrands", fields: [ownerVendorId], references: [id], onDelete: SetNull)
+  ownerVendorId String?        @map("owner_vendor_id")
+  ownerVendor   VendorProfile? @relation("OwnedBrands", fields: [ownerVendorId], references: [id], onDelete: SetNull)
 
-  products         Product[]
-  authorizations   VendorBrandAuthorization[]
-  protectionRules  BrandProtectionRule[]
+  products        Product[]
+  authorizations  VendorBrandAuthorization[]
+  protectionRules BrandProtectionRule[]
 
-  createdAt        DateTime                   @default(now())
-  updatedAt        DateTime                   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tier, isGated])
   @@index([ownerVendorId])
 }
 
 model VendorBrandAuthorization {
-  id                 String          @id @default(uuid())
-  vendorId           String          @map("vendor_id")
-  vendor             VendorProfile   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id       String        @id @default(uuid())
+  vendorId String        @map("vendor_id")
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  brandId            String          @map("brand_id")
-  brand              Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId String @map("brand_id")
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   status             BrandAuthStatus @default(PENDING)
   documentType       String          @map("document_type") // LOA, TRADEMARK_CERT, INVOICE, DEALERSHIP_CONTRACT
   documentUrl        String          @map("document_url")
   documentExpiryDate DateTime?       @map("document_expiry_date")
 
-  reviewedBy         String?         @map("reviewed_by")
-  reviewedAt         DateTime?       @map("reviewed_at")
-  reviewNotes        String?         @map("review_notes")
-  rejectionReason    String?         @map("rejection_reason")
+  reviewedBy      String?   @map("reviewed_by")
+  reviewedAt      DateTime? @map("reviewed_at")
+  reviewNotes     String?   @map("review_notes")
+  rejectionReason String?   @map("rejection_reason")
 
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([vendorId, brandId])
   @@index([vendorId, status])
@@ -581,16 +586,16 @@ model VendorBrandAuthorization {
 }
 
 model BrandProtectionRule {
-  id          String   @id @default(uuid())
-  brandId     String   @map("brand_id")
-  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  brandId String @map("brand_id")
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
-  pattern     String   // Regex pattern for anti-hijack screening
-  matchField  String   @default("TITLE_AND_DESCRIPTION") @map("match_field")
-  isActive    Boolean  @default(true) @map("is_active")
+  pattern    String // Regex pattern for anti-hijack screening
+  matchField String  @default("TITLE_AND_DESCRIPTION") @map("match_field")
+  isActive   Boolean @default(true) @map("is_active")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([brandId, isActive])
 }
@@ -607,49 +612,49 @@ enum MediaScope {
 }
 
 model MediaFolder {
-  id          String         @id @default(uuid())
-  vendorId    String?        @map("vendor_id")
-  vendor      VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id       String         @id @default(uuid())
+  vendorId String?        @map("vendor_id")
+  vendor   VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  name        String
-  parentId    String?        @map("parent_id")
-  parent      MediaFolder?   @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  subFolders  MediaFolder[]  @relation("FolderHierarchy")
+  name       String
+  parentId   String?       @map("parent_id")
+  parent     MediaFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subFolders MediaFolder[] @relation("FolderHierarchy")
 
-  assets      MediaAsset[]
+  assets MediaAsset[]
 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([vendorId, parentId, name])
   @@index([vendorId])
 }
 
 model MediaAsset {
-  id           String         @id @default(uuid())
-  vendorId     String?        @map("vendor_id")
-  vendor       VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id       String         @id @default(uuid())
+  vendorId String?        @map("vendor_id")
+  vendor   VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  folderId     String?        @map("folder_id")
-  folder       MediaFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId String?      @map("folder_id")
+  folder   MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-  originalName String         @map("original_name")
-  key          String         @unique
+  originalName String @map("original_name")
+  key          String @unique
   url          String
 
-  mimeType     String         @map("mime_type")
-  sizeBytes    Int            @map("size_bytes")
-  width        Int?
-  height       Int?
-  aspectRatio  Float?         @map("aspect_ratio")
-  hashSha256   String?        @map("hash_sha256")
+  mimeType    String  @map("mime_type")
+  sizeBytes   Int     @map("size_bytes")
+  width       Int?
+  height      Int?
+  aspectRatio Float?  @map("aspect_ratio")
+  hashSha256  String? @map("hash_sha256")
 
-  scope        MediaScope     @default(PRODUCT)
-  isPrivate    Boolean        @default(false) @map("is_private")
-  usageCount   Int            @default(0) @map("usage_count")
+  scope      MediaScope @default(PRODUCT)
+  isPrivate  Boolean    @default(false) @map("is_private")
+  usageCount Int        @default(0) @map("usage_count")
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([vendorId, scope])
   @@index([vendorId, folderId])
@@ -662,33 +667,33 @@ model MediaAsset {
 // ==========================================
 
 model Product {
-  id                      String             @id @default(uuid())
-  name                    String
-  brand                   String?
-  brandId                 String?
-  brandRef                Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  slug                    String             @unique
-  description             String?            @default("")
-  price                   Decimal            @db.Decimal(12, 2)
-  discountedPrice         Decimal?           @db.Decimal(12, 2)
-  status                  String             @default("draft") // draft, pending_review, published, rejected, deactivated, archived
-  featured                Boolean            @default(false)
-  mainImages              String[]
-  tags                    String[]
+  id              String   @id @default(uuid())
+  name            String
+  brand           String?
+  brandId         String?
+  brandRef        Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  slug            String   @unique
+  description     String?  @default("")
+  price           Decimal  @db.Decimal(12, 2)
+  discountedPrice Decimal? @db.Decimal(12, 2)
+  status          String   @default("draft") // draft, pending_review, published, rejected, deactivated, archived
+  featured        Boolean  @default(false)
+  mainImages      String[]
+  tags            String[]
 
   // Flexible Document JSONB Fields
-  sizes                   Json?              // Array of ISize (productMeasurements + bodyMeasurements)
-  colorVariants           Json?              // Array of IColorVariant
-  skus                    Json?              // Array of ISkuItem
-  variantOptions          Json?              // Array of IVariantOption
-  dynamicData             Json?              // Category dynamic attribute values
+  sizes          Json? // Array of ISize (productMeasurements + bodyMeasurements)
+  colorVariants  Json? // Array of IColorVariant
+  skus           Json? // Array of ISkuItem
+  variantOptions Json? // Array of IVariantOption
+  dynamicData    Json? // Category dynamic attribute values
 
   // Moderation & QC
   qualityScore            Float?
   reviewNote              String?
   rejectionReasonCategory String?
-  rejectionSubcategories String[]
-  rejectionFields        String[]
+  rejectionSubcategories  String[]
+  rejectionFields         String[]
   reviewHistory           Json?
   reviewedBy              String?
   reviewedAt              DateTime?
@@ -696,23 +701,22 @@ model Product {
   updatedBy               String?
 
   // Relational Foreign Keys
-  vendorId                String?
-  vendorName              String?
-  vendor                  VendorProfile?     @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  vendorId   String?
+  vendorName String?
+  vendor     VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
 
-  categoryId              String
-  category                Category           @relation("CategoryProducts", fields: [categoryId], references: [id])
-  subcategoryId           String?
-  subcategory             Category?          @relation("SubcategoryProducts", fields: [subcategoryId], references: [id], onDelete: SetNull)
+  categoryId    String
+  category      Category  @relation("CategoryProducts", fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory   Category? @relation("SubcategoryProducts", fields: [subcategoryId], references: [id], onDelete: SetNull)
 
-  inventories             ProductInventory[]
-  reviews                 Review[]
-  wishlistItems           WishlistItem[]
+  inventories   ProductInventory[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
 
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([slug])
   @@index([categoryId])
   @@index([subcategoryId])
   @@index([vendorId])
@@ -723,26 +727,26 @@ model Product {
 }
 
 model Category {
-  id               String      @id @default(uuid())
-  name             String
-  slug             String      @unique
-  path             String?
-  level            Int         @default(0)
-  parentCategory   String?
-  parent           Category?   @relation("ParentChildCategory", fields: [parentCategory], references: [id], onDelete: SetNull)
-  children         Category[]  @relation("ParentChildCategory")
+  id             String     @id @default(uuid())
+  name           String
+  slug           String     @unique
+  path           String?
+  level          Int        @default(0)
+  parentCategory String?
+  parent         Category?  @relation("ParentChildCategory", fields: [parentCategory], references: [id], onDelete: SetNull)
+  children       Category[] @relation("ParentChildCategory")
 
-  attributes       Json?       // Array of CategoryAttribute objects
+  attributes       Json? // Array of CategoryAttribute objects
   sizeChartColumns String[]
-  bodyChartColumns String[]    @default([])
+  bodyChartColumns String[] @default([])
   imageUrl         String?
-  isActive         Boolean     @default(true)
+  isActive         Boolean  @default(true)
 
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  products         Product[]   @relation("CategoryProducts")
-  subProducts      Product[]   @relation("SubcategoryProducts")
+  products    Product[] @relation("CategoryProducts")
+  subProducts Product[] @relation("SubcategoryProducts")
 
   @@index([slug])
   @@index([parentCategory])
@@ -764,38 +768,41 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@index([productId])
+  @@index([productId, status])
   @@index([userId])
 }
 
 model OptionSet {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   displayName String?
   description String?
-  options     Json     // Array of option items { label, value, meta }
+  options     Json // Array of option items { label, value, meta }
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model QuickFilter {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   title        String
-  slug         String   @unique
+  slug         String  @unique
   categoryId   String?
   filterConfig Json
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
 }
 
 model Banner {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   title     String
   imageUrl  String
   targetUrl String?
-  position  String   @default("home_hero")
-  isActive  Boolean  @default(true)
+  position  String  @default("home_hero")
+  isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -813,36 +820,35 @@ enum SettingType {
 }
 
 model PlatformSetting {
-  key          String      @id
-  value        String
-  type         SettingType @default(BOOLEAN)
-  group        String      @default("GENERAL")
-  label        String
-  description  String?
-  isPublic     Boolean     @default(false) @map("is_public")
+  key         String      @id
+  value       String
+  type        SettingType @default(BOOLEAN)
+  group       String      @default("GENERAL")
+  label       String
+  description String?
+  isPublic    Boolean     @default(false) @map("is_public")
 
-  updatedBy    String?     @map("updated_by")
-  updatedAt    DateTime    @updatedAt
-  createdAt    DateTime    @default(now())
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 
-  auditLogs    PlatformSettingAudit[]
+  auditLogs PlatformSettingAudit[]
 
   @@index([group])
   @@index([isPublic])
 }
 
 model PlatformSettingAudit {
-  id           String          @id @default(uuid())
-  settingKey   String          @map("setting_key")
-  setting      PlatformSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
+  id         String          @id @default(uuid())
+  settingKey String          @map("setting_key")
+  setting    PlatformSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
 
-  oldValue     String?         @map("old_value")
-  newValue     String          @map("new_value")
-  changedBy    String          @map("changed_by")
-  reason       String?
+  oldValue  String? @map("old_value")
+  newValue  String  @map("new_value")
+  changedBy String  @map("changed_by")
+  reason    String?
 
-  createdAt    DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@index([settingKey, createdAt])
 }
-
