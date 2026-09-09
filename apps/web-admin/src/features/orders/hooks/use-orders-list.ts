@@ -18,6 +18,7 @@ interface UseOrdersListParams {
   page: number;
   pageSize?: number;
   searchQuery: string;
+  enabled?: boolean;
 }
 
 export function useOrdersList({
@@ -26,6 +27,7 @@ export function useOrdersList({
   page,
   pageSize = PAGE_LIMIT,
   searchQuery,
+  enabled = true,
 }: UseOrdersListParams) {
   const statusParam = activeTab === 'ALL' ? undefined : activeTab;
   const queryParams = { status: statusParam, page, limit: pageSize };
@@ -36,6 +38,7 @@ export function useOrdersList({
         ? ORDERS_QUERY_KEYS.vendor(queryParams)
         : ORDERS_QUERY_KEYS.admin(queryParams),
     queryFn: () => (mode === 'vendor' ? getVendorOrders(queryParams) : getAdminOrders(queryParams)),
+    enabled,
   });
 
   const rows = useMemo(() => {

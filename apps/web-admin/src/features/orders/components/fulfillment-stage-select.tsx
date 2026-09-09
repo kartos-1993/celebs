@@ -32,10 +32,10 @@ export function FulfillmentStageSelect({
           <SelectValue placeholder="Select status" />
         </SelectTrigger>
         <SelectContent>
-          {ALLOWED_TRANSITIONS[item.itemStatus].map((status) => (
+          {(ALLOWED_TRANSITIONS[item.itemStatus] ?? []).map((status) => (
             <SelectItem key={status} value={status}>
-              {ITEM_STATUS_LABELS[status]}
-              {ITEM_STATUS_HINTS[status]}
+              {ITEM_STATUS_LABELS[status] ?? status}
+              {ITEM_STATUS_HINTS[status] ?? ''}
             </SelectItem>
           ))}
         </SelectContent>

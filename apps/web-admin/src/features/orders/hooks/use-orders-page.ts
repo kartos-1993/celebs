@@ -18,21 +18,39 @@ import { usePermission } from '@/hooks/use-permission';
 import { useToast } from '@/hooks/use-toast';
 
 export function useOrdersPage() {
-  const { user } = useAuthContext();
+  const {
+    user,
+    isVendor,
+    isStaff,
+    isAdmin,
+    isSuperAdmin,
+    isLoading: isAuthLoading,
+  } = useAuthContext();
   const { toast } = useToast();
 
-  const mode: Mode = user?.vendorProfile?.id ? 'vendor' : 'admin';
+  const isSeller = isVendor || isStaff || Boolean(user?.vendorProfile?.id);
+  const mode: Mode = isSeller ? 'vendor' : 'admin';
 
   const [activeTab, setActiveTab] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSizeState] = useState(10);
 
-  const list = useOrdersList({ mode, activeTab, page, pageSize, searchQuery });
+  const list = useOrdersList({
+    mode,
+    activeTab,
+    page,
+    pageSize,
+    searchQuery,
+    enabled: !isAuthLoading && Boolean(user),
+  });
   const dialog = useFulfillmentDialog();
 
   const canManage = usePermission(Permission.ORDER_MANAGE);
-  const canSettleFinance = usePermission(Permission.FINANCE_MANAGE);
+  const hasFinanceManage = usePermission(Permission.FINANCE_MANAGE);
+  // Platform finance actions (manual payment update, COD settlement) are strictly
+  // platform operations — third-party vendors never see or execute them.
+  const canSettleFinance = !isSeller && (isAdmin || isSuperAdmin) && hasFinanceManage;
 
   const fulfillmentMutation = useUpdateFulfillmentMutation(list.activeListKey, {
     onSuccess: () => {
