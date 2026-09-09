@@ -2,8 +2,6 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { wishlistRepository } from './wishlist.repository';
 
-import prisma from '@/config/db.prisma';
-
 export interface WishlistProductSummary {
   id: string;
   name: string;
@@ -84,7 +82,7 @@ export class WishlistService {
     }
 
     // Validate product exists before creating the relation
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    const product = await wishlistRepository.findProductById(productId);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }

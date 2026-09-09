@@ -6,7 +6,7 @@ import {
   logger,
 } from '@celebs/shared-utils';
 
-import prisma from '@/config/db.prisma';
+import { inventoryRepository } from './inventory.repository';
 
 export class OutOfStockError extends AppError {
   constructor(message: string) {
@@ -39,14 +39,7 @@ export class InventoryService {
       '[InventoryService.decrementStock] Attempting stock decrement',
     );
 
-    const updatedRows: Array<{ id: string; quantity: number }> = await prisma.$queryRaw`
-      UPDATE "ProductInventory"
-      SET "quantity" = "quantity" - ${quantity}
-      WHERE "id" = ${inventoryId} AND "quantity" >= ${quantity}
-      RETURNING "id", "quantity"
-    `;
-
-    const firstRow = updatedRows[0];
+    const firstRow = await inventoryRepository.decrementStockAtomic(inventoryId, quantity);
     if (!firstRow) {
       throw new OutOfStockError(`Insufficient stock available for inventory item ${inventoryId}`);
     }
@@ -63,15 +56,11 @@ export class InventoryService {
     size: string,
   ): Promise<StockCheckResult> {
     logger.info({ productId, colorVariantName, size }, '[InventoryService] Looking up inventory');
-    const existing = await prisma.productInventory.findUnique({
-      where: {
-        productId_colorVariantName_size: {
-          productId,
-          colorVariantName,
-          size,
-        },
-      },
-    });
+    const existing = await inventoryRepository.findByProductVariantSize(
+      productId,
+      colorVariantName,
+      size,
+    );
 
     if (existing) {
       const available = existing.quantity - existing.reservedQuantity;
@@ -93,7 +82,7 @@ export class InventoryService {
 
     let initialQty = 10;
     try {
-      const product = await prisma.product.findUnique({ where: { id: productId } });
+      const product = await inventoryRepository.findProductColorVariants(productId);
       if (product && Array.isArray(product.colorVariants)) {
         const variants = product.colorVariants as Array<{
           name: string;
@@ -115,15 +104,13 @@ export class InventoryService {
 
     const sku = generateSheinStyleSku({ brandPrefix: 'c' });
 
-    const created = await prisma.productInventory.create({
-      data: {
-        productId,
-        colorVariantName,
-        size,
-        sku,
-        quantity: initialQty,
-        reservedQuantity: 0,
-      },
+    const created = await inventoryRepository.createInventory({
+      productId,
+      colorVariantName,
+      size,
+      sku,
+      quantity: initialQty,
+      reservedQuantity: 0,
     });
 
     const available = created.quantity - created.reservedQuantity;

@@ -28,10 +28,8 @@ import { type TokenService, tokenService } from './token.service';
 import { type VerificationService, verificationService } from './verification.service';
 
 import { authCache } from '@/common/cache/auth-cache';
-import { ensurePlatformVendor, PLATFORM_SYSTEM_EMAIL } from '@/common/constants/platform-vendor';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
-import prisma from '@/config/db.prisma';
 
 export interface AuthServiceDeps {
   authRepo?: AuthRepository;
@@ -229,11 +227,7 @@ export class AuthService {
     }
 
     // Clean up any legacy phantom platform account if present
-    await prisma.user
-      .deleteMany({
-        where: { email: PLATFORM_SYSTEM_EMAIL },
-      })
-      .catch(() => {});
+    await this.authRepo.purgePhantomPlatformUsers();
 
     const hashedPassword = await hashValue(password);
     const newUser = await this.authRepo.createUser({
@@ -244,7 +238,7 @@ export class AuthService {
       isEmailVerified: true,
     });
 
-    await ensurePlatformVendor(prisma, newUser.id);
+    await this.authRepo.provisionPlatformVendor(newUser.id);
 
     return {
       user: this.tokenService.stripPassword(newUser),

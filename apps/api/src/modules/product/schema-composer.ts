@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import prisma from '@/config/db.prisma';
+import { optionSetRepository } from '../option-set/option-set.repository';
 
 // UI field types supported by the renderer
 export type UiType =
@@ -142,7 +142,7 @@ async function getCachedOptionSetsMap(): Promise<Map<string, string[]>> {
     return cachedOptionSetsMap;
   }
 
-  const optionSets = await prisma.optionSet.findMany();
+  const optionSets = await optionSetRepository.findAll();
   const map = new Map<string, string[]>();
   for (const s of optionSets) {
     if (Array.isArray(s.options)) {

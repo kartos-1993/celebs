@@ -14,7 +14,7 @@ if (fs.existsSync(envPath)) {
 import { logger } from '@celebs/shared-utils';
 
 import { ensurePlatformVendor } from './common/constants/platform-vendor';
-import { verifyRedisConnection } from './common/services/queue.service';
+import { closeQueues, verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import { config } from './config/app.config';
 import prisma from './config/db.prisma';
@@ -101,6 +101,7 @@ const shutdown = async (signal: string) => {
       if (!currentServer) return resolve();
       currentServer.close(() => resolve());
     });
+    await closeQueues();
     await prisma.$disconnect();
     await closeSentry();
     logger.info('Graceful shutdown complete');

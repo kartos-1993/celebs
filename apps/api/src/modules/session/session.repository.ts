@@ -49,6 +49,20 @@ export class SessionRepository {
     });
     return result.count;
   }
+
+  public async findSessionsByUserIds(userIds: string[]) {
+    return prisma.session.findMany({
+      where: { userId: { in: userIds } },
+      select: { id: true },
+    });
+  }
+
+  public async deleteSessionsByUserIds(userIds: string[]): Promise<number> {
+    const result = await prisma.session.deleteMany({
+      where: { userId: { in: userIds } },
+    });
+    return result.count;
+  }
 }
 
 export const sessionRepository = new SessionRepository();

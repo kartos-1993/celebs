@@ -89,6 +89,45 @@ export class VendorRepository {
       return { user, vendorProfileId: vendorProfile.id };
     });
   }
+
+  public async findStatusById(id: string) {
+    return prisma.vendorProfile.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+  }
+
+  public async updateStatusCas(
+    id: string,
+    fromStatus: string,
+    toStatus: string,
+    extraData?: Record<string, unknown>,
+  ): Promise<number> {
+    const result = await prisma.vendorProfile.updateMany({
+      where: { id, status: fromStatus },
+      data: { status: toStatus, ...(extraData ?? {}) },
+    });
+    return result.count;
+  }
+
+  public async findStoreWithUser(id: string) {
+    return prisma.vendorProfile.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, isEmailVerified: true } },
+      },
+    });
+  }
+
+  public async findStoreMemberUserIds(storeId: string): Promise<string[]> {
+    const members = await prisma.user.findMany({
+      where: {
+        OR: [{ vendor: { id: storeId } }, { vendorProfile: { id: storeId } }],
+      },
+      select: { id: true },
+    });
+    return members.map((m) => m.id);
+  }
 }
 
 export const vendorRepository = new VendorRepository();
