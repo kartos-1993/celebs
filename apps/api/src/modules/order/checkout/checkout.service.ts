@@ -1,9 +1,10 @@
 import { CheckoutInput, COD_MAX_LIMIT } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { AddressRepository,addressRepository } from '../address/address.repository';
-import { PaymentRepository,paymentRepository } from '../payment/payment.repository';
-import { PaymentService,paymentService } from '../payment/payment.service';
+import { AddressRepository, addressRepository } from '../address/address.repository';
+import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
+import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
+import { PaymentService, paymentService } from '../payment/payment.service';
 import { generateOrderNumber } from '../utils/order-number.util';
 
 import {
@@ -23,6 +24,7 @@ export class CheckoutService {
     private addressRepo: AddressRepository = addressRepository,
     private paymentRepo: PaymentRepository = paymentRepository,
     private paymentSvc: PaymentService = paymentService,
+    private coreOrderRepo: CoreOrderRepository = coreOrderRepository,
   ) {}
 
   async checkout(userId: string, input: CheckoutInput, requestHost?: string) {
@@ -203,39 +205,68 @@ export class CheckoutService {
     // Create online payment intent when not COD
     let paymentResult = null;
     if (paymentMethod !== 'COD') {
-      const adapter = this.paymentSvc.getPaymentGateway(paymentMethod);
-      const callbackBase = input.callbackBase
-        ? resolveCallbackBase(input.callbackBase, requestHost, '')
-        : '';
-      const apiBase = (config.BASE_PATH || '/api/v1').replace(/\/+$/, '');
-      const walletMeta = callbackBase
-        ? {
-            successUrl: `${callbackBase}${apiBase}/orders/payments/esewa/success`,
-            failureUrl: `${callbackBase}${apiBase}/orders/payments/esewa/failure`,
-            returnUrl: `${callbackBase}${apiBase}/orders/payments/khalti/return`,
-          }
-        : {};
-      paymentResult = await adapter.createPaymentIntent(
-        order.id,
-        totalAmountDecimal.toNumber(),
-        'NPR',
-        {
-          orderNumber: order.orderNumber,
-          userId,
-          ...walletMeta,
-        },
-      );
+      try {
+        const adapter = this.paymentSvc.getPaymentGateway(paymentMethod);
+        const callbackBase = input.callbackBase
+          ? resolveCallbackBase(input.callbackBase, requestHost, '')
+          : '';
+        const apiBase = (config.BASE_PATH || '/api/v1').replace(/\/+$/, '');
+        const walletMeta = callbackBase
+          ? {
+              successUrl: `${callbackBase}${apiBase}/orders/payments/esewa/success`,
+              failureUrl: `${callbackBase}${apiBase}/orders/payments/esewa/failure`,
+              returnUrl: `${callbackBase}${apiBase}/orders/payments/khalti/return`,
+            }
+          : {};
+        paymentResult = await adapter.createPaymentIntent(
+          order.id,
+          totalAmountDecimal.toNumber(),
+          'NPR',
+          {
+            orderNumber: order.orderNumber,
+            userId,
+            ...walletMeta,
+          },
+        );
 
-      await this.paymentRepo.createPayment({
-        orderId: order.id,
-        userId,
-        amount: totalAmountDecimal,
-        currency: 'NPR',
-        gateway: paymentMethod,
-        transactionId: paymentResult.paymentId,
-        status: 'PENDING',
-        rawResponse: (paymentResult.rawResponse as Prisma.InputJsonValue) || {},
-      });
+        await this.paymentRepo.createPayment({
+          orderId: order.id,
+          userId,
+          amount: totalAmountDecimal,
+          currency: 'NPR',
+          gateway: paymentMethod,
+          transactionId: paymentResult.paymentId,
+          status: 'PENDING',
+          rawResponse: (paymentResult.rawResponse as Prisma.InputJsonValue) || {},
+        });
+      } catch (paymentError: unknown) {
+        const rawMsg = paymentError instanceof Error ? paymentError.message : String(paymentError);
+        logger.error(
+          { orderId: order.id, paymentMethod, err: rawMsg },
+          'Failed to initiate online payment intent — releasing reserved stock',
+        );
+
+        try {
+          await this.coreOrderRepo.applyOrderCancellation({
+            id: order.id,
+            items: order.items.map((item) => ({
+              inventoryId: item.inventoryId,
+              quantity: item.quantity,
+            })),
+          });
+        } catch (cancelErr) {
+          logger.error(
+            { orderId: order.id, cancelErr },
+            'Failed to auto-cancel order after payment intent failure',
+          );
+        }
+
+        throw new AppError(
+          `Unable to initiate ${paymentMethod} payment: ${rawMsg}. Please retry or choose another payment method.`,
+          HTTPSTATUS.BAD_GATEWAY,
+          ErrorCode.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
 
     const responseBody = {

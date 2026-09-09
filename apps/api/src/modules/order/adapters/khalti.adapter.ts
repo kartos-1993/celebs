@@ -17,6 +17,7 @@ export interface KhaltiConfig {
 export function resolveKhaltiConfig(): KhaltiConfig {
   return {
     secretKey: process.env.KHALTI_SECRET_KEY || '',
+    // Sandbox uses https://dev.khalti.com (test-pay.khalti.com for webview)
     baseUrl: process.env.KHALTI_BASE_URL || 'https://dev.khalti.com',
     returnUrl:
       process.env.KHALTI_RETURN_URL || 'http://localhost:3333/api/v1/orders/payments/khalti/return',
