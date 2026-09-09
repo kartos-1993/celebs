@@ -145,38 +145,43 @@ export class CoreOrderRepository {
     id: string;
     items: { inventoryId: string; quantity: number }[];
   }) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      for (const item of order.items) {
-        await tx.productInventory.update({
-          where: { id: item.inventoryId },
-          data: {
-            reservedQuantity: {
-              decrement: item.quantity,
+    const sortedItems = [...order.items].sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
+
+    return prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        for (const item of sortedItems) {
+          await tx.productInventory.update({
+            where: { id: item.inventoryId },
+            data: {
+              reservedQuantity: {
+                decrement: item.quantity,
+              },
             },
+          });
+        }
+
+        await tx.orderItem.updateMany({
+          where: { orderId: order.id },
+          data: { itemStatus: 'CANCELLED' },
+        });
+
+        await tx.orderTrackingEvent.create({
+          data: {
+            orderId: order.id,
+            status: 'CANCELLED',
+            title: 'Order Cancelled',
+            description: 'This order was cancelled and reserved stock was released.',
+            source: 'SYSTEM',
           },
         });
-      }
 
-      await tx.orderItem.updateMany({
-        where: { orderId: order.id },
-        data: { itemStatus: 'CANCELLED' },
-      });
-
-      await tx.orderTrackingEvent.create({
-        data: {
-          orderId: order.id,
-          status: 'CANCELLED',
-          title: 'Order Cancelled',
-          description: 'This order was cancelled and reserved stock was released.',
-          source: 'SYSTEM',
-        },
-      });
-
-      return tx.order.update({
-        where: { id: order.id },
-        data: { status: 'CANCELLED' },
-      });
-    });
+        return tx.order.update({
+          where: { id: order.id },
+          data: { status: 'CANCELLED' },
+        });
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 }
 

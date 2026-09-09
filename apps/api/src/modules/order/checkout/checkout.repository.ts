@@ -79,83 +79,89 @@ export class CheckoutRepository {
     items: CheckoutItemDetail[];
     idempotencyKey: string;
   }) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Authoritative conditional atomic stock reservation
-      for (const item of data.items) {
-        const updated = await tx.$executeRaw`
-          UPDATE "ProductInventory"
-          SET reserved_quantity = reserved_quantity + ${item.quantity}
-          WHERE id = ${item.inventoryId}
-            AND quantity - reserved_quantity >= ${item.quantity}`;
-        if (updated === 0) {
-          throw new InsufficientStockError(`${item.colorVariantName} - ${item.size}`);
+    // Sort items deterministically by inventoryId to mathematically eliminate PostgreSQL 40P01 deadlocks
+    const sortedItems = [...data.items].sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
+
+    return prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // 1. Authoritative conditional atomic stock reservation in deterministic lock order
+        for (const item of sortedItems) {
+          const updated = await tx.$executeRaw`
+            UPDATE "ProductInventory"
+            SET reserved_quantity = reserved_quantity + ${item.quantity}
+            WHERE id = ${item.inventoryId}
+              AND quantity - reserved_quantity >= ${item.quantity}`;
+          if (updated === 0) {
+            throw new InsufficientStockError(`${item.colorVariantName} - ${item.size}`);
+          }
         }
-      }
 
-      // 2. Create Order & Items
-      const createdOrder = await tx.order.create({
-        data: {
-          orderNumber: data.orderNumber,
-          userId: data.userId,
-          addressId: data.addressId,
-          subtotal: data.subtotal,
-          shippingFee: data.shippingFee,
-          discountAmount: new Prisma.Decimal(0),
-          totalAmount: data.totalAmount,
-          status: data.orderStatus,
-          paymentMethod: data.paymentMethod,
-          paymentStatus: data.paymentStatus,
-          items: {
-            create: data.items.map((det) => ({
-              inventoryId: det.inventoryId,
-              vendorId: det.vendorId,
-              productName: det.productName,
-              colorVariantName: det.colorVariantName,
-              size: det.size,
-              unitPrice: det.unitPrice,
-              quantity: det.quantity,
-              subtotal: det.subtotal,
-              itemStatus: 'PENDING',
-            })),
+        // 2. Create Order & Items
+        const createdOrder = await tx.order.create({
+          data: {
+            orderNumber: data.orderNumber,
+            userId: data.userId,
+            addressId: data.addressId,
+            subtotal: data.subtotal,
+            shippingFee: data.shippingFee,
+            discountAmount: new Prisma.Decimal(0),
+            totalAmount: data.totalAmount,
+            status: data.orderStatus,
+            paymentMethod: data.paymentMethod,
+            paymentStatus: data.paymentStatus,
+            items: {
+              create: data.items.map((det) => ({
+                inventoryId: det.inventoryId,
+                vendorId: det.vendorId,
+                productName: det.productName,
+                colorVariantName: det.colorVariantName,
+                size: det.size,
+                unitPrice: det.unitPrice,
+                quantity: det.quantity,
+                subtotal: det.subtotal,
+                itemStatus: 'PENDING',
+              })),
+            },
           },
-        },
-        include: {
-          items: true,
-          address: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
-      });
+          include: {
+            items: true,
+            address: true,
+            user: { select: { id: true, name: true, email: true } },
+          },
+        });
 
-      // 2b. Seed the first tracking event so the customer timeline exists from day one
-      await tx.orderTrackingEvent.create({
-        data: {
-          orderId: createdOrder.id,
-          status: data.orderStatus,
-          title: 'Order Placed',
-          description: data.isCOD
-            ? 'Your order has been confirmed. Pay with cash on delivery.'
-            : 'Order received. Complete the payment to begin processing.',
-          source: 'SYSTEM',
-        },
-      });
+        // 2b. Seed the first tracking event so the customer timeline exists from day one
+        await tx.orderTrackingEvent.create({
+          data: {
+            orderId: createdOrder.id,
+            status: data.orderStatus,
+            title: 'Order Placed',
+            description: data.isCOD
+              ? 'Your order has been confirmed. Pay with cash on delivery.'
+              : 'Order received. Complete the payment to begin processing.',
+            source: 'SYSTEM',
+          },
+        });
 
-      // 3. Clear User Cart
-      await tx.cartItem.deleteMany({
-        where: { cartId: data.cartId },
-      });
+        // 3. Clear User Cart
+        await tx.cartItem.deleteMany({
+          where: { cartId: data.cartId },
+        });
 
-      // 4. Create placeholder idempotency key inside the transaction to guard against concurrent replay
-      await tx.idempotencyKey.create({
-        data: {
-          key: data.idempotencyKey,
-          userId: data.userId,
-          statusCode: 201,
-          responseBody: JSON.stringify({ status: 'PROCESSING', retry_with_new_key: true }),
-        },
-      });
+        // 4. Create placeholder idempotency key inside the transaction to guard against concurrent replay
+        await tx.idempotencyKey.create({
+          data: {
+            key: data.idempotencyKey,
+            userId: data.userId,
+            statusCode: 201,
+            responseBody: JSON.stringify({ status: 'PROCESSING', retry_with_new_key: true }),
+          },
+        });
 
-      return createdOrder;
-    });
+        return createdOrder;
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
   async findStalePaymentOrders(cutoffTime: Date) {
@@ -178,8 +184,10 @@ export class CheckoutRepository {
     id: string;
     items: { inventoryId: string; quantity: number; itemStatus: string }[];
   }) {
+    const sortedItems = [...data.items].sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
+
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      for (const item of data.items) {
+      for (const item of sortedItems) {
         if (item.itemStatus !== 'CANCELLED') {
           await tx.productInventory.update({
             where: { id: item.inventoryId },
