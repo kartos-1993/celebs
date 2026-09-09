@@ -183,12 +183,14 @@ app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
 app.use(`${config.BASE_PATH}/categories`, categoryRoutes);
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
-app.use(`${config.BASE_PATH}/quick-filter`, quickFilterRoutes);
+app.use(`${config.BASE_PATH}/quick-filters`, quickFilterRoutes);
+app.use(`${config.BASE_PATH}/quick-filter`, quickFilterRoutes); // Backward-compatibility alias
 app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
 app.use(`${config.BASE_PATH}/products`, productRoutes);
 app.use(`${config.BASE_PATH}/brands`, brandRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
-app.use(`${config.BASE_PATH}/vendor`, vendorRoutes);
+app.use(`${config.BASE_PATH}/vendors`, vendorRoutes);
+app.use(`${config.BASE_PATH}/vendor`, vendorRoutes); // Backward-compatibility alias
 app.use(`${config.BASE_PATH}/admin`, adminRoutes);
 app.use(`${config.BASE_PATH}/users`, userRoutes);
 app.use(`${config.BASE_PATH}/staff`, staffRoutes);
