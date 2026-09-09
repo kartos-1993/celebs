@@ -9,8 +9,9 @@ import {
 } from '../adapters/esewa.adapter';
 import { KhaltiAdapter, toPaisa } from '../adapters/khalti.adapter';
 import { IPaymentGateway } from '../adapters/payment-gateway.interface';
+import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 
-import { PaymentRepository,paymentRepository } from './payment.repository';
+import { PaymentRepository, paymentRepository } from './payment.repository';
 
 export class PaymentService {
   constructor(private repo: PaymentRepository = paymentRepository) {}
@@ -72,6 +73,11 @@ export class PaymentService {
       { orderId, from: current, to: next, reference: input.reference, by: actorLabel },
       'Updated order payment status',
     );
+
+    // Enqueue payment confirmation receipt when payment completes
+    if (next === 'COMPLETED' && updated) {
+      await enqueueOrderConfirmationEmail(updated, 'payment-completed');
+    }
 
     return updated;
   }

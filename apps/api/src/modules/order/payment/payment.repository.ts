@@ -39,9 +39,14 @@ export class PaymentRepository {
       });
 
       if (currentOrder && currentOrder.paymentStatus === data.next) {
-        return tx.order.findUnique({
+        return tx.order.findUniqueOrThrow({
           where: { id: data.orderId },
-          include: { payments: { orderBy: { createdAt: 'desc' } } },
+          include: {
+            payments: { orderBy: { createdAt: 'desc' } },
+            items: true,
+            address: true,
+            user: { select: { id: true, name: true, email: true } },
+          },
         });
       }
 
@@ -106,7 +111,12 @@ export class PaymentRepository {
           paymentStatus: data.next,
           status: nextOrderStatus,
         },
-        include: { payments: { orderBy: { createdAt: 'desc' } } },
+        include: {
+          payments: { orderBy: { createdAt: 'desc' } },
+          items: true,
+          address: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
       });
     });
   }

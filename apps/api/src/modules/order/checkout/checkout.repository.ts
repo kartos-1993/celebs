@@ -122,6 +122,7 @@ export class CheckoutRepository {
         include: {
           items: true,
           address: true,
+          user: { select: { id: true, name: true, email: true } },
         },
       });
 

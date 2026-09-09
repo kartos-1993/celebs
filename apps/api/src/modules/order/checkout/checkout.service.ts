@@ -5,6 +5,7 @@ import { AddressRepository, addressRepository } from '../address/address.reposit
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
 import { PaymentService, paymentService } from '../payment/payment.service';
+import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 import { generateOrderNumber } from '../utils/order-number.util';
 
 import {
@@ -279,6 +280,11 @@ export class CheckoutService {
       idempotencyKey,
       JSON.stringify(responseBody),
     );
+
+    // Enqueue order confirmation email for COD orders (immediately confirmed)
+    if (order.paymentMethod === 'COD') {
+      await enqueueOrderConfirmationEmail(order, 'checkout-cod');
+    }
 
     return responseBody;
   }
