@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 
 import { codSettlementSchema, dispatchOrderSchema } from '@celebs/shared-types';
-import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
+import { asyncHandler } from '@celebs/shared-utils';
 
 import { type LogisticsService, logisticsService } from './logistics.service';
+
+import { sendSuccess } from '@/common/utils/response.util';
 
 export class LogisticsController {
   private service: LogisticsService;
@@ -24,11 +26,7 @@ export class LogisticsController {
     const actorStoreId = req.store?.id ?? null;
     const result = await this.service.dispatchOrder(validated, actorStoreId);
 
-    res.status(HTTPSTATUS.OK).json({
-      success: true,
-      message: 'Order dispatched successfully',
-      data: result,
-    });
+    return sendSuccess(res, result, 'Order dispatched successfully');
   });
 
   public settleCod = asyncHandler(async (req: Request, res: Response) => {
@@ -43,11 +41,7 @@ export class LogisticsController {
       validated.settlementReference,
     );
 
-    res.status(HTTPSTATUS.OK).json({
-      success: true,
-      message: 'COD payment settled successfully',
-      data: result,
-    });
+    return sendSuccess(res, result, 'COD payment settled successfully');
   });
 }
 

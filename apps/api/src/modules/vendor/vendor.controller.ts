@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
 
 import {
-  IApiResponse,
   vendorBusinessInfoSchema,
   vendorDocumentsSchema,
   vendorProfileSchema,
   warehouseSchema,
 } from '@celebs/shared-types';
-import { asyncHandler, HTTPSTATUS, UnauthorizedException } from '@celebs/shared-utils';
+import { asyncHandler, UnauthorizedException } from '@celebs/shared-utils';
 
 import { VendorService } from './vendor.service';
+
+import { sendSuccess } from '@/common/utils/response.util';
 
 export class VendorController {
   private vendorService: VendorService;
@@ -30,12 +31,7 @@ export class VendorController {
     async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);
       const profile = await this.vendorService.getOnboardingStatus(userId);
-      const response: IApiResponse<typeof profile> = {
-        success: true,
-        message: 'Onboarding status retrieved successfully',
-        data: profile,
-      };
-      return res.status(HTTPSTATUS.OK).json(response);
+      return sendSuccess(res, profile, 'Onboarding status retrieved successfully');
     },
   );
 
@@ -43,36 +39,21 @@ export class VendorController {
     const userId = this.getUserId(req);
     const body = vendorProfileSchema.parse(req.body);
     const profile = await this.vendorService.updateProfile(userId, body);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Vendor profile updated successfully',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, profile, 'Vendor profile updated successfully');
   });
 
   public updateWarehouse = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const body = warehouseSchema.parse(req.body);
     const profile = await this.vendorService.updateWarehouse(userId, body);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Vendor warehouse updated successfully',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, profile, 'Vendor warehouse updated successfully');
   });
 
   public updateDocuments = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const body = vendorDocumentsSchema.parse(req.body);
     const profile = await this.vendorService.updateDocuments(userId, body);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Vendor documents updated successfully',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, profile, 'Vendor documents updated successfully');
   });
 
   public updateBusinessInfo = asyncHandler(
@@ -80,36 +61,21 @@ export class VendorController {
       const userId = this.getUserId(req);
       const body = vendorBusinessInfoSchema.parse(req.body);
       const profile = await this.vendorService.updateBusinessInfo(userId, body);
-      const response: IApiResponse<typeof profile> = {
-        success: true,
-        message: 'Vendor business info updated successfully',
-        data: profile,
-      };
-      return res.status(HTTPSTATUS.OK).json(response);
+      return sendSuccess(res, profile, 'Vendor business info updated successfully');
     },
   );
 
   public submitForReview = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userId = this.getUserId(req);
     const profile = await this.vendorService.submitForReview(userId);
-    const response: IApiResponse<typeof profile> = {
-      success: true,
-      message: 'Vendor documents submitted for review',
-      data: profile,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, profile, 'Vendor documents submitted for review');
   });
 
   public resubmitForReview = asyncHandler(
     async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);
       const profile = await this.vendorService.resubmitForReview(userId);
-      const response: IApiResponse<typeof profile> = {
-        success: true,
-        message: 'Application resubmitted for review',
-        data: profile,
-      };
-      return res.status(HTTPSTATUS.OK).json(response);
+      return sendSuccess(res, profile, 'Application resubmitted for review');
     },
   );
 
@@ -117,12 +83,7 @@ export class VendorController {
     async (req: Request, res: Response): Promise<Response> => {
       const userId = this.getUserId(req);
       const profile = await this.vendorService.toggleHolidayMode(userId);
-      const response: IApiResponse<typeof profile> = {
-        success: true,
-        message: 'Holiday mode toggled successfully',
-        data: profile,
-      };
-      return res.status(HTTPSTATUS.OK).json(response);
+      return sendSuccess(res, profile, 'Holiday mode toggled successfully');
     },
   );
 }

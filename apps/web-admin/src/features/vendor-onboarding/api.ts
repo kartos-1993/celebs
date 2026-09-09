@@ -19,27 +19,33 @@ export async function getOnboardingStatus() {
 }
 
 export async function updateVendorProfile(data: vendorProfileType) {
-  return await axiosClient.put('/vendor/profile', data);
+  const response = await axiosClient.put('/vendor/profile', data);
+  return response.data;
 }
 
 export async function updateVendorWarehouse(data: warehouseType) {
-  return await axiosClient.put('/vendor/warehouse', data);
+  const response = await axiosClient.put('/vendor/warehouse', data);
+  return response.data;
 }
 
 export async function updateVendorDocuments(data: vendorDocumentsType) {
-  return await axiosClient.put('/vendor/documents', data);
+  const response = await axiosClient.put('/vendor/documents', data);
+  return response.data;
 }
 
 export async function updateVendorBusinessInfo(data: vendorBusinessInfoType) {
-  return await axiosClient.put('/vendor/business-info', data);
+  const response = await axiosClient.put('/vendor/business-info', data);
+  return response.data;
 }
 
 export async function submitVendorForReview() {
-  return await axiosClient.post('/vendor/submit-for-review');
+  const response = await axiosClient.post('/vendor/submit-for-review');
+  return response.data;
 }
 
 export async function resubmitForReview() {
-  return await axiosClient.post('/vendor/resubmit');
+  const response = await axiosClient.post('/vendor/resubmit');
+  return response.data;
 }
 
 export async function uploadOnboardingImage(file: File): Promise<string> {

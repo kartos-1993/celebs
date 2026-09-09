@@ -4,6 +4,7 @@ import type { CategoryAttributeType, CategoryTreeNode, RecentCategory } from '@c
 import type {
   CreateProductRequest,
   DropdownCategory,
+  FieldSpec,
   ProductFilterRequest,
   ProductRecord,
   ReviewProductRequestPayload,
@@ -210,6 +211,23 @@ export async function getDropdownCategoryById(
   return response.data;
 }
 
+export interface ProductRenderSchemaResponse {
+  fields: FieldSpec[];
+  renderTag: string;
+  catId: string;
+}
+
+export async function fetchProductRenderSchema(
+  catId: string,
+  productId?: string,
+): Promise<ProductApiResponse<ProductRenderSchemaResponse>> {
+  const response = await axiosClient.get<ProductApiResponse<ProductRenderSchemaResponse>>(
+    '/product-render',
+    { params: { catId, locale: 'en_US', productId } },
+  );
+  return response.data;
+}
+
 export const ProductApiService = {
   createProduct,
   getProducts,
@@ -226,4 +244,5 @@ export const ProductApiService = {
   searchDropdownCategories,
   getDropdownRecentCategories,
   recordDropdownRecentCategory,
+  fetchProductRenderSchema,
 };

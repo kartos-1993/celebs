@@ -1,18 +1,18 @@
 import { Request, Response } from 'express';
 
 import {
-  IApiResponse,
   loginSchema,
   registerSchema,
   resendVerificationSchema,
   setupSuperadminSchema,
   vendorRegisterSchema,
 } from '@celebs/shared-types';
-import { asyncHandler, BadRequestException, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { asyncHandler, BadRequestException, ErrorCode } from '@celebs/shared-utils';
 
 import { AuthService } from './auth.service';
 
 import { clearAuthenticationCookies, setAuthenticationCookies } from '@/common/utils/cookie';
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 import { buildWebUrl } from '@/common/utils/url';
 
 export class AuthController {
@@ -24,23 +24,13 @@ export class AuthController {
   public register = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const body = registerSchema.parse(req.body);
     const { user } = await this.authService.register(body);
-    const response: IApiResponse<typeof user> = {
-      success: true,
-      message: 'User registered successfully',
-      data: user,
-    };
-    return res.status(HTTPSTATUS.CREATED).json(response);
+    return sendCreated(res, user, 'User registered successfully');
   });
 
   public vendorRegister = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const body = vendorRegisterSchema.parse(req.body);
     const { user } = await this.authService.vendorRegister(body);
-    const response: IApiResponse<typeof user> = {
-      success: true,
-      message: 'Vendor registered successfully. Approval is pending.',
-      data: user,
-    };
-    return res.status(HTTPSTATUS.CREATED).json(response);
+    return sendCreated(res, user, 'Vendor registered successfully. Approval is pending.');
   });
 
   public login = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
@@ -52,13 +42,7 @@ export class AuthController {
     });
     const { user, accessToken, refreshToken } = await this.authService.login(body, surface);
     setAuthenticationCookies({ res, accessToken, refreshToken });
-    const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> =
-      {
-        success: true,
-        message: 'User logged in successfully',
-        data: { user, accessToken, refreshToken },
-      };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, { user, accessToken, refreshToken }, 'User logged in successfully');
   });
 
   public verifyEmail = asyncHandler(
@@ -78,16 +62,7 @@ export class AuthController {
         return res.redirect(buildWebUrl('/onboarding', { verified: 'true' }));
       }
 
-      const response: IApiResponse<{
-        user: typeof user;
-        accessToken: string;
-        refreshToken: string;
-      }> = {
-        success: true,
-        message: 'Email verified successfully',
-        data: { user, accessToken, refreshToken },
-      };
-      return res.status(HTTPSTATUS.OK).json(response);
+      return sendSuccess(res, { user, accessToken, refreshToken }, 'Email verified successfully');
     },
   );
 
@@ -95,12 +70,7 @@ export class AuthController {
     async (req: Request, res: Response): Promise<Response> => {
       const body = resendVerificationSchema.parse(req.body);
       const result = await this.authService.resendVerification(body);
-      const response: IApiResponse<typeof result> = {
-        success: true,
-        message: 'Verification link sent successfully',
-        data: result,
-      };
-      return res.status(HTTPSTATUS.OK).json(response);
+      return sendSuccess(res, result, 'Verification link sent successfully');
     },
   );
 
@@ -110,23 +80,13 @@ export class AuthController {
       await this.authService.logout(sessionId);
     }
     clearAuthenticationCookies(res);
-    const response: IApiResponse<null> = {
-      success: true,
-      message: 'Logged out successfully',
-      data: null,
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, null, 'Logged out successfully');
   });
 
   public setupSuperadmin = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const body = setupSuperadminSchema.parse(req.body);
     const { user } = await this.authService.setupSuperadmin(body);
-    const response: IApiResponse<typeof user> = {
-      success: true,
-      message: 'Superadmin setup completed successfully',
-      data: user,
-    };
-    return res.status(HTTPSTATUS.CREATED).json(response);
+    return sendCreated(res, user, 'Superadmin setup completed successfully');
   });
 
   public refreshToken = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
@@ -147,26 +107,16 @@ export class AuthController {
       refreshToken: newRefreshToken,
     });
 
-    const response: IApiResponse<{
-      user: typeof user;
-      accessToken: string;
-      refreshToken: string;
-    }> = {
-      success: true,
-      message: 'Token refreshed successfully',
-      data: { user, accessToken, refreshToken: newRefreshToken },
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(
+      res,
+      { user, accessToken, refreshToken: newRefreshToken },
+      'Token refreshed successfully',
+    );
   });
 
   public getSetupStatus = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const setupRequired = await this.authService.isSuperadminSetupRequired();
-    const response: IApiResponse<{ setupRequired: boolean }> = {
-      success: true,
-      message: 'Setup status fetched successfully',
-      data: { setupRequired },
-    };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, { setupRequired }, 'Setup status fetched successfully');
   });
 
   public googleSignIn = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
@@ -177,12 +127,6 @@ export class AuthController {
       userAgent,
     });
     setAuthenticationCookies({ res, accessToken, refreshToken });
-    const response: IApiResponse<{ user: typeof user; accessToken: string; refreshToken: string }> =
-      {
-        success: true,
-        message: 'Google sign in successful',
-        data: { user, accessToken, refreshToken },
-      };
-    return res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, { user, accessToken, refreshToken }, 'Google sign in successful');
   });
 }

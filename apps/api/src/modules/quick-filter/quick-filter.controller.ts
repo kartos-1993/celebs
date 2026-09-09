@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-import { HTTPSTATUS } from '@celebs/shared-utils';
-
 import { QuickFilterService } from './quick-filter.service';
+
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 
 export class QuickFilterController {
   constructor(private readonly quickFilterService: QuickFilterService) {}
@@ -10,47 +10,29 @@ export class QuickFilterController {
   getStorefrontConfig = async (req: Request, res: Response) => {
     const slug = req.params.slug || '';
     const data = await this.quickFilterService.getStorefrontConfigBySlug(slug);
-    res.status(HTTPSTATUS.OK).json({
-      success: true,
-      message: 'Storefront config retrieved successfully',
-      data,
-    });
+    return sendSuccess(res, data, 'Storefront config retrieved successfully');
   };
 
   getQuickFiltersForCategory = async (req: Request, res: Response) => {
     const categoryId = req.params.categoryId || '';
     const data = await this.quickFilterService.getQuickFiltersForCategory(categoryId);
-    res.status(HTTPSTATUS.OK).json({
-      success: true,
-      data,
-    });
+    return sendSuccess(res, data, 'Quick filters retrieved successfully');
   };
 
   createQuickFilter = async (req: Request, res: Response) => {
     const data = await this.quickFilterService.createQuickFilter(req.body);
-    res.status(HTTPSTATUS.CREATED).json({
-      success: true,
-      message: 'Quick filter created successfully',
-      data,
-    });
+    return sendCreated(res, data, 'Quick filter created successfully');
   };
 
   updateQuickFilter = async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const data = await this.quickFilterService.updateQuickFilter(id, req.body);
-    res.status(HTTPSTATUS.OK).json({
-      success: true,
-      message: 'Quick filter updated successfully',
-      data,
-    });
+    return sendSuccess(res, data, 'Quick filter updated successfully');
   };
 
   deleteQuickFilter = async (req: Request, res: Response) => {
     const id = req.params.id || '';
     await this.quickFilterService.deleteQuickFilter(id);
-    res.status(HTTPSTATUS.OK).json({
-      success: true,
-      message: 'Quick filter deleted successfully',
-    });
+    return sendSuccess(res, null, 'Quick filter deleted successfully');
   };
 }

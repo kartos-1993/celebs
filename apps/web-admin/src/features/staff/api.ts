@@ -13,13 +13,16 @@ export async function getStaff(vendorId?: string) {
 }
 
 export async function createStaff(data: Record<string, unknown>) {
-  return await axiosClient.post('/staff', data);
+  const response = await axiosClient.post('/staff', data);
+  return response.data;
 }
 
 export async function deleteStaff(id: string) {
-  return await axiosClient.delete(`/staff/${id}`);
+  const response = await axiosClient.delete(`/staff/${id}`);
+  return response.data;
 }
 
 export async function updateStaff(id: string, data: Record<string, unknown>) {
-  return await axiosClient.patch(`/staff/${id}`, data);
+  const response = await axiosClient.patch(`/staff/${id}`, data);
+  return response.data;
 }

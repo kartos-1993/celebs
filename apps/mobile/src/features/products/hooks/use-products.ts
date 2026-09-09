@@ -54,13 +54,8 @@ export function useProducts(
 
   const products: Product[] = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => {
-      if (Array.isArray(page?.data?.products)) return page.data.products;
-      if (Array.isArray(page?.data)) return page.data;
-      if (Array.isArray(page?.products)) return page.products;
-      return [];
-    });
-  }, [data]);
+    return data.pages.flatMap((page) => page?.data?.products ?? []);
+  }, [data?.pages]);
 
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {

@@ -1,3 +1,5 @@
+import type { IApiResponse } from '@celebs/shared-types';
+
 import type { Product, ProductFilterParams } from './types';
 
 import { apiClient } from '@/api/client';
@@ -11,8 +13,17 @@ export const PRODUCT_QUERY_KEYS = {
   detail: (id: string) => [...PRODUCT_QUERY_KEYS.details(), id] as const,
 };
 
-export async function getProducts(params: ProductFilterParams) {
-  const response = await apiClient.get('/products', {
+export interface PaginatedProductsPayload {
+  products: Product[];
+  total: number;
+  nextCursor?: string;
+  hasMore?: boolean;
+}
+
+export async function getProducts(
+  params: ProductFilterParams,
+): Promise<IApiResponse<PaginatedProductsPayload>> {
+  const response = await apiClient.get<IApiResponse<PaginatedProductsPayload>>('/products', {
     params: {
       status: 'published',
       ...params,

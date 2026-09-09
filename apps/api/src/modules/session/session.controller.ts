@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 
-import { IApiResponse } from '@celebs/shared-types';
-import { asyncHandler, HTTPSTATUS, NotFoundException } from '@celebs/shared-utils';
+import { asyncHandler, NotFoundException } from '@celebs/shared-utils';
 
 import { SessionService } from './session.service';
 
 import { verifyJwtToken } from '@/common/utils/jwt';
+import { sendSuccess } from '@/common/utils/response.util';
 
 export class SessionController {
   private sessionService: SessionService;
@@ -36,14 +36,10 @@ export class SessionController {
 
     const actorUserId = (req.user as { id?: string })?.id;
     const session = await this.sessionService.getSessionById(sessionId, actorUserId);
-    const response: IApiResponse<typeof session> = {
-      success: true,
-      message: 'Session retrieved successfully',
-      data: session,
-    };
+
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    res.status(HTTPSTATUS.OK).json(response); // Return the session data
+    return sendSuccess(res, session, 'Session retrieved successfully');
   });
 }

@@ -1,6 +1,7 @@
 import {
   AddToCartInput,
   CartResponse,
+  IApiResponse,
   SyncCartInput,
   UpdateCartItemInput,
 } from '@celebs/shared-types';
@@ -13,9 +14,12 @@ export class CartApiService {
     if (sessionId) {
       headers['x-session-id'] = sessionId;
     }
-    const response = await apiClient.get<{ message: string; data: CartResponse }>('/cart', {
+    const response = await apiClient.get<IApiResponse<CartResponse>>('/cart', {
       headers,
     });
+    if (!response.data.data) {
+      throw new Error(response.data.message || 'Failed to fetch cart');
+    }
     return response.data.data;
   }
 
@@ -24,13 +28,12 @@ export class CartApiService {
     if (sessionId) {
       headers['x-session-id'] = sessionId;
     }
-    const response = await apiClient.post<{ message: string; data: CartResponse }>(
-      '/cart/items',
-      input,
-      {
-        headers,
-      },
-    );
+    const response = await apiClient.post<IApiResponse<CartResponse>>('/cart/items', input, {
+      headers,
+    });
+    if (!response.data.data) {
+      throw new Error(response.data.message || 'Failed to add item to cart');
+    }
     return response.data.data;
   }
 
@@ -43,11 +46,14 @@ export class CartApiService {
     if (sessionId) {
       headers['x-session-id'] = sessionId;
     }
-    const response = await apiClient.patch<{ message: string; data: CartResponse }>(
+    const response = await apiClient.patch<IApiResponse<CartResponse>>(
       `/cart/items/${itemId}`,
       input,
       { headers },
     );
+    if (!response.data.data) {
+      throw new Error(response.data.message || 'Failed to update cart item');
+    }
     return response.data.data;
   }
 
@@ -56,10 +62,12 @@ export class CartApiService {
     if (sessionId) {
       headers['x-session-id'] = sessionId;
     }
-    const response = await apiClient.delete<{ message: string; data: CartResponse }>(
-      `/cart/items/${itemId}`,
-      { headers },
-    );
+    const response = await apiClient.delete<IApiResponse<CartResponse>>(`/cart/items/${itemId}`, {
+      headers,
+    });
+    if (!response.data.data) {
+      throw new Error(response.data.message || 'Failed to remove cart item');
+    }
     return response.data.data;
   }
 
@@ -68,17 +76,20 @@ export class CartApiService {
     if (sessionId) {
       headers['x-session-id'] = sessionId;
     }
-    const response = await apiClient.delete<{ message: string; data: CartResponse }>('/cart', {
+    const response = await apiClient.delete<IApiResponse<CartResponse>>('/cart', {
       headers,
     });
+    if (!response.data.data) {
+      throw new Error(response.data.message || 'Failed to clear cart');
+    }
     return response.data.data;
   }
 
   static async syncCart(input: SyncCartInput): Promise<CartResponse> {
-    const response = await apiClient.post<{ message: string; data: CartResponse }>(
-      '/cart/sync',
-      input,
-    );
+    const response = await apiClient.post<IApiResponse<CartResponse>>('/cart/sync', input);
+    if (!response.data.data) {
+      throw new Error(response.data.message || 'Failed to sync cart');
+    }
     return response.data.data;
   }
 }

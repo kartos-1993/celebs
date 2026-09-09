@@ -7,10 +7,11 @@ import {
   syncCartSchema,
   updateCartItemSchema,
 } from '@celebs/shared-types';
-import { asyncHandler, HTTPSTATUS, logger } from '@celebs/shared-utils';
+import { asyncHandler, logger, UnauthorizedException } from '@celebs/shared-utils';
 
 import { CartService } from './cart.service';
 
+import { sendSuccess } from '@/common/utils/response.util';
 import { appConfig } from '@/config/app.config';
 
 interface AuthUser {
@@ -76,9 +77,9 @@ export class CartController {
 
     // Prevent crawler DB bloat: return ephemeral empty cart without writing to PostgreSQL
     if (!userId && !sessionId) {
-      res.status(HTTPSTATUS.OK).json({
-        message: 'Cart retrieved successfully',
-        data: {
+      sendSuccess(
+        res,
+        {
           id: '',
           userId: null,
           sessionId: null,
@@ -89,17 +90,15 @@ export class CartController {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         } satisfies CartResponse,
-      });
+        'Cart retrieved successfully',
+      );
       return;
     }
 
     logger.info({ userId, sessionId }, '[CartController.getCart] Fetching cart');
     const cart = await CartService.getCart(userId, sessionId);
 
-    res.status(HTTPSTATUS.OK).json({
-      message: 'Cart retrieved successfully',
-      data: cart,
-    });
+    sendSuccess(res, cart, 'Cart retrieved successfully');
   });
 
   static addToCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -124,10 +123,7 @@ export class CartController {
       '[CartController.addToCart] Successfully added item to cart',
     );
 
-    res.status(HTTPSTATUS.OK).json({
-      message: 'Item added to cart successfully',
-      data: cart,
-    });
+    sendSuccess(res, cart, 'Item added to cart successfully');
   });
 
   static updateCartItem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -143,10 +139,7 @@ export class CartController {
       validatedInput.quantity,
     );
 
-    res.status(HTTPSTATUS.OK).json({
-      message: 'Cart item updated successfully',
-      data: cart,
-    });
+    sendSuccess(res, cart, 'Cart item updated successfully');
   });
 
   static removeCartItem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -156,37 +149,25 @@ export class CartController {
 
     const cart = await CartService.removeCartItem(userId, sessionId, itemId);
 
-    res.status(HTTPSTATUS.OK).json({
-      message: 'Cart item removed successfully',
-      data: cart,
-    });
+    sendSuccess(res, cart, 'Cart item removed successfully');
   });
 
   static clearCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { userId, sessionId } = CartController.extractIdentifiers(req);
     const cart = await CartService.clearCart(userId, sessionId);
 
-    res.status(HTTPSTATUS.OK).json({
-      message: 'Cart cleared successfully',
-      data: cart,
-    });
+    sendSuccess(res, cart, 'Cart cleared successfully');
   });
 
   static syncCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const user = req.user as AuthUser | undefined;
     if (!user || !user.id) {
-      res.status(HTTPSTATUS.UNAUTHORIZED).json({
-        message: 'Authentication required to sync cart',
-      });
-      return;
+      throw new UnauthorizedException('Authentication required to sync cart');
     }
 
     const validatedInput = syncCartSchema.parse(req.body);
     const cart = await CartService.syncCart(user.id, validatedInput.items);
 
-    res.status(HTTPSTATUS.OK).json({
-      message: 'Guest cart merged successfully',
-      data: cart,
-    });
+    sendSuccess(res, cart, 'Guest cart merged successfully');
   });
 }
