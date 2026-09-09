@@ -40,22 +40,25 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
 
   const imagesHash = (images || []).map((file) => imageValueKey(file)).join('|');
   const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
+  const imagesRef = React.useRef(images);
+  imagesRef.current = images;
+
   React.useEffect(() => {
     let active = true;
-    const urls = (images || []).map((item) =>
+    const currentImages = imagesRef.current || [];
+    const urls = currentImages.map((item) =>
       typeof item === 'string' ? item : URL.createObjectURL(item),
     );
     setImagePreviews(urls);
     return () => {
       active = false;
       urls.forEach((url, idx) => {
-        if (typeof images?.[idx] !== 'string') {
+        if (typeof currentImages[idx] !== 'string') {
           URL.revokeObjectURL(url);
         }
       });
       if (!active) setImagePreviews([]);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagesHash]);
 
   React.useEffect(() => {

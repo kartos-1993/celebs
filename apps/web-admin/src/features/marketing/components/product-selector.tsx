@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Package, Search, X } from 'lucide-react';
 
 import type { CatalogProductType, ProductSelectorPropsType } from '@celebs/shared-types';
@@ -10,7 +9,7 @@ import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import { getProducts } from '@/features/product/api';
+import { useProductSelectorQuery } from '@/features/product/hooks/use-product-queries';
 import { useDebounce } from '@/hooks/use-debounce';
 
 const getProductImage = (p: CatalogProductType): string | null => {
@@ -34,10 +33,7 @@ export function ProductSelector({
     Record<string, CatalogProductType>
   >({});
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['products', 'selector', debouncedSearchTerm],
-    queryFn: () => getProducts({ search: debouncedSearchTerm || undefined, limit: 20 }),
-  });
+  const { data, isLoading } = useProductSelectorQuery(debouncedSearchTerm);
 
   const rawProducts = data?.data?.products;
   const productsList = useMemo(() => (rawProducts as CatalogProductType[]) ?? [], [rawProducts]);

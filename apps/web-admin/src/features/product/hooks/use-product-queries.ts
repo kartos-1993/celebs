@@ -22,6 +22,7 @@ export const PRODUCT_QUERY_KEYS = {
   all: ['products'] as const,
   lists: () => [...PRODUCT_QUERY_KEYS.all, 'list'] as const,
   list: (params: ProductFilterRequest) => [...PRODUCT_QUERY_KEYS.all, 'list', params] as const,
+  selector: (search?: string) => [...PRODUCT_QUERY_KEYS.all, 'selector', search] as const,
   reviewQueues: () => [...PRODUCT_QUERY_KEYS.all, 'review-queue'] as const,
   reviewQueue: (page: number, limit: number) =>
     [...PRODUCT_QUERY_KEYS.all, 'review-queue', { page, limit }] as const,
@@ -31,6 +32,14 @@ export const PRODUCT_QUERY_KEYS = {
   categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
   categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
 };
+
+export function useProductSelectorQuery(search?: string, enabled = true) {
+  return useQuery({
+    queryKey: PRODUCT_QUERY_KEYS.selector(search),
+    queryFn: () => getProducts({ search: search || undefined, limit: 20 }),
+    enabled,
+  });
+}
 
 export function useProductsQuery(filters: ProductFilterRequest, enabled = true) {
   return useQuery({
