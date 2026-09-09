@@ -24,6 +24,7 @@ Specific domain mandates are strictly isolated into local configuration files:
 
 - **Monorepo Boundaries & Types**: [`.agents/rules/monorepo-boundaries.md`](file:///C:/celebs/celebs/.agents/rules/monorepo-boundaries.md)
 - **Commit & Testing Protocol**: [`.agents/rules/commit-protocol.md`](file:///C:/celebs/celebs/.agents/rules/commit-protocol.md)
+- **Ponytail Anti-Overengineering**: [`.agents/rules/ponytail.md`](file:///C:/celebs/celebs/.agents/rules/ponytail.md)
 - **Frontend / Web-Admin**: [`apps/web-admin/AGENTS.md`](file:///C:/celebs/celebs/apps/web-admin/AGENTS.md)
 - **Backend / API**: [`apps/api/AGENTS.md`](file:///C:/celebs/celebs/apps/api/AGENTS.md)
 - **Mobile / Expo**: [`apps/mobile/AGENTS.md`](file:///C:/celebs/celebs/apps/mobile/AGENTS.md)
