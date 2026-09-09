@@ -249,7 +249,194 @@ graph TD
 
 ---
 
-## 4. How to Audit with Codebase Memory MCP
+## 5. API Response Standardization Matrix (API vs Mobile vs Web-Admin)
+
+### 5.1 The Canonical Monorepo Contract
+
+Defined in [`packages/shared-types/src/types/api.ts`](file:///c:/celebs/celebs/packages/shared-types/src/types/api.ts) and [`apps/api/src/common/utils/response.util.ts`](file:///c:/celebs/celebs/apps/api/src/common/utils/response.util.ts):
+
+```typescript
+export interface IApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  errorCode?: unknown;
+  errors?: unknown[];
+  requestId?: string;
+  timestamp?: string;
+}
+```
+
+### 5.2 Controller Response Implementation Audit (24 Modules)
+
+| Controller                   | File Path                                                                                                                            | Envelope Status  | Primary Anti-Pattern / Defect                                                                                                                                                         |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :--------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CartController`             | [`cart.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/cart/cart.controller.ts)                                        |    **BROKEN**    | Returns `{ message, data }` — **`success: true` is completely missing**. Breaks standard response guards.                                                                             |
+| `MediaController`            | [`media.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/media/media.controller.ts)                                     |    **BROKEN**    | Returns `{ success: true, data }` — **`message` is completely missing** in `getAssets`, `createFolder`, `presign`.                                                                    |
+| `QuickFilterController`      | [`quick-filter.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/quick-filter/quick-filter.controller.ts)                | **INCONSISTENT** | `getQuickFiltersForCategory` returns `{ success: true, data }` without `message`; `delete` returns `{ success: true, message }` without `data: null`.                                 |
+| `ProductController`          | [`product.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/product/product.controller.ts)                               | **NON-STANDARD** | Manually constructs inline object `{ success: true, message, data }`; omits `requestId` and `timestamp`. Pagination returns `{ data: { products, total, page, limit, totalPages } }`. |
+| `CategoryController`         | [`category.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/category/category.controller.ts)                            | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`. Pagination returns `{ data: { categories, total, page, limit, pages } }` (`pages` instead of `totalPages`).     |
+| `BrandController`            | [`brand.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/brand/brand.controller.ts)                                     | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`. Pagination returns `{ data: { items, total, page, limit, pages } }`.                                            |
+| `VendorController`           | [`vendor.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/vendor/vendor.controller.ts)                                  | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `UserController`             | [`user.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/user/user.controller.ts)                                        | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `AuthController`             | [`auth.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/auth/auth.controller.ts)                                        | **NON-STANDARD** | Manually constructs inline object in all 10 auth endpoints; omits `requestId` and `timestamp`.                                                                                        |
+| `SessionController`          | [`session.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/session/session.controller.ts)                               | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `BannerController`           | [`banner.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/banner/banner.controller.ts)                                  | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `CampaignController`         | [`campaign.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/campaign/campaign.controller.ts)                            | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `ComboController`            | [`combo.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/combo/combo.controller.ts)                                     | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `OptionSetController`        | [`option-set.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/option-set/option-set.controller.ts)                      | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `StaffController`            | [`staff.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/staff/staff.controller.ts)                                     | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `AdminController`            | [`admin.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/admin/admin.controller.ts)                                     | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `LogisticsController`        | [`logistics.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/logistics/logistics.controller.ts)                         | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `PlatformSettingsController` | [`platform-settings.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/platform-settings/platform-settings.controller.ts) | **NON-STANDARD** | Manually constructs inline object; omits `requestId` and `timestamp`.                                                                                                                 |
+| `WishlistController`         | [`wishlist.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/wishlist/wishlist.controller.ts)                            |  **CANONICAL**   | Uses `sendSuccess()` and `sendCreated()`. Correctly injects `requestId` & `timestamp`.                                                                                                |
+| `CoreOrderController`        | [`order.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/order/core/order.controller.ts)                                |  **CANONICAL**   | Uses `sendSuccess()`.                                                                                                                                                                 |
+| `OrderPaymentController`     | [`payment.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/order/payment/payment.controller.ts)                         |  **CANONICAL**   | Uses `sendSuccess()`.                                                                                                                                                                 |
+| `OrderFulfillmentController` | [`fulfillment.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/order/fulfillment/fulfillment.controller.ts)             |  **CANONICAL**   | Uses `sendSuccess()`.                                                                                                                                                                 |
+| `OrderAddressController`     | [`address.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/order/address/address.controller.ts)                         |  **CANONICAL**   | Uses `sendSuccess()` and `sendCreated()`.                                                                                                                                             |
+| `CheckoutController`         | [`checkout.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/order/checkout/checkout.controller.ts)                      |  **CANONICAL**   | Uses `sendCreated()`.                                                                                                                                                                 |
+
+---
+
+### 5.3 Client Consumption Discrepancies
+
+#### A. Web-Admin Axios Client Return Contract Inconsistency
+
+In `apps/web-admin/src/features/`:
+
+1. **Raw AxiosResponse returned on mutations** (Leak):
+   - In `vendors/api.ts`: `approveVendor`, `rejectVendor`, `suspendVendor` do `return await axiosClient.patch(...)` &rarr; returns `{ data, status, headers, config }` instead of payload!
+   - In `vendor-onboarding/api.ts`: `updateVendorProfile`, `updateVendorWarehouse`, `updateVendorDocuments`, `submitVendorForReview` all return raw `AxiosResponse`.
+   - In `staff/api.ts`: `createStaff`, `deleteStaff`, `updateStaff` return raw `AxiosResponse`.
+   - In `users/api.ts`: `createUser`, `deleteUser` return raw `AxiosResponse`.
+   - In `auth/api.ts`: `login`, `register`, `verifyEmail` return raw `AxiosResponse`.
+2. **Double/Triple-unwrapped data** (Envelope bypass & fragmentation):
+   - In `use-product-schema.ts:70`: Knowledge graph uncovered direct call to `/product-render` with **triple-nested fallback**: `response.data?.data?.data ?? response.data?.data ?? []`.
+   - In `option-sets/api.ts`: `fetchOptionSets()`, `fetchOptionSetById()`, `createOptionSet()` return `res.data?.data`.
+   - In `platform-settings/api.ts`: `getBanners()`, `updateBanners()` return `response.data?.data`.
+3. **Single-unwrapped envelope** (Standard):
+   - In `product/api.ts`, `orders/api.ts`, `category/api.ts`, `brand/api.ts`, `media-api.ts`: return `response.data` (`IApiResponse<T>`). Callers inspect `.data`.
+
+#### B. Mobile Client Defensive Hacks & Fragile Handlers
+
+In `apps/mobile/src/features/`:
+
+1. **Direct `apiClient` in Hook**:
+   - In `features/sdui/hooks/use-sdui-layout.ts`: Directly calls `apiClient.get('/settings/public')` inside `useQuery` queryFn, violating the mandate that all network calls must be isolated in feature-level `api.ts` modules.
+2. **Triple-fallback array checks**:
+   - In `products/hooks/use-products.ts:58-61`:
+     ```typescript
+     if (Array.isArray(page?.data?.products)) return page.data.products;
+     if (Array.isArray(page?.data)) return page.data;
+     if (Array.isArray(page?.products)) return page.products;
+     ```
+     Root cause: Inconsistent typing between `apiClient.get` and controller pagination envelope.
+3. **Custom Cart response wrapper**:
+   - In `cart/services/cart-service.ts`: Handlers explicitly declare `apiClient.get<{ message: string; data: CartResponse }>` because `CartController` fails to provide `success: true`.
+
+#### C. REST Route Verb Anti-Patterns (Graph-Verified)
+
+Discovered via `MATCH (r:Route)` in `codebase-memory-mcp`:
+
+- `POST /:id/archive` in [`product.controller.ts:240`](file:///c:/celebs/celebs/apps/api/src/modules/product/product.controller.ts#L240) (Action verb in path; should be `DELETE /:id`).
+- `POST /:id/toggle-activation` in [`product.controller.ts`](file:///c:/celebs/celebs/apps/api/src/modules/product/product.controller.ts) (Action verb in path; should be `PATCH /:id`).
+- `/campaigns/all` and `/campaigns/id/:id` in [`marketing/api.ts`](file:///c:/celebs/celebs/apps/web-admin/src/features/marketing/api.ts) (Action verbs and non-REST paths).
+
+---
+
+## 6. Database & Prisma ORM Anti-Patterns
+
+### 6.1 Missing Database Indexes (`apps/api/src/db/schema.prisma`)
+
+| Model               | Missing Index                                                          | Affected Endpoints / Operations                                          | Performance Impact                                                                           |
+| :------------------ | :--------------------------------------------------------------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| **`VendorProfile`** | `@@index([status])`                                                    | `GET /api/v1/admin/vendors` (filtered by status e.g. `PENDING`)          | **Full table scan** on vendor admin management.                                              |
+| **`QuickFilter`**   | `@@index([categoryId])`                                                | `GET /api/v1/quick-filters/category/:categoryId`                         | **Full table scan** on category storefront load.                                             |
+| **`Review`**        | `@@index([productId, status])`                                         | `GET /api/v1/products/:id` (loads approved reviews)                      | **Full index scan + filter**; slow product detail load.                                      |
+| **`CartItem`**      | `@@index([inventoryId])`                                               | Foreign key checks & cart item stock validations                         | **Sequential scan** during checkout and stock updates (only `[cartId, inventoryId]` exists). |
+| **`OrderItem`**     | `@@index([vendorId, itemStatus])` and `@@index([vendorId, createdAt])` | `GET /api/v1/orders/vendor/orders` (vendor dashboard)                    | **Filesort & sequential scans** across vendor order items.                                   |
+| **`Product`**       | Redundant `@@index([slug])`                                            | `slug` already has `@unique` which creates a B-tree index in PostgreSQL. | **Double index write overhead** on every product insert/update.                              |
+
+### 6.2 Sequential Loop Queries & Concurrency Deadlocks
+
+#### 1. Unsorted Row Locking Deadlocks (PostgreSQL 40P01)
+
+- **File**: [`apps/api/src/modules/order/checkout/checkout.repository.ts:84-93`](file:///c:/celebs/celebs/apps/api/src/modules/order/checkout/checkout.repository.ts#L84)
+- **Problem**:
+  ```typescript
+  // Unsorted items iterate and lock rows in user-supplied cart order
+  for (const item of data.items) {
+    await tx.$executeRaw`
+      UPDATE "ProductInventory"
+      SET reserved_quantity = reserved_quantity + ${item.quantity}
+      WHERE id = ${item.inventoryId} ...`;
+  }
+  ```
+  If Customer 1 checks out `[Inventory A, Inventory B]` while Customer 2 checks out `[Inventory B, Inventory A]`, the two interactive transactions take opposing row locks and trigger a **deadlock (`40P01`)**.
+- **Remediation**:
+  Enforce deterministic row locking order before transaction entry:
+  ```typescript
+  const sortedItems = [...data.items].sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
+  ```
+
+#### 2. Sequential Round Trips Inside Interactive Transactions
+
+- **File**: [`apps/api/src/modules/banner/banner.repository.ts:39-44`](file:///c:/celebs/celebs/apps/api/src/modules/banner/banner.repository.ts#L39)
+  Executes `for (const b of bannersData) { await tx.banner.create(...) }` inside `$transaction`. Replaced with atomic `tx.banner.createMany({ data: bannersData })`.
+- **File**: [`apps/api/src/modules/product/repositories/postgres-inventory.repository.ts:176-206`](file:///c:/celebs/celebs/apps/api/src/modules/product/repositories/postgres-inventory.repository.ts#L176)
+  Nested loops execute 30+ sequential `upsertInventoryRecord` queries inside an open transaction.
+- **File**: [`apps/api/src/modules/order/core/order.repository.ts:149-158`](file:///c:/celebs/celebs/apps/api/src/modules/order/core/order.repository.ts#L149)
+  Sequential `update` loop on cancellation instead of sorted locks or batch update.
+
+---
+
+## 7. Supabase PgBouncer (Port 6543) Connection Pooling Standards
+
+1. **Transaction Hold Time**:
+   In PgBouncer **Transaction Mode** (port 6543), a physical server connection is checked out exclusively for the duration of `prisma.$transaction(async (tx) => { ... })`. Any slow query or sequential network hop holds that physical connection. Batching loops into single round trips directly prevents pool exhaustion.
+2. **Interactive Transaction Timeout**:
+   Transactions must specify explicit timeout boundaries:
+   ```typescript
+   prisma.$transaction(async (tx) => { ... }, { maxWait: 5000, timeout: 10000 });
+   ```
+
+---
+
+## 8. BullMQ & Redis Architecture & Performance Standards
+
+### 8.1 Redis TCP Connection Multiplication
+
+- **File**: [`apps/api/src/common/services/queue.service.ts:14-19`](file:///c:/celebs/celebs/apps/api/src/common/services/queue.service.ts#L14)
+- **Problem**: Passing a raw connection object `{ host, port, password }` causes BullMQ to instantiate separate IORedis instances per Queue (4 queues = 4 connections) and 3 per Worker (4 workers = 12 connections), consuming **16+ TCP connections**.
+- **Remediation**: Use a shared IORedis instance factory or dedicated connection instance with `maxRetriesPerRequest: null`.
+
+### 8.2 Worker vs Server Graceful Shutdown
+
+- `worker-main.ts` correctly closes all workers and queues upon `SIGTERM`/`SIGINT`.
+- `main.ts` closes the HTTP server and Prisma pool, but must also close the queues instantiated for job dispatch (`mailQueue`, `assetQueue`).
+
+---
+
+## 9. Clean Architecture Service Layering Leaks
+
+1. **`InventoryService`** ([`apps/api/src/modules/inventory/inventory.service.ts`](file:///c:/celebs/celebs/apps/api/src/modules/inventory/inventory.service.ts)):
+   - **Violation**: Has no repository file. Directly imports `prisma from '@/config/db.prisma'` and runs raw SQL `$queryRaw` and `findUnique`.
+   - **Remediation**: Extract all database operations into `inventory.repository.ts`.
+2. **`ProductService`, `ProductQueryService`, `ProductLifecycleService`**:
+   - **Violation**: No `ProductRepository` exists (`postgres-inventory.repository.ts` handles inventory only). Direct queries (`prisma.product.findMany`, `count`, `update`, `$transaction`) run inside the service classes.
+   - **Remediation**: Create `postgres-product.repository.ts` and encapsulate all product CRUD and lifecycle transactions.
+3. **`StoreLifecycleService`** ([`apps/api/src/modules/store/store-lifecycle.service.ts`](file:///c:/celebs/celebs/apps/api/src/modules/store/store-lifecycle.service.ts)):
+   - **Violation**: Directly calls `prisma.vendorProfile.findUnique` and `updateMany`.
+   - **Remediation**: Move vendor profile status queries and CAS updates to `vendor.repository.ts`.
+4. **`WishlistService`** ([`apps/api/src/modules/wishlist/wishlist.service.ts:87`](file:///c:/celebs/celebs/apps/api/src/modules/wishlist/wishlist.service.ts#L87)):
+   - **Violation**: Directly calls `prisma.product.findUnique({ where: { id: productId } })`.
+   - **Remediation**: Route product existence check through `wishlist.repository.ts` or `product.repository.ts`.
+5. **Dangling Dead Prisma Imports**:
+   - `auth.service.ts:34`, `cart.service.ts:10`, and `schema-composer.ts:3` import `prisma from '@/config/db.prisma'` but never invoke it (orphaned imports from previous refactorings).
+
+---
+
+## 10. How to Audit with Codebase Memory MCP
 
 To verify compliance in future sessions, run these Cypher queries via `query_graph`:
 

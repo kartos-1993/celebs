@@ -2,7 +2,7 @@
 
 ## 0. MANDATORY PRE-FLIGHT COMPLIANCE CHECK
 
-Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 6 gates:
+Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 11 gates:
 
 1. **Domain Scoping**: Are you respecting the domain's scoped rules (`apps/web-admin/AGENTS.md`, `apps/api/AGENTS.md`, `apps/mobile/AGENTS.md`)?
 2. **File Budget**: Is any `.tsx` file exceeding 150 lines or Cyclomatic Complexity > 8? If so, STOP and decompose into FSD slices.
@@ -10,6 +10,11 @@ Before outputting ANY implementation plan, refactoring proposal, or code modific
 4. **Component Purity**: Are all data transformations and fallback assignments extracted to standalone `.ts` files to preserve HMR?
 5. **Incremental Phasing**: Are you delivering this in discrete, verified steps with localized test runs and git commits?
 6. **Strict Null Contracts & Existence Guarantees**: Never suppress compiler errors with lax parameter typing (`| null | undefined`) in leaf functions or services. Fix contracts at the source: use Prisma's `findUniqueOrThrow()` inside transactions or validated operations so repository return types are strictly non-nullable.
+7. **Universal API Response Standardization**: All Express controllers MUST return the canonical `IApiResponse<T>` envelope via `sendSuccess`, `sendCreated`, or `sendPaginated` from `response.util.ts`. Zero bare `res.json({ message, data })` without `success: true`. Zero omission of `message`, `requestId`, or `timestamp`.
+8. **Database Concurrency & Deadlock Prevention**: In interactive transactions (`$transaction`), row updates across collections (e.g. inventory reservation/decrement) MUST sort items deterministically by unique key (`inventoryId`) before locking rows to eliminate PostgreSQL 40P01 deadlocks. ZERO sequential loops inside `$transaction` (use `createMany`, batch updates, or single CTEs) to minimize port 6543 connection pool hold times.
+9. **Repository Encapsulation & Dead Import Cleanliness**: Every entity model accessed by services MUST have a dedicated Repository (e.g., `ProductRepository`, `InventoryRepository`, `VendorRepository`). Zero direct `prisma.*` or `$queryRaw` calls inside domain services. Zero orphaned Prisma imports (`import prisma from '@/config/db.prisma'`).
+10. **Zero Raw Network Calls in Hooks & Clean Client Unwrapping**: Web-Admin and Mobile API client functions MUST return `response.data` (`IApiResponse<T>`) or unwrap uniformly. No mutating functions returning raw `AxiosResponse`. Never call `apiClient`/`axiosClient` directly inside UI components or React Query hooks (must reside in dedicated feature `api.ts` clients).
+11. **REST Verbs & YAGNI Pre-Production Simplicity**: In active development, reject legacy backward-compatibility shims, action-verb URLs (`POST /:id/archive`, `POST /:id/toggle-activation`), and triple-nested fallback cascades (`data?.data?.data`). Build cleanly to the standard from the start; delete dead legacy adapters.
 
 ---
 

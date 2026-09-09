@@ -68,3 +68,20 @@
 - List headers: every list page uses `PageHeader` (title + description + `actions`) followed by the shared `FilterBar` (`@/components/filter-bar`) — `FilterSearch` left, `SegmentedTabs`/filters right, stacks on mobile. Never hand-roll a filter row or flip the order.
 - Row actions: every desktop table with 2+ row actions uses the shared `RowActionsMenu` kebab (`@/components/row-actions-menu`) with labeled items. Single-action rows keep their inline button; mobile cards keep full-width buttons.
 - Exemptions (documented, do not "fix"): storefront preview canvases (`widget-preview-boundary`, product preview sections) follow shop styling, not this scale; fixed-size glyph contexts (avatar initials, swatch placeholders, thumbnail overlays) may go below the floor.
+
+## 8. API Client Uniformity & Return Contracts
+
+- Uniform Return Shape: Every API client function in `src/features/{domain}/api.ts` MUST return `response.data` (which is `IApiResponse<T>`), NEVER the raw `AxiosResponse`.
+- Ban Raw Axios Responses in Mutations: Mutating API functions (e.g. `create...`, `update...`, `delete...`) must return `response.data`, never the full `AxiosResponse` object.
+- Ban Fallback Cascades (The Ponytail Rule): Triple-nested fallback chaining like `response.data?.data?.data ?? response.data?.data ?? []` is strictly forbidden. If an endpoint returns an unexpected shape, fix the backend controller at the source. Never write defensive client shims to accommodate malformed API envelopes.
+
+## 9. Zero Network Calls in Hooks & Direct Invocations
+
+- Feature API Client Encapsulation: All network requests MUST reside in `src/features/{domain}/api.ts`.
+- Zero Direct Axios in React Query: Never call `axiosClient.get(...)` directly inside `useQuery({ queryFn: ... })` (e.g., as seen in `use-product-schema.ts`). Queries must invoke named client functions from `api.ts`.
+- Centralized Query Keys: All query keys must come from the domain's `QUERY_KEYS` factory object.
+
+## 10. Pre-Production YAGNI & Zero Speculative Backward-Compatibility
+
+- In active development, reject backward-compatibility translation layers, multi-version adapters, and legacy response shims.
+- Always fix contracts at the source: update the Express controller to return the canonical `IApiResponse<T>`, update the client API method to expect it, and delete any legacy fallback cascading code.
