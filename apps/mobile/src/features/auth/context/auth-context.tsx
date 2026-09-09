@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+import { loginWithEmailApi, loginWithGoogleApi, logoutApi, registerApi } from '../api/auth-api';
 import type { AuthContextType, UserProfile } from '../types';
 import { clearAuthSession, restoreAuthSession, saveAuthSession } from '../utils/auth-storage';
 
-import { apiClient, setUnauthorizedHandler } from '@/api/client';
+import { setUnauthorizedHandler } from '@/api/client';
 import { useCartStore } from '@/features/cart/store/use-cart-store';
 
 export type { UserProfile };
@@ -28,11 +29,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     async function restore() {
       try {
-        const stored = await restoreAuthSession();
-        if (stored.token && stored.user) {
-          setToken(stored.token);
-          setUser(stored.user);
+        const session = await restoreAuthSession();
+        if (session) {
+          setToken(session.token);
+          setUser(session.user);
         }
+      } catch {
+        await clearAuthSession();
       } finally {
         setIsLoading(false);
       }
@@ -40,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     restore();
   }, []);
 
+  // Sync state & persist to SecureStore
   const handleSaveSession = async (
     newToken: string,
     newUser: UserProfile,
@@ -54,8 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async (data: { idToken: string }) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post('/auth/google', data, { skipAuth: true });
-      const { user: userProfile, accessToken, refreshToken } = response.data.data;
+      const { user: userProfile, accessToken, refreshToken } = await loginWithGoogleApi(data);
       await handleSaveSession(accessToken, userProfile, refreshToken);
       await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
@@ -67,8 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post('/auth/login', { email, password }, { skipAuth: true });
-      const { user: userProfile, accessToken, refreshToken } = response.data.data;
+      const {
+        user: userProfile,
+        accessToken,
+        refreshToken,
+      } = await loginWithEmailApi(email, password);
       await handleSaveSession(accessToken, userProfile, refreshToken);
       await useCartStore.getState().mergeGuestCartOnLogin();
     } finally {
@@ -85,12 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post(
-        '/auth/register',
-        { name, email, password, confirmPassword: confirmPassword ?? password },
-        { skipAuth: true },
-      );
-      return response.data;
+      await registerApi({ name, email, password, confirmPassword });
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/logout').catch(() => {});
+      await logoutApi();
       await clearAuthSession();
       setToken(null);
       setUser(null);
