@@ -18,3 +18,8 @@
 - Function return types, test helper objects, and mocked boundaries must be strongly typed.
 - Avoid unsafe double-cast escape hatches (`as unknown as Record<string, unknown>`).
 - Use structured optional fields or index signatures with runtime type guards (e.g. `isRecord(val)`, `Array.isArray(val)`) and Zod schema parsing.
+
+## 4. Strict Existence Contracts & Zero Lax Parameter Typing
+
+- Never dilute function signatures with `| null | undefined` ("lax parameter typing") to paper over upstream compilation errors. Functions must require valid domain entities.
+- Existence validation belongs at the retrieval boundary (repositories and service entrypoints). If an entity is guaranteed to exist by prior validation or inside an interactive transaction, use Prisma's `findUniqueOrThrow()` to produce strictly non-null types.

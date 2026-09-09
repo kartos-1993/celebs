@@ -26,3 +26,10 @@
 - Local Database Only: Integration/unit tests MUST run strictly against local PostgreSQL (`postgresql://postgres:celebs@localhost:5432/celebs_test`).
 - Password Hashing for Auth Fixtures: NEVER insert plain-text passwords into test database records. Always hash using `await hashValue(...)`.
 - Stubs for Cloud Storage: Mock S3/R2 presigned URL generation; do not require live cloud storage during automated tests.
+
+## 5. Strict Existence Contracts & Repository Non-Nullability
+
+- Zero Lax Parameter Typing: Never add `| null | undefined` to downstream services, utilities, or mailer signatures to patch compile errors. Functions must enforce concrete domain contracts.
+- Repository Mutation Returns: State-modifying repository methods (`apply...`, `update...`, `create...`) MUST return non-null domain entities.
+- Transactional Reads of Verified Entities: When fetching an entity that was already confirmed to exist within the transaction or caller boundary, use `tx.<model>.findUniqueOrThrow()` instead of `tx.<model>.findUnique()`. Never let Prisma's `findUnique()` leak unnecessary `null` unions into domain services.
+- User ID Lookups: Arbitrary lookups by external user ID may return `T | null`; the domain Service MUST perform an explicit 404 existence guard before delegating to downstream operations.

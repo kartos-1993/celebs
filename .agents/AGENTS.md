@@ -2,13 +2,14 @@
 
 ## 0. MANDATORY PRE-FLIGHT COMPLIANCE CHECK
 
-Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 5 gates:
+Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 6 gates:
 
 1. **Domain Scoping**: Are you respecting the domain's scoped rules (`apps/web-admin/AGENTS.md`, `apps/api/AGENTS.md`, `apps/mobile/AGENTS.md`)?
 2. **File Budget**: Is any `.tsx` file exceeding 150 lines or Cyclomatic Complexity > 8? If so, STOP and decompose into FSD slices.
 3. **Server State**: Is any mutation declared inline inside a UI component? (Forbidden; must use dedicated hook in `hooks/` with a Query Key factory).
 4. **Component Purity**: Are all data transformations and fallback assignments extracted to standalone `.ts` files to preserve HMR?
 5. **Incremental Phasing**: Are you delivering this in discrete, verified steps with localized test runs and git commits?
+6. **Strict Null Contracts & Existence Guarantees**: Never suppress compiler errors with lax parameter typing (`| null | undefined`) in leaf functions or services. Fix contracts at the source: use Prisma's `findUniqueOrThrow()` inside transactions or validated operations so repository return types are strictly non-nullable.
 
 ---
 
