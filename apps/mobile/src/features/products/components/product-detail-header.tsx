@@ -55,7 +55,7 @@ export function ProductDetailHeader({
 
         <View style={styles.headerRightActions}>
           <Animated.View style={animatedTopCartStyle}>
-            <View ref={topCartBtnRef} onLayout={onLayoutCartIcon}>
+            <View ref={topCartBtnRef} collapsable={false} onLayout={onLayoutCartIcon}>
               <TouchableOpacity
                 style={styles.headerIconButton}
                 onPress={onOpenCart}
@@ -66,7 +66,14 @@ export function ProductDetailHeader({
                 <ShoppingBag size={20} color={Palette.gray900} />
                 {itemCount > 0 && (
                   <View style={styles.cartBadge}>
-                    <ThemedText style={styles.cartBadgeText}>{itemCount}</ThemedText>
+                    <ThemedText
+                      allowFontScaling={false}
+                      maxFontSizeMultiplier={1}
+                      numberOfLines={1}
+                      style={styles.cartBadgeText}
+                    >
+                      {itemCount > 99 ? '99+' : itemCount}
+                    </ThemedText>
                   </View>
                 )}
               </TouchableOpacity>

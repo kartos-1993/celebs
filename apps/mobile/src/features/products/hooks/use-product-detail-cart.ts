@@ -38,7 +38,10 @@ export function useProductDetailCart({
   const { addToCart } = useCart();
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
   const topCartBtnRef = useRef<View>(null);
-  const topCartCoordsRef = useRef<{ x: number; y: number } | null>(null);
+  const topCartCoordsRef = useRef<{ x: number; y: number }>({
+    x: windowWidth - 72,
+    y: (insets.top || 30) + 24,
+  });
   const topCartScale = useSharedValue(1);
   const [isAdding, setIsAdding] = useState(false);
 
