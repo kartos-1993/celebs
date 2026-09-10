@@ -15,15 +15,14 @@ interface OrderCardBadgeProps {
 interface BadgeTheme {
   bg: string;
   text: string;
-  border: string;
 }
 
 const TONE_THEMES: Record<string, BadgeTheme> = {
-  warning: { bg: '#FFF7ED', text: '#C2410C', border: '#FFEDD5' },
-  active: { bg: '#EFF6FF', text: '#1D4ED8', border: '#DBEAFE' },
-  success: { bg: '#F0FDF4', text: '#15803D', border: '#DCFCE7' },
-  danger: { bg: '#FEF2F2', text: '#B91C1C', border: '#FEE2E2' },
-  neutral: { bg: '#F8FAFC', text: '#64748B', border: '#E2E8F0' },
+  warning: { bg: '#FFF7ED', text: '#C2410C' },
+  active: { bg: '#EFF6FF', text: '#1D4ED8' },
+  success: { bg: '#F0FDF4', text: '#15803D' },
+  danger: { bg: '#FEF2F2', text: '#B91C1C' },
+  neutral: { bg: '#F8FAFC', text: '#64748B' },
 };
 
 export function OrderCardBadge({ status, paymentStatus }: OrderCardBadgeProps) {
@@ -34,25 +33,30 @@ export function OrderCardBadge({ status, paymentStatus }: OrderCardBadgeProps) {
   const label = isUnpaid ? 'To Pay' : meta.label;
 
   return (
-    <View style={[styles.badge, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-      <ThemedText style={[styles.badgeText, { color: theme.text }]}>{label}</ThemedText>
+    <View style={[styles.badge, { backgroundColor: theme.bg }]}>
+      <ThemedText
+        allowFontScaling={false}
+        maxFontSizeMultiplier={1}
+        style={[styles.badgeText, { color: theme.text }]}
+      >
+        {label}
+      </ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: Radius.xs,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: FontWeight.bold,
-    lineHeight: 13,
-    letterSpacing: 0.1,
+    lineHeight: 14,
+    letterSpacing: 0.2,
   },
 });

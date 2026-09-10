@@ -17,7 +17,8 @@ interface OrderCardActionsProps {
 export function OrderCardActions({ order, onPayNow, onCancel }: OrderCardActionsProps) {
   const router = useRouter();
   const isUnpaid = order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT';
-  const trackable = isActiveOrder(order.status) || order.status === 'DELIVERED';
+  const isDelivered = order.status === 'DELIVERED';
+  const trackable = isActiveOrder(order.status);
   const canCancel =
     order.status === 'PENDING_PAYMENT' || order.status === 'CONFIRMED' || order.status === 'PACKED';
 
@@ -36,18 +37,13 @@ export function OrderCardActions({ order, onPayNow, onCancel }: OrderCardActions
   return (
     <View style={styles.container}>
       {canCancel && onCancel && (
-        <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPress} activeOpacity={0.7}>
-          <ThemedText style={styles.cancelBtnText}>Cancel</ThemedText>
-        </TouchableOpacity>
-      )}
-
-      <TouchableOpacity style={styles.outlineBtn} onPress={goToDetail} activeOpacity={0.7}>
-        <ThemedText style={styles.outlineBtnText}>Details</ThemedText>
-      </TouchableOpacity>
-
-      {trackable && !isUnpaid && (
-        <TouchableOpacity style={styles.outlineBtn} onPress={goToDetail} activeOpacity={0.7}>
-          <ThemedText style={styles.outlineBtnText}>Track</ThemedText>
+        <TouchableOpacity
+          style={styles.cancelTextBtn}
+          onPress={handleCancelPress}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ThemedText style={styles.cancelText}>Cancel</ThemedText>
         </TouchableOpacity>
       )}
 
@@ -55,9 +51,21 @@ export function OrderCardActions({ order, onPayNow, onCancel }: OrderCardActions
         <TouchableOpacity
           style={styles.primaryBtn}
           onPress={() => onPayNow(order)}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
           <ThemedText style={styles.primaryBtnText}>Pay Now</ThemedText>
+        </TouchableOpacity>
+      )}
+
+      {trackable && !isUnpaid && (
+        <TouchableOpacity style={styles.outlineBtn} onPress={goToDetail} activeOpacity={0.8}>
+          <ThemedText style={styles.outlineBtnText}>Track</ThemedText>
+        </TouchableOpacity>
+      )}
+
+      {isDelivered && (
+        <TouchableOpacity style={styles.outlineBtn} onPress={goToDetail} activeOpacity={0.8}>
+          <ThemedText style={styles.outlineBtnText}>Review</ThemedText>
         </TouchableOpacity>
       )}
     </View>
@@ -68,26 +76,20 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
-  cancelBtn: {
-    height: 24,
-    paddingHorizontal: 8,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEF2F2',
+  cancelTextBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
-  cancelBtnText: {
-    fontSize: 11,
+  cancelText: {
+    fontSize: 12,
     fontWeight: FontWeight.semibold,
     color: Palette.danger,
   },
   outlineBtn: {
-    height: 24,
-    paddingHorizontal: 8,
+    height: 28,
+    paddingHorizontal: 12,
     borderRadius: Radius.pill,
     borderWidth: 1,
     borderColor: Palette.gray300,
@@ -96,20 +98,25 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.white,
   },
   outlineBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: FontWeight.semibold,
     color: Palette.gray800,
   },
   primaryBtn: {
-    height: 24,
-    paddingHorizontal: 10,
+    height: 28,
+    paddingHorizontal: 14,
     borderRadius: Radius.pill,
     backgroundColor: Palette.gray900,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 1,
   },
   primaryBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: FontWeight.bold,
     color: Palette.white,
   },

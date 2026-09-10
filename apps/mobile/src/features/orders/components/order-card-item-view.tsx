@@ -1,12 +1,14 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { ShoppingBag } from 'lucide-react-native';
 
 import type { OrderItemView } from '../utils/order-status';
 
+import { styles } from './order-card-item-view.styles';
+
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
-import { FontSize, FontWeight, Palette, Radius } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 
 interface OrderCardItemViewProps {
   items: OrderItemView[];
@@ -86,84 +88,3 @@ export function OrderCardItemView({ items }: OrderCardItemViewProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  singleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 4,
-  },
-  thumbBox: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.xs,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  thumb: {
-    width: '100%',
-    height: '100%',
-  },
-  singleInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  singleTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-  },
-  singleTitle: {
-    flex: 1,
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.semibold,
-    color: Palette.gray900,
-  },
-  singlePrice: {
-    fontSize: FontSize.caption,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-  },
-  singleVariant: {
-    fontSize: 11,
-    color: Palette.gray500,
-  },
-  multiRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginVertical: 4,
-  },
-  multiThumbBox: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.xs,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  moreBox: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.xs,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moreText: {
-    fontSize: 11,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray600,
-  },
-});
