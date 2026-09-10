@@ -126,12 +126,11 @@ app.use(
       },
     },
     customLogLevel(req, res, err) {
+      if (process.env.NODE_ENV === 'test') return 'silent';
       if (res.statusCode >= 500 || err) return 'error';
       if (res.statusCode >= 400) return 'warn';
       return 'info';
     },
-    // Silence request logging in test environment to keep test runs clean
-    useLevel: process.env.NODE_ENV === 'test' ? 'silent' : 'info',
     // Custom serializers to prevent logging massive objects and sensitive headers
     serializers: {
       req(req) {
