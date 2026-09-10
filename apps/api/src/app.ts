@@ -164,8 +164,21 @@ app.use(
     },
   }),
 );
-app.use(helmet());
-app.use(compression());
+app.use(
+  helmet({
+    contentSecurityPolicy: config.NODE_ENV === 'production' ? undefined : false,
+  }),
+);
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (req.headers.accept?.includes('text/event-stream') || req.path?.includes('/stream')) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }),
+);
 app.use(globalRateLimiter);
 
 // Session management setup

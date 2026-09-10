@@ -502,13 +502,21 @@ export const devLogsController = {
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('Content-Encoding', 'none');
     res.flushHeaders();
 
+    const sendEvent = (data: unknown) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+      if (typeof (res as unknown as { flush?: () => void }).flush === 'function') {
+        (res as unknown as { flush: () => void }).flush();
+      }
+    };
+
     // Send existing ring buffer history on initial client connection
-    res.write(`data: ${JSON.stringify({ type: 'init', logs: logRingBuffer })}\n\n`);
+    sendEvent({ type: 'init', logs: logRingBuffer });
 
     const onLog = (entry: LogEntry) => {
-      res.write(`data: ${JSON.stringify({ type: 'log', log: entry })}\n\n`);
+      sendEvent({ type: 'log', log: entry });
     };
 
     logEmitter.on('log', onLog);
@@ -516,6 +524,9 @@ export const devLogsController = {
     // Keep connection alive across reverse proxies (Render / Cloudflare)
     const keepAlive = setInterval(() => {
       res.write(': ping\n\n');
+      if (typeof (res as unknown as { flush?: () => void }).flush === 'function') {
+        (res as unknown as { flush: () => void }).flush();
+      }
     }, 15000);
 
     req.on('close', () => {
