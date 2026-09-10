@@ -9,9 +9,13 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 
-import { ErrorCode, logger, NotFoundException } from '@celebs/shared-utils';
+import { asyncHandler, ErrorCode, logger, NotFoundException } from '@celebs/shared-utils';
 
+import { actorContext } from './common/context/actor-context.middleware';
+import { requirePlatformActor } from './common/guards/store.guards';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
+import { getBullBoardRouter } from './common/services/bull-board.service';
+import { authenticateJWT } from './common/strategies/jwt.strategy';
 import { config } from './config/app.config';
 import { UpstashRedisStore } from './config/session-store';
 import { errorHandler } from './middlewares/error-handler';
@@ -121,7 +125,10 @@ app.use(
       ignore: (req) => {
         const url = req.url || '';
         return (
-          url.includes('/health') || url.includes('/favicon.ico') || url.includes('/docs.json')
+          url.includes('/health') ||
+          url.includes('/favicon.ico') ||
+          url.includes('/docs.json') ||
+          url.includes('/admin/queues/static')
         );
       },
     },
@@ -203,6 +210,19 @@ app.use(`${config.BASE_PATH}/brands`, brandRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
 app.use(`${config.BASE_PATH}/vendors`, vendorRoutes);
 app.use(`${config.BASE_PATH}/vendor`, vendorRoutes); // Backward-compatibility alias
+const queuesPath = `${config.BASE_PATH}/admin/queues`;
+if (config.NODE_ENV === 'development') {
+  app.use(queuesPath, getBullBoardRouter());
+} else {
+  app.use(
+    queuesPath,
+    authenticateJWT,
+    asyncHandler(actorContext),
+    requirePlatformActor,
+    getBullBoardRouter(),
+  );
+}
+
 app.use(`${config.BASE_PATH}/admin`, adminRoutes);
 app.use(`${config.BASE_PATH}/users`, userRoutes);
 app.use(`${config.BASE_PATH}/staff`, staffRoutes);
