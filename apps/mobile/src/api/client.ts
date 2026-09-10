@@ -146,6 +146,8 @@ const GUEST_CAPABLE_PREFIXES = [
   '/banners',
   '/combos',
   '/settings',
+  '/storefront',
+  '/quick-filters',
 ];
 
 function isGuestCapable(url?: string): boolean {

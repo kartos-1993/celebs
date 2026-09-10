@@ -117,6 +117,19 @@ app.use(
       return id;
     },
     logger,
+    autoLogging: {
+      ignore: (req) => {
+        const url = req.url || '';
+        return (
+          url.includes('/health') || url.includes('/favicon.ico') || url.includes('/docs.json')
+        );
+      },
+    },
+    customLogLevel(req, res, err) {
+      if (res.statusCode >= 500 || err) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
     // Silence request logging in test environment to keep test runs clean
     useLevel: process.env.NODE_ENV === 'test' ? 'silent' : 'info',
     // Custom serializers to prevent logging massive objects and sensitive headers
@@ -126,7 +139,6 @@ app.use(
           id: req.id,
           method: req.method,
           url: req.url,
-          query: req.query,
         };
       },
       res(res) {
@@ -137,10 +149,10 @@ app.use(
     },
     // Concise request completion messages
     customSuccessMessage(req, res, responseTime) {
-      return `${req.method} ${req.url} completed with status ${res.statusCode} in ${responseTime}ms`;
+      return `${req.method} ${req.url} -> ${res.statusCode} (${responseTime}ms)`;
     },
     customErrorMessage(req, res, error) {
-      return `${req.method} ${req.url} failed with status ${res.statusCode}: ${error.message}`;
+      return `${req.method} ${req.url} -> ${res.statusCode}: ${error.message}`;
     },
   }),
 );

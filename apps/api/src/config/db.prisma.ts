@@ -22,7 +22,8 @@ declare global {
 }
 
 const isDev = process.env.NODE_ENV === 'development';
-const slowQueryThresholdMs = Number(process.env.SLOW_QUERY_THRESHOLD_MS ?? '500');
+const slowQueryThresholdMs = Number(process.env.SLOW_QUERY_THRESHOLD_MS ?? (isDev ? '200' : '500'));
+const debugQueries = process.env.DEBUG_QUERIES === 'true';
 
 // Pool configurations optimized for Supabase PgBouncer (Port 6543)
 const pool =
@@ -54,25 +55,23 @@ if (isDev) {
   globalThis.__pgPool = pool;
 }
 
-if (!isDev) {
-  prisma.$on('query', (event) => {
-    if (event.duration >= slowQueryThresholdMs) {
-      logger.warn(
-        { durationMs: event.duration, query: event.query },
-        'Slow database query detected',
-      );
-    }
-  });
-  prisma.$on('warn', (event) => {
-    logger.warn({ message: event.message }, 'Prisma warning');
-  });
-  prisma.$on('error', (event) => {
-    logger.error({ message: event.message }, 'Prisma error');
-  });
-} else {
-  prisma.$on('query', (event) => {
+prisma.$on('query', (event) => {
+  if (event.duration >= slowQueryThresholdMs) {
+    logger.warn(
+      { durationMs: event.duration, query: event.query },
+      `Slow database query detected (${event.duration}ms)`,
+    );
+  } else if (debugQueries) {
     logger.debug({ durationMs: event.duration, query: event.query }, 'db query');
-  });
-}
+  }
+});
+
+prisma.$on('warn', (event) => {
+  logger.warn({ message: event.message }, 'Prisma warning');
+});
+
+prisma.$on('error', (event) => {
+  logger.error({ message: event.message }, 'Prisma error');
+});
 
 export default prisma;

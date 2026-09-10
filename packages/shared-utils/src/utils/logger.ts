@@ -1,7 +1,7 @@
 import pino from 'pino';
 
 const nodeEnv = process.env.NODE_ENV;
-const logLevel = process.env.LOG_LEVEL || 'debug';
+const logLevel = process.env.LOG_LEVEL || (nodeEnv === 'test' ? 'silent' : 'info');
 
 let logger: pino.Logger;
 
@@ -21,8 +21,9 @@ if (canUsePretty) {
       target: 'pino-pretty',
       options: {
         colorize: true,
-        translateTime: 'SYS:standard',
+        translateTime: 'HH:MM:ss',
         ignore: 'pid,hostname',
+        singleLine: true,
       },
     },
     level: logLevel,
