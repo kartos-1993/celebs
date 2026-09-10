@@ -39,7 +39,14 @@ export function OrderStatusTabs({ activeTab, onSelectTab, unpaidCount = 0 }: Ord
                 </ThemedText>
                 {showBadge && (
                   <View style={styles.badge}>
-                    <ThemedText style={styles.badgeText}>{unpaidCount}</ThemedText>
+                    <ThemedText
+                      allowFontScaling={false}
+                      maxFontSizeMultiplier={1}
+                      numberOfLines={1}
+                      style={styles.badgeText}
+                    >
+                      {unpaidCount > 99 ? '99+' : unpaidCount}
+                    </ThemedText>
                   </View>
                 )}
               </View>
@@ -106,5 +113,8 @@ const styles = StyleSheet.create({
     color: Palette.white,
     fontSize: 10,
     fontWeight: FontWeight.bold,
+    lineHeight: 12,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
 });

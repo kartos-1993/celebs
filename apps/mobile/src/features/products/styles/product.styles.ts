@@ -89,6 +89,9 @@ export const styles = StyleSheet.create({
     color: Palette.white,
     fontSize: FontSize.micro,
     fontWeight: FontWeight.extrabold,
+    lineHeight: 12,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
 
   /* ---------- Scroll Sections ---------- */
