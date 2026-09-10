@@ -30,6 +30,7 @@ import campaignRoutes from './modules/campaign/campaign.routes';
 import cartRoutes from './modules/cart/cart.routes';
 import categoryRoutes from './modules/category/category.routes';
 import comboRoutes from './modules/combo/combo.routes';
+import devLogsRouter from './modules/dev/dev-logs.routes';
 import logisticsRoutes from './modules/logistics/logistics.routes';
 import mediaRoutes from './modules/media/media.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
@@ -128,7 +129,8 @@ app.use(
           url.includes('/health') ||
           url.includes('/favicon.ico') ||
           url.includes('/docs.json') ||
-          url.includes('/admin/queues/static')
+          url.includes('/admin/queues/static') ||
+          url.includes('/dev/logs')
         );
       },
     },
@@ -243,6 +245,7 @@ if (config.NODE_ENV !== 'production') {
     res.send(generateOpenAPIDocument());
   });
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
+  app.use(`${config.BASE_PATH}/dev/logs`, devLogsRouter);
 }
 
 import healthRoutes from './modules/health/health.routes';
