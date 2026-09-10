@@ -1,3 +1,5 @@
+import { PaymentMethod } from '@prisma/client';
+
 import { CheckoutInput, COD_MAX_LIMIT } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
@@ -289,6 +291,52 @@ export class CheckoutService {
     return responseBody;
   }
 
+  private async verifyOrderGatewayPayment(order: {
+    id: string;
+    totalAmount: Prisma.Decimal;
+    paymentMethod: PaymentMethod;
+    payments?: Array<{ id: string; transactionId: string | null; rawResponse: unknown }>;
+  }): Promise<boolean> {
+    try {
+      if (order.paymentMethod === 'KHALTI') {
+        const latestPayment = order.payments?.[0];
+        const pidx = latestPayment?.transactionId;
+        if (!pidx) return false;
+
+        const adapter = this.paymentSvc.getPaymentGateway('KHALTI');
+        const verification = await adapter.verifyPayment(pidx);
+        if (verification.success) {
+          await this.paymentSvc.updatePaymentStatus(
+            order.id,
+            { status: 'COMPLETED', reference: `Khalti Reconciled ${verification.transactionId}` },
+            'AUTO-REMEDIATION-VERIFY',
+          );
+          return true;
+        }
+      } else if (order.paymentMethod === 'ESEWA') {
+        const adapter = this.paymentSvc.getPaymentGateway('ESEWA');
+        const verification = await adapter.verifyPayment(order.id, {
+          totalAmount: Number(order.totalAmount),
+        });
+        if (verification.status === 'COMPLETED') {
+          await this.paymentSvc.updatePaymentStatus(
+            order.id,
+            { status: 'COMPLETED', reference: `eSewa Reconciled ${verification.transactionId}` },
+            'AUTO-REMEDIATION-VERIFY',
+          );
+          return true;
+        }
+      }
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.warn(
+        { orderId: order.id, gateway: order.paymentMethod, error: errMsg },
+        'Pre-cancellation gateway verification failed or inconclusive; proceeding to cancel',
+      );
+    }
+    return false;
+  }
+
   async releaseStaleReservations(): Promise<{ cancelledOrders: number }> {
     const ttlHours = Number(process.env.ORDER_RESERVATION_TTL_HOURS ?? 2);
     const cutoff = new Date(Date.now() - ttlHours * 3600_000);
@@ -298,6 +346,17 @@ export class CheckoutService {
 
     for (const order of staleOrders) {
       try {
+        // 1. Verify with payment gateway first — never cancel an order the customer actually paid for
+        const isVerifiedPaid = await this.verifyOrderGatewayPayment(order);
+        if (isVerifiedPaid) {
+          logger.info(
+            { orderId: order.id, gateway: order.paymentMethod },
+            'Stale order verified as PAID at gateway; fulfilled and preserved inventory',
+          );
+          continue;
+        }
+
+        // 2. Safe to cancel unpaid order and release reserved stock
         await this.checkoutRepo.releaseStaleReservation({
           id: order.id,
           items: order.items.map((item) => ({

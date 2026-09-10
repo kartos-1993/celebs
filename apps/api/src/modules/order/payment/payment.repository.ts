@@ -33,6 +33,9 @@ export class PaymentRepository {
     latestPayment?: { id: string; rawResponse: unknown } | null;
   }) {
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 1. Acquire pessimistic row lock to serialize concurrent webhook callbacks and user redirects
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${data.orderId} FOR UPDATE`;
+
       const currentOrder = await tx.order.findUnique({
         where: { id: data.orderId },
         select: { id: true, paymentStatus: true, status: true },
