@@ -1,3 +1,4 @@
+import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -16,10 +17,18 @@ import { clientPersister, queryClient } from '@/lib/react-query/query-client';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [isCacheRestored, setIsCacheRestored] = useState(false);
+
+  const handleRestoreComplete = useCallback(() => {
+    setIsCacheRestored(true);
+  }, []);
+
   return (
     <SafeAreaProvider>
       <PersistQueryClientProvider
         client={queryClient}
+        onSuccess={handleRestoreComplete}
+        onError={handleRestoreComplete}
         persistOptions={{
           persister: clientPersister,
           maxAge: 1000 * 60 * 60 * 4,
@@ -49,7 +58,7 @@ export default function RootLayout() {
               <FlyToCartProvider>
                 <CartSheetProvider>
                   <View style={{ flex: 1 }}>
-                    <AnimatedSplashOverlay />
+                    <AnimatedSplashOverlay isReady={isCacheRestored} />
                     <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                       <Stack.Screen

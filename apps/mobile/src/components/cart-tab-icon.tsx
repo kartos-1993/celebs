@@ -21,13 +21,11 @@ export function CartTabIcon({ color, focused }: { color: ColorValue; focused: bo
 
   // Measure bottom tab cart icon and sync as fly target
   const measureCartIcon = React.useCallback(() => {
-    setTimeout(() => {
-      iconRef.current?.measureInWindow((x, y, width, height) => {
-        if (typeof x === 'number' && typeof y === 'number' && width > 0 && height > 0) {
-          setCartIconCoords({ x: x + width / 2, y: y + height / 2 });
-        }
-      });
-    }, 100);
+    iconRef.current?.measureInWindow((x, y, width, height) => {
+      if (typeof x === 'number' && typeof y === 'number' && width > 0 && height > 0) {
+        setCartIconCoords({ x: x + width / 2, y: y + height / 2 });
+      }
+    });
   }, [setCartIconCoords]);
 
   React.useEffect(() => {

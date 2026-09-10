@@ -7,18 +7,22 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import { styles } from './animated-icon.styles';
 
+import expoLogo from '@/assets/images/expo-logo.png';
+import logoGlow from '@/assets/images/logo-glow.png';
+
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
 
-export function AnimatedSplashOverlay() {
+export function AnimatedSplashOverlay({ isReady = true }: { isReady?: boolean }) {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
   React.useEffect(() => {
+    if (!isReady) return;
     SplashScreen.hideAsync().finally(() => {
       setAnimate(true);
     });
-  }, []);
+  }, [isReady]);
 
   if (!visible) return null;
 
@@ -41,7 +45,7 @@ export function AnimatedSplashOverlay() {
     },
   });
 
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  const image = <Image style={styles.image} source={expoLogo} />;
 
   return animate ? (
     <Animated.View
@@ -100,14 +104,12 @@ export function AnimatedIcon() {
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        {}
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
+        <Image style={styles.glow} source={logoGlow} />
       </Animated.View>
 
       <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        {}
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
+        <Image style={styles.image} source={expoLogo} />
       </Animated.View>
     </View>
   );
