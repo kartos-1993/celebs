@@ -1,9 +1,11 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import type { DynamicWidget, WidgetProps } from '../types';
+import type { DynamicWidget } from '../types';
 
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { PromoCardData, PromoCardWidget } from './promo-card-widget';
+
+import { Palette } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CampaignCountdownBanner } from '@/features/home/components/campaign-countdown-banner';
@@ -38,87 +40,25 @@ function UnknownWidgetFallback({ widget }: { widget: DynamicWidget }) {
   );
 }
 
-/**
- * Custom Promo Card Widget.
- */
-function PromoCardWidget({
-  widget,
-  onAction,
-}: WidgetProps<{
-  title?: string;
-  subtitle?: string;
-  badge?: string;
-  ctaText?: string;
-  targetRoute?: string;
-}>) {
-  const { title, subtitle, badge, ctaText, targetRoute } = widget.data || {};
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      onPress={() => onAction?.('NAVIGATE', { route: targetRoute })}
-      style={[
-        styles.promoCard,
-        widget.styling?.backgroundColor
-          ? { backgroundColor: widget.styling.backgroundColor }
-          : undefined,
-        widget.styling?.borderRadius ? { borderRadius: widget.styling.borderRadius } : undefined,
-      ]}
-    >
-      {badge && (
-        <View style={styles.promoBadge}>
-          <Text style={styles.promoBadgeText}>{badge}</Text>
-        </View>
-      )}
-      {title && <Text style={styles.promoTitle}>{title}</Text>}
-      {subtitle && <Text style={styles.promoSubtitle}>{subtitle}</Text>}
-      {ctaText && (
-        <View style={styles.promoCtaButton}>
-          <Text style={styles.promoCtaText}>{ctaText}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
 export type WidgetComponentRenderer = (props: {
   widget: DynamicWidget;
   handlers?: SDUIActionHandlers;
-  refreshKey?: number;
 }) => React.ReactElement | null;
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
-  BANNER_CAROUSEL: ({ widget: _widget, refreshKey }) => (
-    <BannerCarousel key={`banner-${refreshKey || 0}`} />
-  ),
+  BANNER_CAROUSEL: () => <BannerCarousel />,
 
-  CAMPAIGN_COUNTDOWN: ({ widget: _widget, refreshKey }) => (
-    <CampaignCountdownBanner key={`camp-${refreshKey || 0}`} />
-  ),
+  CAMPAIGN_COUNTDOWN: () => <CampaignCountdownBanner />,
 
-  COMBO_SHOWCASE: ({ widget: _widget, handlers, refreshKey }) => (
-    <ComboBundleShowcase key={`combo-${refreshKey || 0}`} onSelectCombo={handlers?.onSelectCombo} />
-  ),
+  COMBO_SHOWCASE: ({ handlers }) => <ComboBundleShowcase onSelectCombo={handlers?.onSelectCombo} />,
 
-  CATEGORY_GRID: ({ widget: _widget, refreshKey }) => (
-    <CategoryGrid key={`cat-${refreshKey || 0}`} />
-  ),
+  CATEGORY_GRID: () => <CategoryGrid />,
 
-  PRODUCT_GRID: ({ widget: _widget, handlers, refreshKey }) => (
-    <ProductGrid key={`prod-${refreshKey || 0}`} loadMoreTrigger={handlers?.loadMoreSignal} />
-  ),
+  PRODUCT_GRID: ({ handlers }) => <ProductGrid loadMoreTrigger={handlers?.loadMoreSignal} />,
 
   PROMO_CARD: ({ widget, handlers }) => (
     <PromoCardWidget
-      widget={
-        widget as DynamicWidget<{
-          title?: string;
-          subtitle?: string;
-          badge?: string;
-          ctaText?: string;
-          targetRoute?: string;
-        }>
-      }
+      widget={widget as DynamicWidget<PromoCardData>}
       onAction={handlers?.onCustomAction}
     />
   ),
@@ -131,14 +71,13 @@ export function registerWidget(type: string, renderer: WidgetComponentRenderer):
 export function renderSDUIWidget(
   widget: DynamicWidget,
   handlers?: SDUIActionHandlers,
-  refreshKey?: number,
 ): React.ReactElement | null {
   const Renderer = WIDGET_REGISTRY[widget.type];
   if (!Renderer) {
     return <UnknownWidgetFallback widget={widget} />;
   }
 
-  return Renderer({ widget, handlers, refreshKey });
+  return Renderer({ widget, handlers });
 }
 
 const styles = StyleSheet.create({
@@ -160,54 +99,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Palette.gray400,
     marginTop: 2,
-  },
-  promoCard: {
-    marginHorizontal: Spacing.md,
-    marginVertical: Spacing.sm,
-    padding: Spacing.lg,
-    borderRadius: Radius.md,
-    backgroundColor: Palette.gray900,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  promoBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: Palette.danger,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.xs,
-    marginBottom: Spacing.sm,
-  },
-  promoBadgeText: {
-    color: Palette.white,
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  promoTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Palette.white,
-    marginBottom: Spacing.xs,
-  },
-  promoSubtitle: {
-    fontSize: 12,
-    color: Palette.gray400,
-    marginBottom: Spacing.md,
-  },
-  promoCtaButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: Palette.white,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Radius.sm,
-  },
-  promoCtaText: {
-    color: Palette.gray900,
-    fontSize: 12,
-    fontWeight: '700',
   },
 });

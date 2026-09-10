@@ -65,10 +65,6 @@ export function useSDUILayout(pageId: string = 'home') {
     },
 
     initialData: DEFAULT_HOME_LAYOUT,
-    // Merchandised layout must revalidate on every mount: the persisted
-    // react-query cache (AsyncStorage) would otherwise serve a stale layout
-    // for up to staleTime after an app restart.
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 5,
   });
 }

@@ -1,12 +1,6 @@
-import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StatusBar,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from 'react-native';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, StatusBar, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SlidersHorizontal } from 'lucide-react-native';
 
@@ -20,7 +14,7 @@ import { useCategoryFilters } from '@/features/categories/hooks/use-category-fil
 import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
 import { styles } from '@/features/categories/styles/category.styles';
 import { ProductCard } from '@/features/products/components/product-card';
-import { useProducts } from '@/features/products/hooks/use-products';
+import { type Product, useProducts } from '@/features/products/hooks/use-products';
 
 export default function CategoryProductsScreen() {
   const { slug, title } = useLocalSearchParams<{ slug: string; title?: string }>();
@@ -37,6 +31,11 @@ export default function CategoryProductsScreen() {
 
   const filters = useCategoryFilters(categorySlug);
   const { products, loading, loadingMore, hasMore, loadMore } = useProducts(filters.filterParams);
+
+  const renderProductItem = useCallback(
+    ({ item }: { item: Product }) => <ProductCard product={item} />,
+    [],
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -90,18 +89,17 @@ export default function CategoryProductsScreen() {
           <ThemedText style={styles.loadingText}>Loading collection...</ThemedText>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={products}
           numColumns={2}
           keyExtractor={(item) => item.id}
-          columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
             if (hasMore && !loadingMore) loadMore();
           }}
           onEndReachedThreshold={0.4}
-          renderItem={({ item }) => <ProductCard product={item} />}
+          renderItem={renderProductItem}
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.footerLoading}>

@@ -1,6 +1,9 @@
+import type { IApiResponse } from '@celebs/shared-types';
+
 import type { Category, StorefrontConfigData } from './types';
 
 import { apiClient } from '@/api/client';
+import { handleApiResponse } from '@/api/response';
 
 export const CATEGORY_QUERY_KEYS = {
   all: ['categories'] as const,
@@ -11,9 +14,10 @@ export const CATEGORY_QUERY_KEYS = {
 };
 
 export async function getCategoriesTree(): Promise<Category[]> {
-  const response = await apiClient.get('/category/tree-with-attributes', { skipAuth: true });
-  const resData = response.data;
-  if (!resData.success || !Array.isArray(resData.data)) {
+  const data = await handleApiResponse(
+    apiClient.get<IApiResponse<Category[]>>('/category/tree-with-attributes', { skipAuth: true }),
+  );
+  if (!Array.isArray(data)) {
     return [];
   }
 
@@ -41,7 +45,7 @@ export async function getCategoriesTree(): Promise<Category[]> {
     });
   };
 
-  resData.data.forEach((rootCat: Category & { name: string; children?: Category[] }) => {
+  data.forEach((rootCat: Category & { name: string; children?: Category[] }) => {
     if (rootCat.children && rootCat.children.length > 0) {
       processNodes(rootCat.children, rootCat.name);
     } else {
@@ -59,12 +63,10 @@ export async function getStorefrontConfig(
   categorySlug: string,
 ): Promise<StorefrontConfigData | null> {
   if (!categorySlug) return null;
-  const response = await apiClient.get(`/category/${categorySlug}/storefront`, {
-    skipAuth: true,
-  });
-  const resData = response.data;
-  if (resData.success && resData.data) {
-    return resData.data as StorefrontConfigData;
-  }
-  return null;
+  const data = await handleApiResponse(
+    apiClient.get<IApiResponse<StorefrontConfigData>>(`/category/${categorySlug}/storefront`, {
+      skipAuth: true,
+    }),
+  );
+  return data ?? null;
 }

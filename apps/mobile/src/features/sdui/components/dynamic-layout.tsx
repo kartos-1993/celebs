@@ -9,10 +9,9 @@ import { renderSDUIWidget, SDUIActionHandlers } from './widget-registry';
 export interface DynamicLayoutProps {
   widgets?: DynamicWidget[];
   handlers?: SDUIActionHandlers;
-  refreshKey?: number;
 }
 
-export function DynamicLayout({ widgets = [], handlers, refreshKey = 0 }: DynamicLayoutProps) {
+export function DynamicLayout({ widgets = [], handlers }: DynamicLayoutProps) {
   if (!widgets || widgets.length === 0) {
     return null;
   }
@@ -37,7 +36,7 @@ export function DynamicLayout({ widgets = [], handlers, refreshKey = 0 }: Dynami
 
         return (
           <WidgetErrorBoundary key={widget.id} widgetId={widget.id} widgetType={widget.type}>
-            <View style={customStyle}>{renderSDUIWidget(widget, handlers, refreshKey)}</View>
+            <View style={customStyle}>{renderSDUIWidget(widget, handlers)}</View>
           </WidgetErrorBoundary>
         );
       })}

@@ -46,7 +46,7 @@ export function useProducts(
         }),
       initialPageParam: null as string | null,
       getNextPageParam: (lastPage) => {
-        return lastPage?.data?.nextCursor ?? null;
+        return lastPage.nextCursor ?? null;
       },
       maxPages: 4,
       staleTime: 1000 * 60 * 2,
@@ -54,7 +54,7 @@ export function useProducts(
 
   const products: Product[] = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page?.data?.products ?? []);
+    return data.pages.flatMap((page) => page.products ?? []);
   }, [data?.pages]);
 
   const loadMore = useCallback(() => {

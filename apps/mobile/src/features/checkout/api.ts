@@ -1,6 +1,9 @@
+import type { IApiResponse } from '@celebs/shared-types';
+
 import type { CheckoutPaymentMethod } from './components/payment-method-selector';
 
 import { apiClient } from '@/api/client';
+import { handleApiResponse } from '@/api/response';
 
 export const CHECKOUT_QUERY_KEYS = {
   all: ['checkout'] as const,
@@ -23,21 +26,20 @@ export interface CheckoutPayment {
   redirectUrl?: string;
 }
 
-export interface CheckoutResponse {
-  success?: boolean;
-  message?: string;
-  data?: {
-    order?: {
-      id?: string;
-      orderNumber?: string;
-    };
-    payment?: CheckoutPayment | null;
+export interface CheckoutResult {
+  order?: {
+    id?: string;
+    orderNumber?: string;
   };
+  payment?: CheckoutPayment | null;
 }
 
-export async function placeOrder(payload: CheckoutRequest): Promise<CheckoutResponse> {
-  const response = await apiClient.post<CheckoutResponse>('/orders/checkout', payload);
-  return response.data;
+export type CheckoutResponse = IApiResponse<CheckoutResult>;
+
+export async function placeOrder(payload: CheckoutRequest): Promise<CheckoutResult> {
+  return handleApiResponse(
+    apiClient.post<IApiResponse<CheckoutResult>>('/orders/checkout', payload),
+  );
 }
 
 export const placeOrderApi = placeOrder;

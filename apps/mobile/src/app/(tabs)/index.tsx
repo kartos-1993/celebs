@@ -7,32 +7,43 @@ import {
   StatusBar,
   useColorScheme,
 } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { AppHeader } from '@/components/app-header';
 import { ThemedView } from '@/components/themed-view';
 import { Palette } from '@/constants/theme';
+import { CATEGORY_QUERY_KEYS } from '@/features/categories/api';
+import { BANNER_QUERY_KEYS, CAMPAIGN_QUERY_KEYS, COMBO_QUERY_KEYS } from '@/features/home/api';
 import { ComboBundleModal } from '@/features/home/components/combo-bundle-modal';
 import { ComboBundleData } from '@/features/home/components/combo-bundle-showcase';
 import { styles } from '@/features/home/styles/home.styles';
+import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import { DynamicLayout } from '@/features/sdui/components/dynamic-layout';
 import { useSDUILayout } from '@/features/sdui/hooks/use-sdui-layout';
 
 export default function HomeScreen() {
   const scheme = useColorScheme();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedCombo, setSelectedCombo] = useState<ComboBundleData | null>(null);
   const [isComboModalOpen, setIsComboModalOpen] = useState(false);
   const { data: sduiLayout, refetch: refetchLayout } = useSDUILayout('home');
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    refetchLayout();
-    setTimeout(() => {
-      setRefreshKey((prev) => prev + 1);
+    try {
+      await Promise.all([
+        refetchLayout(),
+        queryClient.invalidateQueries({ queryKey: BANNER_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: CAMPAIGN_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: COMBO_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all }),
+      ]);
+    } finally {
       setRefreshing(false);
-    }, 1000);
-  }, [refetchLayout]);
+    }
+  }, [queryClient, refetchLayout]);
 
   const [scrollY, setScrollY] = useState(0);
   const [loadMoreSignal, setLoadMoreSignal] = useState(0);
@@ -90,11 +101,7 @@ export default function HomeScreen() {
         }
       >
         {/* Dynamic Server-Driven Layout */}
-        <DynamicLayout
-          widgets={sduiLayout?.widgets}
-          handlers={sduiHandlers}
-          refreshKey={refreshKey}
-        />
+        <DynamicLayout widgets={sduiLayout?.widgets} handlers={sduiHandlers} />
       </ScrollView>
 
       {/* Combo Bundle Modal */}

@@ -1,23 +1,27 @@
 import { AxiosResponse } from 'axios';
 
-import { ApiError, ApiResponse } from './types';
+import type { IApiResponse } from '@celebs/shared-types';
+
+import { ApiError } from './types';
 
 /**
- * Safely unwrap an Axios response wrapping an ApiResponse<T> payload.
+ * Safely unwrap an Axios response wrapping a canonical IApiResponse<T> payload.
+ * Returns the inner T data directly, or throws a normalized ApiError.
  */
 export async function handleApiResponse<T>(
-  requestPromise: Promise<AxiosResponse<ApiResponse<T>>>,
+  requestPromise: Promise<AxiosResponse<IApiResponse<T>>>,
 ): Promise<T> {
   try {
     const response = await requestPromise;
-    if (response.data && response.data.success !== false) {
-      return response.data.data;
+    const body = response.data;
+    if (body && body.success !== false) {
+      return body.data as T;
     }
     throw {
-      message: response.data?.message || 'Request failed',
+      message: body?.message || 'Request failed',
     } as ApiError;
-  } catch (error) {
-    if ((error as ApiError).message) {
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
       throw error;
     }
     throw {

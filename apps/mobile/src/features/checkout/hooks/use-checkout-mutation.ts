@@ -36,14 +36,14 @@ export function useCheckoutMutation() {
       return placeOrderRequest(payload);
     },
     onSuccess: async (data, variables) => {
-      const placedOrderNumber = data?.data?.order?.orderNumber;
-      const orderId = data?.data?.order?.id;
+      const placedOrderNumber = data.order?.orderNumber;
+      const orderId = data.order?.id;
       await clearCart();
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: CHECKOUT_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
 
-      const paymentUrl = data?.data?.payment?.redirectUrl;
+      const paymentUrl = data.payment?.redirectUrl;
       if (paymentUrl && orderId) {
         const startUrl =
           variables.paymentMethod === 'ESEWA' && !paymentUrl.includes('bookingId=')
