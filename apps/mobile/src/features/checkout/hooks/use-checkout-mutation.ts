@@ -8,6 +8,7 @@ import type { CheckoutPaymentMethod } from '../components/payment-method-selecto
 import { getApiBaseUrl } from '@/api/client';
 import { showToast } from '@/components/toast/toast';
 import { useAuth } from '@/features/auth/context/auth-context';
+import { CART_QUERY_KEYS } from '@/features/cart/api';
 import { useCart } from '@/features/cart/context/cart-context';
 import { ORDER_QUERY_KEYS } from '@/features/orders/api';
 import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
@@ -39,6 +40,7 @@ export function useCheckoutMutation() {
       const placedOrderNumber = data.order?.orderNumber;
       const orderId = data.order?.id;
       await clearCart();
+      queryClient.invalidateQueries({ queryKey: CART_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: CHECKOUT_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });

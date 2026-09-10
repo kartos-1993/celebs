@@ -5,7 +5,10 @@ import type { AuthContextType, UserProfile } from '../types';
 import { clearAuthSession, restoreAuthSession, saveAuthSession } from '../utils/auth-storage';
 
 import { setUnauthorizedHandler } from '@/api/client';
-import { useCartStore } from '@/features/cart/store/use-cart-store';
+import {
+  resetGuestSessionOnLogout,
+  syncGuestCartOnLogin,
+} from '@/features/cart/services/cart-sync';
 
 export type { UserProfile };
 
@@ -60,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { user: userProfile, accessToken, refreshToken } = await loginWithGoogleApi(data);
       await handleSaveSession(accessToken, userProfile, refreshToken);
-      await useCartStore.getState().mergeGuestCartOnLogin();
+      await syncGuestCartOnLogin();
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshToken,
       } = await loginWithEmailApi(email, password);
       await handleSaveSession(accessToken, userProfile, refreshToken);
-      await useCartStore.getState().mergeGuestCartOnLogin();
+      await syncGuestCartOnLogin();
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await clearAuthSession();
       setToken(null);
       setUser(null);
-      await useCartStore.getState().startFreshGuestSession();
+      await resetGuestSessionOnLogout();
     } finally {
       setIsLoading(false);
     }

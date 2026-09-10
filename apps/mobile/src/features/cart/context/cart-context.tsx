@@ -1,134 +1,151 @@
-import React, { createContext, ReactNode, useContext, useEffect, useMemo } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
-import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
+import type { AddToCartInput } from '@celebs/shared-types';
 
-import { useCartStore } from '../store/use-cart-store';
+import { getGuestSessionId } from '../api';
+import {
+  useAddToCartMutation,
+  useCartQuery,
+  useClearCartMutation,
+  useRemoveCartItemMutation,
+  useUpdateCartQuantityMutation,
+} from '../hooks/use-cart-queries';
+import { useCartUiStore } from '../store/use-cart-ui-store';
+import type { CartContextType } from '../types';
 import { computeTotals } from '../utils/cart-selectors';
 
-interface CartContextType {
-  cart: CartResponse | null;
-  loading: boolean;
-  error: string | null;
-  itemCount: number;
-  subtotal: number;
-  selectedItemIds: string[];
-  selectedItems: CartItemHydrated[];
-  selectedCount: number;
-  selectedSubtotal: number;
-  selectedOriginalSubtotal: number;
-  selectedSavings: number;
-  selectedSavingsPercent: number;
-  isAllSelected: boolean;
-  addToCart: (input: AddToCartInput) => Promise<void>;
-  updateQuantity: (itemId: string, newQuantity: number) => Promise<void>;
-  removeItem: (itemId: string) => Promise<void>;
-  clearCart: () => Promise<void>;
-  refreshCart: () => Promise<void>;
-  toggleItemSelection: (itemId: string) => void;
-  setItemsSelection: (itemIds: string[], selected: boolean) => void;
-  toggleAllSelection: () => void;
-}
+export type { CartContextType };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    getGuestSessionId().then((id) => setSessionId(id));
+    return () => {
+      debounceTimers.current.forEach((timer) => clearTimeout(timer));
+      debounceTimers.current.clear();
+    };
+  }, []);
+
+  const { data: cart = null, isLoading, error: queryError, refetch } = useCartQuery(sessionId);
+  const addToCartMutation = useAddToCartMutation(sessionId);
+  const updateQuantityMutation = useUpdateCartQuantityMutation(sessionId);
+  const removeItemMutation = useRemoveCartItemMutation(sessionId);
+  const clearCartMutation = useClearCartMutation(sessionId);
+
   const {
-    cart,
-    loading,
-    error,
-    fetchCart,
-    addToCart,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    initSession,
     selectedItemIds,
     toggleItemSelection,
     setItemsSelection,
     toggleAllSelection,
-  } = useCartStore();
-
-  useEffect(() => {
-    initSession().then(() => {
-      fetchCart();
-    });
-  }, [initSession, fetchCart]);
-
-  const itemCount = cart?.itemCount || 0;
-  const subtotal = cart?.subtotal || 0;
+    syncSelection,
+  } = useCartUiStore();
 
   const items = useMemo(() => cart?.items || [], [cart]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      syncSelection(items);
+    }
+  }, [items, syncSelection]);
+
   const selectedItems = useMemo(
     () => items.filter((item) => selectedItemIds.includes(item.id)),
     [items, selectedItemIds],
   );
+
   const totals = useMemo(() => computeTotals(selectedItems), [selectedItems]);
   const isAllSelected =
     items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
 
-  return (
-    <CartContext.Provider
-      value={{
-        cart,
-        loading,
-        error,
-        itemCount,
-        subtotal,
-        selectedItemIds,
-        selectedItems,
-        selectedCount: totals.count,
-        selectedSubtotal: totals.total,
-        selectedOriginalSubtotal: totals.originalTotal,
-        selectedSavings: totals.savings,
-        selectedSavingsPercent: totals.savingsPercent,
-        isAllSelected,
-        addToCart,
-        updateQuantity,
-        removeItem,
-        clearCart,
-        refreshCart: fetchCart,
-        toggleItemSelection,
-        setItemsSelection,
-        toggleAllSelection,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+  const handleAddToCart = useCallback(
+    async (input: AddToCartInput) => {
+      await addToCartMutation.mutateAsync(input);
+    },
+    [addToCartMutation],
   );
+
+  const handleUpdateQuantity = useCallback(
+    async (itemId: string, newQuantity: number) => {
+      const existing = debounceTimers.current.get(itemId);
+      if (existing) clearTimeout(existing);
+
+      if (newQuantity <= 0) {
+        await removeItemMutation.mutateAsync(itemId);
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        updateQuantityMutation.mutate({ itemId, quantity: newQuantity });
+        debounceTimers.current.delete(itemId);
+      }, 350);
+      debounceTimers.current.set(itemId, timer);
+    },
+    [removeItemMutation, updateQuantityMutation],
+  );
+
+  const handleRemoveItem = useCallback(
+    async (itemId: string) => {
+      await removeItemMutation.mutateAsync(itemId);
+    },
+    [removeItemMutation],
+  );
+
+  const handleClearCart = useCallback(async () => {
+    await clearCartMutation.mutateAsync();
+  }, [clearCartMutation]);
+
+  const handleRefreshCart = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const handleToggleAllSelection = useCallback(() => {
+    toggleAllSelection(items);
+  }, [toggleAllSelection, items]);
+
+  const value: CartContextType = {
+    cart,
+    loading: isLoading,
+    error: queryError ? (queryError as Error).message || 'Failed to load cart' : null,
+    itemCount: cart?.itemCount || 0,
+    subtotal: cart?.subtotal || 0,
+    selectedItemIds,
+    selectedItems,
+    selectedCount: totals.count,
+    selectedSubtotal: totals.total,
+    selectedOriginalSubtotal: totals.originalTotal,
+    selectedSavings: totals.savings,
+    selectedSavingsPercent: totals.savingsPercent,
+    isAllSelected,
+    addToCart: handleAddToCart,
+    updateQuantity: handleUpdateQuantity,
+    removeItem: handleRemoveItem,
+    clearCart: handleClearCart,
+    refreshCart: handleRefreshCart,
+    toggleItemSelection,
+    setItemsSelection,
+    toggleAllSelection: handleToggleAllSelection,
+  };
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
 export const useCart = (): CartContextType => {
   const context = useContext(CartContext);
-  const store = useCartStore();
   if (!context) {
-    // Fallback directly to Zustand store if invoked outside provider
-    const items = store.cart?.items || [];
-    const selectedItems = items.filter((item) => store.selectedItemIds.includes(item.id));
-    const totals = computeTotals(selectedItems);
-    return {
-      cart: store.cart,
-      loading: store.loading,
-      error: store.error,
-      itemCount: store.cart?.itemCount || 0,
-      subtotal: store.cart?.subtotal || 0,
-      selectedItemIds: store.selectedItemIds,
-      selectedItems,
-      selectedCount: totals.count,
-      selectedSubtotal: totals.total,
-      selectedOriginalSubtotal: totals.originalTotal,
-      selectedSavings: totals.savings,
-      selectedSavingsPercent: totals.savingsPercent,
-      isAllSelected:
-        items.length > 0 && items.every((item) => store.selectedItemIds.includes(item.id)),
-      addToCart: store.addToCart,
-      updateQuantity: store.updateQuantity,
-      removeItem: store.removeItem,
-      clearCart: store.clearCart,
-      refreshCart: store.fetchCart,
-      toggleItemSelection: store.toggleItemSelection,
-      setItemsSelection: store.setItemsSelection,
-      toggleAllSelection: store.toggleAllSelection,
-    };
+    throw new Error('useCart must be used within a CartProvider');
   }
   return context;
 };
