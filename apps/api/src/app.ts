@@ -36,6 +36,7 @@ import renderRoutes from './modules/product/product-render.routes';
 import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
 import sessionRoutes from './modules/session/session.routes';
 import staffRoutes from './modules/staff/staff.routes';
+import storefrontRoutes from './modules/storefront/storefront.routes';
 import userRoutes from './modules/user/user.routes';
 import vendorRoutes from './modules/vendor/vendor.routes';
 import wishlistRoutes from './modules/wishlist/wishlist.routes';
@@ -202,6 +203,7 @@ app.use(`${config.BASE_PATH}/combos`, comboRoutes);
 app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
 app.use(`${config.BASE_PATH}/wishlist`, wishlistRoutes);
 app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
+app.use(`${config.BASE_PATH}/storefront`, storefrontRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {

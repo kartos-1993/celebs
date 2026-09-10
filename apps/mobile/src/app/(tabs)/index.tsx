@@ -18,6 +18,7 @@ import { ComboBundleModal } from '@/features/home/components/combo-bundle-modal'
 import { ComboBundleData } from '@/features/home/components/combo-bundle-showcase';
 import { styles } from '@/features/home/styles/home.styles';
 import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
+import { SDUI_QUERY_KEYS } from '@/features/sdui/api';
 import { DynamicLayout } from '@/features/sdui/components/dynamic-layout';
 import { useSDUILayout } from '@/features/sdui/hooks/use-sdui-layout';
 
@@ -34,6 +35,7 @@ export default function HomeScreen() {
     try {
       await Promise.all([
         refetchLayout(),
+        queryClient.invalidateQueries({ queryKey: SDUI_QUERY_KEYS.all }),
         queryClient.invalidateQueries({ queryKey: BANNER_QUERY_KEYS.all }),
         queryClient.invalidateQueries({ queryKey: CAMPAIGN_QUERY_KEYS.all }),
         queryClient.invalidateQueries({ queryKey: COMBO_QUERY_KEYS.all }),

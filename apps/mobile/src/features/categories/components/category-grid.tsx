@@ -11,15 +11,19 @@ import { useRouter } from 'expo-router';
 
 import { useCategories } from '../hooks/use-categories';
 import { styles } from '../styles/categories.styles';
+import type { Category } from '../types';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
 import { Colors, Spacing } from '@/constants/theme';
 
-export function CategoryGrid() {
+export function CategoryGrid({ initialCategories }: { initialCategories?: Category[] } = {}) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { categories, loading } = useCategories();
+  const { categories: queryCategories, loading: queryLoading } = useCategories();
+  const hasInitial = !!(initialCategories && initialCategories.length > 0);
+  const categories = hasInitial ? initialCategories! : queryCategories;
+  const loading = hasInitial ? false : queryLoading;
   const router = useRouter();
 
   const handleCategoryPress = (cat: { slug?: string; name?: string; displayName?: string }) => {

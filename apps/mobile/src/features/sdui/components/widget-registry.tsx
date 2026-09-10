@@ -7,13 +7,16 @@ import { PromoCardData, PromoCardWidget } from './promo-card-widget';
 
 import { Palette } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
+import type { Category } from '@/features/categories/types';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
 import { CampaignCountdownBanner } from '@/features/home/components/campaign-countdown-banner';
 import {
   ComboBundleData,
   ComboBundleShowcase,
 } from '@/features/home/components/combo-bundle-showcase';
+import type { Banner, CampaignData } from '@/features/home/types';
 import { ProductGrid } from '@/features/products/components/product-grid';
+import type { Product } from '@/features/products/hooks/use-products';
 
 export interface SDUIActionHandlers {
   onSelectCombo?: (combo: ComboBundleData) => void;
@@ -46,15 +49,35 @@ export type WidgetComponentRenderer = (props: {
 }) => React.ReactElement | null;
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
-  BANNER_CAROUSEL: () => <BannerCarousel />,
+  BANNER_CAROUSEL: ({ widget }) => (
+    <BannerCarousel initialBanners={(widget.data as { banners?: Banner[] } | undefined)?.banners} />
+  ),
 
-  CAMPAIGN_COUNTDOWN: () => <CampaignCountdownBanner />,
+  CAMPAIGN_COUNTDOWN: ({ widget }) => (
+    <CampaignCountdownBanner
+      initialCampaigns={(widget.data as { campaigns?: CampaignData[] } | undefined)?.campaigns}
+    />
+  ),
 
-  COMBO_SHOWCASE: ({ handlers }) => <ComboBundleShowcase onSelectCombo={handlers?.onSelectCombo} />,
+  COMBO_SHOWCASE: ({ widget, handlers }) => (
+    <ComboBundleShowcase
+      initialCombos={(widget.data as { combos?: ComboBundleData[] } | undefined)?.combos}
+      onSelectCombo={handlers?.onSelectCombo}
+    />
+  ),
 
-  CATEGORY_GRID: () => <CategoryGrid />,
+  CATEGORY_GRID: ({ widget }) => (
+    <CategoryGrid
+      initialCategories={(widget.data as { categories?: Category[] } | undefined)?.categories}
+    />
+  ),
 
-  PRODUCT_GRID: ({ handlers }) => <ProductGrid loadMoreTrigger={handlers?.loadMoreSignal} />,
+  PRODUCT_GRID: ({ widget, handlers }) => (
+    <ProductGrid
+      initialProducts={(widget.data as { products?: Product[] } | undefined)?.products}
+      loadMoreTrigger={handlers?.loadMoreSignal}
+    />
+  ),
 
   PROMO_CARD: ({ widget, handlers }) => (
     <PromoCardWidget

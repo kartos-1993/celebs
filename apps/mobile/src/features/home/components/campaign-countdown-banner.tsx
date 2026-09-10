@@ -3,6 +3,7 @@ import { ImageBackground, TouchableOpacity, View } from 'react-native';
 import { ArrowRight, Flame } from 'lucide-react-native';
 
 import { useActiveCampaign } from '../hooks/use-home-queries';
+import type { CampaignData } from '../types';
 import { calculateTimeRemaining, FALLBACK_CAMPAIGN } from '../utils/countdown-utils';
 
 import { styles } from './campaign-countdown-banner.styles';
@@ -10,8 +11,13 @@ import { styles } from './campaign-countdown-banner.styles';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
-export function CampaignCountdownBanner() {
-  const { activeCampaign } = useActiveCampaign();
+export function CampaignCountdownBanner({
+  initialCampaigns,
+}: { initialCampaigns?: CampaignData[] } = {}) {
+  const { activeCampaign: queryActiveCampaign } = useActiveCampaign();
+  const activeCampaign =
+    (initialCampaigns && initialCampaigns.length > 0 ? initialCampaigns[0] : null) ||
+    queryActiveCampaign;
   const campaign = activeCampaign || FALLBACK_CAMPAIGN;
 
   const [prevEndDate, setPrevEndDate] = useState(campaign.endDate);

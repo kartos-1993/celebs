@@ -3,6 +3,7 @@ import { createCampaignSchema } from '@celebs/shared-types';
 
 import { type CampaignRepository, campaignRepository } from './campaign.repository';
 
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { TtlCache } from '@/common/utils/ttl-cache';
 
 interface ProductItem {
@@ -100,6 +101,7 @@ export class CampaignService {
     });
 
     await activeCampaignsCache.invalidate();
+    await invalidateCacheKey('storefront:home');
     return created;
   }
 
@@ -113,6 +115,7 @@ export class CampaignService {
     const updated = await this.campaignRepository.update(id, dataToUpdate, productIds);
 
     await activeCampaignsCache.invalidate();
+    await invalidateCacheKey('storefront:home');
     return updated;
   }
 }

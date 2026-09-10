@@ -1,3 +1,4 @@
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { TtlCache } from '@/common/utils/ttl-cache';
 import prisma from '@/config/db.prisma';
 
@@ -49,6 +50,7 @@ export class BannerRepository {
     );
 
     await activeBannersCache.invalidate();
+    await invalidateCacheKey('storefront:home');
     return created;
   }
 }

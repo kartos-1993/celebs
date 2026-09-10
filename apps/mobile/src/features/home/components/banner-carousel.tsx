@@ -18,13 +18,15 @@ import { showToast } from '@/components/toast/toast';
 import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
 
-export function BannerCarousel() {
+export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] } = {}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
   const autoPlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { banners, loading } = useBanners();
+  const { banners: queryBanners, loading: queryLoading } = useBanners();
+  const banners = initialBanners && initialBanners.length > 0 ? initialBanners : queryBanners;
+  const loading = initialBanners && initialBanners.length > 0 ? false : queryLoading;
   const hasBanners = banners.length > 0;
 
   const stopAutoPlay = useCallback(() => {

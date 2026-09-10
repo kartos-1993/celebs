@@ -7,6 +7,8 @@ import {
   platformSettingsRepository,
 } from './platform-settings.repository';
 
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
+
 export class PlatformSettingsService {
   constructor(
     private readonly repository: PlatformSettingsRepository = platformSettingsRepository,
@@ -52,7 +54,9 @@ export class PlatformSettingsService {
     }
 
     this.validateSettingValue(value, setting.type);
-    return this.repository.updateSetting(key, value, userId, reason);
+    const updated = await this.repository.updateSetting(key, value, userId, reason);
+    await invalidateCacheKey('storefront:home');
+    return updated;
   }
 
   async upsertSetting(
@@ -71,7 +75,7 @@ export class PlatformSettingsService {
     const targetType = data.type || 'BOOLEAN';
     this.validateSettingValue(data.value, targetType);
 
-    return this.repository.upsertSetting(
+    const upserted = await this.repository.upsertSetting(
       key,
       {
         ...data,
@@ -79,6 +83,8 @@ export class PlatformSettingsService {
       },
       reason,
     );
+    await invalidateCacheKey('storefront:home');
+    return upserted;
   }
 
   async bulkUpdateSettings(
@@ -106,6 +112,8 @@ export class PlatformSettingsService {
       const updated = await this.repository.updateSetting(s.key, s.value, userId, reason);
       results.push(updated);
     }
+
+    await invalidateCacheKey('storefront:home');
     return results;
   }
 
