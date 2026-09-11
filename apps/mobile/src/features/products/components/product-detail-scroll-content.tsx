@@ -59,8 +59,20 @@ export function ProductDetailScrollContent({
 
       <View style={styles.sectionBand} />
       <ProductServicesCard />
-      <View style={styles.sectionBand} />
-      <ProductReviewsCard />
+      <ProductReviewsCard
+        productId={product.id}
+        onBuyTheSame={(variant) => {
+          if (variant.color && product.colorVariants) {
+            const colorIdx = product.colorVariants.findIndex(
+              (c) => c.name.toLowerCase() === variant.color?.toLowerCase(),
+            );
+            if (colorIdx >= 0) onSelectColor(colorIdx);
+          }
+          if (variant.size) {
+            onSelectSize(variant.size);
+          }
+        }}
+      />
       <ProductDescriptionCard description={product.description} />
     </ScrollView>
   );

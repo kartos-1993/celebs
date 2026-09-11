@@ -22,6 +22,8 @@ function getTabCount(key: OrderFilterTab, counts?: OrderSummaryCounts): number {
       return counts.toShip ?? 0;
     case 'TO_RECEIVE':
       return counts.toReceive ?? 0;
+    case 'TO_REVIEW':
+      return counts.toReview ?? 0;
     case 'DELIVERED':
       return counts.delivered ?? 0;
     case 'CANCELLED':

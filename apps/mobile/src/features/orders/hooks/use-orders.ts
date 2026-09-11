@@ -23,6 +23,7 @@ const DEFAULT_COUNTS: OrderSummaryCounts = {
   toPay: 0,
   toShip: 0,
   toReceive: 0,
+  toReview: 0,
   delivered: 0,
   cancelled: 0,
 };

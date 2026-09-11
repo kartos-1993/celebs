@@ -88,6 +88,7 @@ export type OrderFilterTab =
   | 'TO_PAY'
   | 'TO_SHIP'
   | 'TO_RECEIVE'
+  | 'TO_REVIEW'
   | 'DELIVERED'
   | 'CANCELLED';
 
@@ -101,6 +102,7 @@ export const ORDER_FILTER_TABS: OrderFilterTabOption[] = [
   { key: 'TO_PAY', label: 'To Pay' },
   { key: 'TO_SHIP', label: 'To Ship' },
   { key: 'TO_RECEIVE', label: 'To Receive' },
+  { key: 'TO_REVIEW', label: 'To Review' },
   { key: 'DELIVERED', label: 'Delivered' },
   { key: 'CANCELLED', label: 'Cancelled' },
 ];

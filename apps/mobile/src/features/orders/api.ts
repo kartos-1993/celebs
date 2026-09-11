@@ -11,6 +11,7 @@ export interface OrderSummaryCounts {
   toPay: number;
   toShip: number;
   toReceive: number;
+  toReview: number;
   delivered: number;
   cancelled: number;
 }
@@ -46,7 +47,7 @@ export async function getOrderSummaryCounts(): Promise<OrderSummaryCounts> {
   const payload = await handleApiResponse(
     apiClient.get<IApiResponse<OrderSummaryCounts>>('/orders/summary-counts'),
   );
-  return payload ?? { toPay: 0, toShip: 0, toReceive: 0, delivered: 0, cancelled: 0 };
+  return payload ?? { toPay: 0, toShip: 0, toReceive: 0, toReview: 0, delivered: 0, cancelled: 0 };
 }
 
 export async function cancelOrderApi(orderId: string): Promise<void> {
