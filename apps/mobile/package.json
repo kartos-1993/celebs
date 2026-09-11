@@ -59,9 +59,11 @@
     "typescript": "~5.7.2"
   },
   "scripts": {
-    "start": "npx expo start",
+    "start": "npx expo start --go",
+    "start:dev-client": "npx expo start --dev-client",
     "start:go": "npx expo start --go",
-    "dev": "npx expo start",
+    "dev": "npx expo start --go",
+    "dev:dev-client": "npx expo start --dev-client",
     "dev:go": "npx expo start --go",
     "dev:staging": "dotenv -e .env.staging -- npx expo start",
     "reset-project": "node ./scripts/reset-project.js",
