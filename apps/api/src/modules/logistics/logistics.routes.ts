@@ -32,4 +32,7 @@ router.post(
   logisticsController.settleCod,
 );
 
+// Inbound 3PL Courier Tracking Webhook (Automated status events from courier)
+router.post('/webhook', logisticsController.handleCourierWebhook);
+
 export default router;

@@ -111,6 +111,60 @@ export class LogisticsService {
     return this.logisticsRepo.markCodSettled(orderId, settlementReference);
   }
 
+  async processCourierWebhook(payload: {
+    trackingNumber: string;
+    status: OrderStatus;
+    title?: string;
+    description?: string;
+    location?: string;
+  }) {
+    const order = await this.logisticsRepo.findOrderByTrackingNumber(payload.trackingNumber);
+
+    if (!order) {
+      throw new NotFoundException(
+        `Shipment not found for tracking number: ${payload.trackingNumber}`,
+      );
+    }
+
+    const defaultTitles: Record<string, string> = {
+      HANDED_OVER: 'Package In Transit',
+      OUT_FOR_DELIVERY: 'Out for Delivery',
+      DELIVERED: 'Package Delivered',
+      RETURNED: 'Delivery Failed - Returned',
+    };
+
+    const title =
+      payload.title || defaultTitles[payload.status] || `Status updated to ${payload.status}`;
+    const description =
+      payload.description ||
+      `Carrier updated shipment status to ${payload.status} at ${payload.location || 'Local Hub'}.`;
+
+    const { event, statusChanged } = await this.logisticsRepo.applyAutomatedTrackingEvent({
+      orderId: order.id,
+      status: payload.status,
+      title,
+      description,
+      location: payload.location,
+      source: 'COURIER_WEBHOOK',
+    });
+
+    if (statusChanged && payload.status === OrderStatus.DELIVERED) {
+      try {
+        const { enqueueOrderDeliveredEmail } = await import('../order/utils/order-email.util');
+        await enqueueOrderDeliveredEmail(order);
+      } catch {
+        // Non-blocking email dispatch
+      }
+    }
+
+    return {
+      orderId: order.id,
+      trackingNumber: payload.trackingNumber,
+      status: payload.status,
+      event,
+    };
+  }
+
   async addTrackingEvent(
     orderId: string,
     status: OrderStatus,

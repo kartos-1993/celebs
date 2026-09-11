@@ -43,6 +43,28 @@ export class LogisticsController {
 
     return sendSuccess(res, result, 'COD payment settled successfully');
   });
+
+  public handleCourierWebhook = asyncHandler(async (req: Request, res: Response) => {
+    const trackingNumber = req.body.trackingNumber || req.body.waybillNumber || req.body.waybillId;
+    const status = req.body.status || req.body.event;
+
+    if (!trackingNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tracking or waybill number is required',
+      });
+    }
+
+    const result = await this.service.processCourierWebhook({
+      trackingNumber: String(trackingNumber),
+      status: status || 'HANDED_OVER',
+      title: req.body.title,
+      description: req.body.description,
+      location: req.body.location,
+    });
+
+    return sendSuccess(res, result, 'Courier tracking event processed successfully');
+  });
 }
 
 export const logisticsController = new LogisticsController();
