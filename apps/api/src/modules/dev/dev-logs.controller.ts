@@ -515,7 +515,8 @@ export const devLogsController = {
     // Send existing ring buffer history on initial client connection
     sendEvent({ type: 'init', logs: logRingBuffer });
 
-    const onLog = (entry: LogEntry) => {
+    const onLog = (...args: unknown[]) => {
+      const entry = args[0] as LogEntry;
       sendEvent({ type: 'log', log: entry });
     };
 

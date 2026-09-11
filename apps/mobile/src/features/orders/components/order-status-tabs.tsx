@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
+import type { OrderSummaryCounts } from '../api';
 import { ORDER_FILTER_TABS, type OrderFilterTab } from '../utils/order-status';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,10 +10,28 @@ import { FontSize, FontWeight, Palette, Spacing } from '@/constants/theme';
 interface OrderStatusTabsProps {
   activeTab: OrderFilterTab;
   onSelectTab: (tab: OrderFilterTab) => void;
-  unpaidCount?: number;
+  counts?: OrderSummaryCounts;
 }
 
-export function OrderStatusTabs({ activeTab, onSelectTab, unpaidCount = 0 }: OrderStatusTabsProps) {
+function getTabCount(key: OrderFilterTab, counts?: OrderSummaryCounts): number {
+  if (!counts) return 0;
+  switch (key) {
+    case 'TO_PAY':
+      return counts.toPay ?? 0;
+    case 'TO_SHIP':
+      return counts.toShip ?? 0;
+    case 'TO_RECEIVE':
+      return counts.toReceive ?? 0;
+    case 'DELIVERED':
+      return counts.delivered ?? 0;
+    case 'CANCELLED':
+      return counts.cancelled ?? 0;
+    default:
+      return 0;
+  }
+}
+
+export function OrderStatusTabs({ activeTab, onSelectTab, counts }: OrderStatusTabsProps) {
   return (
     <View style={styles.container}>
       <ScrollView
@@ -22,7 +41,9 @@ export function OrderStatusTabs({ activeTab, onSelectTab, unpaidCount = 0 }: Ord
       >
         {ORDER_FILTER_TABS.map((tab) => {
           const isActive = activeTab === tab.key;
-          const showBadge = tab.key === 'TO_PAY' && unpaidCount > 0;
+          const count = getTabCount(tab.key, counts);
+          const showBadge = count > 0;
+          const isUrgent = tab.key === 'TO_PAY';
 
           return (
             <TouchableOpacity
@@ -38,14 +59,14 @@ export function OrderStatusTabs({ activeTab, onSelectTab, unpaidCount = 0 }: Ord
                   {tab.label}
                 </ThemedText>
                 {showBadge && (
-                  <View style={styles.badge}>
+                  <View style={[styles.badge, !isUrgent && styles.badgeNeutral]}>
                     <ThemedText
                       allowFontScaling={false}
                       maxFontSizeMultiplier={1}
                       numberOfLines={1}
                       style={styles.badgeText}
                     >
-                      {unpaidCount > 99 ? '99+' : unpaidCount}
+                      {count > 99 ? '99+' : count}
                     </ThemedText>
                   </View>
                 )}
@@ -108,6 +129,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
+  },
+  badgeNeutral: {
+    backgroundColor: Palette.gray700,
   },
   badgeText: {
     color: Palette.white,

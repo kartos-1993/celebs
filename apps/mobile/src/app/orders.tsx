@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -13,7 +13,7 @@ import { OrderCard } from '@/features/orders/components/order-card';
 import { OrderStatusTabs } from '@/features/orders/components/order-status-tabs';
 import { OrdersEmptyState } from '@/features/orders/components/orders-empty-state';
 import { useCancelOrderMutation } from '@/features/orders/hooks/use-cancel-order';
-import { useMyOrders } from '@/features/orders/hooks/use-orders';
+import { useMyOrders, useOrderSummaryCounts } from '@/features/orders/hooks/use-orders';
 import { styles } from '@/features/orders/styles/orders.styles';
 import {
   type ActivePaymentSheet,
@@ -30,18 +30,18 @@ export default function MyOrdersScreen() {
   const [activePayment, setActivePayment] = useState<ActivePaymentSheet | null>(null);
 
   const { orders, loading, loadingMore, refresh, loadMore } = useMyOrders(isLoggedIn);
+  const { counts, refetch: refetchCounts } = useOrderSummaryCounts(isLoggedIn);
   const { cancelOrder } = useCancelOrderMutation();
-
-  const unpaidCount = useMemo(
-    () =>
-      orders.filter((o) => o.paymentStatus === 'PENDING' || o.status === 'PENDING_PAYMENT').length,
-    [orders],
-  );
 
   const filteredOrders = useMemo(
     () => orders.filter((order) => matchesOrderFilter(order, activeTab)),
     [orders, activeTab],
   );
+
+  const handleRefresh = useCallback(() => {
+    refresh();
+    refetchCounts();
+  }, [refresh, refetchCounts]);
 
   const handlePayNow = (order: OrderView) => {
     setActivePayment(buildOrderPaymentIntent(order));
@@ -49,7 +49,7 @@ export default function MyOrdersScreen() {
 
   const handlePaymentClose = () => {
     setActivePayment(null);
-    refresh();
+    handleRefresh();
   };
 
   if (!isLoggedIn || (loading && orders.length === 0)) {
@@ -83,7 +83,7 @@ export default function MyOrdersScreen() {
         <View style={styles.headerIconSlot} />
       </View>
 
-      <OrderStatusTabs activeTab={activeTab} onSelectTab={setActiveTab} unpaidCount={unpaidCount} />
+      <OrderStatusTabs activeTab={activeTab} onSelectTab={setActiveTab} counts={counts} />
 
       <FlatList
         data={filteredOrders}
@@ -98,7 +98,11 @@ export default function MyOrdersScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={Palette.gray900} />
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={handleRefresh}
+            tintColor={Palette.gray900}
+          />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}

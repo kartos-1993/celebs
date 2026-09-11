@@ -183,6 +183,51 @@ export class CoreOrderRepository {
       { maxWait: 5000, timeout: 10000 },
     );
   }
+
+  async getOrderSummaryCounts(userId: string) {
+    const [toPay, toShip, toReceive, delivered, cancelled] = await Promise.all([
+      prisma.order.count({
+        where: {
+          userId,
+          status: { notIn: [OrderStatus.CANCELLED, OrderStatus.RETURNED] },
+          paymentStatus: 'PENDING',
+        },
+      }),
+      prisma.order.count({
+        where: {
+          userId,
+          status: { in: [OrderStatus.CONFIRMED, OrderStatus.PACKED] },
+          paymentStatus: { not: 'PENDING' },
+        },
+      }),
+      prisma.order.count({
+        where: {
+          userId,
+          status: { in: [OrderStatus.HANDED_OVER, OrderStatus.OUT_FOR_DELIVERY] },
+        },
+      }),
+      prisma.order.count({
+        where: {
+          userId,
+          status: OrderStatus.DELIVERED,
+        },
+      }),
+      prisma.order.count({
+        where: {
+          userId,
+          status: { in: [OrderStatus.CANCELLED, OrderStatus.RETURNED] },
+        },
+      }),
+    ]);
+
+    return {
+      toPay,
+      toShip,
+      toReceive,
+      delivered,
+      cancelled,
+    };
+  }
 }
 
 export const coreOrderRepository = new CoreOrderRepository();

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { CoreOrderService,coreOrderService } from './order.service';
+import { CoreOrderService, coreOrderService } from './order.service';
 
 import { sendSuccess } from '@/common/utils/response.util';
 
@@ -36,6 +36,12 @@ export class CoreOrderController {
 
     const result = await this.service.adminGetOrders(status, page, limit);
     return sendSuccess(res, result, 'Admin orders retrieved successfully');
+  };
+
+  getOrderSummaryCounts = async (req: Request, res: Response) => {
+    const userId = req.user?.id || '';
+    const counts = await this.service.getOrderSummaryCounts(userId);
+    return sendSuccess(res, counts, 'Order summary counts retrieved successfully');
   };
 }
 

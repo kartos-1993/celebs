@@ -33,7 +33,17 @@ orderRoutes.delete(
 
 // --- CUSTOMER CHECKOUT & ORDERS ---
 orderRoutes.post('/checkout', authenticateJWT, asyncHandler(checkoutController.checkout));
+orderRoutes.get(
+  '/summary-counts',
+  authenticateJWT,
+  asyncHandler(coreOrderController.getOrderSummaryCounts),
+);
 orderRoutes.get('/my-orders', authenticateJWT, asyncHandler(coreOrderController.getMyOrders));
+orderRoutes.get(
+  '/my-orders/summary-counts',
+  authenticateJWT,
+  asyncHandler(coreOrderController.getOrderSummaryCounts),
+);
 orderRoutes.get(
   '/my-orders/:orderId',
   authenticateJWT,

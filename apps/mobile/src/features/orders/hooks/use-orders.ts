@@ -1,7 +1,13 @@
 import { useCallback } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { getMyOrders, getOrderById, ORDER_QUERY_KEYS } from '../api';
+import {
+  getMyOrders,
+  getOrderById,
+  getOrderSummaryCounts,
+  ORDER_QUERY_KEYS,
+  type OrderSummaryCounts,
+} from '../api';
 import { PAGE_SIZE } from '../types';
 import { isActiveOrder } from '../utils/order-status';
 
@@ -12,6 +18,14 @@ export { mapOrder } from '../utils/order-mappers';
 
 export const LIVE_POLL_INTERVAL_MS = 15000;
 const PENDING_PAYMENT_POLL_MS = 30000;
+
+const DEFAULT_COUNTS: OrderSummaryCounts = {
+  toPay: 0,
+  toShip: 0,
+  toReceive: 0,
+  delivered: 0,
+  cancelled: 0,
+};
 
 /** Paginated list of the signed-in user's orders */
 export function useMyOrders(enabled: boolean = true) {
@@ -60,9 +74,27 @@ export function useMyOrders(enabled: boolean = true) {
   };
 }
 
-/**
- * Single order with tracking events.
- */
+/** Aggregate counts for all tabs (To Pay, To Ship, To Receive, etc.) */
+export function useOrderSummaryCounts(enabled: boolean = true) {
+  const { isLoggedIn, isLoading } = useAuth();
+  const shouldEnable = Boolean(enabled && isLoggedIn && !isLoading);
+
+  const query = useQuery({
+    queryKey: ORDER_QUERY_KEYS.summaryCounts(),
+    enabled: shouldEnable,
+    queryFn: getOrderSummaryCounts,
+    staleTime: 1000 * 10,
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+  });
+
+  return {
+    counts: query.data ?? DEFAULT_COUNTS,
+    loading: query.isLoading,
+    refetch: query.refetch,
+  };
+}
+
+/** Single order with tracking events */
 export function useOrderDetail(orderId: string, enabled: boolean = true) {
   const { isLoggedIn, isLoading } = useAuth();
   const shouldEnable = Boolean(enabled && !!orderId && isLoggedIn && !isLoading);

@@ -1,6 +1,6 @@
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
-import { CoreOrderRepository,coreOrderRepository } from './order.repository';
+import { CoreOrderRepository, coreOrderRepository } from './order.repository';
 
 export class CoreOrderService {
   constructor(private repo: CoreOrderRepository = coreOrderRepository) {}
@@ -45,6 +45,10 @@ export class CoreOrderService {
 
   async adminGetOrders(status?: string, page = 1, limit = 10) {
     return this.repo.findAdminOrders(status, page, limit);
+  }
+
+  async getOrderSummaryCounts(userId: string) {
+    return this.repo.getOrderSummaryCounts(userId);
   }
 }
 
