@@ -1,50 +1,63 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 
 import { registerPushTokenApi } from '../api';
 
 import { useAuth } from '@/features/auth/context/auth-context';
 
-const isExpoGo =
-  Constants.appOwnership === 'expo' ||
-  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-
-// Configure foreground notification presentation safely
-try {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-} catch {
-  // Safe fallback if native module isn't available
+interface NotificationResponseData {
+  notification?: {
+    request?: {
+      content?: {
+        data?: Record<string, unknown>;
+      };
+    };
+  };
 }
+
+/**
+ * Remote push notifications are only supported on physical devices with custom
+ * development builds (expo-dev-client / standalone APK).
+ * Expo Go SDK 53+ throws a fatal error if expo-notifications is evaluated
+ * on Android, so we lazy-load the module strictly outside of Expo Go.
+ */
+const isPushSupported =
+  Constants.appOwnership !== 'expo' && Platform.OS !== 'web' && Device.isDevice;
+
+const getNotifications = () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('expo-notifications');
+};
 
 export function usePushNotifications() {
   const router = useRouter();
   const { user } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isPushSupported) return;
+
+    let isMounted = true;
+    let notificationListener: { remove: () => void } | null = null;
+    let responseListener: { remove: () => void } | null = null;
 
     async function registerForPush() {
-      // Remote push notifications are only supported on physical devices with custom dev-client builds
-      if (Platform.OS === 'web' || isExpoGo || !Device.isDevice) {
-        return;
-      }
-
       try {
+        const Notifications = getNotifications();
+
+        Notifications.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+            shouldShowBanner: true,
+            shouldShowList: true,
+          }),
+        });
+
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
 
@@ -64,39 +77,32 @@ export function usePushNotifications() {
 
         const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
         const token = tokenData?.data;
-        if (token) {
+        if (token && isMounted) {
           setExpoPushToken(token);
           await registerPushTokenApi(token);
         }
-      } catch {
-        // Non-blocking registration
+
+        notificationListener = Notifications.addNotificationReceivedListener(() => {});
+
+        responseListener = Notifications.addNotificationResponseReceivedListener(
+          (response: NotificationResponseData) => {
+            const data = response.notification?.request?.content?.data;
+            if (data && typeof data.url === 'string' && data.url.startsWith('/')) {
+              router.push(data.url as never);
+            }
+          },
+        );
+      } catch (err) {
+        console.warn('[PushNotification] Native setup skipped:', err);
       }
     }
 
     registerForPush();
 
-    try {
-      notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
-
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(
-        (response) => {
-          const data = response.notification?.request?.content?.data;
-          if (data && typeof data.url === 'string' && data.url.startsWith('/')) {
-            router.push(data.url as never);
-          }
-        },
-      );
-    } catch {
-      // Safe fallback if running in an unsupported environment
-    }
-
     return () => {
-      if (notificationListener.current) {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current) {
-        responseListener.current.remove();
-      }
+      isMounted = false;
+      notificationListener?.remove();
+      responseListener?.remove();
     };
   }, [user, router]);
 
