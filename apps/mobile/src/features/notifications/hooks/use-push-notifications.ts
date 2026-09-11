@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
@@ -8,16 +9,24 @@ import { registerPushTokenApi } from '../api';
 
 import { useAuth } from '@/features/auth/context/auth-context';
 
-// Configure foreground notification presentation
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+// Configure foreground notification presentation safely
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch {
+  // Safe fallback if native module isn't available
+}
 
 export function usePushNotifications() {
   const router = useRouter();
@@ -30,9 +39,8 @@ export function usePushNotifications() {
     if (!user) return;
 
     async function registerForPush() {
-      if (Platform.OS === 'web') return;
-
-      if (!Device.isDevice) {
+      // Remote push notifications are only supported on physical devices with custom dev-client builds
+      if (Platform.OS === 'web' || isExpoGo || !Device.isDevice) {
         return;
       }
 
@@ -49,12 +57,17 @@ export function usePushNotifications() {
           return;
         }
 
-        const tokenData = await Notifications.getExpoPushTokenAsync();
-        const token = tokenData.data;
-        setExpoPushToken(token);
+        const projectId =
+          Constants.expoConfig?.extra?.eas?.projectId ??
+          Constants.easConfig?.projectId ??
+          '3a54d402-6501-43f8-b834-c690e2e49a71';
 
-        // Register with backend Redis store
-        await registerPushTokenApi(token);
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const token = tokenData?.data;
+        if (token) {
+          setExpoPushToken(token);
+          await registerPushTokenApi(token);
+        }
       } catch {
         // Non-blocking registration
       }
@@ -62,16 +75,20 @@ export function usePushNotifications() {
 
     registerForPush();
 
-    // Foreground listener
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
+    try {
+      notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
 
-    // Notification click / deep link listener
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data;
-      if (data && typeof data.url === 'string' && data.url.startsWith('/')) {
-        router.push(data.url as never);
-      }
-    });
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(
+        (response) => {
+          const data = response.notification?.request?.content?.data;
+          if (data && typeof data.url === 'string' && data.url.startsWith('/')) {
+            router.push(data.url as never);
+          }
+        },
+      );
+    } catch {
+      // Safe fallback if running in an unsupported environment
+    }
 
     return () => {
       if (notificationListener.current) {
