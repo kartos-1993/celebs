@@ -186,7 +186,7 @@ export class CoreOrderRepository {
   }
 
   async getOrderSummaryCounts(userId: string) {
-    const [toPay, toShip, toReceive, delivered, cancelled] = await Promise.all([
+    const [toPay, toShip, toReceive, toReview, delivered, cancelled] = await Promise.all([
       prisma.order.count({
         where: {
           userId,
@@ -207,6 +207,15 @@ export class CoreOrderRepository {
           status: { in: [OrderStatus.HANDED_OVER, OrderStatus.OUT_FOR_DELIVERY] },
         },
       }),
+      prisma.orderItem.count({
+        where: {
+          order: {
+            userId,
+            status: OrderStatus.DELIVERED,
+          },
+          review: null,
+        },
+      }),
       prisma.order.count({
         where: {
           userId,
@@ -225,6 +234,7 @@ export class CoreOrderRepository {
       toPay,
       toShip,
       toReceive,
+      toReview,
       delivered,
       cancelled,
     };

@@ -39,6 +39,7 @@ import platformSettingsRoutes from './modules/platform-settings/platform-setting
 import productRoutes from './modules/product/product.routes';
 import renderRoutes from './modules/product/product-render.routes';
 import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
+import { reviewRoutes } from './modules/review/review.routes';
 import sessionRoutes from './modules/session/session.routes';
 import staffRoutes from './modules/staff/staff.routes';
 import storefrontRoutes from './modules/storefront/storefront.routes';
@@ -244,6 +245,7 @@ app.use(`${config.BASE_PATH}/staff`, staffRoutes);
 app.use(`${config.BASE_PATH}/banners`, bannerRoutes);
 app.use(`${config.BASE_PATH}/cart`, cartRoutes);
 app.use(`${config.BASE_PATH}/orders`, orderRoutes);
+app.use(`${config.BASE_PATH}/reviews`, reviewRoutes);
 app.use(`${config.BASE_PATH}/campaigns`, campaignRoutes);
 app.use(`${config.BASE_PATH}/combos`, comboRoutes);
 app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);

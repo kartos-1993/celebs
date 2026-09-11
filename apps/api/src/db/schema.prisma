@@ -303,6 +303,7 @@ model Order {
   items          OrderItem[]
   payments       Payment[]
   trackingEvents OrderTrackingEvent[]
+  reviews        Review[]
 
   courierProvider   String?
   courierName       String?
@@ -446,6 +447,7 @@ model OrderItem {
   itemStatus     OrderItemStatus @default(PENDING) @map("item_status")
   trackingNumber String?         @map("tracking_number")
   courierPartner String?         @map("courier_partner")
+  review         Review?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -712,6 +714,7 @@ model Product {
 
   inventories   ProductInventory[]
   reviews       Review[]
+  reviewSummary ProductReviewSummary?
   wishlistItems WishlistItem[]
 
   createdAt DateTime @default(now())
@@ -752,24 +755,80 @@ model Category {
   @@index([parentCategory])
 }
 
-model Review {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userName  String?
-  rating    Int
-  comment   String?
-  images    String[]
-  status    String   @default("pending") // pending, approved, rejected
+enum ReviewFitRating {
+  RUNS_SMALL
+  TRUE_TO_SIZE
+  RUNS_LARGE
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum ReviewStatus {
+  APPROVED
+  PENDING_MODERATION
+  REJECTED
+}
+
+model Review {
+  id                 String          @id @default(uuid())
+  productId          String          @map("product_id")
+  product            Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId             String          @map("user_id")
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId            String?         @map("order_id")
+  order              Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderItemId        String?         @unique @map("order_item_id")
+  orderItem          OrderItem?      @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  inventoryId        String?         @map("inventory_id")
+
+  userName           String          @map("user_name")
+  userAvatar         String?         @map("user_avatar")
+  rating             Int
+  fitRating          ReviewFitRating @default(TRUE_TO_SIZE) @map("fit_rating")
+  comment            String          @db.Text
+  images             String[]        @default([])
+  colorVariantName   String?         @map("color_variant_name")
+  size               String?
+  variantSnapshot    Json?           @map("variant_snapshot")
+
+  helpfulCount       Int             @default(0) @map("helpful_count")
+  status             ReviewStatus    @default(APPROVED)
+  isVerifiedPurchase Boolean         @default(true) @map("is_verified_purchase")
+
+  likes              ReviewLike[]
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   @@index([productId])
   @@index([productId, status])
+  @@index([productId, status, rating])
+  @@index([productId, status, createdAt])
   @@index([userId])
+  @@index([orderId])
+}
+
+model ReviewLike {
+  id        String   @id @default(uuid())
+  reviewId  String   @map("review_id")
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+  @@index([userId])
+}
+
+model ProductReviewSummary {
+  productId          String   @id @map("product_id")
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  averageRating      Decimal  @default(0.0) @db.Decimal(3, 2) @map("average_rating")
+  totalReviews       Int      @default(0) @map("total_reviews")
+  ratingsCount       Int      @default(0) @map("ratings_count")
+  withImagesCount    Int      @default(0) @map("with_images_count")
+  ratingDistribution Json     @default("{\"1\":0,\"2\":0,\"3\":0,\"4\":0,\"5\":0}") @map("rating_distribution")
+  fitDistribution    Json     @default("{\"trueToSize\":0,\"runsSmall\":0,\"runsLarge\":0}") @map("fit_distribution")
+  updatedAt          DateTime @updatedAt
+
+  @@index([averageRating])
 }
 
 model OptionSet {
