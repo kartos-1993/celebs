@@ -83,3 +83,50 @@ export async function toggleReviewLikeApi(
   );
   return data ?? { liked: false, helpfulCount: 0 };
 }
+
+export interface PresignReviewImageResponse {
+  key: string;
+  uploadUrl: string;
+  publicUrl: string;
+  expiresIn: number;
+}
+
+export async function presignReviewImageApi(payload: {
+  originalname: string;
+  mimeType: string;
+  size: number;
+}): Promise<PresignReviewImageResponse> {
+  const data = await handleApiResponse(
+    apiClient.post<IApiResponse<PresignReviewImageResponse>>('/reviews/presign', payload),
+  );
+  return data;
+}
+
+export async function uploadReviewImageApi(
+  localUri: string,
+  filename = 'review.jpg',
+  mimeType = 'image/jpeg',
+): Promise<string> {
+  const { uploadUrl, publicUrl } = await presignReviewImageApi({
+    originalname: filename,
+    mimeType,
+    size: 1024 * 500,
+  });
+
+  const response = await fetch(localUri);
+  const blob = await response.blob();
+
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': mimeType,
+    },
+    body: blob,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error(`Upload failed with status: ${uploadRes.status}`);
+  }
+
+  return publicUrl;
+}

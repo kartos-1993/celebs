@@ -68,6 +68,17 @@ export class ReviewController {
     const result = await this.service.toggleReviewLike(reviewId, userId);
     return sendSuccess(res, result, result.liked ? 'Review liked' : 'Review unliked');
   };
+
+  presignReviewImage = async (req: Request, res: Response) => {
+    const userId = req.user?.id || '';
+    const { originalname, mimeType, size } = req.body;
+    const result = await this.service.presignReviewImage(userId, {
+      originalname,
+      mimeType,
+      size: Number(size),
+    });
+    return sendCreated(res, result, 'Presigned review photo upload URL generated');
+  };
 }
 
 export const reviewController = new ReviewController();

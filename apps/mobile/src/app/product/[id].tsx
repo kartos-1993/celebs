@@ -113,6 +113,7 @@ export default function ProductDetailScreen() {
         selectedSize={selectedSize}
         onSelectColor={handleColorChange}
         onSelectSize={setSelectedSize}
+        onAddToCart={() => handleAddToCart()}
       />
 
       <ProductBottomBar

@@ -10,6 +10,7 @@ const reviewRoutes = Router();
 
 // Customer authenticated routes
 reviewRoutes.post('/', authenticateJWT, asyncHandler(reviewController.createReview));
+reviewRoutes.post('/presign', authenticateJWT, asyncHandler(reviewController.presignReviewImage));
 reviewRoutes.get('/to-review', authenticateJWT, asyncHandler(reviewController.getToReviewItems));
 reviewRoutes.post(
   '/:reviewId/likes',

@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { X } from 'lucide-react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
-import { useSubmitReviewMutation } from '../hooks/use-reviews';
+import { useSubmitReviewWithImages } from '../hooks/use-reviews';
 import { styles } from '../styles/review-modal.styles';
 import type { ReviewFitRating, ToReviewItem } from '../types';
 
+import { ReviewCommentInput } from './review-comment-input';
+import { ReviewFitSelector } from './review-fit-selector';
+import { ReviewImagePicker } from './review-image-picker';
+import { ReviewModalHeader } from './review-modal-header';
 import { StarRating } from './star-rating';
 
 import { ThemedText } from '@/components/themed-text';
@@ -24,19 +21,38 @@ interface ReviewModalProps {
   onClose: () => void;
 }
 
-const FIT_OPTIONS: { key: ReviewFitRating; label: string }[] = [
-  { key: 'RUNS_SMALL', label: 'Runs Small' },
-  { key: 'TRUE_TO_SIZE', label: 'True to Size' },
-  { key: 'RUNS_LARGE', label: 'Runs Large' },
-];
-
 export function ReviewModal({ visible, item, onClose }: ReviewModalProps) {
   const [rating, setRating] = useState(5);
   const [fitRating, setFitRating] = useState<ReviewFitRating>('TRUE_TO_SIZE');
   const [comment, setComment] = useState('');
-  const { mutate: submitReview, isPending } = useSubmitReviewMutation();
+  const [images, setImages] = useState<string[]>([]);
+  const { mutate: submitReview, isSubmitting, isUploading } = useSubmitReviewWithImages();
 
   if (!item) return null;
+
+  const handleAddImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Denied',
+        'Please grant photo library access to upload review photos.',
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      selectionLimit: Math.max(1, 5 - images.length),
+    });
+    if (!result.canceled && result.assets?.length > 0) {
+      setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 5));
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = () => {
     if (!comment.trim()) return;
@@ -46,33 +62,25 @@ export function ReviewModal({ visible, item, onClose }: ReviewModalProps) {
         rating,
         fitRating,
         comment: comment.trim(),
-        images: [],
+        localImageUris: images,
       },
       {
         onSuccess: () => {
           setComment('');
+          setImages([]);
           onClose();
         },
       },
     );
   };
 
+  const isSubmitDisabled = !comment.trim() || isSubmitting;
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
-          <View style={styles.headerRow}>
-            <ThemedText style={styles.sheetTitle}>Review Purchase</ThemedText>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <X size={20} color={Palette.gray700} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.policyBanner}>
-            <ThemedText style={styles.policyText}>
-              Honest reviews help our community! Share your fit and experience.
-            </ThemedText>
-          </View>
+          <ReviewModalHeader onClose={onClose} />
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
             <View style={styles.ratingSection}>
@@ -80,50 +88,29 @@ export function ReviewModal({ visible, item, onClose }: ReviewModalProps) {
               <StarRating rating={rating} size={28} onSelectRating={setRating} />
             </View>
 
-            <View style={styles.fitSection}>
-              <ThemedText style={styles.sectionLabel}>How does it fit?</ThemedText>
-              <View style={styles.fitOptionsRow}>
-                {FIT_OPTIONS.map((opt) => {
-                  const isSelected = fitRating === opt.key;
-                  return (
-                    <TouchableOpacity
-                      key={opt.key}
-                      style={[styles.fitOptionBtn, isSelected && styles.fitOptionBtnActive]}
-                      onPress={() => setFitRating(opt.key)}
-                      activeOpacity={0.8}
-                    >
-                      <ThemedText
-                        style={[styles.fitOptionText, isSelected && styles.fitOptionTextActive]}
-                      >
-                        {opt.label}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
+            <ReviewFitSelector fitRating={fitRating} onSelectFit={setFitRating} />
 
-            <View style={{ gap: 6 }}>
-              <ThemedText style={styles.sectionLabel}>Your Review</ThemedText>
-              <TextInput
-                style={styles.textInput}
-                placeholder="How was the fit, material quality, and delivery? Write your honest thoughts..."
-                placeholderTextColor={Palette.gray400}
-                multiline
-                numberOfLines={4}
-                value={comment}
-                onChangeText={setComment}
-              />
-            </View>
+            <ReviewCommentInput value={comment} onChangeText={setComment} />
+
+            <ReviewImagePicker
+              images={images}
+              onAddImage={handleAddImage}
+              onRemoveImage={handleRemoveImage}
+            />
 
             <TouchableOpacity
-              style={[styles.submitBtn, (!comment.trim() || isPending) && styles.submitBtnDisabled]}
+              style={[styles.submitBtn, isSubmitDisabled && styles.submitBtnDisabled]}
               onPress={handleSubmit}
-              disabled={!comment.trim() || isPending}
+              disabled={isSubmitDisabled}
               activeOpacity={0.8}
             >
-              {isPending ? (
-                <ActivityIndicator size="small" color={Palette.white} />
+              {isSubmitting ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <ActivityIndicator size="small" color={Palette.white} />
+                  <ThemedText style={styles.submitBtnText}>
+                    {isUploading ? 'Uploading Photos...' : 'Submitting...'}
+                  </ThemedText>
+                </View>
               ) : (
                 <ThemedText style={styles.submitBtnText}>Submit Review</ThemedText>
               )}

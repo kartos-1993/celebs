@@ -2,6 +2,8 @@ import { ReviewFitRating } from '@prisma/client';
 
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
+import { createReviewPresignedPut } from '../media/storage.service';
+
 import { FindReviewsOptions, ReviewRepository, reviewRepository } from './review.repository';
 
 export interface CreateReviewDTO {
@@ -126,6 +128,25 @@ export class ReviewService {
       throw new AppError('Review not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
     return this.repo.toggleReviewLike(reviewId, userId);
+  }
+
+  async presignReviewImage(
+    userId: string,
+    data: { originalname: string; mimeType: string; size: number },
+  ) {
+    if (!userId) {
+      throw new AppError(
+        'Unauthorized',
+        HTTPSTATUS.UNAUTHORIZED,
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+    return createReviewPresignedPut({
+      userId,
+      originalname: data.originalname,
+      mimeType: data.mimeType,
+      size: data.size,
+    });
   }
 }
 

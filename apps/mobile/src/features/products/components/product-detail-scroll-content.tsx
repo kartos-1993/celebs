@@ -19,6 +19,7 @@ interface ProductDetailScrollContentProps {
   selectedSize: string;
   onSelectColor: (index: number) => void;
   onSelectSize: (size: string) => void;
+  onAddToCart?: () => void;
 }
 
 export function ProductDetailScrollContent({
@@ -29,6 +30,7 @@ export function ProductDetailScrollContent({
   selectedSize,
   onSelectColor,
   onSelectSize,
+  onAddToCart,
 }: ProductDetailScrollContentProps) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -71,6 +73,18 @@ export function ProductDetailScrollContent({
           if (variant.size) {
             onSelectSize(variant.size);
           }
+        }}
+        onAddToCart={(item) => {
+          if (item.colorVariantName && product.colorVariants) {
+            const colorIdx = product.colorVariants.findIndex(
+              (c) => c.name.toLowerCase() === item.colorVariantName?.toLowerCase(),
+            );
+            if (colorIdx >= 0) onSelectColor(colorIdx);
+          }
+          if (item.size) {
+            onSelectSize(item.size);
+          }
+          onAddToCart?.();
         }}
       />
       <ProductDescriptionCard description={product.description} />

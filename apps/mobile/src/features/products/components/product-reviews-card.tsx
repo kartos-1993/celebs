@@ -8,7 +8,6 @@ import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 import { FitSpectrumBar } from '@/features/reviews/components/fit-spectrum-bar';
 import { ProductReviewsSheet } from '@/features/reviews/components/product-reviews-sheet';
-import { ReviewGalleryModal } from '@/features/reviews/components/review-gallery-modal';
 import { StarRating } from '@/features/reviews/components/star-rating';
 import { useProductReviews, useProductReviewSummary } from '@/features/reviews/hooks/use-reviews';
 import type { ReviewGalleryItem } from '@/features/reviews/types';
@@ -16,15 +15,17 @@ import type { ReviewGalleryItem } from '@/features/reviews/types';
 interface ProductReviewsCardProps {
   productId?: string;
   onBuyTheSame?: (variant: { color?: string | null; size?: string | null }) => void;
+  onAddToCart?: (item: ReviewGalleryItem) => void;
 }
 
 const SENTIMENT_CHIPS = ['True to Picture', 'Good Quality', 'Fast Shipping'];
 
-export function ProductReviewsCard({ productId = '', onBuyTheSame }: ProductReviewsCardProps) {
+export function ProductReviewsCard({
+  productId = '',
+  onBuyTheSame,
+  onAddToCart,
+}: ProductReviewsCardProps) {
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [galleryVisible, setGalleryVisible] = useState(false);
-  const [galleryItems, setGalleryItems] = useState<ReviewGalleryItem[]>([]);
-  const [galleryIndex, setGalleryIndex] = useState(0);
 
   const { data: summary } = useProductReviewSummary(productId);
   const { data: reviews = [] } = useProductReviews(productId, 1, 3);
@@ -32,12 +33,6 @@ export function ProductReviewsCard({ productId = '', onBuyTheSame }: ProductRevi
   const avgRating = summary?.averageRating ? summary.averageRating.toFixed(1) : '4.8';
   const totalCount = summary?.totalReviews ?? reviews.length;
   const previewReviews = reviews.slice(0, 2);
-
-  const handleOpenGallery = (items: ReviewGalleryItem[], idx: number) => {
-    setGalleryItems(items);
-    setGalleryIndex(idx);
-    setGalleryVisible(true);
-  };
 
   return (
     <View style={styles.container}>
@@ -98,14 +93,7 @@ export function ProductReviewsCard({ productId = '', onBuyTheSame }: ProductRevi
         productId={productId}
         onClose={() => setSheetVisible(false)}
         onBuyTheSame={onBuyTheSame}
-        onOpenGallery={handleOpenGallery}
-      />
-
-      <ReviewGalleryModal
-        visible={galleryVisible}
-        items={galleryItems}
-        initialIndex={galleryIndex}
-        onClose={() => setGalleryVisible(false)}
+        onAddToCart={onAddToCart}
       />
     </View>
   );

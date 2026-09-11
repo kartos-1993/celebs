@@ -71,7 +71,13 @@ export function buildVendorObjectKey(params: {
   return `${customFolder}/${scopeFolder}/${uuidv4()}-${safeName}`;
 }
 
-const ALLOWED_KEY_PREFIXES = ['celebs/products', 'celebs/kyc', 'vendors', 'platform'] as const;
+const ALLOWED_KEY_PREFIXES = [
+  'celebs/products',
+  'celebs/kyc',
+  'vendors',
+  'platform',
+  'reviews',
+] as const;
 
 /**
  * Single source of truth for which object keys the upload pipeline accepts.
@@ -255,6 +261,52 @@ export async function createPresignedPut(
 
   // Fail fast: reject disallowed prefixes/traversal BEFORE the browser
   // uploads bytes, so bad requests never produce orphaned R2 objects.
+  validateObjectKey(key);
+
+  await ensureDevPublicReadAccess();
+
+  const command = new PutObjectCommand({
+    Bucket: config.S3.BUCKET_NAME,
+    Key: key,
+    ContentType: mimeType,
+  });
+
+  const uploadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: PRESIGN_EXPIRES_IN,
+  });
+
+  return {
+    key,
+    uploadUrl,
+    publicUrl: buildPublicObjectUrl(key),
+    headers: {
+      'Content-Type': mimeType,
+    },
+    expiresIn: PRESIGN_EXPIRES_IN,
+    originalname,
+    mimeType,
+    size,
+  };
+}
+
+/**
+ * Create a presigned PUT URL for customer review photo upload.
+ */
+export async function createReviewPresignedPut(params: {
+  userId: string;
+  originalname: string;
+  mimeType: string;
+  size: number;
+}): Promise<PresignFileResult> {
+  const { originalname, mimeType, size } = assertUploadMeta({
+    originalname: params.originalname,
+    mimeType: params.mimeType,
+    size: params.size,
+    scope: 'PRODUCT',
+  });
+
+  const safeName = sanitizeFileName(originalname);
+  const key = `reviews/${params.userId}/${uuidv4()}-${safeName}`;
   validateObjectKey(key);
 
   await ensureDevPublicReadAccess();

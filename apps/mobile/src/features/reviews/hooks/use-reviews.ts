@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -8,6 +9,7 @@ import {
   REVIEW_QUERY_KEYS,
   submitReviewApi,
   toggleReviewLikeApi,
+  uploadReviewImageApi,
 } from '../api';
 import type { SubmitReviewPayload } from '../types';
 
@@ -39,6 +41,55 @@ export function useSubmitReviewMutation() {
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.summaryCounts() });
     },
   });
+}
+
+export function useSubmitReviewWithImages() {
+  const queryClient = useQueryClient();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: async (
+      payload: Omit<SubmitReviewPayload, 'images'> & { localImageUris?: string[] },
+    ) => {
+      let finalImages: string[] = [];
+      const localUris = payload.localImageUris || [];
+
+      if (localUris.length > 0) {
+        setIsUploading(true);
+        try {
+          finalImages = await Promise.all(
+            localUris.map(async (uri, idx) => {
+              if (uri.startsWith('http://') || uri.startsWith('https://')) {
+                return uri;
+              }
+              const filename = `review_${Date.now()}_${idx}.jpg`;
+              return uploadReviewImageApi(uri, filename, 'image/jpeg');
+            }),
+          );
+        } finally {
+          setIsUploading(false);
+        }
+      }
+
+      return submitReviewApi({
+        orderItemId: payload.orderItemId,
+        rating: payload.rating,
+        fitRating: payload.fitRating,
+        comment: payload.comment,
+        images: finalImages,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: REVIEW_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.summaryCounts() });
+    },
+  });
+
+  return {
+    ...mutation,
+    isUploading,
+    isSubmitting: isUploading || mutation.isPending,
+  };
 }
 
 export function useProductReviews(
