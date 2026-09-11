@@ -17,6 +17,9 @@ export const PATHS = {
   CATEGORIES: {
     LIST: '/categories',
   },
+  REVIEWS: {
+    LIST: '/reviews',
+  },
   VENDORS: {
     LIST: '/vendors',
     DETAIL: (id: string) => `/vendors/${id}`,

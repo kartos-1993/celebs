@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { ChevronRight, ShoppingBag } from 'lucide-react-native';
+import { ChevronRight, ShoppingBag, ThumbsUp } from 'lucide-react-native';
 
+import { useToggleReviewLikeMutation } from '../hooks/use-reviews';
 import { styles } from '../styles/product-reviews-sheet.styles';
 import type { ReviewItem } from '../types';
 
@@ -23,7 +24,25 @@ export const ProductReviewItem = React.memo(function ProductReviewItem({
   onBuyTheSame,
   onOpenPhoto,
 }: ProductReviewItemProps) {
+  const [isLiked, setIsLiked] = useState(!!item.isLikedByMe);
+  const [helpfulCount, setHelpfulCount] = useState(item.helpfulCount);
+  const toggleLikeMutation = useToggleReviewLikeMutation();
+
   const variantStr = [item.colorVariantName, item.size].filter(Boolean).join(' / ');
+
+  const handleToggleLike = () => {
+    const nextLiked = !isLiked;
+    const nextCount = nextLiked ? helpfulCount + 1 : Math.max(0, helpfulCount - 1);
+    setIsLiked(nextLiked);
+    setHelpfulCount(nextCount);
+
+    toggleLikeMutation.mutate(item.id, {
+      onError: () => {
+        setIsLiked(!nextLiked);
+        setHelpfulCount(helpfulCount);
+      },
+    });
+  };
 
   return (
     <View style={styles.reviewItem}>
@@ -60,6 +79,23 @@ export const ProductReviewItem = React.memo(function ProductReviewItem({
           ))}
         </View>
       )}
+
+      <View style={styles.helpfulRow}>
+        <TouchableOpacity
+          style={[styles.helpfulBtn, isLiked && styles.helpfulBtnActive]}
+          onPress={handleToggleLike}
+          activeOpacity={0.7}
+        >
+          <ThumbsUp
+            size={12}
+            color={isLiked ? Palette.gray900 : Palette.gray500}
+            fill={isLiked ? Palette.gray900 : 'none'}
+          />
+          <ThemedText style={isLiked ? styles.helpfulTextActive : styles.helpfulText}>
+            Helpful ({helpfulCount})
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 });

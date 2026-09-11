@@ -12,6 +12,7 @@ import { AuthProvider } from '@/features/auth/context/auth-context';
 import { CartProvider } from '@/features/cart/context/cart-context';
 import { CartSheetProvider } from '@/features/cart/context/cart-sheet-context';
 import { FlyToCartProvider } from '@/features/cart/context/fly-to-cart-context';
+import { PushNotificationListener } from '@/features/notifications/components/push-notification-listener';
 import { clientPersister, queryClient } from '@/lib/react-query/query-client';
 
 SplashScreen.preventAutoHideAsync();
@@ -54,6 +55,7 @@ export default function RootLayout() {
       >
         <ThemeProvider value={DefaultTheme}>
           <AuthProvider>
+            <PushNotificationListener />
             <CartProvider>
               <FlyToCartProvider>
                 <CartSheetProvider>

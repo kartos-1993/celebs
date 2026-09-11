@@ -148,12 +148,27 @@ export class LogisticsService {
       source: 'COURIER_WEBHOOK',
     });
 
-    if (statusChanged && payload.status === OrderStatus.DELIVERED) {
+    if (statusChanged) {
+      if (payload.status === OrderStatus.DELIVERED) {
+        try {
+          const { enqueueOrderDeliveredEmail } = await import('../order/utils/order-email.util');
+          await enqueueOrderDeliveredEmail(order);
+        } catch {
+          // Non-blocking email dispatch
+        }
+      }
+
       try {
-        const { enqueueOrderDeliveredEmail } = await import('../order/utils/order-email.util');
-        await enqueueOrderDeliveredEmail(order);
+        const { notificationService } = await import('../notification/notification.service');
+        await notificationService.notifyOrderStatus({
+          userId: order.userId,
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          status: payload.status,
+          trackingNumber: payload.trackingNumber,
+        });
       } catch {
-        // Non-blocking email dispatch
+        // Non-blocking push notification dispatch
       }
     }
 

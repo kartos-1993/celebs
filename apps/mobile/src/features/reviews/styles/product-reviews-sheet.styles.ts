@@ -103,4 +103,34 @@ export const styles = StyleSheet.create({
     fontSize: FontSize.caption,
     color: Palette.gray500,
   },
+  helpfulRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  helpfulBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Palette.gray200,
+    backgroundColor: Palette.white,
+  },
+  helpfulBtnActive: {
+    backgroundColor: Palette.gray100,
+    borderColor: Palette.gray900,
+  },
+  helpfulText: {
+    fontSize: 11,
+    color: Palette.gray600,
+  },
+  helpfulTextActive: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
+  },
 });

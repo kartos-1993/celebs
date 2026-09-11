@@ -1,5 +1,7 @@
 import { Prisma, ReviewFitRating, ReviewStatus } from '@prisma/client';
 
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
 import prisma from '@/config/db.prisma';
 
 export interface CreateReviewData {
@@ -17,6 +19,7 @@ export interface CreateReviewData {
   colorVariantName?: string;
   size?: string;
   variantSnapshot?: Record<string, string>;
+  status?: ReviewStatus;
 }
 
 export interface FindReviewsOptions {
@@ -24,6 +27,7 @@ export interface FindReviewsOptions {
   limit?: number;
   rating?: number;
   hasImages?: boolean;
+  currentUserId?: string;
 }
 
 export class ReviewRepository {
@@ -90,7 +94,7 @@ export class ReviewRepository {
           variantSnapshot: data.variantSnapshot
             ? (data.variantSnapshot as Prisma.InputJsonValue)
             : Prisma.DbNull,
-          status: ReviewStatus.APPROVED,
+          status: data.status ?? ReviewStatus.APPROVED,
           isVerifiedPurchase: true,
         },
       });
@@ -200,11 +204,126 @@ export class ReviewRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: options.currentUserId
+          ? {
+              likes: {
+                where: { userId: options.currentUserId },
+                select: { id: true },
+              },
+            }
+          : undefined,
+      }),
+      prisma.review.count({ where }),
+    ]);
+
+    const formattedReviews = reviews.map((r) => {
+      const recordWithLikes = r as typeof r & { likes?: { id: string }[] };
+      const isLikedByMe = Array.isArray(recordWithLikes.likes) && recordWithLikes.likes.length > 0;
+      return {
+        id: r.id,
+        productId: r.productId,
+        userId: r.userId,
+        userName: r.userName,
+        userAvatar: r.userAvatar,
+        rating: r.rating,
+        fitRating: r.fitRating,
+        comment: r.comment,
+        images: r.images,
+        colorVariantName: r.colorVariantName,
+        size: r.size,
+        variantSnapshot: r.variantSnapshot,
+        helpfulCount: r.helpfulCount,
+        isVerifiedPurchase: r.isVerifiedPurchase,
+        isLikedByMe,
+        createdAt: r.createdAt,
+      };
+    });
+
+    return { reviews: formattedReviews, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async findAdminReviews(params: {
+    vendorId?: string | null;
+    status?: ReviewStatus;
+    rating?: number;
+    hasImages?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(50, Math.max(1, params.limit ?? 15));
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ReviewWhereInput = {};
+
+    if (params.vendorId) {
+      where.product = { vendorId: params.vendorId };
+    }
+
+    if (params.status) {
+      where.status = params.status;
+    }
+
+    if (params.rating) {
+      where.rating = params.rating;
+    }
+
+    if (params.hasImages) {
+      where.images = { isEmpty: false };
+    }
+
+    if (params.search) {
+      where.OR = [
+        { comment: { contains: params.search, mode: 'insensitive' } },
+        { userName: { contains: params.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              mainImages: true,
+              vendorId: true,
+            },
+          },
+        },
       }),
       prisma.review.count({ where }),
     ]);
 
     return { reviews, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async updateReviewStatus(reviewId: string, status: ReviewStatus) {
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.review.findUnique({
+        where: { id: reviewId },
+      });
+
+      if (!existing) {
+        throw new AppError('Review not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      }
+
+      const updated = await tx.review.update({
+        where: { id: reviewId },
+        data: { status },
+      });
+
+      if (existing.status === ReviewStatus.APPROVED || status === ReviewStatus.APPROVED) {
+        await this.syncProductReviewSummary(tx, existing.productId);
+      }
+
+      return updated;
+    });
   }
 
   async findProductReviewSummary(productId: string) {

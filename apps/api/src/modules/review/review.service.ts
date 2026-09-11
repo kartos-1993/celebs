@@ -1,9 +1,10 @@
-import { ReviewFitRating } from '@prisma/client';
+import { ReviewFitRating, ReviewStatus } from '@prisma/client';
 
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { createReviewPresignedPut } from '../media/storage.service';
 
+import { evaluateReviewQuality } from './utils/review-quality.evaluator';
 import { FindReviewsOptions, ReviewRepository, reviewRepository } from './review.repository';
 
 export interface CreateReviewDTO {
@@ -88,6 +89,12 @@ export class ReviewService {
       variantSnapshot['Size'] = orderItem.size;
     }
 
+    const quality = evaluateReviewQuality(data.comment);
+    const status = quality.isSubstantive ? ReviewStatus.APPROVED : ReviewStatus.PENDING_MODERATION;
+    if (!quality.isSubstantive && quality.flagReason) {
+      variantSnapshot['_flagReason'] = quality.flagReason;
+    }
+
     return this.repo.createReview({
       userId,
       userName,
@@ -103,6 +110,7 @@ export class ReviewService {
       colorVariantName: orderItem.colorVariantName || undefined,
       size: orderItem.size || undefined,
       variantSnapshot: Object.keys(variantSnapshot).length > 0 ? variantSnapshot : undefined,
+      status,
     });
   }
 
@@ -147,6 +155,22 @@ export class ReviewService {
       mimeType: data.mimeType,
       size: data.size,
     });
+  }
+
+  async getAdminReviews(params: {
+    vendorId?: string | null;
+    status?: ReviewStatus;
+    rating?: number;
+    hasImages?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    return this.repo.findAdminReviews(params);
+  }
+
+  async updateReviewStatus(reviewId: string, status: ReviewStatus) {
+    return this.repo.updateReviewStatus(reviewId, status);
   }
 }
 

@@ -5,18 +5,17 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { ShoppingBag, X } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 
 import { styles } from '../styles/review-gallery-modal.styles';
 import type { ReviewGalleryItem } from '../types';
 
-import { StarRating } from './star-rating';
+import { ReviewGalleryDetails } from './review-gallery-details';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
@@ -54,9 +53,6 @@ export function ReviewGalleryModal({
   if (!visible || items.length === 0) return null;
 
   const currentItem = items[currentIndex] ?? items[0];
-  const variantText = [currentItem?.colorVariantName, currentItem?.size]
-    .filter(Boolean)
-    .join(' / ');
 
   const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -108,35 +104,11 @@ export function ReviewGalleryModal({
         />
 
         {/* Bottom Review Details & Sticky Add-to-Cart */}
-        <View style={[styles.bottomCard, { paddingBottom: insets.bottom + 12 }]}>
-          <View style={styles.userRow}>
-            <ThemedText style={styles.userName}>{currentItem.userName}</ThemedText>
-            <StarRating rating={currentItem.rating} size={13} />
-          </View>
-
-          {!!variantText && <ThemedText style={styles.variantText}>{variantText}</ThemedText>}
-
-          <ScrollView
-            style={styles.scrollableComment}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-          >
-            <ThemedText style={styles.commentText}>{currentItem.comment}</ThemedText>
-          </ScrollView>
-
-          {!!onAddToCart && (
-            <TouchableOpacity
-              style={styles.cartBtn}
-              onPress={() => onAddToCart(currentItem)}
-              activeOpacity={0.8}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <ShoppingBag size={15} color={Palette.gray900} />
-                <ThemedText style={styles.cartBtnText}>Add to Cart</ThemedText>
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
+        <ReviewGalleryDetails
+          item={currentItem}
+          bottomInset={insets.bottom}
+          onAddToCart={onAddToCart}
+        />
       </View>
     </Modal>
   );

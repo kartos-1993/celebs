@@ -59,6 +59,9 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   if (hasPerm(Permission.PRODUCT_REVIEW)) {
     productSubmenus.push({ href: '/products/review-product-queue', label: 'Review Queue' });
   }
+  if (hasPerm(Permission.PRODUCT_VIEW) || hasPerm(Permission.PRODUCT_REVIEW)) {
+    productSubmenus.push({ href: '/reviews', label: 'Customer Reviews' });
+  }
   if (productSubmenus.length > 0) {
     operations.push({ href: '', label: 'Products', icon: ShoppingBag, submenus: productSubmenus });
   }

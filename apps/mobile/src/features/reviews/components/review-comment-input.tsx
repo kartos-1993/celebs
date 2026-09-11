@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TextInput, View } from 'react-native';
 
 import { styles } from '../styles/review-modal.styles';
+import { evaluateCommentHint } from '../utils/review-quality-hint';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
@@ -12,6 +13,8 @@ interface ReviewCommentInputProps {
 }
 
 export function ReviewCommentInput({ value, onChangeText }: ReviewCommentInputProps) {
+  const hint = useMemo(() => evaluateCommentHint(value), [value]);
+
   return (
     <View style={{ gap: 6 }}>
       <ThemedText style={styles.sectionLabel}>Your Review</ThemedText>
@@ -24,6 +27,17 @@ export function ReviewCommentInput({ value, onChangeText }: ReviewCommentInputPr
         value={value}
         onChangeText={onChangeText}
       />
+      {hint.message && (
+        <ThemedText
+          style={{
+            fontSize: 11,
+            color: hint.isWarning ? Palette.danger : Palette.gray500,
+            marginTop: 2,
+          }}
+        >
+          {hint.message}
+        </ThemedText>
+      )}
     </View>
   );
 }

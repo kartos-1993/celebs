@@ -14,6 +14,7 @@ export interface ReviewItem {
   size?: string | null;
   variantSnapshot?: Record<string, string> | null;
   helpfulCount: number;
+  isLikedByMe?: boolean;
   isVerifiedPurchase: boolean;
   createdAt: string;
 }
@@ -58,6 +59,7 @@ export interface ReviewGalleryItem {
   size?: string | null;
   comment: string;
   helpfulCount: number;
+  isLikedByMe?: boolean;
   createdAt: string;
 }
 

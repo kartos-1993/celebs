@@ -131,8 +131,17 @@ export class FulfillmentService {
       } else if (newStatus === 'DELIVERED') {
         await enqueueOrderDeliveredEmail(fullOrder);
       }
+
+      const { notificationService } = await import('../../notification/notification.service');
+      await notificationService.notifyOrderStatus({
+        userId: fullOrder.userId,
+        orderId: fullOrder.id,
+        orderNumber: fullOrder.orderNumber,
+        status: newStatus,
+        trackingNumber: trackingNumber || fullOrder.trackingNumber || undefined,
+      });
     } catch {
-      // Non-blocking email dispatch
+      // Non-blocking dispatch
     }
   }
 }

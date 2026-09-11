@@ -97,4 +97,25 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Palette.gray900,
   },
+  galleryHelpfulBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  galleryHelpfulBtnActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  galleryHelpfulText: {
+    fontSize: 11,
+    color: Palette.gray300,
+  },
+  galleryHelpfulTextActive: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: Palette.white,
+  },
 });
