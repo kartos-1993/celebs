@@ -1,6 +1,9 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { FulfillmentRepository,fulfillmentRepository } from './fulfillment.repository';
+import { coreOrderRepository } from '../core/order.repository';
+import { enqueueOrderDeliveredEmail, enqueueOrderShippedEmail } from '../utils/order-email.util';
+
+import { FulfillmentRepository, fulfillmentRepository } from './fulfillment.repository';
 
 import { Prisma } from '@/config/db.prisma';
 
@@ -74,19 +77,29 @@ export class FulfillmentService {
       );
     }
 
-    const { updatedItem, allDelivered, isPaid } = await this.repo.applyOrderItemStatus({
-      orderItemId,
-      orderId: item.orderId,
-      inventoryId: item.inventoryId,
-      quantity: item.quantity,
-      previousItemStatus: item.itemStatus,
-      orderStatus: item.order.status,
-      orderPaymentMethod: item.order.paymentMethod,
-      itemStatus,
-      ...(trackingNumber ? { trackingNumber } : {}),
-      ...(courierPartner ? { courierPartner } : {}),
-      source: isPlatform ? 'PLATFORM' : 'VENDOR',
-    });
+    const { updatedItem, newOrderStatus, allDelivered, isPaid } =
+      await this.repo.applyOrderItemStatus({
+        orderItemId,
+        orderId: item.orderId,
+        inventoryId: item.inventoryId,
+        quantity: item.quantity,
+        previousItemStatus: item.itemStatus,
+        orderStatus: item.order.status,
+        orderPaymentMethod: item.order.paymentMethod,
+        itemStatus,
+        ...(trackingNumber ? { trackingNumber } : {}),
+        ...(courierPartner ? { courierPartner } : {}),
+        source: isPlatform ? 'PLATFORM' : 'VENDOR',
+      });
+
+    if (newOrderStatus !== item.order.status) {
+      this.triggerFulfillmentEmail(
+        item.orderId,
+        newOrderStatus,
+        trackingNumber,
+        courierPartner,
+      ).catch(() => {});
+    }
 
     if (allDelivered && !isPaid) {
       logger.error(
@@ -96,6 +109,31 @@ export class FulfillmentService {
     }
 
     return updatedItem;
+  }
+
+  private async triggerFulfillmentEmail(
+    orderId: string,
+    newStatus: string,
+    trackingNumber?: string,
+    courierPartner?: string,
+  ) {
+    try {
+      const fullOrder = await coreOrderRepository.findOrderById(orderId);
+      if (!fullOrder) return;
+
+      if (newStatus === 'HANDED_OVER') {
+        await enqueueOrderShippedEmail(fullOrder, {
+          courierName: courierPartner || fullOrder.courierName || 'Standard Delivery',
+          trackingNumber: trackingNumber || fullOrder.trackingNumber || undefined,
+          trackingUrl: fullOrder.trackingUrl || undefined,
+          estimatedDelivery: fullOrder.estimatedDelivery || undefined,
+        });
+      } else if (newStatus === 'DELIVERED') {
+        await enqueueOrderDeliveredEmail(fullOrder);
+      }
+    } catch {
+      // Non-blocking email dispatch
+    }
   }
 }
 

@@ -29,6 +29,7 @@ export class CoreOrderRepository {
           },
         },
         address: true,
+        user: { select: { id: true, name: true, email: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
         },

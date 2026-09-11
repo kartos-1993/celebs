@@ -59,7 +59,7 @@ export class LogisticsService {
     const dispatchMode =
       payload.provider === 'MANUAL' ? DispatchMode.MANUAL : DispatchMode.AUTOMATED_3PL;
 
-    return this.logisticsRepo.updateDispatchedOrder({
+    const result = await this.logisticsRepo.updateDispatchedOrder({
       orderId: payload.orderId,
       dispatchMode,
       courierProvider: payload.provider,
@@ -71,6 +71,40 @@ export class LogisticsService {
       estimatedDelivery,
       notes: payload.notes,
     });
+
+    this.triggerDispatchEmail(
+      payload.orderId,
+      courierName,
+      trackingNumber,
+      trackingUrl,
+      estimatedDelivery,
+    ).catch(() => {});
+
+    return result;
+  }
+
+  private async triggerDispatchEmail(
+    orderId: string,
+    courierName?: string,
+    trackingNumber?: string,
+    trackingUrl?: string,
+    estimatedDelivery?: Date,
+  ) {
+    try {
+      const { coreOrderRepository } = await import('../order/core/order.repository');
+      const { enqueueOrderShippedEmail } = await import('../order/utils/order-email.util');
+      const fullOrder = await coreOrderRepository.findOrderById(orderId);
+      if (!fullOrder) return;
+
+      await enqueueOrderShippedEmail(fullOrder, {
+        courierName: courierName || fullOrder.courierName || 'Standard Delivery',
+        trackingNumber: trackingNumber || fullOrder.trackingNumber || undefined,
+        trackingUrl: trackingUrl || fullOrder.trackingUrl || undefined,
+        estimatedDelivery,
+      });
+    } catch {
+      // Non-blocking email dispatch
+    }
   }
 
   async markCodSettled(orderId: string, settlementReference: string) {

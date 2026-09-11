@@ -143,6 +143,8 @@ export class FulfillmentRepository {
           data: {
             status: newOrderStatus,
             ...(allDelivered && isPaid ? { paymentStatus: 'COMPLETED' } : {}),
+            ...(data.trackingNumber ? { trackingNumber: data.trackingNumber } : {}),
+            ...(data.courierPartner ? { courierName: data.courierPartner } : {}),
           },
         });
 
@@ -157,7 +159,11 @@ export class FulfillmentRepository {
             ? `Your package ${data.trackingNumber ? `(${data.trackingNumber}) ` : ''}is on its way${
                 data.courierPartner ? ` via ${data.courierPartner}` : ''
               }.`
-            : undefined;
+            : newOrderStatus === 'PACKED'
+              ? 'All items have been verified, packed, and prepared for shipping.'
+              : newOrderStatus === 'DELIVERED'
+                ? 'Your order has been safely delivered. Thank you for shopping with us!'
+                : undefined;
 
         await tx.orderTrackingEvent.create({
           data: {

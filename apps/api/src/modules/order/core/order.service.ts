@@ -1,5 +1,7 @@
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
+import { enqueueOrderCancelledEmail } from '../utils/order-email.util';
+
 import { CoreOrderRepository, coreOrderRepository } from './order.repository';
 
 export class CoreOrderService {
@@ -26,7 +28,7 @@ export class CoreOrderService {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    if (['SHIPPED', 'DELIVERED', 'CANCELLED'].includes(order.status)) {
+    if (['HANDED_OVER', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].includes(order.status)) {
       throw new AppError(
         `Cannot cancel order in status ${order.status}`,
         HTTPSTATUS.BAD_REQUEST,
@@ -34,13 +36,17 @@ export class CoreOrderService {
       );
     }
 
-    return this.repo.applyOrderCancellation({
+    const result = await this.repo.applyOrderCancellation({
       id: order.id,
       items: order.items.map((item) => ({
         inventoryId: item.inventoryId,
         quantity: item.quantity,
       })),
     });
+
+    enqueueOrderCancelledEmail(order).catch(() => {});
+
+    return result;
   }
 
   async adminGetOrders(status?: string, page = 1, limit = 10) {
