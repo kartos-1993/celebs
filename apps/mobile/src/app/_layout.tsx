@@ -14,6 +14,7 @@ import { CartSheetProvider } from '@/features/cart/context/cart-sheet-context';
 import { FlyToCartProvider } from '@/features/cart/context/fly-to-cart-context';
 import { PushNotificationListener } from '@/features/notifications/components/push-notification-listener';
 import { clientPersister, queryClient } from '@/lib/react-query/query-client';
+import { AppKeyboardProvider } from '@/providers/keyboard-provider';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -54,47 +55,49 @@ export default function RootLayout() {
         }}
       >
         <ThemeProvider value={DefaultTheme}>
-          <AuthProvider>
-            <PushNotificationListener />
-            <CartProvider>
-              <FlyToCartProvider>
-                <CartSheetProvider>
-                  <View style={{ flex: 1 }}>
-                    <AnimatedSplashOverlay isReady={isCacheRestored} />
-                    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                      <Stack.Screen
-                        name="product/[id]"
-                        options={{ headerShown: false, animation: 'slide_from_right' }}
-                      />
-                      <Stack.Screen
-                        name="category/[slug]"
-                        options={{ headerShown: false, animation: 'slide_from_right' }}
-                      />
-                      <Stack.Screen
-                        name="checkout"
-                        options={{ headerShown: false, animation: 'slide_from_bottom' }}
-                      />
-                      <Stack.Screen
-                        name="orders"
-                        options={{ headerShown: false, animation: 'slide_from_right' }}
-                      />
-                      <Stack.Screen
-                        name="order-detail"
-                        options={{ headerShown: false, animation: 'slide_from_right' }}
-                      />
-                      <Stack.Screen
-                        name="wishlist"
-                        options={{ headerShown: false, animation: 'slide_from_right' }}
-                      />
-                    </Stack>
-                    <FlyToCartOverlay />
-                    <ToastHost />
-                  </View>
-                </CartSheetProvider>
-              </FlyToCartProvider>
-            </CartProvider>
-          </AuthProvider>
+          <AppKeyboardProvider>
+            <AuthProvider>
+              <PushNotificationListener />
+              <CartProvider>
+                <FlyToCartProvider>
+                  <CartSheetProvider>
+                    <View style={{ flex: 1 }}>
+                      <AnimatedSplashOverlay isReady={isCacheRestored} />
+                      <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                        <Stack.Screen
+                          name="product/[id]"
+                          options={{ headerShown: false, animation: 'slide_from_right' }}
+                        />
+                        <Stack.Screen
+                          name="category/[slug]"
+                          options={{ headerShown: false, animation: 'slide_from_right' }}
+                        />
+                        <Stack.Screen
+                          name="checkout"
+                          options={{ headerShown: false, animation: 'slide_from_bottom' }}
+                        />
+                        <Stack.Screen
+                          name="orders"
+                          options={{ headerShown: false, animation: 'slide_from_right' }}
+                        />
+                        <Stack.Screen
+                          name="order-detail"
+                          options={{ headerShown: false, animation: 'slide_from_right' }}
+                        />
+                        <Stack.Screen
+                          name="wishlist"
+                          options={{ headerShown: false, animation: 'slide_from_right' }}
+                        />
+                      </Stack>
+                      <FlyToCartOverlay />
+                      <ToastHost />
+                    </View>
+                  </CartSheetProvider>
+                </FlyToCartProvider>
+              </CartProvider>
+            </AuthProvider>
+          </AppKeyboardProvider>
         </ThemeProvider>
       </PersistQueryClientProvider>
     </SafeAreaProvider>

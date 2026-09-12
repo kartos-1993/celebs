@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 
 import { useSubmitReviewWithImages } from '../hooks/use-reviews';
@@ -14,6 +15,11 @@ import { StarRating } from './star-rating';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
+import { isKeyboardControllerSupported } from '@/providers/keyboard-provider';
+
+const FormScroll = (
+  isKeyboardControllerSupported ? KeyboardAwareScrollView : ScrollView
+) as React.ComponentType<React.ComponentProps<typeof ScrollView> & { bottomOffset?: number }>;
 
 interface ReviewModalProps {
   visible: boolean;
@@ -82,7 +88,13 @@ export function ReviewModal({ visible, item, onClose }: ReviewModalProps) {
         <View style={styles.sheet}>
           <ReviewModalHeader onClose={onClose} />
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+          <FormScroll
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: 14 }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            bottomOffset={40}
+          >
             <View style={styles.ratingSection}>
               <ThemedText style={styles.ratingPrompt}>Overall Quality & Satisfaction</ThemedText>
               <StarRating rating={rating} size={28} onSelectRating={setRating} />
@@ -115,7 +127,7 @@ export function ReviewModal({ visible, item, onClose }: ReviewModalProps) {
                 <ThemedText style={styles.submitBtnText}>Submit Review</ThemedText>
               )}
             </TouchableOpacity>
-          </ScrollView>
+          </FormScroll>
         </View>
       </View>
     </Modal>

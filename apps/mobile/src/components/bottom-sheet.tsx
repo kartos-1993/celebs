@@ -1,11 +1,21 @@
-import React from 'react';
-import { Animated, Dimensions, Modal, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Keyboard,
+  Modal,
+  Platform,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { styles } from './bottom-sheet.styles';
 import { useBottomSheetAnimation } from './use-bottom-sheet-animation';
 
 import { Spacing } from '@/constants/theme';
+import { isKeyboardControllerSupported } from '@/providers/keyboard-provider';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const DEFAULT_HEIGHT_RATIO = 0.9;
@@ -30,6 +40,7 @@ export function BottomSheet({
   accessibilityLabel = 'Bottom sheet',
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const sheetHeight = Math.round(SCREEN_HEIGHT * heightRatio);
 
   const { mounted, slide, overlayOpacity, dragOffset, panResponder } = useBottomSheetAnimation({
@@ -37,6 +48,19 @@ export function BottomSheet({
     sheetHeight,
     onClose,
   });
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardOpen(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   if (!mounted) return null;
 
@@ -73,12 +97,23 @@ export function BottomSheet({
             <View style={styles.handle} />
           </View>
           {header}
-          <View style={styles.body}>{children}</View>
-          {footer ? (
-            <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.sm }]}>
-              {footer}
-            </View>
-          ) : null}
+          <KeyboardAvoidingView
+            behavior="padding"
+            style={styles.avoidingContainer}
+            enabled={isKeyboardControllerSupported}
+          >
+            <View style={styles.body}>{children}</View>
+            {footer ? (
+              <View
+                style={[
+                  styles.footer,
+                  { paddingBottom: isKeyboardOpen ? Spacing.sm : insets.bottom + Spacing.sm },
+                ]}
+              >
+                {footer}
+              </View>
+            ) : null}
+          </KeyboardAvoidingView>
         </Animated.View>
       </View>
     </Modal>
