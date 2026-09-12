@@ -116,14 +116,20 @@ export const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: Spacing.md,
     marginBottom: Spacing.sm,
+  },
+  titleTouchable: {
+    flex: 1,
+    flexShrink: 1,
   },
   ratingInline: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
+    paddingTop: 2,
   },
   ratingInlineText: {
     fontSize: FontSize.small,

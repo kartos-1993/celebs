@@ -1,3 +1,6 @@
+import { Platform } from 'react-native';
+import { File, UploadType } from 'expo-file-system';
+
 import type { IApiResponse } from '@celebs/shared-types';
 
 import type {
@@ -57,7 +60,14 @@ export async function fetchProductReviewSummaryApi(
   const data = await handleApiResponse(
     apiClient.get<IApiResponse<ProductReviewSummary>>(`/reviews/products/${productId}/summary`),
   );
-  return data ?? null;
+  if (!data) return null;
+  return {
+    ...data,
+    averageRating: Number(data.averageRating ?? 0),
+    totalReviews: Number(data.totalReviews ?? 0),
+    ratingsCount: Number(data.ratingsCount ?? 0),
+    withImagesCount: Number(data.withImagesCount ?? 0),
+  };
 }
 
 export async function fetchProductReviewGalleryApi(
@@ -113,19 +123,31 @@ export async function uploadReviewImageApi(
     size: 1024 * 500,
   });
 
-  const response = await fetch(localUri);
-  const blob = await response.blob();
-
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': mimeType,
-    },
-    body: blob,
-  });
-
-  if (!uploadRes.ok) {
-    throw new Error(`Upload failed with status: ${uploadRes.status}`);
+  if (Platform.OS === 'web') {
+    const response = await fetch(localUri);
+    const blob = await response.blob();
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': mimeType,
+      },
+      body: blob,
+    });
+    if (!uploadRes.ok) {
+      throw new Error(`Upload failed with status: ${uploadRes.status}`);
+    }
+  } else {
+    const file = new File(localUri);
+    const uploadResult = await file.upload(uploadUrl, {
+      httpMethod: 'PUT',
+      uploadType: UploadType.BINARY_CONTENT,
+      headers: {
+        'Content-Type': mimeType,
+      },
+    });
+    if (uploadResult.status < 200 || uploadResult.status >= 300) {
+      throw new Error(`Upload failed with status: ${uploadResult.status}`);
+    }
   }
 
   return publicUrl;

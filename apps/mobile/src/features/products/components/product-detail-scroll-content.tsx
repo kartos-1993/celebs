@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { styles } from '../styles/product.styles';
@@ -32,6 +32,8 @@ export function ProductDetailScrollContent({
   onSelectSize,
   onAddToCart,
 }: ProductDetailScrollContentProps) {
+  const [isReviewsSheetOpen, setIsReviewsSheetOpen] = useState(false);
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <ProductDetailGallerySection
@@ -41,9 +43,11 @@ export function ProductDetailScrollContent({
       />
 
       <ProductPriceCard
+        productId={product.id}
         name={product.name}
         price={product.price}
         discountedPrice={product.discountedPrice}
+        onOpenReviews={() => setIsReviewsSheetOpen(true)}
       />
 
       <View style={styles.sectionBand} />
@@ -63,6 +67,9 @@ export function ProductDetailScrollContent({
       <ProductServicesCard />
       <ProductReviewsCard
         productId={product.id}
+        isSheetOpen={isReviewsSheetOpen}
+        onOpenSheet={() => setIsReviewsSheetOpen(true)}
+        onCloseSheet={() => setIsReviewsSheetOpen(false)}
         onBuyTheSame={(variant) => {
           if (variant.color && product.colorVariants) {
             const colorIdx = product.colorVariants.findIndex(

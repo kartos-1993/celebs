@@ -13,15 +13,18 @@ interface FitSpectrumBarProps {
 }
 
 export function FitSpectrumBar({ fitDistribution }: FitSpectrumBarProps) {
-  const total = fitDistribution.trueToSize + fitDistribution.runsSmall + fitDistribution.runsLarge;
+  const trueToSize = Number(fitDistribution?.trueToSize ?? 0);
+  const runsSmall = Number(fitDistribution?.runsSmall ?? 0);
+  const runsLarge = Number(fitDistribution?.runsLarge ?? 0);
+  const total = trueToSize + runsSmall + runsLarge;
 
-  if (total === 0) {
+  if (total === 0 || isNaN(total)) {
     return null;
   }
 
-  const smallPct = Math.round((fitDistribution.runsSmall / total) * 100);
-  const truePct = Math.round((fitDistribution.trueToSize / total) * 100);
-  const largePct = Math.round((fitDistribution.runsLarge / total) * 100);
+  const smallPct = Math.round((runsSmall / total) * 100);
+  const truePct = Math.round((trueToSize / total) * 100);
+  const largePct = Math.round((runsLarge / total) * 100);
 
   return (
     <View style={styles.container}>

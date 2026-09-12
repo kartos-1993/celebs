@@ -21,15 +21,21 @@ interface NotificationResponseData {
 /**
  * Remote push notifications are only supported on physical devices with custom
  * development builds (expo-dev-client / standalone APK).
- * Expo Go SDK 53+ throws a fatal error if expo-notifications is evaluated
- * on Android, so we lazy-load the module strictly outside of Expo Go.
+ * Expo Go SDK 53+ throws a fatal error if remote push notification APIs are invoked
+ * on Android, so we strictly disable remote push token registration inside Expo Go.
  */
-const isPushSupported =
-  Constants.appOwnership !== 'expo' && Platform.OS !== 'web' && Device.isDevice;
+const isExpoGo =
+  Constants.appOwnership === 'expo' || (Constants.executionEnvironment as string) === 'storeClient';
+
+const isPushSupported = !isExpoGo && Platform.OS !== 'web' && Device.isDevice;
 
 const getNotifications = () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('expo-notifications');
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
 };
 
 export function usePushNotifications() {
@@ -39,6 +45,9 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!user || !isPushSupported) return;
+
+    const Notifications = getNotifications();
+    if (!Notifications) return;
 
     let isMounted = true;
     let notificationListener: { remove: () => void } | null = null;

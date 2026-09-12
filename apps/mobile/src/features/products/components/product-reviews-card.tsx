@@ -16,6 +16,9 @@ interface ProductReviewsCardProps {
   productId?: string;
   onBuyTheSame?: (variant: { color?: string | null; size?: string | null }) => void;
   onAddToCart?: (item: ReviewGalleryItem) => void;
+  isSheetOpen?: boolean;
+  onOpenSheet?: () => void;
+  onCloseSheet?: () => void;
 }
 
 const SENTIMENT_CHIPS = ['True to Picture', 'Good Quality', 'Fast Shipping'];
@@ -24,15 +27,24 @@ export function ProductReviewsCard({
   productId = '',
   onBuyTheSame,
   onAddToCart,
+  isSheetOpen,
+  onOpenSheet,
+  onCloseSheet,
 }: ProductReviewsCardProps) {
-  const [sheetVisible, setSheetVisible] = useState(false);
+  const [internalSheetVisible, setInternalSheetVisible] = useState(false);
+  const sheetVisible = isSheetOpen !== undefined ? isSheetOpen : internalSheetVisible;
+  const handleOpenSheet = onOpenSheet ?? (() => setInternalSheetVisible(true));
+  const handleCloseSheet = onCloseSheet ?? (() => setInternalSheetVisible(false));
 
   const { data: summary } = useProductReviewSummary(productId);
   const { data: reviews = [] } = useProductReviews(productId, 1, 3);
 
-  const avgRating = summary?.averageRating ? summary.averageRating.toFixed(1) : '4.8';
-  const totalCount = summary?.totalReviews ?? reviews.length;
-  const previewReviews = reviews.slice(0, 2);
+  const rawAvg = Number(summary?.averageRating ?? 0);
+  const avgRating = !isNaN(rawAvg) && rawAvg > 0 ? rawAvg.toFixed(1) : '4.8';
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
+  const totalCount =
+    summary?.totalReviews != null ? Number(summary.totalReviews) : safeReviews.length;
+  const previewReviews = safeReviews.slice(0, 2);
 
   return (
     <View style={styles.container}>
@@ -42,11 +54,7 @@ export function ProductReviewsCard({
           <Star size={15} color={Palette.gold ?? '#F59E0B'} fill={Palette.gold ?? '#F59E0B'} />
           <ThemedText style={styles.countText}>({totalCount} reviews)</ThemedText>
         </View>
-        <TouchableOpacity
-          style={styles.viewMoreBtn}
-          onPress={() => setSheetVisible(true)}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.viewMoreBtn} onPress={handleOpenSheet} activeOpacity={0.7}>
           <ThemedText style={styles.viewMoreText}>View more</ThemedText>
           <ChevronRight size={14} color={Palette.gray600} />
         </TouchableOpacity>
@@ -91,7 +99,7 @@ export function ProductReviewsCard({
       <ProductReviewsSheet
         visible={sheetVisible}
         productId={productId}
-        onClose={() => setSheetVisible(false)}
+        onClose={handleCloseSheet}
         onBuyTheSame={onBuyTheSame}
         onAddToCart={onAddToCart}
       />

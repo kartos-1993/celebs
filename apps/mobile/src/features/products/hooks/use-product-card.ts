@@ -168,15 +168,23 @@ export function useProductCard({
   const primaryImage = cardImages[activeImageIndex] || cardImages[0] || '';
   const resolvedPrimaryUrl = resolveImageUrl(primaryImage);
 
-  const currentPrice = product.discountedPrice || product.price;
-  const hasDiscount = Boolean(product.discountedPrice && product.discountedPrice < product.price);
-  const discountPercent = hasDiscount
-    ? Math.round(((product.price - product.discountedPrice!) / product.price) * 100)
-    : (productRecord.discountPercent as number | undefined) || 0;
+  const rawPrice = Number(product.price ?? 0);
+  const rawDiscount =
+    product.discountedPrice != null && !isNaN(Number(product.discountedPrice))
+      ? Number(product.discountedPrice)
+      : null;
+  const currentPrice =
+    rawDiscount != null && rawDiscount > 0 ? rawDiscount : isNaN(rawPrice) ? 0 : rawPrice;
+  const hasDiscount = Boolean(rawDiscount != null && rawDiscount < rawPrice);
+  const discountPercent =
+    hasDiscount && rawPrice > 0
+      ? Math.round(((rawPrice - rawDiscount!) / rawPrice) * 100)
+      : (productRecord.discountPercent as number | undefined) || 0;
 
   const priceColor = hasDiscount ? Palette.warning : Palette.black;
-  const integerPart = Math.floor(currentPrice);
-  const decimalPart = (currentPrice % 1).toFixed(2).substring(1);
+  const safePrice = isNaN(currentPrice) ? 0 : currentPrice;
+  const integerPart = Math.floor(safePrice);
+  const decimalPart = (safePrice % 1).toFixed(2).substring(1);
 
   const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
 
