@@ -6,6 +6,7 @@ import type { DynamicWidget } from '../types';
 import { PromoCardData, PromoCardWidget } from './promo-card-widget';
 
 import { Palette } from '@/constants/theme';
+import { CategoryCircles } from '@/features/categories/components/category-circles';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import type { Category } from '@/features/categories/types';
 import { BannerCarousel } from '@/features/home/components/banner-carousel';
@@ -68,6 +69,12 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
 
   CATEGORY_GRID: ({ widget }) => (
     <CategoryGrid
+      initialCategories={(widget.data as { categories?: Category[] } | undefined)?.categories}
+    />
+  ),
+
+  CATEGORY_CIRCLES: ({ widget }) => (
+    <CategoryCircles
       initialCategories={(widget.data as { categories?: Category[] } | undefined)?.categories}
     />
   ),

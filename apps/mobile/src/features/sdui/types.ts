@@ -13,6 +13,7 @@ export type KnownSDUIWidgetType =
   | 'CAMPAIGN_COUNTDOWN'
   | 'COMBO_SHOWCASE'
   | 'CATEGORY_GRID'
+  | 'CATEGORY_CIRCLES'
   | 'PRODUCT_GRID'
   | 'PROMO_CARD'
   | 'CUSTOM_BANNER'
