@@ -1,4 +1,5 @@
 import { uploadFiles } from '../api';
+import { pathFor } from '../fields/components/sku-table-utils';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import type { CreateProductRequest } from '../types';
 import type { FieldSpec } from '../types';
@@ -11,8 +12,10 @@ import {
   normalizeText,
   resolveColorCode,
   toNonNegativeInteger,
+  toPositiveNumber,
   toStringArray,
 } from './add-product-helpers';
+import { generateCollisionProofBaseSku } from './generate-sku-helpers';
 
 interface MeasurementItem {
   name?: string;
@@ -123,7 +126,7 @@ export async function buildProductPayload({
         quantity:
           toNonNegativeInteger(
             flatValues[
-              `sku.variants.${colorFieldName}.${colorValue}.${sizeFieldName}.${sizeValue}.stock`
+              pathFor(colorFieldName as string, colorValue, sizeFieldName, sizeValue, 'stock')
             ],
           ) ?? defaultStock,
       }));
@@ -132,16 +135,15 @@ export async function buildProductPayload({
         {
           size: 'default',
           quantity:
-            toNonNegativeInteger(
-              flatValues[`sku.variants.${colorFieldName}.${colorValue}.stock`],
-            ) ?? defaultStock,
+            toNonNegativeInteger(flatValues[pathFor(colorFieldName, colorValue, 'stock')]) ??
+            defaultStock,
         },
       ];
     } else if (sizeFieldName && selectedSizes.length > 0) {
       stocks = selectedSizes.map((sizeValue) => ({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
-          toNonNegativeInteger(flatValues[`sku.variants.${sizeFieldName}.${sizeValue}.stock`]) ??
+          toNonNegativeInteger(flatValues[pathFor(sizeFieldName, sizeValue, 'stock')]) ??
           defaultStock,
       }));
     } else {
@@ -167,8 +169,99 @@ export async function buildProductPayload({
     };
   });
 
+  // Build variantOptions from actual selections (BE inventory maps skus by Color+Size).
+  const builtVariantOptions: CreateProductRequest['variantOptions'] = [];
+  if (colorFieldName && selectedColors.length > 0) {
+    builtVariantOptions.push({
+      name: 'Color',
+      values: selectedColors.map((c) => colorLabelMap.get(c) || c),
+    });
+  }
+  if (sizeFieldName && selectedSizes.length > 0) {
+    builtVariantOptions.push({
+      name: 'Size',
+      values: selectedSizes.map((s) => sizeLabelMap.get(s) || s),
+    });
+  }
+
+  // Build skus[] from the SKU matrix so BE skuMap finds real codes instead of minting randoms.
+  const brandForSku = normalizeText(values.brand);
+  const buildSkuCode = (fallbackParts: string[]): string =>
+    generateCollisionProofBaseSku(brandForSku || undefined, fallbackParts.join(' '));
+  const readCell = (parts: string[], field: string): unknown =>
+    flatValues[pathFor(...parts, field)];
+
+  const builtSkus: NonNullable<CreateProductRequest['skus']> = [];
+  const pushSku = (selectedOptions: Record<string, string>, parts: string[], image?: string) => {
+    const cellPrice =
+      toPositiveNumber(readCell(parts, 'price')) ??
+      toPositiveNumber(readCell(parts, 'specialPrice')) ??
+      price;
+    const cellDiscounted = toPositiveNumber(readCell(parts, 'specialPrice'));
+    const cellStock =
+      toNonNegativeInteger(readCell(parts, 'stock')) ??
+      toNonNegativeInteger(flatValues['sku.default.stock']) ??
+      0;
+    const rawSellerSku = normalizeText(readCell(parts, 'sellerSku'));
+    builtSkus.push({
+      skuCode: rawSellerSku || buildSkuCode(Object.values(selectedOptions)),
+      selectedOptions,
+      price: cellPrice,
+      discountedPrice:
+        cellDiscounted !== undefined && cellDiscounted < cellPrice ? cellDiscounted : undefined,
+      stock: cellStock,
+      image: image || mainImages[0] || undefined,
+      isDefault: builtSkus.length === 0,
+    });
+  };
+
+  if (colorFieldName && sizeFieldName && selectedColors.length > 0 && selectedSizes.length > 0) {
+    for (const colorValue of selectedColors) {
+      const colorLabel = colorLabelMap.get(colorValue) || colorValue;
+      const colorImages = uploadedColorAssets[colorValue]?.images?.length
+        ? uploadedColorAssets[colorValue].images
+        : mainImages;
+      for (const sizeValue of selectedSizes) {
+        const sizeLabel = sizeLabelMap.get(sizeValue) || sizeValue;
+        pushSku(
+          { Color: colorLabel, Size: sizeLabel },
+          [colorFieldName, colorValue, sizeFieldName, sizeValue],
+          colorImages[0],
+        );
+      }
+    }
+  } else if (colorFieldName && selectedColors.length > 0) {
+    for (const colorValue of selectedColors) {
+      const colorLabel = colorLabelMap.get(colorValue) || colorValue;
+      const colorImages = uploadedColorAssets[colorValue]?.images?.length
+        ? uploadedColorAssets[colorValue].images
+        : mainImages;
+      pushSku({ Color: colorLabel }, [colorFieldName, colorValue], colorImages[0]);
+    }
+  } else if (sizeFieldName && selectedSizes.length > 0) {
+    for (const sizeValue of selectedSizes) {
+      const sizeLabel = sizeLabelMap.get(sizeValue) || sizeValue;
+      pushSku({ Size: sizeLabel }, [sizeFieldName, sizeValue], mainImages[0]);
+    }
+  }
+
+  // Canonical colorMeta — the only shape BE reads (presenter + usage collector).
+  const canonicalColorMeta: Record<string, { swatch?: string; images: string[]; hot: boolean }> =
+    {};
+  for (const [colorValue, assets] of Object.entries(uploadedColorAssets)) {
+    canonicalColorMeta[colorValue] = {
+      swatch: assets.swatch,
+      images: assets.images,
+      hot: assets.hot,
+    };
+  }
+
   return {
     name: normalizeText(values.name),
+    brandId:
+      typeof values.brandId === 'string' && values.brandId.trim().length > 0
+        ? values.brandId.trim()
+        : undefined,
     brand: normalizeText(values.brand) || undefined,
     description: normalizeText(values.description),
     price,
@@ -188,6 +281,7 @@ export async function buildProductPayload({
               ![
                 'name',
                 'brand',
+                'brandId',
                 'description',
                 'price',
                 'specialPrice',
@@ -206,20 +300,14 @@ export async function buildProductPayload({
           )
           .map((name) => [name, values[name]]),
       ),
-      uploadedAssets: {
-        mainImages,
-        colorMeta: uploadedColorAssets,
+      variants: {
+        colorMeta: canonicalColorMeta,
       },
-      variantFields: variantMeta,
     },
     tags: [],
     featured: false,
-    skus: Array.isArray(values.skus)
-      ? (values.skus as CreateProductRequest['skus'] & unknown[])
-      : [],
-    variantOptions: Array.isArray(values.variantOptions)
-      ? (values.variantOptions as CreateProductRequest['variantOptions'] & unknown[])
-      : [],
+    skus: builtSkus,
+    variantOptions: builtVariantOptions,
     status,
   };
 }
