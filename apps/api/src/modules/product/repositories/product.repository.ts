@@ -34,11 +34,11 @@ export class ProductRepository {
       .then((row) => row !== null);
   }
 
-  create(data: Prisma.ProductCreateInput, tx: TxClient) {
+  create(data: Prisma.ProductUncheckedCreateInput, tx: TxClient) {
     return tx.product.create({ data, include: PRODUCT_DETAIL_INCLUDE });
   }
 
-  update(id: string, data: Prisma.ProductUpdateInput, tx: TxClient) {
+  update(id: string, data: Prisma.ProductUncheckedUpdateInput, tx: TxClient) {
     return tx.product.update({ where: { id }, data, include: PRODUCT_DETAIL_INCLUDE });
   }
 }

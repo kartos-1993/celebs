@@ -526,8 +526,10 @@ export class ProductService {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
-    const departmentHint =
-      resolvedCategory.path || resolvedCategory.name || resolvedCategory.slug || '';
+    const categoryPath = resolvedCategory.path;
+    const departmentHint = Array.isArray(categoryPath)
+      ? categoryPath.join('/')
+      : categoryPath || resolvedCategory.name || resolvedCategory.slug || '';
 
     return {
       categoryId: resolvedCategory.id,

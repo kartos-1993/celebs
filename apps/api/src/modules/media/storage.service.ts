@@ -411,12 +411,12 @@ export async function confirmUploadedObject(
   if (finalKey !== key) {
     // Idempotent re-confirm: identical bytes already catalogued under the hash key.
     const existing = await mediaRepository.findAssetByKey(finalKey);
-    // Temp upload key is unreferenced either way — best-effort removal (age-cutoff
-    // reaper is the backstop).
-    await s3Client
-      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
-      .catch(() => null);
     if (existing) {
+      // Temp upload key is unreferenced — best-effort removal (age-cutoff
+      // reaper is the backstop).
+      await s3Client
+        .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
+        .catch(() => null);
       return {
         key: existing.key,
         url: existing.url,
