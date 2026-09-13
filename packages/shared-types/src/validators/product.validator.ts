@@ -33,6 +33,7 @@ export const stockSchema = z.object({
 export const colorVariantSchema = z.object({
   name: z.string().trim().min(1, 'Color name is required'),
   colorCode: z.string().trim().min(1, 'Color code is required'),
+  swatch: z.string().url('Swatch must be a valid URL').optional().or(z.literal('')),
   images: z.array(z.string().url('Image must be a valid URL')).optional().default([]),
   stocks: z.array(stockSchema).optional().default([]),
 });
