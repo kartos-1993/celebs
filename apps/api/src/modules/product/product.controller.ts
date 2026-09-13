@@ -62,6 +62,7 @@ export class ProductController {
         actor.userId,
         effectiveVendorId,
         effectiveVendorName,
+        actor.role,
       );
 
       sendCreated(res, product, 'Product created successfully');

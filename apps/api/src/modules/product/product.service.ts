@@ -116,6 +116,7 @@ export class ProductService {
     userId: string,
     vendorId?: string | null,
     vendorName?: string,
+    userRole?: string,
   ): Promise<Record<string, unknown> | null> {
     const { categoryId, subcategoryId, departmentHint } = await this.resolveCategoryIds(
       input.categoryId,
@@ -128,6 +129,7 @@ export class ProductService {
     await this.assertBrandGuards({
       vendorId,
       brandId: resolvedBrandId,
+      userRole,
       title: input.name,
       description: input.description,
     });
