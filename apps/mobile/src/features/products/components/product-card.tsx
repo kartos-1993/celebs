@@ -17,7 +17,7 @@ interface ProductCardProps {
   isFirstCard?: boolean;
 }
 
-export function ProductCard({
+export const ProductCard = React.memo(function ProductCard({
   product,
   onPress,
   onAddToCart,
@@ -83,4 +83,4 @@ export function ProductCard({
       />
     </View>
   );
-}
+});

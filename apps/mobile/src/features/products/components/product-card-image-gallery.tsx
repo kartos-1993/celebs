@@ -41,6 +41,13 @@ interface ProductCardImageGalleryProps {
   onSelectColor: (idx: number, e?: GestureResponderEvent) => void;
 }
 
+/**
+ * Render window around the visible slide. Mounting all 10+ full-res photos per
+ * card at once stalls the homepage (network + decode + memory on every card).
+ * Neighbors mount so swipes never show a blank frame.
+ */
+const GALLERY_WINDOW = 1;
+
 export function ProductCardImageGallery({
   cardWidth,
   cardImages,
@@ -82,8 +89,11 @@ export function ProductCardImageGallery({
             style={styles.imageScrollView}
           >
             {cardImages.map((imgSrc, idx) => {
-              const resolvedUrl = resolveImageUrl(imgSrc);
-              const optimizedUrl = getOptimizedImageUrl(resolvedUrl, { preset: 'grid-card', dpr });
+              const inWindow = Math.abs(idx - activeImageIndex) <= GALLERY_WINDOW;
+              const resolvedUrl = inWindow ? resolveImageUrl(imgSrc) : '';
+              const optimizedUrl = inWindow
+                ? getOptimizedImageUrl(resolvedUrl, { preset: 'grid-card', dpr })
+                : '';
               const finalUri = optimizedUrl || resolvedUrl;
 
               return (
@@ -92,7 +102,7 @@ export function ProductCardImageGallery({
                   onPress={onPress}
                   style={{ width: cardWidth, height: '100%' }}
                 >
-                  {finalUri ? (
+                  {inWindow && finalUri ? (
                     <Image
                       source={{ uri: finalUri }}
                       style={styles.productImage}
@@ -100,12 +110,16 @@ export function ProductCardImageGallery({
                       transition={150}
                       cachePolicy="memory-disk"
                     />
-                  ) : (
+                  ) : inWindow ? (
                     <View style={styles.placeholderImage}>
                       <ThemedText type="small" style={{ opacity: 0.4 }}>
                         No Image
                       </ThemedText>
                     </View>
+                  ) : (
+                    // Same-size blank slot: keeps paging widths stable without
+                    // mounting (and fetching) off-screen photos.
+                    <View style={[styles.productImage, { backgroundColor: Palette.gray100 }]} />
                   )}
                 </Pressable>
               );
