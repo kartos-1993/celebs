@@ -19,6 +19,41 @@ export interface IQCCheckResult {
   };
 }
 
+/**
+ * Hard publish floor (strict mode): per-size 0 is allowed, but a product whose
+ * every size in every color is 0 — or that has no variants at all — stays draft.
+ * Mirrors the FE sidebar gates so direct API callers can't bypass them.
+ */
+export function sumVariantStock(colorVariants: unknown): number {
+  if (!Array.isArray(colorVariants)) return 0;
+  let total = 0;
+  for (const variant of colorVariants as Array<Record<string, unknown>>) {
+    const stocks = variant?.stocks;
+    if (!Array.isArray(stocks)) continue;
+    for (const stock of stocks as Array<Record<string, unknown>>) {
+      const qty = typeof stock?.quantity === 'number' ? stock.quantity : Number(stock?.quantity);
+      if (Number.isFinite(qty) && (qty as number) > 0) total += qty as number;
+    }
+  }
+  return total;
+}
+
+/** Every selected color must carry at least one gallery photo. */
+export function getColorImageBlockers(colorVariants: unknown): string[] {
+  if (!Array.isArray(colorVariants) || colorVariants.length === 0) {
+    return ['Add at least one color variant to publish.'];
+  }
+  const blockers: string[] = [];
+  for (const variant of colorVariants as Array<Record<string, unknown>>) {
+    const name = String(variant?.name ?? 'Unnamed');
+    const images = variant?.images;
+    if (!Array.isArray(images) || images.length === 0) {
+      blockers.push(`Add at least one product photo for color ${name}.`);
+    }
+  }
+  return blockers;
+}
+
 export function calculateProductQCScore(
   productInput?: Record<string, unknown> | null,
 ): IQCCheckResult {

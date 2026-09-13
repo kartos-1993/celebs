@@ -156,16 +156,17 @@ export class CoreOrderRepository {
 
     return prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
-        for (const item of sortedItems) {
-          await tx.productInventory.update({
-            where: { id: item.inventoryId },
-            data: {
-              reservedQuantity: {
-                decrement: item.quantity,
-              },
-            },
-          });
-        }
+        // Single set-based restore (sorted input keeps lock order deterministic).
+        await tx.$executeRaw`
+          UPDATE "ProductInventory" AS p
+          SET "reservedQuantity" = p."reservedQuantity" - u.qty
+          FROM (
+            SELECT
+              unnest(${sortedItems.map((item) => item.inventoryId)}::text[]) AS id,
+              unnest(${sortedItems.map((item) => item.quantity)}::int[]) AS qty
+          ) AS u
+          WHERE p.id = u.id
+        `;
 
         await tx.orderItem.updateMany({
           where: { orderId: order.id },

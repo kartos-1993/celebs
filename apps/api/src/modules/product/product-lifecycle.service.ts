@@ -4,7 +4,11 @@ import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { mediaRepository } from '../media/media.repository';
 
-import { calculateProductQCScore } from './utils/product-qc';
+import {
+  calculateProductQCScore,
+  getColorImageBlockers,
+  sumVariantStock,
+} from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import type { ProductStatusValue } from './product-status';
@@ -40,6 +44,8 @@ export class ProductLifecycleService {
         ErrorCode.INVALID_REQUEST,
       );
     }
+
+    await this.assertPublishable(product.id, product.colorVariants);
 
     const updated = await prisma.product.update({
       where: { id },
@@ -84,6 +90,9 @@ export class ProductLifecycleService {
     }
 
     const args = this.parseReviewArgs(actionOrPayload, reviewerIdArg, noteArg);
+    if (args.action === 'approve') {
+      await this.assertPublishable(product.id, product.colorVariants);
+    }
     const qcResult = calculateProductQCScore(formatProductResponse(product));
 
     const updatedHistory = toJsonInput([
@@ -107,6 +116,31 @@ export class ProductLifecycleService {
     }
 
     return formatProductResponse(updated, { isElevated: true });
+  }
+
+  /**
+   * Strict publish floor: per-size 0 is fine, but all-zero stock or a color
+   * without photos stays out of review and out of the storefront. Live
+   * ProductInventory rows are authoritative when present, JSON otherwise.
+   */
+  private async assertPublishable(productId: string, colorVariants: unknown): Promise<void> {
+    const blockers = [...getColorImageBlockers(colorVariants)];
+
+    const liveRows = await prisma.productInventory.findMany({
+      where: { productId },
+      select: { quantity: true },
+    });
+    const total =
+      liveRows.length > 0
+        ? liveRows.reduce((sum, row) => sum + row.quantity, 0)
+        : sumVariantStock(colorVariants);
+    if (total <= 0) {
+      blockers.push('Add at least 1 unit in one size to publish.');
+    }
+
+    if (blockers.length > 0) {
+      throw new AppError(blockers.join(' '), HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    }
   }
 
   private parseReviewArgs(

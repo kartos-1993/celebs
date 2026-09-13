@@ -15,12 +15,13 @@ import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 import { brandRepository } from '../brand/brand.repository';
 import { brandService } from '../brand/brand.service';
 import { categoryRepository } from '../category/category.repository';
+import { InventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
 
-import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
+import { getColorImageBlockers, sumVariantStock } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import { ProductLifecycleService } from './product-lifecycle.service';
@@ -38,7 +39,7 @@ export type ProductColorVariantInput = ProductColorVariantType;
 export { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT };
 
 export class ProductService {
-  private readonly inventoryRepository = new PostgresInventoryRepository();
+  private readonly inventoryRepository = new InventoryRepository();
   private readonly products: ProductRepository;
   private readonly queryService = new ProductQueryService();
   private readonly lifecycleService = new ProductLifecycleService();
@@ -130,6 +131,20 @@ export class ProductService {
       title: input.name,
       description: input.description,
     });
+
+    // Direct publish (publish-capable actors) must clear the same floor as
+    // submit/review — otherwise zero-stock products bypass the strict rule.
+    if (input.status === PRODUCT_STATUS.PUBLISHED) {
+      const blockers = [
+        ...getColorImageBlockers(input.colorVariants),
+        ...(sumVariantStock(input.colorVariants) > 0
+          ? []
+          : ['Add at least 1 unit in one size to publish.']),
+      ];
+      if (blockers.length > 0) {
+        throw new AppError(blockers.join(' '), HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      }
+    }
 
     const maxAttempts = 3;
     let createdProduct: Product | null = null;

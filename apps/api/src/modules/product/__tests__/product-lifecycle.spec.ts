@@ -158,6 +158,7 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
         {
           name: 'Space Gray',
           colorCode: '#53565A',
+          images: ['https://example.com/macbook-air-space-gray.jpg'],
           stocks: [{ size: 'Default', quantity: 5 }],
         },
       ],
@@ -195,6 +196,7 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
         {
           name: 'Silver',
           colorCode: '#C0C0C0',
+          images: ['https://example.com/ipad-pro-silver.jpg'],
           stocks: [{ size: 'Default', quantity: 8 }],
         },
       ],
@@ -232,6 +234,7 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
         {
           name: 'White',
           colorCode: '#FFFFFF',
+          images: ['https://example.com/clone-charger-white.jpg'],
           stocks: [{ size: 'Default', quantity: 100 }],
         },
       ],
@@ -338,7 +341,7 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     ).rejects.toThrow('Forbidden: You do not own this product');
   });
 
-  it('should create a product with multiple color variants sharing prefixes without SKU collision (Shein-style SKUs)', async () => {
+  it('should create a product with multiple color variants sharing prefixes without SKU collision (generated SKUs)', async () => {
     const input: CreateProductType = {
       name: 'Prefix Collision Resilience Shirt',
       description: 'Testing multi-variant SKU collision resistance.',
@@ -395,10 +398,73 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     const skuSet = new Set(inventories.map((inv) => inv.sku));
     expect(skuSet.size).toBe(6);
 
-    // Verify each SKU follows the 18-character Shein/Retail-grade standard
+    // Verify each SKU follows the 18-character retail-grade standard
     for (const inv of inventories) {
       expect(inv.sku).toHaveLength(18);
       expect(inv.sku).toMatch(/^[a-z0-9]{2}\d{16}$/);
     }
+  });
+
+  it('should refuse submit for review when every size has zero stock', async () => {
+    const input: CreateProductType = {
+      name: 'Out Of Stock Widget',
+      description: 'Widget with no units anywhere.',
+      price: 250,
+      categoryId: mockCategory.id,
+      subcategoryId: mockSubcategory.id,
+      colorVariants: [
+        {
+          name: 'Black',
+          colorCode: '#000000',
+          images: ['https://example.com/oos-widget-black.jpg'],
+          stocks: [
+            { size: 'S', quantity: 0 },
+            { size: 'M', quantity: 0 },
+          ],
+        },
+      ],
+    };
+
+    const product = await productService.createProduct(
+      input,
+      'user-id-123',
+      mockVendor.id,
+      'OOS Store',
+    );
+    expect(product).not.toBeNull();
+    expect(product?.status).toBe('draft');
+
+    await expect(
+      productService.submitProductForReview(String(product?.id), mockVendor.id),
+    ).rejects.toThrow('Add at least 1 unit in one size to publish.');
+  });
+
+  it('should refuse submit for review when a color has no photos', async () => {
+    const input: CreateProductType = {
+      name: 'Photo Less Gadget',
+      description: 'Gadget missing gallery for its color.',
+      price: 300,
+      categoryId: mockCategory.id,
+      subcategoryId: mockSubcategory.id,
+      colorVariants: [
+        {
+          name: 'Red',
+          colorCode: '#FF0000',
+          stocks: [{ size: 'Default', quantity: 5 }],
+        },
+      ],
+    };
+
+    const product = await productService.createProduct(
+      input,
+      'user-id-123',
+      mockVendor.id,
+      'Photo Store',
+    );
+    expect(product).not.toBeNull();
+
+    await expect(
+      productService.submitProductForReview(String(product?.id), mockVendor.id),
+    ).rejects.toThrow('Add at least one product photo for color Red.');
   });
 });
