@@ -1,4 +1,4 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderItemStatus, OrderStatus, PaymentMethod } from '@prisma/client';
 
 import { resolveOrderItemImageUrl } from '../utils/order-image.util';
 
@@ -14,6 +14,9 @@ export class CoreOrderRepository {
       include: {
         items: {
           include: {
+            vendor: {
+              select: { id: true, shopName: true },
+            },
             inventory: {
               include: {
                 product: {
@@ -62,6 +65,9 @@ export class CoreOrderRepository {
         include: {
           items: {
             include: {
+              vendor: {
+                select: { id: true, shopName: true },
+              },
               inventory: {
                 include: {
                   product: {
@@ -192,27 +198,43 @@ export class CoreOrderRepository {
           userId,
           status: { notIn: [OrderStatus.CANCELLED, OrderStatus.RETURNED] },
           paymentStatus: 'PENDING',
+          paymentMethod: { not: PaymentMethod.COD },
         },
       }),
       prisma.order.count({
         where: {
           userId,
           status: { in: [OrderStatus.CONFIRMED, OrderStatus.PACKED] },
-          paymentStatus: { not: 'PENDING' },
+          OR: [{ paymentMethod: PaymentMethod.COD }, { paymentStatus: { not: 'PENDING' } }],
+          items: {
+            some: {
+              itemStatus: { in: [OrderItemStatus.PENDING, OrderItemStatus.PACKED] },
+            },
+          },
         },
       }),
       prisma.order.count({
         where: {
           userId,
-          status: { in: [OrderStatus.HANDED_OVER, OrderStatus.OUT_FOR_DELIVERY] },
+          status: { notIn: [OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.RETURNED] },
+          OR: [
+            { status: { in: [OrderStatus.HANDED_OVER, OrderStatus.OUT_FOR_DELIVERY] } },
+            {
+              items: {
+                some: {
+                  itemStatus: OrderItemStatus.HANDED_OVER,
+                },
+              },
+            },
+          ],
         },
       }),
       prisma.orderItem.count({
         where: {
           order: {
             userId,
-            status: OrderStatus.DELIVERED,
           },
+          itemStatus: OrderItemStatus.DELIVERED,
           review: null,
         },
       }),

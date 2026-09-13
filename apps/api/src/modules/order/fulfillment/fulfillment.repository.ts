@@ -107,26 +107,34 @@ export class FulfillmentRepository {
         });
       }
 
-      // Check if all items in parent order have reached the new status
+      // Check active items in parent order (excluding cancelled items)
       const allItems = await tx.orderItem.findMany({
         where: { orderId: data.orderId },
       });
 
-      const allPacked = allItems.every((i) =>
-        ['PACKED', 'HANDED_OVER', 'DELIVERED'].includes(i.itemStatus),
-      );
-      const allHandedOver = allItems.every((i) =>
-        ['HANDED_OVER', 'DELIVERED'].includes(i.itemStatus),
-      );
-      const allDelivered = allItems.every((i) => i.itemStatus === 'DELIVERED');
+      const activeItems = allItems.filter((i) => i.itemStatus !== 'CANCELLED');
 
       let newOrderStatus = data.orderStatus;
-      if (allDelivered) {
-        newOrderStatus = 'DELIVERED';
-      } else if (allHandedOver) {
-        newOrderStatus = 'HANDED_OVER';
-      } else if (allPacked) {
-        newOrderStatus = 'PACKED';
+      let allDelivered = false;
+
+      if (activeItems.length === 0) {
+        newOrderStatus = 'CANCELLED';
+      } else {
+        allDelivered = activeItems.every((i) => i.itemStatus === 'DELIVERED');
+        const anyInTransit = activeItems.some((i) =>
+          ['HANDED_OVER', 'DELIVERED'].includes(i.itemStatus),
+        );
+        const anyPacked = activeItems.some((i) =>
+          ['PACKED', 'HANDED_OVER', 'DELIVERED'].includes(i.itemStatus),
+        );
+
+        if (allDelivered) {
+          newOrderStatus = 'DELIVERED';
+        } else if (anyInTransit) {
+          newOrderStatus = 'HANDED_OVER';
+        } else if (anyPacked) {
+          newOrderStatus = 'PACKED';
+        }
       }
 
       const isPaid =

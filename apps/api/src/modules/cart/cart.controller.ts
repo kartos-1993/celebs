@@ -166,7 +166,9 @@ export class CartController {
     }
 
     const validatedInput = syncCartSchema.parse(req.body);
-    const cart = await CartService.syncCart(user.id, validatedInput.items);
+    const guestSessionId =
+      validatedInput.sessionId || (req.headers['x-session-id'] as string | undefined);
+    const cart = await CartService.syncCart(user.id, validatedInput.items, guestSessionId);
 
     sendSuccess(res, cart, 'Guest cart merged successfully');
   });
