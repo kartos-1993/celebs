@@ -120,34 +120,6 @@ export function useProductCard({
     product.colorVariants,
   ]);
 
-  useEffect(() => {
-    let isMounted = true;
-    if (isFirstCard && cardImages.length > 1) {
-      const timer = setTimeout(() => {
-        if (!isMounted) return;
-        Animated.sequence([
-          Animated.timing(hintAnim, {
-            toValue: -28,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(hintAnim, {
-            toValue: 0,
-            friction: 7,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }, 700);
-
-      return () => {
-        isMounted = false;
-        clearTimeout(timer);
-        hintAnim.stopAnimation();
-      };
-    }
-  }, [isFirstCard, cardImages.length, hintAnim]);
-
   const handleSelectColor = useCallback((idx: number, e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
     setSelectedColorIndex(idx);
@@ -165,7 +137,26 @@ export function useProductCard({
     [CARD_WIDTH, activeImageIndex, cardImages.length],
   );
 
-  const primaryImage = cardImages[activeImageIndex] || cardImages[0] || '';
+  // One-time swipe cue on the first feed card — only when there is a real
+  // multi-photo gallery to discover, so it never fires on a blank frame.
+  useEffect(() => {
+    if (!isFirstCard || cardImages.length <= 1) return;
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (!isMounted) return;
+      Animated.sequence([
+        Animated.timing(hintAnim, { toValue: -28, duration: 400, useNativeDriver: true }),
+        Animated.spring(hintAnim, { toValue: 0, friction: 7, tension: 40, useNativeDriver: true }),
+      ]).start();
+    }, 700);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      hintAnim.stopAnimation();
+    };
+  }, [isFirstCard, cardImages.length, hintAnim]);
+
+  const primaryImage = cardImages[0] || '';
   const resolvedPrimaryUrl = resolveImageUrl(primaryImage);
 
   const rawPrice = Number(product.price ?? 0);

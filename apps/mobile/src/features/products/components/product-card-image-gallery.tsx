@@ -22,6 +22,13 @@ import { ProductCardWishlistButton } from './product-card-wishlist-button';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
+/**
+ * Render window around the visible slide: at most 3 mounted photos per card
+ * no matter how long the gallery is. No dots (SHEIN parity) — the one-time
+ * first-card nudge is the only swipe cue.
+ */
+const GALLERY_WINDOW = 1;
+
 interface ProductCardImageGalleryProps {
   cardWidth: number;
   cardImages: string[];
@@ -40,13 +47,6 @@ interface ProductCardImageGalleryProps {
   onToggleWishlist: (e?: GestureResponderEvent) => void;
   onSelectColor: (idx: number, e?: GestureResponderEvent) => void;
 }
-
-/**
- * Render window around the visible slide. Mounting all 10+ full-res photos per
- * card at once stalls the homepage (network + decode + memory on every card).
- * Neighbors mount so swipes never show a blank frame.
- */
-const GALLERY_WINDOW = 1;
 
 export function ProductCardImageGallery({
   cardWidth,
@@ -117,7 +117,7 @@ export function ProductCardImageGallery({
                       </ThemedText>
                     </View>
                   ) : (
-                    // Same-size blank slot: keeps paging widths stable without
+                    // Same-size blank slot: keeps paging offsets stable without
                     // mounting (and fetching) off-screen photos.
                     <View style={[styles.productImage, { backgroundColor: Palette.gray100 }]} />
                   )}
@@ -132,22 +132,6 @@ export function ProductCardImageGallery({
             No Image
           </ThemedText>
         </Pressable>
-      )}
-
-      {cardImages.length > 1 && (
-        <View style={styles.paginationDotsContainer} pointerEvents="none">
-          {cardImages.map((_, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.paginationDot,
-                activeImageIndex === idx
-                  ? styles.paginationDotActive
-                  : styles.paginationDotInactive,
-              ]}
-            />
-          ))}
-        </View>
       )}
 
       {isOutOfStock && (
