@@ -49,7 +49,8 @@ export function ColorMetaInputField({ field }: UiProps) {
 
       {colors.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/70 px-4 py-5 text-center text-xs text-muted-foreground">
-          Select one or more colors first — each color gets its own swatch and product images.
+          Select one or more colors first — each color needs its own product photos. The swatch dot
+          is automatic from the first photo.
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border/70 bg-background">

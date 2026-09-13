@@ -174,6 +174,71 @@ export const collectPricingErrors = ({
   return errors;
 };
 
+export const collectColorImageErrors = ({
+  values,
+  variantMeta,
+}: {
+  values: Record<string, unknown>;
+  variantMeta: Array<{ key: string; label: string }>;
+}): string[] => {
+  const colorAxis = variantMeta.find(
+    (v) => v.key.toLowerCase().includes('color') || v.label.toLowerCase().includes('color'),
+  );
+  if (!colorAxis) return [];
+  const selected = toStringArray(getNestedValue(values, colorAxis.key));
+  if (selected.length === 0) return [];
+  const colorMeta = getNestedValue(values, 'variants.colorMeta') as
+    | Record<string, { images?: unknown }>
+    | undefined;
+  const errors: string[] = [];
+  for (const colorValue of selected) {
+    const images = (colorMeta?.[colorValue] as { images?: unknown } | undefined)?.images;
+    if (!Array.isArray(images) || images.length === 0) {
+      errors.push(`Add at least one product photo for color ${colorValue}.`);
+    }
+  }
+  return errors;
+};
+
+export const collectTotalStockError = ({
+  values,
+}: {
+  values: Record<string, unknown>;
+}): string[] => {
+  const flat = values as Record<string, unknown>;
+  let total = 0;
+  let seenAny = false;
+  for (const [key, value] of Object.entries(flattenObjectShallow(flat))) {
+    if (/(^|\.)stock$/.test(key)) {
+      const qty = toNonNegativeInteger(value);
+      if (qty !== undefined) {
+        seenAny = true;
+        total += qty;
+      }
+    }
+  }
+  if (!seenAny || total === 0) {
+    return ['Add at least 1 unit in one size to publish.'];
+  }
+  return [];
+};
+
+const flattenObjectShallow = (
+  obj: Record<string, unknown>,
+  prefix = '',
+): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof File)) {
+      Object.assign(out, flattenObjectShallow(value as Record<string, unknown>, path));
+    } else {
+      out[path] = value;
+    }
+  }
+  return out;
+};
+
 export const buildSidebarSections = ({
   fieldErrors,
   schemaFields,
@@ -224,6 +289,7 @@ export const buildSidebarSections = ({
   const imageErrors = uniqueMessages([
     ...groupedErrors.images,
     ...getRequiredFieldErrors(groupedFields.base, values),
+    ...collectColorImageErrors({ values, variantMeta }),
   ]);
 
   const specificationErrors = uniqueMessages([
@@ -242,6 +308,7 @@ export const buildSidebarSections = ({
       values,
       variantMeta,
     }),
+    ...collectTotalStockError({ values }),
   ]);
 
   const shippingErrors = uniqueMessages([
