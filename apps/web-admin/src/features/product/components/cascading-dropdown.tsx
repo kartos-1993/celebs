@@ -33,12 +33,6 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
           <CategoryTrigger selectedCategory={selectedCategory} placeholder={placeholder} />
         </PopoverTrigger>
 
-        <RecentChips
-          recentCategories={state.recentCategories}
-          onSelect={state.handleRecentSelect}
-          className="pt-1"
-        />
-
         <PopoverContent
           className="max-h-[var(--radix-popover-content-available-height)] w-[min(800px,95vw)] overflow-hidden p-0"
           align="start"

@@ -43,6 +43,7 @@ export function useCascadingDropdownState({
     recentCategories,
     addToRecent,
     findCategoryById,
+    isLoading: isLoadingTree,
   } = useCategoryTree();
 
   const debouncedGlobalSearch = useDebounce(globalSearchQuery, 300);
@@ -69,21 +70,39 @@ export function useCascadingDropdownState({
   const applyPathSelection = useCallback(
     (category: DropdownCategory) => {
       const byId = category.id ? findCategoryById(category.id) : undefined;
-      const finalPath =
-        byId !== undefined
-          ? findNodeChain(byId, findCategoryById)
-          : resolvePathBySegments(splitPathSegments(category.path), {
-              getRoots: getRootCategories,
-              getChildren: getChildCategories,
-              findById: findCategoryById,
-            });
-      const resolvedPath = finalPath.length > 0 ? finalPath : [category];
+      let resolvedPath: DropdownCategory[];
+      let resolvedOk = false;
+      if (byId !== undefined) {
+        resolvedPath = findNodeChain(byId, findCategoryById);
+        resolvedOk = true;
+      } else {
+        const segments = splitPathSegments(category.path);
+        const segResolved = resolvePathBySegments(segments, {
+          getRoots: getRootCategories,
+          getChildren: getChildCategories,
+          findById: findCategoryById,
+        });
+        if (segments.length > 0 && segResolved.length === segments.length) {
+          resolvedPath = segResolved;
+          resolvedOk = true;
+        } else if (isLoadingTree) {
+          // Tree not ready — trust the caller for now; re-resolved on next open.
+          resolvedPath = [category];
+          resolvedOk = true;
+        } else {
+          // Unknown id and unresolvable path (stale recent/renamed): stage
+          // nothing so Confirm stays disabled instead of committing a ghost.
+          resolvedPath = [];
+          resolvedOk = false;
+        }
+      }
       setSelectedPath(resolvedPath);
-      const isLeaf = resolvedPath.length > 0 && !resolvedPath[resolvedPath.length - 1].hasChildren;
+      const last = resolvedPath[resolvedPath.length - 1];
+      const isLeaf = resolvedOk && resolvedPath.length > 0 && !last?.hasChildren;
       setTempSelectedPath(isLeaf ? resolvedPath : []);
       setColumns(buildColumnsForPath(resolvedPath));
     },
-    [findCategoryById, getRootCategories, getChildCategories],
+    [findCategoryById, getRootCategories, getChildCategories, isLoadingTree],
   );
 
   const commitSelection = useCallback(
@@ -111,8 +130,12 @@ export function useCascadingDropdownState({
   const expandToCategory = useCallback(
     (category: DropdownCategory, columnIndex: number) => {
       const newPath = [...selectedPath.slice(0, columnIndex), category];
+      // Don't wipe a staged leaf while merely exploring a sibling branch.
+      const keepTemp =
+        tempSelectedPath.length > newPath.length &&
+        newPath.every((node, i) => tempSelectedPath[i]?.id === node.id);
       setSelectedPath(newPath);
-      setTempSelectedPath([]);
+      setTempSelectedPath(keepTemp ? tempSelectedPath : []);
       if (category.hasChildren) {
         setColumns((prev) => [
           ...prev.slice(0, columnIndex + 1),
@@ -120,7 +143,7 @@ export function useCascadingDropdownState({
         ]);
       }
     },
-    [selectedPath],
+    [selectedPath, tempSelectedPath],
   );
 
   const handleCategoryClick = useCallback(
@@ -129,9 +152,10 @@ export function useCascadingDropdownState({
         expandToCategory(category, columnIndex);
         return;
       }
-      setTempSelectedPath([...selectedPath.slice(0, columnIndex), category]);
+      const base = tempSelectedPath.length > columnIndex ? tempSelectedPath : selectedPath;
+      setTempSelectedPath([...base.slice(0, columnIndex), category]);
     },
-    [expandToCategory, selectedPath],
+    [expandToCategory, selectedPath, tempSelectedPath],
   );
 
   const handleColumnSearch = useCallback((value: string, columnIndex: number) => {
@@ -174,10 +198,14 @@ export function useCascadingDropdownState({
       if (isOpen) {
         applyPathSelection(item);
       } else {
-        requestCategorySelection(item);
+        // Closed-popover chips commit immediately — only for ids the tree knows.
+        const known = item.id ? findCategoryById(item.id) : undefined;
+        if (known || isLoadingTree) {
+          requestCategorySelection(item);
+        }
       }
     },
-    [isOpen, applyPathSelection, requestCategorySelection],
+    [isOpen, applyPathSelection, requestCategorySelection, findCategoryById, isLoadingTree],
   );
 
   const handleConfirm = useCallback(() => {
@@ -206,6 +234,12 @@ export function useCascadingDropdownState({
       setIsOpen(open);
       if (open && selectedCategory) {
         applyPathSelection(selectedCategory);
+      } else if (!open) {
+        // Dismiss (outside-click/Esc) must not leak staged state into next open.
+        setColumns([{ ...ROOT_COLUMN }]);
+        setSelectedPath([]);
+        setTempSelectedPath([]);
+        setGlobalSearchQuery('');
       }
     },
     [selectedCategory, applyPathSelection],
