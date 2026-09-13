@@ -194,11 +194,12 @@ export class MediaController {
           targetKey = parts.join('/');
         }
       } catch {
-        targetKey = url.replace(/^https?:\/\/[^/]+\//, '');
+        // Legacy stamped URLs (?v=) must resolve to their bare key.
+        targetKey = url.replace(/^https?:\/\/[^/]+\//, '').split('?')[0];
       }
     }
     if (targetKey) {
-      targetKey = targetKey.replace(/^\/+/, '');
+      targetKey = targetKey.split('?')[0].replace(/^\/+/, '');
     }
     if (!targetKey) {
       throw new BadRequestException('key or url query parameter is required');

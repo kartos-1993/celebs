@@ -655,6 +655,11 @@ model MediaAsset {
   isPrivate  Boolean    @default(false) @map("is_private")
   usageCount Int        @default(0) @map("usage_count")
 
+  // Single-product ownership: an image assigned to a product belongs to that
+  // product alone (duplicate-on-assign, never shared). Null for brand banners,
+  // category headers, KYC docs, and unassigned library uploads.
+  productId String? @map("product_id")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -662,6 +667,7 @@ model MediaAsset {
   @@index([vendorId, folderId])
   @@index([vendorId, hashSha256])
   @@index([vendorId, createdAt])
+  @@index([productId])
 }
 
 // ==========================================

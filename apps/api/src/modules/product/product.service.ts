@@ -441,14 +441,16 @@ export class ProductService {
 
   // Link media usage so DAM badges / delete guards reflect reality.
   private async linkMediaUsageOnCreate(createdProduct: Product): Promise<void> {
-    await mediaRepository
-      .adjustUsageByUrls(collectProductAssetUrls(createdProduct), 1)
-      .catch((err) =>
-        logger.error(
-          { err, productId: createdProduct.id },
-          'Media usage reconciliation failed on product create — usageCount may be desynced',
-        ),
-      );
+    const urls = collectProductAssetUrls(createdProduct);
+    await Promise.all([
+      mediaRepository.adjustUsageByUrls(urls, 1),
+      mediaRepository.claimProductOwner(urls, createdProduct.id, createdProduct.vendorId),
+    ]).catch((err) =>
+      logger.error(
+        { err, productId: createdProduct.id },
+        'Media usage reconciliation failed on product create — usageCount may be desynced',
+      ),
+    );
   }
 
   // Reconcile media usage: increment newly added URLs, decrement removed ones
@@ -476,6 +478,9 @@ export class ProductService {
       [
         addedUrls.length ? mediaRepository.adjustUsageByUrls(addedUrls, 1) : null,
         removedUrls.length ? mediaRepository.adjustUsageByUrls(removedUrls, -1) : null,
+        addedUrls.length
+          ? mediaRepository.claimProductOwner(addedUrls, productId, previous.vendorId)
+          : null,
       ].filter(Boolean),
     ).catch((err) =>
       logger.error(
