@@ -200,12 +200,17 @@ export function useProductCard({
     if (onPress) {
       onPress(product);
     } else {
+      // Forward the card's selected color so PDP opens on the same variant
+      // (SHEIN behavior) instead of always defaulting to the first one.
+      const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
       router.push({
         pathname: '/product/[id]',
-        params: { id: product.id },
+        params: selectedColorName
+          ? { id: product.id, color: selectedColorName }
+          : { id: product.id },
       });
     }
-  }, [onPress, product, router]);
+  }, [onPress, product, router, selectedColorIndex]);
 
   const handleAddToCart = useCallback(
     (evt?: GestureResponderEvent) => {

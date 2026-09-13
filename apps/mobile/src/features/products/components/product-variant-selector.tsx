@@ -29,10 +29,11 @@ interface ColorSwatchItemProps {
 
 const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, onSelect }) => {
   const [imageFailed, setImageFailed] = useState(false);
+  // Canonical dot source: explicit swatch first, then first gallery photo.
   const rawImage =
+    (variant as { swatch?: string }).swatch ||
     variant.images?.[0] ||
-    (variant as { image?: string }).image ||
-    (variant as { swatch?: string }).swatch;
+    (variant as { image?: string }).image;
   const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
   const variantOos = isVariantOutOfStock(variant);
 

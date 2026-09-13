@@ -21,7 +21,7 @@ import {
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, color } = useLocalSearchParams<{ id: string; color?: string }>();
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { itemCount } = useCart();
@@ -35,7 +35,7 @@ export default function ProductDetailScreen() {
     isSizeModalOpen,
     setIsSizeModalOpen,
     handleColorChange,
-  } = useProductVariantSelection(product);
+  } = useProductVariantSelection(product, Array.isArray(color) ? color[0] : color);
 
   const { isWishlisted } = useWishlistStatus();
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
