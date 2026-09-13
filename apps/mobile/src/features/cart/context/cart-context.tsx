@@ -5,7 +5,6 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 
@@ -23,27 +22,42 @@ import { useCartUiStore } from '../store/use-cart-ui-store';
 import type { CartContextType } from '../types';
 import { computeTotals } from '../utils/cart-selectors';
 
+import { useAuth } from '@/features/auth/context/auth-context';
+
 export type { CartContextType };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const { isLoggedIn } = useAuth();
+  const [guestId, setGuestId] = useState<string | null>(null);
 
   useEffect(() => {
-    getGuestSessionId().then((id) => setSessionId(id));
+    let isMounted = true;
+    if (!isLoggedIn) {
+      getGuestSessionId().then((id) => {
+        if (isMounted) {
+          setGuestId(id);
+        }
+      });
+    }
     return () => {
-      debounceTimers.current.forEach((timer) => clearTimeout(timer));
-      debounceTimers.current.clear();
+      isMounted = false;
     };
-  }, []);
+  }, [isLoggedIn]);
 
-  const { data: cart = null, isLoading, error: queryError, refetch } = useCartQuery(sessionId);
-  const addToCartMutation = useAddToCartMutation(sessionId);
-  const updateQuantityMutation = useUpdateCartQuantityMutation(sessionId);
-  const removeItemMutation = useRemoveCartItemMutation(sessionId);
-  const clearCartMutation = useClearCartMutation(sessionId);
+  const activeSessionId = isLoggedIn ? null : guestId;
+  const isQueryEnabled = isLoggedIn || Boolean(guestId);
+  const {
+    data: cart = null,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useCartQuery(activeSessionId, { enabled: isQueryEnabled });
+  const addToCartMutation = useAddToCartMutation(activeSessionId);
+  const updateQuantityMutation = useUpdateCartQuantityMutation(activeSessionId);
+  const removeItemMutation = useRemoveCartItemMutation(activeSessionId);
+  const clearCartMutation = useClearCartMutation(activeSessionId);
 
   const {
     selectedItemIds,
@@ -71,49 +85,36 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
 
   const handleAddToCart = useCallback(
-    async (input: AddToCartInput) => {
+    async (input: AddToCartInput): Promise<void> => {
       await addToCartMutation.mutateAsync(input);
     },
     [addToCartMutation],
   );
 
   const handleUpdateQuantity = useCallback(
-    async (itemId: string, newQuantity: number) => {
-      const existing = debounceTimers.current.get(itemId);
-      if (existing) clearTimeout(existing);
-
+    async (itemId: string, newQuantity: number): Promise<void> => {
       if (newQuantity <= 0) {
         await removeItemMutation.mutateAsync(itemId);
         return;
       }
-
-      const timer = setTimeout(() => {
-        updateQuantityMutation.mutate({ itemId, quantity: newQuantity });
-        debounceTimers.current.delete(itemId);
-      }, 350);
-      debounceTimers.current.set(itemId, timer);
+      await updateQuantityMutation.mutateAsync({ itemId, quantity: newQuantity });
     },
     [removeItemMutation, updateQuantityMutation],
   );
 
   const handleRemoveItem = useCallback(
-    async (itemId: string) => {
-      await removeItemMutation.mutateAsync(itemId);
+    async (id: string): Promise<void> => {
+      await removeItemMutation.mutateAsync(id);
     },
     [removeItemMutation],
   );
-
-  const handleClearCart = useCallback(async () => {
+  const handleClearCart = useCallback(async (): Promise<void> => {
     await clearCartMutation.mutateAsync();
   }, [clearCartMutation]);
-
-  const handleRefreshCart = useCallback(async () => {
+  const handleRefreshCart = useCallback(async (): Promise<void> => {
     await refetch();
   }, [refetch]);
-
-  const handleToggleAllSelection = useCallback(() => {
-    toggleAllSelection(items);
-  }, [toggleAllSelection, items]);
+  const handleToggleAll = useCallback(() => toggleAllSelection(items), [toggleAllSelection, items]);
 
   const value: CartContextType = {
     cart,
@@ -136,7 +137,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshCart: handleRefreshCart,
     toggleItemSelection,
     setItemsSelection,
-    toggleAllSelection: handleToggleAllSelection,
+    toggleAllSelection: handleToggleAll,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -144,8 +145,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useCart = (): CartContextType => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 };

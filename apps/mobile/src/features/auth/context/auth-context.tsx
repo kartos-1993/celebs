@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { loginWithEmailApi, loginWithGoogleApi, logoutApi, registerApi } from '../api/auth-api';
 import type { AuthContextType, UserProfile } from '../types';
@@ -46,90 +46,95 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     restore();
   }, []);
 
-  // Sync state & persist to SecureStore
-  const handleSaveSession = async (
-    newToken: string,
-    newUser: UserProfile,
-    refreshToken?: string,
-  ) => {
-    setToken(newToken);
-    setUser(newUser);
-    await saveAuthSession(newToken, newUser, refreshToken);
-  };
+  // Sync state & persist to SecureStore (stable identity so Google
+  // auth effect with [response, loginWithGoogle] deps doesn't re-fire).
+  const handleSaveSession = useCallback(
+    async (newToken: string, newUser: UserProfile, refreshToken?: string) => {
+      setToken(newToken);
+      setUser(newUser);
+      await saveAuthSession(newToken, newUser, refreshToken);
+    },
+    [],
+  );
 
   // Google 1-Tap Login
-  const loginWithGoogle = async (data: { idToken: string }) => {
-    setIsLoading(true);
-    try {
-      const { user: userProfile, accessToken, refreshToken } = await loginWithGoogleApi(data);
-      await handleSaveSession(accessToken, userProfile, refreshToken);
-      await syncGuestCartOnLogin();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const loginWithGoogle = useCallback(
+    async (data: { idToken: string }) => {
+      setIsLoading(true);
+      try {
+        const { user: userProfile, accessToken, refreshToken } = await loginWithGoogleApi(data);
+        await handleSaveSession(accessToken, userProfile, refreshToken);
+        await syncGuestCartOnLogin();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleSaveSession],
+  );
 
   // Standard Email/Password Login
-  const loginWithEmail = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const {
-        user: userProfile,
-        accessToken,
-        refreshToken,
-      } = await loginWithEmailApi(email, password);
-      await handleSaveSession(accessToken, userProfile, refreshToken);
-      await syncGuestCartOnLogin();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const loginWithEmail = useCallback(
+    async (email: string, password: string) => {
+      setIsLoading(true);
+      try {
+        const {
+          user: userProfile,
+          accessToken,
+          refreshToken,
+        } = await loginWithEmailApi(email, password);
+        await handleSaveSession(accessToken, userProfile, refreshToken);
+        await syncGuestCartOnLogin();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleSaveSession],
+  );
 
   // User Registration
-  const register = async (
-    name: string,
-    email: string,
-    password: string,
-    confirmPassword?: string,
-  ) => {
-    setIsLoading(true);
-    try {
-      await registerApi({ name, email, password, confirmPassword });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const register = useCallback(
+    async (name: string, email: string, password: string, confirmPassword?: string) => {
+      setIsLoading(true);
+      try {
+        await registerApi({ name, email, password, confirmPassword });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   // Logout
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
     try {
       await logoutApi();
+    } catch (err) {
+      console.warn('[AuthContext] Remote logout error:', err);
+    } finally {
+      await resetGuestSessionOnLogout();
       await clearAuthSession();
       setToken(null);
       setUser(null);
-      await resetGuestSessionOnLogout();
-    } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoggedIn: !!user && !!token,
-        isLoading,
-        loginWithGoogle,
-        loginWithEmail,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      isLoggedIn: !!user && !!token,
+      isLoading,
+      loginWithGoogle,
+      loginWithEmail,
+      register,
+      logout,
+    }),
+    [user, token, isLoading, loginWithGoogle, loginWithEmail, register, logout],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

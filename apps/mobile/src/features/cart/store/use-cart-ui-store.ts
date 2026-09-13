@@ -58,8 +58,9 @@ export const useCartUiStore = create<CartUiState>()(
             };
           }
           const validIds = new Set(items.map((item) => item.id));
+          const filtered = state.selectedItemIds.filter((id) => validIds.has(id));
           return {
-            selectedItemIds: state.selectedItemIds.filter((id) => validIds.has(id)),
+            selectedItemIds: filtered.length > 0 ? filtered : items.map((item) => item.id),
           };
         }),
 

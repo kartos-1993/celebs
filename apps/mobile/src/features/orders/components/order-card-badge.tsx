@@ -10,6 +10,7 @@ import { FontWeight, Radius } from '@/constants/theme';
 interface OrderCardBadgeProps {
   status: OrderStatus;
   paymentStatus: string;
+  paymentMethod?: string;
 }
 
 interface BadgeTheme {
@@ -25,8 +26,12 @@ const TONE_THEMES: Record<string, BadgeTheme> = {
   neutral: { bg: '#F8FAFC', text: '#64748B' },
 };
 
-export function OrderCardBadge({ status, paymentStatus }: OrderCardBadgeProps) {
-  const isUnpaid = paymentStatus === 'PENDING' || status === 'PENDING_PAYMENT';
+export function OrderCardBadge({ status, paymentStatus, paymentMethod }: OrderCardBadgeProps) {
+  const isUnpaid =
+    (paymentStatus === 'PENDING' || status === 'PENDING_PAYMENT') &&
+    paymentMethod !== 'COD' &&
+    status !== 'CANCELLED' &&
+    status !== 'RETURNED';
   const meta = getOrderStatusMeta(status);
   const toneKey = isUnpaid ? 'warning' : meta.tone;
   const theme = TONE_THEMES[toneKey] ?? TONE_THEMES.neutral;

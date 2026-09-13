@@ -3,6 +3,7 @@ import { Image, View } from 'react-native';
 import { ShoppingBag } from 'lucide-react-native';
 
 import type { OrderItemView } from '../utils/order-status';
+import { getItemStatusMeta } from '../utils/order-status';
 
 import { styles } from './order-item-row.styles';
 
@@ -21,6 +22,8 @@ export function OrderItemRow({ item, imageUrl, isLast }: OrderItemRowProps) {
   const variantLine = [item.colorVariantName, item.size ? `Size ${item.size}` : '']
     .filter(Boolean)
     .join(' · ');
+  const statusMeta = getItemStatusMeta(item.itemStatus);
+  const showStatusTag = item.itemStatus !== 'PENDING';
 
   return (
     <View style={[styles.row, !isLast && styles.rowDivided]}>
@@ -39,6 +42,12 @@ export function OrderItemRow({ item, imageUrl, isLast }: OrderItemRowProps) {
       </View>
 
       <View style={styles.info}>
+        {item.vendorName ? (
+          <ThemedText style={styles.qty} numberOfLines={1}>
+            Seller: {item.vendorName}
+          </ThemedText>
+        ) : null}
+
         <ThemedText style={styles.name} numberOfLines={2}>
           {item.productName}
         </ThemedText>
@@ -56,8 +65,18 @@ export function OrderItemRow({ item, imageUrl, isLast }: OrderItemRowProps) {
           <ThemedText style={styles.qty}>Qty: {item.quantity}</ThemedText>
         </View>
 
-        {item.itemStatus === 'CANCELLED' && (
-          <ThemedText style={styles.cancelledTag}>ITEM CANCELLED</ThemedText>
+        {showStatusTag && (
+          <ThemedText
+            style={[
+              styles.cancelledTag,
+              item.itemStatus === 'HANDED_OVER' && { color: Palette.brand },
+              item.itemStatus === 'DELIVERED' && { color: Palette.success },
+              item.itemStatus === 'PACKED' && { color: Palette.gray700 },
+            ]}
+          >
+            {statusMeta.label.toUpperCase()}
+            {item.trackingNumber ? ` · ${item.trackingNumber}` : ''}
+          </ThemedText>
         )}
       </View>
     </View>

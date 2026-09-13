@@ -33,7 +33,11 @@ export function OrderCard({ order, onPayNow, onCancel }: OrderCardProps) {
           <ThemedText style={styles.orderNumber}>#{order.orderNumber}</ThemedText>
           <ThemedText style={styles.orderDate}>· {formatDate(order.createdAt)}</ThemedText>
         </View>
-        <OrderCardBadge status={order.status} paymentStatus={order.paymentStatus} />
+        <OrderCardBadge
+          status={order.status}
+          paymentStatus={order.paymentStatus}
+          paymentMethod={order.paymentMethod}
+        />
       </View>
 
       <View style={styles.divider} />

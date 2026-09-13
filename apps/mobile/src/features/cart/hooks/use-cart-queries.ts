@@ -28,11 +28,11 @@ function recalculateCartTotals(items: CartItemHydrated[]) {
   return { subtotal, itemCount };
 }
 
-export function useCartQuery(sessionId: string | null) {
+export function useCartQuery(sessionId: string | null, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: CART_QUERY_KEYS.detail(sessionId),
     queryFn: () => getCartApi(sessionId),
-    enabled: sessionId !== null,
+    enabled: options?.enabled ?? true,
     staleTime: 1000 * 30,
   });
 }

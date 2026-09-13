@@ -121,5 +121,8 @@ export async function clearCartApi(sessionId?: string | null): Promise<CartRespo
 }
 
 export async function syncCartApi(input: SyncCartInput): Promise<CartResponse> {
-  return handleApiResponse(apiClient.post<IApiResponse<CartResponse>>('/cart/sync', input));
+  const headers = input.sessionId ? { 'x-session-id': input.sessionId } : undefined;
+  return handleApiResponse(
+    apiClient.post<IApiResponse<CartResponse>>('/cart/sync', input, { headers }),
+  );
 }

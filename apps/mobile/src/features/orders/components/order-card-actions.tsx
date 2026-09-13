@@ -16,7 +16,11 @@ interface OrderCardActionsProps {
 
 export function OrderCardActions({ order, onPayNow, onCancel }: OrderCardActionsProps) {
   const router = useRouter();
-  const isUnpaid = order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT';
+  const canPayOnline =
+    order.paymentMethod !== 'COD' &&
+    (order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT') &&
+    order.status !== 'CANCELLED' &&
+    order.status !== 'RETURNED';
   const isDelivered = order.status === 'DELIVERED';
   const trackable = isActiveOrder(order.status);
   const canCancel =
@@ -47,7 +51,7 @@ export function OrderCardActions({ order, onPayNow, onCancel }: OrderCardActions
         </TouchableOpacity>
       )}
 
-      {isUnpaid && onPayNow && (
+      {canPayOnline && onPayNow && (
         <TouchableOpacity
           style={styles.primaryBtn}
           onPress={() => onPayNow(order)}
@@ -57,7 +61,7 @@ export function OrderCardActions({ order, onPayNow, onCancel }: OrderCardActions
         </TouchableOpacity>
       )}
 
-      {trackable && !isUnpaid && (
+      {trackable && !canPayOnline && (
         <TouchableOpacity style={styles.outlineBtn} onPress={goToDetail} activeOpacity={0.8}>
           <ThemedText style={styles.outlineBtnText}>Track</ThemedText>
         </TouchableOpacity>

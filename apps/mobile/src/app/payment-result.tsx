@@ -31,7 +31,7 @@ export default function PaymentResultScreen() {
       showToast('Payment pending. Pull to refresh your order for updates.');
     }
     router.replace('/orders');
-  }, [params.status, router, showToast]);
+  }, [params.status, router]);
 
   return (
     <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

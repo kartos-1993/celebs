@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, Modal, TouchableOpacity, View } from 'react-native';
 import { X } from 'lucide-react-native';
 
@@ -58,13 +58,22 @@ export function ProductReviewsSheet({
     setGalleryVisible(true);
   };
 
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
+
   const handleCloseGallery = (reviewId?: string) => {
     setGalleryVisible(false);
     if (!reviewId) return;
 
     const targetIndex = reviews.findIndex((r) => r.id === reviewId);
     if (targetIndex >= 0) {
-      setTimeout(() => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
         flatListRef.current?.scrollToIndex({
           index: targetIndex,
           animated: true,

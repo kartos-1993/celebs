@@ -19,7 +19,7 @@ AppState.addEventListener('change', onAppStateChange);
 // Create an async persister using AsyncStorage (compatible with Expo Go)
 export const clientPersister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: 'REACT_QUERY_OFFLINE_CACHE_V3', // Busts previous stale cache
+  key: 'REACT_QUERY_OFFLINE_CACHE_V4', // Busts previous stale cache
 });
 
 export const queryClient = new QueryClient({

@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { defaultShouldDehydrateQuery } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -36,11 +37,25 @@ export default function RootLayout() {
           maxAge: 1000 * 60 * 60 * 4,
           dehydrateOptions: {
             shouldDehydrateQuery: (query) => {
-              const rootKey = query.queryKey[0];
-              if (rootKey === 'wishlist' || rootKey === 'orders' || rootKey === 'addresses') {
+              // 1. Never dehydrate pending or errored queries (prevents CancelledError / rejection crash)
+              if (!defaultShouldDehydrateQuery(query)) {
                 return false;
               }
-              // Only persist the default homefeed and categories/sdui layout for 0ms cold-start.
+
+              const rootKey = query.queryKey[0];
+
+              // 2. Never persist dynamic user/session transactional state to disk:
+              if (
+                rootKey === 'cart' ||
+                rootKey === 'wishlist' ||
+                rootKey === 'orders' ||
+                rootKey === 'addresses' ||
+                rootKey === 'reviews'
+              ) {
+                return false;
+              }
+
+              // 3. Only persist the default homefeed and categories/sdui layout for 0ms cold-start.
               // Deep product searches, filtered lists, and PDP details stay in RAM to prevent disk bloat.
               if (rootKey === 'products') {
                 const isList = query.queryKey[1] === 'list';
@@ -49,7 +64,10 @@ export default function RootLayout() {
                   isList && (!filterArg || Object.keys(filterArg as object).length === 0);
                 return isDefaultHomeFeed;
               }
-              return true;
+
+              return (
+                rootKey === 'categories' || rootKey === 'sdui' || rootKey === 'storefront-config'
+              );
             },
           },
         }}

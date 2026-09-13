@@ -14,6 +14,7 @@ export interface OrderItemView {
   imageUrl?: string | null;
   trackingNumber?: string | null;
   courierPartner?: string | null;
+  vendorName?: string | null;
 }
 
 export interface OrderAddressView {
@@ -76,7 +77,7 @@ const STATUS_META: Record<OrderStatus, StatusMeta> = {
   PENDING_PAYMENT: { label: 'To Pay', tone: 'warning' },
   CONFIRMED: { label: 'To Ship', tone: 'active' },
   PACKED: { label: 'Packed', tone: 'active' },
-  HANDED_OVER: { label: 'To Receive', tone: 'active' },
+  HANDED_OVER: { label: 'In Transit', tone: 'active' },
   OUT_FOR_DELIVERY: { label: 'Out for Delivery', tone: 'active' },
   DELIVERED: { label: 'Delivered', tone: 'success' },
   CANCELLED: { label: 'Cancelled', tone: 'danger' },
@@ -109,25 +110,76 @@ export const ORDER_FILTER_TABS: OrderFilterTabOption[] = [
 
 export function matchesOrderFilter(order: OrderView, filter: OrderFilterTab): boolean {
   if (filter === 'ALL') return true;
+
   if (filter === 'TO_PAY') {
-    return order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT';
-  }
-  if (filter === 'TO_SHIP') {
     return (
-      (order.status === 'CONFIRMED' || order.status === 'PACKED') &&
-      order.paymentStatus !== 'PENDING'
+      (order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT') &&
+      order.paymentMethod !== 'COD' &&
+      order.status !== 'CANCELLED' &&
+      order.status !== 'RETURNED'
     );
   }
-  if (filter === 'TO_RECEIVE') {
-    return order.status === 'HANDED_OVER' || order.status === 'OUT_FOR_DELIVERY';
+
+  if (filter === 'TO_SHIP') {
+    if (
+      order.status === 'CANCELLED' ||
+      order.status === 'RETURNED' ||
+      order.status === 'DELIVERED'
+    ) {
+      return false;
+    }
+    const isUnpaidOnline =
+      order.paymentMethod !== 'COD' &&
+      (order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT');
+    if (isUnpaidOnline) return false;
+
+    const hasItemsWaitingToShip = order.items.some(
+      (item) => item.itemStatus === 'PENDING' || item.itemStatus === 'PACKED',
+    );
+    const isOrderPreparing = order.status === 'CONFIRMED' || order.status === 'PACKED';
+
+    return hasItemsWaitingToShip || isOrderPreparing;
   }
+
+  if (filter === 'TO_RECEIVE') {
+    if (
+      order.status === 'CANCELLED' ||
+      order.status === 'RETURNED' ||
+      order.status === 'DELIVERED'
+    ) {
+      return false;
+    }
+    const isOrderInTransit = order.status === 'HANDED_OVER' || order.status === 'OUT_FOR_DELIVERY';
+    const hasItemsInTransit = order.items.some((item) => item.itemStatus === 'HANDED_OVER');
+    return isOrderInTransit || hasItemsInTransit;
+  }
+
   if (filter === 'DELIVERED') {
     return order.status === 'DELIVERED';
   }
+
   if (filter === 'CANCELLED') {
     return order.status === 'CANCELLED' || order.status === 'RETURNED';
   }
+
   return true;
+}
+
+export function getItemStatusMeta(status: OrderItemStatus): StatusMeta {
+  switch (status) {
+    case 'PENDING':
+      return { label: 'Processing', tone: 'neutral' };
+    case 'PACKED':
+      return { label: 'Packed', tone: 'active' };
+    case 'HANDED_OVER':
+      return { label: 'In Transit', tone: 'active' };
+    case 'DELIVERED':
+      return { label: 'Delivered', tone: 'success' };
+    case 'CANCELLED':
+      return { label: 'Cancelled', tone: 'danger' };
+    default:
+      return { label: status, tone: 'neutral' };
+  }
 }
 
 export function getOrderStatusMeta(status: OrderStatus): StatusMeta {

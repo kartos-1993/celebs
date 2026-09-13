@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -38,17 +38,13 @@ export function ReviewGalleryModal({
   onAddToCart,
 }: ReviewGalleryModalProps) {
   const insets = useSafeAreaInsets();
+  const [prevInitialIndex, setPrevInitialIndex] = useState(initialIndex);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const flatListRef = useRef<FlatList<ReviewGalleryItem>>(null);
 
-  useEffect(() => {
-    if (visible && initialIndex >= 0 && initialIndex < items.length) {
-      setCurrentIndex(initialIndex);
-      setTimeout(() => {
-        flatListRef.current?.scrollToIndex({ index: initialIndex, animated: false });
-      }, 50);
-    }
-  }, [visible, initialIndex, items.length]);
+  if (initialIndex !== prevInitialIndex) {
+    setPrevInitialIndex(initialIndex);
+    setCurrentIndex(initialIndex);
+  }
 
   if (!visible || items.length === 0) return null;
 
@@ -82,11 +78,11 @@ export function ReviewGalleryModal({
 
         {/* Gallery Carousel */}
         <FlatList
-          ref={flatListRef}
           data={items}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          initialScrollIndex={initialIndex >= 0 && initialIndex < items.length ? initialIndex : 0}
           keyExtractor={(item) => item.id}
           getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
           onMomentumScrollEnd={handleScrollEnd}
