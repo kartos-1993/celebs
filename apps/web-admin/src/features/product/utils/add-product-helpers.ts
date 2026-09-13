@@ -4,9 +4,20 @@ export type { PageSectionKey } from '../types';
 
 export const MANAGE_PRODUCTS_PATH = '/products/manage';
 export const DRAFT_STORAGE_KEY = 'web-admin.product-draft.add';
+export const DRAFT_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
-export const getDraftStorageKey = (userId?: string): string =>
-  userId ? `${DRAFT_STORAGE_KEY}.${userId}` : DRAFT_STORAGE_KEY;
+export const getDraftStorageKey = (userId?: string, storeId?: string): string => {
+  const userPart = userId?.trim() ? `.${userId.trim()}` : '';
+  const storePart = storeId?.trim() ? `.${storeId.trim()}` : '';
+  return `${DRAFT_STORAGE_KEY}${userPart}${storePart}`;
+};
+
+export const isDraftExpired = (savedAt?: string, ttlMs: number = DRAFT_TTL_MS): boolean => {
+  if (!savedAt) return false;
+  const ts = Date.parse(savedAt);
+  if (Number.isNaN(ts)) return true;
+  return Date.now() - ts > ttlMs;
+};
 
 export const normalizeText = (value: unknown): string =>
   value !== null && value !== undefined ? String(value).trim() : '';

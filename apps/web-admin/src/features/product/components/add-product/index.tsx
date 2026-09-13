@@ -44,6 +44,9 @@ const AddProduct = () => {
   const { toast } = useToast();
   const { role, user } = useAuthContext();
   const userId = user?.id || user?.email;
+  const storeId =
+    (user as unknown as { vendorId?: string; storeId?: string })?.vendorId ??
+    (user as unknown as { vendorId?: string; storeId?: string })?.storeId;
 
   const {
     form,
@@ -66,6 +69,7 @@ const AddProduct = () => {
   const draft = useProductDraft({
     form,
     userId,
+    storeId,
     isEditMode,
     initialCategoryPath: productCategoryPath,
   });
@@ -130,6 +134,7 @@ const AddProduct = () => {
         categoryPath={draft.categoryPath}
         getValues={form.getValues}
         userId={userId}
+        storeId={storeId}
       />
       <AddProductFormBody
         productId={id}
@@ -228,14 +233,22 @@ const AddProductFormBody = ({
 
   const applyServerErrors = useCallback(
     (error: unknown): { messages: string[]; firstPath?: string } => {
+      // Axios interceptor rejects with flattened { status, message, errors, errorCode, ... }
+      // where errors is [{ field, message }] from the BE error-handler. Legacy shapes checked last.
       const errObj = error as
-        | { data?: unknown; response?: { data?: { data?: unknown } } }
+        | {
+            errors?: unknown;
+            message?: unknown;
+            data?: unknown;
+            response?: { data?: { errors?: unknown; data?: unknown } };
+          }
         | undefined;
-      const apiErrors = Array.isArray(errObj?.data)
-        ? errObj.data
-        : Array.isArray(errObj?.response?.data?.data)
-          ? errObj.response.data.data
-          : [];
+      const rawErrors =
+        errObj?.errors ??
+        errObj?.response?.data?.errors ??
+        errObj?.data ??
+        errObj?.response?.data?.data;
+      const apiErrors = Array.isArray(rawErrors) ? rawErrors : [];
       const unmappedMessages: string[] = [];
       let firstPath: string | undefined;
       apiErrors.forEach((entry: unknown) => {

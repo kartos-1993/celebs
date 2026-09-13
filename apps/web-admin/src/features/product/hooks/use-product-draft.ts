@@ -5,8 +5,8 @@ import { logger } from '@celebs/shared-utils';
 
 import type { ProductDraft } from '../types';
 import {
-  flattenObject,
   getDraftStorageKey,
+  isDraftExpired,
   serializeDraftValue,
 } from '../utils/add-product-helpers';
 
@@ -15,6 +15,7 @@ import type { ProductFormValues } from './use-product-form';
 interface UseProductDraftOptions {
   form: UseFormReturn<ProductFormValues>;
   userId?: string;
+  storeId?: string;
   isEditMode: boolean;
   initialCategoryPath?: string[];
 }
@@ -22,6 +23,7 @@ interface UseProductDraftOptions {
 export function useProductDraft({
   form,
   userId,
+  storeId,
   isEditMode,
   initialCategoryPath,
 }: UseProductDraftOptions) {
@@ -36,7 +38,7 @@ export function useProductDraft({
     }
   }, [initialCategoryPath, categoryPath?.length]);
 
-  const draftKey = getDraftStorageKey(userId);
+  const draftKey = getDraftStorageKey(userId, storeId);
 
   const setFormField = useCallback(
     (
@@ -67,12 +69,18 @@ export function useProductDraft({
 
     try {
       const draft = JSON.parse(rawDraft) as ProductDraft;
+      if (isDraftExpired(draft.savedAt)) {
+        window.localStorage.removeItem(draftKey);
+        return;
+      }
+      if (storeId && draft.storeId && draft.storeId !== storeId) {
+        return;
+      }
       if (Array.isArray(draft.categoryPath)) setCategoryPath(draft.categoryPath);
       if (draft.savedAt) setRestoredDraftAt(draft.savedAt);
 
       if (draft.values) {
         const valObj = draft.values;
-        const flatVals = flattenObject(valObj);
 
         // Category ids first so schema effects key off correct values
         if (valObj.categoryId && !form.getValues('categoryId')) {
@@ -82,18 +90,18 @@ export function useProductDraft({
           setFormField('subcategoryId', String(valObj.subcategoryId), { shouldValidate: true });
         }
 
+        // Nested-only restore — never persist dot-keys like "sku.default.price".
         form.reset({
           ...form.getValues(),
           ...valObj,
-          ...flatVals,
           status: 'draft',
         });
 
-        Object.entries({ ...valObj, ...flatVals }).forEach(([key, val]) => {
+        for (const [key, val] of Object.entries(valObj)) {
           if (val !== undefined && val !== null) {
             setFormField(key, val, { shouldDirty: true, shouldValidate: false });
           }
-        });
+        }
       }
     } catch (error) {
       logger.error({ error }, 'Failed to restore draft; purging corrupted draft');
@@ -108,17 +116,23 @@ export function useProductDraft({
     const values = form.getValues() as Record<string, unknown>;
     if (!values.categoryId || !values.subcategoryId) return false;
 
-    window.localStorage.setItem(
-      draftKey,
-      JSON.stringify({
-        categoryPath,
-        savedAt: new Date().toISOString(),
-        values: serializeDraftValue(values) as Record<string, unknown>,
-      } satisfies ProductDraft),
-    );
+    try {
+      window.localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          categoryPath,
+          savedAt: new Date().toISOString(),
+          storeId,
+          values: serializeDraftValue(values) as Record<string, unknown>,
+        } satisfies ProductDraft),
+      );
+    } catch (error) {
+      logger.warn({ error }, 'Draft save skipped: storage unavailable or quota exceeded');
+      return false;
+    }
     setRestoredDraftAt(new Date().toISOString());
     return true;
-  }, [categoryPath, draftKey, form]);
+  }, [categoryPath, draftKey, form, storeId]);
 
   /** Discard draft and reset to a blank form. */
   const discardDraft = useCallback(() => {

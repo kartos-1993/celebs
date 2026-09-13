@@ -12,6 +12,7 @@ interface DraftAutoSaverProps {
   categoryPath: string[] | undefined;
   getValues: () => Record<string, unknown>;
   userId?: string;
+  storeId?: string;
 }
 
 export const DraftAutoSaver = memo(
@@ -24,6 +25,7 @@ export const DraftAutoSaver = memo(
     categoryPath,
     getValues,
     userId,
+    storeId,
   }: DraftAutoSaverProps) => {
     const watchedFormValues = useWatch({ control });
 
@@ -34,14 +36,19 @@ export const DraftAutoSaver = memo(
       const timer = setTimeout(() => {
         const values = getValues();
         if (values.categoryId && values.subcategoryId) {
-          window.localStorage.setItem(
-            getDraftStorageKey(userId),
-            JSON.stringify({
-              categoryPath,
-              savedAt: new Date().toISOString(),
-              values: serializeDraftValue(values),
-            }),
-          );
+          try {
+            window.localStorage.setItem(
+              getDraftStorageKey(userId, storeId),
+              JSON.stringify({
+                categoryPath,
+                savedAt: new Date().toISOString(),
+                storeId,
+                values: serializeDraftValue(values),
+              }),
+            );
+          } catch {
+            // Private mode / quota — autosave is best-effort, explicit save surfaces errors.
+          }
         }
       }, 1000);
       return () => clearTimeout(timer);
@@ -54,6 +61,7 @@ export const DraftAutoSaver = memo(
       watchedSubcategoryId,
       getValues,
       userId,
+      storeId,
     ]);
 
     return null;

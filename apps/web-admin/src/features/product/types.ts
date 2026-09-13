@@ -99,6 +99,7 @@ export interface ProductSidebarSection {
 export interface ProductDraft {
   categoryPath?: string[];
   savedAt?: string;
+  storeId?: string;
   values?: Record<string, unknown>;
 }
 
