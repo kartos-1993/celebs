@@ -1,5 +1,5 @@
 /**
- * Real-World Shein/Retail Standard Collision-Proof SKU Generator
+ * Retail Standard Collision-Proof SKU Generator
  *
  * Format: [brand: 1 char][dept: 1 char][date: YYMMDD 6 digits][uniqueID: 10 digits]
  * Example: cm2608140051059585 (Men), cw2608140051059585 (Women), ck2608140051059585 (Kids), cu2608140051059585 (Unisex)
@@ -67,7 +67,7 @@ export function resolveDepartmentCode(departmentOrCategory?: string): string {
   return firstAlpha || 'u';
 }
 
-export function generateSheinStyleSku(options: SkuOptions = {}): string {
+export function generateSku(options: SkuOptions = {}): string {
   const brand =
     options.brandPrefix
       ?.toLowerCase()

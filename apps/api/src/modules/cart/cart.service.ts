@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
-import { AppError, ErrorCode, generateSheinStyleSku, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -242,7 +242,7 @@ export class CartService {
           ${productId},
           ${colorVariantName},
           ${size},
-          ${generateSheinStyleSku({ brandPrefix: 'c' })},
+          ${generateSku({ brandPrefix: 'c' })},
           COALESCE((
             SELECT (s ->> 'quantity')::int
             FROM "Product" p,

@@ -1,10 +1,4 @@
-import {
-  AppError,
-  ErrorCode,
-  generateSheinStyleSku,
-  HTTPSTATUS,
-  logger,
-} from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSku, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { inventoryRepository } from './inventory.repository';
 
@@ -102,7 +96,7 @@ export class InventoryService {
       // Keep default initialQty
     }
 
-    const sku = generateSheinStyleSku({ brandPrefix: 'c' });
+    const sku = generateSku({ brandPrefix: 'c' });
 
     const created = await inventoryRepository.createInventory({
       productId,
