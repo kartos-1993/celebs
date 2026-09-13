@@ -84,6 +84,34 @@ describe('Category Recent Usage Tracking (PostgreSQL Database)', () => {
     expect(staffRecent[0]?.id).toBe(cat2.id);
   });
 
+  it('should store recent paths as slug segments, not one joined string', async () => {
+    const after = await categoryService.recordRecentCategory(mockUserId, cat2.id, mockVendorId);
+    const entry = after.find((c) => c.id === cat2.id);
+    expect(entry).toBeDefined();
+    // women-apparel-<uid>/maxi-dresses-<uid> must round-trip as two segments
+    expect(entry?.path).toHaveLength(2);
+    expect(entry?.path[1]).toContain('maxi-dresses-');
+
+    const persisted = await categoryService.getRecentCategories(mockUserId, mockVendorId);
+    expect(persisted.find((c) => c.id === cat2.id)?.path).toHaveLength(2);
+  });
+
+  it('should report real hasChildren in search so parents are never confirmable as leaves', async () => {
+    const results = await categoryService.searchCategories(
+      `Women Apparel ${cat1.name.split(' ').pop()}`,
+    );
+    const parentHit = results.find((c) => c.id === cat1.id);
+    expect(parentHit).toBeDefined();
+    expect(parentHit?.hasChildren).toBe(true);
+
+    const leafResults = await categoryService.searchCategories(
+      `Maxi Dresses ${cat2.name.split(' ').pop()}`,
+    );
+    const leafHit = leafResults.find((c) => c.id === cat2.id);
+    expect(leafHit).toBeDefined();
+    expect(leafHit?.hasChildren).toBe(false);
+  });
+
   it('should cap recent categories to a maximum of 5 and automatically evict older items (LRU)', async () => {
     const categories: { id: string; name: string }[] = [];
     for (let i = 1; i <= 7; i++) {

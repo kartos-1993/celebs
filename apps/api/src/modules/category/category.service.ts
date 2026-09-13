@@ -108,11 +108,14 @@ export class CategoryService {
       },
       limit,
     );
+    const parentsWithChildren = new Set(
+      await this.categoryRepository.findChildParentIds(results.map((c) => c.id)),
+    );
     return results.map((c: CategoryEntity) => ({
       id: c.id,
       name: c.name,
       parentCategory: c.parentCategory,
-      hasChildren: false,
+      hasChildren: parentsWithChildren.has(c.id),
       level: c.level ?? (Array.isArray(c.path) ? Math.max(0, c.path.length - 1) : 0),
       path:
         Array.isArray(c.path) && c.path.length
@@ -485,11 +488,15 @@ export class CategoryService {
     const category = await this.categoryRepository.findById(categoryId);
     if (!category) return [];
 
-    const pathArr = Array.isArray(category.path)
-      ? category.path
-      : typeof category.path === 'string'
-        ? [category.path]
-        : [category.name];
+    const pathArr =
+      Array.isArray(category.path) && category.path.length > 0
+        ? category.path
+        : typeof category.path === 'string' && category.path.length > 0
+          ? category.path
+              .split('/')
+              .map((segment) => segment.trim())
+              .filter(Boolean)
+          : [category.name];
 
     const newEntry: RecentCategory = {
       id: category.id,
