@@ -89,12 +89,13 @@ export class CampaignService {
       ...campaignData,
       startDate: new Date(campaignData.startDate),
       endDate: new Date(campaignData.endDate),
+      // Bare links only — deal tags always derive from real numbers
+      // (product discountedPrice or an explicit per-item override), never
+      // an invented default.
       products: productIds
         ? {
             create: productIds.map((pId: string) => ({
               productId: pId,
-              discountType: 'PERCENTAGE',
-              discountValue: 10,
             })),
           }
         : undefined,

@@ -412,7 +412,11 @@ model CampaignProduct {
   campaignId String
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   productId  String
-  createdAt  DateTime @default(now())
+  // Optional campaign-level override; null means the product's own
+  // discountedPrice rules (never invent a discount).
+  discountType ComboDiscountType @default(PERCENTAGE)
+  discountValue Decimal? @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
 
   @@unique([campaignId, productId])
   @@index([productId])

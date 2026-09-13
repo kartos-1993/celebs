@@ -14,6 +14,7 @@ export type KnownSDUIWidgetType =
   | 'COMBO_SHOWCASE'
   | 'CATEGORY_GRID'
   | 'CATEGORY_CIRCLES'
+  | 'SUPER_DEALS'
   | 'PRODUCT_GRID'
   | 'PROMO_CARD'
   | 'CUSTOM_BANNER'

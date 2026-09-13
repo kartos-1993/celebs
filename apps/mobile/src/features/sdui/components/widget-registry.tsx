@@ -15,6 +15,7 @@ import {
   ComboBundleData,
   ComboBundleShowcase,
 } from '@/features/home/components/combo-bundle-showcase';
+import { SuperDealsRail } from '@/features/home/components/super-deals-rail';
 import type { Banner, CampaignData } from '@/features/home/types';
 import { ProductGrid } from '@/features/products/components/product-grid';
 import type { Product } from '@/features/products/hooks/use-products';
@@ -78,6 +79,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
       initialCategories={(widget.data as { categories?: Category[] } | undefined)?.categories}
     />
   ),
+
+  SUPER_DEALS: () => <SuperDealsRail />,
 
   PRODUCT_GRID: ({ widget, handlers }) => (
     <ProductGrid
