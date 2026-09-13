@@ -12,15 +12,14 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { brandRepository } from '../brand/brand.repository';
 import { brandService } from '../brand/brand.service';
+import { categoryRepository } from '../category/category.repository';
 import { mediaRepository } from '../media/media.repository';
 
 import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
-import {
-  PRODUCT_DETAIL_INCLUDE,
-  PRODUCT_DETAIL_SELECT,
-  PRODUCT_LIST_SELECT,
-} from './repositories/product-projections';
+import { ProductRepository, productRepository } from './repositories/product.repository';
+import { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
@@ -29,8 +28,6 @@ import { buildProductCreateData, buildProductUpdateData } from './product-payloa
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
-
-import prisma from '@/config/db.prisma';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -42,8 +39,13 @@ export { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT };
 
 export class ProductService {
   private readonly inventoryRepository = new PostgresInventoryRepository();
+  private readonly products: ProductRepository;
   private readonly queryService = new ProductQueryService();
   private readonly lifecycleService = new ProductLifecycleService();
+
+  constructor(products?: ProductRepository) {
+    this.products = products ?? productRepository;
+  }
 
   // --- QUERY DELEGATES ---
 
@@ -138,41 +140,44 @@ export class ProductService {
         const slug = await this.generateUniqueSlug(input.name);
 
         // Atomic Prisma Transaction: Create Product & Inventory in PostgreSQL together
-        createdProduct = await prisma.$transaction(async (tx) => {
-          const product = await tx.product.create({
-            data: buildProductCreateData(input, {
-              slug,
-              categoryId,
-              subcategoryId,
-              brandId: resolvedBrandId,
-              brandName: resolvedBrandName,
-              userId,
-              vendorId,
-              vendorName,
-            }),
-            include: PRODUCT_DETAIL_INCLUDE,
-          });
+        createdProduct = await this.products.transaction(
+          async (tx) => {
+            const product = await this.products.create(
+              buildProductCreateData(input, {
+                slug,
+                categoryId,
+                subcategoryId,
+                brandId: resolvedBrandId,
+                brandName: resolvedBrandName,
+                userId,
+                vendorId,
+                vendorName,
+              }),
+              tx,
+            );
 
-          await this.inventoryRepository.syncProductInventory(
-            tx,
-            product.id,
-            input.colorVariants,
-            input.skus,
-            departmentHint,
-          );
+            await this.inventoryRepository.syncProductInventory(
+              tx,
+              product.id,
+              input.colorVariants,
+              input.skus,
+              departmentHint,
+            );
 
-          const inventories = await tx.productInventory.findMany({
-            where: { productId: product.id },
-            select: {
-              colorVariantName: true,
-              size: true,
-              quantity: true,
-              reservedQuantity: true,
-            },
-          });
+            const inventories = await tx.productInventory.findMany({
+              where: { productId: product.id },
+              select: {
+                colorVariantName: true,
+                size: true,
+                quantity: true,
+                reservedQuantity: true,
+              },
+            });
 
-          return { ...product, inventories };
-        });
+            return { ...product, inventories };
+          },
+          { maxWait: 5000, timeout: 10000 },
+        );
 
         break;
       } catch (err: unknown) {
@@ -205,7 +210,7 @@ export class ProductService {
     vendorId?: string,
     userPermissions?: string[],
   ) {
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -314,25 +319,28 @@ export class ProductService {
       auditChanges: ReturnType<typeof buildProductAuditDiff>;
     },
   ) {
-    return prisma.$transaction(async (tx) => {
-      if (updateData.colorVariants) {
-        await this.inventoryRepository.syncProductInventory(
-          tx,
+    return this.products.transaction(
+      async (tx) => {
+        if (updateData.colorVariants) {
+          await this.inventoryRepository.syncProductInventory(
+            tx,
+            id,
+            updateData.colorVariants,
+            updateData.skus,
+            opts.resolvedCategoryId,
+          );
+        }
+
+        const p = await this.products.update(
           id,
-          updateData.colorVariants,
-          updateData.skus,
-          opts.resolvedCategoryId,
+          buildProductUpdateData(product, updateData, opts),
+          tx,
         );
-      }
 
-      const p = await tx.product.update({
-        where: { id },
-        data: buildProductUpdateData(product, updateData, opts),
-        include: PRODUCT_DETAIL_INCLUDE,
-      });
-
-      return p;
-    });
+        return p;
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
   private async assertBrandGuards(params: {
@@ -380,14 +388,12 @@ export class ProductService {
     let resolvedBrandName = input.brand?.trim() || null;
 
     if (resolvedBrandId) {
-      const b = await prisma.brand.findUnique({ where: { id: resolvedBrandId } });
+      const b = await brandRepository.findById(resolvedBrandId);
       if (b) {
         resolvedBrandName = b.name;
       }
     } else if (resolvedBrandName) {
-      const b = await prisma.brand.findFirst({
-        where: { name: { equals: resolvedBrandName, mode: 'insensitive' } },
-      });
+      const b = await brandRepository.findByName(resolvedBrandName);
       if (b) {
         resolvedBrandId = b.id;
         resolvedBrandName = b.name;
@@ -403,12 +409,10 @@ export class ProductService {
       updateData.brand !== undefined ? updateData.brand?.trim() || null : product.brand;
 
     if (updateData.brandId && updateData.brandId !== product.brandId) {
-      const b = await prisma.brand.findUnique({ where: { id: updateData.brandId } });
+      const b = await brandRepository.findById(updateData.brandId);
       if (b) resolvedBrandName = b.name;
     } else if (updateData.brand && updateData.brand !== product.brand) {
-      const b = await prisma.brand.findFirst({
-        where: { name: { equals: updateData.brand.trim(), mode: 'insensitive' } },
-      });
+      const b = await brandRepository.findByName(updateData.brand.trim());
       if (b) {
         resolvedBrandId = b.id;
         resolvedBrandName = b.name;
@@ -471,9 +475,7 @@ export class ProductService {
 
     let resolvedSubcategory = null;
     if (subcategoryId) {
-      resolvedSubcategory = await prisma.category.findUnique({
-        where: { id: subcategoryId },
-      });
+      resolvedSubcategory = await categoryRepository.findById(subcategoryId);
       if (!resolvedSubcategory) {
         throw new AppError(
           'Subcategory not found',
@@ -485,15 +487,13 @@ export class ProductService {
 
     let resolvedCategory = null;
     if (categoryId) {
-      resolvedCategory = await prisma.category.findUnique({
-        where: { id: categoryId },
-      });
+      resolvedCategory = await categoryRepository.findById(categoryId);
     }
 
     if (!resolvedCategory && resolvedSubcategory?.parentCategory) {
-      resolvedCategory = await prisma.category.findUnique({
-        where: { id: resolvedSubcategory.parentCategory },
-      });
+      resolvedCategory = await categoryRepository.findById(
+        String(resolvedSubcategory.parentCategory),
+      );
     }
 
     if (!resolvedCategory && resolvedSubcategory) {
@@ -520,7 +520,7 @@ export class ProductService {
     let slug = `${base}-${Date.now().toString().slice(-6)}-${randomSuffix}`;
     let attempt = 0;
 
-    while (await prisma.product.findUnique({ where: { slug } })) {
+    while (await this.products.existsBySlug(slug)) {
       attempt += 1;
       const extraRandom = Math.random().toString(36).substring(2, 7);
       slug = `${base}-${Date.now()}-${attempt}-${extraRandom}`;
