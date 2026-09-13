@@ -2,8 +2,11 @@ import { Prisma } from '@prisma/client';
 
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { InventoryRepository, inventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
+import { VendorRepository, vendorRepository } from '../vendor/vendor.repository';
 
+import { ProductRepository, productRepository } from './repositories/product.repository';
 import {
   calculateProductQCScore,
   getColorImageBlockers,
@@ -15,16 +18,29 @@ import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
 import { enqueueMail } from '@/common/services/mail.queue';
-import prisma from '@/config/db.prisma';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 
 export class ProductLifecycleService {
+  private readonly products: ProductRepository;
+  private readonly vendors: VendorRepository;
+  private readonly inventoryRepository: InventoryRepository;
+
+  constructor(
+    products?: ProductRepository,
+    vendors?: VendorRepository,
+    inventories?: InventoryRepository,
+  ) {
+    this.products = products ?? productRepository;
+    this.vendors = vendors ?? vendorRepository;
+    this.inventoryRepository = inventories ?? inventoryRepository;
+  }
+
   async submitProductForReview(
     id: string,
     vendorId?: string,
     isPlatform = false,
   ): Promise<Record<string, unknown> | null> {
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -47,14 +63,7 @@ export class ProductLifecycleService {
 
     await this.assertPublishable(product.id, product.colorVariants);
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: { status: PRODUCT_STATUS.PENDING_REVIEW },
-      include: {
-        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-      },
-    });
+    const updated = await this.products.update(id, { status: PRODUCT_STATUS.PENDING_REVIEW });
 
     return formatProductResponse(updated);
   }
@@ -76,7 +85,7 @@ export class ProductLifecycleService {
     reviewerIdArg?: string,
     noteArg?: string,
   ): Promise<Record<string, unknown> | null> {
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -102,14 +111,7 @@ export class ProductLifecycleService {
 
     const updateData = this.buildReviewUpdateData(args, updatedHistory, qcResult.score);
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: updateData,
-      include: {
-        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-      },
-    });
+    const updated = await this.products.update(id, updateData);
 
     if (args.action === 'reject' && product.vendorId) {
       await this.sendRejectionEmail(id, product, updated, args);
@@ -126,10 +128,7 @@ export class ProductLifecycleService {
   private async assertPublishable(productId: string, colorVariants: unknown): Promise<void> {
     const blockers = [...getColorImageBlockers(colorVariants)];
 
-    const liveRows = await prisma.productInventory.findMany({
-      where: { productId },
-      select: { quantity: true },
-    });
+    const liveRows = await this.inventoryRepository.findQuantitiesByProductId(productId);
     const total =
       liveRows.length > 0
         ? liveRows.reduce((sum, row) => sum + row.quantity, 0)
@@ -198,7 +197,7 @@ export class ProductLifecycleService {
     args: ReturnType<ProductLifecycleService['parseReviewArgs']>,
     updatedHistory: Prisma.InputJsonValue | undefined,
     qualityScore: number,
-  ): Prisma.ProductUpdateInput {
+  ): Prisma.ProductUncheckedUpdateInput {
     const updateData: Prisma.ProductUpdateInput = {
       qualityScore,
       reviewedBy: args.reviewerId,
@@ -230,10 +229,7 @@ export class ProductLifecycleService {
     args: ReturnType<ProductLifecycleService['parseReviewArgs']>,
   ): Promise<void> {
     try {
-      const vendorProfile = await prisma.vendorProfile.findUnique({
-        where: { id: String(product.vendorId) },
-        include: { user: true },
-      });
+      const vendorProfile = await this.vendors.findByIdWithUser(String(product.vendorId));
 
       if (vendorProfile?.user?.email) {
         const emailData = productRejectionEmailTemplate({
@@ -259,7 +255,7 @@ export class ProductLifecycleService {
   }
 
   async archiveProduct(id: string, userId: string, role: string, vendorId?: string) {
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -272,16 +268,9 @@ export class ProductLifecycleService {
       );
     }
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        status: PRODUCT_STATUS.ARCHIVED,
-        updatedBy: userId,
-      },
-      include: {
-        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-      },
+    const updated = await this.products.update(id, {
+      status: PRODUCT_STATUS.ARCHIVED,
+      updatedBy: userId,
     });
 
     if (product.status !== PRODUCT_STATUS.ARCHIVED) {
@@ -299,7 +288,7 @@ export class ProductLifecycleService {
   }
 
   async toggleProductActivation(id: string, vendorId?: string, isPlatform = false) {
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -323,18 +312,11 @@ export class ProductLifecycleService {
       );
     }
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        status:
-          product.status === PRODUCT_STATUS.PUBLISHED
-            ? PRODUCT_STATUS.DEACTIVATED
-            : PRODUCT_STATUS.PUBLISHED,
-      },
-      include: {
-        category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-        subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-      },
+    const updated = await this.products.update(id, {
+      status:
+        product.status === PRODUCT_STATUS.PUBLISHED
+          ? PRODUCT_STATUS.DEACTIVATED
+          : PRODUCT_STATUS.PUBLISHED,
     });
 
     return formatProductResponse(updated);

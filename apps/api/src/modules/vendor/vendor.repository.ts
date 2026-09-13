@@ -10,6 +10,13 @@ export class VendorRepository {
     });
   }
 
+  public async findByIdWithUser(id: string) {
+    return prisma.vendorProfile.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+  }
+
   public async findByShopName(shopName: string): Promise<VendorProfile | null> {
     return prisma.vendorProfile.findUnique({
       where: { shopName },

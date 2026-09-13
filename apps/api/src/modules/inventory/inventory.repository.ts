@@ -24,6 +24,14 @@ export class InventoryRepository {
     return updatedRows[0] ?? null;
   }
 
+  /** Live quantities for publish-floor and stock derivations. */
+  public async findQuantitiesByProductId(productId: string): Promise<Array<{ quantity: number }>> {
+    return prisma.productInventory.findMany({
+      where: { productId },
+      select: { quantity: true },
+    });
+  }
+
   public async findByProductVariantSize(
     productId: string,
     colorVariantName: string,

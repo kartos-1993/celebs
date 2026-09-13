@@ -87,6 +87,37 @@ export class CategoryRepository {
       .filter((id): id is string => typeof id === 'string' && id.length > 0);
   }
 
+  /** Lean match for storefront category filters (slug, id, path, or slugified name). */
+  async findFilterMatch(param: string) {
+    const trimmed = param.trim();
+    return prisma.category.findFirst({
+      where: {
+        OR: [
+          { slug: { equals: trimmed, mode: 'insensitive' } },
+          { id: trimmed },
+          { path: { equals: trimmed, mode: 'insensitive' } },
+          { name: { equals: trimmed.replace(/-/g, ' '), mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true, slug: true, name: true, path: true, level: true, parentCategory: true },
+    });
+  }
+
+  /** All descendant ids of a category (direct children + path-tree matches). */
+  async findDescendantIds(id: string, slug: string): Promise<string[]> {
+    const descendants = await prisma.category.findMany({
+      where: {
+        OR: [
+          { parentCategory: id },
+          { path: { equals: slug } },
+          { path: { startsWith: `${slug}/` } },
+        ],
+      },
+      select: { id: true },
+    });
+    return descendants.map((c) => c.id);
+  }
+
   async findMany(
     where: Prisma.CategoryWhereInput = {},
     limit?: number,
