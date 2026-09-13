@@ -510,6 +510,10 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         )}
 
         {/* Specifications Footer */}
+        <div className="text-xs text-muted-foreground">
+          Optional when color galleries are set — the first color photo becomes the cover
+          automatically.
+        </div>
         {field.rule ? (
           <div className="text-xs text-muted-foreground">
             Max size:{' '}

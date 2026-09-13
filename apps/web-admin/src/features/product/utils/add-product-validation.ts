@@ -239,6 +239,21 @@ const flattenObjectShallow = (
   return out;
 };
 
+export const collectCoverError = ({ values }: { values: Record<string, unknown> }): string[] => {
+  // Cover = explicit main images OR any per-color gallery (auto-derived).
+  const main = getNestedValue(values, 'mainImage');
+  if (Array.isArray(main) && main.length > 0) return [];
+  const colorMeta = getNestedValue(values, 'variants.colorMeta') as
+    | Record<string, { images?: unknown }>
+    | undefined;
+  const hasGallery =
+    colorMeta &&
+    Object.values(colorMeta).some(
+      (entry) => Array.isArray(entry?.images) && entry.images.length > 0,
+    );
+  return hasGallery ? [] : ['Add a cover photo or at least one color gallery photo.'];
+};
+
 export const buildSidebarSections = ({
   fieldErrors,
   schemaFields,
@@ -290,6 +305,7 @@ export const buildSidebarSections = ({
     ...groupedErrors.images,
     ...getRequiredFieldErrors(groupedFields.base, values),
     ...collectColorImageErrors({ values, variantMeta }),
+    ...collectCoverError({ values }),
   ]);
 
   const specificationErrors = uniqueMessages([

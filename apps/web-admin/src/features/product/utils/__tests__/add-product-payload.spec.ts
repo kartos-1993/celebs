@@ -88,4 +88,55 @@ describe('buildProductPayload', () => {
       { size: 'M', quantity: 8 },
     ]);
   });
+
+  it('should derive the cover from the first color gallery when main images are empty', async () => {
+    const payload = await buildProductPayload({
+      fields,
+      status: 'draft',
+      values: {
+        name: 'Coverless Tee',
+        categoryId: 'cat-1',
+        subcategoryId: 'subcat-1',
+        Color: ['Red'],
+        Size: ['M'],
+        'sku.default.price': '1500',
+        'sku.default.stock': '7',
+        mainImage: [],
+        variants: {
+          colorMeta: {
+            Red: { images: ['https://example.com/red-1.jpg'], hot: false },
+          },
+        },
+      },
+      upload: mockUpload,
+    });
+
+    expect(payload.mainImages).toEqual(['https://example.com/red-1.jpg']);
+    expect(payload.colorVariants?.[0]?.images).toEqual(['https://example.com/red-1.jpg']);
+  });
+
+  it('should prefer explicit main images over color galleries for the cover', async () => {
+    const payload = await buildProductPayload({
+      fields,
+      status: 'draft',
+      values: {
+        name: 'Covered Tee',
+        categoryId: 'cat-1',
+        subcategoryId: 'subcat-1',
+        Color: ['Red'],
+        Size: ['M'],
+        'sku.default.price': '1500',
+        'sku.default.stock': '7',
+        mainImage: ['https://example.com/cover.jpg'],
+        variants: {
+          colorMeta: {
+            Red: { images: ['https://example.com/red-1.jpg'], hot: false },
+          },
+        },
+      },
+      upload: mockUpload,
+    });
+
+    expect(payload.mainImages).toEqual(['https://example.com/cover.jpg']);
+  });
 });

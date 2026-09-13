@@ -179,12 +179,14 @@ export async function composeSchema(params: {
   const fields: FieldSpec[] = [];
 
   // System fields (images only; product name is handled in Basic Info section on the web app)
+  // Cover is optional when per-color galleries exist — the payload auto-derives
+  // the cover from the first color gallery, enforced by the dynamic cover rule.
   fields.push({
     name: 'mainImage',
     uiType: 'MainImage',
-    label: 'Product Images',
+    label: 'Cover Images',
     group: 'base',
-    required: true,
+    required: false,
     rule: {
       maxItems: params.policy.media.maxImages,
       accept: params.policy.media.accept,

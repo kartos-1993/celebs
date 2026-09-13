@@ -82,6 +82,13 @@ export async function buildProductPayload({
   const uploadedColorAssets: Record<string, { hot: boolean; images: string[]; swatch?: string }> =
     Object.fromEntries(colorAssetEntries);
 
+  // Cover auto-derive: explicit main images win; otherwise the first
+  // selected color gallery provides the cover (SHEIN card behavior).
+  const firstSelectedColor = selectedColors[0];
+  const firstGalleryImages =
+    firstSelectedColor !== undefined ? (uploadedColorAssets[firstSelectedColor]?.images ?? []) : [];
+  const effectiveMainImages = mainImages.length > 0 ? mainImages : firstGalleryImages;
+
   const price = getFirstPrice(values, '.price');
   if (price === undefined) {
     throw new Error('Add a valid price before publishing the product.');
@@ -210,7 +217,7 @@ export async function buildProductPayload({
       discountedPrice:
         cellDiscounted !== undefined && cellDiscounted < cellPrice ? cellDiscounted : undefined,
       stock: cellStock,
-      image: image || mainImages[0] || undefined,
+      image: image || effectiveMainImages[0] || undefined,
       isDefault: builtSkus.length === 0,
     });
   };
@@ -241,7 +248,7 @@ export async function buildProductPayload({
   } else if (sizeFieldName && selectedSizes.length > 0) {
     for (const sizeValue of selectedSizes) {
       const sizeLabel = sizeLabelMap.get(sizeValue) || sizeValue;
-      pushSku({ Size: sizeLabel }, [sizeFieldName, sizeValue], mainImages[0]);
+      pushSku({ Size: sizeLabel }, [sizeFieldName, sizeValue], effectiveMainImages[0]);
     }
   }
 
@@ -270,7 +277,7 @@ export async function buildProductPayload({
     subcategoryId: String(values.subcategoryId || ''),
     sizes,
     colorVariants,
-    mainImages,
+    mainImages: effectiveMainImages,
     dynamicData: {
       values: Object.fromEntries(
         fields
