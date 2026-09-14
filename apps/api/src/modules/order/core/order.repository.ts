@@ -159,7 +159,7 @@ export class CoreOrderRepository {
         // Single set-based restore (sorted input keeps lock order deterministic).
         await tx.$executeRaw`
           UPDATE "ProductInventory" AS p
-          SET "reservedQuantity" = p."reservedQuantity" - u.qty
+          SET "reserved_quantity" = GREATEST(0, p."reserved_quantity" - u.qty)
           FROM (
             SELECT
               unnest(${sortedItems.map((item) => item.inventoryId)}::text[]) AS id,

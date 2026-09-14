@@ -397,7 +397,18 @@ export class CartService {
       }
     };
 
-    // Merge guest items between DB and payload WITHOUT duplicating the same guest item!
+    // Merge duplicate lines in payload first (sum quantities)
+    const payloadItemsByKey = new Map<string, AddToCartInput>();
+    for (const item of guestItems) {
+      const key = `${item.productId}|${item.colorVariantName}|${item.size}`;
+      const existing = payloadItemsByKey.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        payloadItemsByKey.set(key, { ...item });
+      }
+    }
+
     const guestItemsByKey = new Map<string, AddToCartInput>();
 
     if (sessionId) {
@@ -417,14 +428,13 @@ export class CartService {
       }
     }
 
-    for (const item of guestItems) {
-      const key = `${item.productId}|${item.colorVariantName}|${item.size}`;
+    // Merge payload items with DB session cart. If present in both, take max to avoid duplicate count.
+    for (const [key, item] of payloadItemsByKey) {
       const existing = guestItemsByKey.get(key);
       if (existing) {
-        // Same guest item present in both DB and payload — take max, never sum guest with itself!
         existing.quantity = Math.max(existing.quantity, item.quantity);
       } else {
-        guestItemsByKey.set(key, { ...item });
+        guestItemsByKey.set(key, item);
       }
     }
 
@@ -533,16 +543,14 @@ export class CartService {
     });
     const existingQty = new Map(existingItems.map((i) => [i.inventoryId, i.quantity]));
 
-    // 5. Stock-check merges; clamp to available stock.
+    // 5. Stock-check merges; skip items that would exceed availability.
     const upserts: Array<{ inventoryId: string; quantity: number }> = [];
     for (const req of mergedRequests.values()) {
       if (!req.inventoryId) continue;
       const invId = req.inventoryId;
       const existingAccountQty = existingQty.get(invId) ?? 0;
-      const requestedTotal = existingAccountQty + req.requestedQuantity;
-      const maxAvailable = req.availableQuantity ?? 0;
-      const targetQuantity = Math.min(requestedTotal, maxAvailable);
-      if (targetQuantity <= 0) continue;
+      const targetQuantity = existingAccountQty + req.requestedQuantity;
+      if ((req.availableQuantity ?? 0) < targetQuantity || targetQuantity <= 0) continue;
       upserts.push({ inventoryId: invId, quantity: targetQuantity });
     }
 
