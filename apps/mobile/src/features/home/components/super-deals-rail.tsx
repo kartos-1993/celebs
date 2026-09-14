@@ -5,10 +5,12 @@ import { useRouter } from 'expo-router';
 
 import { useActiveCampaign } from '../hooks/use-home-queries';
 import type { CampaignData, HydratedProduct } from '../types';
+import { dealTag, tilePhoto, tilePrice } from '../utils/super-deals.utils';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
+import { useNavigationGuard } from '@/utils/navigation-guard';
 
 type CampaignWithProducts = CampaignData & {
   productDetails?: HydratedProduct[];
@@ -16,34 +18,10 @@ type CampaignWithProducts = CampaignData & {
 
 const MIN_DEAL_TILES = 2;
 
-function dealTag(product: HydratedProduct): string | null {
-  const price = Number(product.price ?? 0);
-  const sale = product as HydratedProduct & { discountedPrice?: number | null };
-  const discounted = sale.discountedPrice != null ? Number(sale.discountedPrice) : NaN;
-  if (Number.isFinite(discounted) && discounted > 0 && discounted < price && price > 0) {
-    return `${Math.round((1 - discounted / price) * 100)}% OFF`;
-  }
-  return null;
-}
-
-function tilePhoto(product: HydratedProduct): string {
-  const firstVariantPhoto = product.colorVariants?.find(
-    (v) => Array.isArray(v.images) && v.images.length > 0,
-  )?.images?.[0];
-  return firstVariantPhoto ?? product.mainImages?.[0] ?? '';
-}
-
-function tilePrice(product: HydratedProduct): string {
-  const sale = product as HydratedProduct & { discountedPrice?: number | null };
-  const discounted = sale.discountedPrice != null ? Number(sale.discountedPrice) : NaN;
-  const price = Number(product.price ?? 0);
-  const effective = Number.isFinite(discounted) && discounted > 0 ? discounted : price;
-  return `$${effective.toFixed(2)}`;
-}
-
 export function SuperDealsRail() {
   const { activeCampaign } = useActiveCampaign();
   const router = useRouter();
+  const guardNav = useNavigationGuard();
 
   const products = React.useMemo(
     () =>
@@ -53,6 +31,16 @@ export function SuperDealsRail() {
         ) as HydratedProduct[]
       ).slice(0, 10),
     [activeCampaign],
+  );
+
+  const handleTilePress = React.useCallback(
+    (productId?: string | number) => {
+      if (!productId) return;
+      guardNav(() => {
+        router.push({ pathname: '/product/[id]', params: { id: String(productId) } });
+      });
+    },
+    [guardNav, router],
   );
 
   // Cold-start contract: sparse rails hide instead of rendering hollow shelves.
@@ -76,9 +64,7 @@ export function SuperDealsRail() {
               key={product.id}
               style={styles.tile}
               activeOpacity={0.8}
-              onPress={() =>
-                router.push({ pathname: '/product/[id]', params: { id: String(product.id) } })
-              }
+              onPress={() => handleTilePress(product.id)}
               accessible={true}
               accessibilityRole="button"
               accessibilityLabel={`Shop deal ${product.name ?? ''}`}

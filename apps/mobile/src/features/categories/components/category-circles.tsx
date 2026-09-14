@@ -9,6 +9,7 @@ import type { Category } from '../types';
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
+import { useNavigationGuard } from '@/utils/navigation-guard';
 
 const CIRCLE_SIZE = 64;
 const MIN_CIRCLES = 3;
@@ -16,6 +17,7 @@ const MIN_CIRCLES = 3;
 export function CategoryCircles({ initialCategories }: { initialCategories?: Category[] } = {}) {
   const { categories: queryCategories } = useCategories();
   const router = useRouter();
+  const guardNav = useNavigationGuard();
 
   const source =
     initialCategories && initialCategories.length > 0 ? initialCategories : queryCategories;
@@ -26,13 +28,15 @@ export function CategoryCircles({ initialCategories }: { initialCategories?: Cat
 
   const handlePress = React.useCallback(
     (cat: Category) => {
-      const slug = cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-');
-      router.push({
-        pathname: '/category/[slug]',
-        params: { slug, title: cat.displayName || cat.name },
+      guardNav(() => {
+        const slug = cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-');
+        router.push({
+          pathname: '/category/[slug]',
+          params: { slug, title: cat.displayName || cat.name },
+        });
       });
     },
-    [router],
+    [guardNav, router],
   );
 
   // Cold-start contract: sparse rails hide instead of rendering hollow shelves.

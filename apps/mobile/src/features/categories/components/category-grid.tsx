@@ -16,6 +16,7 @@ import type { Category } from '../types';
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
 import { Colors, Spacing } from '@/constants/theme';
+import { useNavigationGuard } from '@/utils/navigation-guard';
 
 export function CategoryGrid({ initialCategories }: { initialCategories?: Category[] } = {}) {
   const scheme = useColorScheme();
@@ -25,15 +26,21 @@ export function CategoryGrid({ initialCategories }: { initialCategories?: Catego
   const categories = hasInitial ? initialCategories! : queryCategories;
   const loading = hasInitial ? false : queryLoading;
   const router = useRouter();
+  const guardNav = useNavigationGuard();
 
-  const handleCategoryPress = (cat: { slug?: string; name?: string; displayName?: string }) => {
-    const slug =
-      cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
-    router.push({
-      pathname: '/category/[slug]',
-      params: { slug, title: cat.displayName || cat.name },
-    });
-  };
+  const handleCategoryPress = React.useCallback(
+    (cat: { slug?: string; name?: string; displayName?: string }) => {
+      guardNav(() => {
+        const slug =
+          cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
+        router.push({
+          pathname: '/category/[slug]',
+          params: { slug, title: cat.displayName || cat.name },
+        });
+      });
+    },
+    [guardNav, router],
+  );
 
   // Chunk categories into groups of 3 per column to guarantee exactly 3 rows on any device
   const columns = React.useMemo(() => {
