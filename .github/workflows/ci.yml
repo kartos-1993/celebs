@@ -21,6 +21,8 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
 
       - name: Get pnpm store directory
         shell: bash
@@ -42,7 +44,7 @@ jobs:
         run: pnpm prisma:generate
 
       - name: Build Shared Packages
-        run: pnpm --filter "@celebs/*" build
+        run: pnpm --filter "@celebs/*" --if-present build
 
       - name: Run Typecheck
         run: pnpm typecheck
@@ -92,6 +94,21 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -100,7 +117,7 @@ jobs:
         run: pnpm prisma:generate
 
       - name: Build Shared Packages
-        run: pnpm --filter "@celebs/*" build
+        run: pnpm --filter "@celebs/*" --if-present build
 
       - name: Push Test Database Schema
         run: npx dotenv -e apps/api/.env.test -- npx prisma db push --schema=apps/api/src/db/schema.prisma --config=prisma.config.ts
@@ -123,6 +140,21 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -132,6 +164,9 @@ jobs:
 
       - name: Build Monorepo Workspace
         run: pnpm build
+
+      - name: Validate Docker Build (Render parity)
+        run: docker build -f Dockerfile -t celebs:ci .
 
   deploy-staging:
     name: Deploy to Render (Staging)
