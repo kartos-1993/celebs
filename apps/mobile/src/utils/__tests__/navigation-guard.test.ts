@@ -1,71 +1,73 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  DEFAULT_NAVIGATION_COOLDOWN_MS,
-  guardNavigation,
-  resetNavigationGuard,
-} from '../navigation-guard';
+// Mock expo-router's useFocusEffect
+let focusCallback: (() => void) | null = null;
+vi.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void) => {
+    focusCallback = cb;
+  },
+}));
+
+vi.mock('react', () => ({
+  useCallback: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
+}));
+
+import { navigateOnce, resetNavigationGuard, useNavigationGuard } from '../navigation-guard';
 
 describe('navigation-guard', () => {
   beforeEach(() => {
     resetNavigationGuard();
-    vi.restoreAllMocks();
+    focusCallback = null;
   });
 
-  it('executes navigation on first call', () => {
-    const fn = vi.fn();
-    const executed = guardNavigation(fn);
-
-    expect(executed).toBe(true);
-    expect(fn).toHaveBeenCalledTimes(1);
-  });
-
-  it('blocks duplicate navigation within the cooldown window', () => {
+  it('allows the first navigation call and blocks immediate subsequent calls', () => {
     const fn1 = vi.fn();
     const fn2 = vi.fn();
 
-    const now = 100000;
-    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const res1 = navigateOnce(fn1);
+    const res2 = navigateOnce(fn2);
 
-    const firstResult = guardNavigation(fn1, 500);
-    expect(firstResult).toBe(true);
+    expect(res1).toBe(true);
     expect(fn1).toHaveBeenCalledTimes(1);
 
-    // Second tap 150ms later (simulating fast double tap during slide transition)
-    vi.spyOn(Date, 'now').mockReturnValue(now + 150);
-    const secondResult = guardNavigation(fn2, 500);
-
-    expect(secondResult).toBe(false);
+    // Second rapid tap (e.g. Card B tapped right after Card A) is dropped
+    expect(res2).toBe(false);
     expect(fn2).not.toHaveBeenCalled();
   });
 
-  it('allows navigation after the cooldown window expires', () => {
+  it('unlocks when navigation focus effect fires upon returning to screen', () => {
+    const navigateSafely = useNavigationGuard();
     const fn1 = vi.fn();
     const fn2 = vi.fn();
 
-    const now = 100000;
-    vi.spyOn(Date, 'now').mockReturnValue(now);
-    guardNavigation(fn1, DEFAULT_NAVIGATION_COOLDOWN_MS);
+    // Tap Card A
+    expect(navigateSafely(fn1)).toBe(true);
+    expect(fn1).toHaveBeenCalledTimes(1);
 
-    // Next tap after 501ms
-    vi.spyOn(Date, 'now').mockReturnValue(now + 501);
-    const secondResult = guardNavigation(fn2, DEFAULT_NAVIGATION_COOLDOWN_MS);
+    // Tap Card B while still navigating -> blocked
+    expect(navigateSafely(fn2)).toBe(false);
+    expect(fn2).not.toHaveBeenCalled();
 
-    expect(secondResult).toBe(true);
-    expect(fn2).toHaveBeenCalledTimes(1);
+    // User returns back to screen (focus effect fires)
+    expect(focusCallback).not.toBeNull();
+    focusCallback?.();
+
+    // Now Card B or another tap is permitted again
+    const fn3 = vi.fn();
+    expect(navigateSafely(fn3)).toBe(true);
+    expect(fn3).toHaveBeenCalledTimes(1);
   });
 
-  it('resets timestamp if callback throws an error synchronously', () => {
-    const failingFn = vi.fn(() => {
-      throw new Error('Navigation failed');
-    });
-    const succeedingFn = vi.fn();
+  it('releases lock if the navigation callback throws', () => {
+    const errorFn = () => {
+      throw new Error('Navigation error');
+    };
 
-    expect(() => guardNavigation(failingFn)).toThrow('Navigation failed');
+    expect(() => navigateOnce(errorFn)).toThrow('Navigation error');
 
-    // Subsequent navigation should immediately succeed because timestamp was reset
-    const result = guardNavigation(succeedingFn);
-    expect(result).toBe(true);
-    expect(succeedingFn).toHaveBeenCalledTimes(1);
+    // Lock was released in catch block
+    const fn2 = vi.fn();
+    expect(navigateOnce(fn2)).toBe(true);
+    expect(fn2).toHaveBeenCalledTimes(1);
   });
 });

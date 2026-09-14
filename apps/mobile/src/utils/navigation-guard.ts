@@ -1,56 +1,94 @@
 import { useCallback } from 'react';
-
-/** Default duration (ms) during which subsequent navigation attempts are dropped. */
-export const DEFAULT_NAVIGATION_COOLDOWN_MS = 500;
-
-let lastNavigationTime = 0;
+import { useFocusEffect } from 'expo-router';
 
 /**
- * Synchronously guards a navigation action against rapid multi-touch or duplicate triggers.
- * Operates at the app/module level to prevent dual-screen stack push races during native transitions.
- *
- * @param fn Navigation callback to invoke (e.g. router.push).
- * @param delayMs Cooldown window in milliseconds.
- * @returns true if navigation was executed, false if dropped.
+ * Shared ref tracking whether a navigation flight is active.
+ * Shared across presentation components (cards, rails, grids) on the screen.
+ * Reset deterministically by React Navigation's `useFocusEffect` when any screen
+ * mounts or regains focus.
  */
-export function guardNavigation(
-  fn: () => void,
-  delayMs: number = DEFAULT_NAVIGATION_COOLDOWN_MS,
-): boolean {
-  const now = Date.now();
-  if (now - lastNavigationTime < delayMs) {
+const isNavigatingRef = { current: false };
+let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function releaseNavigationGuard(): void {
+  if (safetyTimer) {
+    clearTimeout(safetyTimer);
+    safetyTimer = null;
+  }
+  isNavigatingRef.current = false;
+}
+
+/**
+ * Focus-based navigation guard hook.
+ *
+ * Deterministically resets the guard when the presenting screen (re)gains focus.
+ * Returns a `navigateSafely` function that synchronously drops rapid duplicate
+ * or concurrent navigation triggers (e.g. Card A -> Card B multi-touch).
+ */
+export function useNavigationGuard() {
+  useFocusEffect(
+    useCallback(() => {
+      releaseNavigationGuard();
+    }, []),
+  );
+
+  const navigateSafely = useCallback((navigateFn: () => void): boolean => {
+    if (isNavigatingRef.current) {
+      return false;
+    }
+    isNavigatingRef.current = true;
+
+    if (safetyTimer) {
+      clearTimeout(safetyTimer);
+    }
+    // Safety valve in case native transition is interrupted or no-ops
+    safetyTimer = setTimeout(() => {
+      releaseNavigationGuard();
+    }, 1500);
+
+    try {
+      navigateFn();
+      return true;
+    } catch (err) {
+      releaseNavigationGuard();
+      throw err;
+    }
+  }, []);
+
+  return navigateSafely;
+}
+
+/**
+ * Standalone guard execution for non-hook callers.
+ */
+export function navigateOnce(navigateFn: () => void): boolean {
+  if (isNavigatingRef.current) {
     return false;
   }
+  isNavigatingRef.current = true;
 
-  lastNavigationTime = now;
+  if (safetyTimer) {
+    clearTimeout(safetyTimer);
+  }
+  safetyTimer = setTimeout(() => {
+    releaseNavigationGuard();
+  }, 1500);
+
   try {
-    fn();
+    navigateFn();
     return true;
   } catch (err) {
-    // Reset timestamp so future navigations are not blocked if action throws synchronously
-    lastNavigationTime = 0;
+    releaseNavigationGuard();
     throw err;
   }
 }
 
 /**
- * React hook providing a memoized navigation guard function.
- *
- * @param delayMs Cooldown window in milliseconds (default: 500ms).
- */
-export function useNavigationGuard(delayMs: number = DEFAULT_NAVIGATION_COOLDOWN_MS) {
-  return useCallback(
-    (fn: () => void): boolean => {
-      return guardNavigation(fn, delayMs);
-    },
-    [delayMs],
-  );
-}
-
-/**
- * Reset the global navigation cooldown.
- * Intended for test suites and mock setups.
+ * Reset helper for testing and development reset.
  */
 export function resetNavigationGuard(): void {
-  lastNavigationTime = 0;
+  releaseNavigationGuard();
 }
+
+export const releaseNavigationLock = releaseNavigationGuard;
+export const resetNavigationLock = resetNavigationGuard;

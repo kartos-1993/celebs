@@ -21,7 +21,7 @@ const MIN_DEAL_TILES = 2;
 export function SuperDealsRail() {
   const { activeCampaign } = useActiveCampaign();
   const router = useRouter();
-  const guardNav = useNavigationGuard();
+  const navigateSafely = useNavigationGuard();
 
   const products = React.useMemo(
     () =>
@@ -36,11 +36,11 @@ export function SuperDealsRail() {
   const handleTilePress = React.useCallback(
     (productId?: string | number) => {
       if (!productId) return;
-      guardNav(() => {
-        router.push({ pathname: '/product/[id]', params: { id: String(productId) } });
+      navigateSafely(() => {
+        router.navigate({ pathname: '/product/[id]', params: { id: String(productId) } });
       });
     },
-    [guardNav, router],
+    [navigateSafely, router],
   );
 
   // Cold-start contract: sparse rails hide instead of rendering hollow shelves.
@@ -64,6 +64,9 @@ export function SuperDealsRail() {
               key={product.id}
               style={styles.tile}
               activeOpacity={0.8}
+              onPressIn={() => {
+                if (uri) Image.prefetch(resolveImageUrl(uri));
+              }}
               onPress={() => handleTilePress(product.id)}
               accessible={true}
               accessibilityRole="button"

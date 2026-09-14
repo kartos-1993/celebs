@@ -21,8 +21,10 @@ import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import { SDUI_QUERY_KEYS } from '@/features/sdui/api';
 import { DynamicLayout } from '@/features/sdui/components/dynamic-layout';
 import { useSDUILayout } from '@/features/sdui/hooks/use-sdui-layout';
+import { useNavigationGuard } from '@/utils/navigation-guard';
 
 export default function HomeScreen() {
+  useNavigationGuard();
   const scheme = useColorScheme();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);

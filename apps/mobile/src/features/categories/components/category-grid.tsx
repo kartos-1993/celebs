@@ -26,20 +26,20 @@ export function CategoryGrid({ initialCategories }: { initialCategories?: Catego
   const categories = hasInitial ? initialCategories! : queryCategories;
   const loading = hasInitial ? false : queryLoading;
   const router = useRouter();
-  const guardNav = useNavigationGuard();
+  const navigateSafely = useNavigationGuard();
 
   const handleCategoryPress = React.useCallback(
     (cat: { slug?: string; name?: string; displayName?: string }) => {
-      guardNav(() => {
-        const slug =
-          cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
-        router.push({
+      const slug =
+        cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
+      navigateSafely(() => {
+        router.navigate({
           pathname: '/category/[slug]',
           params: { slug, title: cat.displayName || cat.name },
         });
       });
     },
-    [guardNav, router],
+    [navigateSafely, router],
   );
 
   // Chunk categories into groups of 3 per column to guarantee exactly 3 rows on any device

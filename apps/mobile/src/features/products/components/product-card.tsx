@@ -44,6 +44,7 @@ export const ProductCard = React.memo(function ProductCard({
     handleToggleWishlist,
     handleSelectColor,
     handleScroll,
+    handlePressIn,
     handlePress,
     handleAddToCart,
   } = useProductCard({ product, onPress, onAddToCart, isFirstCard });
@@ -63,6 +64,7 @@ export const ProductCard = React.memo(function ProductCard({
         scrollViewRef={scrollViewRef}
         product={product}
         selectedColorIndex={selectedColorIndex}
+        onPressIn={handlePressIn}
         onPress={handlePress}
         onScroll={handleScroll}
         onToggleWishlist={handleToggleWishlist}
@@ -78,6 +80,7 @@ export const ProductCard = React.memo(function ProductCard({
         hasDiscount={hasDiscount}
         discountPercent={discountPercent}
         isOutOfStock={isOutOfStock}
+        onPressIn={handlePressIn}
         onPress={handlePress}
         onAddToCart={handleAddToCart}
       />

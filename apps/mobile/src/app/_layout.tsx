@@ -85,10 +85,12 @@ export default function RootLayout() {
                         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                         <Stack.Screen
                           name="product/[id]"
+                          getId={({ params }) => (params?.id ? String(params.id) : undefined)}
                           options={{ headerShown: false, animation: 'slide_from_right' }}
                         />
                         <Stack.Screen
                           name="category/[slug]"
+                          getId={({ params }) => (params?.slug ? String(params.slug) : undefined)}
                           options={{ headerShown: false, animation: 'slide_from_right' }}
                         />
                         <Stack.Screen
@@ -101,6 +103,9 @@ export default function RootLayout() {
                         />
                         <Stack.Screen
                           name="order-detail"
+                          getId={({ params }) =>
+                            params?.orderId ? String(params.orderId) : undefined
+                          }
                           options={{ headerShown: false, animation: 'slide_from_right' }}
                         />
                         <Stack.Screen

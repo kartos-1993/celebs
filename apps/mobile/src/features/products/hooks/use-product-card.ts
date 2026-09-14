@@ -9,8 +9,11 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
+import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
 import { isProductFullyOutOfStock } from '../utils/stock';
 
 import { Product, resolveImageUrl } from './use-products';
@@ -39,7 +42,8 @@ export function useProductCard({
   isFirstCard = false,
 }: UseProductCardParams) {
   const router = useRouter();
-  const guardNav = useNavigationGuard();
+  const navigateSafely = useNavigationGuard();
+  const queryClient = useQueryClient();
   const { width: windowWidth } = useWindowDimensions();
   const CARD_WIDTH = (windowWidth - GRID_PADDING * 2 - COLUMN_GAP) / 2;
 
@@ -58,8 +62,8 @@ export function useProductCard({
     (e?: GestureResponderEvent) => {
       e?.stopPropagation?.();
       if (!isLoggedIn) {
-        guardNav(() => {
-          router.push('/(tabs)/me');
+        navigateSafely(() => {
+          router.navigate('/(tabs)/me');
         });
         return;
       }
@@ -71,16 +75,7 @@ export function useProductCard({
         addToWishlist.mutate(product.id);
       }
     },
-    [
-      isLoggedIn,
-      isFavorite,
-      isWishlistBusy,
-      guardNav,
-      router,
-      product.id,
-      addToWishlist,
-      removeFromWishlist,
-    ],
+    [isLoggedIn, isFavorite, isWishlistBusy, router, product.id, addToWishlist, removeFromWishlist],
   );
 
   const imageRef = useRef<View>(null);
@@ -200,15 +195,35 @@ export function useProductCard({
 
   const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
 
+  const handlePressIn = useCallback(() => {
+    // 1. Seed detail query cache so PDP mounts synchronously on Frame 0
+    queryClient.setQueryData(
+      PRODUCT_QUERY_KEYS.detail(product.id),
+      (existing: unknown) => existing ?? product,
+    );
+
+    // 2. Prefetch fresh detail in background
+    queryClient.prefetchQuery({
+      queryKey: PRODUCT_QUERY_KEYS.detail(product.id),
+      queryFn: () => getProductById(product.id),
+      staleTime: 1000 * 60 * 5,
+    });
+
+    // 3. Prefetch primary hero image
+    if (resolvedPrimaryUrl) {
+      Image.prefetch(resolvedPrimaryUrl);
+    }
+  }, [queryClient, product, resolvedPrimaryUrl]);
+
   const handlePress = useCallback(() => {
-    guardNav(() => {
+    navigateSafely(() => {
       if (onPress) {
         onPress(product);
       } else {
         // Forward the card's selected color so PDP opens on the same variant
         // (SHEIN behavior) instead of always defaulting to the first one.
         const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
-        router.push({
+        router.navigate({
           pathname: '/product/[id]',
           params: selectedColorName
             ? { id: product.id, color: selectedColorName }
@@ -216,7 +231,7 @@ export function useProductCard({
         });
       }
     });
-  }, [guardNav, onPress, product, router, selectedColorIndex]);
+  }, [navigateSafely, onPress, product, router, selectedColorIndex]);
 
   const handleAddToCart = useCallback(
     (evt?: GestureResponderEvent) => {
@@ -280,6 +295,7 @@ export function useProductCard({
     handleToggleWishlist,
     handleSelectColor,
     handleScroll,
+    handlePressIn,
     handlePress,
     handleAddToCart,
   };

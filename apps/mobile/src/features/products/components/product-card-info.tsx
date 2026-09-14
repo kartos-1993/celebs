@@ -16,6 +16,7 @@ interface ProductCardInfoProps {
   hasDiscount: boolean;
   discountPercent: number;
   isOutOfStock: boolean;
+  onPressIn?: () => void;
   onPress: () => void;
   onAddToCart: (evt?: GestureResponderEvent) => void;
 }
@@ -29,11 +30,12 @@ export function ProductCardInfo({
   hasDiscount,
   discountPercent,
   isOutOfStock,
+  onPressIn,
   onPress,
   onAddToCart,
 }: ProductCardInfoProps) {
   return (
-    <Pressable onPress={onPress} style={styles.detailsContainer}>
+    <Pressable onPressIn={onPressIn} onPress={onPress} style={styles.detailsContainer}>
       <View style={styles.brandBadgeRow}>
         <View style={styles.trendsBadge}>
           <ThemedText style={styles.trendsText}>Trends</ThemedText>

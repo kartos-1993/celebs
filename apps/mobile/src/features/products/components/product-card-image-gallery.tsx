@@ -42,6 +42,7 @@ interface ProductCardImageGalleryProps {
   scrollViewRef: React.RefObject<ScrollView | null>;
   product: Product;
   selectedColorIndex: number;
+  onPressIn?: () => void;
   onPress: () => void;
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onToggleWishlist: (e?: GestureResponderEvent) => void;
@@ -61,6 +62,7 @@ export function ProductCardImageGallery({
   scrollViewRef,
   product,
   selectedColorIndex,
+  onPressIn,
   onPress,
   onScroll,
   onToggleWishlist,
@@ -99,6 +101,7 @@ export function ProductCardImageGallery({
               return (
                 <Pressable
                   key={`${imgSrc}-${idx}`}
+                  onPressIn={onPressIn}
                   onPress={onPress}
                   style={{ width: cardWidth, height: '100%' }}
                 >
@@ -117,8 +120,6 @@ export function ProductCardImageGallery({
                       </ThemedText>
                     </View>
                   ) : (
-                    // Same-size blank slot: keeps paging offsets stable without
-                    // mounting (and fetching) off-screen photos.
                     <View style={[styles.productImage, { backgroundColor: Palette.gray100 }]} />
                   )}
                 </Pressable>
@@ -127,7 +128,7 @@ export function ProductCardImageGallery({
           </ScrollView>
         </Animated.View>
       ) : (
-        <Pressable onPress={onPress} style={styles.placeholderImage}>
+        <Pressable onPressIn={onPressIn} onPress={onPress} style={styles.placeholderImage}>
           <ThemedText type="small" style={{ opacity: 0.4 }}>
             No Image
           </ThemedText>
