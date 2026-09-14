@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
 
-import { StorefrontService,storefrontService } from './storefront.service';
+import { StorefrontService, storefrontService } from './storefront.service';
 
 import { sendSuccess } from '@/common/utils/response.util';
 

@@ -350,85 +350,85 @@ const Banners: React.FC = () => {
               screenClassName="flex h-[548px] flex-col overflow-hidden bg-zinc-900"
             >
               {/* Mobile Content Screen */}
-                {/* Apple Immersive Slider Screen Area */}
-                <div className="relative h-[220px] w-full bg-zinc-800 overflow-hidden">
-                  {banners[activePreviewIndex]?.imageUrl ? (
-                    <img
-                      src={banners[activePreviewIndex].imageUrl}
-                      alt="Banner Preview"
-                      className="w-full h-full object-cover animate-fade-in"
+              {/* Apple Immersive Slider Screen Area */}
+              <div className="relative h-[220px] w-full bg-zinc-800 overflow-hidden">
+                {banners[activePreviewIndex]?.imageUrl ? (
+                  <img
+                    src={banners[activePreviewIndex].imageUrl}
+                    alt="Banner Preview"
+                    className="w-full h-full object-cover animate-fade-in"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-zinc-500 p-4 text-center">
+                    <Eye className="w-8 h-8 opacity-40 mb-2" />
+                    <span className="text-xs font-semibold">No Image Uploaded</span>
+                    <span className="text-xs opacity-75">
+                      Upload a banner in Slot {activePreviewIndex + 1} to preview
+                    </span>
+                  </div>
+                )}
+
+                {/* Transparent Overlay Status Bar Mockup */}
+                <div className="absolute top-0 inset-x-0 h-11 bg-gradient-to-b from-black/50 to-transparent z-20 px-5 flex items-center justify-between">
+                  <span className="text-xs text-white/95 font-semibold">9:41</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3.5 h-2 border border-white/90 rounded-[3px] p-[1px] flex items-center">
+                      <div className="w-full h-full bg-white/90 rounded-[1px]"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Immersive Apple Navigation Bar Mockup (Transparent Overlay) */}
+                <div className="absolute top-9 inset-x-0 h-12 flex items-center justify-between px-4 z-20">
+                  <div className="w-7 h-7 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">C</span>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className="text-xs font-bold text-white tracking-wide uppercase drop-shadow-md">
+                      Celebs
+                    </span>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center">
+                    <Link2 className="w-3.5 h-3.5 text-white" />
+                  </div>
+                </div>
+
+                {/* Pagination Indicator Dots */}
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
+                  {banners.map((b, i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        activePreviewIndex === i ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
+                      } ${!b.isActive ? 'opacity-30' : ''}`}
                     />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-zinc-500 p-4 text-center">
-                      <Eye className="w-8 h-8 opacity-40 mb-2" />
-                      <span className="text-xs font-semibold">No Image Uploaded</span>
-                      <span className="text-xs opacity-75">
-                        Upload a banner in Slot {activePreviewIndex + 1} to preview
-                      </span>
-                    </div>
-                  )}
+                  ))}
+                </div>
+              </div>
 
-                  {/* Transparent Overlay Status Bar Mockup */}
-                  <div className="absolute top-0 inset-x-0 h-11 bg-gradient-to-b from-black/50 to-transparent z-20 px-5 flex items-center justify-between">
-                    <span className="text-xs text-white/95 font-semibold">9:41</span>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3.5 h-2 border border-white/90 rounded-[3px] p-[1px] flex items-center">
-                        <div className="w-full h-full bg-white/90 rounded-[1px]"></div>
-                      </div>
-                    </div>
+              {/* Simulated Homepage Body Grid */}
+              <div className="flex-1 p-3 space-y-3 bg-zinc-900 z-10 -mt-2.5 rounded-t-xl">
+                <div className="h-4 w-24 bg-zinc-800 rounded"></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-28 bg-zinc-800/80 rounded-lg p-2 flex flex-col justify-end">
+                    <div className="h-3 w-16 bg-zinc-700 rounded mb-1"></div>
+                    <div className="h-2.5 w-10 bg-zinc-700/60 rounded"></div>
                   </div>
-
-                  {/* Immersive Apple Navigation Bar Mockup (Transparent Overlay) */}
-                  <div className="absolute top-9 inset-x-0 h-12 flex items-center justify-between px-4 z-20">
-                    <div className="w-7 h-7 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">C</span>
-                    </div>
-                    <div className="flex-1 text-center">
-                      <span className="text-xs font-bold text-white tracking-wide uppercase drop-shadow-md">
-                        Celebs
-                      </span>
-                    </div>
-                    <div className="w-7 h-7 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center">
-                      <Link2 className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  </div>
-
-                  {/* Pagination Indicator Dots */}
-                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
-                    {banners.map((b, i) => (
-                      <div
-                        key={i}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          activePreviewIndex === i ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
-                        } ${!b.isActive ? 'opacity-30' : ''}`}
-                      />
-                    ))}
+                  <div className="h-28 bg-zinc-800/80 rounded-lg p-2 flex flex-col justify-end">
+                    <div className="h-3 w-16 bg-zinc-700 rounded mb-1"></div>
+                    <div className="h-2.5 w-10 bg-zinc-700/60 rounded"></div>
                   </div>
                 </div>
-
-                {/* Simulated Homepage Body Grid */}
-                <div className="flex-1 p-3 space-y-3 bg-zinc-900 z-10 -mt-2.5 rounded-t-xl">
-                  <div className="h-4 w-24 bg-zinc-800 rounded"></div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="h-28 bg-zinc-800/80 rounded-lg p-2 flex flex-col justify-end">
-                      <div className="h-3 w-16 bg-zinc-700 rounded mb-1"></div>
-                      <div className="h-2.5 w-10 bg-zinc-700/60 rounded"></div>
-                    </div>
-                    <div className="h-28 bg-zinc-800/80 rounded-lg p-2 flex flex-col justify-end">
-                      <div className="h-3 w-16 bg-zinc-700 rounded mb-1"></div>
-                      <div className="h-2.5 w-10 bg-zinc-700/60 rounded"></div>
-                    </div>
+                {banners[activePreviewIndex]?.linkType !== 'NONE' && (
+                  <div className="bg-zinc-800/40 border border-zinc-800 rounded-lg p-2 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
+                      <Link2 className="w-3 h-3 text-primary" />
+                      Target: {banners[activePreviewIndex].linkType}
+                    </span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
                   </div>
-                  {banners[activePreviewIndex]?.linkType !== 'NONE' && (
-                    <div className="bg-zinc-800/40 border border-zinc-800 rounded-lg p-2 flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
-                        <Link2 className="w-3 h-3 text-primary" />
-                        Target: {banners[activePreviewIndex].linkType}
-                      </span>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
+                )}
+              </div>
             </DeviceFrame>
           </div>
         </div>

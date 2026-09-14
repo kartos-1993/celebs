@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { checkoutSchema } from '@celebs/shared-types';
 
-import { CheckoutService,checkoutService } from './checkout.service';
+import { CheckoutService, checkoutService } from './checkout.service';
 
 import { sendCreated } from '@/common/utils/response.util';
 

@@ -417,40 +417,40 @@ export function WidgetPreviewBoundary({
         <DeviceFrame width={deviceConfig.width} screenClassName="h-[720px]">
           {/* Screen Content */}
           {/* Simulated App Header */}
-            <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/90 px-4 py-3 backdrop-blur-md">
-              <span className="text-xs font-extrabold tracking-tight text-primary">CELEBS</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">
-                {layout.title || 'Storefront'}
-              </span>
-            </div>
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/90 px-4 py-3 backdrop-blur-md">
+            <span className="text-xs font-extrabold tracking-tight text-primary">CELEBS</span>
+            <span className="text-[10px] font-semibold text-muted-foreground">
+              {layout.title || 'Storefront'}
+            </span>
+          </div>
 
-            {/* Widget Stack */}
-            <div className="space-y-3 p-3 pb-16">
-              {widgets.map((widget) => (
-                <div
-                  key={widget.id}
-                  onClick={() => onWidgetSelect?.(widget)}
-                  className="group relative cursor-pointer rounded-xl transition-all hover:ring-2 hover:ring-primary/60"
-                  style={{
-                    paddingTop: widget.styling?.paddingVertical
-                      ? `${widget.styling.paddingVertical}px`
-                      : undefined,
-                    paddingBottom: widget.styling?.paddingVertical
-                      ? `${widget.styling.paddingVertical}px`
-                      : undefined,
-                    marginBottom: widget.styling?.marginBottom
-                      ? `${widget.styling.marginBottom}px`
-                      : undefined,
-                  }}
-                >
-                  <MockWidgetRenderer widget={widget} />
+          {/* Widget Stack */}
+          <div className="space-y-3 p-3 pb-16">
+            {widgets.map((widget) => (
+              <div
+                key={widget.id}
+                onClick={() => onWidgetSelect?.(widget)}
+                className="group relative cursor-pointer rounded-xl transition-all hover:ring-2 hover:ring-primary/60"
+                style={{
+                  paddingTop: widget.styling?.paddingVertical
+                    ? `${widget.styling.paddingVertical}px`
+                    : undefined,
+                  paddingBottom: widget.styling?.paddingVertical
+                    ? `${widget.styling.paddingVertical}px`
+                    : undefined,
+                  marginBottom: widget.styling?.marginBottom
+                    ? `${widget.styling.marginBottom}px`
+                    : undefined,
+                }}
+              >
+                <MockWidgetRenderer widget={widget} />
 
-                  <div className="absolute top-1 right-1 hidden rounded-md bg-black/80 px-1.5 py-0.5 text-[9px] font-mono text-white group-hover:block backdrop-blur-xs">
-                    #{widget.order} {widget.type}
-                  </div>
+                <div className="absolute top-1 right-1 hidden rounded-md bg-black/80 px-1.5 py-0.5 text-[9px] font-mono text-white group-hover:block backdrop-blur-xs">
+                  #{widget.order} {widget.type}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
         </DeviceFrame>
 
         {/* JSON Schema Inspector Sidebar */}

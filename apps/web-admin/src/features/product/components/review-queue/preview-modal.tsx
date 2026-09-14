@@ -367,7 +367,9 @@ export function PreviewModal({
                               />
                             )}
                             <div>
-                              <h5 className="text-sm font-semibold text-foreground">{variant.name}</h5>
+                              <h5 className="text-sm font-semibold text-foreground">
+                                {variant.name}
+                              </h5>
                               <span className="text-xs text-muted-foreground">
                                 {isMulti ? 'Multicolor / Fabric Pattern' : `Color Code: ${safeBg}`}
                               </span>

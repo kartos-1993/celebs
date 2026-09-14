@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { updateOrderItemStatusSchema } from '@celebs/shared-types';
 import { ErrorCode, ForbiddenException } from '@celebs/shared-utils';
 
-import { FulfillmentService,fulfillmentService } from './fulfillment.service';
+import { FulfillmentService, fulfillmentService } from './fulfillment.service';
 
 import { isPlatformActor } from '@/common/context/actor-context';
 import { sendSuccess } from '@/common/utils/response.util';

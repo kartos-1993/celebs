@@ -71,13 +71,11 @@ export function StaffTable({
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
-                      member.permissions
-                        .slice(0, 4)
-                        .map((perm: string) => (
-                          <Badge key={perm} variant="outline" className="px-1.5 py-0 font-mono">
-                            {perm}
-                          </Badge>
-                        ))
+                      member.permissions.slice(0, 4).map((perm: string) => (
+                        <Badge key={perm} variant="outline" className="px-1.5 py-0 font-mono">
+                          {perm}
+                        </Badge>
+                      ))
                     ) : (
                       <Badge variant="secondary">Staff Sub-User</Badge>
                     )}

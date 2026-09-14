@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { updatePaymentStatusSchema } from '@celebs/shared-types';
 
-import { PaymentService,paymentService } from './payment.service';
+import { PaymentService, paymentService } from './payment.service';
 
 import { sendSuccess } from '@/common/utils/response.util';
 

@@ -445,7 +445,9 @@ export default function LayoutEditorPage() {
                   return (
                     <>
                       <Icon className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-semibold">{widgetMeta(selected.type).label}</span>
+                      <span className="text-sm font-semibold">
+                        {widgetMeta(selected.type).label}
+                      </span>
                       <Badge variant="outline" className="ml-auto">
                         #{selected.order}
                       </Badge>
@@ -645,9 +647,7 @@ export default function LayoutEditorPage() {
                     <Icon className="h-4 w-4" />
                   </div>
                   <p className="text-xs font-semibold">{meta.label}</p>
-                  <p className="text-xs leading-snug text-muted-foreground">
-                    {meta.description}
-                  </p>
+                  <p className="text-xs leading-snug text-muted-foreground">{meta.description}</p>
                 </button>
               );
             })}

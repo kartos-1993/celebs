@@ -64,11 +64,7 @@ export function VendorCards({
           </div>
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="h-10 flex-1"
-              onClick={() => onInspect(vendor.id)}
-            >
+            <Button variant="outline" className="h-10 flex-1" onClick={() => onInspect(vendor.id)}>
               Inspect
             </Button>
             {vendor.status !== 'APPROVED' && (

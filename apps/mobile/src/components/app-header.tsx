@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, useColorScheme,View } from 'react-native';
+import { TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Mail, Menu, Search, ShoppingCart } from 'lucide-react-native';

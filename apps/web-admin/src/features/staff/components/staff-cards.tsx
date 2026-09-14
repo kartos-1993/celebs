@@ -41,12 +41,8 @@ export function StaffCards({
         <Card key={member.id} className="space-y-3 p-4 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-foreground">
-                {member.name}
-              </div>
-              <div className="truncate font-mono text-xs text-muted-foreground">
-                {member.email}
-              </div>
+              <div className="truncate text-sm font-semibold text-foreground">{member.name}</div>
+              <div className="truncate font-mono text-xs text-muted-foreground">{member.email}</div>
               {isAdminOrSuperAdmin && (
                 <div className="mt-0.5 truncate text-xs text-muted-foreground">
                   {member.vendorProfile?.shopName || 'Vendor Shop'}
@@ -67,13 +63,11 @@ export function StaffCards({
 
           <div className="flex flex-wrap gap-1">
             {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
-              member.permissions
-                .slice(0, 4)
-                .map((perm: string) => (
-                  <Badge key={perm} variant="outline" className="px-1.5 py-0 font-mono">
-                    {perm}
-                  </Badge>
-                ))
+              member.permissions.slice(0, 4).map((perm: string) => (
+                <Badge key={perm} variant="outline" className="px-1.5 py-0 font-mono">
+                  {perm}
+                </Badge>
+              ))
             ) : (
               <Badge variant="secondary">Staff Sub-User</Badge>
             )}

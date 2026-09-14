@@ -29,7 +29,11 @@ interface RowActionsMenuProps {
  * staff, review-queue, manage-products). Single-action rows keep their
  * inline button; mobile cards keep full-width buttons.
  */
-export function RowActionsMenu({ items, label = 'Row actions', align = 'end' }: RowActionsMenuProps) {
+export function RowActionsMenu({
+  items,
+  label = 'Row actions',
+  align = 'end',
+}: RowActionsMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -43,7 +47,9 @@ export function RowActionsMenu({ items, label = 'Row actions', align = 'end' }: 
             key={item.label}
             onClick={item.onSelect}
             disabled={item.disabled}
-            className={cn(item.destructive && 'text-destructive focus:bg-destructive/10 focus:text-destructive')}
+            className={cn(
+              item.destructive && 'text-destructive focus:bg-destructive/10 focus:text-destructive',
+            )}
           >
             {item.label}
           </DropdownMenuItem>
