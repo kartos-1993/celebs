@@ -9,9 +9,13 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 
-import { ErrorCode, logger, NotFoundException } from '@celebs/shared-utils';
+import { asyncHandler, ErrorCode, logger, NotFoundException } from '@celebs/shared-utils';
 
+import { actorContext } from './common/context/actor-context.middleware';
+import { requirePlatformActor } from './common/guards/store.guards';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
+import { getBullBoardRouter } from './common/services/bull-board.service';
+import { authenticateJWT } from './common/strategies/jwt.strategy';
 import { config } from './config/app.config';
 import { UpstashRedisStore } from './config/session-store';
 import { errorHandler } from './middlewares/error-handler';
@@ -26,16 +30,20 @@ import campaignRoutes from './modules/campaign/campaign.routes';
 import cartRoutes from './modules/cart/cart.routes';
 import categoryRoutes from './modules/category/category.routes';
 import comboRoutes from './modules/combo/combo.routes';
+import devLogsRouter from './modules/dev/dev-logs.routes';
 import logisticsRoutes from './modules/logistics/logistics.routes';
 import mediaRoutes from './modules/media/media.routes';
+import notificationRoutes from './modules/notification/notification.routes';
 import optionSetRoutes from './modules/option-set/option-set.routes';
 import orderRoutes from './modules/order/order.routes';
 import platformSettingsRoutes from './modules/platform-settings/platform-settings.routes';
 import productRoutes from './modules/product/product.routes';
 import renderRoutes from './modules/product/product-render.routes';
 import quickFilterRoutes from './modules/quick-filter/quick-filter.routes';
+import { reviewRoutes } from './modules/review/review.routes';
 import sessionRoutes from './modules/session/session.routes';
 import staffRoutes from './modules/staff/staff.routes';
+import storefrontRoutes from './modules/storefront/storefront.routes';
 import userRoutes from './modules/user/user.routes';
 import vendorRoutes from './modules/vendor/vendor.routes';
 import wishlistRoutes from './modules/wishlist/wishlist.routes';
@@ -116,8 +124,24 @@ app.use(
       return id;
     },
     logger,
-    // Silence request logging in test environment to keep test runs clean
-    useLevel: process.env.NODE_ENV === 'test' ? 'silent' : 'info',
+    autoLogging: {
+      ignore: (req) => {
+        const url = req.url || '';
+        return (
+          url.includes('/health') ||
+          url.includes('/favicon.ico') ||
+          url.includes('/docs.json') ||
+          url.includes('/admin/queues/static') ||
+          url.includes('/dev/logs')
+        );
+      },
+    },
+    customLogLevel(req, res, err) {
+      if (process.env.NODE_ENV === 'test') return 'silent';
+      if (res.statusCode >= 500 || err) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
     // Custom serializers to prevent logging massive objects and sensitive headers
     serializers: {
       req(req) {
@@ -125,7 +149,6 @@ app.use(
           id: req.id,
           method: req.method,
           url: req.url,
-          query: req.query,
         };
       },
       res(res) {
@@ -136,15 +159,28 @@ app.use(
     },
     // Concise request completion messages
     customSuccessMessage(req, res, responseTime) {
-      return `${req.method} ${req.url} completed with status ${res.statusCode} in ${responseTime}ms`;
+      return `${req.method} ${req.url} -> ${res.statusCode} (${responseTime}ms)`;
     },
     customErrorMessage(req, res, error) {
-      return `${req.method} ${req.url} failed with status ${res.statusCode}: ${error.message}`;
+      return `${req.method} ${req.url} -> ${res.statusCode}: ${error.message}`;
     },
   }),
 );
-app.use(helmet());
-app.use(compression());
+app.use(
+  helmet({
+    contentSecurityPolicy: config.NODE_ENV === 'production' ? undefined : false,
+  }),
+);
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (req.headers.accept?.includes('text/event-stream') || req.path?.includes('/stream')) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }),
+);
 app.use(globalRateLimiter);
 
 // Session management setup
@@ -183,23 +219,41 @@ app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
 app.use(`${config.BASE_PATH}/categories`, categoryRoutes);
 app.use(`${config.BASE_PATH}/category`, categoryRoutes);
-app.use(`${config.BASE_PATH}/quick-filter`, quickFilterRoutes);
+app.use(`${config.BASE_PATH}/quick-filters`, quickFilterRoutes);
+app.use(`${config.BASE_PATH}/quick-filter`, quickFilterRoutes); // Backward-compatibility alias
 app.use(`${config.BASE_PATH}/option-sets`, optionSetRoutes);
 app.use(`${config.BASE_PATH}/products`, productRoutes);
 app.use(`${config.BASE_PATH}/brands`, brandRoutes);
 app.use(`${config.BASE_PATH}/media`, mediaRoutes);
-app.use(`${config.BASE_PATH}/vendor`, vendorRoutes);
+app.use(`${config.BASE_PATH}/vendors`, vendorRoutes);
+app.use(`${config.BASE_PATH}/vendor`, vendorRoutes); // Backward-compatibility alias
+const queuesPath = `${config.BASE_PATH}/admin/queues`;
+if (config.NODE_ENV === 'development') {
+  app.use(queuesPath, getBullBoardRouter());
+} else {
+  app.use(
+    queuesPath,
+    authenticateJWT,
+    asyncHandler(actorContext),
+    requirePlatformActor,
+    getBullBoardRouter(),
+  );
+}
+
 app.use(`${config.BASE_PATH}/admin`, adminRoutes);
 app.use(`${config.BASE_PATH}/users`, userRoutes);
 app.use(`${config.BASE_PATH}/staff`, staffRoutes);
 app.use(`${config.BASE_PATH}/banners`, bannerRoutes);
 app.use(`${config.BASE_PATH}/cart`, cartRoutes);
 app.use(`${config.BASE_PATH}/orders`, orderRoutes);
+app.use(`${config.BASE_PATH}/reviews`, reviewRoutes);
+app.use(`${config.BASE_PATH}/notifications`, notificationRoutes);
 app.use(`${config.BASE_PATH}/campaigns`, campaignRoutes);
 app.use(`${config.BASE_PATH}/combos`, comboRoutes);
 app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
 app.use(`${config.BASE_PATH}/wishlist`, wishlistRoutes);
 app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
+app.use(`${config.BASE_PATH}/storefront`, storefrontRoutes);
 app.use(`${config.BASE_PATH}`, renderRoutes);
 
 if (config.NODE_ENV !== 'production') {
@@ -208,6 +262,7 @@ if (config.NODE_ENV !== 'production') {
     res.send(generateOpenAPIDocument());
   });
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
+  app.use(`${config.BASE_PATH}/dev/logs`, devLogsRouter);
 }
 
 import healthRoutes from './modules/health/health.routes';

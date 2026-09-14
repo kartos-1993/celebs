@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, Percent, Plane, Plus, Sparkles, Tag } from 'lucide-react';
+import { Plane, Plus, Sparkles, Tag } from 'lucide-react';
 
 import type { ComboBundleType } from '@celebs/shared-types';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@celebs/shared-ui/components/table';
 
 import { getCombos } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
+import { ComboCards } from '../components/combo-cards';
+import { ComboTable } from '../components/combo-table';
 
 import { FilterBar, FilterSearch } from '@/components/filter-bar';
 
@@ -78,7 +71,7 @@ export default function ComboListPage() {
           </div>
           <div>
             <div className="text-xs font-medium text-muted-foreground">Active Travel Packs</div>
-            <div className="text-xl font-bold text-foreground">
+            <div className="text-xl font-semibold tracking-tight text-foreground">
               {combos.filter((c) => c.tag === 'abroad-travel').length} Bundles
             </div>
           </div>
@@ -90,7 +83,7 @@ export default function ComboListPage() {
           </div>
           <div>
             <div className="text-xs font-medium text-muted-foreground">Festive Combos</div>
-            <div className="text-xl font-bold text-foreground">
+            <div className="text-xl font-semibold tracking-tight text-foreground">
               {combos.filter((c) => c.tag === 'festive').length} Bundles
             </div>
           </div>
@@ -102,7 +95,7 @@ export default function ComboListPage() {
           </div>
           <div>
             <div className="text-xs font-medium text-muted-foreground">Average Savings</div>
-            <div className="text-xl font-bold text-foreground">18.5% Off</div>
+            <div className="text-xl font-semibold tracking-tight text-foreground">18.5% Off</div>
           </div>
         </div>
       </div>
@@ -116,102 +109,9 @@ export default function ComboListPage() {
         />
       </FilterBar>
 
-      {/* Combos Table */}
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Combo Details</TableHead>
-              <TableHead>Category / Tag</TableHead>
-              <TableHead>Discount Offer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
-                  Loading combo bundles...
-                </TableCell>
-              </TableRow>
-            ) : filteredCombos.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
-                  No combo bundles found matching your query.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredCombos.map((combo) => (
-                <TableRow key={combo.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {combo.bannerImage ? (
-                        <img
-                          src={combo.bannerImage}
-                          alt={combo.title}
-                          className="w-12 h-12 object-cover rounded-lg border border-border"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-sm font-medium text-foreground">{combo.title}</div>
-                        <div className="text-xs text-muted-foreground">{combo.subtitle}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 font-mono">
-                          /{combo.slug} ({combo.itemCount} items)
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {combo.tag === 'abroad-travel' && (
-                        <Plane className="w-3 h-3 mr-1 text-info" />
-                      )}
-                      {combo.tag === 'festive' && (
-                        <Sparkles className="w-3 h-3 mr-1 text-warning" />
-                      )}
-                      {combo.tag || 'general'}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-xs font-bold text-success">
-                      {combo.discountType === 'PERCENTAGE' ? (
-                        <>
-                          <Percent className="w-3.5 h-3.5" />
-                          {combo.discountValue}% OFF Total
-                        </>
-                      ) : (
-                        <>
-                          <DollarSign className="w-3.5 h-3.5" />
-                          Save NPR {combo.discountValue.toLocaleString()}
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge variant={combo.isActive ? 'success' : 'secondary'}>
-                      {combo.isActive ? 'ACTIVE' : 'DRAFT'}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm" className="text-xs h-7 gap-1">
-                      <Link to={`/marketing/combos/${combo.id}`}>Edit</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Combos Table (desktop) + Cards (mobile) */}
+      <ComboTable combos={filteredCombos} isLoading={isLoading} />
+      <ComboCards combos={filteredCombos} isLoading={isLoading} />
     </div>
   );
 }

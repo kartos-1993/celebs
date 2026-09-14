@@ -27,6 +27,12 @@ export class WishlistRepository {
       where: { userId_productId: { userId, productId } },
     });
   }
+
+  async findProductById(productId: string) {
+    return prisma.product.findUnique({
+      where: { id: productId },
+    });
+  }
 }
 
 export const wishlistRepository = new WishlistRepository();

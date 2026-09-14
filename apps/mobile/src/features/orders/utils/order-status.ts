@@ -1,14 +1,6 @@
-export type OrderStatus =
-  | 'PENDING_PAYMENT'
-  | 'CONFIRMED'
-  | 'PACKED'
-  | 'HANDED_OVER'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'RETURNED';
+import type { OrderItemStatus, OrderStatus } from '@celebs/shared-types';
 
-export type OrderItemStatus = 'PENDING' | 'PACKED' | 'HANDED_OVER' | 'DELIVERED' | 'CANCELLED';
+export type { OrderItemStatus, OrderStatus };
 
 export interface OrderItemView {
   id: string;
@@ -19,8 +11,10 @@ export interface OrderItemView {
   unitPrice: number;
   subtotal: number;
   itemStatus: OrderItemStatus;
+  imageUrl?: string | null;
   trackingNumber?: string | null;
   courierPartner?: string | null;
+  vendorName?: string | null;
 }
 
 export interface OrderAddressView {
@@ -80,8 +74,8 @@ export interface StatusMeta {
 }
 
 const STATUS_META: Record<OrderStatus, StatusMeta> = {
-  PENDING_PAYMENT: { label: 'Pending Payment', tone: 'warning' },
-  CONFIRMED: { label: 'Confirmed', tone: 'active' },
+  PENDING_PAYMENT: { label: 'To Pay', tone: 'warning' },
+  CONFIRMED: { label: 'To Ship', tone: 'active' },
   PACKED: { label: 'Packed', tone: 'active' },
   HANDED_OVER: { label: 'In Transit', tone: 'active' },
   OUT_FOR_DELIVERY: { label: 'Out for Delivery', tone: 'active' },
@@ -89,6 +83,104 @@ const STATUS_META: Record<OrderStatus, StatusMeta> = {
   CANCELLED: { label: 'Cancelled', tone: 'danger' },
   RETURNED: { label: 'Returned', tone: 'danger' },
 };
+
+export type OrderFilterTab =
+  | 'ALL'
+  | 'TO_PAY'
+  | 'TO_SHIP'
+  | 'TO_RECEIVE'
+  | 'TO_REVIEW'
+  | 'DELIVERED'
+  | 'CANCELLED';
+
+export interface OrderFilterTabOption {
+  key: OrderFilterTab;
+  label: string;
+}
+
+export const ORDER_FILTER_TABS: OrderFilterTabOption[] = [
+  { key: 'ALL', label: 'All' },
+  { key: 'TO_PAY', label: 'To Pay' },
+  { key: 'TO_SHIP', label: 'To Ship' },
+  { key: 'TO_RECEIVE', label: 'To Receive' },
+  { key: 'TO_REVIEW', label: 'To Review' },
+  { key: 'DELIVERED', label: 'Delivered' },
+  { key: 'CANCELLED', label: 'Cancelled' },
+];
+
+export function matchesOrderFilter(order: OrderView, filter: OrderFilterTab): boolean {
+  if (filter === 'ALL') return true;
+
+  if (filter === 'TO_PAY') {
+    return (
+      (order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT') &&
+      order.paymentMethod !== 'COD' &&
+      order.status !== 'CANCELLED' &&
+      order.status !== 'RETURNED'
+    );
+  }
+
+  if (filter === 'TO_SHIP') {
+    if (
+      order.status === 'CANCELLED' ||
+      order.status === 'RETURNED' ||
+      order.status === 'DELIVERED'
+    ) {
+      return false;
+    }
+    const isUnpaidOnline =
+      order.paymentMethod !== 'COD' &&
+      (order.paymentStatus === 'PENDING' || order.status === 'PENDING_PAYMENT');
+    if (isUnpaidOnline) return false;
+
+    const hasItemsWaitingToShip = order.items.some(
+      (item) => item.itemStatus === 'PENDING' || item.itemStatus === 'PACKED',
+    );
+    const isOrderPreparing = order.status === 'CONFIRMED' || order.status === 'PACKED';
+
+    return hasItemsWaitingToShip || isOrderPreparing;
+  }
+
+  if (filter === 'TO_RECEIVE') {
+    if (
+      order.status === 'CANCELLED' ||
+      order.status === 'RETURNED' ||
+      order.status === 'DELIVERED'
+    ) {
+      return false;
+    }
+    const isOrderInTransit = order.status === 'HANDED_OVER' || order.status === 'OUT_FOR_DELIVERY';
+    const hasItemsInTransit = order.items.some((item) => item.itemStatus === 'HANDED_OVER');
+    return isOrderInTransit || hasItemsInTransit;
+  }
+
+  if (filter === 'DELIVERED') {
+    return order.status === 'DELIVERED';
+  }
+
+  if (filter === 'CANCELLED') {
+    return order.status === 'CANCELLED' || order.status === 'RETURNED';
+  }
+
+  return true;
+}
+
+export function getItemStatusMeta(status: OrderItemStatus): StatusMeta {
+  switch (status) {
+    case 'PENDING':
+      return { label: 'Processing', tone: 'neutral' };
+    case 'PACKED':
+      return { label: 'Packed', tone: 'active' };
+    case 'HANDED_OVER':
+      return { label: 'In Transit', tone: 'active' };
+    case 'DELIVERED':
+      return { label: 'Delivered', tone: 'success' };
+    case 'CANCELLED':
+      return { label: 'Cancelled', tone: 'danger' };
+    default:
+      return { label: status, tone: 'neutral' };
+  }
+}
 
 export function getOrderStatusMeta(status: OrderStatus): StatusMeta {
   return STATUS_META[status] ?? { label: status.replace(/_/g, ' '), tone: 'neutral' };

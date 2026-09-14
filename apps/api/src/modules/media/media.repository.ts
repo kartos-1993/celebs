@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 
+import { BadRequestException } from '@celebs/shared-utils';
+
 import prisma from '@/config/db.prisma';
 
 export class MediaRepository {
@@ -83,6 +85,20 @@ export class MediaRepository {
     scope?: 'PRODUCT' | 'BRANDING' | 'KYC' | 'MARKETING';
     isPrivate?: boolean;
   }) {
+    // Immutable keys embed the content hash: a key-hit with different bytes is
+    // a collision or caller misuse — never overwrite the stored URL in place.
+    const existing = await prisma.mediaAsset.findUnique({
+      where: { key: data.key },
+      select: { hashSha256: true },
+    });
+    if (
+      existing &&
+      existing.hashSha256 &&
+      data.hashSha256 &&
+      existing.hashSha256 !== data.hashSha256
+    ) {
+      throw new BadRequestException('Asset key collision: key already holds different bytes');
+    }
     return prisma.mediaAsset.upsert({
       where: { key: data.key },
       update: {
@@ -229,6 +245,28 @@ export class MediaRepository {
     });
   }
 
+  /**
+   * Single-product ownership: claim currently unowned assets for a product.
+   * Only claims rows with no owner and a matching vendor — never steals an
+   * asset already belonging to another product. Banners, KYC docs, and fresh
+   * library uploads stay ownerless (productId null) until assigned.
+   */
+  async claimProductOwner(urls: string[], productId: string, vendorId?: string | null) {
+    const uniqueUrls = Array.from(
+      new Set(urls.filter((url): url is string => typeof url === 'string' && url.length > 0)),
+    );
+    if (!uniqueUrls.length || !productId) return;
+
+    return prisma.mediaAsset.updateMany({
+      where: {
+        url: { in: uniqueUrls },
+        productId: null,
+        ...(vendorId !== undefined ? { vendorId: vendorId ?? null } : {}),
+      },
+      data: { productId },
+    });
+  }
+
   async getQuota(vendorId?: string | null) {
     const whereCondition: Prisma.MediaAssetWhereInput = {
       scope: 'PRODUCT',
@@ -311,19 +349,19 @@ export class MediaRepository {
     });
   }
 
-  async createFolder(vendorId: string | null | undefined, name: string, parentId?: string | null) {
+  async createFolder(vendorId: string | null, name: string, parentId?: string | null) {
     return prisma.mediaFolder.create({
       data: {
-        vendorId: vendorId ?? null,
+        vendorId,
         name,
         parentId: parentId || null,
       },
     });
   }
 
-  async updateFolder(id: string, vendorId: string | null | undefined, name: string) {
+  async updateFolder(id: string, vendorId: string | null, name: string) {
     const where: Prisma.MediaFolderWhereInput = { id };
-    if (vendorId !== undefined) {
+    if (vendorId !== null) {
       where.vendorId = vendorId;
     }
     return prisma.mediaFolder.updateMany({

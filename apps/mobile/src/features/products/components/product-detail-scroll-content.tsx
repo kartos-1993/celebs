@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { styles } from '../styles/product.styles';
@@ -19,6 +19,7 @@ interface ProductDetailScrollContentProps {
   selectedSize: string;
   onSelectColor: (index: number) => void;
   onSelectSize: (size: string) => void;
+  onAddToCart?: () => void;
 }
 
 export function ProductDetailScrollContent({
@@ -29,7 +30,10 @@ export function ProductDetailScrollContent({
   selectedSize,
   onSelectColor,
   onSelectSize,
+  onAddToCart,
 }: ProductDetailScrollContentProps) {
+  const [isReviewsSheetOpen, setIsReviewsSheetOpen] = useState(false);
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <ProductDetailGallerySection
@@ -39,9 +43,11 @@ export function ProductDetailScrollContent({
       />
 
       <ProductPriceCard
+        productId={product.id}
         name={product.name}
         price={product.price}
         discountedPrice={product.discountedPrice}
+        onOpenReviews={() => setIsReviewsSheetOpen(true)}
       />
 
       <View style={styles.sectionBand} />
@@ -59,8 +65,35 @@ export function ProductDetailScrollContent({
 
       <View style={styles.sectionBand} />
       <ProductServicesCard />
-      <View style={styles.sectionBand} />
-      <ProductReviewsCard />
+      <ProductReviewsCard
+        productId={product.id}
+        isSheetOpen={isReviewsSheetOpen}
+        onOpenSheet={() => setIsReviewsSheetOpen(true)}
+        onCloseSheet={() => setIsReviewsSheetOpen(false)}
+        onBuyTheSame={(variant) => {
+          if (variant.color && product.colorVariants) {
+            const colorIdx = product.colorVariants.findIndex(
+              (c) => c.name.toLowerCase() === variant.color?.toLowerCase(),
+            );
+            if (colorIdx >= 0) onSelectColor(colorIdx);
+          }
+          if (variant.size) {
+            onSelectSize(variant.size);
+          }
+        }}
+        onAddToCart={(item) => {
+          if (item.colorVariantName && product.colorVariants) {
+            const colorIdx = product.colorVariants.findIndex(
+              (c) => c.name.toLowerCase() === item.colorVariantName?.toLowerCase(),
+            );
+            if (colorIdx >= 0) onSelectColor(colorIdx);
+          }
+          if (item.size) {
+            onSelectSize(item.size);
+          }
+          onAddToCart?.();
+        }}
+      />
       <ProductDescriptionCard description={product.description} />
     </ScrollView>
   );

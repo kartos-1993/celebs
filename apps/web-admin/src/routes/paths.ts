@@ -2,6 +2,7 @@ export const PATHS = {
   AUTH: {
     LOGIN: '/login',
     SETUP_SUPERADMIN: '/setup-superadmin',
+    SETUP_ADMIN: '/setup-admin',
     REGISTER: '/register',
     VENDOR_REGISTER: '/register/vendor',
     FORGOT_PASSWORD: '/forgot-password',
@@ -15,6 +16,9 @@ export const PATHS = {
   },
   CATEGORIES: {
     LIST: '/categories',
+  },
+  REVIEWS: {
+    LIST: '/reviews',
   },
   VENDORS: {
     LIST: '/vendors',

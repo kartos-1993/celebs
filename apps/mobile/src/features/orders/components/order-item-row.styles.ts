@@ -6,20 +6,20 @@ export const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
+    gap: Spacing.sm + 2,
+    paddingVertical: Spacing.sm,
   },
   rowDivided: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Palette.gray100,
   },
   thumbBox: {
-    width: 52,
-    height: 52,
-    borderRadius: Radius.sm,
-    backgroundColor: Palette.gray100,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Palette.gray200,
+    width: 72,
+    height: 72,
+    borderRadius: Radius.md,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -30,16 +30,39 @@ export const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    gap: Spacing.xxs,
+    justifyContent: 'center',
+    gap: 3,
   },
   name: {
     fontSize: FontSize.small,
     fontWeight: FontWeight.semibold,
     color: Palette.gray900,
-    lineHeight: 17,
+    lineHeight: 18,
   },
-  meta: {
-    fontSize: FontSize.footnote,
+  variantBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  variantText: {
+    fontSize: FontSize.caption,
+    color: Palette.gray600,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  price: {
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.bold,
+    color: Palette.gray900,
+  },
+  qty: {
+    fontSize: FontSize.caption,
     color: Palette.gray500,
   },
   cancelledTag: {
@@ -47,10 +70,6 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Palette.danger,
     letterSpacing: 0.4,
-  },
-  price: {
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.extrabold,
-    color: Palette.danger,
+    marginTop: 2,
   },
 });

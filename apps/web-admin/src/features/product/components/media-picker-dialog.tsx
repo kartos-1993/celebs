@@ -119,7 +119,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[85vh] w-[95vw] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[85vh] w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
         <MediaPickerHeader
           quotaPct={quotaPct}
           selectedCount={selectedUrls.length}

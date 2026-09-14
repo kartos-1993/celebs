@@ -1,3 +1,4 @@
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { TtlCache } from '@/common/utils/ttl-cache';
 import prisma from '@/config/db.prisma';
 
@@ -33,19 +34,23 @@ export class BannerRepository {
   }
 
   async replaceBanners(bannersData: BannerCreateInput[]) {
-    const created = await prisma.$transaction(async (tx) => {
-      await tx.banner.deleteMany({});
-      const items = [];
-      for (const b of bannersData) {
-        const item = await tx.banner.create({
-          data: b,
+    const created = await prisma.$transaction(
+      async (tx) => {
+        await tx.banner.deleteMany({});
+        if (bannersData.length > 0) {
+          await tx.banner.createMany({
+            data: bannersData,
+          });
+        }
+        return tx.banner.findMany({
+          orderBy: { createdAt: 'asc' },
         });
-        items.push(item);
-      }
-      return items;
-    });
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
 
     await activeBannersCache.invalidate();
+    await invalidateCacheKey('storefront:home');
     return created;
   }
 }

@@ -8,7 +8,7 @@ export interface PaymentIntentResult {
 export interface PaymentVerificationResult {
   success: boolean;
   transactionId?: string;
-  status: 'COMPLETED' | 'FAILED' | 'PENDING';
+  status: 'COMPLETED' | 'FAILED' | 'PENDING' | 'REFUNDED';
   rawResponse?: Record<string, unknown>;
 }
 
@@ -20,5 +20,5 @@ export interface IPaymentGateway {
     metadata?: Record<string, unknown>,
   ): Promise<PaymentIntentResult>;
 
-  verifyPayment(paymentId: string, payload: unknown): Promise<PaymentVerificationResult>;
+  verifyPayment(paymentId: string, payload?: unknown): Promise<PaymentVerificationResult>;
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, TextInput, TouchableOpacity, View } from 'react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,6 +17,8 @@ import { useAuth } from '@/features/auth/context/auth-context';
 export function LoginForm() {
   const { loginWithEmail } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Ref guard closes the double-tap gap before setState disables the button.
+  const submittingRef = useRef(false);
 
   const {
     control,
@@ -28,6 +30,8 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: loginType) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       await loginWithEmail(data.email, data.password);
@@ -36,6 +40,7 @@ export function LoginForm() {
       const apiError = err as { message?: string };
       showToast(apiError?.message || 'Invalid email or password', { type: 'error' });
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };

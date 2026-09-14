@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from 'express';
 import passport, { PassportStatic } from 'passport';
 import { ExtractJwt, Strategy as JwtStrategy, StrategyOptionsWithRequest } from 'passport-jwt';
 
@@ -12,25 +13,24 @@ interface JwtPayload {
   sessionId: string;
 }
 
+export const extractTokenFromRequest = (req: Request): string | null => {
+  // 1. Try to extract from Authorization: Bearer <token> header (Mobile)
+  const bearerToken = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+  if (bearerToken && bearerToken !== 'null' && bearerToken !== 'undefined') {
+    return bearerToken;
+  }
+
+  // 2. Fallback to HTTP-only Cookie (Web)
+  const cookieToken = req.cookies?.accessToken;
+  if (cookieToken && cookieToken !== 'null' && cookieToken !== 'undefined') {
+    return cookieToken;
+  }
+
+  return null;
+};
+
 const options: StrategyOptionsWithRequest = {
-  jwtFromRequest: ExtractJwt.fromExtractors([
-    (req) => {
-      // 1. Try to extract from Authorization: Bearer <token> header (Mobile)
-      const bearerToken = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-      if (bearerToken) {
-        return bearerToken;
-      }
-
-      // 2. Fallback to HTTP-only Cookie (Web)
-      const cookieToken = req.cookies?.accessToken;
-      if (cookieToken) {
-        return cookieToken;
-      }
-
-      return null;
-    },
-  ]),
-
+  jwtFromRequest: ExtractJwt.fromExtractors([extractTokenFromRequest]),
   secretOrKey: config.JWT.SECRET,
   audience: ['user'],
   algorithms: ['HS256'],
@@ -91,8 +91,6 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
   );
 };
 
-import { NextFunction, Request, Response } from 'express';
-
 function extractAuthErrorMessage(info: unknown): string {
   if (info instanceof Error) {
     return info.message;
@@ -122,10 +120,24 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 };
 
 export const optionalAuthenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
-  passport.authenticate('jwt', { session: false }, (_err: unknown, user: Express.User | false) => {
-    if (user) {
+  const token = extractTokenFromRequest(req);
+  if (!token) {
+    return next();
+  }
+
+  passport.authenticate(
+    'jwt',
+    { session: false },
+    (err: unknown, user: Express.User | false, info: unknown) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        const message = extractAuthErrorMessage(info);
+        return next(new UnauthorizedException(message, ErrorCode.AUTH_UNAUTHORIZED_ACCESS));
+      }
       req.user = user;
-    }
-    next();
-  })(req, res, next);
+      next();
+    },
+  )(req, res, next);
 };

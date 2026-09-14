@@ -1,6 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react-native';
 
@@ -13,6 +14,7 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 import type { AddressDraft, SavedAddress } from '@/features/addresses/types';
+import { isKeyboardControllerSupported } from '@/providers/keyboard-provider';
 
 interface AddressFormSheetProps {
   visible: boolean;
@@ -120,13 +122,26 @@ export function AddressFormSheet({
         </View>
       }
     >
-      <ScrollView
-        contentContainerStyle={styles.formContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <AddressFormFields control={control} errors={errors} />
-      </ScrollView>
+      {isKeyboardControllerSupported ? (
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.formContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          bottomOffset={20}
+        >
+          <AddressFormFields control={control} errors={errors} />
+        </KeyboardAwareScrollView>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.formContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          <AddressFormFields control={control} errors={errors} />
+        </ScrollView>
+      )}
     </BottomSheet>
   );
 }

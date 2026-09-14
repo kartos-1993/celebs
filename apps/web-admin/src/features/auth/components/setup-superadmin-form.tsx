@@ -2,7 +2,6 @@ import { HTMLAttributes } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { z } from 'zod';
 
@@ -19,7 +18,7 @@ import {
 import { Input } from '@celebs/shared-ui/components/input';
 import { PasswordInput } from '@celebs/shared-ui/components/password-input';
 
-import { setupSuperadmin } from '../api';
+import { useSetupSuperadminMutation } from '../hooks/use-auth-mutations';
 
 import { cn } from '@/lib/utils';
 
@@ -29,11 +28,7 @@ type FormValues = z.infer<typeof setupSuperadminSchema>;
 
 export function SetupSuperadminForm({ className, ...props }: SetupSuperadminFormProps) {
   const navigate = useNavigate();
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: setupSuperadmin,
-    meta: { suppressErrorToast: true },
-  });
+  const { mutate, isPending } = useSetupSuperadminMutation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(setupSuperadminSchema),

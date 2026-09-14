@@ -23,6 +23,7 @@ import {
 
 import { resolveTargetStoreId } from '@/common/guards/store.guards';
 import { assetQueue } from '@/common/services/queue.service';
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 import { config } from '@/config/app.config';
 
 export class MediaController {
@@ -44,16 +45,18 @@ export class MediaController {
       limit: query.limit,
     });
 
-    res.json({
-      success: true,
-      data: {
+    sendSuccess(
+      res,
+      {
         items: result.items,
         total: result.total,
         page: result.page,
         limit: result.limit,
         totalPages: result.pages,
+        pages: result.pages,
       },
-    });
+      'Media assets retrieved successfully',
+    );
   }
 
   /**
@@ -62,21 +65,22 @@ export class MediaController {
   async getQuota(req: Request, res: Response): Promise<void> {
     const vendorId = resolveTargetStoreId(req, 'query');
     if (!vendorId) {
-      res.json({
-        success: true,
-        data: {
+      sendSuccess(
+        res,
+        {
           usedBytes: 0,
           maxBytes: 10 * 1024 * 1024 * 1024,
           percentUsed: 0,
           remainingBytes: 10 * 1024 * 1024 * 1024,
           assetCount: 0,
         },
-      });
+        'Media quota retrieved successfully',
+      );
       return;
     }
 
     const quota = await mediaRepository.getQuota(vendorId);
-    res.json({ success: true, data: quota });
+    sendSuccess(res, quota, 'Media quota retrieved successfully');
   }
 
   /**
@@ -86,7 +90,7 @@ export class MediaController {
     const vendorId = resolveTargetStoreId(req, 'query');
     const parentId = typeof req.query.parentId === 'string' ? req.query.parentId : undefined;
     const folders = await mediaRepository.findFolders(vendorId, parentId);
-    res.json({ success: true, data: folders });
+    sendSuccess(res, folders, 'Media folders retrieved successfully');
   }
 
   /**
@@ -96,7 +100,7 @@ export class MediaController {
     const vendorId = resolveTargetStoreId(req, 'body');
     const { name } = createMediaFolderSchema.parse(req.body);
     const folder = await mediaRepository.createFolder(vendorId, name);
-    res.status(201).json({ success: true, data: folder });
+    sendCreated(res, folder, 'Media folder created successfully');
   }
 
   /**
@@ -111,7 +115,7 @@ export class MediaController {
       vendorId: vendorId ?? undefined,
     });
 
-    res.status(201).json({ success: true, data: result });
+    sendCreated(res, result, 'Presigned URL generated successfully');
   }
 
   /**
@@ -131,7 +135,7 @@ export class MediaController {
       ),
     );
 
-    res.status(201).json({ success: true, data: results });
+    sendCreated(res, results, 'Batch presigned URLs generated successfully');
   }
 
   /**
@@ -154,7 +158,7 @@ export class MediaController {
       });
     }
 
-    res.status(201).json({ success: true, data: asset });
+    sendCreated(res, asset, 'Media upload confirmed successfully');
   }
 
   /**
@@ -168,7 +172,7 @@ export class MediaController {
       vendorId: vendorId ?? null,
       targetFolderId: targetFolderId ?? null,
     });
-    res.json({ success: true, data: { movedCount: result.count } });
+    sendSuccess(res, { movedCount: result.count }, 'Media assets moved successfully');
   }
 
   /**
@@ -190,11 +194,12 @@ export class MediaController {
           targetKey = parts.join('/');
         }
       } catch {
-        targetKey = url.replace(/^https?:\/\/[^/]+\//, '');
+        // Legacy stamped URLs (?v=) must resolve to their bare key.
+        targetKey = url.replace(/^https?:\/\/[^/]+\//, '').split('?')[0] ?? '';
       }
     }
     if (targetKey) {
-      targetKey = targetKey.replace(/^\/+/, '');
+      targetKey = (targetKey.split('?')[0] ?? '').replace(/^\/+/, '');
     }
     if (!targetKey) {
       throw new BadRequestException('key or url query parameter is required');
@@ -233,7 +238,7 @@ export class MediaController {
 
     await Promise.all([mediaRepository.deleteAsset(id, vendorId), deleteS3Object(asset.key)]);
 
-    res.json({ success: true, message: 'Asset deleted successfully' });
+    sendSuccess(res, null, 'Asset deleted successfully');
   }
 
   /**
@@ -256,11 +261,11 @@ export class MediaController {
       Promise.all(keysToDelete.map((key: string) => deleteS3Object(key))),
     ]);
 
-    res.json({
-      success: true,
-      message: `Cleaned up ${assetIds.length} unused assets.`,
-      data: { deletedCount: assetIds.length },
-    });
+    sendSuccess(
+      res,
+      { deletedCount: assetIds.length },
+      `Cleaned up ${assetIds.length} unused assets.`,
+    );
   }
 }
 

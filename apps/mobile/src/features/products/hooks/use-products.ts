@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getProductById, getProducts, PRODUCT_QUERY_KEYS } from '../api';
 import type { Product, ProductFilterParams } from '../types';
@@ -46,21 +46,15 @@ export function useProducts(
         }),
       initialPageParam: null as string | null,
       getNextPageParam: (lastPage) => {
-        return lastPage?.data?.nextCursor ?? null;
+        return lastPage.nextCursor ?? null;
       },
       maxPages: 4,
       staleTime: 1000 * 60 * 2,
-      refetchOnMount: false,
     });
 
   const products: Product[] = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => {
-      if (Array.isArray(page?.data?.products)) return page.data.products;
-      if (Array.isArray(page?.data)) return page.data;
-      if (Array.isArray(page?.products)) return page.products;
-      return [];
-    });
+    return data.pages.flatMap((page) => page.products ?? []);
   }, [data]);
 
   const loadMore = useCallback(() => {
@@ -80,6 +74,8 @@ export function useProducts(
 }
 
 export function useProduct(id: string) {
+  const queryClient = useQueryClient();
+
   const {
     data: product,
     isLoading: loading,
@@ -89,11 +85,35 @@ export function useProduct(id: string) {
     queryFn: () => getProductById(id),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 5,
+    placeholderData: () => {
+      // Look up product in any cached products lists (infinite query pages or direct lists)
+      const listQueries = queryClient.getQueriesData<{
+        pages?: { products?: Product[] }[];
+        products?: Product[];
+      }>({
+        queryKey: ['products', 'list'],
+      });
+
+      for (const [, cache] of listQueries) {
+        if (!cache) continue;
+        if (Array.isArray(cache.pages)) {
+          for (const page of cache.pages) {
+            const hit = page.products?.find((p) => String(p.id) === String(id));
+            if (hit) return hit;
+          }
+        }
+        if (Array.isArray(cache.products)) {
+          const hit = cache.products.find((p) => String(p.id) === String(id));
+          if (hit) return hit;
+        }
+      }
+      return undefined;
+    },
   });
 
   return {
     product: product ?? null,
-    loading,
+    loading: loading && !product,
     error: error ? (error instanceof Error ? error.message : 'Failed to load product') : null,
   };
 }

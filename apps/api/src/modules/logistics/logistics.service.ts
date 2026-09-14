@@ -59,7 +59,7 @@ export class LogisticsService {
     const dispatchMode =
       payload.provider === 'MANUAL' ? DispatchMode.MANUAL : DispatchMode.AUTOMATED_3PL;
 
-    return this.logisticsRepo.updateDispatchedOrder({
+    const result = await this.logisticsRepo.updateDispatchedOrder({
       orderId: payload.orderId,
       dispatchMode,
       courierProvider: payload.provider,
@@ -71,10 +71,113 @@ export class LogisticsService {
       estimatedDelivery,
       notes: payload.notes,
     });
+
+    this.triggerDispatchEmail(
+      payload.orderId,
+      courierName,
+      trackingNumber,
+      trackingUrl,
+      estimatedDelivery,
+    ).catch(() => {});
+
+    return result;
+  }
+
+  private async triggerDispatchEmail(
+    orderId: string,
+    courierName?: string,
+    trackingNumber?: string,
+    trackingUrl?: string,
+    estimatedDelivery?: Date,
+  ) {
+    try {
+      const { coreOrderRepository } = await import('../order/core/order.repository');
+      const { enqueueOrderShippedEmail } = await import('../order/utils/order-email.util');
+      const fullOrder = await coreOrderRepository.findOrderById(orderId);
+      if (!fullOrder) return;
+
+      await enqueueOrderShippedEmail(fullOrder, {
+        courierName: courierName || fullOrder.courierName || 'Standard Delivery',
+        trackingNumber: trackingNumber || fullOrder.trackingNumber || undefined,
+        trackingUrl: trackingUrl || fullOrder.trackingUrl || undefined,
+        estimatedDelivery,
+      });
+    } catch {
+      // Non-blocking email dispatch
+    }
   }
 
   async markCodSettled(orderId: string, settlementReference: string) {
     return this.logisticsRepo.markCodSettled(orderId, settlementReference);
+  }
+
+  async processCourierWebhook(payload: {
+    trackingNumber: string;
+    status: OrderStatus;
+    title?: string;
+    description?: string;
+    location?: string;
+  }) {
+    const order = await this.logisticsRepo.findOrderByTrackingNumber(payload.trackingNumber);
+
+    if (!order) {
+      throw new NotFoundException(
+        `Shipment not found for tracking number: ${payload.trackingNumber}`,
+      );
+    }
+
+    const defaultTitles: Record<string, string> = {
+      HANDED_OVER: 'Package In Transit',
+      OUT_FOR_DELIVERY: 'Out for Delivery',
+      DELIVERED: 'Package Delivered',
+      RETURNED: 'Delivery Failed - Returned',
+    };
+
+    const title =
+      payload.title || defaultTitles[payload.status] || `Status updated to ${payload.status}`;
+    const description =
+      payload.description ||
+      `Carrier updated shipment status to ${payload.status} at ${payload.location || 'Local Hub'}.`;
+
+    const { event, statusChanged } = await this.logisticsRepo.applyAutomatedTrackingEvent({
+      orderId: order.id,
+      status: payload.status,
+      title,
+      description,
+      location: payload.location,
+      source: 'COURIER_WEBHOOK',
+    });
+
+    if (statusChanged) {
+      if (payload.status === OrderStatus.DELIVERED) {
+        try {
+          const { enqueueOrderDeliveredEmail } = await import('../order/utils/order-email.util');
+          await enqueueOrderDeliveredEmail(order);
+        } catch {
+          // Non-blocking email dispatch
+        }
+      }
+
+      try {
+        const { notificationService } = await import('../notification/notification.service');
+        await notificationService.notifyOrderStatus({
+          userId: order.userId,
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          status: payload.status,
+          trackingNumber: payload.trackingNumber,
+        });
+      } catch {
+        // Non-blocking push notification dispatch
+      }
+    }
+
+    return {
+      orderId: order.id,
+      trackingNumber: payload.trackingNumber,
+      status: payload.status,
+      event,
+    };
   }
 
   async addTrackingEvent(

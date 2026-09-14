@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { Control, FieldValues, useFormState } from 'react-hook-form';
+import { Control, FieldValues, useFormContext, useFormState } from 'react-hook-form';
 
 import {
   FormControl,
@@ -43,6 +43,11 @@ const BasicInfoSection = ({
 }: BasicInfoSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
   const { isDirty } = useFormState({ control });
+  const { setValue, watch } = useFormContext();
+  const watchedName = watch('name');
+  const watchedBrand = watch('brand');
+  const watchedDescription = watch('description');
+  const watchedAttributes = watch('attributes');
 
   useEffect(() => {
     if (categoryPath?.length && selectedSubcategoryId) {
@@ -64,14 +69,13 @@ const BasicInfoSection = ({
     [selectedCategory, selectedSubcategoryId],
   );
 
-  const formValues = control._formValues;
   const isFormDirty =
     isDirty ||
     Boolean(
-      formValues?.name ||
-        formValues?.brand ||
-        formValues?.description ||
-        (formValues?.attributes && Object.keys(formValues.attributes).length > 0),
+      watchedName ||
+        watchedBrand ||
+        watchedDescription ||
+        (watchedAttributes && Object.keys(watchedAttributes).length > 0),
     );
 
   return (
@@ -193,9 +197,10 @@ const BasicInfoSection = ({
                       value={field.value}
                       onChange={(brandId, brandName) => {
                         field.onChange(brandId);
-                        if (control._formValues) {
-                          control._formValues.brand = brandName || '';
-                        }
+                        setValue('brand', brandName || '', {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
                         onFieldChange('brand', brandName || '');
                       }}
                     />

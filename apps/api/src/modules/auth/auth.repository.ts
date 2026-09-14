@@ -1,5 +1,6 @@
 import { Session, User, VerificationCode } from '@prisma/client';
 
+import { ensurePlatformVendor, PLATFORM_SYSTEM_EMAIL } from '@/common/constants/platform-vendor';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { fortyFiveMinutesFromNow } from '@/common/utils/date-time';
 import prisma, { Prisma } from '@/config/db.prisma';
@@ -45,8 +46,23 @@ export class AuthRepository {
 
   public async findSuperadmin(): Promise<User | null> {
     return prisma.user.findFirst({
-      where: { role: 'SUPERADMIN' },
+      where: {
+        role: 'SUPERADMIN',
+        email: { not: PLATFORM_SYSTEM_EMAIL },
+      },
     });
+  }
+
+  public async purgePhantomPlatformUsers(): Promise<void> {
+    await prisma.user
+      .deleteMany({
+        where: { email: PLATFORM_SYSTEM_EMAIL },
+      })
+      .catch(() => {});
+  }
+
+  public async provisionPlatformVendor(userId: string): Promise<void> {
+    await ensurePlatformVendor(prisma, userId);
   }
 
   public async createSession(data: {

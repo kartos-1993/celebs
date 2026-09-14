@@ -11,9 +11,11 @@ export async function getUsers() {
 }
 
 export async function createUser(data: Record<string, unknown>) {
-  return await axiosClient.post('/admin/users', data);
+  const response = await axiosClient.post('/admin/users', data);
+  return response.data;
 }
 
 export async function deleteUser(id: string) {
-  return await axiosClient.delete(`/admin/users/${id}`);
+  const response = await axiosClient.delete(`/admin/users/${id}`);
+  return response.data;
 }

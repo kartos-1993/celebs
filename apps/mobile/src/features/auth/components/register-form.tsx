@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, TextInput, TouchableOpacity, View } from 'react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,6 +17,7 @@ import { useAuth } from '@/features/auth/context/auth-context';
 export function RegisterForm() {
   const { register, loginWithEmail } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const {
     control,
@@ -28,6 +29,8 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (data: registerType) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       await register(data.name, data.email, data.password, data.confirmPassword);
@@ -48,6 +51,7 @@ export function RegisterForm() {
         type: 'error',
       });
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };

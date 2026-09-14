@@ -93,6 +93,16 @@ export class UserRepository {
       },
     });
   }
+
+  public async findSellerStatus(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        vendorProfile: { select: { status: true } },
+        vendor: { select: { status: true } },
+      },
+    });
+  }
 }
 
 export const userRepository = new UserRepository();

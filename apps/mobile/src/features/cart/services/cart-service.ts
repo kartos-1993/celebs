@@ -1,37 +1,26 @@
-import {
+import type {
   AddToCartInput,
   CartResponse,
   SyncCartInput,
   UpdateCartItemInput,
 } from '@celebs/shared-types';
 
-import { apiClient } from '../../../api/client';
+import {
+  addToCartApi,
+  clearCartApi,
+  getCartApi,
+  removeCartItemApi,
+  syncCartApi,
+  updateCartItemApi,
+} from '../api';
 
 export class CartApiService {
   static async getCart(sessionId?: string): Promise<CartResponse> {
-    const headers: Record<string, string> = {};
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
-    }
-    const response = await apiClient.get<{ message: string; data: CartResponse }>('/cart', {
-      headers,
-    });
-    return response.data.data;
+    return getCartApi(sessionId);
   }
 
   static async addToCart(input: AddToCartInput, sessionId?: string): Promise<CartResponse> {
-    const headers: Record<string, string> = {};
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
-    }
-    const response = await apiClient.post<{ message: string; data: CartResponse }>(
-      '/cart/items',
-      input,
-      {
-        headers,
-      },
-    );
-    return response.data.data;
+    return addToCartApi(input, sessionId);
   }
 
   static async updateCartItem(
@@ -39,46 +28,18 @@ export class CartApiService {
     input: UpdateCartItemInput,
     sessionId?: string,
   ): Promise<CartResponse> {
-    const headers: Record<string, string> = {};
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
-    }
-    const response = await apiClient.patch<{ message: string; data: CartResponse }>(
-      `/cart/items/${itemId}`,
-      input,
-      { headers },
-    );
-    return response.data.data;
+    return updateCartItemApi(itemId, input, sessionId);
   }
 
   static async removeCartItem(itemId: string, sessionId?: string): Promise<CartResponse> {
-    const headers: Record<string, string> = {};
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
-    }
-    const response = await apiClient.delete<{ message: string; data: CartResponse }>(
-      `/cart/items/${itemId}`,
-      { headers },
-    );
-    return response.data.data;
+    return removeCartItemApi(itemId, sessionId);
   }
 
   static async clearCart(sessionId?: string): Promise<CartResponse> {
-    const headers: Record<string, string> = {};
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
-    }
-    const response = await apiClient.delete<{ message: string; data: CartResponse }>('/cart', {
-      headers,
-    });
-    return response.data.data;
+    return clearCartApi(sessionId);
   }
 
   static async syncCart(input: SyncCartInput): Promise<CartResponse> {
-    const response = await apiClient.post<{ message: string; data: CartResponse }>(
-      '/cart/sync',
-      input,
-    );
-    return response.data.data;
+    return syncCartApi(input);
   }
 }

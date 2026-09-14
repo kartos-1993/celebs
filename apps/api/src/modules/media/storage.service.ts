@@ -1,10 +1,12 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -71,7 +73,34 @@ export function buildVendorObjectKey(params: {
   return `${customFolder}/${scopeFolder}/${uuidv4()}-${safeName}`;
 }
 
-const ALLOWED_KEY_PREFIXES = ['celebs/products', 'celebs/kyc', 'vendors', 'platform'] as const;
+/**
+ * Immutable content addressing: the object key embeds a SHA-256 fingerprint
+ * of the bytes, so identical uploads always resolve to the same key and URL.
+ * Re-uploads are idempotent no-ops — no version stamps, no propagation sweeps.
+ */
+export const CONTENT_HASH_LENGTH = 24; // hex chars (96-bit) — plenty for media dedup
+
+export function contentHashKey(tempKey: string, hash: string, originalname: string): string {
+  const prefix = tempKey.includes('/') ? tempKey.slice(0, tempKey.lastIndexOf('/')) : 'platform';
+  const safeName = sanitizeFileName(originalname);
+  return `${prefix}/${hash}-${safeName}`;
+}
+
+async function streamToBuffer(stream: unknown): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+const ALLOWED_KEY_PREFIXES = [
+  'celebs/products',
+  'celebs/kyc',
+  'vendors',
+  'platform',
+  'reviews',
+] as const;
 
 /**
  * Single source of truth for which object keys the upload pipeline accepts.
@@ -284,6 +313,52 @@ export async function createPresignedPut(
 }
 
 /**
+ * Create a presigned PUT URL for customer review photo upload.
+ */
+export async function createReviewPresignedPut(params: {
+  userId: string;
+  originalname: string;
+  mimeType: string;
+  size: number;
+}): Promise<PresignFileResult> {
+  const { originalname, mimeType, size } = assertUploadMeta({
+    originalname: params.originalname,
+    mimeType: params.mimeType,
+    size: params.size,
+    scope: 'PRODUCT',
+  });
+
+  const safeName = sanitizeFileName(originalname);
+  const key = `reviews/${params.userId}/${uuidv4()}-${safeName}`;
+  validateObjectKey(key);
+
+  await ensureDevPublicReadAccess();
+
+  const command = new PutObjectCommand({
+    Bucket: config.S3.BUCKET_NAME,
+    Key: key,
+    ContentType: mimeType,
+  });
+
+  const uploadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: PRESIGN_EXPIRES_IN,
+  });
+
+  return {
+    key,
+    uploadUrl,
+    publicUrl: buildPublicObjectUrl(key),
+    headers: {
+      'Content-Type': mimeType,
+    },
+    expiresIn: PRESIGN_EXPIRES_IN,
+    originalname,
+    mimeType,
+    size,
+  };
+}
+
+/**
  * Verify object exists after browser PUT and catalog in MediaAsset table.
  */
 export async function confirmUploadedObject(
@@ -318,26 +393,74 @@ export async function confirmUploadedObject(
     throw new BadRequestException(`Uploaded object exceeds ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
   }
 
-  const timestamp = Date.now();
-  const publicUrl = `${buildPublicObjectUrl(key)}?v=${timestamp}`;
+  // Authoritative content hash — the bytes in R2 are the source of truth,
+  // never client-declared metadata.
+  const object = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: config.S3.BUCKET_NAME,
+      Key: key,
+    }),
+  );
+  const contentBytes = await streamToBuffer(object.Body);
+  const hash = createHash('sha256')
+    .update(contentBytes)
+    .digest('hex')
+    .slice(0, CONTENT_HASH_LENGTH);
+  const finalKey = contentHashKey(key, hash, originalname);
 
-  // Catalog asset into PostgreSQL DAM
+  if (finalKey !== key) {
+    // Idempotent re-confirm: identical bytes already catalogued under the hash key.
+    const existing = await mediaRepository.findAssetByKey(finalKey);
+    if (existing) {
+      // Temp upload key is unreferenced — best-effort removal (age-cutoff
+      // reaper is the backstop).
+      await s3Client
+        .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
+        .catch(() => null);
+      return {
+        key: existing.key,
+        url: existing.url,
+        bytes: existing.sizeBytes,
+        contentType: existing.mimeType,
+        originalname: existing.originalName,
+      };
+    }
+    // Promote temp upload to its immutable address with long-lived cache headers.
+    await s3Client.send(
+      new CopyObjectCommand({
+        Bucket: config.S3.BUCKET_NAME,
+        Key: finalKey,
+        CopySource: `${config.S3.BUCKET_NAME}/${key}`,
+        ContentType: head.ContentType || mimeType,
+        CacheControl: 'public, max-age=31536000, immutable',
+        MetadataDirective: 'REPLACE',
+      }),
+    );
+    await s3Client
+      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
+      .catch(() => null);
+  }
+
+  // Immutable public URL — no version stamp, ever. Same bytes = same URL.
+  const publicUrl = buildPublicObjectUrl(finalKey);
+
+  // Catalog asset into PostgreSQL DAM (upsert by key is idempotent: same key
+  // implies same bytes, so the update branch can only rewrite identical values).
   await mediaRepository.createAsset({
     vendorId: input.vendorId || null,
     folderId: input.folderId || null,
     originalName: originalname,
-    key,
+    key: finalKey,
     url: publicUrl,
     mimeType: head.ContentType || mimeType,
     sizeBytes: bytes,
+    hashSha256: hash,
     scope: input.scope || 'PRODUCT',
     isPrivate: input.scope === 'KYC',
   });
 
-  await mediaRepository.propagateAssetUrlUpdate(key, publicUrl);
-
   return {
-    key,
+    key: finalKey,
     url: publicUrl,
     bytes,
     contentType: head.ContentType || mimeType,

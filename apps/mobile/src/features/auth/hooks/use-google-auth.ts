@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as Google from 'expo-auth-session/providers/google';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
@@ -63,6 +63,12 @@ export function useGoogleAuth() {
     }
   }, [isNativeFlow]);
 
+  // Each Expo Auth Session response must be consumed exactly once.
+  // Without this, re-renders (stable or not) re-run the effect and fire a
+  // second loginWithGoogle -> syncGuestCartOnLogin, doubling the guest cart.
+  const handledResponseRef = useRef<unknown>(null);
+  const googleInFlightRef = useRef(false);
+
   useEffect(() => {
     async function handleResponse() {
       // User closed the browser sheet — reset quietly
@@ -72,6 +78,8 @@ export function useGoogleAuth() {
       }
 
       if (response?.type === 'success') {
+        if (googleInFlightRef.current) return;
+        googleInFlightRef.current = true;
         setIsAuthenticating(true);
         setAuthError(null);
         try {
@@ -87,6 +95,7 @@ export function useGoogleAuth() {
           console.error('[useGoogleAuth] Authentication failed:', err);
           setAuthError(errObj?.message || 'Google Sign-In failed');
         } finally {
+          googleInFlightRef.current = false;
           setIsAuthenticating(false);
         }
       } else if (response?.type === 'error') {
@@ -94,16 +103,19 @@ export function useGoogleAuth() {
       }
     }
 
-    if (response) {
+    if (response && handledResponseRef.current !== response) {
+      handledResponseRef.current = response;
       handleResponse();
     }
   }, [response, loginWithGoogle]);
 
   const signInWithGoogle = async () => {
+    if (googleInFlightRef.current) return;
     setAuthError(null);
 
     // If running in Standalone APK / Dev Client, use native GoogleSignin
     if (isNativeFlow) {
+      googleInFlightRef.current = true;
       setIsAuthenticating(true);
       try {
         const GoogleSignin = getNativeGoogleSignin();
@@ -131,6 +143,7 @@ export function useGoogleAuth() {
         console.error('[GoogleSignin] Native Error:', error);
         setAuthError(errObj?.message || 'Google Sign-In failed');
       } finally {
+        googleInFlightRef.current = false;
         setIsAuthenticating(false);
       }
       return;

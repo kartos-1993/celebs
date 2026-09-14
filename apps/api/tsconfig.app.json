@@ -8,7 +8,10 @@
     "module": "commonjs",
     "types": ["node", "express"],
     "paths": {
-      "@/*": ["apps/api/src/*"]
+      "@/*": ["apps/api/src/*"],
+      "@celebs/rbac": ["packages/rbac/src/index.ts"],
+      "@celebs/shared-utils": ["packages/shared-utils/src/index.ts"],
+      "@celebs/shared-types": ["packages/shared-types/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

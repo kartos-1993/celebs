@@ -13,7 +13,8 @@ if (fs.existsSync(envPath)) {
 
 import { logger } from '@celebs/shared-utils';
 
-import { verifyRedisConnection } from './common/services/queue.service';
+import { ensurePlatformVendor } from './common/constants/platform-vendor';
+import { closeQueues, verifyRedisConnection } from './common/services/queue.service';
 import { verifyS3Connection } from './common/utils/s3.client';
 import { config } from './config/app.config';
 import prisma from './config/db.prisma';
@@ -41,6 +42,11 @@ const startServer = async () => {
     // Connect and verify Postgres connection
     await prisma.$connect();
     logger.info('Postgres Database Connected successfully');
+
+    // Ensure canonical 1P platform vendor is provisioned
+    await ensurePlatformVendor(prisma).catch((err: unknown) => {
+      logger.error({ err }, 'Failed to ensure 1P platform vendor on boot');
+    });
 
     // Connect and verify Redis and S3 connections
     await verifyRedisConnection();
@@ -95,6 +101,7 @@ const shutdown = async (signal: string) => {
       if (!currentServer) return resolve();
       currentServer.close(() => resolve());
     });
+    await closeQueues();
     await prisma.$disconnect();
     await closeSentry();
     logger.info('Graceful shutdown complete');

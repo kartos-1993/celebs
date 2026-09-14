@@ -18,7 +18,7 @@ export interface MediaCropDialogProps {
   open: boolean;
   target?: CropTarget | null;
   file?: File | null;
-  onCropComplete: (croppedFile: File, overwrite?: boolean) => void;
+  onCropComplete: (croppedFile: File) => void;
   onCancel: () => void;
   targetAspectRatio?: number; // default 0.75 (3:4)
 }
@@ -93,7 +93,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
     [isDragging, dragStart],
   );
 
-  const handleApplyCrop = async (overwrite: boolean) => {
+  const handleApplyCrop = async () => {
     if (!imgSrc || !resolvedTarget || !containerRef.current || !imageRef.current) return;
     setIsProcessing(true);
     setCropError(null);
@@ -107,7 +107,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
         editedName,
         defaultFileName: resolvedTarget.name,
       });
-      onCropComplete(cropped, overwrite);
+      onCropComplete(cropped);
     } catch (err) {
       setCropError(err instanceof Error ? err.message : 'Crop processing failed');
     } finally {
@@ -117,7 +117,7 @@ export const MediaCropDialog = memo(function MediaCropDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
         <MediaCropHeader editedName={editedName} onNameChange={setEditedName} />
         <div className="flex flex-col items-center gap-3 bg-muted/10 p-4">
           <MediaCropViewport
@@ -145,7 +145,6 @@ export const MediaCropDialog = memo(function MediaCropDialog({
         </div>
 
         <MediaCropFooter
-          isEditingExisting={Boolean(resolvedTarget?.key)}
           isProcessing={isProcessing}
           onCancel={onCancel}
           onApplyCrop={handleApplyCrop}

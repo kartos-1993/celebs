@@ -98,7 +98,7 @@ export const CategoryAttributesTab: React.FC<CategoryAttributesTabProps> = ({
       {/* Measurement Charts & Fit Guides Section */}
       <div className="space-y-4 border-t pt-5">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-foreground">
+          <h3 className="text-sm font-semibold text-foreground">
             Category Measurement Charts & Fit Guides
           </h3>
           <p className="text-xs text-muted-foreground">

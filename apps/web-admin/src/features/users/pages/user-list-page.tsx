@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { UserData } from '@celebs/shared-types';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { ConfirmDialog } from '@celebs/shared-ui/components/confirm-dialog';
 import {
@@ -13,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@celebs/shared-ui/components/dialog';
-import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
   Form,
   FormControl,
@@ -31,17 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@celebs/shared-ui/components/table';
 
 import { createUser, deleteUser, getUsers } from '../api';
 import { USERS_QUERY_KEYS } from '../api';
+import { UserCards } from '../components/user-cards';
+import { UserTable } from '../components/user-table';
 
 import { PageLoader } from '@/components/page-loader';
 
@@ -95,7 +86,7 @@ export default function UserList() {
 
       {showCreateModal && (
         <Dialog open onOpenChange={(open) => !open && setShowCreateModal(false)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Create New Account</DialogTitle>
               <DialogDescription>
@@ -178,49 +169,16 @@ export default function UserList() {
         </Dialog>
       )}
 
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Verified</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <EmptyState title="No user accounts found." />
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((account: UserData) => (
-                <TableRow key={account.id} className="hover:bg-muted/30">
-                  <TableCell className="font-medium">{account.name}</TableCell>
-                  <TableCell>{account.email}</TableCell>
-                  <TableCell>
-                    <Badge className="bg-primary/10 text-primary">{account.role}</Badge>
-                  </TableCell>
-                  <TableCell>{account.isEmailVerified ? 'Yes' : 'No'}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setUserToDelete({ id: account.id, name: account.name })}
-                      disabled={deleteMutation.isPending}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <UserTable
+        users={users}
+        onDelete={(user) => setUserToDelete(user)}
+        isDeletePending={deleteMutation.isPending}
+      />
+      <UserCards
+        users={users}
+        onDelete={(user) => setUserToDelete(user)}
+        isDeletePending={deleteMutation.isPending}
+      />
 
       <ConfirmDialog
         open={userToDelete !== null}

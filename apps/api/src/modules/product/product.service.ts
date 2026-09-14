@@ -12,16 +12,16 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { brandRepository } from '../brand/brand.repository';
 import { brandService } from '../brand/brand.service';
+import { categoryRepository } from '../category/category.repository';
+import { InventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
 
-import { PostgresInventoryRepository } from './repositories/postgres-inventory.repository';
-import {
-  PRODUCT_DETAIL_INCLUDE,
-  PRODUCT_DETAIL_SELECT,
-  PRODUCT_LIST_SELECT,
-} from './repositories/product-projections';
+import { ProductRepository, productRepository } from './repositories/product.repository';
+import { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
+import { getColorImageBlockers, sumVariantStock } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import { ProductLifecycleService } from './product-lifecycle.service';
@@ -29,8 +29,6 @@ import { buildProductCreateData, buildProductUpdateData } from './product-payloa
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
-
-import prisma from '@/config/db.prisma';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -41,9 +39,14 @@ export type ProductColorVariantInput = ProductColorVariantType;
 export { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT };
 
 export class ProductService {
-  private readonly inventoryRepository = new PostgresInventoryRepository();
+  private readonly inventoryRepository = new InventoryRepository();
+  private readonly products: ProductRepository;
   private readonly queryService = new ProductQueryService();
   private readonly lifecycleService = new ProductLifecycleService();
+
+  constructor(products?: ProductRepository) {
+    this.products = products ?? productRepository;
+  }
 
   // --- QUERY DELEGATES ---
 
@@ -113,6 +116,7 @@ export class ProductService {
     userId: string,
     vendorId?: string | null,
     vendorName?: string,
+    userRole?: string,
   ): Promise<Record<string, unknown> | null> {
     const { categoryId, subcategoryId, departmentHint } = await this.resolveCategoryIds(
       input.categoryId,
@@ -125,9 +129,24 @@ export class ProductService {
     await this.assertBrandGuards({
       vendorId,
       brandId: resolvedBrandId,
+      userRole,
       title: input.name,
       description: input.description,
     });
+
+    // Direct publish (publish-capable actors) must clear the same floor as
+    // submit/review — otherwise zero-stock products bypass the strict rule.
+    if (input.status === PRODUCT_STATUS.PUBLISHED) {
+      const blockers = [
+        ...getColorImageBlockers(input.colorVariants),
+        ...(sumVariantStock(input.colorVariants) > 0
+          ? []
+          : ['Add at least 1 unit in one size to publish.']),
+      ];
+      if (blockers.length > 0) {
+        throw new AppError(blockers.join(' '), HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      }
+    }
 
     const maxAttempts = 3;
     let createdProduct: Product | null = null;
@@ -138,41 +157,44 @@ export class ProductService {
         const slug = await this.generateUniqueSlug(input.name);
 
         // Atomic Prisma Transaction: Create Product & Inventory in PostgreSQL together
-        createdProduct = await prisma.$transaction(async (tx) => {
-          const product = await tx.product.create({
-            data: buildProductCreateData(input, {
-              slug,
-              categoryId,
-              subcategoryId,
-              brandId: resolvedBrandId,
-              brandName: resolvedBrandName,
-              userId,
-              vendorId,
-              vendorName,
-            }),
-            include: PRODUCT_DETAIL_INCLUDE,
-          });
+        createdProduct = await this.products.transaction(
+          async (tx) => {
+            const product = await this.products.create(
+              buildProductCreateData(input, {
+                slug,
+                categoryId,
+                subcategoryId,
+                brandId: resolvedBrandId,
+                brandName: resolvedBrandName,
+                userId,
+                vendorId,
+                vendorName,
+              }),
+              tx,
+            );
 
-          await this.inventoryRepository.syncProductInventory(
-            tx,
-            product.id,
-            input.colorVariants,
-            input.skus,
-            departmentHint,
-          );
+            await this.inventoryRepository.syncProductInventory(
+              tx,
+              product.id,
+              input.colorVariants,
+              input.skus,
+              departmentHint,
+            );
 
-          const inventories = await tx.productInventory.findMany({
-            where: { productId: product.id },
-            select: {
-              colorVariantName: true,
-              size: true,
-              quantity: true,
-              reservedQuantity: true,
-            },
-          });
+            const inventories = await tx.productInventory.findMany({
+              where: { productId: product.id },
+              select: {
+                colorVariantName: true,
+                size: true,
+                quantity: true,
+                reservedQuantity: true,
+              },
+            });
 
-          return { ...product, inventories };
-        });
+            return { ...product, inventories };
+          },
+          { maxWait: 5000, timeout: 10000 },
+        );
 
         break;
       } catch (err: unknown) {
@@ -205,7 +227,7 @@ export class ProductService {
     vendorId?: string,
     userPermissions?: string[],
   ) {
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
     }
@@ -314,25 +336,28 @@ export class ProductService {
       auditChanges: ReturnType<typeof buildProductAuditDiff>;
     },
   ) {
-    return prisma.$transaction(async (tx) => {
-      if (updateData.colorVariants) {
-        await this.inventoryRepository.syncProductInventory(
-          tx,
+    return this.products.transaction(
+      async (tx) => {
+        if (updateData.colorVariants) {
+          await this.inventoryRepository.syncProductInventory(
+            tx,
+            id,
+            updateData.colorVariants,
+            updateData.skus,
+            opts.resolvedCategoryId,
+          );
+        }
+
+        const p = await this.products.update(
           id,
-          updateData.colorVariants,
-          updateData.skus,
-          opts.resolvedCategoryId,
+          buildProductUpdateData(product, updateData, opts),
+          tx,
         );
-      }
 
-      const p = await tx.product.update({
-        where: { id },
-        data: buildProductUpdateData(product, updateData, opts),
-        include: PRODUCT_DETAIL_INCLUDE,
-      });
-
-      return p;
-    });
+        return p;
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
   private async assertBrandGuards(params: {
@@ -380,14 +405,12 @@ export class ProductService {
     let resolvedBrandName = input.brand?.trim() || null;
 
     if (resolvedBrandId) {
-      const b = await prisma.brand.findUnique({ where: { id: resolvedBrandId } });
+      const b = await brandRepository.findById(resolvedBrandId);
       if (b) {
         resolvedBrandName = b.name;
       }
     } else if (resolvedBrandName) {
-      const b = await prisma.brand.findFirst({
-        where: { name: { equals: resolvedBrandName, mode: 'insensitive' } },
-      });
+      const b = await brandRepository.findByName(resolvedBrandName);
       if (b) {
         resolvedBrandId = b.id;
         resolvedBrandName = b.name;
@@ -403,12 +426,10 @@ export class ProductService {
       updateData.brand !== undefined ? updateData.brand?.trim() || null : product.brand;
 
     if (updateData.brandId && updateData.brandId !== product.brandId) {
-      const b = await prisma.brand.findUnique({ where: { id: updateData.brandId } });
+      const b = await brandRepository.findById(updateData.brandId);
       if (b) resolvedBrandName = b.name;
     } else if (updateData.brand && updateData.brand !== product.brand) {
-      const b = await prisma.brand.findFirst({
-        where: { name: { equals: updateData.brand.trim(), mode: 'insensitive' } },
-      });
+      const b = await brandRepository.findByName(updateData.brand.trim());
       if (b) {
         resolvedBrandId = b.id;
         resolvedBrandName = b.name;
@@ -420,14 +441,16 @@ export class ProductService {
 
   // Link media usage so DAM badges / delete guards reflect reality.
   private async linkMediaUsageOnCreate(createdProduct: Product): Promise<void> {
-    await mediaRepository
-      .adjustUsageByUrls(collectProductAssetUrls(createdProduct), 1)
-      .catch((err) =>
-        logger.error(
-          { err, productId: createdProduct.id },
-          'Media usage reconciliation failed on product create — usageCount may be desynced',
-        ),
-      );
+    const urls = collectProductAssetUrls(createdProduct);
+    await Promise.all([
+      mediaRepository.adjustUsageByUrls(urls, 1),
+      mediaRepository.claimProductOwner(urls, createdProduct.id, createdProduct.vendorId),
+    ]).catch((err) =>
+      logger.error(
+        { err, productId: createdProduct.id },
+        'Media usage reconciliation failed on product create — usageCount may be desynced',
+      ),
+    );
   }
 
   // Reconcile media usage: increment newly added URLs, decrement removed ones
@@ -455,6 +478,9 @@ export class ProductService {
       [
         addedUrls.length ? mediaRepository.adjustUsageByUrls(addedUrls, 1) : null,
         removedUrls.length ? mediaRepository.adjustUsageByUrls(removedUrls, -1) : null,
+        addedUrls.length
+          ? mediaRepository.claimProductOwner(addedUrls, productId, previous.vendorId)
+          : null,
       ].filter(Boolean),
     ).catch((err) =>
       logger.error(
@@ -471,9 +497,7 @@ export class ProductService {
 
     let resolvedSubcategory = null;
     if (subcategoryId) {
-      resolvedSubcategory = await prisma.category.findUnique({
-        where: { id: subcategoryId },
-      });
+      resolvedSubcategory = await categoryRepository.findById(subcategoryId);
       if (!resolvedSubcategory) {
         throw new AppError(
           'Subcategory not found',
@@ -485,15 +509,13 @@ export class ProductService {
 
     let resolvedCategory = null;
     if (categoryId) {
-      resolvedCategory = await prisma.category.findUnique({
-        where: { id: categoryId },
-      });
+      resolvedCategory = await categoryRepository.findById(categoryId);
     }
 
     if (!resolvedCategory && resolvedSubcategory?.parentCategory) {
-      resolvedCategory = await prisma.category.findUnique({
-        where: { id: resolvedSubcategory.parentCategory },
-      });
+      resolvedCategory = await categoryRepository.findById(
+        String(resolvedSubcategory.parentCategory),
+      );
     }
 
     if (!resolvedCategory && resolvedSubcategory) {
@@ -504,8 +526,10 @@ export class ProductService {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
-    const departmentHint =
-      resolvedCategory.path || resolvedCategory.name || resolvedCategory.slug || '';
+    const categoryPath = resolvedCategory.path;
+    const departmentHint = Array.isArray(categoryPath)
+      ? categoryPath.join('/')
+      : categoryPath || resolvedCategory.name || resolvedCategory.slug || '';
 
     return {
       categoryId: resolvedCategory.id,
@@ -520,7 +544,7 @@ export class ProductService {
     let slug = `${base}-${Date.now().toString().slice(-6)}-${randomSuffix}`;
     let attempt = 0;
 
-    while (await prisma.product.findUnique({ where: { slug } })) {
+    while (await this.products.existsBySlug(slug)) {
       attempt += 1;
       const extraRandom = Math.random().toString(36).substring(2, 7);
       slug = `${base}-${Date.now()}-${attempt}-${extraRandom}`;

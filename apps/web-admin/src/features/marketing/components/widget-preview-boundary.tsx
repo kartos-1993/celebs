@@ -19,6 +19,8 @@ import { Button } from '@celebs/shared-ui/components/button';
 
 import { DEVICE_PRESETS, DeviceViewport, MOCK_SDUI_LAYOUT } from './widget-preview-types';
 
+import { DeviceFrame } from '@/components/device-frame';
+
 interface WidgetPreviewBoundaryProps {
   layout?: SDUIPageLayout;
   onWidgetSelect?: (widget: DynamicWidget) => void;
@@ -412,54 +414,44 @@ export function WidgetPreviewBoundary({
       {/* Main Preview Frame */}
       <div className="flex justify-center items-start gap-6 overflow-x-auto p-4 bg-muted/20 rounded-2xl border min-h-[600px]">
         {/* Mobile Device Frame */}
-        <div
-          style={{ width: `${deviceConfig.width}px` }}
-          className={`relative bg-neutral-950 p-3.5 ${deviceConfig.frameBorderRadius} shadow-2xl ring-1 ring-white/10 transition-all duration-300`}
-        >
-          {/* Hardware Dynamic Island */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-30 flex items-center justify-end px-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-neutral-900 border border-neutral-700" />
-          </div>
-
+        <DeviceFrame width={deviceConfig.width} screenClassName="h-[720px]">
           {/* Screen Content */}
-          <div className="relative h-[720px] w-full overflow-y-auto rounded-[36px] bg-background text-foreground scrollbar-none">
-            {/* Simulated App Header */}
-            <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/90 px-4 py-3 backdrop-blur-md">
-              <span className="text-xs font-extrabold tracking-tight text-primary">CELEBS</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">
-                {layout.title || 'Storefront'}
-              </span>
-            </div>
-
-            {/* Widget Stack */}
-            <div className="space-y-3 p-3 pb-16">
-              {widgets.map((widget) => (
-                <div
-                  key={widget.id}
-                  onClick={() => onWidgetSelect?.(widget)}
-                  className="group relative cursor-pointer rounded-xl transition-all hover:ring-2 hover:ring-primary/60"
-                  style={{
-                    paddingTop: widget.styling?.paddingVertical
-                      ? `${widget.styling.paddingVertical}px`
-                      : undefined,
-                    paddingBottom: widget.styling?.paddingVertical
-                      ? `${widget.styling.paddingVertical}px`
-                      : undefined,
-                    marginBottom: widget.styling?.marginBottom
-                      ? `${widget.styling.marginBottom}px`
-                      : undefined,
-                  }}
-                >
-                  <MockWidgetRenderer widget={widget} />
-
-                  <div className="absolute top-1 right-1 hidden rounded-md bg-black/80 px-1.5 py-0.5 text-[9px] font-mono text-white group-hover:block backdrop-blur-xs">
-                    #{widget.order} {widget.type}
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Simulated App Header */}
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/90 px-4 py-3 backdrop-blur-md">
+            <span className="text-xs font-extrabold tracking-tight text-primary">CELEBS</span>
+            <span className="text-[10px] font-semibold text-muted-foreground">
+              {layout.title || 'Storefront'}
+            </span>
           </div>
-        </div>
+
+          {/* Widget Stack */}
+          <div className="space-y-3 p-3 pb-16">
+            {widgets.map((widget) => (
+              <div
+                key={widget.id}
+                onClick={() => onWidgetSelect?.(widget)}
+                className="group relative cursor-pointer rounded-xl transition-all hover:ring-2 hover:ring-primary/60"
+                style={{
+                  paddingTop: widget.styling?.paddingVertical
+                    ? `${widget.styling.paddingVertical}px`
+                    : undefined,
+                  paddingBottom: widget.styling?.paddingVertical
+                    ? `${widget.styling.paddingVertical}px`
+                    : undefined,
+                  marginBottom: widget.styling?.marginBottom
+                    ? `${widget.styling.marginBottom}px`
+                    : undefined,
+                }}
+              >
+                <MockWidgetRenderer widget={widget} />
+
+                <div className="absolute top-1 right-1 hidden rounded-md bg-black/80 px-1.5 py-0.5 text-[9px] font-mono text-white group-hover:block backdrop-blur-xs">
+                  #{widget.order} {widget.type}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DeviceFrame>
 
         {/* JSON Schema Inspector Sidebar */}
         {showJsonInspector && (

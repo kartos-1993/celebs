@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { generateSheinStyleSku, resolveDepartmentCode } from '../sku-generator';
+import { generateSku, resolveDepartmentCode } from '../sku-generator';
 
-describe('Shein/Retail Standard SKU Generator', () => {
+describe('Retail Standard SKU Generator', () => {
   it('resolves department codes accurately from category/department names', () => {
     expect(resolveDepartmentCode("Men's Fashion")).toBe('m');
     expect(resolveDepartmentCode("Men's Tops")).toBe('m');
@@ -22,7 +22,7 @@ describe('Shein/Retail Standard SKU Generator', () => {
 
   it('generates standard 18-character SKU with brand, dept, date, and 10-digit ID', () => {
     const fixedDate = new Date('2026-08-14T00:00:00Z');
-    const sku = generateSheinStyleSku({
+    const sku = generateSku({
       brandPrefix: 'c',
       department: "Men's Apparel",
       date: fixedDate,
@@ -39,7 +39,7 @@ describe('Shein/Retail Standard SKU Generator', () => {
     const count = 1000;
 
     for (let i = 0; i < count; i++) {
-      const sku = generateSheinStyleSku({
+      const sku = generateSku({
         brandPrefix: 'c',
         department: 'women',
       });

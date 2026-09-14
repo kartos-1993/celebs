@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  CATEGORY_QUERY_KEYS,
   createQuickFilter,
   deleteQuickFilter,
   getQuickFiltersForCategory,
@@ -11,8 +12,12 @@ import { QuickFilter } from '../types';
 export function useQuickFilters(categoryId?: string) {
   const queryClient = useQueryClient();
 
+  const queryKey = categoryId
+    ? CATEGORY_QUERY_KEYS.quickFilters(categoryId)
+    : [...CATEGORY_QUERY_KEYS.all, 'quick-filters'];
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['quick-filters', categoryId],
+    queryKey,
     queryFn: async () => {
       if (!categoryId) return [];
       const res = await getQuickFiltersForCategory(categoryId);
@@ -32,8 +37,8 @@ export function useQuickFilters(categoryId?: string) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quick-filters', categoryId] });
-      queryClient.invalidateQueries({ queryKey: ['category-tree'] });
+      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.tree() });
     },
   });
 
@@ -43,8 +48,8 @@ export function useQuickFilters(categoryId?: string) {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quick-filters', categoryId] });
-      queryClient.invalidateQueries({ queryKey: ['category-tree'] });
+      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: CATEGORY_QUERY_KEYS.tree() });
     },
   });
 

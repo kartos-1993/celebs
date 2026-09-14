@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { fetchSDUILayout } from '../api';
 import type { SDUIPageLayout } from '../types';
-
-import { apiClient } from '@/api/client';
 
 export const DEFAULT_HOME_LAYOUT: SDUIPageLayout = {
   pageId: 'home',
@@ -51,15 +50,7 @@ export function useSDUILayout(pageId: string = 'home') {
     queryKey: SDUI_QUERY_KEYS.layout(pageId),
     queryFn: async () => {
       try {
-        const response = await apiClient.get<{
-          success: boolean;
-          data?: { parsed?: { [key: string]: unknown } };
-        }>('/settings/public', { skipAuth: true });
-
-        const customLayout = response.data?.data?.parsed?.[`layout_${pageId}`] as
-          | SDUIPageLayout
-          | undefined;
-
+        const customLayout = await fetchSDUILayout(pageId);
         if (
           customLayout &&
           Array.isArray(customLayout.widgets) &&
@@ -72,11 +63,8 @@ export function useSDUILayout(pageId: string = 'home') {
       }
       return DEFAULT_HOME_LAYOUT;
     },
+
     initialData: DEFAULT_HOME_LAYOUT,
-    // Merchandised layout must revalidate on every mount: the persisted
-    // react-query cache (AsyncStorage) would otherwise serve a stale layout
-    // for up to staleTime after an app restart.
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 5,
   });
 }

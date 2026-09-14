@@ -3,11 +3,10 @@ import { Prisma } from '@prisma/client';
 import { ProductFilterType } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
-import {
-  PRODUCT_FEED_SELECT,
-  PRODUCT_LIST_SELECT,
-  PRODUCT_PUBLIC_DETAIL_SELECT,
-} from './repositories/product-projections';
+import { CategoryRepository, categoryRepository } from '../category/category.repository';
+
+import { ProductRepository, productRepository } from './repositories/product.repository';
+import { PRODUCT_FEED_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { decodeProductCursor, encodeProductCursor } from './utils/product-cursor';
 import { calculateProductQCScore } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
@@ -15,7 +14,6 @@ import { PRODUCT_STATUS } from './product-status';
 
 import type { Actor } from '@/common/context/actor-context';
 import { isPlatformActor } from '@/common/context/actor-context';
-import prisma from '@/config/db.prisma';
 
 export interface QueryServiceOptions {
   actor?: Actor | null;
@@ -25,6 +23,14 @@ export interface QueryServiceOptions {
 }
 
 export class ProductQueryService {
+  private readonly products: ProductRepository;
+  private readonly categories: CategoryRepository;
+
+  constructor(products?: ProductRepository, categories?: CategoryRepository) {
+    this.products = products ?? productRepository;
+    this.categories = categories ?? categoryRepository;
+  }
+
   async getProducts(filters: ProductFilterType, opts: QueryServiceOptions = {}) {
     return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, opts);
   }
@@ -33,29 +39,7 @@ export class ProductQueryService {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
-    const product = isElevated
-      ? await prisma.product.findUnique({
-          where: { id },
-          include: {
-            category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-            subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-            brandRef: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                logoUrl: true,
-                tier: true,
-                isGated: true,
-                countryOfOrigin: true,
-              },
-            },
-          },
-        })
-      : await prisma.product.findUnique({
-          where: { id },
-          select: PRODUCT_PUBLIC_DETAIL_SELECT,
-        });
+    const product = await this.products.findDetailedById(id, isElevated);
 
     if (!product) return null;
     return formatProductResponse(product, { isElevated });
@@ -138,8 +122,8 @@ export class ProductQueryService {
     }
 
     const [rawProducts, totalCount] = await Promise.all([
-      prisma.product.findMany(findOptions),
-      isCursorMode ? Promise.resolve(undefined) : prisma.product.count({ where }),
+      this.products.findManyList(findOptions),
+      isCursorMode ? Promise.resolve(undefined) : this.products.count(where),
     ]);
 
     const hasMore = rawProducts.length > limit;
@@ -177,7 +161,7 @@ export class ProductQueryService {
     const isElevated =
       opts.isElevated ?? (isPlatform || (Boolean(opts.actor) && Boolean(opts.isStoreManagement)));
 
-    if (opts.storeId && opts.isStoreManagement) {
+    if (!isPlatform && opts.storeId && opts.isStoreManagement) {
       where.vendorId = opts.storeId;
     } else if (filters.vendorId) {
       where.vendorId = filters.vendorId;
@@ -186,7 +170,7 @@ export class ProductQueryService {
     if (isElevated) {
       if (filters.status) {
         where.status = filters.status;
-      } else if (where.vendorId) {
+      } else if (isPlatform || where.vendorId) {
         where.status = { not: PRODUCT_STATUS.ARCHIVED };
       } else {
         where.status = PRODUCT_STATUS.PUBLISHED;
@@ -243,31 +227,15 @@ export class ProductQueryService {
     if (filters.category) {
       const categoryParam = filters.category.trim();
 
-      const categoryDoc = await prisma.category.findFirst({
-        where: {
-          OR: [
-            { slug: { equals: categoryParam, mode: 'insensitive' } },
-            { id: categoryParam },
-            { path: { equals: categoryParam, mode: 'insensitive' } },
-            { name: { equals: categoryParam.replace(/-/g, ' '), mode: 'insensitive' } },
-          ],
-        },
-        select: { id: true, slug: true, name: true, path: true, level: true, parentCategory: true },
-      });
+      const categoryDoc = await this.categories.findFilterMatch(categoryParam);
 
       if (categoryDoc) {
-        const descendantCategories = await prisma.category.findMany({
-          where: {
-            OR: [
-              { parentCategory: categoryDoc.id },
-              { path: { equals: categoryDoc.slug } },
-              { path: { startsWith: `${categoryDoc.slug}/` } },
-            ],
-          },
-          select: { id: true },
-        });
+        const descendantIds = await this.categories.findDescendantIds(
+          categoryDoc.id,
+          categoryDoc.slug,
+        );
 
-        const allMatchingCategoryIds = [categoryDoc.id, ...descendantCategories.map((c) => c.id)];
+        const allMatchingCategoryIds = [categoryDoc.id, ...descendantIds];
 
         // FIX Q1: Add to andClauses instead of overwriting where.OR
         andClauses.push({
@@ -278,22 +246,10 @@ export class ProductQueryService {
         });
       }
     } else if (filters.categoryId) {
-      const targetCat = await prisma.category.findUnique({
-        where: { id: filters.categoryId },
-        select: { id: true, slug: true },
-      });
+      const targetCat = await this.categories.findById(filters.categoryId);
       if (targetCat) {
-        const descendantCategories = await prisma.category.findMany({
-          where: {
-            OR: [
-              { parentCategory: targetCat.id },
-              { path: { equals: targetCat.slug } },
-              { path: { startsWith: `${targetCat.slug}/` } },
-            ],
-          },
-          select: { id: true },
-        });
-        const catIds = [targetCat.id, ...descendantCategories.map((c) => c.id)];
+        const descendantIds = await this.categories.findDescendantIds(targetCat.id, targetCat.slug);
+        const catIds = [targetCat.id, ...descendantIds];
         andClauses.push({
           OR: [{ categoryId: { in: catIds } }, { subcategoryId: { in: catIds } }],
         });
@@ -313,7 +269,7 @@ export class ProductQueryService {
     const skip = (page - 1) * limit;
 
     const [rawProducts, total] = await Promise.all([
-      prisma.product.findMany({
+      this.products.findManyList({
         where,
         orderBy: { createdAt: 'asc' },
         skip,
@@ -323,7 +279,7 @@ export class ProductQueryService {
           subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
         },
       }),
-      prisma.product.count({ where }),
+      this.products.count(where),
     ]);
 
     const products = rawProducts.map((p) => {

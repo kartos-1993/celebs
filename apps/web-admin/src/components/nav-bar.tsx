@@ -45,7 +45,7 @@ export function Navbar() {
     <header
       className={cn(
         'sticky top-0 z-30 border-b border-border/60 bg-background/85 px-4 backdrop-blur-md transition-[margin-left] ease-in-out duration-300 md:px-6',
-        isSidebarOpen ? 'md:ml-[76px] lg:ml-64' : 'md:ml-[76px]',
+        isSidebarOpen ? 'md:ml-64' : 'md:ml-[76px]',
       )}
     >
       <div className="flex h-12 items-center gap-4">

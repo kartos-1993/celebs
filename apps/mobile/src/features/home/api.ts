@@ -1,6 +1,9 @@
+import type { IApiResponse } from '@celebs/shared-types';
+
 import type { Banner, CampaignData, ComboBundleData } from './types';
 
 import { apiClient } from '@/api/client';
+import { handleApiResponse } from '@/api/response';
 
 export const BANNER_QUERY_KEYS = {
   all: ['banners'] as const,
@@ -20,35 +23,28 @@ export const COMBO_QUERY_KEYS = {
 };
 
 export async function getBanners(): Promise<Banner[]> {
-  const response = await apiClient.get('/banners', { skipAuth: true });
-  const resData = response.data;
-  if (resData.success && Array.isArray(resData.data)) {
-    return resData.data;
-  }
-  return [];
+  const data = await handleApiResponse(
+    apiClient.get<IApiResponse<Banner[]>>('/banners', { skipAuth: true }),
+  );
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getActiveCampaigns(): Promise<CampaignData[]> {
-  const response = await apiClient.get<{ success: boolean; data: CampaignData[] }>(
-    '/campaigns/active',
-    { skipAuth: true },
+  const data = await handleApiResponse(
+    apiClient.get<IApiResponse<CampaignData[]>>('/campaigns/active', { skipAuth: true }),
   );
-  if (response.data?.data && Array.isArray(response.data.data)) {
-    return response.data.data;
-  }
-  return [];
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getCombos(tag?: string): Promise<ComboBundleData[]> {
   const params: Record<string, unknown> = {};
   if (tag) params.tag = tag;
 
-  const response = await apiClient.get<{ success: boolean; data: ComboBundleData[] }>('/combos', {
-    params,
-    skipAuth: true,
-  });
-  if (response.data?.data && Array.isArray(response.data.data)) {
-    return response.data.data;
-  }
-  return [];
+  const data = await handleApiResponse(
+    apiClient.get<IApiResponse<ComboBundleData[]>>('/combos', {
+      params,
+      skipAuth: true,
+    }),
+  );
+  return Array.isArray(data) ? data : [];
 }

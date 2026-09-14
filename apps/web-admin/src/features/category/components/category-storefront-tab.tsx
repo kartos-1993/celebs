@@ -163,7 +163,7 @@ export const CategoryStorefrontTab: React.FC<CategoryStorefrontTabProps> = ({
 
       {/* Quick Filter Configuration Section */}
       <div className="space-y-4 border p-4 rounded-lg bg-muted/50">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <ImageIcon className="h-4 w-4 text-primary" />
           Hero Quick Filter Configuration
         </h3>

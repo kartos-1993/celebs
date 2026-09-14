@@ -13,13 +13,29 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
   );
   const [isHover, setIsHover] = React.useState(false);
+
+  React.useEffect(() => {
+    let prevWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      if (currentWidth < 1024 && prevWidth >= 1024) {
+        setIsSidebarOpen(false);
+      } else if (currentWidth >= 1024 && prevWidth < 1024) {
+        setIsSidebarOpen(true);
+      }
+      prevWidth = currentWidth;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const value = { isSidebarOpen, setIsSidebarOpen, isHover, setIsHover };
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 };
 
 export default SidebarProvider;
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useSidebarContext = () => {
   const context = React.useContext(SidebarContext);
   if (!context) {

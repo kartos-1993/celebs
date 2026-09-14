@@ -38,11 +38,19 @@ export const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     backgroundColor: Palette.gray200,
   },
+  avoidingContainer: {
+    flex: 1,
+    minHeight: 0,
+  },
   body: {
     flex: 1,
     minHeight: 0,
   },
   footer: {
     paddingTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Palette.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Palette.gray100,
   },
 });

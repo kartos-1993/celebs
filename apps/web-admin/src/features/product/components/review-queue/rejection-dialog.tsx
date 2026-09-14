@@ -22,7 +22,7 @@ import {
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 
-import type { ReviewProductRequestPayload } from '../../api';
+import type { ReviewProductRequestPayload } from '../../types';
 
 import { FLAGGED_FIELDS_OPTIONS, REJECTION_CATEGORIES } from './constants';
 
@@ -105,7 +105,7 @@ export function RejectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <XCircle className="w-5 h-5" /> Reject Product Listing

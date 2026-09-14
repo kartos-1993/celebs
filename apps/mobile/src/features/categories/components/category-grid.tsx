@@ -11,25 +11,36 @@ import { useRouter } from 'expo-router';
 
 import { useCategories } from '../hooks/use-categories';
 import { styles } from '../styles/categories.styles';
+import type { Category } from '../types';
 
 import { ThemedText } from '@/components/themed-text';
 import { resolveImageUrl } from '@/constants/config';
 import { Colors, Spacing } from '@/constants/theme';
+import { useNavigationGuard } from '@/utils/navigation-guard';
 
-export function CategoryGrid() {
+export function CategoryGrid({ initialCategories }: { initialCategories?: Category[] } = {}) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { categories, loading } = useCategories();
+  const { categories: queryCategories, loading: queryLoading } = useCategories();
+  const hasInitial = !!(initialCategories && initialCategories.length > 0);
+  const categories = hasInitial ? initialCategories! : queryCategories;
+  const loading = hasInitial ? false : queryLoading;
   const router = useRouter();
+  const navigateSafely = useNavigationGuard();
 
-  const handleCategoryPress = (cat: { slug?: string; name?: string; displayName?: string }) => {
-    const slug =
-      cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
-    router.push({
-      pathname: '/category/[slug]',
-      params: { slug, title: cat.displayName || cat.name },
-    });
-  };
+  const handleCategoryPress = React.useCallback(
+    (cat: { slug?: string; name?: string; displayName?: string }) => {
+      const slug =
+        cat.slug || (cat.name ? cat.name.toLowerCase().replace(/\s+/g, '-') : 'denim-jeans');
+      navigateSafely(() => {
+        router.navigate({
+          pathname: '/category/[slug]',
+          params: { slug, title: cat.displayName || cat.name },
+        });
+      });
+    },
+    [navigateSafely, router],
+  );
 
   // Chunk categories into groups of 3 per column to guarantee exactly 3 rows on any device
   const columns = React.useMemo(() => {

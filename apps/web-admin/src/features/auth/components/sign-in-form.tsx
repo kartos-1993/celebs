@@ -21,6 +21,7 @@ import { useLoginMutation } from '../hooks/use-auth-mutations';
 import { signInFormSchema, SignInFormValues } from '../types/sign-in.schema';
 import { handleSignInErrors } from '../utils/auth-error';
 
+import { SetupRequiredBanner } from './setup-required-banner';
 import { SignInErrorBanner } from './sign-in-error-banner';
 
 import { getUserSession } from '@/features/account/api';
@@ -43,6 +44,9 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
 
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const isBusy = isPending || isRedirecting || form.formState.isSubmitting;
 
   useEffect(() => {
     const subscription = form.watch(() => {
@@ -59,6 +63,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
         navigate(`/verify-mfa?email=${values.email}`);
         return;
       }
+      setIsRedirecting(true);
       const sessionData = await getUserSession();
       queryClient.setQueryData(ACCOUNT_QUERY_KEYS.userSession(), sessionData);
       const searchParams = new URLSearchParams(location.search);
@@ -66,12 +71,14 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
       const targetUrl = returnUrlParam ? decodeURIComponent(returnUrlParam) : '/';
       navigate(targetUrl, { replace: true });
     } catch (error: unknown) {
+      setIsRedirecting(false);
       handleSignInErrors(error, form.setError, setServerError);
     }
   }
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
+      <SetupRequiredBanner />
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success p-3 rounded-md text-sm mb-2">
           {successMessage}
@@ -117,9 +124,8 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
                 </FormItem>
               )}
             />
-            <Button className="mt-2" disabled={isPending}>
-              {isPending && <Spinner size="sm" className="mr-2" />}
-              Login
+            <Button className="mt-2" disabled={isBusy} type="submit">
+              {isBusy ? <Spinner size="sm" /> : 'Login'}
             </Button>
           </div>
         </form>

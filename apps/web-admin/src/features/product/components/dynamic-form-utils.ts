@@ -1,15 +1,14 @@
 import type { CategoryAttributeType } from '@celebs/shared-types';
 
+import { getDropdownCategoryById } from '../api';
 import { extractVariantsMeta } from '../fields/variant-utils';
 import type { FieldSpec } from '../types';
-
-import { getCategoryById } from '@/features/category/api';
 
 export const addFallbackFields = async (catId: string, next: FieldSpec[]) => {
   const merged = Array.isArray(next) ? [...next] : [];
 
   try {
-    const res = await getCategoryById(catId);
+    const res = await getDropdownCategoryById(catId);
     const cat = res?.data;
     const attrs: CategoryAttributeType[] = Array.isArray(cat?.attributes) ? cat.attributes : [];
 

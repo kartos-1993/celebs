@@ -1,6 +1,9 @@
+import type { IApiResponse } from '@celebs/shared-types';
+
 import type { AddressDraft, SavedAddress } from './types';
 
 import { apiClient } from '@/api/client';
+import { handleApiResponse } from '@/api/response';
 
 export const ADDRESS_QUERY_KEYS = {
   all: ['addresses'] as const,
@@ -11,30 +14,23 @@ export const ADDRESS_QUERY_KEYS = {
 };
 
 export async function getAddresses(): Promise<SavedAddress[]> {
-  const response = await apiClient.get<{ data?: SavedAddress[] }>('/orders/addresses');
-  return response.data?.data ?? [];
+  const data = await handleApiResponse(
+    apiClient.get<IApiResponse<SavedAddress[]>>('/orders/addresses'),
+  );
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createAddress(draft: AddressDraft): Promise<SavedAddress> {
-  const response = await apiClient.post<{ data?: SavedAddress }>('/orders/addresses', draft);
-  if (!response.data?.data) {
-    throw new Error('Failed to save address');
-  }
-  return response.data.data;
+  return handleApiResponse(apiClient.post<IApiResponse<SavedAddress>>('/orders/addresses', draft));
 }
 
 export async function updateAddress(
   addressId: string,
   draft: Partial<AddressDraft>,
 ): Promise<SavedAddress> {
-  const response = await apiClient.patch<{ data?: SavedAddress }>(
-    `/orders/addresses/${addressId}`,
-    draft,
+  return handleApiResponse(
+    apiClient.patch<IApiResponse<SavedAddress>>(`/orders/addresses/${addressId}`, draft),
   );
-  if (!response.data?.data) {
-    throw new Error('Failed to update address');
-  }
-  return response.data.data;
 }
 
 export async function deleteAddress(addressId: string): Promise<void> {

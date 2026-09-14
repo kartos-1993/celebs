@@ -1,7 +1,10 @@
 import { Router } from 'express';
 
+import { asyncHandler, BadRequestException, NotFoundException } from '@celebs/shared-utils';
+
 import { composeSchema } from './schema-composer';
 
+import { sendSuccess } from '@/common/utils/response.util';
 import { CategoryService } from '@/modules/category/category.service';
 
 const router = Router();
@@ -17,19 +20,18 @@ const DEFAULT_POLICY = {
   },
 };
 
-router.get('/product-render', async (req, res) => {
-  try {
+router.get(
+  '/product-render',
+  asyncHandler(async (req, res) => {
     const catId = String(req.query.catId || '');
     const locale = String(req.query.locale || 'en_US');
     if (!catId) {
-      res.status(400).json({ error: 'catId is required' });
-      return;
+      throw new BadRequestException('catId is required');
     }
 
     const category = await categoryService.getCategoryById(catId);
     if (!category) {
-      res.status(404).json({ error: 'Category not found' });
-      return;
+      throw new NotFoundException('Category not found');
     }
 
     const { fields, renderTag } = await composeSchema({
@@ -45,24 +47,18 @@ router.get('/product-render', async (req, res) => {
       policy: DEFAULT_POLICY,
     });
 
-    const payload = {
-      api: 'product.render',
-      v: '1.0',
-      data: { data: fields, extra: {}, ignore: false },
-      ret: ['SUCCESS::OK'],
-      value: { render_tag: renderTag, renderTimestamp: Date.now(), catId },
-    };
-
     res.setHeader('ETag', renderTag);
     if (req.headers['if-none-match'] === renderTag) {
       res.status(304).end();
       return;
     }
-    res.json(payload);
-  } catch (err: unknown) {
-    const errMsg = err instanceof Error ? err.message : 'Failed to compose render schema';
-    res.status(500).json({ error: errMsg });
-  }
-});
+
+    return sendSuccess(
+      res,
+      { fields, renderTag, catId },
+      'Product render schema composed successfully',
+    );
+  }),
+);
 
 export default router;

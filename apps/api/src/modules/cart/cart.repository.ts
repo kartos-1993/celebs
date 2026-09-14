@@ -78,6 +78,40 @@ export class CartRepository {
       where: { id: inventoryId },
     });
   }
+
+  async findCartBySessionWithItems(sessionId: string) {
+    return prisma.cart.findUnique({
+      where: { sessionId },
+      include: {
+        items: {
+          include: {
+            inventory: {
+              select: {
+                productId: true,
+                colorVariantName: true,
+                size: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async deleteCartBySession(sessionId: string) {
+    const carts = await prisma.cart.findMany({
+      where: { sessionId },
+      select: { id: true },
+    });
+    if (carts.length === 0) return { count: 0 };
+    const cartIds = carts.map((c) => c.id);
+    await prisma.cartItem.deleteMany({
+      where: { cartId: { in: cartIds } },
+    });
+    return prisma.cart.deleteMany({
+      where: { id: { in: cartIds } },
+    });
+  }
 }
 
 export const cartRepository = new CartRepository();

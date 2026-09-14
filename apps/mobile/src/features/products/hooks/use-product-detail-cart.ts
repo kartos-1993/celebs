@@ -38,7 +38,10 @@ export function useProductDetailCart({
   const { addToCart } = useCart();
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
   const topCartBtnRef = useRef<View>(null);
-  const topCartCoordsRef = useRef<{ x: number; y: number } | null>(null);
+  const topCartCoordsRef = useRef<{ x: number; y: number }>({
+    x: windowWidth - 72,
+    y: (insets.top || 30) + 24,
+  });
   const topCartScale = useSharedValue(1);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -51,22 +54,20 @@ export function useProductDetailCart({
   }, []);
 
   const measureTopCartIcon = useCallback(() => {
-    setTimeout(() => {
-      if (!isMountedRef.current) return;
-      topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
-        if (
-          isMountedRef.current &&
-          typeof x === 'number' &&
-          typeof y === 'number' &&
-          width > 0 &&
-          height > 0
-        ) {
-          const coords = { x: x + width / 2, y: y + height / 2 };
-          topCartCoordsRef.current = coords;
-          setCartIconCoords(coords);
-        }
-      });
-    }, 100);
+    if (!isMountedRef.current) return;
+    topCartBtnRef.current?.measureInWindow((x, y, width, height) => {
+      if (
+        isMountedRef.current &&
+        typeof x === 'number' &&
+        typeof y === 'number' &&
+        width > 0 &&
+        height > 0
+      ) {
+        const coords = { x: x + width / 2, y: y + height / 2 };
+        topCartCoordsRef.current = coords;
+        setCartIconCoords(coords);
+      }
+    });
   }, [setCartIconCoords]);
 
   useEffect(() => {

@@ -37,6 +37,14 @@ export type ProductStatus =
   | 'deactivated'
   | 'archived';
 
+export interface ReviewProductRequestPayload {
+  action: 'approve' | 'reject';
+  note?: string;
+  rejectionCategory?: string;
+  rejectionSubcategories?: string[];
+  rejectionFields?: string[];
+}
+
 // ── Dynamic form schema ─────────────────────────────────────────────────────
 export type UiType =
   | 'input'
@@ -91,9 +99,30 @@ export interface ProductSidebarSection {
 export interface ProductDraft {
   categoryPath?: string[];
   savedAt?: string;
+  storeId?: string;
   values?: Record<string, unknown>;
 }
 
 export type ProductListItem = ProductRecord;
+
+// ── Cascading category dropdown UI state ────────────────────────────────
+export interface DropdownColumn {
+  parentId: string | null;
+  parentName: string;
+  searchQuery: string;
+}
+
+// ── Manage list UI state ────────────────────────────────────────────────
+export type ProductSortKey = 'newest' | 'price-asc' | 'price-desc' | 'name-asc';
+
+export type StockState = 'in' | 'low' | 'out';
+
+export type PreviewStockFilter = 'all' | StockState;
+
+export interface PreviewFilters {
+  vendor: string;
+  category: string;
+  stock: PreviewStockFilter;
+}
 
 export type { DropdownCategory, RecentCategory } from '@celebs/shared-types';

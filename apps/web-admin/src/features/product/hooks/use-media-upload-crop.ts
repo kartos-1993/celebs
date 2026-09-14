@@ -9,7 +9,7 @@ import { MEDIA_QUERY_KEYS } from '../media-query-keys';
 import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 
 import { toast } from '@/hooks/use-toast';
-import { directUploadBatch, directUploadFile, extractApiErrorMessage } from '@/lib/media-upload';
+import { directUploadBatch, extractApiErrorMessage } from '@/lib/media-upload';
 
 export function useMediaUploadCrop() {
   const [isUploading, setIsUploading] = useState(false);
@@ -58,23 +58,18 @@ export function useMediaUploadCrop() {
   }, []);
 
   const handleCropComplete = useCallback(
-    async (croppedFile: File, overwrite?: boolean) => {
-      const target = cropTarget;
+    async (croppedFile: File) => {
       setCropTarget(null);
       setIsUploading(true);
       try {
-        if (overwrite && target?.key) {
-          // Editing existing asset -> overwrite existing asset in place
-          await directUploadFile(croppedFile, 'celebs/products', 'PRODUCT', target.key);
-          toast({ title: 'Updated', description: `"${croppedFile.name}" updated successfully` });
-        } else {
-          // New file or Save as Copy -> catalog as new asset
-          await directUploadBatch([croppedFile], 'celebs/products', 'PRODUCT');
-          toast({
-            title: target?.key ? 'Saved as Copy' : 'Saved',
-            description: `"${croppedFile.name}" added to media gallery`,
-          });
-        }
+        // Immutable assets: every edit mints a new version. The previous
+        // revision keeps working wherever referenced; orphan cleanup reclaims
+        // it once nothing points at it.
+        await directUploadBatch([croppedFile], 'celebs/products', 'PRODUCT');
+        toast({
+          title: 'Saved as new version',
+          description: `"${croppedFile.name}" added to media gallery`,
+        });
         queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
         queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
       } catch (e: unknown) {
@@ -87,7 +82,7 @@ export function useMediaUploadCrop() {
         setIsUploading(false);
       }
     },
-    [cropTarget, queryClient],
+    [queryClient],
   );
 
   return {

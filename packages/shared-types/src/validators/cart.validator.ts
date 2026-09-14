@@ -12,14 +12,18 @@ export const updateCartItemSchema = z.object({
 });
 
 export const syncCartSchema = z.object({
-  items: z.array(
-    z.object({
-      productId: z.string().min(1),
-      colorVariantName: z.string().min(1),
-      size: z.string().min(1),
-      quantity: z.number().int().positive(),
-    }),
-  ),
+  sessionId: z.string().optional(),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        colorVariantName: z.string().min(1),
+        size: z.string().min(1),
+        quantity: z.number().int().positive(),
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 export type AddToCartInput = z.infer<typeof addToCartSchema>;

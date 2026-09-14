@@ -112,3 +112,12 @@ export const orderMaintenanceQueue = new Queue('order-maintenance', {
     removeOnFail: false,
   },
 });
+
+export async function closeQueues(): Promise<void> {
+  await Promise.allSettled([
+    assetQueue.close(),
+    sessionQueue.close(),
+    mailQueue.close(),
+    orderMaintenanceQueue.close(),
+  ]);
+}

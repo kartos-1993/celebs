@@ -30,8 +30,11 @@ import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 import { isMulticolorVariant, resolveColorCode } from '../../utils/add-product-helpers';
 import { formatProductCategoryBreadcrumb } from '../../utils/category-format';
 
+import { PdpOverviewPreview } from './preview-modal-overview';
 import { QualityBadge } from './quality-badge';
 import type { ProductQueueItem } from './types';
+
+import { DeviceFrame } from '@/components/device-frame';
 
 type PreviewTab = 'overview' | 'specs' | 'sizes' | 'variants' | 'qc' | 'history';
 
@@ -122,7 +125,7 @@ export function PreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto p-0 sm:max-w-5xl">
         <DialogHeader className="sr-only">
           <DialogTitle>{product.name}</DialogTitle>
           <DialogDescription>
@@ -134,10 +137,10 @@ export function PreviewModal({
           <div className="p-4 border-b bg-muted/20 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold">{product.name}</h2>
+                <h2 className="text-xl font-semibold tracking-tight">{product.name}</h2>
                 <QualityBadge score={product.qualityScore} />
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
                 <span>
                   Vendor:{' '}
                   <strong className="text-foreground">{product.vendorName || 'Independent'}</strong>
@@ -182,7 +185,7 @@ export function PreviewModal({
           {/* ── Tab navigation ─────────────────────────────────────── */}
           <div className="border-b bg-background px-4">
             <Tabs value={previewTab} onValueChange={(v: string) => setPreviewTab(v as PreviewTab)}>
-              <TabsList className="bg-transparent h-auto w-full justify-start gap-1 rounded-none p-0 overflow-x-auto">
+              <TabsList className="no-scrollbar bg-transparent h-auto w-full justify-start gap-1 rounded-none p-0 overflow-x-auto">
                 {PREVIEW_TABS.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -200,177 +203,26 @@ export function PreviewModal({
           </div>
 
           {/* ── Tab body ───────────────────────────────────────────── */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* 1. Live PDP preview */}
-            {previewTab === 'overview' && (
-              <div
-                className={
-                  previewDevice === 'mobile'
-                    ? 'max-w-sm mx-auto border-4 border-foreground/20 rounded-2xl p-4 shadow-2xl bg-background'
-                    : ''
-                }
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Gallery */}
-                  <div className="space-y-3">
-                    <div className="relative aspect-square rounded-xl overflow-hidden border bg-muted group">
-                      <img
-                        src={activePreviewImage || '/placeholder.svg'}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          target.onerror = null;
-                          target.src = '/placeholder.svg';
-                        }}
-                      />
-                      <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md backdrop-blur">
-                        {product.mainImages?.length || 0} Main Images
-                      </span>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto py-1">
-                      {(product.mainImages ?? []).map((imageUrl, index) => (
-                        <Button
-                          key={index}
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setActivePreviewImage(imageUrl)}
-                          className={`h-16 w-16 p-0 rounded-md overflow-hidden border-2 ${
-                            activePreviewImage === imageUrl
-                              ? 'border-primary scale-95'
-                              : 'border-transparent opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <img
-                            src={imageUrl}
-                            alt={`Thumbnail ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.onerror = null;
-                              target.src = '/placeholder.svg';
-                            }}
-                          />
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-4">
-                    <div>
-                      <Badge variant="outline" className="mb-2">
-                        {product.brand || 'No Brand'}
-                      </Badge>
-                      <h3 className="text-2xl font-bold text-foreground">{product.name}</h3>
-                      <div className="flex items-baseline gap-3 mt-2">
-                        {product.discountedPrice ? (
-                          <>
-                            <span className="text-2xl font-extrabold text-foreground">
-                              Rs. {product.discountedPrice.toLocaleString()}
-                            </span>
-                            <span className="text-base text-muted-foreground line-through">
-                              Rs. {product.price.toLocaleString()}
-                            </span>
-                            <Badge className="bg-destructive text-destructive-foreground">
-                              {discountPercent}% OFF
-                            </Badge>
-                          </>
-                        ) : (
-                          <span className="text-2xl font-extrabold text-foreground">
-                            Rs. {product.price.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {(product.sizes ?? []).length > 0 && (
-                      <div>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
-                          Available Sizes
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {(product.sizes ?? []).map((size, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="px-3 py-1 text-sm font-medium"
-                            >
-                              {size.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {(product.colorVariants ?? []).length > 0 && (
-                      <div>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
-                          Color Options ({product.colorVariants?.length})
-                        </span>
-                        <div className="flex gap-2 flex-wrap">
-                          {(product.colorVariants ?? []).map((variant, index) => {
-                            const swatchImg =
-                              variant.swatch ||
-                              (variant.images && variant.images.length > 0
-                                ? variant.images[0]
-                                : null);
-                            const isMulti = isMulticolorVariant(
-                              `${variant.name} ${variant.colorCode}`,
-                            );
-                            const safeBg = resolveColorCode(variant.colorCode || variant.name);
-
-                            return (
-                              <div
-                                key={index}
-                                className="flex items-center gap-2 border p-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                                title={variant.name}
-                              >
-                                {swatchImg ? (
-                                  <img
-                                    src={swatchImg}
-                                    alt={variant.name}
-                                    className="w-5 h-5 rounded-full object-cover border shadow-2xs"
-                                    onError={(e) => {
-                                      e.currentTarget.onerror = null;
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                ) : isMulti ? (
-                                  <div
-                                    className="w-5 h-5 rounded-full border shadow-2xs"
-                                    style={{
-                                      background:
-                                        'conic-gradient(#ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #ef4444)',
-                                    }}
-                                  />
-                                ) : (
-                                  <div
-                                    className="w-5 h-5 rounded-full border shadow-2xs"
-                                    style={{ backgroundColor: safeBg }}
-                                  />
-                                )}
-                                <span className="text-xs font-medium pr-1">{variant.name}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
-                        Description
-                      </span>
-                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap line-clamp-4">
-                        {product.description || 'No description provided.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {previewTab === 'overview' &&
+              (previewDevice === 'mobile' ? (
+                <DeviceFrame className="mx-auto w-full max-w-sm">
+                  <PdpOverviewPreview
+                    product={product}
+                    activePreviewImage={activePreviewImage}
+                    onSelectImage={setActivePreviewImage}
+                    discountPercent={discountPercent}
+                  />
+                </DeviceFrame>
+              ) : (
+                <PdpOverviewPreview
+                  product={product}
+                  activePreviewImage={activePreviewImage}
+                  onSelectImage={setActivePreviewImage}
+                  discountPercent={discountPercent}
+                />
+              ))}
 
             {/* 2. Category specs */}
             {previewTab === 'specs' && (
@@ -380,7 +232,7 @@ export function PreviewModal({
                   Attributes
                 </h4>
                 {specEntries.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {specEntries.map(([key, value]) => (
                       <div key={key} className="p-3 bg-muted/30 rounded-lg border min-w-0">
                         <span className="text-xs font-medium text-muted-foreground capitalize block">
@@ -411,7 +263,7 @@ export function PreviewModal({
                     {(product.sizes ?? []).map((size, index) => (
                       <Card key={index}>
                         <CardHeader className="py-3 bg-muted/20">
-                          <CardTitle className="text-sm font-bold flex items-center gap-2">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             Size: <Badge variant="secondary">{size.name}</Badge>
                           </CardTitle>
                         </CardHeader>
@@ -515,7 +367,9 @@ export function PreviewModal({
                               />
                             )}
                             <div>
-                              <h5 className="font-bold text-sm text-foreground">{variant.name}</h5>
+                              <h5 className="text-sm font-semibold text-foreground">
+                                {variant.name}
+                              </h5>
                               <span className="text-xs text-muted-foreground">
                                 {isMulti ? 'Multicolor / Fabric Pattern' : `Color Code: ${safeBg}`}
                               </span>
@@ -554,9 +408,9 @@ export function PreviewModal({
             {/* 5. QC scorecard */}
             {previewTab === 'qc' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/30 border rounded-xl">
+                <div className="flex flex-col items-stretch gap-3 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h4 className="font-bold text-lg flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                       <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality Score
                     </h4>
                     <p className="text-xs text-muted-foreground">
@@ -683,8 +537,13 @@ export function PreviewModal({
           </div>
 
           {/* ── Footer actions ─────────────────────────────────────── */}
-          <div className="p-4 border-t bg-muted/10 flex justify-end gap-3 mt-auto">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+          <div className="mt-auto flex flex-col-reverse gap-2 border-t bg-muted/10 p-4 sm:flex-row sm:justify-end sm:gap-3">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
             {product.status === 'pending_review' && (
@@ -693,13 +552,13 @@ export function PreviewModal({
                   variant="destructive"
                   onClick={() => onReject(product)}
                   disabled={isSubmitting}
-                  className="gap-1"
+                  className="w-full gap-1 sm:w-auto"
                 >
                   {isSubmitting ? <Spinner size="sm" /> : <X className="w-4 h-4" />} Reject Listing
                 </Button>
                 <Button
                   variant="default"
-                  className="bg-success hover:bg-success/90 text-success-foreground gap-1"
+                  className="w-full gap-1 bg-success text-success-foreground hover:bg-success/90 sm:w-auto"
                   onClick={() => onApprove(product.id)}
                   disabled={isSubmitting}
                 >

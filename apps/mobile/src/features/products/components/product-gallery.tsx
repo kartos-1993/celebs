@@ -21,6 +21,9 @@ import { Palette } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/** Same render-window policy as the homepage card: mount visible ±1 only. */
+const GALLERY_WINDOW = 1;
+
 interface ProductGalleryProps {
   images: string[];
   productName: string;
@@ -66,8 +69,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
         scrollEventThrottle={16}
       >
         {galleryImages.map((img, idx) => {
-          const resolvedUrl = resolveImageUrl(img);
-          const heroUrl = getOptimizedImageUrl(resolvedUrl, { preset: 'pdp-hero', dpr });
+          const inWindow = Math.abs(idx - activeIndex) <= GALLERY_WINDOW;
+          const resolvedUrl = inWindow ? resolveImageUrl(img) : '';
+          const heroUrl = inWindow
+            ? getOptimizedImageUrl(resolvedUrl, { preset: 'pdp-hero', dpr })
+            : '';
 
           return (
             <TouchableOpacity
@@ -81,13 +87,17 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
               accessibilityRole="button"
               accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length} for ${productName}`}
             >
-              <Image
-                source={{ uri: heroUrl || resolvedUrl }}
-                style={styles.mainImage}
-                contentFit="cover"
-                transition={150}
-                cachePolicy="memory-disk"
-              />
+              {inWindow ? (
+                <Image
+                  source={{ uri: heroUrl || resolvedUrl }}
+                  style={styles.mainImage}
+                  contentFit="cover"
+                  transition={150}
+                  cachePolicy="memory-disk"
+                />
+              ) : (
+                <View style={[styles.mainImage, { backgroundColor: Palette.gray100 }]} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -127,17 +137,24 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
             contentOffset={{ x: zoomIndex * SCREEN_WIDTH, y: 0 }}
           >
             {galleryImages.map((img, idx) => {
-              const resolvedUrl = resolveImageUrl(img);
-              const zoomUrl = getOptimizedImageUrl(resolvedUrl, { preset: 'zoom' });
+              const inZoomWindow = Math.abs(idx - zoomIndex) <= GALLERY_WINDOW;
+              const resolvedUrl = inZoomWindow ? resolveImageUrl(img) : '';
+              const zoomUrl = inZoomWindow
+                ? getOptimizedImageUrl(resolvedUrl, { preset: 'zoom' })
+                : '';
 
               return (
                 <View key={`zoom-${idx}`} style={styles.zoomSlide}>
-                  <Image
-                    source={{ uri: zoomUrl || resolvedUrl }}
-                    style={styles.zoomImage}
-                    contentFit="contain"
-                    cachePolicy="memory-disk"
-                  />
+                  {inZoomWindow ? (
+                    <Image
+                      source={{ uri: zoomUrl || resolvedUrl }}
+                      style={styles.zoomImage}
+                      contentFit="contain"
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <View style={[styles.zoomImage, { backgroundColor: Palette.gray100 }]} />
+                  )}
                 </View>
               );
             })}

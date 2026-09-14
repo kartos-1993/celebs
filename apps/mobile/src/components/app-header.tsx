@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View, useColorScheme } from 'react-native';
-
+import { TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Mail, Menu, Search, ShoppingCart } from 'lucide-react-native';
 
 import { styles } from './app-header.styles';
+import { AppHeaderSubTabs } from './app-header-subtabs';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Palette } from '@/constants/theme';
@@ -19,8 +19,6 @@ interface AppHeaderProps {
   transparent?: boolean;
   scrollY?: number;
 }
-
-const SUB_TABS = ['All', 'Women', 'Men', 'Kids', 'Curve', 'Home'];
 
 export function AppHeader({
   showSubHeader = true,
@@ -44,10 +42,7 @@ export function AppHeader({
     }
   };
 
-  // Calculate opacity transition (0 at top, 1 after scrolling 100px)
   const scrollProgress = transparent ? Math.min(1, Math.max(0, scrollY / 100)) : 1;
-
-  // Determine styles and colors based on transparency and scroll progress
   const isSolid = !transparent || scrollProgress > 0.5;
   const headerBgColor = transparent
     ? `rgba(${scheme === 'dark' ? '0, 0, 0' : '255, 255, 255'}, ${scrollProgress})`
@@ -70,9 +65,7 @@ export function AppHeader({
         transparent && styles.absoluteHeader,
       ]}
     >
-      {/* Top Bar */}
       <View style={styles.topBar}>
-        {/* Left Actions */}
         <View style={styles.iconGroup}>
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Menu size={22} color={textColor} strokeWidth={2} />
@@ -82,7 +75,6 @@ export function AppHeader({
           </TouchableOpacity>
         </View>
 
-        {/* Logo */}
         <TouchableOpacity
           style={styles.logoContainer}
           activeOpacity={0.8}
@@ -91,7 +83,6 @@ export function AppHeader({
           <ThemedText style={[styles.logoText, { color: textColor }]}>CELEBS</ThemedText>
         </TouchableOpacity>
 
-        {/* Right Actions */}
         <View style={styles.iconGroup}>
           <TouchableOpacity
             style={styles.iconButton}
@@ -107,7 +98,12 @@ export function AppHeader({
             <ShoppingCart size={22} color={textColor} strokeWidth={2} />
             {itemCount > 0 && (
               <View style={styles.cartBadge}>
-                <ThemedText style={styles.cartBadgeText}>
+                <ThemedText
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1}
+                  numberOfLines={1}
+                  style={styles.cartBadgeText}
+                >
                   {itemCount > 99 ? '99+' : itemCount}
                 </ThemedText>
               </View>
@@ -116,38 +112,13 @@ export function AppHeader({
         </View>
       </View>
 
-      {/* Sub Header (Horizontal Scrolling Category Tabs) */}
       {showSubHeader && (
-        <View style={styles.subHeaderContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.subScrollContent}
-          >
-            {SUB_TABS.map((tab) => {
-              const isActive = activeSubTab === tab;
-              return (
-                <TouchableOpacity
-                  key={tab}
-                  style={[styles.subTabButton, isActive && { borderBottomColor: textColor }]}
-                  activeOpacity={0.7}
-                  onPress={() => handleSubTabPress(tab)}
-                >
-                  <ThemedText
-                    maxFontSizeMultiplier={1.15}
-                    style={[
-                      styles.subTabText,
-                      isActive && styles.subTabActiveText,
-                      isActive ? { color: textColor } : { color: secondaryTextColor },
-                    ]}
-                  >
-                    {tab}
-                  </ThemedText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        <AppHeaderSubTabs
+          activeSubTab={activeSubTab}
+          onSelectSubTab={handleSubTabPress}
+          textColor={textColor}
+          secondaryTextColor={secondaryTextColor}
+        />
       )}
     </View>
   );

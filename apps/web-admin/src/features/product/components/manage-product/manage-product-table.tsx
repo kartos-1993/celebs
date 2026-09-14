@@ -13,7 +13,7 @@ import {
 
 import type { ProductListItem } from '../../types';
 
-import { ManageProductPagination } from './manage-product-pagination';
+import { ManageProductCards } from './manage-product-cards';
 import { ManageProductTableRow } from './manage-product-table-row';
 
 interface ManageProductTableProps {
@@ -31,9 +31,6 @@ interface ManageProductTableProps {
   onToggleActivation: (id: string) => void;
   isTogglePending: boolean;
   onSetArchiveTarget: (product: ProductListItem) => void;
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
   searchQuery: string;
 }
 
@@ -52,9 +49,6 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   onToggleActivation,
   isTogglePending,
   onSetArchiveTarget,
-  page,
-  totalPages,
-  onPageChange,
   searchQuery,
 }) => {
   if (isLoading) {
@@ -73,17 +67,15 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
         description={
           searchQuery
             ? `Nothing matches "${searchQuery}". Try a different search or status filter.`
-            : 'Try a different status filter, or create your first product.'
+            : 'Try a different filter, or create your first product.'
         }
       />
     );
   }
 
   return (
-    <div
-      className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'}
-    >
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+    <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+      <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -93,10 +85,12 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
                   onCheckedChange={onSelectAll}
                 />
               </TableHead>
-              <TableHead>Product Info</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Category &amp; Status</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead className="text-right">Stock</TableHead>
               <TableHead className="text-right">Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ownership</TableHead>
+              <TableHead>Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -121,7 +115,22 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
         </Table>
       </div>
 
-      <ManageProductPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
+      <ManageProductCards
+        products={products}
+        isLoading={false}
+        isFetching={isFetching}
+        selectedProducts={selectedProducts}
+        onSelectProduct={onSelectProduct}
+        isSellerOrStaff={isSellerOrStaff}
+        canCreate={canCreate}
+        canEdit={canEdit}
+        onSubmit={onSubmit}
+        isSubmitPending={isSubmitPending}
+        onToggleActivation={onToggleActivation}
+        isTogglePending={isTogglePending}
+        onSetArchiveTarget={onSetArchiveTarget}
+        searchQuery={searchQuery}
+      />
     </div>
   );
 };

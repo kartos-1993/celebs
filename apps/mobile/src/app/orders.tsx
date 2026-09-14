@@ -1,236 +1,137 @@
-import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  View,
-  type TextStyle,
-} from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { ChevronLeft, ShoppingBag } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Palette } from '@/constants/theme';
-import { OrderItemRow } from '@/features/orders/components/order-item-row';
-import { useMyOrders } from '@/features/orders/hooks/use-orders';
-import type { OrderView } from '@/features/orders/utils/order-status';
-import {
-  formatDate,
-  getOrderStatusMeta,
-  isActiveOrder,
-} from '@/features/orders/utils/order-status';
 import { useAuth } from '@/features/auth/context/auth-context';
+import { InAppPaymentSheet } from '@/features/checkout/components/in-app-payment-sheet';
+import { OrderCard } from '@/features/orders/components/order-card';
+import { OrderStatusTabs } from '@/features/orders/components/order-status-tabs';
+import { OrdersEmptyState } from '@/features/orders/components/orders-empty-state';
+import { OrdersHeader } from '@/features/orders/components/orders-header';
+import { useCancelOrderMutation } from '@/features/orders/hooks/use-cancel-order';
+import { useMyOrders, useOrderSummaryCounts } from '@/features/orders/hooks/use-orders';
 import { styles } from '@/features/orders/styles/orders.styles';
-
-const STATUS_STYLE: Record<string, TextStyle> = {
-  active: styles.statusTextActive,
-  success: styles.statusTextSuccess,
-  warning: styles.statusTextWarning,
-  danger: styles.statusTextDanger,
-  neutral: styles.statusTextNeutral,
-};
-
-function OrderCard({ order }: { order: OrderView }) {
-  const router = useRouter();
-  const meta = getOrderStatusMeta(order.status);
-  const trackable = isActiveOrder(order.status) || order.status === 'DELIVERED';
-
-  return (
-    <View style={styles.orderCard}>
-      <View style={styles.cardTopRow}>
-        <ThemedText style={STATUS_STYLE[meta.tone] ?? styles.statusTextNeutral}>
-          {meta.label}
-        </ThemedText>
-        <ThemedText style={styles.dateText}>{formatDate(order.createdAt)}</ThemedText>
-      </View>
-
-      <View>
-        {order.items.map((item, index) => (
-          <OrderItemRow key={item.id} item={item} isLast={index === order.items.length - 1} />
-        ))}
-      </View>
-
-      <View style={styles.cardFooter}>
-        <View style={styles.totalRow}>
-          <ThemedText style={styles.totalLabel}>
-            {order.items.length} item{order.items.length === 1 ? '' : 's'} ·{' '}
-            {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'}
-          </ThemedText>
-          <ThemedText style={styles.totalValue}>
-            Rs. {order.totalAmount.toLocaleString()}
-          </ThemedText>
-        </View>
-
-        <View style={styles.actionsRow}>
-          <View style={styles.liveHintRow}>
-            {isActiveOrder(order.status) && (
-              <>
-                <View style={styles.liveDot} />
-                <ThemedText style={styles.liveHintText}>Live tracking</ThemedText>
-              </>
-            )}
-            {order.status === 'DELIVERED' && (
-              <ThemedText style={[styles.liveHintText, { color: Palette.success }]}>
-                ✓ Delivered
-              </ThemedText>
-            )}
-          </View>
-
-          {trackable ? (
-            <TouchableOpacity
-              style={styles.trackBtn}
-              onPress={() =>
-                router.push({ pathname: '/order-detail', params: { orderId: order.id } })
-              }
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel={`Track order ${order.orderNumber}`}
-            >
-              <ThemedText style={styles.trackBtnText}>Track</ThemedText>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      </View>
-    </View>
-  );
-}
+import {
+  type ActivePaymentSheet,
+  buildOrderPaymentIntent,
+} from '@/features/orders/utils/order-payment-utils';
+import type { OrderFilterTab } from '@/features/orders/utils/order-status';
+import { matchesOrderFilter } from '@/features/orders/utils/order-status';
+import { ReviewModal } from '@/features/reviews/components/review-modal';
+import { ToReviewCard } from '@/features/reviews/components/to-review-card';
+import { useToReviewItems } from '@/features/reviews/hooks/use-reviews';
+import type { ToReviewItem } from '@/features/reviews/types';
 
 export default function MyOrdersScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isLoggedIn } = useAuth();
+  const [activeTab, setActiveTab] = useState<OrderFilterTab>('ALL');
+  const [activePayment, setActivePayment] = useState<ActivePaymentSheet | null>(null);
+  const [reviewingItem, setReviewingItem] = useState<ToReviewItem | null>(null);
 
-  const { orders, loading, loadingMore, error, refresh, loadMore } = useMyOrders(isLoggedIn);
+  const { orders, loading, loadingMore, refresh, loadMore } = useMyOrders(isLoggedIn);
+  const { counts, refetch: refetchCounts } = useOrderSummaryCounts(isLoggedIn);
+  const {
+    items: toReviewItems,
+    loading: toReviewLoading,
+    refetch: refetchToReview,
+  } = useToReviewItems(isLoggedIn && activeTab === 'TO_REVIEW');
+  const { cancelOrder } = useCancelOrderMutation();
 
-  const renderOrder = ({ item }: { item: OrderView }) => (
-    <>
-      <OrderCard order={item} />
-      <View style={styles.sectionBand} />
-    </>
+  const filteredOrders = useMemo(
+    () => orders.filter((order) => matchesOrderFilter(order, activeTab)),
+    [orders, activeTab],
   );
 
-  if (!isLoggedIn || loading) {
+  const handleRefresh = useCallback(() => {
+    refresh();
+    refetchCounts();
+    if (activeTab === 'TO_REVIEW') refetchToReview();
+  }, [refresh, refetchCounts, refetchToReview, activeTab]);
+
+  if (!isLoggedIn || (loading && orders.length === 0)) {
     return (
       <ThemedView style={styles.container}>
-        <View style={[styles.headerBar, { paddingTop: insets.top }]}>
-          <TouchableOpacity
-            style={styles.headerIconSlot}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <ChevronLeft size={24} color={Palette.gray900} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>My Orders</ThemedText>
-          <View style={styles.headerIconSlot} />
-        </View>
+        <OrdersHeader paddingTop={insets.top} />
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={Palette.gray900} />
-          <ThemedText style={styles.loadingText}>Loading your orders…</ThemedText>
+          {loading ? (
+            <ActivityIndicator size="large" color={Palette.gray900} />
+          ) : (
+            <ThemedText style={styles.emptySub}>Please sign in to view your orders.</ThemedText>
+          )}
         </View>
       </ThemedView>
     );
   }
 
-  if (error) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={[styles.headerBar, { paddingTop: insets.top }]}>
-          <TouchableOpacity
-            style={styles.headerIconSlot}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <ChevronLeft size={24} color={Palette.gray900} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>My Orders</ThemedText>
-          <View style={styles.headerIconSlot} />
-        </View>
-        <View style={styles.centerBox}>
-          <ThemedText style={styles.errorText}>{error}</ThemedText>
-          <TouchableOpacity
-            style={styles.retryBtn}
-            onPress={() => void refresh()}
-            accessibilityRole="button"
-            accessibilityLabel="Retry loading orders"
-          >
-            <ThemedText style={styles.retryBtnText}>Try Again</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  if (orders.length === 0) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={[styles.headerBar, { paddingTop: insets.top }]}>
-          <TouchableOpacity
-            style={styles.headerIconSlot}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <ChevronLeft size={24} color={Palette.gray900} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>My Orders</ThemedText>
-          <View style={styles.headerIconSlot} />
-        </View>
-        <View style={styles.centerBox}>
-          <View style={styles.emptyIconCircle}>
-            <ShoppingBag size={36} color={Palette.gray400} strokeWidth={1.6} />
-          </View>
-          <ThemedText style={styles.emptyTitle}>No Orders Yet</ThemedText>
-          <ThemedText style={styles.emptySub}>
-            When you place an order, it shows up here with live delivery tracking.
-          </ThemedText>
-          <TouchableOpacity
-            style={styles.shopNowBtn}
-            onPress={() => router.replace('/(tabs)' as never)}
-            accessibilityRole="button"
-            accessibilityLabel="Start shopping"
-          >
-            <ThemedText style={styles.shopNowBtnText}>Start Shopping</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </ThemedView>
-    );
-  }
+  const isToReview = activeTab === 'TO_REVIEW';
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.headerBar, { paddingTop: insets.top }]}>
-        <TouchableOpacity
-          style={styles.headerIconSlot}
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ChevronLeft size={24} color={Palette.gray900} />
-        </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>My Orders</ThemedText>
-        <View style={styles.headerIconSlot} />
-      </View>
+      <OrdersHeader paddingTop={insets.top} />
+      <OrderStatusTabs activeTab={activeTab} onSelectTab={setActiveTab} counts={counts} />
 
-      <FlatList
-        data={orders}
-        keyExtractor={(item) => item.id}
-        renderItem={renderOrder}
-        onEndReachedThreshold={0.4}
-        onEndReached={loadMore}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={false} onRefresh={refresh} tintColor={Palette.gray900} />
-        }
-        ListFooterComponent={
-          loadingMore ? (
-            <ActivityIndicator style={styles.footerSpinner} color={Palette.gray900} />
-          ) : null
-        }
+      {isToReview ? (
+        <FlatList
+          data={toReviewItems}
+          keyExtractor={(item) => item.orderItemId}
+          renderItem={({ item }) => <ToReviewCard item={item} onPressReview={setReviewingItem} />}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={toReviewLoading} onRefresh={handleRefresh} />}
+          ListEmptyComponent={<OrdersEmptyState activeTab={activeTab} />}
+        />
+      ) : (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <OrderCard
+              order={item}
+              onPayNow={(o) => setActivePayment(buildOrderPaymentIntent(o))}
+              onCancel={(o) => cancelOrder(o.id)}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerSpinner}>
+                <ActivityIndicator size="small" color={Palette.gray900} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={<OrdersEmptyState activeTab={activeTab} />}
+        />
+      )}
+
+      <ReviewModal
+        visible={!!reviewingItem}
+        item={reviewingItem}
+        onClose={() => {
+          setReviewingItem(null);
+          handleRefresh();
+        }}
+      />
+
+      <InAppPaymentSheet
+        visible={!!activePayment}
+        paymentUrl={activePayment?.paymentUrl ?? null}
+        title={activePayment?.title ?? 'Payment'}
+        onClose={() => {
+          setActivePayment(null);
+          handleRefresh();
+        }}
+        onSuccess={() => {
+          setActivePayment(null);
+          handleRefresh();
+        }}
       />
     </ThemedView>
   );

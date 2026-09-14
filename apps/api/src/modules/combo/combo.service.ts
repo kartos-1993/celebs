@@ -4,6 +4,7 @@ import { CreateComboType } from '@celebs/shared-types';
 
 import { type ComboRepository, comboRepository } from './combo.repository';
 
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { TtlCache } from '@/common/utils/ttl-cache';
 
 interface ComboItemInput {
@@ -117,7 +118,11 @@ export class ComboService {
       },
     });
 
-    await Promise.all([activeCombosCache.invalidate(), allCombosCache.invalidate()]);
+    await Promise.all([
+      activeCombosCache.invalidate(),
+      allCombosCache.invalidate(),
+      invalidateCacheKey('storefront:home'),
+    ]);
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
   }
@@ -151,14 +156,22 @@ export class ComboService {
       payload.productIds,
     );
 
-    await Promise.all([activeCombosCache.invalidate(), allCombosCache.invalidate()]);
+    await Promise.all([
+      activeCombosCache.invalidate(),
+      allCombosCache.invalidate(),
+      invalidateCacheKey('storefront:home'),
+    ]);
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
   }
 
   async deleteCombo(id: string) {
     const deleted = await this.comboRepository.delete(id);
-    await Promise.all([activeCombosCache.invalidate(), allCombosCache.invalidate()]);
+    await Promise.all([
+      activeCombosCache.invalidate(),
+      allCombosCache.invalidate(),
+      invalidateCacheKey('storefront:home'),
+    ]);
     return deleted;
   }
 }

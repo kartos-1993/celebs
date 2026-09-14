@@ -1,6 +1,5 @@
 import React, { KeyboardEvent, useState } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp, Layers, Plus, X } from 'lucide-react';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
@@ -32,7 +31,7 @@ import {
   SelectValue,
 } from '@celebs/shared-ui/components/select';
 
-import { axiosClient } from '@/lib/axios/axios-client';
+import { useOptionSetDetail, useOptionSets } from '@/features/option-sets/hooks/use-option-sets';
 
 export interface AttributeFieldSetProps {
   index: number;
@@ -89,27 +88,14 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
       name: `attributes.${index}.values`,
     }) || [];
 
-  // Fetch available option sets via TanStack Query
-  const { data: optionSets = [], isLoading: loadingSets } = useQuery<OptionSetItem[]>({
-    queryKey: ['option-sets'],
-    queryFn: async () => {
-      const res = await axiosClient.get<{ data?: Array<{ id?: string; name: string }> }>(
-        '/option-sets',
-      );
-      const rawData = res.data;
-      const sets = Array.isArray(rawData?.data)
-        ? rawData.data
-        : Array.isArray(rawData)
-          ? (rawData as Array<{ id?: string; name: string }>)
-          : [];
-      return sets.map((s: { id?: string; name: string }) => ({
-        id: String(s.id || ''),
-        name: s.name,
-      }));
-    },
-    enabled: !!(useStandardOptions || isVariant),
-    staleTime: 5 * 60 * 1000,
-  });
+  // Fetch available option sets via dedicated hook (Query Key Factory)
+  const { data: rawOptionSets = [], isLoading: loadingSets } = useOptionSets(
+    Boolean(useStandardOptions || isVariant),
+  );
+  const optionSets: OptionSetItem[] = React.useMemo(
+    () => rawOptionSets.map((s) => ({ id: s.id, name: s.name })),
+    [rawOptionSets],
+  );
 
   // Automatically resolve OptionSet ID by matching attribute name (e.g. Color -> Basic Colors, Size -> Alpha Sizes)
   const effectiveOptionSetId =
@@ -124,26 +110,15 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
       );
     })?.id;
 
-  // Load preview of standard option set values when effectiveOptionSetId changes via TanStack Query
-  const { data: optionSetValues = [] } = useQuery<string[]>({
-    queryKey: ['option-set-values', effectiveOptionSetId],
-    queryFn: async () => {
-      if (!effectiveOptionSetId) return [];
-      const res = await axiosClient.get<{
-        data?: { values?: Array<string | { label?: string; name?: string }> };
-        values?: Array<string | { label?: string; name?: string }>;
-      }>(`/option-sets/${effectiveOptionSetId}`);
-      const rawData = res.data;
-      const rawVals = rawData?.data?.values ?? rawData?.values ?? [];
-      return rawVals
-        .map((v: string | { label?: string; name?: string }) =>
-          typeof v === 'string' ? v : (v?.label ?? v?.name ?? ''),
-        )
-        .filter(Boolean);
-    },
-    enabled: !!(useStandardOptions && effectiveOptionSetId),
-    staleTime: 5 * 60 * 1000,
-  });
+  // Load preview of standard option set values when effectiveOptionSetId changes via dedicated hook
+  const { data: effectiveOptionSet } = useOptionSetDetail(
+    effectiveOptionSetId,
+    Boolean(useStandardOptions && effectiveOptionSetId),
+  );
+  const optionSetValues = React.useMemo(() => {
+    if (!effectiveOptionSet || !Array.isArray(effectiveOptionSet.values)) return [];
+    return effectiveOptionSet.values.map(String).filter(Boolean);
+  }, [effectiveOptionSet]);
 
   const handleAddManualValue = () => {
     const trimmed = newOptionInput.trim();
@@ -494,7 +469,7 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="max-w-xs">
+        <DialogContent className="sm:max-w-xs">
           <DialogHeader>
             <DialogTitle>Delete Attribute</DialogTitle>
             <DialogDescription className="py-2 text-sm text-muted-foreground">

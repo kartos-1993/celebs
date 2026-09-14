@@ -21,7 +21,7 @@ import {
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, color } = useLocalSearchParams<{ id: string; color?: string }>();
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { itemCount } = useCart();
@@ -35,7 +35,7 @@ export default function ProductDetailScreen() {
     isSizeModalOpen,
     setIsSizeModalOpen,
     handleColorChange,
-  } = useProductVariantSelection(product);
+  } = useProductVariantSelection(product, Array.isArray(color) ? color[0] : color);
 
   const { isWishlisted } = useWishlistStatus();
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
@@ -86,10 +86,10 @@ export default function ProductDetailScreen() {
     return <ProductDetailState loading={loading} error={error} onBack={() => router.back()} />;
   }
 
+  const selectedVariantImages = product.colorVariants?.[selectedColorIndex]?.images;
   const galleryImages =
-    product.colorVariants?.[selectedColorIndex]?.images &&
-    product.colorVariants[selectedColorIndex].images!.length > 0
-      ? product.colorVariants[selectedColorIndex].images!
+    Array.isArray(selectedVariantImages) && selectedVariantImages.length > 0
+      ? selectedVariantImages
       : product.mainImages || [];
 
   return (
@@ -113,6 +113,7 @@ export default function ProductDetailScreen() {
         selectedSize={selectedSize}
         onSelectColor={handleColorChange}
         onSelectSize={setSelectedSize}
+        onAddToCart={() => handleAddToCart()}
       />
 
       <ProductBottomBar

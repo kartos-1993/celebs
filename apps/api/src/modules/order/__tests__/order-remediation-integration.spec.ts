@@ -1,14 +1,13 @@
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { OrderService } from '../order.service';
+import { checkoutService } from '../checkout/checkout.service';
+import { fulfillmentService } from '../fulfillment/fulfillment.service';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
 
 describe('Order Remediation & Financial Integrity Integration Tests', () => {
-  const orderService = new OrderService();
-
   let userAId: string;
   let userBId: string;
   let vendorUserId: string;
@@ -158,7 +157,7 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
 
     // User B tries to checkout using key of User A
     await expect(
-      orderService.checkout(userBId, {
+      checkoutService.checkout(userBId, {
         addressId: addressBId,
         paymentMethod: 'COD',
         idempotencyKey: key,
@@ -187,12 +186,12 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
 
     // Run 2 checkouts concurrently
     const [resA, resB] = await Promise.allSettled([
-      orderService.checkout(userAId, {
+      checkoutService.checkout(userAId, {
         addressId: addressAId,
         paymentMethod: 'COD',
         idempotencyKey: `idemp_a_${Date.now()}`,
       }),
-      orderService.checkout(userBId, {
+      checkoutService.checkout(userBId, {
         addressId: addressBId,
         paymentMethod: 'COD',
         idempotencyKey: `idemp_b_${Date.now()}`,
@@ -246,7 +245,7 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
     const orderItemId = order.items[0]!.id;
 
     // Vendor cancels item
-    await orderService.updateOrderItemStatus(vendorProfileId, orderItemId, 'CANCELLED');
+    await fulfillmentService.updateOrderItemStatus(vendorProfileId, orderItemId, 'CANCELLED');
 
     const updatedInv = await prisma.productInventory.findUnique({ where: { id: inventoryId } });
     expect(updatedInv?.reservedQuantity).toBe(0);
@@ -264,7 +263,7 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
         subtotal: 2000,
         totalAmount: 2150,
         status: OrderStatus.PENDING_PAYMENT,
-        paymentMethod: PaymentMethod.STRIPE,
+        paymentMethod: PaymentMethod.ESEWA,
         paymentStatus: PaymentStatus.PENDING,
         createdAt: threeHoursAgo,
         updatedAt: threeHoursAgo,
@@ -289,7 +288,7 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
       data: { reservedQuantity: 2 },
     });
 
-    const result = await orderService.releaseStaleReservations();
+    const result = await checkoutService.releaseStaleReservations();
     expect(result.cancelledOrders).toBeGreaterThanOrEqual(1);
 
     const reapedOrder = await prisma.order.findUnique({ where: { id: staleOrder.id } });
@@ -299,8 +298,8 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
     expect(invAfter?.reservedQuantity).toBe(0);
   });
 
-  it('A7: does not mark unpaid STRIPE order as COMPLETED upon delivery', async () => {
-    // Create STRIPE order with no COMPLETED payment
+  it('A7: does not mark unpaid ESEWA order as COMPLETED upon delivery', async () => {
+    // Create ESEWA order with no COMPLETED payment
     const order = await prisma.order.create({
       data: {
         orderNumber: `ORD-UNPAID-${Date.now()}`,
@@ -309,7 +308,7 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
         subtotal: 2000,
         totalAmount: 2150,
         status: OrderStatus.PACKED,
-        paymentMethod: PaymentMethod.STRIPE,
+        paymentMethod: PaymentMethod.ESEWA,
         paymentStatus: PaymentStatus.PENDING,
         items: {
           create: {
@@ -336,7 +335,7 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
     const orderItemId = order.items[0]!.id;
 
     // Transition to DELIVERED
-    await orderService.updateOrderItemStatus(vendorProfileId, orderItemId, 'DELIVERED');
+    await fulfillmentService.updateOrderItemStatus(vendorProfileId, orderItemId, 'DELIVERED');
 
     const deliveredOrder = await prisma.order.findUnique({ where: { id: order.id } });
     expect(deliveredOrder?.status).toBe(OrderStatus.DELIVERED);
@@ -406,12 +405,12 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
 
     // 5. Both users attempt to checkout SIMULTANEOUSLY
     const [orderAAttempt, orderBAttempt] = await Promise.allSettled([
-      orderService.checkout(userAId, {
+      checkoutService.checkout(userAId, {
         addressId: addressAId,
         paymentMethod: 'COD',
         idempotencyKey: `idemp_simul_a_${Date.now()}`,
       }),
-      orderService.checkout(userBId, {
+      checkoutService.checkout(userBId, {
         addressId: addressBId,
         paymentMethod: 'COD',
         idempotencyKey: `idemp_simul_b_${Date.now()}`,

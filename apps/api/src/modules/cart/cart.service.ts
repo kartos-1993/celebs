@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
-import { AppError, ErrorCode, generateSheinStyleSku, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
 
 import { cartRepository } from './cart.repository';
 
 import prisma, { Prisma } from '@/config/db.prisma';
+import { cacheRedis } from '@/config/upstash.redis';
 
 export class CartService {
   /**
@@ -241,7 +242,7 @@ export class CartService {
           ${productId},
           ${colorVariantName},
           ${size},
-          ${generateSheinStyleSku({ brandPrefix: 'c' })},
+          ${generateSku({ brandPrefix: 'c' })},
           COALESCE((
             SELECT (s ->> 'quantity')::int
             FROM "Product" p,
@@ -367,13 +368,88 @@ export class CartService {
    * regardless of guest item count. Out-of-stock items are skipped silently,
    * matching the previous per-item try/catch behavior.
    */
-  static async syncCart(userId: string, guestItems: AddToCartInput[]): Promise<CartResponse> {
-    if (guestItems.length === 0) {
+  static async syncCart(
+    userId: string,
+    guestItems: AddToCartInput[],
+    sessionId?: string,
+  ): Promise<CartResponse> {
+    // Idempotency: a retried / double-fired sync with the same guest
+    // session must not sum quantities a second time (existingQty + requested
+    // would double). Fail-open if Redis is unavailable.
+    const syncIdempotencyKey = sessionId ? `cart:sync:${userId}:${sessionId}` : null;
+    if (syncIdempotencyKey) {
+      try {
+        const seen = await cacheRedis.get<string>(syncIdempotencyKey);
+        if (seen) {
+          return this.getCart(userId, undefined);
+        }
+      } catch {
+        // Fail-open: fall through to normal merge.
+      }
+    }
+
+    const markSynced = async () => {
+      if (!syncIdempotencyKey) return;
+      try {
+        await cacheRedis.set(syncIdempotencyKey, '1', { ex: 24 * 60 * 60 });
+      } catch {
+        // Fail-open: merge already succeeded.
+      }
+    };
+
+    // Merge duplicate lines in payload first (sum quantities)
+    const payloadItemsByKey = new Map<string, AddToCartInput>();
+    for (const item of guestItems) {
+      const key = `${item.productId}|${item.colorVariantName}|${item.size}`;
+      const existing = payloadItemsByKey.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        payloadItemsByKey.set(key, { ...item });
+      }
+    }
+
+    const guestItemsByKey = new Map<string, AddToCartInput>();
+
+    if (sessionId) {
+      const guestCart = await cartRepository.findCartBySessionWithItems(sessionId);
+      if (guestCart?.items && guestCart.items.length > 0) {
+        for (const item of guestCart.items) {
+          if (item.inventory) {
+            const key = `${item.inventory.productId}|${item.inventory.colorVariantName}|${item.inventory.size}`;
+            guestItemsByKey.set(key, {
+              productId: item.inventory.productId,
+              colorVariantName: item.inventory.colorVariantName,
+              size: item.inventory.size,
+              quantity: item.quantity,
+            });
+          }
+        }
+      }
+    }
+
+    // Merge payload items with DB session cart. If present in both, take max to avoid duplicate count.
+    for (const [key, item] of payloadItemsByKey) {
+      const existing = guestItemsByKey.get(key);
+      if (existing) {
+        existing.quantity = Math.max(existing.quantity, item.quantity);
+      } else {
+        guestItemsByKey.set(key, item);
+      }
+    }
+
+    const allGuestItems = Array.from(guestItemsByKey.values());
+
+    if (allGuestItems.length === 0) {
+      if (sessionId) {
+        await cartRepository.deleteCartBySession(sessionId);
+      }
+      await markSynced();
       return this.getCart(userId, undefined);
     }
 
     // 1. Bulk-validate products; drop unknown ones silently.
-    const productIds = Array.from(new Set(guestItems.map((g) => g.productId)));
+    const productIds = Array.from(new Set(allGuestItems.map((g) => g.productId)));
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
       select: { id: true },
@@ -390,7 +466,7 @@ export class CartService {
       availableQuantity?: number;
     }
     const mergedRequests = new Map<string, MergedRequest>();
-    for (const g of guestItems) {
+    for (const g of allGuestItems) {
       if (!validProductIds.has(g.productId)) continue;
       const key = `${g.productId}|${g.colorVariantName}|${g.size}`;
       const acc = mergedRequests.get(key);
@@ -406,6 +482,10 @@ export class CartService {
       }
     }
     if (mergedRequests.size === 0) {
+      if (sessionId) {
+        await cartRepository.deleteCartBySession(sessionId);
+      }
+      await markSynced();
       return this.getCart(userId, undefined);
     }
 
@@ -451,7 +531,11 @@ export class CartService {
     // 4. Cart + existing items in two round trips.
     const cartRecord = await this.getOrCreateCartRecord(userId, undefined);
     const wantedInventoryIds = Array.from(
-      new Set(Array.from(mergedRequests.values()).map((r) => r.inventoryId!)),
+      new Set(
+        Array.from(mergedRequests.values())
+          .map((r) => r.inventoryId)
+          .filter((id): id is string => Boolean(id)),
+      ),
     );
     const existingItems = await prisma.cartItem.findMany({
       where: { cartId: cartRecord.id, inventoryId: { in: wantedInventoryIds } },
@@ -462,9 +546,12 @@ export class CartService {
     // 5. Stock-check merges; skip items that would exceed availability.
     const upserts: Array<{ inventoryId: string; quantity: number }> = [];
     for (const req of mergedRequests.values()) {
-      const targetQuantity = (existingQty.get(req.inventoryId!) ?? 0) + req.requestedQuantity;
+      if (!req.inventoryId) continue;
+      const invId = req.inventoryId;
+      const existingAccountQty = existingQty.get(invId) ?? 0;
+      const targetQuantity = existingAccountQty + req.requestedQuantity;
       if ((req.availableQuantity ?? 0) < targetQuantity || targetQuantity <= 0) continue;
-      upserts.push({ inventoryId: req.inventoryId!, quantity: targetQuantity });
+      upserts.push({ inventoryId: invId, quantity: targetQuantity });
     }
 
     // 6. One statement writes every accepted item.
@@ -484,6 +571,11 @@ export class CartService {
       `;
     }
 
+    if (sessionId) {
+      await cartRepository.deleteCartBySession(sessionId);
+    }
+
+    await markSynced();
     return this.getCart(userId, undefined);
   }
 }

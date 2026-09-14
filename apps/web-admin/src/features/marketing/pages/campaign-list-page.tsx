@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Flame, Plus } from 'lucide-react';
+import { Flame, Plus } from 'lucide-react';
 
 import type { CampaignItemType } from '@celebs/shared-types';
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@celebs/shared-ui/components/table';
 
 import { getCampaigns } from '../api';
 import { MARKETING_QUERY_KEYS } from '../api';
+import { CampaignCards } from '../components/campaign-cards';
+import { CampaignTable } from '../components/campaign-table';
 
 import { FilterBar, FilterSearch } from '@/components/filter-bar';
 
@@ -76,79 +69,9 @@ export default function CampaignListPage() {
         />
       </FilterBar>
 
-      {/* Campaigns Table */}
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Campaign Details</TableHead>
-              <TableHead>Type & Theme</TableHead>
-              <TableHead>Date Range</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
-                  Loading marketing campaigns...
-                </TableCell>
-              </TableRow>
-            ) : filteredCampaigns.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
-                  No marketing campaigns found matching your query.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredCampaigns.map((camp) => (
-                <TableRow key={camp.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-4 h-10 rounded-full shrink-0"
-                        style={{ backgroundColor: camp.themeColor }}
-                      />
-                      <div>
-                        <div className="text-sm font-medium text-foreground">{camp.title}</div>
-                        <div className="text-xs text-muted-foreground">{camp.tagline}</div>
-                        <div className="text-xs font-mono text-muted-foreground">
-                          /{camp.slug} ({camp.productCount} products)
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge variant="destructive">{camp.campaignType}</Badge>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="text-xs text-foreground font-medium flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                      {new Date(camp.startDate).toLocaleDateString()} —{' '}
-                      {new Date(camp.endDate).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge variant={camp.isActive ? 'success' : 'secondary'}>
-                      {camp.isActive ? 'ACTIVE' : 'INACTIVE'}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm" className="text-xs h-7 gap-1">
-                      <Link to={`/marketing/campaigns/${camp.id}`}>Edit</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Campaigns Table (desktop) + Cards (mobile) */}
+      <CampaignTable campaigns={filteredCampaigns} isLoading={isLoading} />
+      <CampaignCards campaigns={filteredCampaigns} isLoading={isLoading} />
     </div>
   );
 }

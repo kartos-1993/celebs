@@ -17,13 +17,25 @@ export interface ProductGridRef {
 interface ProductGridProps {
   onProductPress?: (product: Product) => void;
   loadMoreTrigger?: number;
+  initialProducts?: Product[];
 }
 
 export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
-  ({ onProductPress, loadMoreTrigger }, ref) => {
+  ({ onProductPress, loadMoreTrigger, initialProducts }, ref) => {
     const scheme = useColorScheme();
     const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-    const { products, loading, loadingMore, hasMore, loadMore, refetch } = useProducts(10);
+    const {
+      products: queryProducts,
+      loading: queryLoading,
+      loadingMore,
+      hasMore,
+      loadMore,
+      refetch,
+    } = useProducts(10);
+
+    const hasInitial = Boolean(initialProducts && initialProducts.length > 0);
+    const products = queryProducts.length > 0 ? queryProducts : hasInitial ? initialProducts! : [];
+    const loading = hasInitial && queryProducts.length === 0 ? false : queryLoading;
 
     React.useImperativeHandle(ref, () => ({
       loadMore,

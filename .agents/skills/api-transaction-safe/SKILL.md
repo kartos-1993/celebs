@@ -27,4 +27,6 @@ Use this skill whenever creating or updating state-modifying backend endpoints i
 
 4. **Repository (`src/modules/{domain}/{domain}.repository.ts`)**:
    - Encapsulate Prisma queries using singletons pooled via port 6543.
-   - Return strongly-typed domain entities.
+   - Return strongly-typed domain entities with strict non-null contracts on mutating methods.
+   - For transactional updates and validated reads, use `tx.<model>.findUniqueOrThrow()` instead of `tx.<model>.findUnique()` so Prisma does not leak unnecessary `null` unions into domain services.
+   - Never use lax typing (`| null | undefined`) in services or utilities to paper over repository nullability.

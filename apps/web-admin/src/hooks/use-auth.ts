@@ -9,7 +9,7 @@ const useAuth = () => {
     queryFn: getUserSession,
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     retry: false,
     meta: {
       suppressErrorToast: true,

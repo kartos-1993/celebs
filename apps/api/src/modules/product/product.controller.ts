@@ -20,6 +20,7 @@ import {
 } from '@/common/constants/platform-vendor';
 import { isPlatformActor } from '@/common/context/actor-context';
 import { resolveTargetStoreId } from '@/common/guards/store.guards';
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -61,13 +62,10 @@ export class ProductController {
         actor.userId,
         effectiveVendorId,
         effectiveVendorName,
+        actor.role,
       );
 
-      res.status(HTTPSTATUS.CREATED).json({
-        success: true,
-        message: 'Product created successfully',
-        data: product,
-      });
+      sendCreated(res, product, 'Product created successfully');
     } catch (error) {
       next(error);
     }
@@ -106,11 +104,7 @@ export class ProductController {
         }
       }
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Product retrieved successfully',
-        data: product,
-      });
+      sendSuccess(res, product, 'Product retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -135,11 +129,7 @@ export class ProductController {
         res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=120');
       }
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Products retrieved successfully',
-        data: result,
-      });
+      sendSuccess(res, result, 'Products retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -160,11 +150,7 @@ export class ProductController {
       const { id } = idParamSchema.parse(req.params);
       const product = await this.productService.submitProductForReview(id, storeId, isPlatform);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Product submitted for review successfully',
-        data: product,
-      });
+      sendSuccess(res, product, 'Product submitted for review successfully');
     } catch (error) {
       next(error);
     }
@@ -193,11 +179,7 @@ export class ProductController {
         rejectionFields: parsed.rejectionFields,
       });
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: `Product ${parsed.action}ed successfully`,
-        data: product,
-      });
+      sendSuccess(res, product, `Product ${parsed.action}ed successfully`);
     } catch (error) {
       next(error);
     }
@@ -227,11 +209,7 @@ export class ProductController {
         actor.permissions,
       );
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Product updated successfully',
-        data: product,
-      });
+      sendSuccess(res, product, 'Product updated successfully');
     } catch (error) {
       next(error);
     }
@@ -258,11 +236,7 @@ export class ProductController {
         effectiveVendorId,
       );
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Product archived successfully',
-        data: product,
-      });
+      sendSuccess(res, product, 'Product archived successfully');
     } catch (error) {
       next(error);
     }
@@ -283,11 +257,11 @@ export class ProductController {
       const { id } = idParamSchema.parse(req.params);
       const product = await this.productService.toggleProductActivation(id, storeId, isPlatform);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: `Product successfully ${product?.status === PRODUCT_STATUS.PUBLISHED ? 'activated' : 'deactivated'}`,
-        data: product,
-      });
+      sendSuccess(
+        res,
+        product,
+        `Product successfully ${product?.status === PRODUCT_STATUS.PUBLISHED ? 'activated' : 'deactivated'}`,
+      );
     } catch (error) {
       next(error);
     }
@@ -295,14 +269,12 @@ export class ProductController {
 
   getProductReviewQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const page = req.query.page ? parseInt(req.query.page as string) : 1;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const pageQuery = Array.isArray(req.query.page) ? req.query.page[0] : req.query.page;
+      const limitQuery = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+      const page = Math.max(1, Number(pageQuery) || 1);
+      const limit = Math.min(100, Math.max(1, Number(limitQuery) || 10));
       const result = await this.productService.getProductReviewQueue(page, limit);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Product review queue retrieved successfully',
-        data: result,
-      });
+      sendSuccess(res, result, 'Product review queue retrieved successfully');
     } catch (error) {
       next(error);
     }

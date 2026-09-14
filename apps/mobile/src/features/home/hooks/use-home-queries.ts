@@ -18,8 +18,7 @@ export function useBanners() {
   } = useQuery({
     queryKey: BANNER_QUERY_KEYS.list(),
     queryFn: getBanners,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 5,
   });
 
   return {

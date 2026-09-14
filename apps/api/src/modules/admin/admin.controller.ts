@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 
-import { IApiResponse } from '@celebs/shared-types';
-import { asyncHandler, HTTPSTATUS } from '@celebs/shared-utils';
+import { asyncHandler } from '@celebs/shared-utils';
 
 import { AdminService, adminService } from './admin.service';
+
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 
 export class AdminController {
   private adminService: AdminService;
@@ -15,100 +16,55 @@ export class AdminController {
   // Vendor Management
   public getAllVendors = asyncHandler(async (_req: Request, res: Response) => {
     const vendors = await this.adminService.getAllVendors();
-    const response: IApiResponse<typeof vendors> = {
-      success: true,
-      message: 'Vendors retrieved successfully',
-      data: vendors,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, vendors, 'Vendors retrieved successfully');
   });
 
   public getVendorById = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const vendor = await this.adminService.getVendorById(id);
-    const response: IApiResponse<typeof vendor> = {
-      success: true,
-      message: 'Vendor details retrieved successfully',
-      data: vendor,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, vendor, 'Vendor details retrieved successfully');
   });
 
   public approveVendor = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const vendor = await this.adminService.approveVendor(id, req.actor?.userId);
-    const response: IApiResponse<typeof vendor> = {
-      success: true,
-      message: 'Vendor approved successfully',
-      data: vendor,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, vendor, 'Vendor approved successfully');
   });
 
   public rejectVendor = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const { reason } = req.body;
     const vendor = await this.adminService.rejectVendor(id, reason, req.actor?.userId);
-    const response: IApiResponse<typeof vendor> = {
-      success: true,
-      message: 'Vendor rejected successfully',
-      data: vendor,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, vendor, 'Vendor rejected successfully');
   });
 
   public suspendVendor = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const vendor = await this.adminService.suspendVendor(id, req.actor?.userId);
-    const response: IApiResponse<typeof vendor> = {
-      success: true,
-      message: 'Vendor suspended successfully',
-      data: vendor,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, vendor, 'Vendor suspended successfully');
   });
 
   // User Management
   public getAllUsers = asyncHandler(async (_req: Request, res: Response) => {
     const users = await this.adminService.getAllUsers();
-    const response: IApiResponse<typeof users> = {
-      success: true,
-      message: 'Users list retrieved successfully',
-      data: users,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, users, 'Users list retrieved successfully');
   });
 
   public createUser = asyncHandler(async (req: Request, res: Response) => {
     const user = await this.adminService.createUser(req.body);
-    const response: IApiResponse<typeof user> = {
-      success: true,
-      message: 'User account created successfully',
-      data: user,
-    };
-    res.status(HTTPSTATUS.CREATED).json(response);
+    return sendCreated(res, user, 'User account created successfully');
   });
 
   public deleteUser = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const deleted = await this.adminService.deleteUser(id);
-    const response: IApiResponse<typeof deleted> = {
-      success: true,
-      message: 'User account deleted successfully',
-      data: deleted,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, deleted, 'User account deleted successfully');
   });
 
   public updateUserRoleAndPermissions = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
     const updatedUser = await this.adminService.updateUserRoleAndPermissions(id, req.body);
-    const response: IApiResponse<typeof updatedUser> = {
-      success: true,
-      message: 'User role and permissions updated successfully',
-      data: updatedUser,
-    };
-    res.status(HTTPSTATUS.OK).json(response);
+    return sendSuccess(res, updatedUser, 'User role and permissions updated successfully');
   });
 }
 

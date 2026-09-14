@@ -86,6 +86,14 @@ describe('Product Multi-Tier Category Hierarchy Search (PostgreSQL)', () => {
         categoryId: rootCat.id,
         subcategoryId: rootCat.id,
         mainImages: ['https://example.com/p1.jpg'],
+        colorVariants: [
+          {
+            name: 'Default',
+            colorCode: '#000000',
+            images: ['https://example.com/p1.jpg'],
+            stocks: [{ size: 'Default', quantity: 10 }],
+          },
+        ],
         status: 'published',
       },
       userId,
@@ -104,6 +112,14 @@ describe('Product Multi-Tier Category Hierarchy Search (PostgreSQL)', () => {
         categoryId: rootCat.id,
         subcategoryId: subCat.id,
         mainImages: ['https://example.com/p2.jpg'],
+        colorVariants: [
+          {
+            name: 'Default',
+            colorCode: '#000000',
+            images: ['https://example.com/p2.jpg'],
+            stocks: [{ size: 'Default', quantity: 10 }],
+          },
+        ],
         status: 'published',
       },
       userId,
@@ -122,6 +138,14 @@ describe('Product Multi-Tier Category Hierarchy Search (PostgreSQL)', () => {
         categoryId: subCat.id,
         subcategoryId: childCat.id,
         mainImages: ['https://example.com/p3.jpg'],
+        colorVariants: [
+          {
+            name: 'Default',
+            colorCode: '#000000',
+            images: ['https://example.com/p3.jpg'],
+            stocks: [{ size: 'Default', quantity: 10 }],
+          },
+        ],
         status: 'published',
       },
       userId,

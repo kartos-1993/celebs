@@ -199,6 +199,58 @@ describe('1P Platform Architecture & Zero-Null Model', () => {
     });
   });
 
+  describe('First-Party Brand Gating on Create', () => {
+    it('should allow SUPERADMIN but refuse VENDOR creating under a FIRST_PARTY brand', async () => {
+      await ensurePlatformVendor(prisma, adminUserId);
+
+      const uid = Math.random().toString(36).substring(2, 8);
+      const gated = await prisma.brand.create({
+        data: {
+          name: `Celebs Official ${uid}`,
+          slug: `celebs-official-${Date.now()}-${uid}`,
+          tier: 'FIRST_PARTY',
+          isGated: true,
+        },
+      });
+
+      const base = {
+        description: 'In-house label tee.',
+        price: 1800,
+        categoryId: category.id,
+        subcategoryId: subcategory.id,
+        brandId: gated.id,
+        status: 'draft' as const,
+        colorVariants: [
+          {
+            name: 'Black',
+            colorCode: '#000000',
+            images: ['https://media.celebs.com.np/black.jpg'],
+            stocks: [{ size: 'M', quantity: 5 }],
+          },
+        ],
+      };
+
+      const adminProduct = await productService.createProduct(
+        { ...base, name: `Official Tee Admin ${uid}` },
+        adminUserId,
+        PLATFORM_VENDOR_ID,
+        PLATFORM_VENDOR_NAME,
+        'SUPERADMIN',
+      );
+      expect(adminProduct).not.toBeNull();
+
+      await expect(
+        productService.createProduct(
+          { ...base, name: `Official Tee Vendor ${uid}` },
+          adminUserId,
+          vendor3P.id,
+          '3P Store',
+          'VENDOR',
+        ),
+      ).rejects.toThrow(/in-house Celebs label/i);
+    });
+  });
+
   describe('Cross-Store Audit Classification', () => {
     it('should NOT flag 1P product updates as cross-store edits, but SHOULD flag 3P product edits', () => {
       // Admin editing 1P product -> Not a cross-store edit

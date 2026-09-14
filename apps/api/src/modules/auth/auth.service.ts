@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import {
   loginType,
@@ -28,10 +28,8 @@ import { type TokenService, tokenService } from './token.service';
 import { type VerificationService, verificationService } from './verification.service';
 
 import { authCache } from '@/common/cache/auth-cache';
-import { ensurePlatformVendor } from '@/common/constants/platform-vendor';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
-import prisma from '@/config/db.prisma';
 
 export interface AuthServiceDeps {
   authRepo?: AuthRepository;
@@ -206,7 +204,20 @@ export class AuthService {
   public async setupSuperadmin(setupData: setupSuperadminType) {
     const { name, email, password, setupSecret } = setupData;
 
-    if (setupSecret !== config.SETUP_SECRET) {
+    if (!config.SETUP_SECRET) {
+      throw new ForbiddenException('Setup secret is not configured on the server');
+    }
+
+    const userSecretHash = new Uint8Array(
+      createHash('sha256')
+        .update(setupSecret || '')
+        .digest(),
+    );
+    const expectedSecretHash = new Uint8Array(
+      createHash('sha256').update(config.SETUP_SECRET).digest(),
+    );
+
+    if (!timingSafeEqual(userSecretHash, expectedSecretHash)) {
       throw new ForbiddenException('Invalid setup secret key');
     }
 
@@ -214,6 +225,9 @@ export class AuthService {
     if (superadminExists) {
       throw new HttpException('A SUPERADMIN user already exists', HTTPSTATUS.CONFLICT);
     }
+
+    // Clean up any legacy phantom platform account if present
+    await this.authRepo.purgePhantomPlatformUsers();
 
     const hashedPassword = await hashValue(password);
     const newUser = await this.authRepo.createUser({
@@ -224,7 +238,7 @@ export class AuthService {
       isEmailVerified: true,
     });
 
-    await ensurePlatformVendor(prisma, newUser.id);
+    await this.authRepo.provisionPlatformVendor(newUser.id);
 
     return {
       user: this.tokenService.stripPassword(newUser),

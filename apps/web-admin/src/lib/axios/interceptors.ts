@@ -93,6 +93,20 @@ const AUTH_BYPASS_URLS = [
   '/auth/password-reset',
   '/auth/verify-email',
   '/auth/refresh',
+  '/auth/setup-superadmin',
+  '/auth/setup-admin',
+  '/auth/setup-status',
+];
+
+const PUBLIC_NO_REDIRECT_PREFIXES = [
+  '/login',
+  '/verify-email',
+  '/setup-superadmin',
+  '/setup-admin',
+  '/vendor/register',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
 ];
 
 // ─── Register interceptors ───────────────────────────────────────────────────
@@ -179,11 +193,13 @@ export const setupInterceptors = (client: AxiosInstance) => {
           processQueue(err);
           _onSessionExpired?.();
 
-          if (
+          const isPublicPage =
             typeof window !== 'undefined' &&
-            !window.location.pathname.startsWith('/login') &&
-            !window.location.pathname.startsWith('/verify-email')
-          ) {
+            PUBLIC_NO_REDIRECT_PREFIXES.some((prefix) =>
+              window.location.pathname.startsWith(prefix),
+            );
+
+          if (typeof window !== 'undefined' && !isPublicPage) {
             window.location.href = '/login';
           }
 

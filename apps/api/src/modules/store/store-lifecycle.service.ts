@@ -7,9 +7,12 @@ import {
   NotFoundException,
 } from '@celebs/shared-utils';
 
+import { sessionRepository } from '../session/session.repository';
+import { userRepository } from '../user/user.repository';
+import { vendorRepository } from '../vendor/vendor.repository';
+
 import { authCache } from '@/common/cache/auth-cache';
 import type { StoreStatus } from '@/common/context/actor-context';
-import prisma from '@/config/db.prisma';
 
 /**
  * Legal store lifecycle transitions.
@@ -48,21 +51,15 @@ export class StoreLifecycleService {
       extraData?: Record<string, unknown>;
     } = {},
   ) {
-    const store = await prisma.vendorProfile.findUnique({
-      where: { id: storeId },
-      select: { id: true, status: true },
-    });
+    const store = await vendorRepository.findStatusById(storeId);
     if (!store) {
       throw new NotFoundException('Vendor profile not found');
     }
     const from = store.status as StoreStatus;
     assertLegalTransition(from, to);
 
-    const result = await prisma.vendorProfile.updateMany({
-      where: { id: storeId, status: from },
-      data: { status: to, ...(ctx.extraData ?? {}) },
-    });
-    if (result.count === 0) {
+    const count = await vendorRepository.updateStatusCas(storeId, from, to, ctx.extraData);
+    if (count === 0) {
       throw new HttpException('Store state changed concurrently, retry', HTTPSTATUS.CONFLICT);
     }
 
@@ -75,10 +72,7 @@ export class StoreLifecycleService {
       'Store lifecycle transition',
     );
 
-    return prisma.vendorProfile.findUnique({
-      where: { id: storeId },
-      include: { user: { select: { id: true, name: true, email: true, isEmailVerified: true } } },
-    });
+    return vendorRepository.findStoreWithUser(storeId);
   }
 
   /**
@@ -86,31 +80,19 @@ export class StoreLifecycleService {
    * on next use because the strategy validates session existence per request.
    */
   public async revokeStoreSessions(storeId: string): Promise<number> {
-    const members = await prisma.user.findMany({
-      where: {
-        OR: [{ vendor: { id: storeId } }, { vendorProfile: { id: storeId } }],
-      },
-      select: { id: true },
-    });
-    if (members.length === 0) return 0;
+    const memberIds = await vendorRepository.findStoreMemberUserIds(storeId);
+    if (memberIds.length === 0) return 0;
 
-    const memberIds = members.map((m) => m.id);
-    const doomed = await prisma.session.findMany({
-      where: { userId: { in: memberIds } },
-      select: { id: true },
-    });
-
-    const result = await prisma.session.deleteMany({
-      where: { userId: { in: memberIds } },
-    });
+    const doomed = await sessionRepository.findSessionsByUserIds(memberIds);
+    const count = await sessionRepository.deleteSessionsByUserIds(memberIds);
 
     // Keep the Redis identity cache honest — revocation must stay instant.
     if (doomed.length > 0) {
       await authCache.invalidateSessions(doomed.map((s) => s.id));
     }
 
-    logger.info({ storeId, revokedSessions: result.count }, 'Store sessions revoked');
-    return result.count;
+    logger.info({ storeId, revokedSessions: count }, 'Store sessions revoked');
+    return count;
   }
 
   /**
@@ -122,13 +104,7 @@ export class StoreLifecycleService {
   public async assertSellerLoginAllowed(user: { id: string; role: string }): Promise<void> {
     if (user.role !== 'VENDOR' && user.role !== 'STAFF') return;
 
-    const record = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: {
-        vendorProfile: { select: { status: true } },
-        vendor: { select: { status: true } },
-      },
-    });
+    const record = await userRepository.findSellerStatus(user.id);
 
     const status = record?.vendorProfile?.status ?? record?.vendor?.status;
     if (status === 'SUSPENDED') {

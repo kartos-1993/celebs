@@ -1,12 +1,6 @@
-import {
-  AppError,
-  ErrorCode,
-  generateSheinStyleSku,
-  HTTPSTATUS,
-  logger,
-} from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSku, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import prisma from '@/config/db.prisma';
+import { inventoryRepository } from './inventory.repository';
 
 export class OutOfStockError extends AppError {
   constructor(message: string) {
@@ -39,18 +33,12 @@ export class InventoryService {
       '[InventoryService.decrementStock] Attempting stock decrement',
     );
 
-    const updatedRows: Array<{ id: string; quantity: number }> = await prisma.$queryRaw`
-      UPDATE "ProductInventory"
-      SET "quantity" = "quantity" - ${quantity}
-      WHERE "id" = ${inventoryId} AND "quantity" >= ${quantity}
-      RETURNING "id", "quantity"
-    `;
-
-    if (!updatedRows || updatedRows.length === 0) {
+    const firstRow = await inventoryRepository.decrementStockAtomic(inventoryId, quantity);
+    if (!firstRow) {
       throw new OutOfStockError(`Insufficient stock available for inventory item ${inventoryId}`);
     }
 
-    return updatedRows[0]!;
+    return firstRow;
   }
 
   /**
@@ -62,15 +50,11 @@ export class InventoryService {
     size: string,
   ): Promise<StockCheckResult> {
     logger.info({ productId, colorVariantName, size }, '[InventoryService] Looking up inventory');
-    const existing = await prisma.productInventory.findUnique({
-      where: {
-        productId_colorVariantName_size: {
-          productId,
-          colorVariantName,
-          size,
-        },
-      },
-    });
+    const existing = await inventoryRepository.findByProductVariantSize(
+      productId,
+      colorVariantName,
+      size,
+    );
 
     if (existing) {
       const available = existing.quantity - existing.reservedQuantity;
@@ -92,7 +76,7 @@ export class InventoryService {
 
     let initialQty = 10;
     try {
-      const product = await prisma.product.findUnique({ where: { id: productId } });
+      const product = await inventoryRepository.findProductColorVariants(productId);
       if (product && Array.isArray(product.colorVariants)) {
         const variants = product.colorVariants as Array<{
           name: string;
@@ -112,17 +96,15 @@ export class InventoryService {
       // Keep default initialQty
     }
 
-    const sku = generateSheinStyleSku({ brandPrefix: 'c' });
+    const sku = generateSku({ brandPrefix: 'c' });
 
-    const created = await prisma.productInventory.create({
-      data: {
-        productId,
-        colorVariantName,
-        size,
-        sku,
-        quantity: initialQty,
-        reservedQuantity: 0,
-      },
+    const created = await inventoryRepository.createInventory({
+      productId,
+      colorVariantName,
+      size,
+      sku,
+      quantity: initialQty,
+      reservedQuantity: 0,
     });
 
     const available = created.quantity - created.reservedQuantity;

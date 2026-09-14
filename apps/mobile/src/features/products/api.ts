@@ -1,6 +1,9 @@
+import type { IApiResponse } from '@celebs/shared-types';
+
 import type { Product, ProductFilterParams } from './types';
 
 import { apiClient } from '@/api/client';
+import { handleApiResponse } from '@/api/response';
 
 export const PRODUCT_QUERY_KEYS = {
   all: ['products'] as const,
@@ -11,22 +14,27 @@ export const PRODUCT_QUERY_KEYS = {
   detail: (id: string) => [...PRODUCT_QUERY_KEYS.details(), id] as const,
 };
 
-export async function getProducts(params: ProductFilterParams) {
-  const response = await apiClient.get('/products', {
-    params: {
-      status: 'published',
-      ...params,
-    },
-    skipAuth: true,
-  });
-  return response.data;
+export interface PaginatedProductsPayload {
+  products: Product[];
+  total: number;
+  nextCursor?: string;
+  hasMore?: boolean;
+}
+
+export async function getProducts(params: ProductFilterParams): Promise<PaginatedProductsPayload> {
+  return handleApiResponse(
+    apiClient.get<IApiResponse<PaginatedProductsPayload>>('/products', {
+      params: {
+        status: 'published',
+        ...params,
+      },
+      skipAuth: true,
+    }),
+  );
 }
 
 export async function getProductById(id: string): Promise<Product> {
-  const response = await apiClient.get(`/products/${id}`, { skipAuth: true });
-  const resData = response.data;
-  if (resData.success && resData.data) {
-    return resData.data as Product;
-  }
-  throw new Error(resData.error || 'Product not found');
+  return handleApiResponse(
+    apiClient.get<IApiResponse<Product>>(`/products/${id}`, { skipAuth: true }),
+  );
 }

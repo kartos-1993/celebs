@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Edit, Layers, Plus, Search, Trash2, X } from 'lucide-react';
+import { Edit, Layers, Plus, Trash2, X } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -19,6 +19,7 @@ import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { createOptionSet, deleteOptionSet, fetchOptionSets, updateOptionSet } from '../api';
 import type { OptionSet } from '../types';
 
+import { FilterBar, FilterSearch } from '@/components/filter-bar';
 import { PageLoader } from '@/components/page-loader';
 import { useToast } from '@/hooks/use-toast';
 
@@ -183,15 +184,13 @@ export default function OptionSetsPage() {
       />
 
       {/* Search & Filter */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search option sets or values (e.g. Coffee Brown, 3XL)..."
+      <FilterBar>
+        <FilterSearch
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 text-sm"
+          onChange={setSearchQuery}
+          placeholder="Search option sets or values (e.g. Coffee Brown, 3XL)..."
         />
-      </div>
+      </FilterBar>
 
       {/* Loading & Content */}
       {loading ? (
@@ -212,7 +211,7 @@ export default function OptionSetsPage() {
             >
               <div className="flex items-start justify-between gap-2 border-b pb-3">
                 <div>
-                  <h3 className="font-bold text-base text-foreground">
+                  <h3 className="text-base font-semibold text-foreground">
                     {set.displayName || set.name}
                   </h3>
                   <span className="text-xs text-muted-foreground font-mono">Key: {set.name}</span>
@@ -348,7 +347,7 @@ export default function OptionSetsPage() {
 
       {/* Delete Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Option Set</DialogTitle>
             <DialogDescription>

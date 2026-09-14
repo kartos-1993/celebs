@@ -34,7 +34,7 @@ export function MediaCenterDialogs({
   return (
     <>
       <Dialog open={Boolean(previewAsset)} onOpenChange={() => onPreviewChange(null)}>
-        <DialogContent className="max-w-3xl overflow-hidden border-0 bg-black/90 p-0">
+        <DialogContent className="overflow-hidden border-0 bg-black/90 p-0 sm:max-w-3xl">
           <DialogTitle className="sr-only">
             {previewAsset ? `Preview ${previewAsset.originalName}` : 'Media Preview'}
           </DialogTitle>

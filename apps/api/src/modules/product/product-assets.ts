@@ -39,28 +39,20 @@ export const collectProductAssetUrls = (source: {
     }
   }
 
-  const colorMeta = (source.dynamicData as Record<string, unknown> | undefined)?.variants as
-    | Record<string, unknown>
-    | undefined;
+  const dynamicRoot = (source.dynamicData as Record<string, unknown> | undefined) ?? {};
+  const colorMeta = dynamicRoot.variants as Record<string, unknown> | undefined;
 
   const metaGroups: Array<Record<string, unknown>> = [];
-  if (colorMeta && typeof colorMeta === 'object') {
-    // Current shape: variants.colorMeta.<ColorKey> = { swatch, images, name? }
-    const colorMetaMap = colorMeta.colorMeta as Record<string, unknown> | undefined;
-    if (colorMetaMap && typeof colorMetaMap === 'object') {
-      metaGroups.push(
-        ...Object.values(colorMetaMap).filter(
-          (m): m is Record<string, unknown> => Boolean(m) && typeof m === 'object',
-        ),
-      );
-    } else {
-      // Legacy fallback: variants.<ColorKey> = { swatch, images }
-      metaGroups.push(
-        ...Object.values(colorMeta).filter(
-          (m): m is Record<string, unknown> => Boolean(m) && typeof m === 'object',
-        ),
-      );
-    }
+  // Canonical shape only: variants.colorMeta.<ColorKey> = { swatch, images, hot }
+  const colorMetaMap = (colorMeta as Record<string, unknown> | undefined)?.colorMeta as
+    | Record<string, unknown>
+    | undefined;
+  if (colorMetaMap && typeof colorMetaMap === 'object') {
+    metaGroups.push(
+      ...Object.values(colorMetaMap).filter(
+        (m): m is Record<string, unknown> => Boolean(m) && typeof m === 'object',
+      ),
+    );
   }
 
   for (const meta of metaGroups) {
@@ -70,5 +62,5 @@ export const collectProductAssetUrls = (source: {
     }
   }
 
-  return urls;
+  return [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
 };

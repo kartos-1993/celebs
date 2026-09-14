@@ -16,11 +16,13 @@ export type { ComboBundleData, ComboItemData, HydratedProduct } from '../types';
 
 interface ComboBundleShowcaseProps {
   onSelectCombo?: (combo: ComboBundleData) => void;
+  initialCombos?: ComboBundleData[];
 }
 
-export function ComboBundleShowcase({ onSelectCombo }: ComboBundleShowcaseProps) {
+export function ComboBundleShowcase({ onSelectCombo, initialCombos }: ComboBundleShowcaseProps) {
   const { combos: fetchedCombos } = useCombos();
-  const combos = fetchedCombos.length > 0 ? fetchedCombos : DEMO_COMBOS;
+  const availableCombos = initialCombos && initialCombos.length > 0 ? initialCombos : fetchedCombos;
+  const combos = availableCombos.length > 0 ? availableCombos : DEMO_COMBOS;
 
   return (
     <View style={styles.container}>

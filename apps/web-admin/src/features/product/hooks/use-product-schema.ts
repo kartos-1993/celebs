@@ -9,14 +9,13 @@ import { useQuery } from '@tanstack/react-query';
 
 import { logger } from '@celebs/shared-utils';
 
+import { fetchProductRenderSchema } from '../api';
 import {
   addFallbackFields,
   ensureVariantSupportFields,
   normalizeSchema,
 } from '../components/dynamic-form-utils';
 import type { FieldSpec } from '../types';
-
-import { axiosClient } from '@/lib/axios/axios-client';
 
 export const PRODUCT_SCHEMA_QUERY_KEYS = {
   all: ['product-schema'] as const,
@@ -64,10 +63,8 @@ export function useProductSchema(catId: string, productId?: string) {
     queryKey: PRODUCT_SCHEMA_QUERY_KEYS.render(catId, productId),
     queryFn: async (): Promise<FieldSpec[]> => {
       try {
-        const response = await axiosClient.get('/product-render', {
-          params: { catId, locale: 'en_US', productId },
-        });
-        const serverFields: FieldSpec[] = response.data?.data?.data ?? response.data?.data ?? [];
+        const res = await fetchProductRenderSchema(catId, productId);
+        const serverFields: FieldSpec[] = res.data?.fields ?? [];
         const withFallbacks = await addFallbackFields(catId, serverFields);
         const merged = ensureVariantSupportFields(normalizeSchema(withFallbacks));
         return merged.length > 0 ? merged : [...BASELINE_SCHEMA];

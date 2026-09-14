@@ -16,7 +16,12 @@ import { CheckoutHeader } from '@/features/checkout/components/checkout-header';
 import { CheckoutItemsStrip } from '@/features/checkout/components/checkout-items-strip';
 import { CheckoutLoggedOut } from '@/features/checkout/components/checkout-logged-out';
 import { CheckoutSummaryCard } from '@/features/checkout/components/checkout-summary-card';
+import { InAppPaymentSheet } from '@/features/checkout/components/in-app-payment-sheet';
 import { PaymentMethodSelector } from '@/features/checkout/components/payment-method-selector';
+import {
+  type CheckoutPaymentMethod,
+  SelectPaymentMethodModal,
+} from '@/features/checkout/components/select-payment-method-modal';
 import { COD_MAX_LIMIT, FREE_SHIPPING_THRESHOLD } from '@/features/checkout/constants';
 import { useCheckoutAddressForm } from '@/features/checkout/hooks/use-checkout-address-form';
 import { useCheckoutMutation } from '@/features/checkout/hooks/use-checkout-mutation';
@@ -29,7 +34,7 @@ export default function CheckoutScreen() {
   const { cart, subtotal, selectedItems, selectedSubtotal } = useCart();
   const { isLoggedIn } = useAuth();
   const { signInWithGoogle, isAuthenticating } = useGoogleAuth();
-  const { placeOrder, isPlacingOrder } = useCheckoutMutation();
+  const { placeOrder, isPlacingOrder, activePayment, handlePaymentResult } = useCheckoutMutation();
 
   const {
     addresses,
@@ -37,7 +42,8 @@ export default function CheckoutScreen() {
     refetch: refetchAddresses,
   } = useAddresses(isLoggedIn);
   const addrForm = useCheckoutAddressForm(addresses);
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'STRIPE'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('COD');
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const {
     checkoutItems,
@@ -104,7 +110,6 @@ export default function CheckoutScreen() {
           onEdit={addrForm.openEdit}
           onAddNew={addrForm.openAdd}
         />
-
         <View style={styles.sectionBand} />
 
         <PaymentMethodSelector
@@ -112,9 +117,8 @@ export default function CheckoutScreen() {
           isCodDisabled={isCodDisabled}
           grandTotal={grandTotal}
           codMaxLimit={COD_MAX_LIMIT}
-          onSelectPaymentMethod={setPaymentMethod}
+          onOpenModal={() => setPaymentModalOpen(true)}
         />
-
         <View style={styles.sectionBand} />
 
         <CheckoutSummaryCard
@@ -143,6 +147,25 @@ export default function CheckoutScreen() {
         onClose={addrForm.closeForm}
         onSubmit={addrForm.handleSubmitAddress}
         onDelete={addrForm.handleDeleteAddress}
+      />
+
+      <SelectPaymentMethodModal
+        visible={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        selectedMethod={paymentMethod}
+        onSelectMethod={setPaymentMethod}
+        subtotal={itemsSubtotal}
+        grandTotal={grandTotal}
+        isCodDisabled={isCodDisabled}
+        codMaxLimit={COD_MAX_LIMIT}
+      />
+
+      <InAppPaymentSheet
+        visible={!!activePayment}
+        paymentUrl={activePayment?.paymentUrl ?? null}
+        title={activePayment?.title ?? 'Payment'}
+        onClose={() => handlePaymentResult('PENDING')}
+        onSuccess={(status) => handlePaymentResult(status)}
       />
     </ThemedView>
   );

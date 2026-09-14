@@ -10,7 +10,10 @@ function getMenuLabels(role?: string, permissions?: string[]): string[] {
   return groups.flatMap((group) => group.menus.map((m) => m.label));
 }
 
-// Helper to extract submenus under a specific menu label
+// Helper to extract section (group) labels in order
+function getGroupLabels(role?: string, permissions?: string[]): Array<string | undefined> {
+  return getMenuList(role, permissions).map((group) => group.label);
+}
 function getSubmenuLabels(menuLabel: string, role?: string, permissions?: string[]): string[] {
   const groups = getMenuList(role, permissions);
   for (const group of groups) {
@@ -180,6 +183,37 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
     it('should see only My Account in the admin panel', () => {
       const labels = getMenuLabels('CUSTOMER');
       expect(labels).toEqual(['My Account']);
+    });
+  });
+
+  describe('Section Labels', () => {
+    it('should group SUPERADMIN menus into Operations, Growth, Management, System in order', () => {
+      expect(getGroupLabels('SUPERADMIN')).toEqual([
+        'Operations',
+        'Growth',
+        'Management',
+        'System',
+      ]);
+    });
+
+    it('should omit the Growth section for VENDOR', () => {
+      const labels = getGroupLabels('VENDOR');
+      expect(labels).toContain('Operations');
+      expect(labels).toContain('Management');
+      expect(labels).toContain('System');
+      expect(labels).not.toContain('Growth');
+    });
+
+    it('should render only the System section for permissionless STAFF', () => {
+      expect(getGroupLabels('STAFF', [])).toEqual(['System']);
+    });
+
+    it('should never emit an empty section group', () => {
+      for (const role of ['SUPERADMIN', 'ADMIN', 'VENDOR', 'STAFF', 'CUSTOMER']) {
+        for (const group of getMenuList(role, [])) {
+          expect(group.menus.length).toBeGreaterThan(0);
+        }
+      }
     });
   });
 });

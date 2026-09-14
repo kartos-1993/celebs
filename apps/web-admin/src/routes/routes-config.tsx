@@ -15,6 +15,7 @@ import { optionSetRoutes } from '@/features/option-sets/routes';
 import { orderRoutes } from '@/features/orders/routes';
 import { platformSettingsRoutes } from '@/features/platform-settings/routes';
 import { productRoutes } from '@/features/product/routes';
+import { reviewRoutes } from '@/features/reviews/routes';
 import { staffRoutes } from '@/features/staff/routes';
 import { userRoutes } from '@/features/users/routes';
 import { vendorOnboardingRoutes } from '@/features/vendor-onboarding/routes';
@@ -44,6 +45,7 @@ export const routesConfig: RouteObject[] = [
     handle: { crumb: 'Home' },
     children: [
       productRoutes,
+      reviewRoutes,
       categoryRoutes,
       optionSetRoutes,
       vendorRoutes,
