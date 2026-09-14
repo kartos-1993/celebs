@@ -5,6 +5,7 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
+    "build": "echo no-build: source-only package",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

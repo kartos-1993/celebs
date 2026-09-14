@@ -11,7 +11,7 @@ else
 fi
 
 echo "Starting background worker..."
-node dist/src/worker-main.js &
+node dist/worker-main.js &
 
 echo "Starting application..."
-exec node dist/src/main.js
+exec node dist/main.js
