@@ -20,6 +20,7 @@ import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
+import { useNavigationGuard } from '@/utils/navigation-guard';
 
 const GRID_PADDING = 12;
 const COLUMN_GAP = 6;
@@ -38,6 +39,7 @@ export function useProductCard({
   isFirstCard = false,
 }: UseProductCardParams) {
   const router = useRouter();
+  const guardNav = useNavigationGuard();
   const { width: windowWidth } = useWindowDimensions();
   const CARD_WIDTH = (windowWidth - GRID_PADDING * 2 - COLUMN_GAP) / 2;
 
@@ -56,7 +58,9 @@ export function useProductCard({
     (e?: GestureResponderEvent) => {
       e?.stopPropagation?.();
       if (!isLoggedIn) {
-        router.push('/(tabs)/me');
+        guardNav(() => {
+          router.push('/(tabs)/me');
+        });
         return;
       }
       if (isWishlistBusy) return;
@@ -67,7 +71,16 @@ export function useProductCard({
         addToWishlist.mutate(product.id);
       }
     },
-    [isLoggedIn, isFavorite, isWishlistBusy, router, product.id, addToWishlist, removeFromWishlist],
+    [
+      isLoggedIn,
+      isFavorite,
+      isWishlistBusy,
+      guardNav,
+      router,
+      product.id,
+      addToWishlist,
+      removeFromWishlist,
+    ],
   );
 
   const imageRef = useRef<View>(null);
@@ -188,20 +201,22 @@ export function useProductCard({
   const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
 
   const handlePress = useCallback(() => {
-    if (onPress) {
-      onPress(product);
-    } else {
-      // Forward the card's selected color so PDP opens on the same variant
-      // (SHEIN behavior) instead of always defaulting to the first one.
-      const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
-      router.push({
-        pathname: '/product/[id]',
-        params: selectedColorName
-          ? { id: product.id, color: selectedColorName }
-          : { id: product.id },
-      });
-    }
-  }, [onPress, product, router, selectedColorIndex]);
+    guardNav(() => {
+      if (onPress) {
+        onPress(product);
+      } else {
+        // Forward the card's selected color so PDP opens on the same variant
+        // (SHEIN behavior) instead of always defaulting to the first one.
+        const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
+        router.push({
+          pathname: '/product/[id]',
+          params: selectedColorName
+            ? { id: product.id, color: selectedColorName }
+            : { id: product.id },
+        });
+      }
+    });
+  }, [guardNav, onPress, product, router, selectedColorIndex]);
 
   const handleAddToCart = useCallback(
     (evt?: GestureResponderEvent) => {
