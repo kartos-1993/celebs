@@ -2,9 +2,8 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, staging, 'remediation/*']
+    branches: [main, staging, 'fix/*', 'feat/*', 'remediation/*']
   pull_request:
-    branches: [main, staging]
 
 jobs:
   lint-and-typecheck:
