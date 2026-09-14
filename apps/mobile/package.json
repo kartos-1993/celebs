@@ -70,6 +70,8 @@
     "dev:staging": "dotenv -e .env.staging -- npx expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "npx expo run:android",
+    "android:dev": "npx expo run:android",
+    "android:release:staging": "dotenv -e .env.staging -- npx expo run:android --variant release",
     "ios": "npx expo run:ios",
     "web": "npx expo start --web",
     "lint": "npx expo lint",
