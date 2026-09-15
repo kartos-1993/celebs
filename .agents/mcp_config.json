@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "prisma": {
+      "serverUrl": "https://mcp.prisma.io/mcp",
+      "url": "https://mcp.prisma.io/mcp"
+    },
+    "postgres": {
+      "command": "C:\\Users\\Abishek Shrestha\\.local\\bin\\uvx.exe",
+      "args": ["--with", "mcp<2", "--python", "3.12", "postgres-mcp", "--access-mode=unrestricted"],
+      "env": {
+        "DATABASE_URI": "postgresql://postgres.qrnikdmrhphimzhwogzw:gccskOOggBXckiId@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
+      }
+    }
+  }
+}
