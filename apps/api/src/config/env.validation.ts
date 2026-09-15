@@ -30,7 +30,15 @@ export const envSchema = z.object({
   SMTP_FROM: z.string().optional().default('info@celebs.com.np'),
   SMTP_API_KEY: z.string().optional().default(''),
   COOKIE_DOMAIN: z.string().optional().default(''),
-  REDIS_HOST: z.string().default('localhost'),
+  REDIS_HOST: z
+    .string()
+    .default('localhost')
+    .transform((val) =>
+      val
+        .trim()
+        .replace(/^https?:\/\//, '')
+        .replace(/\/+$/, ''),
+    ),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_PASSWORD: z.string().optional().default(''),
   S3_REGION: z.string().optional().default('ap-south-1'),

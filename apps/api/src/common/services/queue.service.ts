@@ -5,14 +5,19 @@ import { logger } from '@celebs/shared-utils';
 
 import { config } from '@/config/app.config';
 
+const redisHost = (config.REDIS.HOST || 'localhost')
+  .trim()
+  .replace(/^https?:\/\//, '')
+  .replace(/\/+$/, '');
+
 const isTls =
-  config.REDIS.HOST &&
-  (config.REDIS.HOST.includes('upstash.io') ||
+  redisHost &&
+  (redisHost.includes('upstash.io') ||
     config.NODE_ENV === 'production' ||
     config.NODE_ENV === 'staging');
 
 export const redisConnection = {
-  host: config.REDIS.HOST,
+  host: redisHost,
   port: config.REDIS.PORT,
   password: config.REDIS.PASSWORD || undefined,
   ...(isTls ? { tls: {} } : {}),

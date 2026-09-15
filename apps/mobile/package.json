@@ -71,6 +71,7 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "npx expo run:android",
     "android:dev": "npx expo run:android",
+    "android:release": "dotenv -e .env -- npx expo run:android --variant release",
     "android:release:staging": "dotenv -e .env.staging -- npx expo run:android --variant release",
     "ios": "npx expo run:ios",
     "web": "npx expo start --web",
