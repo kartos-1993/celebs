@@ -4,7 +4,7 @@ import sharp from 'sharp';
 
 import { logger } from '@celebs/shared-utils';
 
-import { redisConnection } from '@/common/services/queue.service';
+import { redisConnection, WORKER_DRAIN_DELAY_SECONDS } from '@/common/services/queue.service';
 import { buildPublicObjectUrl, s3Client } from '@/common/utils/s3.client';
 import { config } from '@/config/app.config';
 
@@ -160,6 +160,7 @@ export const assetWorker = new Worker<AssetJobPayload>(
   {
     connection: redisConnection,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY || '2', 10),
+    drainDelay: WORKER_DRAIN_DELAY_SECONDS,
   },
 );
 
