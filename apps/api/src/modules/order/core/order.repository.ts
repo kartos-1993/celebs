@@ -82,10 +82,6 @@ export class CoreOrderRepository {
               },
             },
           },
-          address: true,
-          payments: {
-            orderBy: { createdAt: 'desc' },
-          },
         },
       }),
       prisma.order.count({ where: { userId } }),

@@ -55,7 +55,7 @@ export class CartService {
    */
   static async getCart(userId?: string, sessionId?: string): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
-    const cartWithItems = await cartRepository.findUniqueWithItems(cartRecord.id);
+    const cartWithItems = await cartRepository.findUniqueWithHydratedItems({ id: cartRecord.id });
 
     if (!cartWithItems) {
       return {
@@ -71,22 +71,12 @@ export class CartService {
       };
     }
 
-    const productIds = Array.from(
-      new Set(cartWithItems.items.map((item) => item.inventory.productId)),
-    );
-
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-    });
-
-    const productMap = new Map(products.map((p) => [p.id, p]));
-
     let subtotalDecimal = new Prisma.Decimal(0);
     let itemCount = 0;
     let hasStockIssues = false;
 
     const hydratedItems: CartItemHydrated[] = cartWithItems.items.map((item) => {
-      const product = productMap.get(item.inventory.productId);
+      const product = item.inventory.product;
       const availableStock = item.inventory.quantity - item.inventory.reservedQuantity;
       const isAvailable = availableStock > 0 && availableStock >= item.quantity;
 

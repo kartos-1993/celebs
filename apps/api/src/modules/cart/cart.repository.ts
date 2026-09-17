@@ -21,6 +21,35 @@ export class CartRepository {
     });
   }
 
+  async findUniqueWithHydratedItems(where: Prisma.CartWhereUniqueInput) {
+    return prisma.cart.findUnique({
+      where,
+      include: {
+        items: {
+          include: {
+            inventory: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    brand: true,
+                    price: true,
+                    discountedPrice: true,
+                    mainImages: true,
+                    colorVariants: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  }
+
   async createCartForUser(userId: string) {
     return prisma.cart.create({
       data: { user: { connect: { id: userId } } },
