@@ -49,6 +49,8 @@ model User {
   orders        Order[]
   reviews       Review[]
   wishlistItems WishlistItem[]
+  pushTokens    PushToken[]
+  notifications Notification[]
 
   @@index([vendorId])
 }
@@ -94,6 +96,7 @@ model VendorProfile {
   brandAuthorizations VendorBrandAuthorization[]
   mediaFolders        MediaFolder[]
   mediaAssets         MediaAsset[]
+  notifications       Notification[]
 
   @@index([status])
 }
@@ -112,6 +115,9 @@ model UserPreference {
   id                String  @id @default(uuid())
   enable2FA         Boolean @default(false)
   emailNotification Boolean @default(true)
+  pushOrderUpdates  Boolean @default(true)
+  pushPromotions    Boolean @default(true)
+  pushPriceDrops    Boolean @default(true)
   twoFactorSecret   String?
   recentCategories  Json?   @default("[]")
   userId            String  @unique
@@ -131,12 +137,13 @@ model VerificationCode {
 }
 
 model WishlistItem {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  priceAtWishlist Decimal? @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
 
   @@unique([userId, productId])
   @@index([userId, createdAt])
@@ -913,4 +920,39 @@ model PlatformSettingAudit {
   createdAt DateTime @default(now())
 
   @@index([settingKey, createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  platform  String   @default("android") // android | ios | web
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
+  @@index([token])
+}
+
+model Notification {
+  id         String         @id @default(uuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorId   String?
+  vendor     VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  type       String         // ORDER_STATUS | PAYMENT | BROADCAST | SYSTEM | VENDOR_ORDER | REVIEW | PRICE_DROP | CART_ABANDONED
+  severity   String         @default("INFO") // INFO | WARNING | CRITICAL
+  title      String
+  body       String
+  data       Json?          // Pointer-only: { url, orderId, productId } (Strictly < 4KB)
+  read       Boolean        @default(false)
+  pushStatus String         @default("PENDING") // PENDING | SENT | FAILED | SKIPPED
+  channel    String         @default("PUSH") // PUSH | EMAIL | INBOX_ONLY
+  createdAt  DateTime       @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, read])
+  @@index([vendorId, createdAt(sort: Desc)])
+  @@index([pushStatus])
 }
