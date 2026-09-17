@@ -106,8 +106,6 @@ model IdempotencyKey {
   responseBody String
   createdAt    DateTime @default(now())
   expiresAt    DateTime @default(dbgenerated("NOW() + interval '24 hours'"))
-
-  @@index([key])
 }
 
 model UserPreference {
@@ -142,6 +140,7 @@ model WishlistItem {
 
   @@unique([userId, productId])
   @@index([userId, createdAt])
+  @@index([productId])
 }
 
 model Warehouse {
@@ -187,8 +186,8 @@ model ProductInventory {
   orderItems OrderItem[]
 
   @@unique([productId, colorVariantName, size])
-  @@index([productId])
   @@index([productId, quantity])
+  @@index([warehouseId])
 }
 
 model Cart {
@@ -202,8 +201,6 @@ model Cart {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([sessionId])
   @@index([updatedAt])
 }
 
@@ -226,6 +223,7 @@ model CartItem {
 
   @@unique([cartId, inventoryId])
   @@index([inventoryId])
+  @@index([comboBundleId])
 }
 
 enum OrderStatus {
@@ -319,9 +317,7 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([orderNumber])
-  @@index([status])
+  @@index([addressId])
   @@index([userId, status])
   @@index([status, createdAt])
 }
@@ -634,6 +630,7 @@ model MediaFolder {
 
   @@unique([vendorId, parentId, name])
   @@index([vendorId])
+  @@index([parentId])
 }
 
 model MediaAsset {
@@ -672,6 +669,7 @@ model MediaAsset {
   @@index([vendorId, hashSha256])
   @@index([vendorId, createdAt])
   @@index([productId])
+  @@index([folderId])
 }
 
 // ==========================================
@@ -730,11 +728,9 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([categoryId])
   @@index([subcategoryId])
   @@index([vendorId])
   @@index([brandId])
-  @@index([status])
   @@index([categoryId, status])
   @@index([status, createdAt])
 }
@@ -761,7 +757,6 @@ model Category {
   products    Product[] @relation("CategoryProducts")
   subProducts Product[] @relation("SubcategoryProducts")
 
-  @@index([slug])
   @@index([parentCategory])
 }
 
@@ -808,8 +803,6 @@ model Review {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
-  @@index([productId])
-  @@index([productId, status])
   @@index([productId, status, rating])
   @@index([productId, status, createdAt])
   @@index([userId])
