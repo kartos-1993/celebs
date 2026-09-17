@@ -14,6 +14,7 @@
     },
     "android": {
       "package": "com.celebs.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 2,
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
@@ -30,6 +31,13 @@
     "plugins": [
       "expo-router",
       "@react-native-google-signin/google-signin",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#000000"
+        }
+      ],
       [
         "@sentry/react-native/expo",
         {

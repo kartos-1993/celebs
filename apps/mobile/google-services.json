@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1032058214977",
+    "firebase_url": "https://celebs-db-3371a.firebaseio.com",
+    "project_id": "celebs-db-3371a",
+    "storage_bucket": "celebs-db-3371a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1032058214977:android:df321b7ec93503d72204c0",
+        "android_client_info": {
+          "package_name": "com.celebs.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1032058214977-1oqip9cr1nah2thlpqgogiq3cse55e3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiIS7ljSOurMtRmnytQD-MxvmcBBynC_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1032058214977-1oqip9cr1nah2thlpqgogiq3cse55e3q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
