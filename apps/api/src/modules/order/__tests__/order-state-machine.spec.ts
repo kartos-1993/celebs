@@ -12,11 +12,11 @@ describe('OrderStateMachine Unit Tests', () => {
     expect(canTransition(OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED)).toBe(true);
   });
 
-  it('should allow cancelling from active non-terminal states', () => {
+  it('should allow cancelling from active pre-dispatch states', () => {
     expect(canTransition(OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED)).toBe(true);
     expect(canTransition(OrderStatus.CONFIRMED, OrderStatus.CANCELLED)).toBe(true);
     expect(canTransition(OrderStatus.PACKED, OrderStatus.CANCELLED)).toBe(true);
-    expect(canTransition(OrderStatus.HANDED_OVER, OrderStatus.CANCELLED)).toBe(true);
+    expect(canTransition(OrderStatus.HANDED_OVER, OrderStatus.CANCELLED)).toBe(false);
   });
 
   it('should reject invalid transitions like skipping steps or cancelling delivered orders', () => {

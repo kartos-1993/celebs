@@ -6,7 +6,7 @@ export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING_PAYMENT: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
   CONFIRMED: [OrderStatus.PACKED, OrderStatus.CANCELLED],
   PACKED: [OrderStatus.HANDED_OVER, OrderStatus.CANCELLED],
-  HANDED_OVER: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CANCELLED],
+  HANDED_OVER: [OrderStatus.OUT_FOR_DELIVERY],
   OUT_FOR_DELIVERY: [OrderStatus.DELIVERED, OrderStatus.RETURNED],
   DELIVERED: [],
   CANCELLED: [],
