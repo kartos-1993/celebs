@@ -105,6 +105,14 @@ export class NotificationRepository {
     });
   }
 
+  async getAdminUserIds(): Promise<string[]> {
+    const admins = await this.prisma.user.findMany({
+      where: { role: { in: ['SUPERADMIN', 'ADMIN'] } },
+      select: { id: true },
+    });
+    return admins.map((a) => a.id);
+  }
+
   // ==========================================
   // INBOX NOTIFICATION OPERATIONS
   // ==========================================
@@ -120,7 +128,7 @@ export class NotificationRepository {
 
     const where: Prisma.NotificationWhereInput = {
       ...(params.storeId
-        ? { vendorId: params.storeId }
+        ? { OR: [{ vendorId: params.storeId }, { userId: params.userId, vendorId: null }] }
         : { userId: params.userId, vendorId: null }),
       ...(params.type ? { type: params.type } : {}),
       ...(params.unreadOnly ? { read: false } : {}),
@@ -147,7 +155,7 @@ export class NotificationRepository {
 
   async getUnreadCount(userId: string, storeId?: string | null): Promise<IUnreadCount> {
     const baseWhere: Prisma.NotificationWhereInput = storeId
-      ? { vendorId: storeId, read: false }
+      ? { OR: [{ vendorId: storeId }, { userId, vendorId: null }], read: false }
       : { userId, vendorId: null, read: false };
 
     const [count, criticalCount] = await Promise.all([
@@ -165,7 +173,9 @@ export class NotificationRepository {
 
   async markAsRead(id: string, userId: string, storeId?: string | null): Promise<Notification> {
     const existing = await this.prisma.notification.findFirstOrThrow({
-      where: storeId ? { id, vendorId: storeId } : { id, userId, vendorId: null },
+      where: storeId
+        ? { id, OR: [{ vendorId: storeId }, { userId, vendorId: null }] }
+        : { id, userId, vendorId: null },
     });
 
     return this.prisma.notification.update({
@@ -176,7 +186,9 @@ export class NotificationRepository {
 
   async markAllAsRead(userId: string, storeId?: string | null): Promise<{ count: number }> {
     return this.prisma.notification.updateMany({
-      where: storeId ? { vendorId: storeId, read: false } : { userId, vendorId: null, read: false },
+      where: storeId
+        ? { OR: [{ vendorId: storeId }, { userId, vendorId: null }], read: false }
+        : { userId, vendorId: null, read: false },
       data: { read: true },
     });
   }

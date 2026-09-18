@@ -155,7 +155,9 @@ describe('NotificationRepository', () => {
       });
 
       expect(mockPrisma.notification.findMany).toHaveBeenCalledWith({
-        where: { vendorId: 'store-abc' },
+        where: {
+          OR: [{ vendorId: 'store-abc' }, { userId: 'user-1', vendorId: null }],
+        },
         orderBy: { createdAt: 'desc' },
         skip: 0,
         take: 10,
@@ -171,10 +173,17 @@ describe('NotificationRepository', () => {
       const result = await repository.getUnreadCount('user-1', 'store-abc');
 
       expect(mockPrisma.notification.count).toHaveBeenNthCalledWith(1, {
-        where: { vendorId: 'store-abc', read: false },
+        where: {
+          OR: [{ vendorId: 'store-abc' }, { userId: 'user-1', vendorId: null }],
+          read: false,
+        },
       });
       expect(mockPrisma.notification.count).toHaveBeenNthCalledWith(2, {
-        where: { vendorId: 'store-abc', read: false, severity: 'CRITICAL' },
+        where: {
+          OR: [{ vendorId: 'store-abc' }, { userId: 'user-1', vendorId: null }],
+          read: false,
+          severity: 'CRITICAL',
+        },
       });
       expect(result).toEqual({ count: 3, hasCritical: true });
     });
@@ -203,7 +212,10 @@ describe('NotificationRepository', () => {
       const result = await repository.markAsRead('n-1', 'user-1', 'store-abc');
 
       expect(mockPrisma.notification.findFirstOrThrow).toHaveBeenCalledWith({
-        where: { id: 'n-1', vendorId: 'store-abc' },
+        where: {
+          id: 'n-1',
+          OR: [{ vendorId: 'store-abc' }, { userId: 'user-1', vendorId: null }],
+        },
       });
       expect(result.read).toBe(true);
     });
@@ -214,7 +226,10 @@ describe('NotificationRepository', () => {
       const result = await repository.markAllAsRead('user-1', 'store-abc');
 
       expect(mockPrisma.notification.updateMany).toHaveBeenCalledWith({
-        where: { vendorId: 'store-abc', read: false },
+        where: {
+          OR: [{ vendorId: 'store-abc' }, { userId: 'user-1', vendorId: null }],
+          read: false,
+        },
         data: { read: true },
       });
       expect(result).toEqual({ count: 7 });

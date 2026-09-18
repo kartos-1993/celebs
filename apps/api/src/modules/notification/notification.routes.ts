@@ -7,6 +7,7 @@ import {
   notificationIdParamSchema,
   registerPushTokenSchema,
   unregisterPushTokenSchema,
+  vendorIdParamSchema,
 } from '@celebs/shared-types';
 import { asyncHandler } from '@celebs/shared-utils';
 
@@ -56,6 +57,7 @@ notificationRoutes.patch(
 notificationRoutes.get(
   '/vendors/:vendorId',
   requireAnyPermission(Permission.VENDOR_MANAGE, Permission.ORDER_VIEW),
+  validateParams(vendorIdParamSchema),
   validateQuery(getInboxQuerySchema),
   asyncHandler(notificationController.getVendorNotificationsForAdmin),
 );
