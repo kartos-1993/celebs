@@ -70,7 +70,13 @@ export function AppHeader({
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Menu size={22} color={textColor} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => router.push('/notifications')}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
             <Mail size={22} color={textColor} strokeWidth={2} />
           </TouchableOpacity>
         </View>

@@ -76,7 +76,8 @@
     "ios": "npx expo run:ios",
     "web": "npx expo start --web",
     "lint": "npx expo lint",
-    "typecheck": "npx tsc --noEmit"
+    "typecheck": "npx tsc --noEmit",
+    "test": "vitest run"
   },
   "private": true
 }

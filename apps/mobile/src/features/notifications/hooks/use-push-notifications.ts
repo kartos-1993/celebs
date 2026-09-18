@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
@@ -88,7 +89,12 @@ export function usePushNotifications() {
         const token = tokenData?.data;
         if (token && isMounted) {
           setExpoPushToken(token);
-          await registerPushTokenApi(token);
+          const lastRegistered = await AsyncStorage.getItem('push_token_registered');
+          if (lastRegistered !== token) {
+            const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+            await registerPushTokenApi(token, platform);
+            await AsyncStorage.setItem('push_token_registered', token);
+          }
         }
 
         notificationListener = Notifications.addNotificationReceivedListener(() => {});
