@@ -151,6 +151,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
       submenus: [
         { href: '/platform-settings/banners', label: 'Mobile Banner Slider' },
         { href: '/platform-settings/layout', label: 'Home Layout Editor' },
+        { href: '/platform-settings/notifications', label: 'Notification Settings' },
       ],
     });
   }
