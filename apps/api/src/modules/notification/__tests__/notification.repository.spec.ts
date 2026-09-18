@@ -127,14 +127,14 @@ describe('NotificationRepository (TDD - Ponytail Consolidated)', () => {
       expect(result).toEqual(mockNotif);
     });
 
-    it('should return paginated inbox items sorted by createdAt DESC', async () => {
+    it('should return paginated inbox items sorted by createdAt DESC for personal inbox (storeId null)', async () => {
       mockPrisma.notification.findMany.mockResolvedValueOnce([{ id: 'n-1' }]);
       mockPrisma.notification.count.mockResolvedValueOnce(15);
 
       const result = await repository.getInbox({ userId: 'user-1', page: 2, limit: 10 });
 
       expect(mockPrisma.notification.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
+        where: { userId: 'user-1', vendorId: null },
         orderBy: { createdAt: 'desc' },
         skip: 10,
         take: 10,
@@ -143,41 +143,99 @@ describe('NotificationRepository (TDD - Ponytail Consolidated)', () => {
       expect(result.total).toBe(15);
     });
 
-    it('should calculate unread count and indicate critical severity presence', async () => {
+    it('should return paginated inbox items scoped to storeId when storeId is provided (Vendor Tenancy)', async () => {
+      mockPrisma.notification.findMany.mockResolvedValueOnce([{ id: 'v-1' }]);
+      mockPrisma.notification.count.mockResolvedValueOnce(5);
+
+      const result = await repository.getInbox({
+        userId: 'user-1',
+        storeId: 'store-abc',
+        page: 1,
+        limit: 10,
+      });
+
+      expect(mockPrisma.notification.findMany).toHaveBeenCalledWith({
+        where: { vendorId: 'store-abc' },
+        orderBy: { createdAt: 'desc' },
+        skip: 0,
+        take: 10,
+      });
+      expect(result.items).toEqual([{ id: 'v-1' }]);
+    });
+
+    it('should calculate unread count scoped to storeId when provided', async () => {
       mockPrisma.notification.count
-        .mockResolvedValueOnce(4) // unread count
+        .mockResolvedValueOnce(3) // unread count
         .mockResolvedValueOnce(1); // critical unread count
+
+      const result = await repository.getUnreadCount('user-1', 'store-abc');
+
+      expect(mockPrisma.notification.count).toHaveBeenNthCalledWith(1, {
+        where: { vendorId: 'store-abc', read: false },
+      });
+      expect(mockPrisma.notification.count).toHaveBeenNthCalledWith(2, {
+        where: { vendorId: 'store-abc', read: false, severity: 'CRITICAL' },
+      });
+      expect(result).toEqual({ count: 3, hasCritical: true });
+    });
+
+    it('should calculate personal unread count with vendorId: null when storeId not provided', async () => {
+      mockPrisma.notification.count.mockResolvedValueOnce(4).mockResolvedValueOnce(0);
 
       const result = await repository.getUnreadCount('user-1');
 
-      expect(result).toEqual({ count: 4, hasCritical: true });
+      expect(mockPrisma.notification.count).toHaveBeenNthCalledWith(1, {
+        where: { userId: 'user-1', vendorId: null, read: false },
+      });
+      expect(mockPrisma.notification.count).toHaveBeenNthCalledWith(2, {
+        where: { userId: 'user-1', vendorId: null, read: false, severity: 'CRITICAL' },
+      });
+      expect(result).toEqual({ count: 4, hasCritical: false });
     });
 
-    it('should mark single notification as read with ownership check', async () => {
+    it('should mark single notification as read scoped to storeId when provided', async () => {
       mockPrisma.notification.findFirstOrThrow.mockResolvedValueOnce({
         id: 'n-1',
-        userId: 'user-1',
+        vendorId: 'store-abc',
       });
       mockPrisma.notification.update.mockResolvedValueOnce({ id: 'n-1', read: true });
 
-      const result = await repository.markAsRead('n-1', 'user-1');
+      const result = await repository.markAsRead('n-1', 'user-1', 'store-abc');
 
       expect(mockPrisma.notification.findFirstOrThrow).toHaveBeenCalledWith({
-        where: { id: 'n-1', userId: 'user-1' },
+        where: { id: 'n-1', vendorId: 'store-abc' },
       });
       expect(result.read).toBe(true);
     });
 
-    it('should mark all notifications as read for the user', async () => {
-      mockPrisma.notification.updateMany.mockResolvedValueOnce({ count: 3 });
+    it('should mark all notifications as read scoped to storeId when provided', async () => {
+      mockPrisma.notification.updateMany.mockResolvedValueOnce({ count: 7 });
 
-      const result = await repository.markAllAsRead('user-1');
+      const result = await repository.markAllAsRead('user-1', 'store-abc');
 
       expect(mockPrisma.notification.updateMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1', read: false },
+        where: { vendorId: 'store-abc', read: false },
         data: { read: true },
       });
-      expect(result).toEqual({ count: 3 });
+      expect(result).toEqual({ count: 7 });
+    });
+
+    it('should support administrative inspection of vendor notifications', async () => {
+      mockPrisma.notification.findMany.mockResolvedValueOnce([{ id: 'audit-1' }]);
+      mockPrisma.notification.count.mockResolvedValueOnce(1);
+
+      const result = await repository.getVendorNotificationsForAdmin('store-xyz', {
+        page: 1,
+        limit: 10,
+      });
+
+      expect(mockPrisma.notification.findMany).toHaveBeenCalledWith({
+        where: { vendorId: 'store-xyz' },
+        orderBy: { createdAt: 'desc' },
+        skip: 0,
+        take: 10,
+      });
+      expect(result.items).toEqual([{ id: 'audit-1' }]);
     });
   });
 });

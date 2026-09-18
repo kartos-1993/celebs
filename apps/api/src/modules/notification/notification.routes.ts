@@ -19,53 +19,50 @@ import { validateBody, validateParams, validateQuery } from '@/middlewares/valid
 
 const notificationRoutes = Router();
 
+// Global middleware for notification routes: JWT Authentication + Actor Context
+notificationRoutes.use(authenticateJWT, asyncHandler(actorContext));
+
 // 1. Device push token registration & teardown
 notificationRoutes.post(
   '/push-tokens',
-  authenticateJWT,
   validateBody(registerPushTokenSchema),
   asyncHandler(notificationController.registerPushToken),
 );
 
 notificationRoutes.delete(
   '/push-tokens',
-  authenticateJWT,
   validateBody(unregisterPushTokenSchema),
   asyncHandler(notificationController.unregisterPushToken),
 );
 
-// 2. Personal inbox management (Standard REST collection /notifications)
+// 2. Personal & Store inbox management (Standard REST collection /notifications)
 notificationRoutes.get(
   '/',
-  authenticateJWT,
   validateQuery(getInboxQuerySchema),
   asyncHandler(notificationController.getInbox),
 );
 
-notificationRoutes.get(
-  '/unread-count',
-  authenticateJWT,
-  asyncHandler(notificationController.getUnreadCount),
-);
+notificationRoutes.get('/unread-count', asyncHandler(notificationController.getUnreadCount));
 
-notificationRoutes.patch(
-  '/read-all',
-  authenticateJWT,
-  asyncHandler(notificationController.markAllAsRead),
-);
+notificationRoutes.patch('/read-all', asyncHandler(notificationController.markAllAsRead));
 
 notificationRoutes.patch(
   '/:id/read',
-  authenticateJWT,
   validateParams(notificationIdParamSchema),
   asyncHandler(notificationController.markAsRead),
 );
 
-// 3. Admin marketing broadcast
+// 3. Administrative Support Audit (Staff inspecting a vendor's delivery notifications)
+notificationRoutes.get(
+  '/vendors/:vendorId',
+  requireAnyPermission(Permission.VENDOR_MANAGE, Permission.ORDER_VIEW),
+  validateQuery(getInboxQuerySchema),
+  asyncHandler(notificationController.getVendorNotificationsForAdmin),
+);
+
+// 4. Admin marketing broadcast
 notificationRoutes.post(
   '/broadcast',
-  authenticateJWT,
-  asyncHandler(actorContext),
   requireAnyPermission(Permission.PLATFORM_MANAGE, Permission.USER_MANAGE),
   validateBody(broadcastPayloadSchema),
   asyncHandler(notificationController.broadcast),

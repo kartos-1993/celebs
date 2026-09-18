@@ -111,45 +111,62 @@ describe('NotificationService (TDD - Ponytail Consolidated)', () => {
   });
 
   describe('inbox operations', () => {
-    it('should delegate getInbox to repository with pagination', async () => {
+    it('should delegate getInbox to repository with pagination and storeId', async () => {
       const mockResult = { items: [], total: 0, page: 1, limit: 20, totalPages: 1 };
       mockRepo.getInbox.mockResolvedValueOnce(mockResult);
 
-      const result = await service.getInbox('user-1', { page: 1, limit: 20 });
+      const result = await service.getInbox('user-1', { page: 1, limit: 20 }, 'store-abc');
 
       expect(mockRepo.getInbox).toHaveBeenCalledWith({
         userId: 'user-1',
+        storeId: 'store-abc',
         page: 1,
         limit: 20,
       });
       expect(result).toEqual(mockResult);
     });
 
-    it('should delegate getUnreadCount to repository', async () => {
+    it('should delegate getUnreadCount to repository with storeId', async () => {
       mockRepo.getUnreadCount.mockResolvedValueOnce({ count: 3, hasCritical: false });
 
-      const result = await service.getUnreadCount('user-1');
+      const result = await service.getUnreadCount('user-1', 'store-abc');
 
-      expect(mockRepo.getUnreadCount).toHaveBeenCalledWith('user-1');
+      expect(mockRepo.getUnreadCount).toHaveBeenCalledWith('user-1', 'store-abc');
       expect(result).toEqual({ count: 3, hasCritical: false });
     });
 
-    it('should delegate markAsRead to repository', async () => {
+    it('should delegate markAsRead to repository with storeId', async () => {
       mockRepo.markAsRead.mockResolvedValueOnce({ id: 'n-1', read: true });
 
-      const result = await service.markAsRead('user-1', 'n-1');
+      const result = await service.markAsRead('user-1', 'n-1', 'store-abc');
 
-      expect(mockRepo.markAsRead).toHaveBeenCalledWith('n-1', 'user-1');
+      expect(mockRepo.markAsRead).toHaveBeenCalledWith('n-1', 'user-1', 'store-abc');
       expect(result.read).toBe(true);
     });
 
-    it('should delegate markAllAsRead to repository', async () => {
+    it('should delegate markAllAsRead to repository with storeId', async () => {
       mockRepo.markAllAsRead.mockResolvedValueOnce({ count: 5 });
 
-      const result = await service.markAllAsRead('user-1');
+      const result = await service.markAllAsRead('user-1', 'store-abc');
 
-      expect(mockRepo.markAllAsRead).toHaveBeenCalledWith('user-1');
+      expect(mockRepo.markAllAsRead).toHaveBeenCalledWith('user-1', 'store-abc');
       expect(result).toEqual({ count: 5 });
+    });
+
+    it('should delegate getVendorNotificationsForAdmin to repository', async () => {
+      const mockResult = { items: [], total: 0, page: 1, limit: 10, totalPages: 1 };
+      mockRepo.getVendorNotificationsForAdmin = vi.fn().mockResolvedValueOnce(mockResult);
+
+      const result = await service.getVendorNotificationsForAdmin('store-xyz', {
+        page: 1,
+        limit: 10,
+      });
+
+      expect(mockRepo.getVendorNotificationsForAdmin).toHaveBeenCalledWith('store-xyz', {
+        page: 1,
+        limit: 10,
+      });
+      expect(result).toEqual(mockResult);
     });
   });
 

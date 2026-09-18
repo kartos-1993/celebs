@@ -148,23 +148,39 @@ export class NotificationService {
     });
   }
 
-  async getInbox(userId: string, query: GetInboxQueryInput): Promise<PaginatedInboxResult> {
+  async getInbox(
+    userId: string,
+    query: GetInboxQueryInput,
+    storeId?: string | null,
+  ): Promise<PaginatedInboxResult> {
     return this.repo.getInbox({
       userId,
+      storeId,
       ...query,
     });
   }
 
-  async getUnreadCount(userId: string): Promise<IUnreadCount> {
-    return this.repo.getUnreadCount(userId);
+  async getUnreadCount(userId: string, storeId?: string | null): Promise<IUnreadCount> {
+    return this.repo.getUnreadCount(userId, storeId);
   }
 
-  async markAsRead(userId: string, notificationId: string): Promise<Notification> {
-    return this.repo.markAsRead(notificationId, userId);
+  async markAsRead(
+    userId: string,
+    notificationId: string,
+    storeId?: string | null,
+  ): Promise<Notification> {
+    return this.repo.markAsRead(notificationId, userId, storeId);
   }
 
-  async markAllAsRead(userId: string): Promise<{ count: number }> {
-    return this.repo.markAllAsRead(userId);
+  async markAllAsRead(userId: string, storeId?: string | null): Promise<{ count: number }> {
+    return this.repo.markAllAsRead(userId, storeId);
+  }
+
+  async getVendorNotificationsForAdmin(
+    vendorId: string,
+    query: { page?: number; limit?: number },
+  ): Promise<PaginatedInboxResult> {
+    return this.repo.getVendorNotificationsForAdmin(vendorId, query);
   }
 
   async broadcast(

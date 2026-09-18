@@ -11,6 +11,7 @@ import defaultPrisma from '@/config/db.prisma';
 
 export interface GetInboxParams {
   userId: string;
+  storeId?: string | null;
   page?: number;
   limit?: number;
   type?: NotificationType;
@@ -49,19 +50,11 @@ export class NotificationRepository {
       },
     });
 
-    // 2. Upsert token record for user
+    // 2. Upsert token record
     return this.prisma.pushToken.upsert({
-      where: {
-        userId_token: { userId, token },
-      },
-      create: {
-        userId,
-        token,
-        platform,
-      },
-      update: {
-        platform,
-      },
+      where: { userId_token: { userId, token } },
+      create: { userId, token, platform },
+      update: { platform },
     });
   }
 
@@ -74,25 +67,24 @@ export class NotificationRepository {
   }
 
   async getUserPushTokens(userId: string): Promise<string[]> {
-    if (!userId) return [];
-
-    const records = await this.prisma.pushToken.findMany({
+    const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
       select: { token: true },
     });
-
-    return records.map((r) => r.token);
+    return tokens.map((t) => t.token);
   }
 
-  async deleteInvalidPushTokens(tokens: string[]): Promise<void> {
-    if (!tokens || tokens.length === 0) return;
-
-    await this.prisma.pushToken.deleteMany({
+  async deleteInvalidPushTokens(tokens: string[]): Promise<number> {
+    if (tokens.length === 0) return 0;
+    const result = await this.prisma.pushToken.deleteMany({
       where: { token: { in: tokens } },
     });
+    return result.count;
   }
 
-  async getAudiencePushTokens(audience: string): Promise<{ userId: string; token: string }[]> {
+  async getAudiencePushTokens(
+    audience: 'CUSTOMERS' | 'VENDORS' | 'ALL',
+  ): Promise<{ userId: string; token: string }[]> {
     if (audience === 'CUSTOMERS') {
       return this.prisma.pushToken.findMany({
         where: { user: { role: 'CUSTOMER' } },
@@ -127,7 +119,9 @@ export class NotificationRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.NotificationWhereInput = {
-      userId: params.userId,
+      ...(params.storeId
+        ? { vendorId: params.storeId }
+        : { userId: params.userId, vendorId: null }),
       ...(params.type ? { type: params.type } : {}),
       ...(params.unreadOnly ? { read: false } : {}),
     };
@@ -151,13 +145,15 @@ export class NotificationRepository {
     };
   }
 
-  async getUnreadCount(userId: string): Promise<IUnreadCount> {
+  async getUnreadCount(userId: string, storeId?: string | null): Promise<IUnreadCount> {
+    const baseWhere: Prisma.NotificationWhereInput = storeId
+      ? { vendorId: storeId, read: false }
+      : { userId, vendorId: null, read: false };
+
     const [count, criticalCount] = await Promise.all([
+      this.prisma.notification.count({ where: baseWhere }),
       this.prisma.notification.count({
-        where: { userId, read: false },
-      }),
-      this.prisma.notification.count({
-        where: { userId, read: false, severity: 'CRITICAL' },
+        where: { ...baseWhere, severity: 'CRITICAL' },
       }),
     ]);
 
@@ -167,9 +163,9 @@ export class NotificationRepository {
     };
   }
 
-  async markAsRead(id: string, userId: string): Promise<Notification> {
+  async markAsRead(id: string, userId: string, storeId?: string | null): Promise<Notification> {
     const existing = await this.prisma.notification.findFirstOrThrow({
-      where: { id, userId },
+      where: storeId ? { id, vendorId: storeId } : { id, userId, vendorId: null },
     });
 
     return this.prisma.notification.update({
@@ -178,11 +174,43 @@ export class NotificationRepository {
     });
   }
 
-  async markAllAsRead(userId: string): Promise<{ count: number }> {
+  async markAllAsRead(userId: string, storeId?: string | null): Promise<{ count: number }> {
     return this.prisma.notification.updateMany({
-      where: { userId, read: false },
+      where: storeId ? { vendorId: storeId, read: false } : { userId, vendorId: null, read: false },
       data: { read: true },
     });
+  }
+
+  async getVendorNotificationsForAdmin(
+    vendorId: string,
+    params: { page?: number; limit?: number; type?: NotificationType } = {},
+  ): Promise<PaginatedInboxResult> {
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.max(1, Math.min(params.limit || 20, 100));
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.NotificationWhereInput = {
+      vendorId,
+      ...(params.type ? { type: params.type } : {}),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
   }
 
   async updatePushStatus(id: string, pushStatus: PushStatus): Promise<Notification> {
