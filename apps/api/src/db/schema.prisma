@@ -231,6 +231,7 @@ model CartItem {
   @@unique([cartId, inventoryId])
   @@index([inventoryId])
   @@index([comboBundleId])
+  @@index([cartId, createdAt(sort: Desc)])
 }
 
 enum OrderStatus {
@@ -327,6 +328,8 @@ model Order {
   @@index([addressId])
   @@index([userId, status])
   @@index([status, createdAt])
+  @@index([status, updatedAt])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 enum DispatchMode {
