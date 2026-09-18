@@ -164,7 +164,7 @@ export class CheckoutService {
       );
     }
 
-    // Enterprise SHEIN/Daraz order numbering: CEL-YYMMDD-XXXXXX
+    // Enterprise order numbering: CEL-YYMMDD-XXXXXX
     const orderNumber = generateOrderNumber();
     const isCOD = paymentMethod === 'COD';
     const orderStatus = isCOD ? 'CONFIRMED' : 'PENDING_PAYMENT';

@@ -215,7 +215,7 @@ export function useProductCard({
         onPress(product);
       } else {
         // Forward the card's selected color so PDP opens on the same variant
-        // (SHEIN behavior) instead of always defaulting to the first one.
+        // instead of always defaulting to the first one.
         const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
         router.navigate({
           pathname: '/product/[id]',

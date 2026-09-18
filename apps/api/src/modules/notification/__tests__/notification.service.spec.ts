@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NotificationRepository } from '../notification.repository';
 import { NotificationService } from '../notification.service';
 
-describe('NotificationService (TDD - Ponytail Consolidated)', () => {
+describe('NotificationService', () => {
   let service: NotificationService;
   let mockRepo: {
     upsertPushToken: ReturnType<typeof vi.fn>;

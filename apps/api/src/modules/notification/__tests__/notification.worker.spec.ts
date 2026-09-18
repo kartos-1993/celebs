@@ -11,7 +11,7 @@ import { calculateQuietHoursDelay, shouldApplyQuietHours } from '../notification
 
 import type { UserRepository } from '@/modules/user/user.repository';
 
-describe('Notification Worker & Quiet Hours (TDD - Ponytail Consolidated)', () => {
+describe('Notification Worker & Quiet Hours', () => {
   describe('calculateQuietHoursDelay', () => {
     it('should calculate delay until 08:00 AM NPT when time is 23:00 NPT (quiet hours)', () => {
       // 23:00 NPT is 17:15 UTC

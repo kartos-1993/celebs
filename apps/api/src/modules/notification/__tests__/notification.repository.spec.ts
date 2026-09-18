@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NotificationRepository } from '../notification.repository';
 
-describe('NotificationRepository (TDD - Ponytail Consolidated)', () => {
+describe('NotificationRepository', () => {
   let mockPrisma: {
     pushToken: {
       upsert: ReturnType<typeof vi.fn>;
