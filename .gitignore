@@ -72,3 +72,9 @@ report.json
 # Expo cache
 .expo/
 
+# Mobile credentials
+google-services.json
+GoogleService-Info.plist
+!google-services.json.example
+!GoogleService-Info.plist.example
+
