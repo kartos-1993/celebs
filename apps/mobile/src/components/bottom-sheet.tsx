@@ -3,12 +3,13 @@ import {
   Animated,
   Dimensions,
   Keyboard,
+  KeyboardAvoidingView as RNKeyboardAvoidingView,
   Modal,
   Platform,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView as ControllerKeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { styles } from './bottom-sheet.styles';
@@ -16,6 +17,10 @@ import { useBottomSheetAnimation } from './use-bottom-sheet-animation';
 
 import { Spacing } from '@/constants/theme';
 import { isKeyboardControllerSupported } from '@/providers/keyboard-provider';
+
+const AvoidingContainer = isKeyboardControllerSupported
+  ? ControllerKeyboardAvoidingView
+  : RNKeyboardAvoidingView;
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const DEFAULT_HEIGHT_RATIO = 0.9;
@@ -97,11 +102,7 @@ export function BottomSheet({
             <View style={styles.handle} />
           </View>
           {header}
-          <KeyboardAvoidingView
-            behavior="padding"
-            style={styles.avoidingContainer}
-            enabled={isKeyboardControllerSupported}
-          >
+          <AvoidingContainer behavior="padding" style={styles.avoidingContainer} enabled={true}>
             <View style={styles.body}>{children}</View>
             {footer ? (
               <View
@@ -113,7 +114,7 @@ export function BottomSheet({
                 {footer}
               </View>
             ) : null}
-          </KeyboardAvoidingView>
+          </AvoidingContainer>
         </Animated.View>
       </View>
     </Modal>

@@ -12,6 +12,7 @@ export type {
   ProductMeasurement,
   ProductSize,
   ProductStock,
+  ProductVariantOption,
 } from '../types';
 export { resolveImageUrl } from '@/constants/config';
 

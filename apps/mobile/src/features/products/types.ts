@@ -23,6 +23,11 @@ export interface ProductColorVariant {
   stocks?: ProductStock[];
 }
 
+export interface ProductVariantOption {
+  name: string;
+  values: string[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -33,6 +38,7 @@ export interface Product {
   mainImages: string[];
   sizes?: ProductSize[];
   colorVariants?: ProductColorVariant[];
+  variantOptions?: ProductVariantOption[];
   status: string;
   featured?: boolean;
 }

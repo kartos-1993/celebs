@@ -1,4 +1,59 @@
-import type { Product, ProductColorVariant } from '../hooks/use-products';
+import type {
+  Product,
+  ProductColorVariant,
+  ProductSize,
+  ProductVariantOption,
+} from '../hooks/use-products';
+
+export interface ProductResolvableSizes {
+  sizes?: ProductSize[];
+  variantOptions?: ProductVariantOption[];
+  colorVariants?: ProductColorVariant[];
+}
+
+/**
+ * Resolves available product sizes using a unified fallback hierarchy:
+ * 1. Explicit measurement sizes (`product.sizes`)
+ * 2. Variant option definitions (`product.variantOptions.find(name === 'Size').values`)
+ * 3. PostgreSQL inventory stocks (`colorVariants[...].stocks`) — single source of truth
+ */
+export function resolveProductSizes(
+  product: ProductResolvableSizes | null | undefined,
+  selectedColorIndex?: number,
+): ProductSize[] {
+  if (!product) return [];
+
+  // 1. Explicit sizes (measurements)
+  if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+    return product.sizes;
+  }
+
+  // 2. Variant options (Size)
+  const sizeOption = product.variantOptions?.find((opt) => opt.name.toLowerCase() === 'size');
+  if (sizeOption && Array.isArray(sizeOption.values) && sizeOption.values.length > 0) {
+    return sizeOption.values.map((val) => ({ name: val }));
+  }
+
+  // 3. Variant stocks from PostgreSQL ProductInventory
+  const stockSizes = new Set<string>();
+  const variants = product.colorVariants || [];
+
+  if (typeof selectedColorIndex === 'number' && variants[selectedColorIndex]?.stocks) {
+    variants[selectedColorIndex].stocks.forEach((s) => {
+      if (s.size) stockSizes.add(s.size);
+    });
+  }
+
+  if (stockSizes.size === 0) {
+    variants.forEach((v) => {
+      v.stocks?.forEach((s) => {
+        if (s.size) stockSizes.add(s.size);
+      });
+    });
+  }
+
+  return Array.from(stockSizes).map((name) => ({ name }));
+}
 
 export function isVariantOutOfStock(variant: ProductColorVariant | undefined): boolean {
   if (!variant) return false;

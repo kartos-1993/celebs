@@ -196,24 +196,18 @@ export function useProductCard({
   const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
 
   const handlePressIn = useCallback(() => {
-    // 1. Seed detail query cache so PDP mounts synchronously on Frame 0
-    queryClient.setQueryData(
-      PRODUCT_QUERY_KEYS.detail(product.id),
-      (existing: unknown) => existing ?? product,
-    );
-
-    // 2. Prefetch fresh detail in background
+    // 1. Prefetch fresh detail in background (placeholderData handles frame-0 UI without cache poisoning)
     queryClient.prefetchQuery({
       queryKey: PRODUCT_QUERY_KEYS.detail(product.id),
       queryFn: () => getProductById(product.id),
       staleTime: 1000 * 60 * 5,
     });
 
-    // 3. Prefetch primary hero image
+    // 2. Prefetch primary hero image
     if (resolvedPrimaryUrl) {
       Image.prefetch(resolvedPrimaryUrl);
     }
-  }, [queryClient, product, resolvedPrimaryUrl]);
+  }, [queryClient, product.id, resolvedPrimaryUrl]);
 
   const handlePress = useCallback(() => {
     navigateSafely(() => {

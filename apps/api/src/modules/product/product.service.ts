@@ -17,6 +17,7 @@ import { brandService } from '../brand/brand.service';
 import { categoryRepository } from '../category/category.repository';
 import { InventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
@@ -29,6 +30,8 @@ import { buildProductCreateData, buildProductUpdateData } from './product-payloa
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
+
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -216,6 +219,10 @@ export class ProductService {
 
     await this.linkMediaUsageOnCreate(createdProduct);
 
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY).catch((err) =>
+      logger.warn({ err }, 'Failed to invalidate storefront home cache after create'),
+    );
+
     return formatProductResponse(createdProduct);
   }
 
@@ -276,6 +283,10 @@ export class ProductService {
     });
 
     await this.reconcileMediaUsageDiff(product, updateData, id);
+
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY).catch((err) =>
+      logger.warn({ err }, 'Failed to invalidate storefront home cache after update'),
+    );
 
     return formatProductResponse(updated);
   }

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { Product } from '../types';
-import { isSizeOutOfStockForVariant } from '../utils/stock';
+import { isSizeOutOfStockForVariant, resolveProductSizes } from '../utils/stock';
 
 import { SizeRequiredModal } from './size-required-modal';
 
@@ -22,7 +22,7 @@ export function ProductDetailSizeModal({
   selectedSize,
   onSelectSizeAndConfirm,
 }: ProductDetailSizeModalProps) {
-  const availableSizes = product.sizes ? product.sizes.map((s) => s.name) : [];
+  const availableSizes = resolveProductSizes(product, selectedColorIndex).map((s) => s.name);
   const variant = product.colorVariants?.[selectedColorIndex];
   const disabledSizes = availableSizes.filter((s) => isSizeOutOfStockForVariant(variant, s));
   const imageUrl = variant?.images?.[0] || product.mainImages?.[0];
