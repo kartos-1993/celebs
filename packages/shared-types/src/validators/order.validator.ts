@@ -74,9 +74,31 @@ export const updatePaymentStatusSchema = z.object({
   reference: z.string().min(2, 'Payment reference is required for audit'),
 });
 
+export const orderIdParamSchema = z.object({
+  orderId: z.string().uuid('Invalid order ID'),
+});
+
+export const addressIdParamSchema = z.object({
+  addressId: z.string().uuid('Invalid address ID'),
+});
+
+export const orderItemIdParamSchema = z.object({
+  orderItemId: z.string().uuid('Invalid order item ID'),
+});
+
+export const orderPaginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  status: z.enum(ORDER_STATUSES).optional(),
+});
+
 export type AddressInput = z.infer<typeof addressSchema>;
 export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
 export type UpdateOrderItemStatusInput = z.infer<typeof updateOrderItemStatusSchema>;
 export type UpdatePaymentStatusInput = z.infer<typeof updatePaymentStatusSchema>;
+export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
+export type AddressIdParam = z.infer<typeof addressIdParamSchema>;
+export type OrderItemIdParam = z.infer<typeof orderItemIdParamSchema>;
+export type OrderPaginationQuery = z.infer<typeof orderPaginationQuerySchema>;

@@ -16,5 +16,11 @@ export const updateUserRolePermissionsSchema = z.object({
   permissions: z.array(z.string()).optional(),
 });
 
+export const updateStaffSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters long').max(255).optional(),
+  permissions: z.array(z.string()).optional(),
+});
+
 export type CreateUserType = z.infer<typeof createUserSchema>;
 export type UpdateUserRolePermissionsType = z.infer<typeof updateUserRolePermissionsSchema>;
+export type UpdateStaffType = z.infer<typeof updateStaffSchema>;

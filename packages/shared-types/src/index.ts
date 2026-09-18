@@ -48,6 +48,7 @@ export * from './validators/option-set.validator';
 export * from './validators/order.validator';
 export * from './validators/platform-settings.validator';
 export * from './validators/product.validator';
+export * from './validators/review.validator';
 export * from './validators/user.validator';
 export * from './validators/vendor.validator';
 export * from './validators/wishlist.validator';

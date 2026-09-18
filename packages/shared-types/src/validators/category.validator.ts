@@ -115,6 +115,24 @@ export const quickFilterSchema = z.object({
   isActive: z.boolean().optional().default(true),
 });
 
+export const createQuickFilterSchema = quickFilterSchema.omit({ id: true });
+
+export const updateQuickFilterSchema = quickFilterSchema
+  .omit({ id: true, categoryId: true })
+  .partial();
+
+export const quickFilterIdParamSchema = z.object({
+  id: z.string().min(1, 'Quick filter ID is required'),
+});
+
+export const quickFilterCategoryParamSchema = z.object({
+  categoryId: z.string().min(1, 'Category ID is required'),
+});
+
+export const quickFilterSlugParamSchema = z.object({
+  slug: z.string().min(1, 'Category slug is required'),
+});
+
 export type AttributeType = z.infer<typeof attributeTypeSchema>;
 export type AttributeGroup = z.infer<typeof attributeGroupSchema>;
 export type CategoryAttributeType = z.infer<typeof attributeSchema>;
@@ -131,3 +149,8 @@ export type QuickFilterType = z.infer<typeof quickFilterTypeSchema>;
 export type QuickFilterDisplayAs = z.infer<typeof quickFilterDisplayAsSchema>;
 export type QuickFilterItem = z.infer<typeof quickFilterItemSchema>;
 export type QuickFilter = z.infer<typeof quickFilterSchema>;
+export type CreateQuickFilterType = z.infer<typeof createQuickFilterSchema>;
+export type UpdateQuickFilterType = z.infer<typeof updateQuickFilterSchema>;
+export type QuickFilterIdParam = z.infer<typeof quickFilterIdParamSchema>;
+export type QuickFilterCategoryParam = z.infer<typeof quickFilterCategoryParamSchema>;
+export type QuickFilterSlugParam = z.infer<typeof quickFilterSlugParamSchema>;
