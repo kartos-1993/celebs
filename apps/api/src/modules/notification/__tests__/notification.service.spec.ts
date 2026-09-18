@@ -33,6 +33,7 @@ describe('NotificationService', () => {
       getUnreadCount: vi.fn(),
       markAsRead: vi.fn(),
       markAllAsRead: vi.fn(),
+      getAdminUserIds: vi.fn(),
     };
     mockQueue = {
       add: vi.fn(),
@@ -105,6 +106,96 @@ describe('NotificationService', () => {
         }),
         expect.objectContaining({
           jobId: 'order:order-1:SHIPPED',
+        }),
+      );
+    });
+
+    it('should create ORDER_STATUS notification when order is placed or confirmed', async () => {
+      mockRepo.createNotification.mockResolvedValueOnce({
+        id: 'notif-2',
+        userId: 'user-1',
+        type: 'ORDER_STATUS',
+        severity: 'INFO',
+        title: 'Order Confirmed 🛍️',
+        body: 'Your order #1002 has been confirmed.',
+      });
+
+      await service.notifyOrderStatus({
+        userId: 'user-1',
+        orderId: 'order-2',
+        orderNumber: '1002',
+        status: 'CONFIRMED',
+      });
+
+      expect(mockRepo.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ORDER_STATUS',
+          severity: 'INFO',
+          title: expect.stringContaining('Order Confirmed'),
+        }),
+      );
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        'push',
+        expect.objectContaining({
+          notificationId: 'notif-2',
+          userId: 'user-1',
+        }),
+        expect.objectContaining({
+          jobId: 'order:order-2:CONFIRMED',
+        }),
+      );
+    });
+
+    it('should create PAYMENT notification when payment completes', async () => {
+      mockRepo.createNotification.mockResolvedValueOnce({
+        id: 'notif-3',
+        userId: 'user-1',
+        type: 'ORDER_STATUS',
+        severity: 'INFO',
+        title: 'Payment Confirmed! ✅',
+        body: 'Payment for order #1003 was successfully received.',
+      });
+
+      await service.notifyOrderStatus({
+        userId: 'user-1',
+        orderId: 'order-3',
+        orderNumber: '1003',
+        status: 'PAID',
+      });
+
+      expect(mockRepo.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ORDER_STATUS',
+          severity: 'INFO',
+          title: expect.stringContaining('Payment Confirmed'),
+        }),
+      );
+    });
+
+    it('should notify all platform admins and vendors on new order', async () => {
+      mockRepo.getAdminUserIds.mockResolvedValueOnce(['admin-1', 'admin-2']);
+      mockRepo.createNotification.mockResolvedValue({ id: 'notif-admin' });
+
+      await service.notifyNewOrderForAdminsAndVendors({
+        orderId: 'ord-100',
+        orderNumber: 'CEL-100',
+        totalAmount: 1500,
+        vendorIds: ['vendor-abc'],
+      });
+
+      expect(mockRepo.getAdminUserIds).toHaveBeenCalled();
+      expect(mockRepo.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'SYSTEM',
+          title: 'New Order Received! 📦',
+          user: { connect: { id: 'admin-1' } },
+        }),
+      );
+      expect(mockRepo.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'VENDOR_ORDER',
+          title: 'New Order Received! 📦',
+          vendor: { connect: { id: 'vendor-abc' } },
         }),
       );
     });

@@ -4,8 +4,16 @@ import { enqueueOrderCancelledEmail } from '../utils/order-email.util';
 
 import { CoreOrderRepository, coreOrderRepository } from './order.repository';
 
+import {
+  NotificationService,
+  notificationService as defaultNotificationService,
+} from '@/modules/notification/notification.service';
+
 export class CoreOrderService {
-  constructor(private repo: CoreOrderRepository = coreOrderRepository) {}
+  constructor(
+    private readonly repo: CoreOrderRepository = coreOrderRepository,
+    private readonly notificationService: NotificationService = defaultNotificationService,
+  ) {}
 
   async getMyOrders(userId: string, page = 1, limit = 10) {
     return this.repo.findOrdersByUser(userId, page, limit);
@@ -45,6 +53,15 @@ export class CoreOrderService {
     });
 
     enqueueOrderCancelledEmail(order).catch(() => {});
+
+    this.notificationService
+      .notifyOrderStatus({
+        userId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: 'CANCELLED',
+      })
+      .catch(() => {});
 
     return result;
   }

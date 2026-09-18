@@ -13,8 +13,16 @@ import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 
 import { PaymentRepository, paymentRepository } from './payment.repository';
 
+import {
+  NotificationService,
+  notificationService as defaultNotificationService,
+} from '@/modules/notification/notification.service';
+
 export class PaymentService {
-  constructor(private repo: PaymentRepository = paymentRepository) {}
+  constructor(
+    private repo: PaymentRepository = paymentRepository,
+    private notificationService: NotificationService = defaultNotificationService,
+  ) {}
 
   getPaymentGateway(method: 'KHALTI' | 'ESEWA'): IPaymentGateway {
     switch (method) {
@@ -77,6 +85,21 @@ export class PaymentService {
     // Enqueue payment confirmation receipt when payment completes
     if (next === 'COMPLETED' && updated) {
       await enqueueOrderConfirmationEmail(updated, 'payment-completed');
+      this.notificationService
+        .notifyOrderStatus({
+          userId: updated.userId,
+          orderId: updated.id,
+          orderNumber: updated.orderNumber,
+          status: 'PAID',
+          totalAmount: Number(updated.totalAmount),
+          gateway: updated.paymentMethod,
+        })
+        .catch((notifErr) => {
+          logger.warn(
+            { orderId: updated.id, err: notifErr },
+            'Failed to dispatch payment notification',
+          );
+        });
     }
 
     return updated;

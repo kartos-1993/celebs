@@ -106,7 +106,7 @@ export class NotificationService {
   }
 
   async notifyOrderStatus(params: OrderNotificationParams): Promise<Notification> {
-    const { userId, orderId, orderNumber, status, trackingNumber } = params;
+    const { userId, orderId, orderNumber, status, trackingNumber, totalAmount, gateway } = params;
 
     const eventKey = status === 'OUT_FOR_DELIVERY' ? 'OUT_FOR_DELIVERY' : `ORDER_${status}`;
     const resolved = await resolveNotificationTemplate(
@@ -115,6 +115,8 @@ export class NotificationService {
         orderNumber,
         trackingNumber,
         status,
+        totalAmount,
+        gateway,
       },
       this.settingsRepo,
     );
@@ -130,9 +132,47 @@ export class NotificationService {
         orderNumber,
         status,
         url: `/orders/${orderId}`,
+        ...(totalAmount !== undefined ? { totalAmount } : {}),
+        ...(gateway ? { gateway } : {}),
       },
       dedupKey: `order:${orderId}:${status}`,
     });
+  }
+
+  async notifyNewOrderForAdminsAndVendors(params: {
+    orderId: string;
+    orderNumber: string;
+    totalAmount: number;
+    vendorIds: string[];
+  }): Promise<void> {
+    const { orderId, orderNumber, totalAmount, vendorIds } = params;
+    const adminIds = await this.repo.getAdminUserIds();
+
+    for (const adminId of adminIds) {
+      await this.createNotification({
+        userId: adminId,
+        type: 'SYSTEM',
+        severity: 'INFO',
+        title: 'New Order Received! 📦',
+        body: `Order #${orderNumber} placed for NPR ${totalAmount.toLocaleString('en-IN')}.`,
+        data: { orderId, orderNumber, url: `/orders/${orderId}` },
+        dedupKey: `admin-order:${orderId}:${adminId}`,
+      }).catch(() => {});
+    }
+
+    for (const vendorId of vendorIds) {
+      if (!vendorId) continue;
+      await this.createNotification({
+        userId: adminIds[0] || '',
+        vendorId,
+        type: 'VENDOR_ORDER',
+        severity: 'CRITICAL',
+        title: 'New Order Received! 📦',
+        body: `You have a new order #${orderNumber} for your store.`,
+        data: { orderId, orderNumber, url: `/vendor/orders/${orderId}` },
+        dedupKey: `vendor-order:${orderId}:${vendorId}`,
+      }).catch(() => {});
+    }
   }
 
   async getInbox(

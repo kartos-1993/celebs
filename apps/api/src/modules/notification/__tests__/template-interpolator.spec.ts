@@ -131,5 +131,28 @@ describe('Template Interpolator & Validator (TDD Phase 2)', () => {
       expect(resolved.title).toBe('Custom Order Confirmed! 🎉');
       expect(resolved.body).toBe('Celebs has received order #99999 and we are packing it!');
     });
+
+    it('should resolve default template for ORDER_PACKED and ORDER_HANDED_OVER', async () => {
+      const mockSettingsRepo = {
+        getSettingByKey: async () => null,
+      };
+
+      const packed = await resolveNotificationTemplate(
+        'ORDER_PACKED',
+        { orderNumber: '10043' },
+        mockSettingsRepo as unknown as PlatformSettingsRepository,
+      );
+      expect(packed.title).toContain('Packed');
+      expect(packed.body).toContain('#10043');
+
+      const handedOver = await resolveNotificationTemplate(
+        'ORDER_HANDED_OVER',
+        { orderNumber: '10044', trackingNumber: 'TRK-123' },
+        mockSettingsRepo as unknown as PlatformSettingsRepository,
+      );
+      expect(handedOver.title).toContain('Handed Over');
+      expect(handedOver.body).toContain('#10044');
+      expect(handedOver.body).toContain('TRK-123');
+    });
   });
 });

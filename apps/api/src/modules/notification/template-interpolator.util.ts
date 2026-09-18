@@ -11,12 +11,47 @@ import {
 } from './template-validator.util';
 
 export const DEFAULT_NOTIFICATION_TEMPLATES: Record<string, NotificationTemplateDefinition> = {
+  ORDER_PENDING: {
+    title: 'Order Placed Successfully! 🛍️',
+    body: 'Your order #{{orderNumber}} has been placed and is being prepared.',
+    severity: 'INFO',
+    requiredVariables: ['orderNumber'],
+    allowedVariables: ['orderNumber', 'totalAmount', 'customerName'],
+  },
+  ORDER_PENDING_PAYMENT: {
+    title: 'Order Placed — Payment Pending ⏳',
+    body: 'Please complete payment for order #{{orderNumber}} to begin processing.',
+    severity: 'INFO',
+    requiredVariables: ['orderNumber'],
+    allowedVariables: ['orderNumber', 'totalAmount'],
+  },
+  ORDER_PAID: {
+    title: 'Payment Confirmed! ✅',
+    body: 'Payment for order #{{orderNumber}} was successfully received.',
+    severity: 'INFO',
+    requiredVariables: ['orderNumber'],
+    allowedVariables: ['orderNumber', 'totalAmount', 'gateway'],
+  },
   ORDER_CONFIRMED: {
     title: 'Order Confirmed 🛍️',
     body: 'Your order #{{orderNumber}} has been confirmed and is being processed.',
     severity: 'INFO',
     requiredVariables: ['orderNumber'],
     allowedVariables: ['orderNumber', 'customerName'],
+  },
+  ORDER_PACKED: {
+    title: 'Order Packed 📦',
+    body: 'Your order #{{orderNumber}} has been packed and is awaiting courier handover.',
+    severity: 'INFO',
+    requiredVariables: ['orderNumber'],
+    allowedVariables: ['orderNumber'],
+  },
+  ORDER_HANDED_OVER: {
+    title: 'Order Handed Over for Delivery 🚚',
+    body: 'Your order #{{orderNumber}} is on its way! Tracking: {{trackingNumber}}',
+    severity: 'INFO',
+    requiredVariables: ['orderNumber'],
+    allowedVariables: ['orderNumber', 'trackingNumber'],
   },
   ORDER_SHIPPED: {
     title: 'Order Shipped ✈️',
@@ -50,6 +85,13 @@ export const DEFAULT_NOTIFICATION_TEMPLATES: Record<string, NotificationTemplate
     title: 'Order Cancelled',
     body: 'Your order #{{orderNumber}} was cancelled.',
     severity: 'CRITICAL',
+    requiredVariables: ['orderNumber'],
+    allowedVariables: ['orderNumber'],
+  },
+  ORDER_RETURNED: {
+    title: 'Order Returned ↩️',
+    body: 'Return processed for order #{{orderNumber}}.',
+    severity: 'INFO',
     requiredVariables: ['orderNumber'],
     allowedVariables: ['orderNumber'],
   },

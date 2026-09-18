@@ -6,9 +6,16 @@ import { enqueueOrderDeliveredEmail, enqueueOrderShippedEmail } from '../utils/o
 import { FulfillmentRepository, fulfillmentRepository } from './fulfillment.repository';
 
 import { Prisma } from '@/config/db.prisma';
+import {
+  NotificationService,
+  notificationService as defaultNotificationService,
+} from '@/modules/notification/notification.service';
 
 export class FulfillmentService {
-  constructor(private repo: FulfillmentRepository = fulfillmentRepository) {}
+  constructor(
+    private repo: FulfillmentRepository = fulfillmentRepository,
+    private notificationService: NotificationService = defaultNotificationService,
+  ) {}
 
   async getVendorOrders(
     vendorId?: string,
@@ -132,14 +139,15 @@ export class FulfillmentService {
         await enqueueOrderDeliveredEmail(fullOrder);
       }
 
-      const { notificationService } = await import('../../notification/notification.service');
-      await notificationService.notifyOrderStatus({
-        userId: fullOrder.userId,
-        orderId: fullOrder.id,
-        orderNumber: fullOrder.orderNumber,
-        status: newStatus,
-        trackingNumber: trackingNumber || fullOrder.trackingNumber || undefined,
-      });
+      this.notificationService
+        .notifyOrderStatus({
+          userId: fullOrder.userId,
+          orderId: fullOrder.id,
+          orderNumber: fullOrder.orderNumber,
+          status: newStatus,
+          trackingNumber: trackingNumber || fullOrder.trackingNumber || undefined,
+        })
+        .catch(() => {});
     } catch {
       // Non-blocking dispatch
     }
