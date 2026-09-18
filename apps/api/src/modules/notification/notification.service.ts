@@ -12,9 +12,15 @@ import type {
 } from '@celebs/shared-types';
 import { logger } from '@celebs/shared-utils';
 
+import {
+  PlatformSettingsRepository,
+  platformSettingsRepository,
+} from '../platform-settings/platform-settings.repository';
+
 import type { PaginatedInboxResult } from './notification.repository';
 import { NotificationRepository, notificationRepository } from './notification.repository';
 import type { OrderNotificationParams } from './notification.types';
+import { resolveNotificationTemplate } from './template-interpolator.util';
 
 import { notificationQueue } from '@/common/services/queue.service';
 
@@ -34,6 +40,7 @@ export class NotificationService {
   constructor(
     private readonly repo: NotificationRepository = notificationRepository,
     private readonly queue: Queue = notificationQueue,
+    private readonly settingsRepo: PlatformSettingsRepository = platformSettingsRepository,
   ) {}
 
   async registerPushToken(userId: string, input: RegisterPushTokenInput): Promise<void> {
@@ -101,43 +108,23 @@ export class NotificationService {
   async notifyOrderStatus(params: OrderNotificationParams): Promise<Notification> {
     const { userId, orderId, orderNumber, status, trackingNumber } = params;
 
-    let title = `Order Update #${orderNumber}`;
-    let body = `Your order status changed to ${status}.`;
-    let severity: NotificationSeverity = 'INFO';
-
-    switch (status) {
-      case 'CONFIRMED':
-        title = 'Order Confirmed 🛍️';
-        body = `Your order #${orderNumber} has been confirmed and is being processed.`;
-        break;
-      case 'SHIPPED':
-        title = 'Order Shipped ✈️';
-        body = trackingNumber
-          ? `Your order #${orderNumber} is on the way! Tracking: ${trackingNumber}`
-          : `Your order #${orderNumber} is on its way to you!`;
-        break;
-      case 'OUT_FOR_DELIVERY':
-        title = 'Out for Delivery 🚚';
-        body = `Your package for #${orderNumber} is out for delivery today!`;
-        severity = 'CRITICAL';
-        break;
-      case 'DELIVERED':
-        title = 'Package Delivered! 🎉';
-        body = `Your order #${orderNumber} has arrived. Tap here to leave a review!`;
-        break;
-      case 'CANCELLED':
-        title = 'Order Cancelled';
-        body = `Your order #${orderNumber} was cancelled.`;
-        severity = 'CRITICAL';
-        break;
-    }
+    const eventKey = status === 'OUT_FOR_DELIVERY' ? 'OUT_FOR_DELIVERY' : `ORDER_${status}`;
+    const resolved = await resolveNotificationTemplate(
+      eventKey,
+      {
+        orderNumber,
+        trackingNumber,
+        status,
+      },
+      this.settingsRepo,
+    );
 
     return this.createNotification({
       userId,
       type: 'ORDER_STATUS',
-      severity,
-      title,
-      body,
+      severity: resolved.severity,
+      title: resolved.title,
+      body: resolved.body,
       data: {
         orderId,
         orderNumber,
