@@ -50,6 +50,9 @@ export const envSchema = z.object({
   GOOGLE_WEB_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_ANDROID_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_IOS_CLIENT_ID: z.string().optional().default(''),
+  EXPO_PUSH_URL: z.string().url().default('https://exp.host/--/api/v2/push/send'),
+  EXPO_RECEIPTS_URL: z.string().url().default('https://exp.host/--/api/v2/push/getReceipts'),
+  EXPO_ACCESS_TOKEN: z.string().optional().default(''),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

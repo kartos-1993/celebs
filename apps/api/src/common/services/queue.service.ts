@@ -137,11 +137,25 @@ export const orderMaintenanceQueue = new Queue('order-maintenance', {
   },
 });
 
+export const notificationQueue = new Queue('notification-delivery', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 5,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: false,
+  },
+});
+
 export async function closeQueues(): Promise<void> {
   await Promise.allSettled([
     assetQueue.close(),
     sessionQueue.close(),
     mailQueue.close(),
     orderMaintenanceQueue.close(),
+    notificationQueue.close(),
   ]);
 }

@@ -1,34 +1,70 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
+
+import type {
+  BroadcastPayloadInput,
+  GetInboxQueryInput,
+  NotificationIdParamInput,
+  RegisterPushTokenInput,
+  UnregisterPushTokenInput,
+} from '@celebs/shared-types';
 
 import { NotificationService, notificationService } from './notification.service';
 
-import { sendCreated, sendSuccess } from '@/common/utils/response.util';
+import { sendCreated, sendPaginated, sendSuccess } from '@/common/utils/response.util';
 
 export class NotificationController {
   constructor(private service: NotificationService = notificationService) {}
 
-  registerToken = async (req: Request, res: Response) => {
+  registerPushToken = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
-    const { pushToken } = req.body as { pushToken: string };
-    await this.service.registerToken(userId, pushToken);
+    const input = req.body as RegisterPushTokenInput;
+    await this.service.registerPushToken(userId, input);
     return sendCreated(res, null, 'Push token registered successfully');
   };
 
-  unregisterToken = async (req: Request, res: Response) => {
+  unregisterPushToken = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
-    const { pushToken } = req.body as { pushToken: string };
-    await this.service.unregisterToken(userId, pushToken);
+    const { pushToken } = req.body as UnregisterPushTokenInput;
+    await this.service.unregisterPushToken(userId, pushToken);
     return sendSuccess(res, null, 'Push token unregistered successfully');
   };
 
+  getInbox = async (req: Request, res: Response) => {
+    const userId = req.user?.id || '';
+    const query = req.query as unknown as GetInboxQueryInput;
+    const result = await this.service.getInbox(userId, query);
+    return sendPaginated(
+      res,
+      result.items,
+      { page: result.page, limit: result.limit, total: result.total },
+      'Notifications retrieved successfully',
+    );
+  };
+
+  getUnreadCount = async (req: Request, res: Response) => {
+    const userId = req.user?.id || '';
+    const result = await this.service.getUnreadCount(userId);
+    return sendSuccess(res, result, 'Unread notification count retrieved');
+  };
+
+  markAsRead = async (req: Request, res: Response) => {
+    const userId = req.user?.id || '';
+    const { id } = req.params as NotificationIdParamInput;
+    const updated = await this.service.markAsRead(userId, id);
+    return sendSuccess(res, updated, 'Notification marked as read');
+  };
+
+  markAllAsRead = async (req: Request, res: Response) => {
+    const userId = req.user?.id || '';
+    const result = await this.service.markAllAsRead(userId);
+    return sendSuccess(res, result, 'All notifications marked as read');
+  };
+
   broadcast = async (req: Request, res: Response) => {
-    const { title, body, data } = req.body as {
-      title: string;
-      body: string;
-      data?: Record<string, unknown>;
-    };
-    const count = await this.service.sendToAll(title, body, data);
-    return sendSuccess(res, { dispatchedCount: count }, 'Broadcast notification sent successfully');
+    const adminUserId = req.user?.id || '';
+    const input = req.body as BroadcastPayloadInput;
+    const result = await this.service.broadcast(adminUserId, input);
+    return sendSuccess(res, result, 'Broadcast notification queued successfully');
   };
 }
 

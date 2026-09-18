@@ -14,6 +14,7 @@ import { logger } from '@celebs/shared-utils';
 import {
   assetQueue,
   mailQueue,
+  notificationQueue,
   orderMaintenanceQueue,
   sessionQueue,
   verifyRedisConnection,
@@ -23,6 +24,7 @@ import prisma from './config/db.prisma';
 import { captureSentryException, closeSentry, initSentry } from './config/sentry';
 import { mailWorker } from './modules/mail/mail.worker';
 import { assetWorker } from './modules/media/asset.worker';
+import { notificationWorker } from './modules/notification/notification.worker';
 import { orderReservationWorker } from './modules/order/order-reservation.worker';
 import { sessionWorker } from './modules/session/session.worker';
 
@@ -49,7 +51,7 @@ const startWorker = async () => {
     await verifyS3Connection();
 
     logger.info(
-      'BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance, order-maintenance',
+      'BullMQ Worker is active and listening to queues: asset-processing, mail-delivery, session-maintenance, order-maintenance, notification-delivery',
     );
 
     // Register daily repeatable session maintenance job (runs at midnight 00:00)
@@ -82,10 +84,12 @@ const startWorker = async () => {
       logger.info({ signal }, `Received ${signal}, shutting down worker gracefully`);
       await assetWorker.close();
       await mailWorker.close();
+      await notificationWorker.close();
       await sessionWorker.close();
       await orderReservationWorker.close();
       await assetQueue.close();
       await mailQueue.close();
+      await notificationQueue.close();
       await sessionQueue.close();
       await orderMaintenanceQueue.close();
       await prisma.$disconnect();

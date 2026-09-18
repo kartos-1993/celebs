@@ -1,122 +1,109 @@
-import axios from 'axios';
+import { type Notification, Prisma } from '@prisma/client';
+import type { Queue } from 'bullmq';
 
+import type {
+  BroadcastPayloadInput,
+  GetInboxQueryInput,
+  IUnreadCount,
+  NotificationChannel,
+  NotificationSeverity,
+  NotificationType,
+  RegisterPushTokenInput,
+} from '@celebs/shared-types';
 import { logger } from '@celebs/shared-utils';
 
+import type { PaginatedInboxResult } from './notification.repository';
 import { NotificationRepository, notificationRepository } from './notification.repository';
-import type {
-  ExpoPushResponse,
-  OrderNotificationParams,
-  PushNotificationPayload,
-} from './notification.types';
+import type { OrderNotificationParams } from './notification.types';
 
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+import { notificationQueue } from '@/common/services/queue.service';
+
+export interface CreateNotificationParams {
+  userId: string;
+  vendorId?: string | null;
+  type: NotificationType;
+  severity?: NotificationSeverity;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  channel?: NotificationChannel;
+  dedupKey?: string;
+}
 
 export class NotificationService {
-  constructor(private repo: NotificationRepository = notificationRepository) {}
+  constructor(
+    private readonly repo: NotificationRepository = notificationRepository,
+    private readonly queue: Queue = notificationQueue,
+  ) {}
 
-  async registerToken(userId: string, token: string): Promise<void> {
-    if (!token || !token.startsWith('ExponentPushToken[')) {
-      logger.warn({ userId, token }, '[NotificationService] Invalid Expo push token format');
-      return;
-    }
-    await this.repo.saveUserPushToken(userId, token);
-    logger.info({ userId, token }, '[NotificationService] Registered push token');
+  async registerPushToken(userId: string, input: RegisterPushTokenInput): Promise<void> {
+    await this.repo.upsertPushToken(userId, input.pushToken, input.platform);
+    logger.info(
+      { userId, platform: input.platform },
+      '[NotificationService] Registered push token',
+    );
   }
 
-  async unregisterToken(userId: string, token: string): Promise<void> {
-    await this.repo.removeUserPushToken(userId, token);
-    logger.info({ userId, token }, '[NotificationService] Unregistered push token');
+  async unregisterPushToken(userId: string, pushToken: string): Promise<void> {
+    if (!userId || !pushToken) return;
+    await this.repo.deletePushToken(userId, pushToken);
+    logger.info({ userId }, '[NotificationService] Unregistered push token');
   }
 
-  async sendPushMessages(messages: PushNotificationPayload[]): Promise<void> {
-    if (messages.length === 0) return;
-
-    // Expo limits requests to 100 messages per batch
-    const BATCH_SIZE = 100;
-    for (let i = 0; i < messages.length; i += BATCH_SIZE) {
-      const batch = messages.slice(i, i + BATCH_SIZE);
-      try {
-        const res = await axios.post<ExpoPushResponse>(EXPO_PUSH_URL, batch, {
-          headers: {
-            Accept: 'application/json',
-            'Accept-Encoding': 'gzip, deflate',
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-        });
-
-        const invalidTokens: string[] = [];
-        const tickets = res.data?.data || [];
-        tickets.forEach((ticket, idx) => {
-          if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
-            const target = batch[idx]?.to;
-            if (typeof target === 'string') {
-              invalidTokens.push(target);
-            }
-          }
-        });
-
-        if (invalidTokens.length > 0) {
-          logger.info(
-            { count: invalidTokens.length },
-            '[NotificationService] Cleaning inactive tokens',
-          );
-          await this.repo.removeInvalidTokens(invalidTokens);
-        }
-      } catch (err) {
-        logger.error(
-          { err },
-          '[NotificationService] Failed to dispatch Expo push notification batch',
-        );
-      }
-    }
-  }
-
-  async sendToUser(
-    userId: string,
-    title: string,
-    body: string,
-    data?: Record<string, unknown>,
-  ): Promise<void> {
-    const tokens = await this.repo.getUserPushTokens(userId);
-    if (tokens.length === 0) return;
-
-    const messages: PushNotificationPayload[] = tokens.map((token) => ({
-      to: token,
-      sound: 'default',
+  async createNotification(params: CreateNotificationParams): Promise<Notification> {
+    const {
+      userId,
+      vendorId,
+      type,
+      severity = 'INFO',
       title,
       body,
       data,
-      priority: 'high',
-      channelId: 'order-updates',
-    }));
+      channel = 'PUSH',
+      dedupKey,
+    } = params;
 
-    await this.sendPushMessages(messages);
-  }
-
-  async sendToAll(title: string, body: string, data?: Record<string, unknown>): Promise<number> {
-    const tokens = await this.repo.getAllPushTokens();
-    if (tokens.length === 0) return 0;
-
-    const messages: PushNotificationPayload[] = tokens.map((token) => ({
-      to: token,
-      sound: 'default',
+    // 1. Persist to PostgreSQL Inbox
+    const createData: Prisma.NotificationCreateInput = {
+      user: { connect: { id: userId } },
+      ...(vendorId ? { vendor: { connect: { id: vendorId } } } : {}),
+      type,
+      severity,
       title,
       body,
-      data,
-      priority: 'normal',
-      channelId: 'promotions',
-    }));
+      data: data ? (data as Prisma.InputJsonValue) : Prisma.JsonNull,
+      channel,
+      pushStatus: 'PENDING',
+    };
 
-    await this.sendPushMessages(messages);
-    return tokens.length;
+    const notification = await this.repo.createNotification(createData);
+
+    // 2. Dispatch push delivery job to BullMQ queue
+    await this.queue.add(
+      'push',
+      {
+        notificationId: notification.id,
+        userId,
+        type,
+        severity,
+        title,
+        body,
+        data,
+      },
+      {
+        jobId: dedupKey || `notification:${notification.id}:${userId}`,
+      },
+    );
+
+    return notification;
   }
 
-  async notifyOrderStatus(params: OrderNotificationParams): Promise<void> {
+  async notifyOrderStatus(params: OrderNotificationParams): Promise<Notification> {
     const { userId, orderId, orderNumber, status, trackingNumber } = params;
 
     let title = `Order Update #${orderNumber}`;
     let body = `Your order status changed to ${status}.`;
+    let severity: NotificationSeverity = 'INFO';
 
     switch (status) {
       case 'CONFIRMED':
@@ -132,6 +119,7 @@ export class NotificationService {
       case 'OUT_FOR_DELIVERY':
         title = 'Out for Delivery 🚚';
         body = `Your package for #${orderNumber} is out for delivery today!`;
+        severity = 'CRITICAL';
         break;
       case 'DELIVERED':
         title = 'Package Delivered! 🎉';
@@ -140,15 +128,84 @@ export class NotificationService {
       case 'CANCELLED':
         title = 'Order Cancelled';
         body = `Your order #${orderNumber} was cancelled.`;
+        severity = 'CRITICAL';
         break;
     }
 
-    await this.sendToUser(userId, title, body, {
-      type: 'ORDER_STATUS_UPDATE',
-      orderId,
-      status,
-      url: `/order-detail?id=${orderId}`,
+    return this.createNotification({
+      userId,
+      type: 'ORDER_STATUS',
+      severity,
+      title,
+      body,
+      data: {
+        orderId,
+        orderNumber,
+        status,
+        url: `/orders/${orderId}`,
+      },
+      dedupKey: `order:${orderId}:${status}`,
     });
+  }
+
+  async getInbox(userId: string, query: GetInboxQueryInput): Promise<PaginatedInboxResult> {
+    return this.repo.getInbox({
+      userId,
+      ...query,
+    });
+  }
+
+  async getUnreadCount(userId: string): Promise<IUnreadCount> {
+    return this.repo.getUnreadCount(userId);
+  }
+
+  async markAsRead(userId: string, notificationId: string): Promise<Notification> {
+    return this.repo.markAsRead(notificationId, userId);
+  }
+
+  async markAllAsRead(userId: string): Promise<{ count: number }> {
+    return this.repo.markAllAsRead(userId);
+  }
+
+  async broadcast(
+    adminUserId: string,
+    input: BroadcastPayloadInput,
+  ): Promise<{ dispatchedCount: number }> {
+    const { title, body, targetAudience, deepLinkUrl } = input;
+
+    logger.info(
+      { adminUserId, targetAudience, title },
+      '[NotificationService] Initiating mass broadcast dispatch',
+    );
+
+    // 1. Fetch audience tokens from PostgreSQL
+    const audienceTokens = await this.repo.getAudiencePushTokens(targetAudience);
+    if (audienceTokens.length === 0) {
+      return { dispatchedCount: 0 };
+    }
+
+    const tokens = audienceTokens.map((t) => t.token);
+
+    // 2. Atomic bulk enqueue in chunks of 100 via BullMQ addBulk
+    const CHUNK_SIZE = 100;
+    const bulkJobs = [];
+    for (let i = 0; i < tokens.length; i += CHUNK_SIZE) {
+      bulkJobs.push({
+        name: 'broadcast-chunk',
+        data: {
+          tokens: tokens.slice(i, i + CHUNK_SIZE),
+          title,
+          body,
+          data: deepLinkUrl ? { url: deepLinkUrl } : undefined,
+        },
+      });
+    }
+
+    if (bulkJobs.length > 0) {
+      await this.queue.addBulk(bulkJobs);
+    }
+
+    return { dispatchedCount: tokens.length };
   }
 }
 
