@@ -1,13 +1,11 @@
-import { randomUUID } from 'node:crypto';
-
 import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
-import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
 
 import { cartRepository } from './cart.repository';
 
-import prisma, { Prisma } from '@/config/db.prisma';
+import { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
 
 export class CartService {
@@ -167,10 +165,7 @@ export class CartService {
     const { productId, colorVariantName, size, quantity } = input;
 
     // 1. Validate Product Existence in PostgreSQL Prisma
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-      select: { id: true },
-    });
+    const product = await cartRepository.findProductById(productId);
 
     if (!product) {
       throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
@@ -180,7 +175,7 @@ export class CartService {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
 
     // 3. Atomic resolve-inventory + stock-checked upsert (single round trip)
-    const result = await this.upsertCartItemAtomic({
+    const result = await cartRepository.upsertCartItemAtomic({
       cartId: cartRecord.id,
       productId,
       colorVariantName,
@@ -191,12 +186,7 @@ export class CartService {
     if (!result) {
       // Failure path only — resolve precise numbers for the client-facing error.
       const stock = await InventoryService.findOrCreateInventory(productId, colorVariantName, size);
-      const existing = await prisma.cartItem.findUnique({
-        where: {
-          cartId_inventoryId: { cartId: cartRecord.id, inventoryId: stock.inventoryId },
-        },
-        select: { quantity: true },
-      });
+      const existing = await cartRepository.findCartItem(cartRecord.id, stock.inventoryId);
       const targetQuantity = (existing?.quantity ?? 0) + quantity;
       throw new AppError(
         `Requested quantity (${targetQuantity}) exceeds available stock (${stock.availableQuantity})`,
@@ -206,84 +196,6 @@ export class CartService {
     }
 
     return this.getCart(userId, sessionId);
-  }
-
-  /**
-   * Single-statement inventory resolution + stock-checked cart item upsert.
-   *
-   * Returns the post-write availability on success, or null when the write
-   * was rejected because requested total exceeded available stock.
-   */
-  private static async upsertCartItemAtomic(args: {
-    cartId: string;
-    productId: string;
-    colorVariantName: string;
-    size: string;
-    quantity: number;
-  }): Promise<{ availableStock: number } | null> {
-    const { cartId, productId, colorVariantName, size, quantity } = args;
-
-    const rows = await prisma.$queryRaw<Array<{ avail: number }>>`
-      WITH inv_ins AS (
-        INSERT INTO "ProductInventory"
-          ("id", "product_id", "color_variant_name", "size", "sku", "quantity", "reserved_quantity", "createdAt", "updatedAt")
-        SELECT
-          ${randomUUID()},
-          ${productId},
-          ${colorVariantName},
-          ${size},
-          ${generateSku({ brandPrefix: 'c' })},
-          COALESCE((
-            SELECT (s ->> 'quantity')::int
-            FROM "Product" p,
-                 jsonb_array_elements(p."colorVariants") v,
-                 jsonb_array_elements(v -> 'stocks') s
-            WHERE p."id" = ${productId}
-              AND lower(v ->> 'name') = lower(${colorVariantName})
-              AND lower(s ->> 'size') = lower(${size})
-            LIMIT 1
-          ), 10),
-          0,
-          now(),
-          now()
-        WHERE EXISTS (SELECT 1 FROM "Product" WHERE "id" = ${productId})
-        ON CONFLICT ("product_id", "color_variant_name", "size") DO NOTHING
-        RETURNING "id", ("quantity" - "reserved_quantity") AS avail
-      ),
-      inv AS (
-        SELECT "id", avail FROM inv_ins
-        UNION ALL
-        SELECT pi."id", pi."quantity" - pi."reserved_quantity" AS avail
-        FROM "ProductInventory" pi
-        WHERE pi."product_id" = ${productId}
-          AND pi."color_variant_name" = ${colorVariantName}
-          AND pi."size" = ${size}
-        LIMIT 1
-      ),
-      item AS (
-        INSERT INTO "CartItem"
-          ("id", "cart_id", "inventory_id", "quantity", "createdAt", "updatedAt")
-        SELECT ${randomUUID()}, ${cartId}, inv."id", ${quantity}, now(), now()
-        FROM inv
-        WHERE inv.avail >= ${quantity}
-        ON CONFLICT ("cart_id", "inventory_id") DO UPDATE
-          SET "quantity" = "CartItem"."quantity" + EXCLUDED."quantity",
-              "updatedAt" = now()
-          WHERE (
-            -- CTEs are not referenceable inside DO UPDATE; re-read live stock.
-            SELECT pi2."quantity" - pi2."reserved_quantity"
-            FROM "ProductInventory" pi2
-            WHERE pi2."id" = EXCLUDED."inventory_id"
-          ) >= "CartItem"."quantity" + EXCLUDED."quantity"
-        RETURNING "inventory_id"
-      )
-      SELECT inv.avail AS avail
-      FROM item
-      JOIN inv ON inv."id" = item."inventory_id"
-    `;
-
-    const row = rows[0];
-    return row ? { availableStock: Number(row.avail) } : null;
   }
 
   /**
@@ -440,10 +352,7 @@ export class CartService {
 
     // 1. Bulk-validate products; drop unknown ones silently.
     const productIds = Array.from(new Set(allGuestItems.map((g) => g.productId)));
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true },
-    });
+    const products = await cartRepository.findProductsByIds(productIds);
     const validProductIds = new Set(products.map((p) => p.id));
 
     // Merge duplicate variants within the guest list into single requests.
@@ -480,23 +389,13 @@ export class CartService {
     }
 
     // 2. Bulk-resolve existing inventories.
-    const inventories = await prisma.productInventory.findMany({
-      where: {
-        OR: Array.from(mergedRequests.values()).map((r) => ({
-          productId: r.productId,
-          colorVariantName: r.colorVariantName,
-          size: r.size,
-        })),
-      },
-      select: {
-        id: true,
-        productId: true,
-        colorVariantName: true,
-        size: true,
-        quantity: true,
-        reservedQuantity: true,
-      },
-    });
+    const inventories = await cartRepository.findInventoriesByVariants(
+      Array.from(mergedRequests.values()).map((r) => ({
+        productId: r.productId,
+        colorVariantName: r.colorVariantName,
+        size: r.size,
+      })),
+    );
     const invMap = new Map(
       inventories.map((i) => [`${i.productId}|${i.colorVariantName}|${i.size}`, i]),
     );
@@ -527,10 +426,10 @@ export class CartService {
           .filter((id): id is string => Boolean(id)),
       ),
     );
-    const existingItems = await prisma.cartItem.findMany({
-      where: { cartId: cartRecord.id, inventoryId: { in: wantedInventoryIds } },
-      select: { inventoryId: true, quantity: true },
-    });
+    const existingItems = await cartRepository.findCartItemsByInventoryIds(
+      cartRecord.id,
+      wantedInventoryIds,
+    );
     const existingQty = new Map(existingItems.map((i) => [i.inventoryId, i.quantity]));
 
     // 5. Stock-check merges; skip items that would exceed availability.
@@ -546,19 +445,7 @@ export class CartService {
 
     // 6. One statement writes every accepted item.
     if (upserts.length > 0) {
-      const rowIds = upserts.map(() => randomUUID());
-      await prisma.$executeRaw`
-        INSERT INTO "CartItem" ("id", "cart_id", "inventory_id", "quantity", "createdAt", "updatedAt")
-        SELECT b.id, ${cartRecord.id}, b.inv, b.qty, now(), now()
-        FROM unnest(
-          ${rowIds}::text[],
-          ${upserts.map((u) => u.inventoryId)}::text[],
-          ${upserts.map((u) => u.quantity)}::int[]
-        ) AS b(id, inv, qty)
-        ON CONFLICT ("cart_id", "inventory_id") DO UPDATE
-          SET "quantity" = EXCLUDED."quantity",
-              "updatedAt" = now()
-      `;
+      await cartRepository.bulkUpsertCartItems(cartRecord.id, upserts);
     }
 
     if (sessionId) {
