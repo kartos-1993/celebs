@@ -63,3 +63,9 @@ export const notificationIdParamSchema = z.object({
 });
 
 export type NotificationIdParamInput = z.infer<typeof notificationIdParamSchema>;
+
+export const vendorIdParamSchema = z.object({
+  vendorId: z.string().uuid('Invalid vendor ID format'),
+});
+
+export type VendorIdParamInput = z.infer<typeof vendorIdParamSchema>;
