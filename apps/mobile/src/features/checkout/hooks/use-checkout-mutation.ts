@@ -10,6 +10,7 @@ import { showToast } from '@/components/toast/toast';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { CART_QUERY_KEYS } from '@/features/cart/api';
 import { useCart } from '@/features/cart/context/cart-context';
+import { NOTIFICATION_QUERY_KEYS } from '@/features/notifications/api';
 import { ORDER_QUERY_KEYS } from '@/features/orders/api';
 import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
 
@@ -44,6 +45,7 @@ export function useCheckoutMutation() {
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: CHECKOUT_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.all });
 
       const paymentUrl = data.payment?.redirectUrl;
       if (paymentUrl && orderId) {
@@ -83,6 +85,7 @@ export function useCheckoutMutation() {
     const orderNumber = activePayment?.orderNumber;
     setActivePayment(null);
     queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
+    queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.all });
     if (status === 'COMPLETED') {
       showToast(orderNumber ? `Order #${orderNumber} paid successfully!` : 'Payment successful!', {
         type: 'success',

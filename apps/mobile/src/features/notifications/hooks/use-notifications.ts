@@ -7,17 +7,18 @@ import {
   markNotificationAsReadApi,
   NOTIFICATION_QUERY_KEYS,
 } from '../api';
-import type { NotificationsResponseData, UnreadCountData } from '../types';
+import type { NotificationItemMobile, UnreadCountData } from '../types';
 
 export function useNotificationsQuery(params?: {
   page?: number;
   limit?: number;
   unreadOnly?: boolean;
 }) {
-  return useQuery<NotificationsResponseData>({
+  return useQuery<NotificationItemMobile[]>({
     queryKey: NOTIFICATION_QUERY_KEYS.list(params),
     queryFn: () => getNotificationsApi(params),
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -25,8 +26,9 @@ export function useUnreadCountQuery() {
   return useQuery<UnreadCountData>({
     queryKey: NOTIFICATION_QUERY_KEYS.unreadCount(),
     queryFn: () => getUnreadCountApi(),
-    staleTime: 30_000,
-    refetchInterval: 90_000,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
 }
 

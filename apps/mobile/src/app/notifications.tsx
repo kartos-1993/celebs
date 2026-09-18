@@ -1,14 +1,17 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { BellOff } from 'lucide-react-native';
 
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Palette, Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
+import {
+  NotificationFilterTabs,
+  type NotificationTab,
+} from '@/features/notifications/components/notification-filter-tabs';
 import { NotificationItemCard } from '@/features/notifications/components/notification-item-card';
+import { NotificationsEmptyState } from '@/features/notifications/components/notifications-empty-state';
 import { NotificationsHeader } from '@/features/notifications/components/notifications-header';
 import {
   useMarkAllAsReadMutation,
@@ -17,18 +20,28 @@ import {
   useUnreadCountQuery,
 } from '@/features/notifications/hooks/use-notifications';
 import type { NotificationItemMobile } from '@/features/notifications/types';
+import { filterNotificationsByTab } from '@/features/notifications/utils/notification-filter.util';
+import { resolveNotificationRoute } from '@/features/notifications/utils/notification-navigation.util';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isLoggedIn } = useAuth();
+  const [activeTab, setActiveTab] = useState<NotificationTab>('ALL');
 
-  const { data, isLoading, refetch, isRefetching } = useNotificationsQuery();
+  const { data: notifications = [], isLoading, refetch, isRefetching } = useNotificationsQuery();
   const { data: unreadData } = useUnreadCountQuery();
   const markAsReadMutation = useMarkNotificationAsReadMutation();
   const markAllAsReadMutation = useMarkAllAsReadMutation();
 
-  const hasUnread = (unreadData?.unreadCount ?? 0) > 0;
+  const unreadCount = unreadData?.count ?? unreadData?.unreadCount ?? 0;
+  const hasUnread = unreadCount > 0;
+
+  const itemsList = Array.isArray(notifications) ? notifications : [];
+  const filteredNotifications = useMemo(
+    () => filterNotificationsByTab(itemsList, activeTab),
+    [itemsList, activeTab],
+  );
 
   const handleNotificationPress = useCallback(
     (notification: NotificationItemMobile) => {
@@ -36,13 +49,9 @@ export default function NotificationsScreen() {
         markAsReadMutation.mutate(notification.id);
       }
 
-      const deepLink = notification.data?.url as string | undefined;
-      const orderId = notification.data?.orderId as string | undefined;
-
-      if (deepLink && deepLink.startsWith('/')) {
-        router.push(deepLink as never);
-      } else if (orderId) {
-        router.push({ pathname: '/order-detail', params: { id: orderId } } as never);
+      const targetRoute = resolveNotificationRoute(notification);
+      if (targetRoute) {
+        router.push(targetRoute as never);
       }
     },
     [markAsReadMutation, router],
@@ -61,13 +70,7 @@ export default function NotificationsScreen() {
           onMarkAllRead={handleMarkAllRead}
           isMarkingAll={false}
         />
-        <View style={styles.centerBox}>
-          <BellOff size={44} color={Palette.gray400} />
-          <ThemedText style={styles.emptyTitle}>Sign in to view notifications</ThemedText>
-          <ThemedText style={styles.emptySubtitle}>
-            Track real-time order updates, tracking links, and special deals.
-          </ThemedText>
-        </View>
+        <NotificationsEmptyState isLoggedOut />
       </ThemedView>
     );
   }
@@ -81,13 +84,15 @@ export default function NotificationsScreen() {
         isMarkingAll={markAllAsReadMutation.isPending}
       />
 
+      <NotificationFilterTabs activeTab={activeTab} onSelectTab={setActiveTab} />
+
       {isLoading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={Palette.brand} />
         </View>
       ) : (
         <FlatList
-          data={data?.notifications ?? []}
+          data={filteredNotifications}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <NotificationItemCard notification={item} onPress={handleNotificationPress} />
@@ -99,15 +104,7 @@ export default function NotificationsScreen() {
               tintColor={Palette.brand}
             />
           }
-          ListEmptyComponent={
-            <View style={styles.centerBox}>
-              <BellOff size={40} color={Palette.gray400} />
-              <ThemedText style={styles.emptyTitle}>No notifications yet</ThemedText>
-              <ThemedText style={styles.emptySubtitle}>
-                We will notify you about updates to your orders and offers here.
-              </ThemedText>
-            </View>
-          }
+          ListEmptyComponent={<NotificationsEmptyState />}
           contentContainerStyle={styles.listContent}
         />
       )}
@@ -124,20 +121,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.xl,
-    gap: Spacing.xs,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Palette.gray800,
-    marginTop: Spacing.sm,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: Palette.gray500,
-    textAlign: 'center',
-    lineHeight: 18,
   },
   listContent: {
     flexGrow: 1,

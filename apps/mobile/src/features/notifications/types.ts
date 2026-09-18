@@ -30,5 +30,7 @@ export interface NotificationsResponseData {
 }
 
 export interface UnreadCountData {
-  unreadCount: number;
+  count: number;
+  unreadCount?: number;
+  hasCritical?: boolean;
 }

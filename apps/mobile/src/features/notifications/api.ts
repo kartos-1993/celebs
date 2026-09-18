@@ -1,6 +1,6 @@
 import type { IApiResponse } from '@celebs/shared-types';
 
-import type { NotificationItemMobile, NotificationsResponseData, UnreadCountData } from './types';
+import type { NotificationItemMobile, UnreadCountData } from './types';
 
 import { apiClient } from '@/api/client';
 import { handleApiResponse } from '@/api/response';
@@ -38,16 +38,30 @@ export async function getNotificationsApi(params?: {
   page?: number;
   limit?: number;
   unreadOnly?: boolean;
-}): Promise<NotificationsResponseData> {
-  return handleApiResponse(
-    apiClient.get<IApiResponse<NotificationsResponseData>>('/notifications', { params }),
-  );
+}): Promise<NotificationItemMobile[]> {
+  const result = await handleApiResponse<
+    NotificationItemMobile[] | { notifications: NotificationItemMobile[] }
+  >(apiClient.get('/notifications', { params }));
+
+  if (Array.isArray(result)) {
+    return result;
+  }
+  return result?.notifications ?? [];
 }
 
 export async function getUnreadCountApi(): Promise<UnreadCountData> {
-  return handleApiResponse(
-    apiClient.get<IApiResponse<UnreadCountData>>('/notifications/unread-count'),
-  );
+  const result = await handleApiResponse<{
+    count?: number;
+    unreadCount?: number;
+    hasCritical?: boolean;
+  }>(apiClient.get('/notifications/unread-count'));
+
+  const count = result.count ?? result.unreadCount ?? 0;
+  return {
+    count,
+    unreadCount: count,
+    hasCritical: Boolean(result.hasCritical),
+  };
 }
 
 export async function markNotificationAsReadApi(id: string): Promise<NotificationItemMobile> {
