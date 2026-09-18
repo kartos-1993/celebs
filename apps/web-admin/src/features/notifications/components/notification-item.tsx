@@ -7,15 +7,18 @@ import { cn } from '@/lib/utils';
 
 export interface NotificationItemProps {
   item: NotificationItemUI;
+  onSelect?: (item: NotificationItemUI) => void;
   onMarkRead?: (id: string) => void;
 }
 
-export function NotificationItem({ item, onMarkRead }: NotificationItemProps) {
+export function NotificationItem({ item, onSelect, onMarkRead }: NotificationItemProps) {
   const { dotColor } = getSeverityBadgeStyles(item.severity);
   const timeFormatted = formatRelativeTime(item.createdAt);
 
   const handleClick = () => {
-    if (!item.read && onMarkRead) {
+    if (onSelect) {
+      onSelect(item);
+    } else if (!item.read && onMarkRead) {
       onMarkRead(item.id);
     }
   };

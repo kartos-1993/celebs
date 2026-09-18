@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCheck } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
@@ -13,7 +14,7 @@ import {
   useNotificationInbox,
   useUnreadNotificationCount,
 } from '../hooks/use-notification-queries';
-import type { NotificationFilterTab } from '../types';
+import type { NotificationFilterTab, NotificationItemUI } from '../types';
 
 import { NotificationBell } from './notification-bell';
 import { NotificationItem } from './notification-item';
@@ -21,6 +22,7 @@ import { NotificationItem } from './notification-item';
 import { cn } from '@/lib/utils';
 
 export function NotificationPopover() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<NotificationFilterTab>('all');
 
@@ -33,7 +35,27 @@ export function NotificationPopover() {
   const markReadMutation = useMarkNotificationAsRead();
   const markAllMutation = useMarkAllNotificationsAsRead();
 
-  const items = data?.items ?? [];
+  const rawItems = Array.isArray(data)
+    ? data
+    : ((data as { items?: NotificationItemUI[] })?.items ?? []);
+  const items: NotificationItemUI[] = Array.isArray(rawItems) ? rawItems : [];
+
+  const handleItemSelect = (item: NotificationItemUI) => {
+    if (!item.read) {
+      markReadMutation.mutate(item.id);
+    }
+    setOpen(false);
+
+    const itemData = item.data;
+    const url = typeof itemData?.url === 'string' ? itemData.url : undefined;
+    const orderId = itemData?.orderId as string | undefined;
+
+    if (orderId || url?.includes('/orders')) {
+      navigate('/orders');
+    } else if (url && url.startsWith('/')) {
+      navigate(url);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -110,11 +132,7 @@ export function NotificationPopover() {
               </div>
             ) : (
               items.map((item) => (
-                <NotificationItem
-                  key={item.id}
-                  item={item}
-                  onMarkRead={(id) => markReadMutation.mutate(id)}
-                />
+                <NotificationItem key={item.id} item={item} onSelect={handleItemSelect} />
               ))
             )}
           </div>

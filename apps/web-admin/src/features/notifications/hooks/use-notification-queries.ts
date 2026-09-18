@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getNotifications, getUnreadCount, NOTIFICATIONS_QUERY_KEYS } from '../api';
 import { playCriticalChime } from '../lib/sound.util';
-import type { NotificationsListParams } from '../types';
+import type { NotificationsListParams, PaginatedNotificationsPayload } from '../types';
 
 /**
  * Hook for polling unread notification count.
@@ -17,11 +17,11 @@ export function useUnreadNotificationCount() {
     queryKey: NOTIFICATIONS_QUERY_KEYS.unreadCount(),
     queryFn: getUnreadCount,
     select: (res) => res.data,
-    refetchInterval: 90_000,
+    refetchInterval: 15_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    staleTime: 30_000,
+    staleTime: 5_000,
   });
 
   const hasCritical = query.data?.hasCritical ?? false;
@@ -48,8 +48,20 @@ export function useNotificationInbox(params: NotificationsListParams = {}, enabl
   return useQuery({
     queryKey: NOTIFICATIONS_QUERY_KEYS.list(params),
     queryFn: () => getNotifications(params),
-    select: (res) => res.data,
+    select: (res) => {
+      const payload = res.data;
+      if (Array.isArray(payload)) {
+        return {
+          items: payload,
+          total: (res as unknown as { meta?: { total?: number } }).meta?.total ?? payload.length,
+          page: (res as unknown as { meta?: { page?: number } }).meta?.page ?? 1,
+          limit: (res as unknown as { meta?: { limit?: number } }).meta?.limit ?? 20,
+          totalPages: (res as unknown as { meta?: { totalPages?: number } }).meta?.totalPages ?? 1,
+        };
+      }
+      return payload as PaginatedNotificationsPayload;
+    },
     enabled,
-    staleTime: 10_000,
+    staleTime: 5_000,
   });
 }
