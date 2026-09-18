@@ -1,5 +1,14 @@
-import { ReviewStatus } from '@prisma/client';
 import { Request, Response } from 'express';
+
+import {
+  adminReviewsQuerySchema,
+  createReviewSchema,
+  presignReviewImageSchema,
+  productIdParamSchema,
+  productReviewsQuerySchema,
+  reviewIdParamSchema,
+  updateReviewStatusSchema,
+} from '@celebs/shared-types';
 
 import { ReviewService, reviewService } from './review.service';
 
@@ -11,7 +20,8 @@ export class ReviewController {
 
   createReview = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
-    const review = await this.service.createReview(userId, req.body);
+    const body = createReviewSchema.parse(req.body);
+    const review = await this.service.createReview(userId, body);
     return sendCreated(res, review, 'Review submitted successfully');
   };
 
@@ -29,18 +39,15 @@ export class ReviewController {
   };
 
   getProductReviews = async (req: Request, res: Response) => {
-    const productId = req.params.productId || '';
-    const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = parseInt(req.query.limit as string, 10) || 10;
-    const rating = req.query.rating ? parseInt(req.query.rating as string, 10) : undefined;
-    const hasImages = req.query.hasImages === 'true';
+    const { productId } = productIdParamSchema.parse(req.params);
+    const query = productReviewsQuerySchema.parse(req.query);
     const currentUserId = req.user?.id;
 
     const result = await this.service.getProductReviews(productId, {
-      page,
-      limit,
-      rating,
-      hasImages,
+      page: query.page,
+      limit: query.limit,
+      rating: query.rating,
+      hasImages: query.hasImages,
       currentUserId,
     });
 
@@ -53,13 +60,13 @@ export class ReviewController {
   };
 
   getProductReviewSummary = async (req: Request, res: Response) => {
-    const productId = req.params.productId || '';
+    const { productId } = productIdParamSchema.parse(req.params);
     const summary = await this.service.getProductReviewSummary(productId);
     return sendSuccess(res, summary, 'Product review summary retrieved');
   };
 
   getProductReviewGallery = async (req: Request, res: Response) => {
-    const productId = req.params.productId || '';
+    const { productId } = productIdParamSchema.parse(req.params);
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const gallery = await this.service.getProductReviewGallery(productId, page, limit);
@@ -68,39 +75,34 @@ export class ReviewController {
 
   toggleReviewLike = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
-    const reviewId = req.params.reviewId || '';
+    const { reviewId } = reviewIdParamSchema.parse(req.params);
     const result = await this.service.toggleReviewLike(reviewId, userId);
     return sendSuccess(res, result, result.liked ? 'Review liked' : 'Review unliked');
   };
 
   presignReviewImage = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
-    const { originalname, mimeType, size } = req.body;
+    const body = presignReviewImageSchema.parse(req.body);
     const result = await this.service.presignReviewImage(userId, {
-      originalname,
-      mimeType,
-      size: Number(size),
+      originalname: body.originalname,
+      mimeType: body.mimeType,
+      size: body.size,
     });
     return sendCreated(res, result, 'Presigned review photo upload URL generated');
   };
 
   getAdminReviews = async (req: Request, res: Response) => {
     const vendorId = resolveTargetStoreId(req, 'query');
-    const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = parseInt(req.query.limit as string, 10) || 15;
-    const status = req.query.status as ReviewStatus | undefined;
-    const rating = req.query.rating ? parseInt(req.query.rating as string, 10) : undefined;
-    const hasImages = req.query.hasImages === 'true';
-    const search = (req.query.search as string) || undefined;
+    const query = adminReviewsQuerySchema.parse(req.query);
 
     const result = await this.service.getAdminReviews({
-      vendorId,
-      page,
-      limit,
-      status,
-      rating,
-      hasImages,
-      search,
+      vendorId: vendorId || query.vendorId,
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+      rating: query.rating,
+      hasImages: query.hasImages,
+      search: query.search,
     });
 
     return sendPaginated(
@@ -112,8 +114,8 @@ export class ReviewController {
   };
 
   updateReviewStatus = async (req: Request, res: Response) => {
-    const reviewId = req.params.reviewId || '';
-    const { status } = req.body as { status: ReviewStatus };
+    const { reviewId } = reviewIdParamSchema.parse(req.params);
+    const { status } = updateReviewStatusSchema.parse(req.body);
     const updated = await this.service.updateReviewStatus(reviewId, status);
     return sendSuccess(res, updated, 'Review status updated successfully');
   };

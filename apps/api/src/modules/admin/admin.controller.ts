@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 
+import { createUserSchema, updateUserRolePermissionsSchema } from '@celebs/shared-types';
 import { asyncHandler } from '@celebs/shared-utils';
 
 import { AdminService, adminService } from './admin.service';
@@ -51,7 +52,8 @@ export class AdminController {
   });
 
   public createUser = asyncHandler(async (req: Request, res: Response) => {
-    const user = await this.adminService.createUser(req.body);
+    const body = createUserSchema.parse(req.body);
+    const user = await this.adminService.createUser(body);
     return sendCreated(res, user, 'User account created successfully');
   });
 
@@ -63,7 +65,8 @@ export class AdminController {
 
   public updateUserRoleAndPermissions = asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id || '';
-    const updatedUser = await this.adminService.updateUserRoleAndPermissions(id, req.body);
+    const body = updateUserRolePermissionsSchema.parse(req.body);
+    const updatedUser = await this.adminService.updateUserRoleAndPermissions(id, body);
     return sendSuccess(res, updatedUser, 'User role and permissions updated successfully');
   });
 }
