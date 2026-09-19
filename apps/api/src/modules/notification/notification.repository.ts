@@ -113,6 +113,51 @@ export class NotificationRepository {
     return admins.map((a) => a.id);
   }
 
+  async getStoreUserIdsMap(storeIds: string[]): Promise<Map<string, string[]>> {
+    const map = new Map<string, string[]>();
+    if (storeIds.length === 0) return map;
+
+    for (const storeId of storeIds) {
+      map.set(storeId, []);
+    }
+
+    const [stores, staffList] = await Promise.all([
+      this.prisma.vendorProfile.findMany({
+        where: { id: { in: storeIds } },
+        select: { id: true, userId: true },
+      }),
+      this.prisma.user.findMany({
+        where: { vendorId: { in: storeIds } },
+        select: { id: true, vendorId: true },
+      }),
+    ]);
+
+    for (const store of stores) {
+      const list = map.get(store.id) || [];
+      if (store.userId && !list.includes(store.userId)) {
+        list.push(store.userId);
+      }
+      map.set(store.id, list);
+    }
+
+    for (const staff of staffList) {
+      if (staff.vendorId) {
+        const list = map.get(staff.vendorId) || [];
+        if (staff.id && !list.includes(staff.id)) {
+          list.push(staff.id);
+        }
+        map.set(staff.vendorId, list);
+      }
+    }
+
+    return map;
+  }
+
+  async getStoreUserIds(storeId: string): Promise<string[]> {
+    const map = await this.getStoreUserIdsMap([storeId]);
+    return map.get(storeId) || [];
+  }
+
   // ==========================================
   // INBOX NOTIFICATION OPERATIONS
   // ==========================================
@@ -225,11 +270,23 @@ export class NotificationRepository {
     };
   }
 
-  async updatePushStatus(id: string, pushStatus: PushStatus): Promise<Notification> {
-    return this.prisma.notification.update({
-      where: { id },
-      data: { pushStatus },
-    });
+  async updatePushStatus(id: string, pushStatus: PushStatus): Promise<Notification | null> {
+    try {
+      return await this.prisma.notification.update({
+        where: { id },
+        data: { pushStatus },
+      });
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2025'
+      ) {
+        return null;
+      }
+      throw error;
+    }
   }
 }
 

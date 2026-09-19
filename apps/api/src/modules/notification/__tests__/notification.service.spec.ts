@@ -16,6 +16,9 @@ describe('NotificationService', () => {
     getUnreadCount: ReturnType<typeof vi.fn>;
     markAsRead: ReturnType<typeof vi.fn>;
     markAllAsRead: ReturnType<typeof vi.fn>;
+    getAdminUserIds: ReturnType<typeof vi.fn>;
+    getStoreUserIds: ReturnType<typeof vi.fn>;
+    getStoreUserIdsMap: ReturnType<typeof vi.fn>;
   };
   let mockQueue: {
     add: ReturnType<typeof vi.fn>;
@@ -34,6 +37,8 @@ describe('NotificationService', () => {
       markAsRead: vi.fn(),
       markAllAsRead: vi.fn(),
       getAdminUserIds: vi.fn(),
+      getStoreUserIds: vi.fn().mockResolvedValue(['vendor-owner-1']),
+      getStoreUserIdsMap: vi.fn().mockResolvedValue(new Map([['vendor-abc', ['vendor-owner-1']]])),
     };
     mockQueue = {
       add: vi.fn(),
@@ -184,6 +189,7 @@ describe('NotificationService', () => {
       });
 
       expect(mockRepo.getAdminUserIds).toHaveBeenCalled();
+      expect(mockRepo.getStoreUserIdsMap).toHaveBeenCalledWith(['vendor-abc']);
       expect(mockRepo.createNotification).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'SYSTEM',
@@ -195,6 +201,7 @@ describe('NotificationService', () => {
         expect.objectContaining({
           type: 'VENDOR_ORDER',
           title: 'New Order Received! 📦',
+          user: { connect: { id: 'vendor-owner-1' } },
           vendor: { connect: { id: 'vendor-abc' } },
         }),
       );

@@ -189,32 +189,39 @@ export const notificationWorker = new Worker(
 );
 
 notificationWorker.on('failed', async (job, error) => {
-  logger.error(
-    { jobId: job?.id, error: error.message, attempts: job?.attemptsMade },
-    'Notification job ultimately failed',
-  );
+  try {
+    logger.error(
+      { jobId: job?.id, error: error.message, attempts: job?.attemptsMade },
+      'Notification job ultimately failed',
+    );
 
-  if (job?.name === 'push') {
-    const data = job.data as NotificationJobPayload;
-    if (data.notificationId) {
-      await notificationRepository.updatePushStatus(data.notificationId, 'FAILED');
-    }
+    if (job?.name === 'push') {
+      const data = job.data as NotificationJobPayload;
+      if (data?.notificationId) {
+        await notificationRepository.updatePushStatus(data.notificationId, 'FAILED');
+      }
 
-    // Ultimate fallback for critical notifications
-    if (data.severity === 'CRITICAL' || data.type === 'ORDER_STATUS') {
-      const user = await userRepository.findUserById(data.userId);
-      if (user?.email) {
-        await mailQueue.add(
-          'send',
-          {
-            to: user.email,
-            subject: data.title,
-            text: data.body,
-            html: `<p>${data.body}</p>`,
-          },
-          { attempts: 3 },
-        );
+      // Ultimate fallback for critical notifications
+      if (data?.severity === 'CRITICAL' || data?.type === 'ORDER_STATUS') {
+        const user = await userRepository.findUserById(data.userId);
+        if (user?.email) {
+          await mailQueue.add(
+            'send',
+            {
+              to: user.email,
+              subject: data.title,
+              text: data.body,
+              html: `<p>${data.body}</p>`,
+            },
+            { attempts: 3 },
+          );
+        }
       }
     }
+  } catch (err) {
+    logger.error(
+      { err, jobId: job?.id },
+      'Failed to execute notificationWorker failed-event callback',
+    );
   }
 });

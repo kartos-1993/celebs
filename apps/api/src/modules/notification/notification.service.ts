@@ -37,6 +37,10 @@ export interface CreateNotificationParams {
   dedupKey?: string;
 }
 
+export interface CreateNotificationOptions {
+  skipCacheInvalidation?: boolean;
+}
+
 export class NotificationService {
   constructor(
     private readonly repo: NotificationRepository = notificationRepository,
@@ -64,9 +68,13 @@ export class NotificationService {
 
   private async invalidateUnreadCache(userId: string, storeId?: string | null): Promise<void> {
     try {
-      const keys = [this.getUnreadCacheKey(userId, storeId)];
+      const keys = [this.getUnreadCacheKey(userId, storeId), this.getUnreadCacheKey(userId, null)];
       if (storeId) {
-        keys.push(this.getUnreadCacheKey(userId, null));
+        const storeUserIds = await this.repo.getStoreUserIds(storeId);
+        for (const sUid of storeUserIds) {
+          keys.push(this.getUnreadCacheKey(sUid, storeId));
+          keys.push(this.getUnreadCacheKey(sUid, null));
+        }
       }
       await cacheRedis.del(...keys);
     } catch (err) {
@@ -74,7 +82,19 @@ export class NotificationService {
     }
   }
 
-  async createNotification(params: CreateNotificationParams): Promise<Notification> {
+  private async batchInvalidateUnreadCache(keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    try {
+      await cacheRedis.del(...keys);
+    } catch (err) {
+      logger.warn({ err }, 'Failed to batch invalidate notification unread count cache');
+    }
+  }
+
+  async createNotification(
+    params: CreateNotificationParams,
+    options?: CreateNotificationOptions,
+  ): Promise<Notification> {
     const {
       userId,
       vendorId,
@@ -101,7 +121,9 @@ export class NotificationService {
     };
 
     const notification = await this.repo.createNotification(createData);
-    await this.invalidateUnreadCache(userId, vendorId);
+    if (!options?.skipCacheInvalidation) {
+      await this.invalidateUnreadCache(userId, vendorId);
+    }
 
     // 2. Dispatch push delivery job to BullMQ queue
     await this.queue.add(
@@ -164,33 +186,79 @@ export class NotificationService {
     vendorIds: string[];
   }): Promise<void> {
     const { orderId, orderNumber, totalAmount, vendorIds } = params;
-    const adminIds = await this.repo.getAdminUserIds();
+    const cleanVendorIds = Array.from(new Set(vendorIds.filter(Boolean)));
 
+    // 1. Concurrently fetch platform admins and batch resolve store user maps
+    const [adminIds, storeUsersMap] = await Promise.all([
+      this.repo.getAdminUserIds(),
+      cleanVendorIds.length > 0
+        ? this.repo.getStoreUserIdsMap(cleanVendorIds)
+        : Promise.resolve(new Map<string, string[]>()),
+    ]);
+
+    // 2. Collect all cache keys across admins and store users for atomic batch invalidation
+    const cacheKeys = new Set<string>();
     for (const adminId of adminIds) {
-      await this.createNotification({
-        userId: adminId,
-        type: 'SYSTEM',
-        severity: 'INFO',
-        title: 'New Order Received! 📦',
-        body: `Order #${orderNumber} placed for NPR ${totalAmount.toLocaleString('en-IN')}.`,
-        data: { orderId, orderNumber, url: `/orders/${orderId}` },
-        dedupKey: `admin-order:${orderId}:${adminId}`,
-      }).catch(() => {});
+      cacheKeys.add(this.getUnreadCacheKey(adminId, null));
+    }
+    for (const vendorId of cleanVendorIds) {
+      const storeUserIds = storeUsersMap.get(vendorId) || [];
+      const targetUserId = storeUserIds[0] || adminIds[0] || '';
+      if (targetUserId) {
+        cacheKeys.add(this.getUnreadCacheKey(targetUserId, vendorId));
+        cacheKeys.add(this.getUnreadCacheKey(targetUserId, null));
+      }
+      for (const sUid of storeUserIds) {
+        cacheKeys.add(this.getUnreadCacheKey(sUid, vendorId));
+        cacheKeys.add(this.getUnreadCacheKey(sUid, null));
+      }
     }
 
-    for (const vendorId of vendorIds) {
-      if (!vendorId) continue;
-      await this.createNotification({
-        userId: adminIds[0] || '',
-        vendorId,
-        type: 'VENDOR_ORDER',
-        severity: 'CRITICAL',
-        title: 'New Order Received! 📦',
-        body: `You have a new order #${orderNumber} for your store.`,
-        data: { orderId, orderNumber, url: `/vendor/orders/${orderId}` },
-        dedupKey: `vendor-order:${orderId}:${vendorId}`,
-      }).catch(() => {});
-    }
+    // 3. Dispatch admin notifications in parallel (skipping per-item cache invalidation)
+    const adminPromises = adminIds.map((adminId) =>
+      this.createNotification(
+        {
+          userId: adminId,
+          type: 'SYSTEM',
+          severity: 'INFO',
+          title: 'New Order Received! 📦',
+          body: `Order #${orderNumber} placed for NPR ${totalAmount.toLocaleString('en-IN')}.`,
+          data: { orderId, orderNumber, url: `/orders/${orderId}` },
+          dedupKey: `admin-order:${orderId}:${adminId}`,
+        },
+        { skipCacheInvalidation: true },
+      ).catch((err) => {
+        logger.warn({ err, adminId, orderId }, 'Failed to dispatch admin notification');
+      }),
+    );
+
+    // 4. Dispatch vendor notifications in parallel (skipping per-item cache invalidation)
+    const vendorPromises = cleanVendorIds.map((vendorId) => {
+      const storeUserIds = storeUsersMap.get(vendorId) || [];
+      const targetUserId = storeUserIds[0] || adminIds[0] || '';
+      return this.createNotification(
+        {
+          userId: targetUserId,
+          vendorId,
+          type: 'VENDOR_ORDER',
+          severity: 'CRITICAL',
+          title: 'New Order Received! 📦',
+          body: `You have a new order #${orderNumber} for your store.`,
+          data: { orderId, orderNumber, url: `/vendor/orders/${orderId}` },
+          dedupKey: `vendor-order:${orderId}:${vendorId}`,
+        },
+        { skipCacheInvalidation: true },
+      ).catch((err) => {
+        logger.warn({ err, vendorId, orderId }, 'Failed to dispatch vendor notification');
+      });
+    });
+
+    // 5. Concurrently await all dispatches and execute atomic batch cache invalidation
+    await Promise.all([
+      ...adminPromises,
+      ...vendorPromises,
+      this.batchInvalidateUnreadCache(Array.from(cacheKeys)),
+    ]);
   }
 
   async getInbox(
