@@ -27,7 +27,7 @@ export function useUnreadCountQuery() {
     queryKey: NOTIFICATION_QUERY_KEYS.unreadCount(),
     queryFn: () => getUnreadCountApi(),
     staleTime: 5_000,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
 }

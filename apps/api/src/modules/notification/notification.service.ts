@@ -23,6 +23,7 @@ import type { OrderNotificationParams } from './notification.types';
 import { resolveNotificationTemplate } from './template-interpolator.util';
 
 import { notificationQueue } from '@/common/services/queue.service';
+import { cacheRedis } from '@/config/upstash.redis';
 
 export interface CreateNotificationParams {
   userId: string;
@@ -57,6 +58,22 @@ export class NotificationService {
     logger.info({ userId }, '[NotificationService] Unregistered push token');
   }
 
+  private getUnreadCacheKey(userId: string, storeId?: string | null): string {
+    return `notif:unread:${userId}:${storeId || 'none'}`;
+  }
+
+  private async invalidateUnreadCache(userId: string, storeId?: string | null): Promise<void> {
+    try {
+      const keys = [this.getUnreadCacheKey(userId, storeId)];
+      if (storeId) {
+        keys.push(this.getUnreadCacheKey(userId, null));
+      }
+      await cacheRedis.del(...keys);
+    } catch (err) {
+      logger.warn({ err, userId, storeId }, 'Failed to invalidate notification unread count cache');
+    }
+  }
+
   async createNotification(params: CreateNotificationParams): Promise<Notification> {
     const {
       userId,
@@ -84,6 +101,7 @@ export class NotificationService {
     };
 
     const notification = await this.repo.createNotification(createData);
+    await this.invalidateUnreadCache(userId, vendorId);
 
     // 2. Dispatch push delivery job to BullMQ queue
     await this.queue.add(
@@ -188,7 +206,25 @@ export class NotificationService {
   }
 
   async getUnreadCount(userId: string, storeId?: string | null): Promise<IUnreadCount> {
-    return this.repo.getUnreadCount(userId, storeId);
+    const cacheKey = this.getUnreadCacheKey(userId, storeId);
+    try {
+      const cached = await cacheRedis.get<IUnreadCount>(cacheKey);
+      if (cached && typeof cached === 'object' && 'count' in cached) {
+        return cached;
+      }
+    } catch (err) {
+      logger.warn({ err, userId, storeId }, 'Failed to read notification unread count cache');
+    }
+
+    const fresh = await this.repo.getUnreadCount(userId, storeId);
+
+    try {
+      await cacheRedis.set(cacheKey, fresh, { ex: 60 });
+    } catch (err) {
+      logger.warn({ err, userId, storeId }, 'Failed to write notification unread count cache');
+    }
+
+    return fresh;
   }
 
   async markAsRead(
@@ -196,11 +232,15 @@ export class NotificationService {
     notificationId: string,
     storeId?: string | null,
   ): Promise<Notification> {
-    return this.repo.markAsRead(notificationId, userId, storeId);
+    const updated = await this.repo.markAsRead(notificationId, userId, storeId);
+    await this.invalidateUnreadCache(userId, storeId);
+    return updated;
   }
 
   async markAllAsRead(userId: string, storeId?: string | null): Promise<{ count: number }> {
-    return this.repo.markAllAsRead(userId, storeId);
+    const result = await this.repo.markAllAsRead(userId, storeId);
+    await this.invalidateUnreadCache(userId, storeId);
+    return result;
   }
 
   async getVendorNotificationsForAdmin(

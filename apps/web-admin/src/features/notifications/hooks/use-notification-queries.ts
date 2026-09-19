@@ -17,7 +17,7 @@ export function useUnreadNotificationCount() {
     queryKey: NOTIFICATIONS_QUERY_KEYS.unreadCount(),
     queryFn: getUnreadCount,
     select: (res) => res.data,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
