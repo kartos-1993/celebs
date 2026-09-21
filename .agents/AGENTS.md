@@ -2,7 +2,13 @@
 
 ## 0. MANDATORY PRE-FLIGHT COMPLIANCE CHECK
 
-Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 11 gates:
+> **MANDATORY PRE-FLIGHT SUMMARY**:
+>
+> 1. **web-admin & mobile**: max 150 lines/tsx, no inline mutations/apiClient in UI, use `<RESOURCE>_QUERY_KEYS` factory.
+> 2. **api**: Clean Architecture (`routes` -> `controller` -> `service` -> `repository`), zero Prisma in controllers, port 6543 pool preservation.
+> 3. **REST**: standard verbs (`GET`/`POST`/`PUT`/`PATCH`/`DELETE`) and plural nouns.
+
+Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 13 gates:
 
 1. **Domain Scoping**: Are you respecting the domain's scoped rules (`apps/web-admin/AGENTS.md`, `apps/api/AGENTS.md`, `apps/mobile/AGENTS.md`)?
 2. **File Budget**: Is any `.tsx` file exceeding 150 lines or Cyclomatic Complexity > 8? If so, STOP and decompose into FSD slices.
@@ -20,6 +26,7 @@ Before outputting ANY implementation plan, refactoring proposal, or code modific
     - **Priority 1 — Absolute Security**: Fail-closed guards, strict authorization, zero account/data enumeration, universal boundary validation at router level before any database interaction.
     - **Priority 2 — Cost & Compute Reduction**: Preserve PostgreSQL port 6543 connection pool; eliminate redundant DB roundtrips via Redis-first caches; reject invalid requests at HTTP gateway with zero database query cost; eliminate N+1 queries.
     - **Priority 3 — Verification Plan First**: Test matrix and resource impact must be planned and agreed upon before writing any solution code.
+13. **Clean & Descriptive Test Naming**: Zero meta-labels, ticket codes (e.g. `P0-H3`, `RED`), or generic slogans (e.g. `"auth hardening"`, `"Item 6"`) in test titles or descriptions. Test suites and cases must clearly and plainly state the exact functional behavior, boundary constraint, or failure scenario under test (e.g., `'allows only a single successful refresh when identical tokens are sent concurrently'`).
 
 ---
 

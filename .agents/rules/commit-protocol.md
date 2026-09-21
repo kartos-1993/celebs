@@ -26,3 +26,4 @@
    - Leverage Redis-first caching to eliminate avoidable database hits.
    - Reject bad inputs at the router level so invalid requests consume 0ms of database CPU/pool resources.
 5. **Step 5 - Refactor & Commit**: Ensure all tests remain green, run localized typechecks (`tsc --noEmit`), and commit cleanly with conventional commit format.
+6. **Step 6 - Plain Descriptive Test Naming**: Write clean, plain test descriptions that state the exact functional behavior or constraint being verified. Zero ticket codes, meta-labels (e.g. `P0-H3`, `RED`), or generic slogans (e.g. `"auth hardening"`, `"Item 6"`).
