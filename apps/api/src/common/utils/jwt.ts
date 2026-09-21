@@ -10,7 +10,7 @@ export type AccessTPayload = {
 };
 export type RefreshTPayload = {
   sessionId: string;
-  jti?: string;
+  jti: string;
 };
 
 type SignOptsAndSecret = SignOptions & {

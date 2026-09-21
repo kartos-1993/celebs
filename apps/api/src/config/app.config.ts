@@ -58,7 +58,7 @@ export const appConfig = () => {
         validatedEnv.GOOGLE_WEB_CLIENT_ID,
         validatedEnv.GOOGLE_ANDROID_CLIENT_ID,
         validatedEnv.GOOGLE_IOS_CLIENT_ID,
-      ].filter(Boolean),
+      ].filter((id): id is string => Boolean(id)),
     },
     REDIS: {
       HOST: validatedEnv.REDIS_HOST,

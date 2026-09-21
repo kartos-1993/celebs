@@ -103,6 +103,39 @@ export class AuthRepository {
     });
   }
 
+  public async slideSessionCas(
+    sessionId: string,
+    expectedJti: string,
+    newJti: string,
+    expiredAt: Date,
+  ): Promise<boolean> {
+    const result = await prisma.session.updateMany({
+      where: {
+        id: sessionId,
+        rotatedRefreshId: expectedJti,
+      },
+      data: {
+        expiredAt,
+        rotatedRefreshId: newJti,
+      },
+    });
+    return result.count > 0;
+  }
+
+  public async deleteAllUserSessions(userId: string): Promise<string[]> {
+    const sessions = await prisma.session.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const sessionIds = sessions.map((s) => s.id);
+    if (sessionIds.length > 0) {
+      await prisma.session.deleteMany({
+        where: { userId },
+      });
+    }
+    return sessionIds;
+  }
+
   public async deleteSession(sessionId: string): Promise<void> {
     await prisma.session
       .delete({

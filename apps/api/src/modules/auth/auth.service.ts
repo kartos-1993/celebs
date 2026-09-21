@@ -14,7 +14,6 @@ import {
   ForbiddenException,
   HttpException,
   HTTPSTATUS,
-  InternalServerException,
   logger,
   UnauthorizedException,
 } from '@celebs/shared-utils';
@@ -160,6 +159,8 @@ export class AuthService {
   public async verifyEmail(code: string): Promise<VerifyEmailResponse> {
     const updatedUser = await this.verificationService.verifyCode(code);
 
+    await storeLifecycle.assertSellerLoginAllowed(updatedUser);
+
     logger.info({ userId: updatedUser.id }, 'Creating session after email verification');
     const userAgent = 'Email Verification Auto-Login';
     const jti = randomUUID();
@@ -257,15 +258,29 @@ export class AuthService {
     }
 
     const presentedJti = payload.jti;
-    if (presentedJti && session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
-      await this.authRepo.deleteSession(session.id);
-      await authCache.invalidateSessions([session.id]);
+    if (session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
+      const revokedSessionIds = await this.authRepo.deleteAllUserSessions(session.userId);
+      await authCache.invalidateSessions(revokedSessionIds);
       logger.error(
-        { sessionId: session.id, userId: session.userId },
-        'security.refresh_reuse_detected — session terminated',
+        { sessionId: session.id, userId: session.userId, revokedCount: revokedSessionIds.length },
+        'security.refresh_reuse_detected — all user sessions terminated',
       );
       throw new UnauthorizedException(
         'Session revoked due to token reuse',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
+    const sessionLifetimeMs = Date.now() - session.createdAt.getTime();
+    if (sessionLifetimeMs > config.SESSION.EXPIRY_MS) {
+      await this.authRepo.deleteSession(session.id);
+      await authCache.invalidateSessions([session.id]);
+      logger.warn(
+        { sessionId: session.id, userId: session.userId },
+        'Session lifetime expired — terminated',
+      );
+      throw new UnauthorizedException(
+        'Session lifetime expired',
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
@@ -274,19 +289,27 @@ export class AuthService {
     await storeLifecycle.assertSellerLoginAllowed(user);
 
     const newJti = randomUUID();
+    const newExpiredAt = new Date(Date.now() + config.SESSION.EXPIRY_MS);
 
-    try {
-      const newExpiredAt = new Date(Date.now() + config.SESSION.EXPIRY_MS);
-      await this.authRepo.slideSession(session.id, newExpiredAt, newJti);
-      await authCache.invalidateSessions([session.id]);
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      logger.error(
-        { error: errMsg, sessionId: session.id },
-        'Failed to slide session window in database',
+    const updated = await this.authRepo.slideSessionCas(
+      session.id,
+      presentedJti,
+      newJti,
+      newExpiredAt,
+    );
+
+    if (!updated) {
+      logger.warn(
+        { sessionId: session.id, presentedJti },
+        'Concurrent refresh detected: CAS slide failed',
       );
-      throw new InternalServerException('Failed to extend session lifetime');
+      throw new UnauthorizedException(
+        'Session revoked or refreshed concurrently',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
     }
+
+    await authCache.invalidateSessions([session.id]);
 
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       this.tokenService.issueTokenPair(user.id, session.id, newJti);
