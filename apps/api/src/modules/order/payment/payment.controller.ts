@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { updatePaymentStatusSchema } from '@celebs/shared-types';
+import { orderIdParamSchema, updatePaymentStatusSchema } from '@celebs/shared-types';
 
 import { PaymentService, paymentService } from './payment.service';
 
@@ -69,7 +69,7 @@ export class PaymentController {
   };
 
   esewaForm = async (req: Request, res: Response) => {
-    const orderId = req.params.orderId || '';
+    const { orderId } = orderIdParamSchema.parse(req.params);
     const userId = req.user?.id || '';
     const { actionUrl, fields } = await this.service.getEsewaFormFields(orderId, userId);
 

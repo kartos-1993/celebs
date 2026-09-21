@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+import { idSchema } from './common.validator';
+
+export const orderIdParamSchema = z.object({
+  orderId: idSchema,
+});
+export type OrderIdParamType = z.infer<typeof orderIdParamSchema>;
+
 export const addressSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   phone: z.string().min(7, 'Valid phone number is required'),
