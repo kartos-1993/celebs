@@ -1,14 +1,18 @@
 import { Request, Response } from 'express';
 
 import {
+  changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendVerificationSchema,
+  resetPasswordSchema,
   setupSuperadminSchema,
   vendorRegisterSchema,
 } from '@celebs/shared-types';
 import { asyncHandler, BadRequestException, ErrorCode } from '@celebs/shared-utils';
 
+import { toAuthResponseDto } from './auth.presenter';
 import { AuthService } from './auth.service';
 
 import { clearAuthenticationCookies, setAuthenticationCookies } from '@/common/utils/cookie';
@@ -42,7 +46,11 @@ export class AuthController {
     });
     const { user, accessToken, refreshToken } = await this.authService.login(body, surface);
     setAuthenticationCookies({ res, accessToken, refreshToken });
-    return sendSuccess(res, { user, accessToken, refreshToken }, 'User logged in successfully');
+    return sendSuccess(
+      res,
+      toAuthResponseDto(req, user, { accessToken, refreshToken }),
+      'User logged in successfully',
+    );
   });
 
   public verifyEmail = asyncHandler(
@@ -62,7 +70,11 @@ export class AuthController {
         return res.redirect(buildWebUrl('/onboarding', { verified: 'true' }));
       }
 
-      return sendSuccess(res, { user, accessToken, refreshToken }, 'Email verified successfully');
+      return sendSuccess(
+        res,
+        toAuthResponseDto(req, user, { accessToken, refreshToken }),
+        'Email verified successfully',
+      );
     },
   );
 
@@ -109,7 +121,7 @@ export class AuthController {
 
     return sendSuccess(
       res,
-      { user, accessToken, refreshToken: newRefreshToken },
+      toAuthResponseDto(req, user, { accessToken, refreshToken: newRefreshToken }),
       'Token refreshed successfully',
     );
   });
@@ -127,6 +139,43 @@ export class AuthController {
       userAgent,
     });
     setAuthenticationCookies({ res, accessToken, refreshToken });
-    return sendSuccess(res, { user, accessToken, refreshToken }, 'Google sign in successful');
+    return sendSuccess(
+      res,
+      toAuthResponseDto(req, user, { accessToken, refreshToken }),
+      'Google sign in successful',
+    );
+  });
+
+  public forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+    const body = forgotPasswordSchema.parse(req.body);
+    await this.authService.forgotPassword(body.email);
+    return sendSuccess(
+      res,
+      null,
+      'If an account exists with that email, a password reset link has been sent.',
+    );
+  });
+
+  public resetPassword = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+    const body = resetPasswordSchema.parse(req.body);
+    await this.authService.resetPassword(body);
+    clearAuthenticationCookies(res);
+    return sendSuccess(
+      res,
+      null,
+      'Password reset successfully. Please log in with your new credentials.',
+    );
+  });
+
+  public changePassword = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    const sessionId = req.user?.sessionId || '';
+    if (!userId) {
+      throw new BadRequestException('User not authenticated', ErrorCode.AUTH_UNAUTHORIZED_ACCESS);
+    }
+    const body = changePasswordSchema.parse(req.body);
+    await this.authService.changePassword(userId, sessionId, body);
+    clearAuthenticationCookies(res);
+    return sendSuccess(res, null, 'Password changed successfully.');
   });
 }

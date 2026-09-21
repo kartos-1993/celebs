@@ -18,6 +18,7 @@ import { getBullBoardRouter } from './common/services/bull-board.service';
 import { authenticateJWT } from './common/strategies/jwt.strategy';
 import { config } from './config/app.config';
 import { UpstashRedisStore } from './config/session-store';
+import { csrfOriginGuard } from './middlewares/csrf-origin-guard.middleware';
 import { errorHandler } from './middlewares/error-handler';
 import passport from './middlewares/passport';
 import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
@@ -114,6 +115,7 @@ app.use(
 );
 
 app.use(cookieParser());
+app.use(csrfOriginGuard);
 app.use(passport.initialize());
 app.use(
   pinoHttp({

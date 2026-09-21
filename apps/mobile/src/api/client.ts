@@ -31,6 +31,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-Surface': 'mobile',
   },
 });
 
@@ -71,7 +72,10 @@ async function performRefresh(): Promise<string | null> {
   try {
     // Bare axios instance — deliberately bypasses this file's interceptors.
     const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, undefined, {
-      headers: { 'x-refresh-token': refreshToken },
+      headers: {
+        'x-refresh-token': refreshToken,
+        'X-Surface': 'mobile',
+      },
       timeout: API_CONFIG.timeout,
     });
 

@@ -194,6 +194,37 @@ export class AuthRepository {
       where: { id },
     });
   }
+
+  public async createPasswordResetCode(userId: string): Promise<VerificationCode> {
+    return prisma.verificationCode.create({
+      data: {
+        userId,
+        type: VerificationEnum.PASSWORD_RESET,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    });
+  }
+
+  public async findValidPasswordResetCode(code: string): Promise<VerificationCode | null> {
+    return prisma.verificationCode.findFirst({
+      where: {
+        type: VerificationEnum.PASSWORD_RESET,
+        code,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+  }
+
+  public async deleteUserPasswordResetCodes(userId: string): Promise<void> {
+    await prisma.verificationCode.deleteMany({
+      where: {
+        userId,
+        type: VerificationEnum.PASSWORD_RESET,
+      },
+    });
+  }
 }
 
 export const authRepository = new AuthRepository();

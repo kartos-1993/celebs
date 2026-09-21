@@ -1,6 +1,8 @@
 import { z } from 'zod';
 export { z };
 import {
+  changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendVerificationSchema,
@@ -56,6 +58,8 @@ export type registerType = z.infer<typeof registerSchema>;
 export type vendorRegisterType = z.infer<typeof vendorRegisterSchema>;
 export type verifyEmailType = z.infer<typeof verificationEmailSchema>;
 export type resetPasswordType = z.infer<typeof resetPasswordSchema>;
+export type forgotPasswordType = z.infer<typeof forgotPasswordSchema>;
+export type changePasswordType = z.infer<typeof changePasswordSchema>;
 export type verifyMFAType = z.infer<typeof verifyMfaSchema>;
 export type mfaLoginType = z.infer<typeof verifyMfaForLoginSchema>;
 export type setupSuperadminType = z.infer<typeof setupSuperadminSchema>;

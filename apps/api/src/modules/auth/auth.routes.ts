@@ -21,5 +21,13 @@ authRoutes.post('/resend-verification', authRateLimiter, authController.resendVe
 authRoutes.post('/logout', authenticateJWT, authController.logout);
 authRoutes.post('/setup-superadmin', authRateLimiter, authController.setupSuperadmin);
 authRoutes.get('/setup-status', authRateLimiter, authController.getSetupStatus);
+authRoutes.post('/forgot-password', authRateLimiter, authController.forgotPassword);
+authRoutes.post('/reset-password', authRateLimiter, authController.resetPassword);
+authRoutes.post(
+  '/change-password',
+  authenticateJWT,
+  authRateLimiter,
+  authController.changePassword,
+);
 
 export default authRoutes;

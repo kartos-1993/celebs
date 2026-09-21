@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 
@@ -68,15 +69,17 @@ describe('Session Lifecycle & Expiry Enforcement Test Suite', () => {
 
     // Create initial session expiring in 10 minutes
     const initialExpiredAt = new Date(Date.now() + 10 * 60 * 1000);
+    const jti = randomUUID();
     const session = await prisma.session.create({
       data: {
         userId: user.id,
         userAgent: 'Test Agent',
         expiredAt: initialExpiredAt,
+        rotatedRefreshId: jti,
       },
     });
 
-    const refreshToken = signJwtToken({ sessionId: session.id }, refreshTokenSignOptions);
+    const refreshToken = signJwtToken({ sessionId: session.id, jti }, refreshTokenSignOptions);
 
     // Use refresh token via x-refresh-token header
     const refreshRes = await request(app)

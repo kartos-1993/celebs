@@ -17,6 +17,7 @@ const defaults: CookieOptions = {
   secure: config.COOKIE.SECURE,
   sameSite: config.COOKIE.SAME_SITE,
   domain: config.COOKIE.DOMAIN,
+  partitioned: config.COOKIE.SAME_SITE === 'none',
 };
 
 export const getRefreshTokenCookieOptions = (): CookieOptions => {

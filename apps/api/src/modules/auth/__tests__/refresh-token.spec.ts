@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -123,15 +124,17 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       },
     });
 
+    const jti = randomUUID();
     const session = await prisma.session.create({
       data: {
         userId: user.id,
         userAgent: 'Suspended Seller Agent',
+        rotatedRefreshId: jti,
       },
     });
 
     const refreshToken = signJwtToken(
-      { sessionId: session.id },
+      { sessionId: session.id, jti },
       { secret: config.JWT.REFRESH_SECRET },
     );
 
@@ -226,14 +229,7 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       .post('/api/v1/auth/refresh')
       .set('Cookie', `refreshToken=${legacyToken}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.data.refreshToken).toBeDefined();
-
-    // Verify session now has rotatedRefreshId populated
-    const updatedSession = await prisma.session.findUnique({
-      where: { id: session.id },
-    });
-    expect(updatedSession?.rotatedRefreshId).toBeDefined();
-    expect(typeof updatedSession?.rotatedRefreshId).toBe('string');
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 });

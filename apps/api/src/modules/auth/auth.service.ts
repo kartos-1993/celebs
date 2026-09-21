@@ -1,9 +1,11 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import {
+  changePasswordType,
   loginType,
   registerType,
   resendVerificationType,
+  resetPasswordType,
   setupSuperadminType,
   vendorRegisterType,
   VerifyEmailResponse,
@@ -15,6 +17,7 @@ import {
   HttpException,
   HTTPSTATUS,
   logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@celebs/shared-utils';
 
@@ -350,6 +353,79 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  public async forgotPassword(email: string): Promise<void> {
+    const user = await this.authRepo.findUserByEmail(email.toLowerCase());
+    if (!user) {
+      logger.warn({ email }, 'Password reset requested for non-existent email — silently ignored');
+      return;
+    }
+
+    // Invalidate existing reset tokens for this user
+    await this.authRepo.deleteUserPasswordResetCodes(user.id);
+
+    // Create fresh single-use reset token (15-minute expiry)
+    const verification = await this.authRepo.createPasswordResetCode(user.id);
+    await this.verificationService.sendPasswordResetEmail(user, verification.code);
+
+    logger.info({ userId: user.id, email: user.email }, 'Password reset email dispatched');
+  }
+
+  public async resetPassword(data: resetPasswordType): Promise<void> {
+    const validCode = await this.authRepo.findValidPasswordResetCode(data.verificationCode);
+    if (!validCode) {
+      throw new BadRequestException(
+        'Invalid or expired password reset verification code',
+        ErrorCode.VERIFICATION_ERROR,
+      );
+    }
+
+    const hashedPassword = await hashValue(data.password);
+    await this.authRepo.updateUser(validCode.userId, { password: hashedPassword });
+
+    // Universal session revocation: invalidate all active sessions for this user across all devices
+    const revokedSessionIds = await this.authRepo.deleteAllUserSessions(validCode.userId);
+    await authCache.invalidateSessions(revokedSessionIds);
+
+    // Single-use code burn
+    await this.authRepo.deleteVerificationCodeById(validCode.id);
+
+    logger.info(
+      { userId: validCode.userId, revokedCount: revokedSessionIds.length },
+      'User password reset completed — all active sessions terminated',
+    );
+  }
+
+  public async changePassword(
+    userId: string,
+    currentSessionId: string,
+    data: changePasswordType,
+  ): Promise<void> {
+    const user = await this.authRepo.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await comparePassword(data.currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException(
+        'Current password is incorrect',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
+    const hashedPassword = await hashValue(data.newPassword);
+    await this.authRepo.updateUser(user.id, { password: hashedPassword });
+
+    // Revoke all sessions across all devices to guarantee no stale credentials remain active
+    const revokedSessionIds = await this.authRepo.deleteAllUserSessions(user.id);
+    await authCache.invalidateSessions(revokedSessionIds);
+
+    logger.info(
+      { userId, currentSessionId, revokedCount: revokedSessionIds.length },
+      'User password changed — all active sessions terminated',
+    );
   }
 }
 

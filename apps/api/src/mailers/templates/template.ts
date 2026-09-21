@@ -44,3 +44,47 @@ export const verifyEmailTemplate = (
     }),
   };
 };
+
+export const passwordResetTemplate = (
+  rawUrl: string,
+  brandName: string = 'Celebs',
+  brandColor: string = '#0F172A',
+) => {
+  const url = rawUrl.replace(/([^:]\/)\/+/g, '$1');
+  const subject = `Reset your ${brandName} account password`;
+
+  const contentHtml = `
+    <h1 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #0F172A; line-height: 1.3;">
+      Password Reset Request
+    </h1>
+    <p style="margin: 0 0 20px 0; font-size: 15px; color: #475569; line-height: 1.6;">
+      We received a request to reset the password for your <strong>${brandName}</strong> account. This link will expire in 15 minutes.
+    </p>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 28px 0;">
+      ${renderButton('Reset Password', url)}
+    </div>
+
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #F1F5F9;">
+      <p style="margin: 0 0 6px 0; font-size: 13px; color: #64748B; line-height: 1.5;">
+        If you did not request a password reset, please ignore this email or contact support if you suspect unauthorized access.
+      </p>
+      <p style="margin: 0; font-size: 12px; word-break: break-all;">
+        <a href="${url}" style="color: #0F172A; text-decoration: underline;">${url}</a>
+      </p>
+    </div>
+  `;
+
+  return {
+    subject,
+    text: `Reset your ${brandName} password by clicking the following link (expires in 15 minutes): ${url}`,
+    html: renderEmailLayout({
+      title: subject,
+      previewText: `Password reset request for your ${brandName} account.`,
+      brandName,
+      brandColor,
+      contentHtml,
+    }),
+  };
+};
