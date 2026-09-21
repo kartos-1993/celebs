@@ -18,9 +18,19 @@ export interface EsewaConfig {
 }
 
 export function resolveEsewaConfig(): EsewaConfig {
+  const productCode = process.env.ESEWA_PRODUCT_CODE || '';
+  const secretKey = process.env.ESEWA_SECRET_KEY || '';
+  const nodeEnv = process.env.NODE_ENV || 'development';
+
+  if ((nodeEnv === 'staging' || nodeEnv === 'production') && (!productCode || !secretKey)) {
+    throw new Error(
+      'ESEWA_PRODUCT_CODE and ESEWA_SECRET_KEY must be configured in staging/production — test defaults are not allowed',
+    );
+  }
+
   return {
-    productCode: process.env.ESEWA_PRODUCT_CODE || 'EPAYTEST',
-    secretKey: process.env.ESEWA_SECRET_KEY || '8gBm/:&EnhH.1/q',
+    productCode: productCode || 'EPAYTEST',
+    secretKey: secretKey || '8gBm/:&EnhH.1/q',
     baseUrl: process.env.ESEWA_BASE_URL || 'https://rc-epay.esewa.com.np',
     successUrl:
       process.env.ESEWA_SUCCESS_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/success',
