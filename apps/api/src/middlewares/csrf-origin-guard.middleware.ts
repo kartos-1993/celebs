@@ -78,7 +78,7 @@ export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction
     );
     throw new ForbiddenException(
       'Cross-site request blocked: unauthorized or missing origin header',
-      ErrorCode.FORBIDDEN,
+      ErrorCode.FORBIDDEN_ACCESS,
     );
   }
 
