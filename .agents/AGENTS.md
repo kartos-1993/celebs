@@ -15,6 +15,11 @@ Before outputting ANY implementation plan, refactoring proposal, or code modific
 9. **Repository Encapsulation & Dead Import Cleanliness**: Every entity model accessed by services MUST have a dedicated Repository (e.g., `ProductRepository`, `InventoryRepository`, `VendorRepository`). Zero direct `prisma.*` or `$queryRaw` calls inside domain services. Zero orphaned Prisma imports (`import prisma from '@/config/db.prisma'`).
 10. **Zero Raw Network Calls in Hooks & Clean Client Unwrapping**: Web-Admin and Mobile API client functions MUST return `response.data` (`IApiResponse<T>`) or unwrap uniformly. No mutating functions returning raw `AxiosResponse`. Never call `apiClient`/`axiosClient` directly inside UI components or React Query hooks (must reside in dedicated feature `api.ts` clients).
 11. **REST Verbs & YAGNI Pre-Production Simplicity**: In active development, reject legacy backward-compatibility shims, action-verb URLs (`POST /:id/archive`, `POST /:id/toggle-activation`), and triple-nested fallback cascades (`data?.data?.data`). Build cleanly to the standard from the start; delete dead legacy adapters.
+12. **TDD Mandate & Security/Cost Hierarchy**:
+    - **Test-First Non-Negotiable**: Tests MUST be authored and proven failing FIRST before any application code is touched. Every requirement, bugfix, and vulnerability must have a dedicated test fixture before implementation.
+    - **Priority 1 — Absolute Security**: Fail-closed guards, strict authorization, zero account/data enumeration, universal boundary validation at router level before any database interaction.
+    - **Priority 2 — Cost & Compute Reduction**: Preserve PostgreSQL port 6543 connection pool; eliminate redundant DB roundtrips via Redis-first caches; reject invalid requests at HTTP gateway with zero database query cost; eliminate N+1 queries.
+    - **Priority 3 — Verification Plan First**: Test matrix and resource impact must be planned and agreed upon before writing any solution code.
 
 ---
 
