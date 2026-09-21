@@ -1,5 +1,9 @@
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
+import { validatePaymentTransition } from '../order.state-machine';
+
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export class PaymentRepository {
@@ -47,7 +51,11 @@ export class PaymentRepository {
         select: { id: true, paymentStatus: true, status: true },
       });
 
-      if (currentOrder && currentOrder.paymentStatus === data.next) {
+      if (!currentOrder) {
+        throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+      }
+
+      if (currentOrder.paymentStatus === data.next) {
         return tx.order.findUniqueOrThrow({
           where: { id: data.orderId },
           include: {
@@ -58,6 +66,8 @@ export class PaymentRepository {
           },
         });
       }
+
+      validatePaymentTransition(currentOrder.paymentStatus, data.next);
 
       if (data.latestPayment) {
         await tx.payment.update({

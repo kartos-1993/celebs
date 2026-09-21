@@ -9,6 +9,7 @@ import {
 } from '../adapters/esewa.adapter';
 import { KhaltiAdapter, toPaisa } from '../adapters/khalti.adapter';
 import { IPaymentGateway } from '../adapters/payment-gateway.interface';
+import { validatePaymentTransition } from '../order.state-machine';
 import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 
 import { PaymentRepository, paymentRepository } from './payment.repository';
@@ -43,19 +44,7 @@ export class PaymentService {
       return order;
     }
 
-    const allowedFrom: Record<string, string[]> = {
-      COMPLETED: ['PENDING', 'FAILED'],
-      FAILED: ['PENDING'],
-      REFUNDED: ['COMPLETED'],
-    };
-
-    if (!allowedFrom[next]?.includes(current)) {
-      throw new AppError(
-        `Invalid payment status transition from '${current}' to '${next}'.`,
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
+    validatePaymentTransition(current, next);
 
     const updated = await this.repo.applyPaymentStatusUpdate({
       orderId: order.id,
