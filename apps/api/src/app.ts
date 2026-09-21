@@ -262,7 +262,17 @@ if (config.NODE_ENV !== 'production') {
     res.send(generateOpenAPIDocument());
   });
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
-  app.use(`${config.BASE_PATH}/dev/logs`, devLogsRouter);
+  if (config.NODE_ENV === 'development') {
+    app.use(`${config.BASE_PATH}/dev/logs`, devLogsRouter);
+  } else {
+    app.use(
+      `${config.BASE_PATH}/dev/logs`,
+      authenticateJWT,
+      asyncHandler(actorContext),
+      requirePlatformActor,
+      devLogsRouter,
+    );
+  }
 }
 
 import healthRoutes from './modules/health/health.routes';

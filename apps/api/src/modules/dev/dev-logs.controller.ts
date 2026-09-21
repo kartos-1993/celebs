@@ -2,14 +2,14 @@ import { Request, Response } from 'express';
 
 import { logEmitter, LogEntry, logRingBuffer } from '@celebs/shared-utils';
 
+import { isPlatformActor } from '@/common/context/actor-context';
 import { config } from '@/config/app.config';
 
 function isAuthorized(req: Request): boolean {
   if (config.NODE_ENV === 'development') {
     return true;
   }
-  const secret = (req.query.secret as string) || (req.headers['x-dev-secret'] as string);
-  return Boolean(secret && secret === config.SETUP_SECRET);
+  return isPlatformActor(req.actor);
 }
 
 export const devLogsController = {
@@ -33,18 +33,12 @@ export const devLogsController = {
 <body>
   <div class="card">
     <h2>Celebs Staging Logs</h2>
-    <p>Please enter the setup secret to access real-time staging telemetry.</p>
-    <form onsubmit="event.preventDefault(); const s = document.getElementById('sec').value; if(s){ localStorage.setItem('celebs_dev_secret', s); window.location.href = window.location.pathname + '?secret=' + encodeURIComponent(s); }">
-      <input id="sec" type="password" placeholder="Enter SETUP_SECRET" required autofocus />
-      <button type="submit">Unlock Dashboard</button>
-    </form>
+    <p>Admin sign-in required. Log in to the admin panel first, then reopen this page.</p>
   </div>
 </body>
 </html>`);
       return;
     }
-
-    const secretParam = req.query.secret ? String(req.query.secret) : '';
 
     res.setHeader('Content-Type', 'text/html');
     res.send(`<!DOCTYPE html>
@@ -284,7 +278,6 @@ export const devLogsController = {
     let isPaused = false;
     let currentFilter = 'all';
     let searchQuery = '';
-    const secret = "${secretParam}";
 
     const container = document.getElementById('logContainer');
     const emptyMsg = document.getElementById('emptyMsg');
@@ -461,7 +454,10 @@ export const devLogsController = {
     }
 
     // Initialize EventSource
-    const streamUrl = window.location.pathname.replace(/\\/$/, '') + '/stream' + (secret ? '?secret=' + encodeURIComponent(secret) : '');
+    const basePath = window.location.pathname.endsWith('/')
+      ? window.location.pathname.slice(0, -1)
+      : window.location.pathname;
+    const streamUrl = basePath + '/stream';
     const es = new EventSource(streamUrl);
 
     es.onopen = () => {
