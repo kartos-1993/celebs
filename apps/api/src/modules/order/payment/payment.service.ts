@@ -58,13 +58,25 @@ export class PaymentService {
       latestPayment: order.payments[0] ?? null,
     });
 
+    if (order.status === 'CANCELLED' && next === 'COMPLETED') {
+      logger.warn(
+        {
+          orderId,
+          amount: String(order.totalAmount),
+          reference: input.reference,
+          by: actorLabel,
+        },
+        'LATE_PAYMENT_ON_CANCELLED_ORDER: Customer paid after order cancellation; held for review/refund',
+      );
+    }
+
     logger.info(
       { orderId, from: current, to: next, reference: input.reference, by: actorLabel },
       'Updated order payment status',
     );
 
-    // Enqueue payment confirmation receipt when payment completes
-    if (next === 'COMPLETED' && updated) {
+    // Enqueue payment confirmation receipt when payment completes for non-cancelled orders
+    if (next === 'COMPLETED' && updated && order.status !== 'CANCELLED') {
       await enqueueOrderConfirmationEmail(updated, 'payment-completed');
     }
 
@@ -95,6 +107,17 @@ export class PaymentService {
 
     if (!order) {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    if (order.paymentStatus === 'COMPLETED') {
+      return {
+        order,
+        verification: {
+          success: true,
+          status: 'COMPLETED',
+          transactionId: order.payments[0]?.transactionId || payload.transaction_uuid,
+        },
+      };
     }
 
     if (Math.abs(Number(payload.total_amount) - Number(order.totalAmount)) > 0.005) {
@@ -209,6 +232,17 @@ export class PaymentService {
 
     if (!order) {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    if (order.paymentStatus === 'COMPLETED') {
+      return {
+        order,
+        verification: {
+          success: true,
+          status: 'COMPLETED',
+          transactionId: payment.transactionId || pidx,
+        },
+      };
     }
 
     const adapter = this.getPaymentGateway('KHALTI');

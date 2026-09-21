@@ -184,6 +184,9 @@ export class EsewaAdapter implements IPaymentGateway {
     let data: { status?: string; ref_id?: string | null };
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!response.ok) {
+        throw new Error(`eSewa status check returned HTTP ${response.status}`);
+      }
       data = (await response.json()) as { status?: string; ref_id?: string | null };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);

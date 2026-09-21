@@ -110,17 +110,29 @@ export class PaymentRepository {
             ? 'CONFIRMED'
             : data.orderStatus;
 
+        const isLatePaymentOnCancelled =
+          data.orderStatus === 'CANCELLED' && data.next === 'COMPLETED';
+
+        let trackingTitle = 'Payment Status Updated';
+        let trackingDescription = `${data.reference} (by ${data.actorLabel})`;
+
+        if (isLatePaymentOnCancelled) {
+          trackingTitle = 'Late Payment Received on Cancelled Order';
+          trackingDescription = `Payment of NPR ${data.totalAmount} received after order was cancelled (${data.reference}). Flagged for review/refund.`;
+        } else if (data.next === 'COMPLETED') {
+          trackingTitle = 'Payment Confirmed';
+        } else if (data.next === 'FAILED') {
+          trackingTitle = 'Payment Failed';
+        } else if (data.next === 'REFUNDED') {
+          trackingTitle = 'Payment Refunded';
+        }
+
         await tx.orderTrackingEvent.create({
           data: {
             orderId: data.orderId,
             status: nextOrderStatus,
-            title:
-              data.next === 'COMPLETED'
-                ? 'Payment Confirmed'
-                : data.next === 'FAILED'
-                  ? 'Payment Failed'
-                  : 'Payment Refunded',
-            description: `${data.reference} (by ${data.actorLabel})`,
+            title: trackingTitle,
+            description: trackingDescription,
             source: 'PLATFORM',
           },
         });
