@@ -70,7 +70,8 @@ export class PaymentController {
 
   esewaForm = async (req: Request, res: Response) => {
     const orderId = req.params.orderId || '';
-    const { actionUrl, fields } = await this.service.getEsewaFormFields(orderId);
+    const userId = req.user?.id || '';
+    const { actionUrl, fields } = await this.service.getEsewaFormFields(orderId, userId);
 
     if (actionUrl && actionUrl.includes('bookingId=')) {
       return res.redirect(302, actionUrl);

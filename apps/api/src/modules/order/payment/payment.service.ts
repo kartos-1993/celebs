@@ -146,8 +146,8 @@ export class PaymentService {
     return { order, verification };
   }
 
-  async getEsewaFormFields(orderId: string) {
-    const order = await this.repo.findOrderWithPayments(orderId);
+  async getEsewaFormFields(orderId: string, userId: string) {
+    const order = await this.repo.findOrderWithPayments(orderId, userId);
 
     if (!order || order.paymentMethod !== 'ESEWA') {
       throw new AppError(

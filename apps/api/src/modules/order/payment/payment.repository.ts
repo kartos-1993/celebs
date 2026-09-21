@@ -3,7 +3,13 @@ import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export class PaymentRepository {
-  async findOrderWithPayments(orderId: string) {
+  async findOrderWithPayments(orderId: string, userId?: string) {
+    if (userId) {
+      return prisma.order.findFirst({
+        where: { id: orderId, userId },
+        include: { payments: { orderBy: { createdAt: 'desc' } } },
+      });
+    }
     return prisma.order.findUnique({
       where: { id: orderId },
       include: { payments: { orderBy: { createdAt: 'desc' } } },
