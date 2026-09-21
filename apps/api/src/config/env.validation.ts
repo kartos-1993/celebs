@@ -19,7 +19,7 @@ export const envSchema = z.object({
         .filter(Boolean),
     ),
   DIRECT_URL: z.string().optional().default(''),
-  SETUP_SECRET: z.string().optional().default('celebs-superadmin-secret-2026'),
+  SETUP_SECRET: z.string().min(32, { message: 'SETUP_SECRET must be at least 32 characters long' }),
   JWT_EXPIRES_IN: z.string().optional().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().optional().default('30d'),
   SESSION_EXPIRES_IN_DAYS: z.coerce.number().min(1).default(30),

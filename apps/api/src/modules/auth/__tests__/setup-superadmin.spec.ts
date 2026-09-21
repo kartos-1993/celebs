@@ -10,11 +10,13 @@ vi.mock('@/mailers/mailer', () => ({
 }));
 
 describe('Superadmin Setup API Integration Tests', () => {
+  const setupSecret =
+    process.env.SETUP_SECRET ?? 'test-setup-secret-local-tests-only-00000000000000000000';
   const setupPayload = {
     name: 'Initial Super Admin',
     email: 'superadmin@celebs.com',
     password: 'SuperAdminPassword123!',
-    setupSecret: 'celebs-superadmin-secret-2026',
+    setupSecret,
   };
 
   it('should reject setup if setupSecret is incorrect', async () => {
