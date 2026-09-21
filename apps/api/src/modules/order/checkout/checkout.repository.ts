@@ -207,13 +207,14 @@ export class CheckoutRepository {
   }) {
     const sortedItems = [...data.items].sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
 
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const itemsToRelease = sortedItems.filter((item) => item.itemStatus !== 'CANCELLED');
-      if (itemsToRelease.length > 0) {
-        const values = itemsToRelease.map(
-          (item) => Prisma.sql`(${item.inventoryId}::text, ${item.quantity}::int)`,
-        );
-        await tx.$executeRaw`
+    return prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const itemsToRelease = sortedItems.filter((item) => item.itemStatus !== 'CANCELLED');
+        if (itemsToRelease.length > 0) {
+          const values = itemsToRelease.map(
+            (item) => Prisma.sql`(${item.inventoryId}::text, ${item.quantity}::int)`,
+          );
+          await tx.$executeRaw`
           WITH to_release(id, qty) AS (
             VALUES ${Prisma.join(values)}
           )
@@ -222,31 +223,34 @@ export class CheckoutRepository {
           FROM to_release r
           WHERE p.id = r.id;
         `;
-      }
+        }
 
-      await tx.orderItem.updateMany({
-        where: { orderId: data.id },
-        data: { itemStatus: 'CANCELLED' },
-      });
+        await tx.orderItem.updateMany({
+          where: { orderId: data.id },
+          data: { itemStatus: 'CANCELLED' },
+        });
 
-      await tx.orderTrackingEvent.create({
-        data: {
-          orderId: data.id,
-          status: 'CANCELLED',
-          title: 'Order Expired',
-          description: 'Payment was not completed within the time limit. The order was cancelled.',
-          source: 'SYSTEM',
-        },
-      });
+        await tx.orderTrackingEvent.create({
+          data: {
+            orderId: data.id,
+            status: 'CANCELLED',
+            title: 'Order Expired',
+            description:
+              'Payment was not completed within the time limit. The order was cancelled.',
+            source: 'SYSTEM',
+          },
+        });
 
-      return tx.order.update({
-        where: { id: data.id },
-        data: {
-          status: 'CANCELLED',
-          paymentStatus: 'FAILED',
-        },
-      });
-    });
+        return tx.order.update({
+          where: { id: data.id },
+          data: {
+            status: 'CANCELLED',
+            paymentStatus: 'FAILED',
+          },
+        });
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 }
 
