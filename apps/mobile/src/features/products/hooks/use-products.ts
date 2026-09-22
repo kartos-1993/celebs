@@ -79,7 +79,9 @@ export function useProduct(id: string) {
   const {
     data: product,
     isLoading: loading,
+    isFetching,
     error,
+    refetch,
   } = useQuery({
     queryKey: PRODUCT_QUERY_KEYS.detail(id),
     queryFn: () => getProductById(id),
@@ -115,5 +117,7 @@ export function useProduct(id: string) {
     product: product ?? null,
     loading: loading && !product,
     error: error ? (error instanceof Error ? error.message : 'Failed to load product') : null,
+    refetch,
+    refreshing: isFetching,
   };
 }

@@ -13,6 +13,8 @@ interface ProductDetailStateProps {
 }
 
 export function ProductDetailState({ loading, error, onBack }: ProductDetailStateProps) {
+  const isGone = !loading && !!error && /not found|no longer available|404/i.test(error);
+
   if (loading) {
     return (
       <View style={styles.centerBox}>
@@ -24,7 +26,14 @@ export function ProductDetailState({ loading, error, onBack }: ProductDetailStat
 
   return (
     <View style={styles.centerBox}>
-      <ThemedText style={styles.errorText}>{error || 'Product not found.'}</ThemedText>
+      <ThemedText style={styles.errorText}>
+        {isGone ? 'This product is no longer available.' : (error ?? 'Product not found.')}
+      </ThemedText>
+      {isGone ? (
+        <ThemedText style={styles.loadingText}>
+          It may have been unpublished. Browse similar items instead.
+        </ThemedText>
+      ) : null}
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
         <ThemedText style={styles.backBtnText}>Go Back</ThemedText>
       </TouchableOpacity>

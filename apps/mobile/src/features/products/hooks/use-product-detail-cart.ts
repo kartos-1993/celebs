@@ -7,10 +7,12 @@ import {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { showToast } from '@/components/toast/toast';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { getProductById, PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import type { Product } from '@/features/products/hooks/use-products';
 import { resolveImageUrl } from '@/features/products/hooks/use-products';
 import { isSizeOutOfStockForVariant } from '@/features/products/utils/stock';
@@ -37,6 +39,7 @@ export function useProductDetailCart({
   const { width: windowWidth } = useWindowDimensions();
   const { addToCart } = useCart();
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
+  const queryClient = useQueryClient();
   const topCartBtnRef = useRef<View>(null);
   const topCartCoordsRef = useRef<{ x: number; y: number }>({
     x: windowWidth - 72,
@@ -127,28 +130,45 @@ export function useProductDetailCart({
     async (overrideSize?: string) => {
       if (!product) return;
       const finalSize = overrideSize || selectedSize;
-      const currentVariant = product.colorVariants?.[selectedColorIndex];
-      const isFinalOos = finalSize ? isSizeOutOfStockForVariant(currentVariant, finalSize) : false;
-
-      if (isFullyOutOfStock || isFinalOos) {
-        showToast('No stock available', { type: 'error' });
-        return;
-      }
-      if (product.sizes && product.sizes.length > 0 && !finalSize) {
-        onOpenSizeModal();
-        return;
-      }
 
       setIsAdding(true);
       try {
+        // Truth check before celebration: revalidate the detail entry and
+        // judge stock on the fresh copy, not the possibly-stale render copy.
+        // Server CTE remains the final guard for the check-to-write race.
+        let freshProduct = product;
+        try {
+          freshProduct = await queryClient.fetchQuery({
+            queryKey: PRODUCT_QUERY_KEYS.detail(product.id),
+            queryFn: () => getProductById(product.id),
+            staleTime: 0,
+          });
+        } catch {
+          // Revalidation failed (offline?): fall through to the cached copy;
+          // the server guard still rejects true oversells.
+        }
+        const freshVariant = freshProduct.colorVariants?.[selectedColorIndex];
+        const isFreshOos = finalSize ? isSizeOutOfStockForVariant(freshVariant, finalSize) : false;
+
+        if (isFullyOutOfStock || isFreshOos) {
+          showToast('No stock available', { type: 'error' });
+          return;
+        }
+        if (freshProduct.sizes && freshProduct.sizes.length > 0 && !finalSize) {
+          onOpenSizeModal();
+          return;
+        }
+
         await addToCart({
-          productId: product.id,
+          productId: freshProduct.id,
           quantity: 1,
           size: finalSize || 'Standard',
-          colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
+          colorVariantName: freshProduct.colorVariants?.[selectedColorIndex]?.name || 'Standard',
         });
         const flyImage =
-          product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
+          freshProduct.colorVariants?.[selectedColorIndex]?.images?.[0] ||
+          freshProduct.mainImages?.[0] ||
+          '';
         if (flyImage) {
           triggerFlyAnimation(flyImage);
         }
@@ -171,6 +191,7 @@ export function useProductDetailCart({
       onOpenSizeModal,
       addToCart,
       triggerFlyAnimation,
+      queryClient,
     ],
   );
 

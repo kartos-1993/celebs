@@ -1,5 +1,6 @@
+import { useCallback, useMemo, useRef } from 'react';
 import { Share, StatusBar } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/features/auth/context/auth-context';
@@ -15,6 +16,7 @@ import { useProductVariantSelection } from '@/features/products/hooks/use-produc
 import { useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
 import {
+  deriveSizesFromStocks,
   isProductFullyOutOfStock,
   isSelectedCombinationOutOfStock,
 } from '@/features/products/utils/stock';
@@ -26,7 +28,30 @@ export default function ProductDetailScreen() {
   const { isLoggedIn } = useAuth();
   const { itemCount } = useCart();
   const { openCartSheet } = useCartSheet();
-  const { product, loading, error } = useProduct(id || '');
+  const { product, loading, error, refetch, refreshing } = useProduct(id || '');
+
+  // Revalidate on every foreground: the cached copy may predate an edit.
+  // Skipped on first mount (the initial fetch already covers it).
+  const focusedOnceRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (focusedOnceRef.current) {
+        refetch();
+      } else {
+        focusedOnceRef.current = true;
+      }
+    }, [refetch]),
+  );
+
+  // Display sizes fall back to the union of tracked stocks so the section
+  // can never blank while stock data exists.
+  const displayProduct = useMemo(
+    () =>
+      product && (!product.sizes || product.sizes.length === 0)
+        ? { ...product, sizes: deriveSizesFromStocks(product) }
+        : product,
+    [product],
+  );
 
   const {
     selectedColorIndex,
@@ -35,7 +60,7 @@ export default function ProductDetailScreen() {
     isSizeModalOpen,
     setIsSizeModalOpen,
     handleColorChange,
-  } = useProductVariantSelection(product, Array.isArray(color) ? color[0] : color);
+  } = useProductVariantSelection(displayProduct, Array.isArray(color) ? color[0] : color);
 
   const { isWishlisted } = useWishlistStatus();
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
@@ -106,7 +131,7 @@ export default function ProductDetailScreen() {
       />
 
       <ProductDetailScrollContent
-        product={product}
+        product={displayProduct ?? product}
         galleryImages={galleryImages}
         isOutOfStock={isAddToCartDisabled}
         selectedColorIndex={selectedColorIndex}
@@ -114,6 +139,8 @@ export default function ProductDetailScreen() {
         onSelectColor={handleColorChange}
         onSelectSize={setSelectedSize}
         onAddToCart={() => handleAddToCart()}
+        refreshing={refreshing}
+        onRefresh={() => refetch()}
       />
 
       <ProductBottomBar
@@ -127,7 +154,7 @@ export default function ProductDetailScreen() {
       <ProductDetailSizeModal
         visible={isSizeModalOpen}
         onClose={() => setIsSizeModalOpen(false)}
-        product={product}
+        product={displayProduct ?? product}
         selectedColorIndex={selectedColorIndex}
         selectedSize={selectedSize}
         onSelectSizeAndConfirm={(chosenSize) => {

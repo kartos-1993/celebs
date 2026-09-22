@@ -34,7 +34,10 @@ export function useCheckoutPricing({
     itemsSubtotal >= FREE_SHIPPING_THRESHOLD || itemsSubtotal === 0 ? 0 : SHIPPING_FEE;
   const grandTotal = itemsSubtotal + shippingFee;
   const isCodDisabled = grandTotal > COD_MAX_LIMIT;
-  const canPlaceOrder = isLoggedIn && !!effectiveAddressId && checkoutItems.length > 0;
+  const blockedItems = checkoutItems.filter((item) => item.isAvailable === false);
+  const stockWarning = blockedItems.find((item) => item.stockWarning)?.stockWarning;
+  const canPlaceOrder =
+    isLoggedIn && !!effectiveAddressId && checkoutItems.length > 0 && blockedItems.length === 0;
   const deliveryCaption =
     shippingFee === 0 ? 'Free delivery applied' : `Incl. Rs. ${formatPrice(shippingFee)} delivery`;
 
@@ -46,6 +49,8 @@ export function useCheckoutPricing({
     grandTotal,
     isCodDisabled,
     canPlaceOrder,
+    blockedItems,
+    stockWarning,
     deliveryCaption,
   };
 }

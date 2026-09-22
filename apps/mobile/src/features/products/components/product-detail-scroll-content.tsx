@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 
 import { styles } from '../styles/product.styles';
 import type { Product } from '../types';
@@ -20,6 +20,8 @@ interface ProductDetailScrollContentProps {
   onSelectColor: (index: number) => void;
   onSelectSize: (size: string) => void;
   onAddToCart?: () => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export function ProductDetailScrollContent({
@@ -31,11 +33,19 @@ export function ProductDetailScrollContent({
   onSelectColor,
   onSelectSize,
   onAddToCart,
+  refreshing = false,
+  onRefresh,
 }: ProductDetailScrollContentProps) {
   const [isReviewsSheetOpen, setIsReviewsSheetOpen] = useState(false);
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
+      }
+    >
       <ProductDetailGallerySection
         images={galleryImages}
         productName={product.name}
