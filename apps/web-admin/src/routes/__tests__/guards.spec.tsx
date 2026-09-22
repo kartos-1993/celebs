@@ -81,12 +81,12 @@ describe('GuestGuard', () => {
     });
   });
 
-  it('should render PageLoader while loading', () => {
+  it('renders nothing while the session check is pending on public routes', () => {
     mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
     mockUseLocation.mockReturnValue({ pathname: '/login' });
 
-    const result = GuestGuard({ children: <div>Login Form</div> }) as GuardElement;
-    expect(result.type).not.toBe(React.Fragment);
+    const result = GuestGuard({ children: <div>Login Form</div> });
+    expect(result).toBeNull();
   });
 
   it('should redirect to /setup-superadmin when setupRequired is true and user is on /login', () => {

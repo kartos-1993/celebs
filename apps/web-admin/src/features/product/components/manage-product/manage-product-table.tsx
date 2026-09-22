@@ -16,6 +16,8 @@ import type { ProductListItem } from '../../types';
 import { ManageProductCards } from './manage-product-cards';
 import { ManageProductTableRow } from './manage-product-table-row';
 
+import { TableSkeleton } from '@/components/table-skeleton';
+
 interface ManageProductTableProps {
   products: ProductListItem[];
   isLoading: boolean;
@@ -52,11 +54,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   searchQuery,
 }) => {
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-        Loading products...
-      </div>
-    );
+    return <TableSkeleton rows={8} columns={7} />;
   }
 
   if (products.length === 0) {
@@ -78,8 +76,8 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
       <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-10">
                 <Checkbox
                   checked={selectedProducts.length === products.length && products.length > 0}
                   onCheckedChange={onSelectAll}

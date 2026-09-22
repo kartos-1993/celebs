@@ -13,6 +13,7 @@ import { QueueTable } from './queue-table';
 import { RejectionDialog } from './rejection-dialog';
 
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { TableSkeleton } from '@/components/table-skeleton';
 
 export default function ReviewProductQueue() {
   const state = useReviewQueueState();
@@ -43,9 +44,7 @@ export default function ReviewProductQueue() {
         />
 
         {state.isLoading ? (
-          <div className="flex h-32 items-center justify-center">
-            <span className="text-muted-foreground">Evaluating product review queue...</span>
-          </div>
+          <TableSkeleton rows={8} columns={6} />
         ) : state.products.length === 0 ? (
           <EmptyState
             icon={<ShoppingBag className="h-8 w-8" />}

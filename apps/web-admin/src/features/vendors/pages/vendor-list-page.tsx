@@ -18,7 +18,7 @@ import { VendorTable } from '../components/vendor-table';
 import type { VendorListItem } from '../types';
 
 import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
-import { PageLoader } from '@/components/page-loader';
+import { TableSkeleton } from '@/components/table-skeleton';
 
 export default function VendorList() {
   const queryClient = useQueryClient();
@@ -70,10 +70,6 @@ export default function VendorList() {
       setIsDetailOpen(false);
     },
   });
-
-  if (isLoading) {
-    return <PageLoader />;
-  }
 
   const vendors: VendorListItem[] = response?.data || [];
 
@@ -136,24 +132,30 @@ export default function VendorList() {
       </FilterBar>
 
       {/* Vendors Table (desktop) + Cards (mobile) */}
-      <VendorTable
-        vendors={filteredVendors}
-        onInspect={handleInspect}
-        onApprove={(id) => approveMutation.mutate(id)}
-        onReject={handleInitiateReject}
-        isActionPending={
-          approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending
-        }
-      />
-      <VendorCards
-        vendors={filteredVendors}
-        onInspect={handleInspect}
-        onApprove={(id) => approveMutation.mutate(id)}
-        onReject={handleInitiateReject}
-        isActionPending={
-          approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending
-        }
-      />
+      {isLoading ? (
+        <TableSkeleton rows={8} columns={5} />
+      ) : (
+        <>
+          <VendorTable
+            vendors={filteredVendors}
+            onInspect={handleInspect}
+            onApprove={(id) => approveMutation.mutate(id)}
+            onReject={handleInitiateReject}
+            isActionPending={
+              approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending
+            }
+          />
+          <VendorCards
+            vendors={filteredVendors}
+            onInspect={handleInspect}
+            onApprove={(id) => approveMutation.mutate(id)}
+            onReject={handleInitiateReject}
+            isActionPending={
+              approveMutation.isPending || rejectMutation.isPending || suspendMutation.isPending
+            }
+          />
+        </>
+      )}
 
       {/* Vendor Detail & Document Inspection Modal */}
       <VendorDetailModal

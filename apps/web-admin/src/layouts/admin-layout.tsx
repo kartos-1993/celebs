@@ -3,7 +3,7 @@ import { Outlet, useMatches, useNavigation } from 'react-router-dom';
 
 import Main from '@/components/main';
 import { Navbar } from '@/components/nav-bar';
-import PageLoader from '@/components/page-loader';
+import { PageSkeleton } from '@/components/page-skeleton';
 import Sidebar from '@/components/sidebar';
 import SidebarProvider from '@/context/sidebar-provider';
 
@@ -33,7 +33,7 @@ export const AdminLayout = () => {
         <div className="bg-muted/40 min-h-screen">
           <Navbar />
           <Main>
-            <Suspense fallback={<PageLoader />}>
+            <Suspense fallback={<PageSkeleton />}>
               <Outlet />
             </Suspense>
           </Main>

@@ -3,7 +3,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 
 import { PATHS } from './paths';
 
-import { PageLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
 import { useSetupStatus } from '@/features/auth/hooks/use-auth-queries';
 
@@ -16,8 +15,11 @@ export const GuestGuard: React.FC<GuestGuardProps> = ({ children }) => {
   const { data: setupData, isLoading: isSetupLoading } = useSetupStatus();
   const location = useLocation();
 
+  // Public routes stay blank while the session check resolves — no app
+  // skeleton on login/setup pages. The check is cache-fast; AuthSkeleton
+  // only covers the lazy chunk download in AuthLayout.
   if (isLoading || isSetupLoading) {
-    return <PageLoader />;
+    return null;
   }
 
   const setupRequired = setupData?.data?.setupRequired;

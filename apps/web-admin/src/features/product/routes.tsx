@@ -1,15 +1,9 @@
-import { lazy } from 'react';
 import { Navigate, type RouteObject } from 'react-router-dom';
 
 import { Permission } from '@celebs/rbac';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const ManageProductPage = lazy(() => import('./pages/manage-product-page'));
-const AddProductPage = lazy(() => import('./pages/add-product-page'));
-const MediaCenterPage = lazy(() => import('./pages/media-center-page'));
-const BrandAuthorizationsPage = lazy(() => import('./pages/brand-authorizations-page'));
-const ReviewProductQueuePage = lazy(() => import('./pages/review-product-queue-page'));
 
 export const productRoutes: RouteObject = {
   path: 'products',
@@ -18,55 +12,73 @@ export const productRoutes: RouteObject = {
     { index: true, element: <Navigate to="manage" replace /> },
     {
       path: 'manage',
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
-          <ManageProductPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/manage-product-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
       handle: { crumb: 'Manage Product' },
     },
     {
       path: 'new',
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_CREATE}>
-          <AddProductPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/add-product-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_CREATE}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
       handle: { crumb: 'Add Product' },
     },
     {
       path: 'edit/:id',
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_EDIT}>
-          <AddProductPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/add-product-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_EDIT}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
       handle: { crumb: 'Edit Product' },
     },
     {
       path: 'mediacenter',
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
-          <MediaCenterPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/media-center-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
       handle: { crumb: 'Media Center' },
     },
     {
       path: 'brand-authorizations',
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_CREATE}>
-          <BrandAuthorizationsPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/brand-authorizations-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_CREATE}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
       handle: { crumb: 'Brand Authorizations' },
     },
     {
       path: 'review-product-queue',
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_REVIEW}>
-          <ReviewProductQueuePage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/review-product-queue-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_REVIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
       handle: { crumb: 'Review Product Queue' },
     },

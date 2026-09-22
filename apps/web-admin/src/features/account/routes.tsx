@@ -1,8 +1,6 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
-const AccountSettingsPage = lazy(() => import('./pages/account-settings-page'));
-const SettingsPage = lazy(() => import('./pages/settings-page'));
+import { pageRoute } from '@/routes/page-route';
 
 export const accountRoutes: RouteObject = {
   path: 'account',
@@ -10,12 +8,12 @@ export const accountRoutes: RouteObject = {
   children: [
     {
       path: 'profile',
-      element: <AccountSettingsPage />,
+      ...pageRoute(() => import('./pages/account-settings-page')),
       handle: { crumb: 'Profile Settings' },
     },
     {
       path: 'security',
-      element: <SettingsPage />,
+      ...pageRoute(() => import('./pages/settings-page')),
       handle: { crumb: 'Security' },
     },
   ],

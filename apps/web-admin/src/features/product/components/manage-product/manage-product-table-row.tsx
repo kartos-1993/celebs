@@ -65,11 +65,11 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
         <Checkbox checked={isSelected} onCheckedChange={(checked) => onSelect(!!checked)} />
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <img
             src={product.mainImages?.[0] || '/placeholder.svg'}
             alt={product.name ?? 'Product'}
-            className="h-10 w-10 shrink-0 rounded-lg border bg-muted object-cover"
+            className="h-8 w-8 shrink-0 rounded-md border bg-muted object-cover"
             onError={(e) => {
               const target = e.currentTarget;
               target.onerror = null;
@@ -77,7 +77,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
             }}
           />
           <div className="min-w-0">
-            <div className="max-w-55 truncate text-sm font-medium leading-tight">
+            <div className="max-w-55 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
               {product.name ?? 'Untitled'}
             </div>
             {product.brand && (
@@ -93,20 +93,20 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
             {getInitials(vendor)}
           </span>
-          <span className="max-w-32 truncate text-sm">{vendor}</span>
+          <span className="max-w-32 truncate text-sm text-foreground">{vendor}</span>
         </div>
       </TableCell>
-      <TableCell className="text-right font-mono text-sm tabular-nums">{stock}</TableCell>
-      <TableCell className="text-right font-mono text-sm tabular-nums">
+      <TableCell className="text-right font-mono text-xs tabular-nums">{stock}</TableCell>
+      <TableCell className="text-right font-mono text-xs tabular-nums">
         Rs. {price.toLocaleString()}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+        <div className="flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="whitespace-nowrap">{updated}</span>
         </div>
       </TableCell>

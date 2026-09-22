@@ -83,6 +83,7 @@ export function Menu({ isSidebarOpen }: MenuProps) {
                             >
                               <Link
                                 to={href}
+                                prefetch="intent"
                                 className={cn(
                                   'flex w-full items-center',
                                   isCollapsed ? 'justify-center' : 'gap-2',

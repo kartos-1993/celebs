@@ -10,7 +10,7 @@ import {
 
 import { PATHS } from './paths';
 
-import PageLoader from '@/components/page-loader';
+import { PageSkeleton } from '@/components/page-skeleton';
 import { useAuthContext } from '@/context/auth-provider';
 
 interface RoleGuardProps {
@@ -34,7 +34,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   const location = useLocation();
 
   if (isLoading) {
-    return <PageLoader />;
+    return <PageSkeleton />;
   }
 
   if (!user) {

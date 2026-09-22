@@ -1,18 +1,19 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 import { Permission } from '@celebs/rbac';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const StaffListPage = lazy(() => import('./pages/staff-list-page'));
 
 export const staffRoutes: RouteObject = {
   path: 'staff',
-  element: (
-    <RoleGuard requiredPermission={Permission.STAFF_VIEW}>
-      <StaffListPage />
-    </RoleGuard>
+  ...pageRoute(
+    () => import('./pages/staff-list-page'),
+    (Page) => (
+      <RoleGuard requiredPermission={Permission.STAFF_VIEW}>
+        <Page />
+      </RoleGuard>
+    ),
   ),
   handle: { crumb: 'Staff' },
 };

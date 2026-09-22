@@ -1,11 +1,9 @@
-import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
 import { Permission } from '@celebs/rbac';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const ReviewModerationPage = lazy(() => import('./pages/review-moderation-page'));
 
 export const reviewRoutes: RouteObject = {
   path: 'reviews',
@@ -13,10 +11,13 @@ export const reviewRoutes: RouteObject = {
   children: [
     {
       index: true,
-      element: (
-        <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
-          <ReviewModerationPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/review-moderation-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.PRODUCT_VIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
     },
   ],

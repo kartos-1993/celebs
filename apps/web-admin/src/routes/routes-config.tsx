@@ -1,8 +1,8 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 import AuthGuard from './auth-guard';
 import GuestGuard from './guest-guard';
+import { pageRoute } from './page-route';
 import { PATHS } from './paths';
 
 import { accountRoutes } from '@/features/account/routes';
@@ -24,15 +24,11 @@ import AdminLayout from '@/layouts/admin-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import VendorPortalLayout from '@/layouts/vendor-portal-layout';
 
-const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
-const ForbiddenError = lazy(() => import('@/features/errors/forbidden-error'));
-const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'));
-
 export const routesConfig: RouteObject[] = [
   // ── Standalone Public Routes (No AuthGuard / GuestGuard) ─────────────────
   {
     path: '/verify-email',
-    element: <VerifyEmailPage />,
+    ...pageRoute(() => import('@/features/auth/pages/verify-email-page')),
   },
   // ── Full Admin App (approved vendors + admins only) ───────────────────────
   {
@@ -58,7 +54,7 @@ export const routesConfig: RouteObject[] = [
       marketingRoutes,
       {
         path: '403',
-        element: <ForbiddenError />,
+        ...pageRoute(() => import('@/features/errors/forbidden-error')),
         handle: { crumb: 'Access Denied' },
       },
     ],
@@ -85,10 +81,10 @@ export const routesConfig: RouteObject[] = [
   // ── Standalone Error Routes ───────────────────────────────────────────────
   {
     path: PATHS.ERRORS.FORBIDDEN,
-    element: <ForbiddenError />,
+    ...pageRoute(() => import('@/features/errors/forbidden-error')),
   },
   {
     path: '*',
-    element: <NotFoundError />,
+    ...pageRoute(() => import('@/features/errors/not-found-error')),
   },
 ];

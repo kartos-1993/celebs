@@ -57,7 +57,7 @@ import { StaffCards } from '../components/staff-cards';
 import { StaffTable } from '../components/staff-table';
 
 import { useResendCooldown } from '@/common/hooks/use-resend-cooldown';
-import { PageLoader } from '@/components/page-loader';
+import { TableSkeleton } from '@/components/table-skeleton';
 import { useAuthContext } from '@/context/auth-provider';
 import { resendVerification } from '@/features/auth/api';
 import { getAdminVendors } from '@/features/vendors/api';
@@ -340,10 +340,6 @@ export default function StaffList() {
     },
   });
 
-  if (isLoading) {
-    return <PageLoader />;
-  }
-
   const staff = response?.data || [];
 
   return (
@@ -616,32 +612,38 @@ export default function StaffList() {
         </Dialog>
       )}
 
-      <StaffTable
-        staff={staff}
-        isAdminOrSuperAdmin={isAdminOrSuperAdmin}
-        onEdit={(member) => {
-          setEditingStaff(member);
-          setEditPermissions(
-            Array.isArray(member.permissions) ? (member.permissions as string[]) : [],
-          );
-        }}
-        onDelete={(member) => setStaffToDelete(member)}
-        isDeletePending={deleteMutation.isPending}
-        renderResendInvite={(email) => <ResendStaffInviteButton email={email} />}
-      />
-      <StaffCards
-        staff={staff}
-        isAdminOrSuperAdmin={isAdminOrSuperAdmin}
-        onEdit={(member) => {
-          setEditingStaff(member);
-          setEditPermissions(
-            Array.isArray(member.permissions) ? (member.permissions as string[]) : [],
-          );
-        }}
-        onDelete={(member) => setStaffToDelete(member)}
-        isDeletePending={deleteMutation.isPending}
-        renderResendInvite={(email) => <ResendStaffInviteButton email={email} />}
-      />
+      {isLoading ? (
+        <TableSkeleton rows={8} columns={5} />
+      ) : (
+        <>
+          <StaffTable
+            staff={staff}
+            isAdminOrSuperAdmin={isAdminOrSuperAdmin}
+            onEdit={(member) => {
+              setEditingStaff(member);
+              setEditPermissions(
+                Array.isArray(member.permissions) ? (member.permissions as string[]) : [],
+              );
+            }}
+            onDelete={(member) => setStaffToDelete(member)}
+            isDeletePending={deleteMutation.isPending}
+            renderResendInvite={(email) => <ResendStaffInviteButton email={email} />}
+          />
+          <StaffCards
+            staff={staff}
+            isAdminOrSuperAdmin={isAdminOrSuperAdmin}
+            onEdit={(member) => {
+              setEditingStaff(member);
+              setEditPermissions(
+                Array.isArray(member.permissions) ? (member.permissions as string[]) : [],
+              );
+            }}
+            onDelete={(member) => setStaffToDelete(member)}
+            isDeletePending={deleteMutation.isPending}
+            renderResendInvite={(email) => <ResendStaffInviteButton email={email} />}
+          />
+        </>
+      )}
 
       <ConfirmDialog
         open={staffToDelete !== null}

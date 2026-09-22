@@ -1,21 +1,29 @@
-import { Spinner } from '@celebs/shared-ui/components/spinner';
+import { useState } from 'react';
+
+import { PageSkeleton } from '@/components/page-skeleton';
+import { TableSkeleton } from '@/components/table-skeleton';
 
 export function PageLoader() {
-  return (
-    <div className="flex h-[calc(100vh-120px)] w-full items-center justify-center">
-      <Spinner size="xl" className="text-primary" />
-    </div>
-  );
+  return <PageSkeleton />;
 }
 
 export function FullscreenLoader() {
+  // Mirror AdminLayout geometry exactly (fixed rail + ml offset + h-12
+  // navbar + muted content) so boot swaps without a layout shift.
+  // Same >=1024 default-open rule as SidebarProvider.
+  const [wide] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
+
   return (
-    <div className="fixed inset-0 z-50 flex bg-background">
-      {/* Sidebar Wireframe Skeleton */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-border/50 bg-card/30 p-4 space-y-4">
+    <div className="fixed inset-0 z-50 bg-background">
+      {/* Sidebar rail skeleton */}
+      <aside
+        className={`hidden md:flex flex-col border-r border-border/50 bg-card/30 p-4 space-y-4 fixed top-0 left-0 z-40 h-screen ${
+          wide ? 'w-64' : 'w-[76px]'
+        }`}
+      >
         <div className="flex items-center gap-3 px-2 py-1">
           <div className="h-7 w-7 rounded-lg bg-muted animate-pulse" />
-          <div className="h-4 w-28 rounded bg-muted animate-pulse" />
+          {wide && <div className="h-4 w-28 rounded bg-muted animate-pulse" />}
         </div>
         <div className="space-y-2 pt-4">
           <div className="h-9 w-full rounded-lg bg-muted/60 animate-pulse" />
@@ -25,20 +33,23 @@ export function FullscreenLoader() {
         </div>
       </aside>
 
-      {/* Main Content Skeleton Area */}
-      <div className="flex flex-1 flex-col">
-        {/* Top Navbar Skeleton */}
-        <header className="flex h-14 items-center justify-between border-b border-border/50 px-6">
+      {/* Main content skeleton area */}
+      <div className={`flex flex-col min-h-screen ${wide ? 'md:ml-64' : 'md:ml-[76px]'}`}>
+        {/* Navbar skeleton (h-12 like the real Navbar) */}
+        <header className="flex h-12 items-center justify-between border-b border-border/50 px-4 md:px-6">
           <div className="h-4 w-32 rounded bg-muted animate-pulse" />
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
           </div>
         </header>
 
-        {/* Center Spinner Area */}
-        <main className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center justify-center">
-            <Spinner size="lg" className="text-primary" />
+        <main className="min-h-[calc(100vh-48px)] bg-muted/40 px-4 py-6 md:px-6">
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-72 animate-pulse rounded bg-muted/60" />
+            </div>
+            <TableSkeleton rows={8} columns={5} />
           </div>
         </main>
       </div>
