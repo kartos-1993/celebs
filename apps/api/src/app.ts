@@ -95,22 +95,18 @@ app.use(
       'Content-Type',
       'Authorization',
       'x-session-id',
-      'X-Session-Id',
       'x-requested-with',
-      'X-Requested-With',
       'x-surface',
-      'X-Surface',
       'x-request-id',
-      'X-Request-Id',
       'x-refresh-token',
-      'X-Refresh-Token',
       'idempotency-key',
-      'Idempotency-Key',
       'x-test-rate-limit',
       'Accept',
       'Origin',
     ],
-    exposedHeaders: ['x-session-id', 'X-Session-Id', 'x-request-id', 'X-Request-Id'],
+    // Header names are case-insensitive (RFC 9110 §5.5) — single lowercase
+    // entries cover all casings; no Title-Case duplicates.
+    exposedHeaders: ['x-session-id', 'x-request-id'],
   }),
 );
 
