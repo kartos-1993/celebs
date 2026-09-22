@@ -15,5 +15,5 @@ export const financeRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Finance' },
+  handle: { crumb: 'Finance', skeleton: 'dashboard' },
 };

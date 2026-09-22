@@ -16,7 +16,7 @@ export const platformSettingsRoutes: RouteObject[] = [
         </RoleGuard>
       ),
     ),
-    handle: { crumb: 'Banner Settings' },
+    handle: { crumb: 'Banner Settings', skeleton: 'table' },
   },
   {
     path: 'platform-settings/layout',
@@ -28,6 +28,6 @@ export const platformSettingsRoutes: RouteObject[] = [
         </RoleGuard>
       ),
     ),
-    handle: { title: 'Home Layout Editor', crumb: 'Layout Editor' },
+    handle: { title: 'Home Layout Editor', crumb: 'Layout Editor', skeleton: 'page' },
   },
 ];

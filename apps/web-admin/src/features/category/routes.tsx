@@ -15,5 +15,5 @@ export const categoryRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Categories' },
+  handle: { crumb: 'Categories', skeleton: 'table' },
 };

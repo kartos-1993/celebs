@@ -3,6 +3,8 @@ import type { RouteObject } from 'react-router-dom';
 import { hasPermissionAccess, type PermissionMode, type PermissionRequirement } from '@celebs/rbac';
 import type { UserData } from '@celebs/shared-types';
 
+export type SkeletonKind = 'table' | 'page' | 'dashboard' | 'form';
+
 export interface RouteMeta {
   title?: string;
   crumb?: string;
@@ -12,6 +14,9 @@ export interface RouteMeta {
   permissions?: PermissionRequirement;
   permissionMode?: PermissionMode;
   allowedRoles?: string[];
+  /** Loading shape shown while the session resolves — declared next to the
+   *  route so each page promises its own silhouette. Absent = neutral page. */
+  skeleton?: SkeletonKind;
 }
 
 export type AppRouteObject = RouteObject & {

@@ -20,7 +20,7 @@ export const productRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Manage Product' },
+      handle: { crumb: 'Manage Product', skeleton: 'table' },
     },
     {
       path: 'new',
@@ -32,7 +32,7 @@ export const productRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Add Product' },
+      handle: { crumb: 'Add Product', skeleton: 'form' },
     },
     {
       path: 'edit/:id',
@@ -44,7 +44,7 @@ export const productRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Edit Product' },
+      handle: { crumb: 'Edit Product', skeleton: 'form' },
     },
     {
       path: 'mediacenter',
@@ -56,7 +56,7 @@ export const productRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Media Center' },
+      handle: { crumb: 'Media Center', skeleton: 'page' },
     },
     {
       path: 'brand-authorizations',
@@ -68,7 +68,7 @@ export const productRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Brand Authorizations' },
+      handle: { crumb: 'Brand Authorizations', skeleton: 'table' },
     },
     {
       path: 'review-product-queue',
@@ -80,7 +80,7 @@ export const productRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Review Product Queue' },
+      handle: { crumb: 'Review Product Queue', skeleton: 'table' },
     },
   ],
 };

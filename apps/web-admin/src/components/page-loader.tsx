@@ -1,13 +1,14 @@
 import { useState } from 'react';
 
-import { PageSkeleton } from '@/components/page-skeleton';
+import { DashboardSkeleton, FormSkeleton, PageSkeleton } from '@/components/page-skeleton';
 import { TableSkeleton } from '@/components/table-skeleton';
+import type { SkeletonKind } from '@/routes/landing-resolver';
 
 export function PageLoader() {
   return <PageSkeleton />;
 }
 
-export function FullscreenLoader() {
+export function FullscreenLoader({ variant = 'page' }: { variant?: SkeletonKind }) {
   // Mirror AdminLayout geometry exactly (fixed rail + ml offset + h-12
   // navbar + muted content) so boot swaps without a layout shift.
   // Same >=1024 default-open rule as SidebarProvider.
@@ -46,13 +47,21 @@ export function FullscreenLoader() {
         </header>
 
         <main className="min-h-[calc(100vh-48px)] bg-muted/40 px-4 py-6 md:px-6">
-          <div className="space-y-6">
-            <div className="space-y-1">
-              <div className="h-8 w-48 animate-pulse motion-reduce:animate-none rounded bg-muted" />
-              <div className="h-4 w-72 animate-pulse motion-reduce:animate-none rounded bg-muted/60" />
+          {variant === 'table' ? (
+            <div className="space-y-6">
+              <div className="space-y-1">
+                <div className="h-8 w-48 animate-pulse motion-reduce:animate-none rounded bg-muted" />
+                <div className="h-4 w-72 animate-pulse motion-reduce:animate-none rounded bg-muted/60" />
+              </div>
+              <TableSkeleton rows={8} columns={5} />
             </div>
-            <TableSkeleton rows={8} columns={5} />
-          </div>
+          ) : variant === 'dashboard' ? (
+            <DashboardSkeleton />
+          ) : variant === 'form' ? (
+            <FormSkeleton />
+          ) : (
+            <PageSkeleton />
+          )}
         </main>
       </div>
     </div>

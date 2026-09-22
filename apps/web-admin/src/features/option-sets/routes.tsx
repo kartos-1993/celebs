@@ -15,5 +15,5 @@ export const optionSetRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Option Sets' },
+  handle: { crumb: 'Option Sets', skeleton: 'table' },
 };

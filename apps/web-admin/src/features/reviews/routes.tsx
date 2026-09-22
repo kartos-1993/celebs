@@ -7,7 +7,7 @@ import { RoleGuard } from '@/routes/role-guard';
 
 export const reviewRoutes: RouteObject = {
   path: 'reviews',
-  handle: { crumb: 'Customer Reviews' },
+  handle: { crumb: 'Customer Reviews', skeleton: 'table' },
   children: [
     {
       index: true,

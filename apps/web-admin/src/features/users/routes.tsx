@@ -15,5 +15,5 @@ export const userRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Users' },
+  handle: { crumb: 'Users', skeleton: 'table' },
 };

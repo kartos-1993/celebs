@@ -15,5 +15,5 @@ export const vendorRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Vendors' },
+  handle: { crumb: 'Vendors', skeleton: 'table' },
 };

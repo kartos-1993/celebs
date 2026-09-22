@@ -16,7 +16,7 @@ export const marketingRoutes: RouteObject = {
     {
       path: 'preview',
       ...pageRoute(() => import('./pages/sdui-preview-page')),
-      handle: { title: 'SDUI Storefront Preview', crumb: 'SDUI Preview' },
+      handle: { title: 'SDUI Storefront Preview', crumb: 'SDUI Preview', skeleton: 'page' },
     },
     {
       path: 'campaigns',
@@ -24,17 +24,17 @@ export const marketingRoutes: RouteObject = {
         {
           path: '',
           ...pageRoute(() => import('./pages/campaign-list-page')),
-          handle: { title: 'Festival Campaigns', crumb: 'Campaigns' },
+          handle: { title: 'Festival Campaigns', crumb: 'Campaigns', skeleton: 'table' },
         },
         {
           path: 'new',
           ...pageRoute(() => import('./pages/campaign-form-page')),
-          handle: { title: 'Create Campaign', crumb: 'New Campaign' },
+          handle: { title: 'Create Campaign', crumb: 'New Campaign', skeleton: 'form' },
         },
         {
           path: ':id',
           ...pageRoute(() => import('./pages/campaign-form-page')),
-          handle: { title: 'Edit Campaign', crumb: 'Edit Campaign' },
+          handle: { title: 'Edit Campaign', crumb: 'Edit Campaign', skeleton: 'form' },
         },
       ],
     },
@@ -44,17 +44,17 @@ export const marketingRoutes: RouteObject = {
         {
           path: '',
           ...pageRoute(() => import('./pages/combo-list-page')),
-          handle: { title: 'Generic Combo Bundles', crumb: 'Combos' },
+          handle: { title: 'Generic Combo Bundles', crumb: 'Combos', skeleton: 'table' },
         },
         {
           path: 'new',
           ...pageRoute(() => import('./pages/combo-form-page')),
-          handle: { title: 'Create Combo Bundle', crumb: 'New Combo' },
+          handle: { title: 'Create Combo Bundle', crumb: 'New Combo', skeleton: 'form' },
         },
         {
           path: ':id',
           ...pageRoute(() => import('./pages/combo-form-page')),
-          handle: { title: 'Edit Combo Bundle', crumb: 'Edit Combo' },
+          handle: { title: 'Edit Combo Bundle', crumb: 'Edit Combo', skeleton: 'form' },
         },
       ],
     },

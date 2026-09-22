@@ -19,7 +19,7 @@ export const orderRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Orders' },
+      handle: { crumb: 'Orders', skeleton: 'table' },
     },
     {
       path: 'return',
@@ -31,7 +31,7 @@ export const orderRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Return Orders' },
+      handle: { crumb: 'Return Orders', skeleton: 'table' },
     },
     {
       path: 'reviews',
@@ -43,7 +43,7 @@ export const orderRoutes: RouteObject = {
           </RoleGuard>
         ),
       ),
-      handle: { crumb: 'Reviews' },
+      handle: { crumb: 'Reviews', skeleton: 'table' },
     },
   ],
 };

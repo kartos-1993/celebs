@@ -13,5 +13,5 @@ export const vendorOnboardingRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Onboarding' },
+  handle: { crumb: 'Onboarding', skeleton: 'form' },
 };

@@ -16,17 +16,25 @@ vi.mock('@/features/auth/hooks/use-auth-queries', () => ({
 }));
 
 const mockUseLocation = vi.fn();
+const mockUseMatches = vi.fn(() => []);
 vi.mock('react-router-dom', () => ({
   useLocation: () => mockUseLocation(),
+  useMatches: () => mockUseMatches(),
   Navigate: ({ to }: { to: string }) => <div data-testid="navigate">{to}</div>,
 }));
 
 vi.mock('@/components/page-loader', () => ({
-  FullscreenLoader: () => <div>Loading...</div>,
+  FullscreenLoader: ({ variant }: { variant?: string }) => (
+    <div data-testid="fullscreen-loader" data-variant={variant ?? 'page'} />
+  ),
   PageLoader: () => <div>Loading...</div>,
 }));
 
-type GuardElement = React.ReactElement<{ to?: string; children?: React.ReactNode }>;
+type GuardElement = React.ReactElement<{
+  to?: string;
+  children?: React.ReactNode;
+  variant?: string;
+}>;
 
 describe('AuthGuard', () => {
   beforeEach(() => {
@@ -70,6 +78,28 @@ describe('AuthGuard', () => {
     const result = AuthGuard({ children: <div>Dashboard Content</div> }) as GuardElement;
     expect(result.type).toBe(React.Fragment);
     expect(result.props.children).toEqual(<div>Dashboard Content</div>);
+  });
+
+  it('renders the table skeleton variant declared by the deepest matched route', () => {
+    mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
+    mockUseLocation.mockReturnValue({ pathname: '/products/manage', search: '' });
+    mockUseMatches.mockReturnValue([
+      { handle: { crumb: 'Home' } },
+      { handle: { crumb: 'Products' } },
+      { handle: { crumb: 'Manage Product', skeleton: 'table' } },
+    ]);
+
+    const result = AuthGuard({ children: <div>Dashboard Content</div> }) as GuardElement;
+    expect(result.props.variant).toBe('table');
+  });
+
+  it('falls back to the neutral page skeleton when no matched route declares one', () => {
+    mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
+    mockUseLocation.mockReturnValue({ pathname: '/finance/payouts', search: '' });
+    mockUseMatches.mockReturnValue([{ handle: { crumb: 'Home' } }, { handle: undefined }]);
+
+    const result = AuthGuard({ children: <div>Dashboard Content</div> }) as GuardElement;
+    expect(result.props.variant).toBe('page');
   });
 });
 

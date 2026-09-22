@@ -9,12 +9,12 @@ export const accountRoutes: RouteObject = {
     {
       path: 'profile',
       ...pageRoute(() => import('./pages/account-settings-page')),
-      handle: { crumb: 'Profile Settings' },
+      handle: { crumb: 'Profile Settings', skeleton: 'form' },
     },
     {
       path: 'security',
       ...pageRoute(() => import('./pages/settings-page')),
-      handle: { crumb: 'Security' },
+      handle: { crumb: 'Security', skeleton: 'form' },
     },
   ],
 };
