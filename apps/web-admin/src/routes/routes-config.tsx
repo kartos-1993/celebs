@@ -1,6 +1,7 @@
 import { RouteObject } from 'react-router-dom';
 
 import AuthGuard from './auth-guard';
+import { DashboardIndex } from './dashboard-index';
 import GuestGuard from './guest-guard';
 import { pageRoute } from './page-route';
 import { PATHS } from './paths';
@@ -40,6 +41,9 @@ export const routesConfig: RouteObject[] = [
     ),
     handle: { crumb: 'Home' },
     children: [
+      // Not a page: instantly forwards to the role's landing route.
+      // hideFromNav keeps the resolver (and the sidebar) from electing it.
+      { index: true, element: <DashboardIndex />, handle: { hideFromNav: true } },
       productRoutes,
       reviewRoutes,
       categoryRoutes,

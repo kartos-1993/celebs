@@ -20,7 +20,9 @@ const PUBLIC_PREFIXES = [
  */
 export function BootFallback() {
   const path = typeof window !== 'undefined' ? window.location.pathname : '';
-  if (PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+  // Exact '/' only (startsWith('/') would match everything): root renders
+  // nothing itself and only ever redirects, so it stays blank for everyone.
+  if (path === '/' || PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return null;
   }
   return <FullscreenLoader variant={skeletonForPath(path)} />;

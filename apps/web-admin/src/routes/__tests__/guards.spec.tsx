@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthGuard } from '../auth-guard';
 import { BootFallback } from '../boot-fallback';
+import { DashboardIndex } from '../dashboard-index';
 import { GuestGuard } from '../guest-guard';
 
 const mockUseAuthContext = vi.fn();
@@ -170,10 +171,37 @@ describe('GuestGuard', () => {
   });
 });
 
+describe('DashboardIndex', () => {
+  it('sends an admin to the products section, never to itself', () => {
+    mockUseAuthContext.mockReturnValue({
+      user: { role: 'SUPERADMIN', isEmailVerified: true },
+      isLoading: false,
+    });
+
+    const result = DashboardIndex() as GuardElement;
+    expect(result.props.to).toBe('/products');
+  });
+
+  it('sends logged-out visits to the login page', () => {
+    mockUseAuthContext.mockReturnValue({ user: null, isLoading: false });
+
+    const result = DashboardIndex() as GuardElement;
+    expect(result.props.to).toBe('/login');
+  });
+});
+
 describe('BootFallback', () => {
   it('renders nothing on public paths while the router initializes', () => {
     Object.defineProperty(window, 'location', {
       value: { pathname: '/login' },
+      writable: true,
+    });
+    expect(BootFallback()).toBeNull();
+  });
+
+  it('renders nothing on the root path while the router initializes', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/' },
       writable: true,
     });
     expect(BootFallback()).toBeNull();

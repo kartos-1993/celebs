@@ -4,13 +4,14 @@
 // scan({
 //   enabled: true,
 // });
-import { StrictMode } from 'react';
+import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import './index.css';
 
+import { PageSkeleton } from '@/components/page-skeleton';
 import { Toaster } from '@/components/toaster';
 import { AuthProvider } from '@/context/auth-provider';
 import { ThemeProvider } from '@/context/theme-provider';
@@ -38,9 +39,12 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="theme">
         <AuthProvider>
-          {/* Shown while the router resolves route.lazy chunks in parallel
-              with the session fetch. Route-aware: blank on public paths. */}
-          <RouterProvider router={router} fallbackElement={<BootFallback />} />
+          {/* Post-init safety net for lazy routes with no layout boundary
+              (verify-email, standalone errors). Layout-owned routes resolve
+              through their nearer Suspense first. */}
+          <Suspense fallback={<PageSkeleton />}>
+            <RouterProvider router={router} fallbackElement={<BootFallback />} />
+          </Suspense>
           <Toaster />
         </AuthProvider>
       </ThemeProvider>
