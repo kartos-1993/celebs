@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
+
 interface CampaignTableProps {
   campaigns: CampaignItemType[];
   isLoading: boolean;

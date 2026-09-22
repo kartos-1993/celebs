@@ -14,6 +14,8 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
+import { TableSkeleton } from '@/components/table-skeleton';
+
 interface ComboTableProps {
   combos: ComboBundleType[];
   isLoading: boolean;
@@ -21,6 +23,10 @@ interface ComboTableProps {
 
 /** Desktop combos table — hidden below md, paired with ComboCards. */
 export function ComboTable({ combos, isLoading }: ComboTableProps) {
+  if (isLoading) {
+    return <TableSkeleton rows={6} columns={5} className="hidden md:block" />;
+  }
+
   return (
     <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
       <Table>
@@ -34,15 +40,7 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5}>
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  Loading combo bundles...
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : combos.length === 0 ? (
+          {combos.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5}>
                 <EmptyState

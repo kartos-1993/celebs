@@ -16,6 +16,7 @@ import type { Mode, OrderItemUI } from '../types';
 
 import { OrderStatusBadge } from './order-status-badge';
 
+import { TableSkeleton } from '@/components/table-skeleton';
 import { cn } from '@/lib/utils';
 
 interface OrderTableProps {
@@ -46,6 +47,10 @@ function PaymentCell({ row }: { row: OrderItemUI }) {
 }
 
 export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: OrderTableProps) {
+  if (isLoading) {
+    return <TableSkeleton rows={8} columns={6} className="hidden md:block" />;
+  }
+
   return (
     <div
       className={cn(
@@ -65,15 +70,7 @@ export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: Orde
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={6}>
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  Loading orders…
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : rows.length === 0 ? (
+          {rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6}>
                 <EmptyState

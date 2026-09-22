@@ -34,7 +34,7 @@ import { USERS_QUERY_KEYS } from '../api';
 import { UserCards } from '../components/user-cards';
 import { UserTable } from '../components/user-table';
 
-import { PageLoader } from '@/components/page-loader';
+import { TableSkeleton } from '@/components/table-skeleton';
 
 export default function UserList() {
   const queryClient = useQueryClient();
@@ -70,10 +70,6 @@ export default function UserList() {
       role: 'ADMIN',
     },
   });
-
-  if (isLoading) {
-    return <PageLoader />;
-  }
 
   const users = response?.data || [];
 
@@ -169,16 +165,22 @@ export default function UserList() {
         </Dialog>
       )}
 
-      <UserTable
-        users={users}
-        onDelete={(user) => setUserToDelete(user)}
-        isDeletePending={deleteMutation.isPending}
-      />
-      <UserCards
-        users={users}
-        onDelete={(user) => setUserToDelete(user)}
-        isDeletePending={deleteMutation.isPending}
-      />
+      {isLoading ? (
+        <TableSkeleton rows={8} columns={5} />
+      ) : (
+        <>
+          <UserTable
+            users={users}
+            onDelete={(user) => setUserToDelete(user)}
+            isDeletePending={deleteMutation.isPending}
+          />
+          <UserCards
+            users={users}
+            onDelete={(user) => setUserToDelete(user)}
+            isDeletePending={deleteMutation.isPending}
+          />
+        </>
+      )}
 
       <ConfirmDialog
         open={userToDelete !== null}

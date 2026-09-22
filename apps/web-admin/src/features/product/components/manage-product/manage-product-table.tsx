@@ -16,6 +16,8 @@ import type { ProductListItem } from '../../types';
 import { ManageProductCards } from './manage-product-cards';
 import { ManageProductTableRow } from './manage-product-table-row';
 
+import { TableSkeleton } from '@/components/table-skeleton';
+
 interface ManageProductTableProps {
   products: ProductListItem[];
   isLoading: boolean;
@@ -52,11 +54,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   searchQuery,
 }) => {
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-        Loading products...
-      </div>
-    );
+    return <TableSkeleton rows={8} columns={7} />;
   }
 
   if (products.length === 0) {
