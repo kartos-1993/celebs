@@ -12,6 +12,9 @@ model Session {
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userAgent        String?
   rotatedRefreshId String?  @map("rotated_refresh_id")
+  previousRefreshId String? @map("previous_refresh_id")
+  previousIssuedAt DateTime? @map("previous_issued_at")
+  oldTokenUseCount Int      @default(0) @map("old_token_use_count")
   createdAt        DateTime @default(now())
   expiredAt        DateTime @default(dbgenerated("NOW() + interval '30 days'"))
 

@@ -111,7 +111,10 @@ export class AuthController {
       user,
       accessToken,
       refreshToken: newRefreshToken,
-    } = await this.authService.refreshToken(refreshToken as string);
+    } = await this.authService.refreshToken(refreshToken as string, {
+      userAgent:
+        typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : undefined,
+    });
 
     setAuthenticationCookies({
       res,

@@ -33,12 +33,36 @@ import { authCache } from '@/common/cache/auth-cache';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
 
+export interface RefreshResult {
+  user: Record<string, unknown>;
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AuthServiceDeps {
   authRepo?: AuthRepository;
   tokenService?: TokenService;
   verificationService?: VerificationService;
   googleAuthService?: GoogleAuthService;
   vendorService?: VendorService;
+}
+
+/** Previous-jti grace: a lost-response retry must not look like theft. */
+const GRACE_WINDOW_MS = 60 * 1000;
+const GRACE_MAX_USES = 3;
+
+/**
+ * Normalizes a User-Agent for device comparison: version numbers churn on
+ * every browser update, so they are stripped and only client/OS tokens
+ * are compared. Returns null when there is nothing stable to compare.
+ */
+export function normalizeFingerprint(userAgent?: string | null): string | null {
+  if (!userAgent) return null;
+  const stripped = userAgent
+    .replace(/\d+(\.\d+)*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped.length >= 8 ? stripped : null;
 }
 
 export class AuthService {
@@ -249,7 +273,47 @@ export class AuthService {
     };
   }
 
-  public async refreshToken(token: string) {
+  /** In-flight refreshes keyed by presented token: identical concurrent
+   *  requests (StrictMode, double-click, tab races) share one rotation
+   *  instead of tripping reuse detection on each other. */
+  private readonly inflightRefreshes = new Map<string, Promise<RefreshResult>>();
+
+  public async refreshToken(
+    token: string,
+    context?: { userAgent?: string },
+  ): Promise<RefreshResult> {
+    const inFlight = this.inflightRefreshes.get(token);
+    if (inFlight) return inFlight;
+
+    const pending = this.executeRefresh(token, context).finally(() => {
+      if (this.inflightRefreshes.get(token) === pending) {
+        this.inflightRefreshes.delete(token);
+      }
+    });
+    this.inflightRefreshes.set(token, pending);
+    return pending;
+  }
+
+  private async revokeSessionFamily(
+    session: { id: string; userId: string },
+    reason: string,
+  ): Promise<never> {
+    const revokedSessionIds = await this.authRepo.deleteAllUserSessions(session.userId);
+    await authCache.invalidateSessions(revokedSessionIds);
+    logger.error(
+      { sessionId: session.id, userId: session.userId, revokedCount: revokedSessionIds.length },
+      `${reason} — all user sessions terminated`,
+    );
+    throw new UnauthorizedException(
+      'Session revoked due to token reuse',
+      ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+    );
+  }
+
+  private async executeRefresh(
+    token: string,
+    context?: { userAgent?: string },
+  ): Promise<RefreshResult> {
     const payload = this.tokenService.verifyRefreshToken(token);
 
     const session = await this.authRepo.findSessionWithUser(payload.sessionId);
@@ -262,16 +326,42 @@ export class AuthService {
 
     const presentedJti = payload.jti;
     if (session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
-      const revokedSessionIds = await this.authRepo.deleteAllUserSessions(session.userId);
-      await authCache.invalidateSessions(revokedSessionIds);
-      logger.error(
-        { sessionId: session.id, userId: session.userId, revokedCount: revokedSessionIds.length },
-        'security.refresh_reuse_detected — all user sessions terminated',
-      );
-      throw new UnauthorizedException(
-        'Session revoked due to token reuse',
-        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
-      );
+      const expectedFingerprint = normalizeFingerprint(session.userAgent);
+      const presentedFingerprint = normalizeFingerprint(context?.userAgent);
+      const fingerprintMismatch =
+        expectedFingerprint !== null &&
+        presentedFingerprint !== null &&
+        expectedFingerprint !== presentedFingerprint;
+      if (fingerprintMismatch) {
+        return this.revokeSessionFamily(session, 'security.refresh_fingerprint_mismatch');
+      }
+
+      const withinWindow =
+        session.previousRefreshId === presentedJti &&
+        session.previousIssuedAt !== null &&
+        Date.now() - session.previousIssuedAt.getTime() <= GRACE_WINDOW_MS;
+      if (withinWindow && session.oldTokenUseCount < GRACE_MAX_USES) {
+        const useCount = await this.authRepo.recordGraceUse(session.id);
+        if (useCount > GRACE_MAX_USES) {
+          return this.revokeSessionFamily(session, 'security.refresh_grace_exhausted');
+        }
+        logger.warn(
+          { sessionId: session.id, userId: session.userId, useCount },
+          'security.refresh_grace_used — previous jti accepted without rotation',
+        );
+        const { accessToken, refreshToken } = this.tokenService.issueTokenPair(
+          session.user.id,
+          session.id,
+          session.rotatedRefreshId,
+        );
+        return {
+          user: this.tokenService.stripPassword(session.user),
+          accessToken,
+          refreshToken,
+        };
+      }
+
+      return this.revokeSessionFamily(session, 'security.refresh_reuse_detected');
     }
 
     const sessionLifetimeMs = Date.now() - session.createdAt.getTime();
@@ -294,7 +384,7 @@ export class AuthService {
     const newJti = randomUUID();
     const newExpiredAt = new Date(Date.now() + config.SESSION.EXPIRY_MS);
 
-    const updated = await this.authRepo.slideSessionCas(
+    const updated = await this.authRepo.rotateSessionCas(
       session.id,
       presentedJti,
       newJti,

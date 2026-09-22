@@ -122,6 +122,43 @@ export class AuthRepository {
     return result.count > 0;
   }
 
+  /**
+   * CAS rotation that stashes the superseded jti into a short grace window
+   * so one lost-response retry does not look like token theft. Resets the
+   * anomaly counter on every clean rotation.
+   */
+  public async rotateSessionCas(
+    sessionId: string,
+    expectedJti: string,
+    newJti: string,
+    expiredAt: Date,
+  ): Promise<boolean> {
+    const result = await prisma.session.updateMany({
+      where: {
+        id: sessionId,
+        rotatedRefreshId: expectedJti,
+      },
+      data: {
+        expiredAt,
+        previousRefreshId: expectedJti,
+        previousIssuedAt: new Date(),
+        rotatedRefreshId: newJti,
+        oldTokenUseCount: 0,
+      },
+    });
+    return result.count > 0;
+  }
+
+  /** Atomically consumes one grace use; returns the post-increment count. */
+  public async recordGraceUse(sessionId: string): Promise<number> {
+    const updated = await prisma.session.update({
+      where: { id: sessionId },
+      data: { oldTokenUseCount: { increment: 1 } },
+      select: { oldTokenUseCount: true },
+    });
+    return updated.oldTokenUseCount;
+  }
+
   public async deleteAllUserSessions(userId: string): Promise<string[]> {
     const sessions = await prisma.session.findMany({
       where: { userId },
