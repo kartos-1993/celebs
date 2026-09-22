@@ -2,6 +2,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthGuard } from '../auth-guard';
+import { BootFallback } from '../boot-fallback';
 import { GuestGuard } from '../guest-guard';
 
 const mockUseAuthContext = vi.fn();
@@ -132,5 +133,24 @@ describe('GuestGuard', () => {
     const result = GuestGuard({ children: <div>Login Form</div> }) as GuardElement;
     expect(result.type).toBe(React.Fragment);
     expect(result.props.children).toEqual(<div>Login Form</div>);
+  });
+});
+
+describe('BootFallback', () => {
+  it('renders nothing on public paths while the router initializes', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/login' },
+      writable: true,
+    });
+    expect(BootFallback()).toBeNull();
+  });
+
+  it('renders the app skeleton on protected paths while the router initializes', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/products/manage' },
+      writable: true,
+    });
+    const result = BootFallback() as GuardElement;
+    expect(result).not.toBeNull();
   });
 });

@@ -11,11 +11,11 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 
 import './index.css';
 
-import { FullscreenLoader } from '@/components/page-loader';
 import { Toaster } from '@/components/toaster';
 import { AuthProvider } from '@/context/auth-provider';
 import { ThemeProvider } from '@/context/theme-provider';
 import { showErrorToast } from '@/lib/error-utils';
+import { BootFallback } from '@/routes/boot-fallback';
 import { router } from '@/routes/router';
 
 const queryClient = new QueryClient({
@@ -39,8 +39,8 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider defaultTheme="dark" storageKey="theme">
         <AuthProvider>
           {/* Shown while the router resolves route.lazy chunks in parallel
-              with the session fetch — same skeleton AuthGuard renders. */}
-          <RouterProvider router={router} fallbackElement={<FullscreenLoader />} />
+              with the session fetch. Route-aware: blank on public paths. */}
+          <RouterProvider router={router} fallbackElement={<BootFallback />} />
           <Toaster />
         </AuthProvider>
       </ThemeProvider>
