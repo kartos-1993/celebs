@@ -124,7 +124,10 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       await storeLifecycle.transition(profile.id, 'SUSPENDED');
 
       // The previously-valid JWT is dead on next use.
-      const res = await request(app).post('/api/v1/auth/logout').set('Cookie', authCookie);
+      const res = await request(app)
+        .post('/api/v1/auth/logout')
+        .set('Origin', 'http://localhost:3000')
+        .set('Cookie', authCookie);
 
       expect(res.status).toBe(401); // Unauthorized/Forbidden access
     });
@@ -144,6 +147,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       // Customer attempts to create a category
       const res = await request(app)
         .post('/api/v1/category')
+        .set('Origin', 'http://localhost:3000')
         .set('Cookie', authCookie)
         .send({ name: 'Electronics' });
 
@@ -165,6 +169,7 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       // Vendor attempts to create a category
       const res = await request(app)
         .post('/api/v1/category')
+        .set('Origin', 'http://localhost:3000')
         .set('Cookie', authCookie)
         .send({ name: 'Furniture' });
 
@@ -191,7 +196,11 @@ describe('RBAC & Vendor Onboarding Integration Tests', () => {
       });
 
       // Admin attempts to create a category (expecting 403 Forbidden)
-      const res = await request(app).post('/api/v1/category').set('Cookie', authCookie).send({});
+      const res = await request(app)
+        .post('/api/v1/category')
+        .set('Origin', 'http://localhost:3000')
+        .set('Cookie', authCookie)
+        .send({});
 
       expect(res.status).toBe(403);
     });

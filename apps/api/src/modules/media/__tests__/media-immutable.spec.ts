@@ -58,8 +58,18 @@ import prisma from '@/config/db.prisma';
 import { mediaRepository } from '@/modules/media/media.repository';
 import { confirmUploadedObject } from '@/modules/media/storage.service';
 
+const createWebpBuffer = (payload: string): Buffer => {
+  const payloadBuf = Buffer.from(payload);
+  const totalLength = 12 + payloadBuf.length;
+  const header = Buffer.alloc(12);
+  header.write('RIFF', 0, 4, 'ascii');
+  header.writeUInt32LE(totalLength - 8, 4);
+  header.write('WEBP', 8, 4, 'ascii');
+  return Buffer.concat([header, payloadBuf]);
+};
+
 const putTemp = (key: string, content: string) => {
-  fakeObjects.set(key, Buffer.from(content));
+  fakeObjects.set(key, createWebpBuffer(content));
 };
 
 describe('Immutable content-addressed uploads', () => {

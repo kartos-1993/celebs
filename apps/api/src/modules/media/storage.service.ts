@@ -154,13 +154,13 @@ export function assertUploadMeta(input: {
   return { originalname, mimeType, size };
 }
 
-export function validateImageMagicBytes(buffer: Buffer): boolean {
-  if (!buffer || buffer.length < 4) return false;
+export function detectMimeFromMagicBytes(buffer: Buffer): string | null {
+  if (!buffer || buffer.length < 4) return null;
   // JPEG: FF D8 FF
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return true;
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
   // PNG: 89 50 4E 47
   if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47)
-    return true;
+    return 'image/png';
   // WEBP: RIFF ... WEBP
   if (
     buffer.length >= 12 &&
@@ -173,7 +173,7 @@ export function validateImageMagicBytes(buffer: Buffer): boolean {
     buffer[10] === 0x42 &&
     buffer[11] === 0x50
   ) {
-    return true;
+    return 'image/webp';
   }
   // AVIF: ftyp (bytes 4..7)
   if (
@@ -183,13 +183,17 @@ export function validateImageMagicBytes(buffer: Buffer): boolean {
     buffer[6] === 0x79 &&
     buffer[7] === 0x70
   ) {
-    return true;
+    return 'image/avif';
   }
   // PDF: %PDF (25 50 44 46)
   if (buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) {
-    return true;
+    return 'application/pdf';
   }
-  return false;
+  return null;
+}
+
+export function validateImageMagicBytes(buffer: Buffer): boolean {
+  return detectMimeFromMagicBytes(buffer) !== null;
 }
 
 /**
@@ -374,6 +378,13 @@ export async function confirmUploadedObject(
     scope: input.scope || 'PRODUCT',
   });
 
+  if (input.folderId) {
+    const folder = await mediaRepository.findFolderById(input.folderId, input.vendorId ?? null);
+    if (!folder) {
+      throw new BadRequestException('Target folder not found or does not belong to this store');
+    }
+  }
+
   const head = await s3Client.send(
     new HeadObjectCommand({
       Bucket: config.S3.BUCKET_NAME,
@@ -402,6 +413,26 @@ export async function confirmUploadedObject(
     }),
   );
   const contentBytes = await streamToBuffer(object.Body);
+
+  const detectedMime = detectMimeFromMagicBytes(contentBytes);
+  if (!detectedMime) {
+    await s3Client
+      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
+      .catch(() => null);
+    throw new BadRequestException(
+      'File failed binary magic byte inspection: unrecognized or forbidden file format',
+    );
+  }
+
+  if (detectedMime !== mimeType) {
+    await s3Client
+      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
+      .catch(() => null);
+    throw new BadRequestException(
+      `File MIME mismatch: detected ${detectedMime} but declared ${mimeType}`,
+    );
+  }
+
   const hash = createHash('sha256')
     .update(contentBytes)
     .digest('hex')
