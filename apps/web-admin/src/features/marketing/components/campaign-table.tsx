@@ -25,7 +25,7 @@ export function CampaignTable({ campaigns, isLoading }: CampaignTableProps) {
     <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-muted/50">
             <TableHead>Campaign Details</TableHead>
             <TableHead>Type &amp; Theme</TableHead>
             <TableHead>Date Range</TableHead>
@@ -53,18 +53,22 @@ export function CampaignTable({ campaigns, isLoading }: CampaignTableProps) {
             </TableRow>
           ) : (
             campaigns.map((camp) => (
-              <TableRow key={camp.id} className="transition-colors hover:bg-muted/50">
+              <TableRow key={camp.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div
                       aria-hidden="true"
-                      className="h-10 w-4 shrink-0 rounded-full"
+                      className="h-8 w-3 shrink-0 rounded-full"
                       style={{ backgroundColor: camp.themeColor }}
                     />
-                    <div>
-                      <div className="text-sm font-medium text-foreground">{camp.title}</div>
-                      <div className="text-xs text-muted-foreground">{camp.tagline}</div>
-                      <div className="font-mono text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <div className="max-w-52 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
+                        {camp.title}
+                      </div>
+                      <div className="max-w-52 truncate text-xs text-muted-foreground">
+                        {camp.tagline}
+                      </div>
+                      <div className="max-w-52 truncate font-mono text-xs text-muted-foreground">
                         /{camp.slug} ({camp.productCount} products)
                       </div>
                     </div>
@@ -74,8 +78,11 @@ export function CampaignTable({ campaigns, isLoading }: CampaignTableProps) {
                   <Badge variant="destructive">{camp.campaignType}</Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1 text-xs font-medium text-foreground">
-                    <Calendar aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
+                  <div className="flex items-center gap-1 whitespace-nowrap text-xs font-medium text-foreground">
+                    <Calendar
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    />
                     {new Date(camp.startDate).toLocaleDateString()} —{' '}
                     {new Date(camp.endDate).toLocaleDateString()}
                   </div>
@@ -86,7 +93,7 @@ export function CampaignTable({ campaigns, isLoading }: CampaignTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="h-7 px-2 text-xs">
                     <Link to={`/marketing/campaigns/${camp.id}`}>Edit</Link>
                   </Button>
                 </TableCell>

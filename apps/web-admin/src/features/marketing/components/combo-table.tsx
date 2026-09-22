@@ -25,7 +25,7 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
     <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-muted/50">
             <TableHead>Combo Details</TableHead>
             <TableHead>Category / Tag</TableHead>
             <TableHead>Discount Offer</TableHead>
@@ -53,24 +53,28 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
             </TableRow>
           ) : (
             combos.map((combo) => (
-              <TableRow key={combo.id} className="transition-colors hover:bg-muted/50">
+              <TableRow key={combo.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {combo.bannerImage ? (
                       <img
                         src={combo.bannerImage}
                         alt={combo.title}
-                        className="h-12 w-12 rounded-lg border border-border object-cover"
+                        className="h-8 w-8 shrink-0 rounded-md border border-border object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <Sparkles aria-hidden="true" className="h-5 w-5" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <Sparkles aria-hidden="true" className="h-4 w-4" />
                       </div>
                     )}
-                    <div>
-                      <div className="text-sm font-medium text-foreground">{combo.title}</div>
-                      <div className="text-xs text-muted-foreground">{combo.subtitle}</div>
-                      <div className="mt-0.5 font-mono text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <div className="max-w-52 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
+                        {combo.title}
+                      </div>
+                      <div className="max-w-52 truncate text-xs text-muted-foreground">
+                        {combo.subtitle}
+                      </div>
+                      <div className="max-w-52 truncate font-mono text-xs text-muted-foreground">
                         /{combo.slug} ({combo.itemCount} items)
                       </div>
                     </div>
@@ -88,7 +92,7 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-success">
+                  <div className="flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-success">
                     {combo.discountType === 'PERCENTAGE' ? (
                       <>
                         <Percent aria-hidden="true" className="h-3.5 w-3.5" />
@@ -108,7 +112,7 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="h-7 px-2 text-xs">
                     <Link to={`/marketing/combos/${combo.id}`}>Edit</Link>
                   </Button>
                 </TableCell>

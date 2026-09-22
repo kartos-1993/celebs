@@ -1,9 +1,7 @@
 import React from 'react';
-import { Search } from 'lucide-react';
 
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
 import {
   Select,
   SelectContent,
@@ -15,7 +13,7 @@ import {
 import { PRODUCT_STATUS_TABS } from '../../hooks/use-manage-product-state';
 import type { PreviewStockFilter, ProductSortKey } from '../../types';
 
-import { UnderlineTabs } from '@/components/underline-tabs';
+import { FilterBar, FilterSearch, SegmentedTabs } from '@/components/filter-bar';
 
 interface ManageProductFilterBarProps {
   searchInput: string;
@@ -57,29 +55,21 @@ export const ManageProductFilterBar: React.FC<ManageProductFilterBarProps> = ({
   showVendorFilter = true,
 }) => {
   return (
-    <div className="rounded-xl border border-border bg-card px-4 pt-3 shadow-sm">
-      <div className="flex flex-col gap-3 pb-3 lg:flex-row lg:items-center lg:justify-between">
-        <UnderlineTabs
+    <div className="rounded-xl border border-border bg-card px-3 shadow-sm">
+      <FilterBar className="rounded-none border-0 bg-transparent p-0 shadow-none">
+        <FilterSearch
+          value={searchInput}
+          onChange={onSearch}
+          placeholder="Search products..."
+          ariaLabel="Search products"
+        />
+        <SegmentedTabs
           options={PRODUCT_STATUS_TABS.map((tab) => ({ value: tab.id, label: tab.label }))}
           value={filterStatus}
           onChange={onStatus}
+          ariaLabel="Product status filter"
         />
-
-        <div className="relative w-full lg:w-56 lg:shrink-0">
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            value={searchInput}
-            onChange={(event) => onSearch(event.target.value)}
-            placeholder="Search products..."
-            aria-label="Search products"
-            className="h-8 pl-8 text-xs"
-          />
-        </div>
-      </div>
+      </FilterBar>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border/60 py-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
