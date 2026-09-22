@@ -12,13 +12,13 @@ interface GuestGuardProps {
 
 export const GuestGuard: React.FC<GuestGuardProps> = ({ children }) => {
   const { user, isLoading } = useAuthContext();
-  const { data: setupData, isLoading: isSetupLoading } = useSetupStatus();
+  const { data: setupData } = useSetupStatus();
   const location = useLocation();
 
-  // Public routes stay blank while the session check resolves — no app
-  // skeleton on login/setup pages. The check is cache-fast; AuthSkeleton
-  // only covers the lazy chunk download in AuthLayout.
-  if (isLoading || isSetupLoading) {
+  // Fail-open on the setup check: public routes render while it resolves
+  // and only redirect on a positive setupRequired — a failed/slow check
+  // must never blank the login form.
+  if (isLoading) {
     return null;
   }
 
