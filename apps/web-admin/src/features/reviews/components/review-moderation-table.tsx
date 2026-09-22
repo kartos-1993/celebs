@@ -10,6 +10,8 @@ import type { AdminReviewItem, ReviewStatus } from '../types';
 
 import { ReviewModerationTableRow } from './review-moderation-table-row';
 
+import { TableSkeleton } from '@/components/table-skeleton';
+
 interface ReviewModerationTableProps {
   reviews: AdminReviewItem[];
   isLoading: boolean;
@@ -26,11 +28,7 @@ export function ReviewModerationTable({
   isUpdating,
 }: ReviewModerationTableProps) {
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center rounded-xl border bg-card text-sm text-muted-foreground">
-        Loading customer reviews...
-      </div>
-    );
+    return <TableSkeleton rows={10} columns={7} />;
   }
 
   if (reviews.length === 0) {

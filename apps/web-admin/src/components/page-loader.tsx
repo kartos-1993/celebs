@@ -53,7 +53,25 @@ export function FullscreenLoader({ variant = 'page' }: { variant?: SkeletonKind 
                 <div className="h-8 w-48 animate-pulse motion-reduce:animate-none rounded bg-muted" />
                 <div className="h-4 w-72 animate-pulse motion-reduce:animate-none rounded bg-muted/60" />
               </div>
-              <TableSkeleton rows={8} columns={5} />
+              {/* FilterBar silhouette: search field + status pills */}
+              <div className="flex animate-pulse flex-col gap-3 rounded-xl border border-border bg-card p-3 motion-reduce:animate-none sm:flex-row sm:items-center sm:justify-between">
+                <div className="h-9 w-full rounded-md bg-muted/40 sm:max-w-md" />
+                <div className="flex gap-1">
+                  <div className="h-8 w-16 rounded-md bg-muted/60" />
+                  <div className="h-8 w-16 rounded-md bg-muted/40" />
+                  <div className="h-8 w-16 rounded-md bg-muted/40" />
+                </div>
+              </div>
+              <TableSkeleton rows={10} columns={6} />
+              {/* Pagination silhouette */}
+              <div className="flex animate-pulse items-center justify-between motion-reduce:animate-none">
+                <div className="h-7 w-28 rounded-full bg-muted/40" />
+                <div className="flex gap-1">
+                  <div className="h-7 w-7 rounded-md bg-muted/60" />
+                  <div className="h-7 w-7 rounded-md bg-muted/40" />
+                  <div className="h-7 w-7 rounded-md bg-muted/40" />
+                </div>
+              </div>
             </div>
           ) : variant === 'dashboard' ? (
             <DashboardSkeleton />

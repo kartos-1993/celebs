@@ -44,7 +44,7 @@ export default function ReviewProductQueue() {
         />
 
         {state.isLoading ? (
-          <TableSkeleton rows={8} columns={6} />
+          <TableSkeleton rows={10} columns={6} />
         ) : state.products.length === 0 ? (
           <EmptyState
             icon={<ShoppingBag className="h-8 w-8" />}

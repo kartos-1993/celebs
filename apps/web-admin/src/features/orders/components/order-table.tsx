@@ -48,11 +48,12 @@ function PaymentCell({ row }: { row: OrderItemUI }) {
 
 export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: OrderTableProps) {
   if (isLoading) {
-    return <TableSkeleton rows={8} columns={6} className="hidden md:block" />;
+    return <TableSkeleton rows={10} columns={6} className="hidden md:block" />;
   }
 
   return (
     <div
+      aria-busy={isFetching}
       className={cn(
         'hidden overflow-x-auto rounded-xl border bg-card shadow-sm transition-opacity md:block',
         isFetching && 'opacity-60',

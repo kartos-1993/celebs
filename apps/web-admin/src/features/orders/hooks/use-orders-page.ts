@@ -59,15 +59,16 @@ export function useOrdersPage() {
     if (listQuery.q !== searchQuery) setSearchQuery(listQuery.q);
   }, [listQuery.q, searchQuery]);
 
-  // AuthGuard guarantees a user before this hook mounts — no auth gate here,
-  // so the list query fires the moment the chunk paints instead of waiting
-  // an extra render cycle.
+  // AuthGuard guarantees a user before this hook mounts. Gate on the user
+  // object (not the loading flag) so the first query already uses the final
+  // vendor/admin mode instead of fetching twice on the mode flip.
   const list = useOrdersList({
     mode,
     activeTab,
     page,
     pageSize,
     searchQuery,
+    enabled: Boolean(user),
   });
   const dialog = useFulfillmentDialog();
 

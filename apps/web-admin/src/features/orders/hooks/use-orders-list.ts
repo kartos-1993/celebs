@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import {
   type AdminOrdersResponse,
@@ -39,6 +39,7 @@ export function useOrdersList({
         : ORDERS_QUERY_KEYS.admin(queryParams),
     queryFn: () => (mode === 'vendor' ? getVendorOrders(queryParams) : getAdminOrders(queryParams)),
     enabled,
+    placeholderData: keepPreviousData,
   });
 
   const rows = useMemo(() => {

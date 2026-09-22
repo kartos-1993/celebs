@@ -7,6 +7,8 @@ import type { ProductListItem } from '../../types';
 
 import { ManageProductCard } from './manage-product-card';
 
+import { CardListSkeleton } from '@/components/table-skeleton';
+
 interface ManageProductCardsProps {
   products: ProductListItem[];
   isLoading: boolean;
@@ -42,11 +44,7 @@ export const ManageProductCards: React.FC<ManageProductCardsProps> = ({
   searchQuery,
 }) => {
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center text-sm text-muted-foreground md:hidden">
-        Loading products...
-      </div>
-    );
+    return <CardListSkeleton rows={4} />;
   }
 
   if (products.length === 0) {

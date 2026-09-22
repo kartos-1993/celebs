@@ -1,11 +1,23 @@
 import { Suspense, useEffect } from 'react';
-import { Outlet, useMatches } from 'react-router-dom';
+import { Outlet, useLocation, useMatches } from 'react-router-dom';
 
 import Main from '@/components/main';
 import { Navbar } from '@/components/nav-bar';
-import { PageSkeleton } from '@/components/page-skeleton';
+import { DashboardSkeleton, FormSkeleton, PageSkeleton } from '@/components/page-skeleton';
 import Sidebar from '@/components/sidebar';
+import { TableSkeleton } from '@/components/table-skeleton';
 import SidebarProvider from '@/context/sidebar-provider';
+import { skeletonForPath } from '@/routes/skeleton-for-path';
+
+/** Chunk-load fallback matching the destination silhouette (same owner). */
+function RouteSkeleton() {
+  const { pathname } = useLocation();
+  const kind = skeletonForPath(pathname);
+  if (kind === 'table') return <TableSkeleton rows={10} columns={6} />;
+  if (kind === 'dashboard') return <DashboardSkeleton />;
+  if (kind === 'form') return <FormSkeleton />;
+  return <PageSkeleton />;
+}
 
 export const AdminLayout = () => {
   const matches = useMatches();
@@ -26,7 +38,7 @@ export const AdminLayout = () => {
         <div className="bg-muted/40 min-h-screen">
           <Navbar />
           <Main>
-            <Suspense fallback={<PageSkeleton />}>
+            <Suspense fallback={<RouteSkeleton />}>
               <Outlet />
             </Suspense>
           </Main>

@@ -24,7 +24,7 @@ interface ComboTableProps {
 /** Desktop combos table — hidden below md, paired with ComboCards. */
 export function ComboTable({ combos, isLoading }: ComboTableProps) {
   if (isLoading) {
-    return <TableSkeleton rows={6} columns={5} className="hidden md:block" />;
+    return <TableSkeleton rows={10} columns={5} className="hidden md:block" />;
   }
 
   return (

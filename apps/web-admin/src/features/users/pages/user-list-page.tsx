@@ -166,7 +166,7 @@ export default function UserList() {
       )}
 
       {isLoading ? (
-        <TableSkeleton rows={8} columns={5} />
+        <TableSkeleton rows={10} columns={5} />
       ) : (
         <>
           <UserTable

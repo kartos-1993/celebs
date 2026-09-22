@@ -1,8 +1,8 @@
 import React from 'react';
-import { Navigate, useLocation, useMatches } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
-import type { RouteMeta, SkeletonKind } from './landing-resolver';
 import { PATHS } from './paths';
+import { skeletonForPath } from './skeleton-for-path';
 
 import { FullscreenLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
@@ -14,17 +14,10 @@ interface AuthGuardProps {
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const { user, isLoading } = useAuthContext();
   const location = useLocation();
-  const matches = useMatches();
 
   if (isLoading) {
-    // Each route declares its own loading silhouette in its handle —
-    // the boot skeleton matches the destination, never a hardcoded shape.
-    const skeleton: SkeletonKind =
-      [...matches]
-        .reverse()
-        .map((match) => (match.handle as RouteMeta | undefined)?.skeleton)
-        .find((kind): kind is SkeletonKind => kind !== undefined) ?? 'page';
-    return <FullscreenLoader variant={skeleton} />;
+    // Same silhouette BootFallback showed pre-router: one answer per path.
+    return <FullscreenLoader variant={skeletonForPath(location.pathname)} />;
   }
 
   if (!user) {

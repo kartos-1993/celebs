@@ -1,3 +1,5 @@
+import { skeletonForPath } from './skeleton-for-path';
+
 import { FullscreenLoader } from '@/components/page-loader';
 
 /** Public paths render nothing while booting — no app skeleton on login. */
@@ -13,14 +15,13 @@ const PUBLIC_PREFIXES = [
 
 /**
  * Router init fallback: the route.lazy chunk downloads before anything
- * renders, so a static skeleton here would show the app shell on public
- * pages too. Public paths stay blank until the form paints; app routes
- * keep the geometry-matched skeleton covering chunk + session in parallel.
+ * renders. Public paths stay blank until the form paints; app routes show
+ * the same silhouette AuthGuard will show once the router commits.
  */
 export function BootFallback() {
   const path = typeof window !== 'undefined' ? window.location.pathname : '';
   if (PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return null;
   }
-  return <FullscreenLoader />;
+  return <FullscreenLoader variant={skeletonForPath(path)} />;
 }

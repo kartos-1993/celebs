@@ -16,12 +16,14 @@ vi.mock('@/features/auth/hooks/use-auth-queries', () => ({
 }));
 
 const mockUseLocation = vi.fn();
-const mockUseMatches = vi.fn(() => []);
-vi.mock('react-router-dom', () => ({
-  useLocation: () => mockUseLocation(),
-  useMatches: () => mockUseMatches(),
-  Navigate: ({ to }: { to: string }) => <div data-testid="navigate">{to}</div>,
-}));
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useLocation: () => mockUseLocation(),
+    Navigate: ({ to }: { to: string }) => <div data-testid="navigate">{to}</div>,
+  };
+});
 
 vi.mock('@/components/page-loader', () => ({
   FullscreenLoader: ({ variant }: { variant?: string }) => (
@@ -80,23 +82,25 @@ describe('AuthGuard', () => {
     expect(result.props.children).toEqual(<div>Dashboard Content</div>);
   });
 
-  it('renders the table skeleton variant declared by the deepest matched route', () => {
+  it('renders the table skeleton variant declared by the destination route', () => {
     mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
     mockUseLocation.mockReturnValue({ pathname: '/products/manage', search: '' });
-    mockUseMatches.mockReturnValue([
-      { handle: { crumb: 'Home' } },
-      { handle: { crumb: 'Products' } },
-      { handle: { crumb: 'Manage Product', skeleton: 'table' } },
-    ]);
 
     const result = AuthGuard({ children: <div>Dashboard Content</div> }) as GuardElement;
     expect(result.props.variant).toBe('table');
   });
 
+  it('renders the form skeleton variant on form destinations', () => {
+    mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
+    mockUseLocation.mockReturnValue({ pathname: '/account/profile', search: '' });
+
+    const result = AuthGuard({ children: <div>Dashboard Content</div> }) as GuardElement;
+    expect(result.props.variant).toBe('form');
+  });
+
   it('falls back to the neutral page skeleton when no matched route declares one', () => {
     mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
-    mockUseLocation.mockReturnValue({ pathname: '/finance/payouts', search: '' });
-    mockUseMatches.mockReturnValue([{ handle: { crumb: 'Home' } }, { handle: undefined }]);
+    mockUseLocation.mockReturnValue({ pathname: '/definitely-not-a-route', search: '' });
 
     const result = AuthGuard({ children: <div>Dashboard Content</div> }) as GuardElement;
     expect(result.props.variant).toBe('page');
@@ -175,12 +179,36 @@ describe('BootFallback', () => {
     expect(BootFallback()).toBeNull();
   });
 
-  it('renders the app skeleton on protected paths while the router initializes', () => {
+  it('renders the destination silhouette on app paths while the router initializes', () => {
     Object.defineProperty(window, 'location', {
       value: { pathname: '/products/manage' },
       writable: true,
     });
     const result = BootFallback() as GuardElement;
     expect(result).not.toBeNull();
+    expect(result.props.variant).toBe('table');
+  });
+
+  it('agrees with AuthGuard on every route that declares a skeleton', () => {
+    const cases: Array<{ pathname: string; variant: string }> = [
+      { pathname: '/products/manage', variant: 'table' },
+      { pathname: '/orders', variant: 'table' },
+      { pathname: '/users', variant: 'table' },
+      { pathname: '/products/new', variant: 'form' },
+      { pathname: '/account/profile', variant: 'form' },
+      { pathname: '/onboarding', variant: 'form' },
+      { pathname: '/marketing/combos', variant: 'table' },
+      { pathname: '/finance', variant: 'dashboard' },
+      { pathname: '/definitely-not-a-route', variant: 'page' },
+    ];
+    mockUseAuthContext.mockReturnValue({ user: null, isLoading: true });
+    for (const { pathname, variant } of cases) {
+      mockUseLocation.mockReturnValue({ pathname, search: '' });
+      Object.defineProperty(window, 'location', { value: { pathname }, writable: true });
+      const guardResult = AuthGuard({ children: <div>X</div> }) as GuardElement;
+      const bootResult = BootFallback() as GuardElement;
+      expect(guardResult.props.variant).toBe(variant);
+      expect(bootResult.props.variant).toBe(variant);
+    }
   });
 });

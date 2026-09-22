@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
+import { TableSkeleton } from '@/components/table-skeleton';
 
 interface CampaignTableProps {
   campaigns: CampaignItemType[];
@@ -22,6 +23,10 @@ interface CampaignTableProps {
 
 /** Desktop campaigns table — hidden below md, paired with CampaignCards. */
 export function CampaignTable({ campaigns, isLoading }: CampaignTableProps) {
+  if (isLoading) {
+    return <TableSkeleton rows={10} columns={5} className="hidden md:block" />;
+  }
+
   return (
     <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
       <Table>
@@ -35,15 +40,7 @@ export function CampaignTable({ campaigns, isLoading }: CampaignTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5}>
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  Loading marketing campaigns...
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : campaigns.length === 0 ? (
+          {campaigns.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5}>
                 <EmptyState

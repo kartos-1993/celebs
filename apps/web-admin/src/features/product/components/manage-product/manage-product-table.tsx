@@ -54,7 +54,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   searchQuery,
 }) => {
   if (isLoading) {
-    return <TableSkeleton rows={8} columns={7} />;
+    return <TableSkeleton rows={10} columns={7} />;
   }
 
   if (products.length === 0) {
@@ -72,7 +72,10 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   }
 
   return (
-    <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+    <div
+      aria-busy={isFetching}
+      className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+    >
       <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
         <Table>
           <TableHeader>

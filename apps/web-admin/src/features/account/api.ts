@@ -22,7 +22,9 @@ export interface SessionResponseType {
 }
 
 export async function getUserSession(): Promise<SessionResponse> {
-  const response = await axiosClient.get<SessionResponse>(`/session/?t=${Date.now()}`);
+  // Stable URL: the query key + staleTime own freshness. A cache-buster
+  // here forces network-before-paint on every mount.
+  const response = await axiosClient.get<SessionResponse>('/session/');
   return response.data;
 }
 
