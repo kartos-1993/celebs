@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Permission } from '@celebs/rbac';
 
@@ -13,9 +13,23 @@ import {
 } from './use-fulfillment-mutations';
 import { useOrdersList } from './use-orders-list';
 
+import { useListQueryState } from '@/common/hooks/use-list-query-state';
 import { useAuthContext } from '@/context/auth-provider';
+import { useDebounce } from '@/hooks/use-debounce';
 import { usePermission } from '@/hooks/use-permission';
 import { useToast } from '@/hooks/use-toast';
+
+const ORDER_TABS = [
+  'ALL',
+  'PENDING',
+  'PACKED',
+  'HANDED_OVER',
+  'DELIVERED',
+  'CANCELLED',
+  'PENDING_PAYMENT',
+  'CONFIRMED',
+  'OUT_FOR_DELIVERY',
+] as const;
 
 export function useOrdersPage() {
   const {
@@ -31,10 +45,26 @@ export function useOrdersPage() {
   const isSeller = isVendor || isStaff || Boolean(user?.vendorProfile?.id);
   const mode: Mode = isSeller ? 'vendor' : 'admin';
 
-  const [activeTab, setActiveTab] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSizeState] = useState(10);
+  const listQuery = useListQueryState({
+    defaultTab: 'ALL',
+    allowedTabs: ORDER_TABS,
+    defaultSort: 'newest',
+    allowedSorts: ['newest'] as const,
+  });
+  const activeTab = listQuery.tab;
+  const page = listQuery.page;
+  const setPage = listQuery.setPage;
+  const pageSize = listQuery.limit;
+  const [searchQuery, setSearchQuery] = useState(listQuery.q);
+  const debouncedQ = useDebounce(searchQuery, 350);
+
+  useEffect(() => {
+    if (debouncedQ.trim() !== listQuery.q) listQuery.setQ(debouncedQ);
+  }, [debouncedQ, listQuery]);
+
+  useEffect(() => {
+    if (listQuery.q !== searchQuery) setSearchQuery(listQuery.q);
+  }, [listQuery.q, searchQuery]);
 
   const list = useOrdersList({
     mode,
@@ -111,20 +141,20 @@ export function useOrdersPage() {
       }),
   });
 
-  const handleTabChange = useCallback((id: string) => {
-    setActiveTab(id);
-    setPage(1);
-  }, []);
+  const handleTabChange = useCallback(
+    (id: string) => listQuery.setTab(id as (typeof ORDER_TABS)[number]),
+    [listQuery],
+  );
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    setPage(1);
-  }, []);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      listQuery.setPage(1);
+    },
+    [listQuery],
+  );
 
-  const setPageSize = useCallback((size: number) => {
-    setPageSizeState(size);
-    setPage(1);
-  }, []);
+  const setPageSize = useCallback((size: number) => listQuery.setLimit(size), [listQuery]);
 
   const handleFulfill = useCallback(() => {
     if (!dialog.selectedItem) return;
