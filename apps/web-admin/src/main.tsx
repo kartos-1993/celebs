@@ -11,6 +11,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 
 import './index.css';
 
+import { FullscreenLoader } from '@/components/page-loader';
 import { Toaster } from '@/components/toaster';
 import { AuthProvider } from '@/context/auth-provider';
 import { ThemeProvider } from '@/context/theme-provider';
@@ -37,7 +38,9 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="theme">
         <AuthProvider>
-          <RouterProvider router={router} />
+          {/* Shown while the router resolves route.lazy chunks in parallel
+              with the session fetch — same skeleton AuthGuard renders. */}
+          <RouterProvider router={router} fallbackElement={<FullscreenLoader />} />
           <Toaster />
         </AuthProvider>
       </ThemeProvider>

@@ -1,18 +1,19 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 import { Permission } from '@celebs/rbac';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const Categories = lazy(() => import('./pages/categories-page'));
 
 export const categoryRoutes: RouteObject = {
   path: 'categories',
-  element: (
-    <RoleGuard requiredPermission={Permission.CATALOG_MANAGE}>
-      <Categories />
-    </RoleGuard>
+  ...pageRoute(
+    () => import('./pages/categories-page'),
+    (Page) => (
+      <RoleGuard requiredPermission={Permission.CATALOG_MANAGE}>
+        <Page />
+      </RoleGuard>
+    ),
   ),
   handle: { crumb: 'Categories' },
 };

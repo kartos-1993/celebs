@@ -1,13 +1,7 @@
-import { lazy } from 'react';
 import { Navigate, Outlet, RouteObject } from 'react-router-dom';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const CampaignListPage = lazy(() => import('./pages/campaign-list-page'));
-const CampaignFormPage = lazy(() => import('./pages/campaign-form-page'));
-const ComboListPage = lazy(() => import('./pages/combo-list-page'));
-const ComboFormPage = lazy(() => import('./pages/combo-form-page'));
-const SDUIPagePreview = lazy(() => import('./pages/sdui-preview-page'));
 
 export const marketingRoutes: RouteObject = {
   path: 'marketing',
@@ -21,7 +15,7 @@ export const marketingRoutes: RouteObject = {
     { index: true, element: <Navigate to="campaigns" replace /> },
     {
       path: 'preview',
-      element: <SDUIPagePreview />,
+      ...pageRoute(() => import('./pages/sdui-preview-page')),
       handle: { title: 'SDUI Storefront Preview', crumb: 'SDUI Preview' },
     },
     {
@@ -29,17 +23,17 @@ export const marketingRoutes: RouteObject = {
       children: [
         {
           path: '',
-          element: <CampaignListPage />,
+          ...pageRoute(() => import('./pages/campaign-list-page')),
           handle: { title: 'Festival Campaigns', crumb: 'Campaigns' },
         },
         {
           path: 'new',
-          element: <CampaignFormPage />,
+          ...pageRoute(() => import('./pages/campaign-form-page')),
           handle: { title: 'Create Campaign', crumb: 'New Campaign' },
         },
         {
           path: ':id',
-          element: <CampaignFormPage />,
+          ...pageRoute(() => import('./pages/campaign-form-page')),
           handle: { title: 'Edit Campaign', crumb: 'Edit Campaign' },
         },
       ],
@@ -49,17 +43,17 @@ export const marketingRoutes: RouteObject = {
       children: [
         {
           path: '',
-          element: <ComboListPage />,
+          ...pageRoute(() => import('./pages/combo-list-page')),
           handle: { title: 'Generic Combo Bundles', crumb: 'Combos' },
         },
         {
           path: 'new',
-          element: <ComboFormPage />,
+          ...pageRoute(() => import('./pages/combo-form-page')),
           handle: { title: 'Create Combo Bundle', crumb: 'New Combo' },
         },
         {
           path: ':id',
-          element: <ComboFormPage />,
+          ...pageRoute(() => import('./pages/combo-form-page')),
           handle: { title: 'Edit Combo Bundle', crumb: 'Edit Combo' },
         },
       ],
