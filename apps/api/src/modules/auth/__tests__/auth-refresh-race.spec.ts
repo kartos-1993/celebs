@@ -21,7 +21,23 @@ describe('Refresh token concurrency and session revocation', () => {
     }
   });
 
-  it('allows only a single successful refresh when identical tokens are sent concurrently', async () => {
+  const ORIGIN = 'http://localhost:5173';
+
+  function cookieToken(res: request.Response): string {
+    const raw = res.headers['set-cookie'] as unknown as string[] | string | undefined;
+    const joined = Array.isArray(raw) ? raw.join(';') : (raw ?? '');
+    return joined.match(/refreshToken=([^;]+)/)?.[1] ?? '';
+  }
+
+  function refreshWith(token: string, userAgent = 'RefreshRaceTest/1.0') {
+    return request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Origin', ORIGIN)
+      .set('Cookie', `refreshToken=${token}`)
+      .set('User-Agent', userAgent);
+  }
+
+  it('shares one rotation across concurrent identical refreshes without revoking anything', async () => {
     const rawPassword = 'Password123!';
     const email = faker.internet.exampleEmail().toLowerCase();
     const user = await prisma.user.create({
@@ -35,33 +51,40 @@ describe('Refresh token concurrency and session revocation', () => {
     createdUserId = user.id;
 
     // Login to obtain valid session and initial token pair
-    const loginRes = await request(app).post('/api/v1/auth/login').send({
-      email,
-      password: rawPassword,
-    });
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Origin', ORIGIN)
+      .set('User-Agent', 'RefreshRaceTest/1.0')
+      .send({
+        email,
+        password: rawPassword,
+      });
     expect(loginRes.status).toBe(200);
-    const initialRefreshToken = loginRes.body.data.refreshToken;
-    expect(initialRefreshToken).toBeDefined();
+    const initialRefreshToken = cookieToken(loginRes);
+    expect(initialRefreshToken).not.toBe('');
 
     // Fire 5 concurrent refresh requests using the exact same refresh token
     const results = await Promise.all(
-      Array.from({ length: 5 }, () =>
-        request(app)
-          .post('/api/v1/auth/refresh')
-          .set('Cookie', `refreshToken=${initialRefreshToken}`),
-      ),
+      Array.from({ length: 5 }, () => refreshWith(initialRefreshToken)),
     );
 
     const statuses = results.map((r) => r.status);
     const successCount = statuses.filter((s) => s === 200).length;
-    const failureCount = statuses.filter((s) => s === 401).length;
 
-    // Concurrency guarantee: EXACTLY one request must succeed, all others must be rejected
-    expect(successCount).toBe(1);
-    expect(failureCount).toBe(4);
+    // In-flight dedup: all duplicates share the single rotation result.
+    expect(successCount).toBe(5);
+    const pairs = results.map((r) => cookieToken(r));
+    for (const pair of pairs) {
+      expect(pair).not.toBe('');
+      expect(pair).toBe(pairs[0]);
+    }
+
+    // Nobody got revoked for a benign race.
+    const sessionInDb = await prisma.session.findFirst({ where: { userId: user.id } });
+    expect(sessionInDb).not.toBeNull();
   });
 
-  it('terminates all user sessions when a rotated refresh token is replayed', async () => {
+  it('absorbs a benign replay but revokes every session once the grace budget is spent', async () => {
     const rawPassword = 'Password123!';
     const email = faker.internet.exampleEmail().toLowerCase();
     const user = await prisma.user.create({
@@ -78,7 +101,7 @@ describe('Refresh token concurrency and session revocation', () => {
     const session1 = await prisma.session.create({
       data: {
         userId: user.id,
-        userAgent: 'Device A - Laptop',
+        userAgent: 'RefreshRaceTest/1.0',
         rotatedRefreshId: 'jti-device-a-v1',
       },
     });
@@ -91,21 +114,24 @@ describe('Refresh token concurrency and session revocation', () => {
     const session2 = await prisma.session.create({
       data: {
         userId: user.id,
-        userAgent: 'Device B - Phone',
+        userAgent: 'RefreshRaceTest/1.0',
         rotatedRefreshId: 'jti-device-b-v1',
       },
     });
 
     // Legitimate rotation of Device A to v2
-    const rotateRes = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${tokenDeviceAV1}`);
+    const rotateRes = await refreshWith(tokenDeviceAV1);
     expect(rotateRes.status).toBe(200);
 
-    // Attacker steals and replays tokenDeviceAV1 (old rotated token)
-    const attackRes = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${tokenDeviceAV1}`);
+    // Benign lost-response retry of tokenDeviceAV1: accepted, both devices survive.
+    const retryRes = await refreshWith(tokenDeviceAV1);
+    expect(retryRes.status).toBe(200);
+    expect((await prisma.session.findMany({ where: { userId: user.id } })).length).toBe(2);
+
+    // Repeated replays exhaust the grace budget → full family revocation.
+    expect((await refreshWith(tokenDeviceAV1)).status).toBe(200);
+    expect((await refreshWith(tokenDeviceAV1)).status).toBe(200);
+    const attackRes = await refreshWith(tokenDeviceAV1);
     expect(attackRes.status).toBe(401);
 
     // Assert ALL active sessions for that user are revoked (both Device A and Device B)
@@ -143,9 +169,7 @@ describe('Refresh token concurrency and session revocation', () => {
     // Sign token WITHOUT jti claim using raw jwt.sign to simulate legacy or untracked token
     const tokenWithoutJti = jwt.sign({ sessionId: session.id }, config.JWT.REFRESH_SECRET);
 
-    const res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${tokenWithoutJti}`);
+    const res = await refreshWith(tokenWithoutJti);
 
     // Must be rejected with 401 — no free pass
     expect(res.status).toBe(401);
@@ -181,9 +205,7 @@ describe('Refresh token concurrency and session revocation', () => {
       { secret: config.JWT.REFRESH_SECRET },
     );
 
-    const res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${token}`);
+    const res = await refreshWith(token);
 
     // Must be rejected with 401 and deleted due to reaching absolute lifetime cap
     expect(res.status).toBe(401);

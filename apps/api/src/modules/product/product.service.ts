@@ -24,6 +24,7 @@ import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-
 import { getColorImageBlockers, sumVariantStock } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
+import { purgeProduct, purgeProductHome } from './product-cache';
 import { ProductLifecycleService } from './product-lifecycle.service';
 import { buildProductCreateData, buildProductUpdateData } from './product-payloads';
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
@@ -216,6 +217,9 @@ export class ProductService {
 
     await this.linkMediaUsageOnCreate(createdProduct);
 
+    // New arrival on rails; detail key cannot exist yet.
+    purgeProductHome();
+
     return formatProductResponse(createdProduct);
   }
 
@@ -276,6 +280,8 @@ export class ProductService {
     });
 
     await this.reconcileMediaUsageDiff(product, updateData, id);
+
+    purgeProduct(id);
 
     return formatProductResponse(updated);
   }

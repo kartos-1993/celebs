@@ -14,6 +14,7 @@ import {
 } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
+import { purgeProduct } from './product-cache';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
@@ -64,6 +65,8 @@ export class ProductLifecycleService {
     await this.assertPublishable(product.id, product.colorVariants);
 
     const updated = await this.products.update(id, { status: PRODUCT_STATUS.PENDING_REVIEW });
+
+    purgeProduct(id);
 
     return formatProductResponse(updated);
   }
@@ -116,6 +119,8 @@ export class ProductLifecycleService {
     if (args.action === 'reject' && product.vendorId) {
       await this.sendRejectionEmail(id, product, updated, args);
     }
+
+    purgeProduct(id);
 
     return formatProductResponse(updated, { isElevated: true });
   }
@@ -273,6 +278,8 @@ export class ProductLifecycleService {
       updatedBy: userId,
     });
 
+    purgeProduct(id);
+
     if (product.status !== PRODUCT_STATUS.ARCHIVED) {
       await mediaRepository
         .adjustUsageByUrls(collectProductAssetUrls(updated), -1)
@@ -318,6 +325,8 @@ export class ProductLifecycleService {
           ? PRODUCT_STATUS.DEACTIVATED
           : PRODUCT_STATUS.PUBLISHED,
     });
+
+    purgeProduct(id);
 
     return formatProductResponse(updated);
   }

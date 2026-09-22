@@ -10,6 +10,15 @@ import { PRODUCT_FEED_SELECT, PRODUCT_LIST_SELECT } from './repositories/product
 import { decodeProductCursor, encodeProductCursor } from './utils/product-cursor';
 import { calculateProductQCScore } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
+import {
+  PRODUCT_DETAIL_TTL_SECONDS,
+  PRODUCT_LIST_TTL_SECONDS,
+  productDetailKey,
+  productListKey,
+  readCachedJson,
+  signListQuery,
+  writeCachedJson,
+} from './product-cache';
 import { PRODUCT_STATUS } from './product-status';
 
 import type { Actor } from '@/common/context/actor-context';
@@ -39,10 +48,16 @@ export class ProductQueryService {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
+    const cacheKey = productDetailKey(id, isElevated);
+    const cached = await readCachedJson<Record<string, unknown> | null>(cacheKey);
+    if (cached) return cached;
+
     const product = await this.products.findDetailedById(id, isElevated);
 
     if (!product) return null;
-    return formatProductResponse(product, { isElevated });
+    const formatted = formatProductResponse(product, { isElevated });
+    await writeCachedJson(cacheKey, formatted, PRODUCT_DETAIL_TTL_SECONDS);
+    return formatted;
   }
 
   async getProductsByVendor(
@@ -65,6 +80,23 @@ export class ProductQueryService {
     nextCursor?: string;
     hasMore?: boolean;
   }> {
+    // List cache covers the public storefront scope only: elevated and
+    // store-scoped reads vary per actor and must never share a key.
+    const isPublicScope =
+      !opts.isElevated && !opts.actor && !opts.storeId && !opts.isStoreManagement;
+    const cacheKey = isPublicScope
+      ? productListKey(signListQuery({ ...(filters as Record<string, unknown>), page, limit }))
+      : null;
+    if (cacheKey) {
+      const cached = await readCachedJson<{
+        products: Array<Record<string, unknown> | null>;
+        total?: number;
+        nextCursor?: string;
+        hasMore?: boolean;
+      }>(cacheKey);
+      if (cached) return cached;
+    }
+
     const where: Prisma.ProductWhereInput = {};
     const andClauses: Prisma.ProductWhereInput[] = [];
 
@@ -143,12 +175,16 @@ export class ProductQueryService {
       });
     }
 
-    return {
+    const result = {
       products: products.map((p) => formatProductResponse(p, { isElevated: opts.isElevated })),
       ...(totalCount !== undefined ? { total: totalCount } : {}),
       nextCursor,
       hasMore,
     };
+    if (cacheKey) {
+      await writeCachedJson(cacheKey, result, PRODUCT_LIST_TTL_SECONDS);
+    }
+    return result;
   }
 
   private applyScalarFilters(

@@ -20,6 +20,7 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
+import { purgeProductDetail } from '@/modules/product/product-cache';
 
 export class CheckoutService {
   constructor(
@@ -205,6 +206,12 @@ export class CheckoutService {
       throw err;
     }
 
+    // Stock just moved: refresh cached PDP truth for the ordered products.
+    // Fire-and-forget; lists and rails ride their short TTLs.
+    for (const productId of new Set(itemDetails.map((item) => item.productId))) {
+      purgeProductDetail(productId);
+    }
+
     // Create online payment intent when not COD
     let paymentResult = null;
     if (paymentMethod !== 'COD') {
@@ -257,6 +264,10 @@ export class CheckoutService {
               quantity: item.quantity,
             })),
           });
+          // Released stock moved truth again for the same products.
+          for (const productId of new Set(itemDetails.map((item) => item.productId))) {
+            purgeProductDetail(productId);
+          }
         } catch (cancelErr) {
           logger.error(
             { orderId: order.id, cancelErr },

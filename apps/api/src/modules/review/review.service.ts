@@ -3,6 +3,7 @@ import { ReviewFitRating, ReviewStatus } from '@prisma/client';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { createReviewPresignedPut } from '../media/storage.service';
+import { purgeProduct } from '../product/product-cache';
 
 import { evaluateReviewQuality } from './utils/review-quality.evaluator';
 import { FindReviewsOptions, ReviewRepository, reviewRepository } from './review.repository';
@@ -95,7 +96,7 @@ export class ReviewService {
       variantSnapshot['_flagReason'] = quality.flagReason;
     }
 
-    return this.repo.createReview({
+    const created = await this.repo.createReview({
       userId,
       userName,
       userAvatar,
@@ -112,6 +113,9 @@ export class ReviewService {
       variantSnapshot: Object.keys(variantSnapshot).length > 0 ? variantSnapshot : undefined,
       status,
     });
+    // Ratings render on the PDP; refresh its cached truth.
+    purgeProduct(productId);
+    return created;
   }
 
   async getToReviewItems(userId: string, page = 1, limit = 10) {

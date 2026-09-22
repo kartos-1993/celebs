@@ -8,6 +8,11 @@ import { signJwtToken } from '@/common/utils/jwt';
 import prisma from '@/config/db.prisma';
 
 describe('Session Integration & Dual-Transport Test Suite', () => {
+  function cookieValue(res: request.Response, name: string): string {
+    const raw = res.headers['set-cookie'] as unknown as string[] | string | undefined;
+    const joined = Array.isArray(raw) ? raw.join(';') : (raw ?? '');
+    return joined.match(new RegExp(`${name}=([^;]+)`))?.[1] ?? '';
+  }
   it('should authenticate via Cookie transport on GET /api/v1/session', async () => {
     const rawPassword = 'Password123!';
     const hashedPassword = await hashValue(rawPassword);
@@ -63,7 +68,8 @@ describe('Session Integration & Dual-Transport Test Suite', () => {
     });
 
     expect(loginRes.status).toBe(200);
-    const accessToken = loginRes.body.data.accessToken;
+    const accessToken = cookieValue(loginRes, 'accessToken');
+    expect(accessToken).not.toBe('');
 
     // Fetch session using Bearer header
     const sessionRes = await request(app)
@@ -99,7 +105,8 @@ describe('Session Integration & Dual-Transport Test Suite', () => {
     });
 
     expect(loginRes.status).toBe(200);
-    const accessToken = loginRes.body.data.accessToken;
+    const accessToken = cookieValue(loginRes, 'accessToken');
+    expect(accessToken).not.toBe('');
 
     // Logout
     const logoutRes = await request(app)
