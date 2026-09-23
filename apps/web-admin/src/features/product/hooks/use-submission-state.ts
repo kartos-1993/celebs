@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import type { FieldSpec, ProductSidebarSection, VariantMetaItem } from '../types';
@@ -25,8 +25,10 @@ export function useSubmissionState({
     control,
     formState: { errors },
   } = useFormContext();
-  const rawFormValues = useWatch({ control }) as Record<string, unknown>;
-  const formValues = useDeferredValue(rawFormValues);
+  // Synchronous watch on purpose: the checklist must agree with RHF errors
+  // on the same render. A deferred value here shows stale red/green for a
+  // frame after every keystroke and upload.
+  const formValues = useWatch({ control }) as Record<string, unknown>;
 
   const fieldErrors = useMemo(() => flattenFormErrors(errors), [errors]);
 

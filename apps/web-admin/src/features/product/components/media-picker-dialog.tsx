@@ -4,7 +4,11 @@ import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Dialog, DialogContent } from '@celebs/shared-ui/components/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
 
-import { useMediaAssets, useMediaQuota } from '../hooks/use-media-assets';
+import {
+  useInvalidateMediaLibrary,
+  useMediaAssets,
+  useMediaQuota,
+} from '../hooks/use-media-assets';
 
 import { MediaPickerFooter } from './media-picker/media-picker-footer';
 import { MediaPickerHeader } from './media-picker/media-picker-header';
@@ -47,6 +51,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
   });
 
   const { data: quota } = useMediaQuota();
+  const invalidateMediaLibrary = useInvalidateMediaLibrary();
   const assets = useMemo(() => assetsData?.items || [], [assetsData]);
 
   useEffect(() => {
@@ -87,6 +92,8 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
       setUploadError(null);
       try {
         const uploadedUrls = await directUploadBatch(fileArray, 'celebs/products', scope);
+        // Library grid + quota would otherwise keep showing stale data.
+        invalidateMediaLibrary();
         setSelectedUrls((prev) => [...prev, ...uploadedUrls].slice(0, maxSelect));
         setActiveTab('library');
       } catch (err: unknown) {
@@ -95,7 +102,7 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
         setIsUploading(false);
       }
     },
-    [maxSelect, scope],
+    [invalidateMediaLibrary, maxSelect, scope],
   );
 
   const handleDrop = useCallback(

@@ -22,6 +22,11 @@ export const isDraftExpired = (savedAt?: string, ttlMs: number = DRAFT_TTL_MS): 
 export const normalizeText = (value: unknown): string =>
   value !== null && value !== undefined ? String(value).trim() : '';
 
+/** Single gallery-emptiness predicate shared by fields and collectors. */
+export function isGalleryFilled(images: unknown): boolean {
+  return Array.isArray(images) && images.length > 0;
+}
+
 /**
  * Single key encoding for variant path segments (dots/brackets break RHF
  * dot-path lookups). Writers (pathFor) and readers (validation, payload)

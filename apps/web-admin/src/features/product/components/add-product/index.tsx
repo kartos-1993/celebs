@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { FieldErrors, Path, UseFormReturn } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Info } from 'lucide-react';
 
 import { can, Permission } from '@celebs/rbac';
@@ -12,6 +13,7 @@ import { createProduct, updateProduct } from '../../api';
 import { extractVariantsMeta } from '../../fields/variant-utils';
 import { useProductDraft } from '../../hooks/use-product-draft';
 import { type ProductFormValues, useProductForm } from '../../hooks/use-product-form';
+import { PRODUCT_QUERY_KEYS } from '../../hooks/use-product-queries';
 import { useProductSchema } from '../../hooks/use-product-schema';
 import { useSubmissionState } from '../../hooks/use-submission-state';
 import type { CreateProductRequest, FieldSpec } from '../../types';
@@ -203,6 +205,7 @@ const AddProductFormBody = ({
   onAutofill,
 }: AddProductFormBodyProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dynamicFormRef = useRef<DynamicProductFormHandle | null>(null);
@@ -335,6 +338,7 @@ const AddProductFormBody = ({
         fields: schemaFields,
         status,
         values: currentValues,
+        isUpdate: isEditMode,
       });
       logger.info({ payload }, 'Submitting product payload to API');
 
@@ -353,6 +357,12 @@ const AddProductFormBody = ({
       }
 
       draft.discardDraft();
+      // Saved photos must show everywhere immediately: refresh the detail
+      // entry (edit mode) and every list/grid backed by product queries.
+      if (isEditMode && productId) {
+        await queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.detail(productId) });
+      }
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.lists() });
       navigate(MANAGE_PRODUCTS_PATH);
     } catch (error: unknown) {
       logger.error({ error }, 'Submit Product API Error');

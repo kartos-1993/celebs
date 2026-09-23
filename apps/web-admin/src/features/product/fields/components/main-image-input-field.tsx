@@ -7,6 +7,8 @@ import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { MediaCropDialog } from '../../components/media-crop-dialog';
 import { MediaLibraryButton } from '../../components/media-library-button';
+import { useInvalidateMediaLibrary } from '../../hooks/use-media-assets';
+import { isGalleryFilled } from '../../utils/add-product-helpers';
 import type { UiProps } from '../ui-registry';
 
 import {
@@ -31,6 +33,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
   const files: ImageValue[] = useMemo(() => rawFiles ?? [], [rawFiles]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const invalidateMediaLibrary = useInvalidateMediaLibrary();
   const [croppingFile, setCroppingFile] = useState<{ file: File; replaceIndex?: number } | null>(
     null,
   );
@@ -107,7 +110,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
       validate: (v: unknown) => {
         const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
         // Main product image is always mandatory regardless of schema flags
-        if (arr.length === 0) return `${field.label} is required`;
+        if (!isGalleryFilled(arr)) return `${field.label} is required`;
         if (typeof field.rule?.maxItems === 'number' && arr.length > field.rule.maxItems)
           return `Max ${field.rule.maxItems} images`;
         if (
@@ -141,7 +144,9 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
   }, [filesHash, files]);
 
   const onAddFiles = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (
+      e: React.ChangeEvent<HTMLInputElement> | { target: { files: FileList | File[] | null } },
+    ) => {
       const raw = Array.from(e.target.files || []);
       if (raw.length === 0) return;
 
@@ -159,6 +164,12 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
       }
 
       const targetFiles = raw.slice(0, slots);
+      if (raw.length > targetFiles.length) {
+        setError(field.name, {
+          type: 'validate',
+          message: `Only ${targetFiles.length} of ${raw.length} images added — Max ${maxItems}`,
+        });
+      }
       const valids: File[] = [];
       const errors: string[] = [];
 
@@ -191,6 +202,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
 
       try {
         const uploadedUrls = await uploadImageFiles(valids);
+        invalidateMediaLibrary();
         const current = (watch(field.name) ?? []) as ImageValue[];
         const next = [...current, ...uploadedUrls];
         setValue(field.name, next, { shouldValidate: true, shouldDirty: true });
@@ -215,6 +227,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
       clearErrors,
       trigger,
       setError,
+      invalidateMediaLibrary,
     ],
   );
 
@@ -238,6 +251,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
 
       try {
         const [uploadedUrl] = await uploadImageFiles([f]);
+        invalidateMediaLibrary();
         const current = (watch(field.name) ?? []) as ImageValue[];
         const next = [...current];
         next[idx] = uploadedUrl;
@@ -262,6 +276,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
       setValue,
       clearErrors,
       trigger,
+      invalidateMediaLibrary,
     ],
   );
 
@@ -273,6 +288,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
 
       try {
         const [uploadedUrl] = await uploadImageFiles([croppedFile]);
+        invalidateMediaLibrary();
         const current = (watch(field.name) ?? []) as ImageValue[];
         let next: ImageValue[];
 
@@ -295,7 +311,16 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
         setIsUploading(false);
       }
     },
-    [croppingFile, watch, field.name, setValue, clearErrors, trigger, setError],
+    [
+      croppingFile,
+      watch,
+      field.name,
+      setValue,
+      clearErrors,
+      trigger,
+      setError,
+      invalidateMediaLibrary,
+    ],
   );
 
   const onRemoveFile = useCallback(
@@ -434,7 +459,8 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
                 const f = e.target.files?.[0] || null;
                 e.target.value = '';
                 if (previews[0]) onReplaceFile(0, f);
-                else onAddFiles(e);
+                // Pass the already-read file: the cleared input reads empty.
+                else if (f) onAddFiles({ target: { files: [f] } });
               }}
             />
           </div>
@@ -443,7 +469,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {previews.map((src, idx) => (
               <div
-                key={idx}
+                key={imageValueKey(files[idx] ?? src)}
                 className="group relative h-28 rounded-xl border bg-muted/20 overflow-hidden"
               >
                 <img src={src} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />

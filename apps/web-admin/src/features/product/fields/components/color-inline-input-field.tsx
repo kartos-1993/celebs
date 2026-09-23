@@ -4,7 +4,10 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { MediaLibraryButton } from '../../components/media-library-button';
+import { useInvalidateMediaLibrary } from '../../hooks/use-media-assets';
+import { isGalleryFilled } from '../../utils/add-product-helpers';
 import type { UiProps } from '../ui-registry';
+import { resolveColorAxisKey } from '../variant-utils';
 
 import {
   AddFromFileTile,
@@ -32,6 +35,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
   const images: ImageValue[] = watch(`${namePrefix}.images`) || [];
   const [isUploadingSwatch, setIsUploadingSwatch] = React.useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = React.useState(false);
+  const invalidateMediaLibrary = useInvalidateMediaLibrary();
   const safeLimits = React.useMemo(() => limits || {}, [limits]);
   const maxImages = typeof safeLimits.maxImages === 'number' ? safeLimits.maxImages : undefined;
   const remainingSlots =
@@ -66,7 +70,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
     register(`${namePrefix}.images`, {
       validate: (v: unknown) => {
         const arr: ImageValue[] = Array.isArray(v) ? (v as ImageValue[]) : [];
-        if (arr.length === 0) return `Upload at least one product image for ${color}`;
+        if (!isGalleryFilled(arr)) return `Upload at least one product image for ${color}`;
         if (typeof maxImages === 'number' && arr.length > maxImages)
           return `Max ${maxImages} images`;
         const ms = safeLimits.maxSize;
@@ -94,6 +98,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
     setIsUploadingSwatch(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
+      invalidateMediaLibrary();
       setValue(`${namePrefix}.swatch`, uploadedUrl, { shouldDirty: true, shouldValidate: true });
       clearErrors(`${namePrefix}.swatch`);
       trigger(`${namePrefix}.swatch`);
@@ -125,6 +130,13 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
       });
       return;
     }
+    // Say plainly when the cap eats files instead of dropping them silently.
+    if (incoming.length > target.length) {
+      setError(`${namePrefix}.images`, {
+        type: 'validate',
+        message: `Only ${target.length} of ${incoming.length} images added — Max ${maxImages}`,
+      });
+    }
 
     const errors: string[] = [];
     const valids: File[] = [];
@@ -142,6 +154,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
     setIsUploadingGallery(true);
     try {
       const uploadedUrls = await uploadImageFiles(valids);
+      invalidateMediaLibrary();
       appendImages(uploadedUrls);
     } catch (error) {
       setError(`${namePrefix}.images`, { type: 'upload', message: uploadErrorMessage(error) });
@@ -160,6 +173,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
     setIsUploadingGallery(true);
     try {
       const [uploadedUrl] = await uploadImageFiles([file]);
+      invalidateMediaLibrary();
       const current = (watch(`${namePrefix}.images`) ?? []) as ImageValue[];
       const next = [...current];
       next[idx] = uploadedUrl;
@@ -236,7 +250,7 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           {imagePreviews.map((src, idx) => (
             <VariantThumb
-              key={idx}
+              key={imageValueKey(images[idx] ?? src)}
               src={src}
               alt={`${color} ${idx + 1}`}
               accept={acceptStr}
@@ -267,6 +281,12 @@ function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowPro
                 const capped =
                   typeof remainingSlots === 'number' ? urls.slice(0, remainingSlots) : urls;
                 if (capped.length) appendImages(capped);
+                if (urls.length > capped.length) {
+                  setError(`${namePrefix}.images`, {
+                    type: 'validate',
+                    message: `Only ${capped.length} of ${urls.length} images added — Max ${maxImages}`,
+                  });
+                }
               }}
             />
           ) : null}
@@ -297,9 +317,12 @@ export function ColorInlineInputField({ field }: UiProps) {
   const dsVariants = Array.isArray(field.dataSource?.variants) ? field.dataSource.variants : [];
   const colorField: string =
     (field.dataSource?.colorField as string | undefined) ??
-    (dsVariants as Array<{ label?: string; key?: string }>).find((v) =>
-      /color/i.test(v?.label ?? v?.key ?? ''),
-    )?.key ??
+    resolveColorAxisKey(
+      (dsVariants as Array<{ label?: string; key?: string }>).map((v) => ({
+        key: v?.key ?? '',
+        label: v?.label ?? '',
+      })),
+    ) ??
     'color';
   const labelsMap: Record<string, Record<string, string>> = (field.dataSource?.labels as Record<
     string,

@@ -16,13 +16,16 @@ export {
 import type { FieldErrors } from 'react-hook-form';
 
 import type { FieldSpec } from '../fields/ui-registry';
+import { resolveColorAxisKey } from '../fields/variant-utils';
 import type { ProductSidebarSection } from '../types';
 
 import {
   getLabelMap,
   getNestedValue,
   isFieldFilled,
+  isGalleryFilled,
   mapSchemaGroup,
+  normalizeGroup,
   normalizeText,
   PageSectionKey,
   resolvePageSectionKey,
@@ -187,19 +190,16 @@ export const collectColorImageErrors = ({
   values: Record<string, unknown>;
   variantMeta: Array<{ key: string; label: string }>;
 }): string[] => {
-  const colorAxis = variantMeta.find(
-    (v) => v.key.toLowerCase().includes('color') || v.label.toLowerCase().includes('color'),
-  );
-  if (!colorAxis) return [];
-  const selected = toStringArray(getNestedValue(values, colorAxis.key));
+  const colorAxisKey = resolveColorAxisKey(variantMeta);
+  if (!colorAxisKey) return [];
+  const selected = toStringArray(getNestedValue(values, colorAxisKey));
   if (selected.length === 0) return [];
   const colorMeta = getNestedValue(values, 'variants.colorMeta') as
     | Record<string, { images?: unknown }>
     | undefined;
   const errors: string[] = [];
   for (const colorValue of selected) {
-    const images = (colorMeta?.[colorValue] as { images?: unknown } | undefined)?.images;
-    if (!Array.isArray(images) || images.length === 0) {
+    if (!isGalleryFilled(colorMeta?.[colorValue]?.images)) {
       errors.push(`Add at least one product photo for color ${colorValue}.`);
     }
   }
@@ -245,9 +245,19 @@ const flattenObjectShallow = (
   return out;
 };
 
-export const collectCoverError = ({ values }: { values: Record<string, unknown> }): string[] => {
+export const collectCoverError = ({
+  values,
+  schemaFields = [],
+}: {
+  values: Record<string, unknown>;
+  schemaFields?: FieldSpec[];
+}): string[] => {
   // Cover = explicit main images OR any per-color gallery (auto-derived).
-  const main = getNestedValue(values, 'mainImage');
+  // The main-image field name comes from the schema (MainImage uiType),
+  // never a hardcoded string, so renames keep validating.
+  const coverFieldName =
+    schemaFields.find((field) => normalizeGroup(field.uiType) === 'mainimage')?.name ?? 'mainImage';
+  const main = getNestedValue(values, coverFieldName);
   if (Array.isArray(main) && main.length > 0) return [];
   const colorMeta = getNestedValue(values, 'variants.colorMeta') as
     | Record<string, { images?: unknown }>
@@ -311,7 +321,7 @@ export const buildSidebarSections = ({
     ...groupedErrors.images,
     ...getRequiredFieldErrors(groupedFields.base, values),
     ...collectColorImageErrors({ values, variantMeta }),
-    ...collectCoverError({ values }),
+    ...collectCoverError({ values, schemaFields }),
   ]);
 
   const specificationErrors = uniqueMessages([

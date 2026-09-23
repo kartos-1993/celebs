@@ -141,44 +141,48 @@ export function hydrateProductForm(
   }
 
   // 5. Hydrate Color Variants, Swatches & Gallery Images
+  // Canonical rule: gallery keys MUST equal the axis values set above
+  // (display labels). Anything else orphans on read (payload) or write.
   const uploadedAssets = dynamicRecord?.uploadedAssets as
     | {
         colorMeta?: Record<string, { swatch?: string; images?: string[]; hot?: boolean }>;
       }
     | undefined;
+  const storedMeta =
+    uploadedAssets?.colorMeta && typeof uploadedAssets.colorMeta === 'object'
+      ? uploadedAssets.colorMeta
+      : {};
+  const variantsByName = new Map(
+    (Array.isArray(product.colorVariants) ? product.colorVariants : [])
+      .filter(Boolean)
+      .map((cv) => {
+        const record = cv as { name?: string; colorName?: string };
+        return [record.name || record.colorName || 'Default', cv] as const;
+      }),
+  );
 
-  if (uploadedAssets?.colorMeta && typeof uploadedAssets.colorMeta === 'object') {
-    for (const [cName, meta] of Object.entries(uploadedAssets.colorMeta)) {
-      const prefix = `variants.colorMeta.${cName}`;
-      if (meta.swatch) values[`${prefix}.swatch`] = meta.swatch;
-      if (Array.isArray(meta.images) && meta.images.length > 0)
-        values[`${prefix}.images`] = meta.images;
-      if (meta.hot !== undefined) values[`${prefix}.hot`] = meta.hot;
+  for (const cName of colorNames) {
+    const stored = storedMeta[cName];
+    const fallback = variantsByName.get(cName) as
+      | { swatch?: string; images?: string[] }
+      | undefined;
+    const swatch = stored?.swatch ?? fallback?.swatch;
+    let images =
+      stored?.images && stored.images.length > 0
+        ? [...stored.images]
+        : Array.isArray(fallback?.images)
+          ? [...fallback.images]
+          : [];
+    // The storefront presenter prepends the swatch into images: strip it
+    // back out so re-saving does not duplicate it into the gallery.
+    if (swatch && images[0] === swatch) {
+      images = images.slice(1);
     }
-  }
-
-  if (Array.isArray(product.colorVariants)) {
-    for (const cv of product.colorVariants) {
-      if (!cv) continue;
-      const cvRecord = cv as {
-        name?: string;
-        colorName?: string;
-        swatch?: string;
-        images?: string[];
-      };
-      const cName = cvRecord.name || cvRecord.colorName || 'Default';
-      const prefix = `variants.colorMeta.${cName}`;
-      if (cvRecord.swatch && !values[`${prefix}.swatch`]) {
-        values[`${prefix}.swatch`] = cvRecord.swatch;
-      }
-      if (
-        Array.isArray(cvRecord.images) &&
-        cvRecord.images.length > 0 &&
-        !values[`${prefix}.images`]
-      ) {
-        values[`${prefix}.images`] = cvRecord.images;
-      }
-    }
+    const prefix = `variants.colorMeta.${cName}`;
+    if (swatch) values[`${prefix}.swatch`] = swatch;
+    if (images.length > 0) values[`${prefix}.images`] = images;
+    const hot = stored && (stored as { hot?: boolean }).hot;
+    if (hot !== undefined) values[`${prefix}.hot`] = hot;
   }
 
   // 6. Hydrate SKU Matrix Table fallback for individual paths

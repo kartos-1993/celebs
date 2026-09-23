@@ -11,11 +11,51 @@ import {
   isHexColor,
   normalizeText,
   resolveColorCode,
+  sanitizeVariantKey,
   toNonNegativeInteger,
   toPositiveNumber,
   toStringArray,
 } from './add-product-helpers';
 import { generateCollisionProofBaseSku } from './generate-sku-helpers';
+
+/**
+ * Drops deselected-axis leftovers (e.g. a removed color's
+ * `sku.variants.*` leaves) so stale paths never leak into the payload,
+ * the draft, or autosave. Keeps every non-variant key untouched.
+ */
+export function pruneOrphanVariantPaths(
+  flat: Record<string, unknown>,
+  axes: Array<{ key: string; values: string[] }>,
+): Record<string, unknown> {
+  const live = axes.filter((axis) => axis.key && axis.values.length > 0);
+  if (live.length === 0) return flat;
+  const allowed = new Set<string>();
+  const prefixFor = (...parts: string[]) =>
+    ['sku', 'variants', ...parts.map(sanitizeVariantKey)].join('.');
+  if (live.length === 1) {
+    for (const value of live[0].values) {
+      allowed.add(prefixFor(live[0].key, value));
+    }
+  } else {
+    const [first, second] = live;
+    for (const firstValue of first.values) {
+      for (const secondValue of second.values) {
+        allowed.add(prefixFor(first.key, firstValue, second.key, secondValue));
+      }
+    }
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(flat)) {
+    if (!key.startsWith('sku.variants.')) {
+      out[key] = value;
+      continue;
+    }
+    if ([...allowed].some((prefix) => key === prefix || key.startsWith(`${prefix}.`))) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
 
 interface MeasurementItem {
   name?: string;
@@ -37,6 +77,12 @@ interface BuildProductPayloadOptions {
   values: Record<string, unknown>;
   /** Injectable for tests; defaults to the real uploader. */
   upload?: UploadFn;
+  /**
+   * Update mode honors explicit emptiness: cleared galleries/covers stay
+   * cleared instead of resurrecting via fallbacks (create mode keeps the
+   * SHEIN-style auto-derive so new products always have a cover).
+   */
+  isUpdate?: boolean;
 }
 
 export async function buildProductPayload({
@@ -44,6 +90,7 @@ export async function buildProductPayload({
   status,
   values,
   upload = uploadFiles,
+  isUpdate = false,
 }: BuildProductPayloadOptions): Promise<CreateProductRequest> {
   const flatValues = flattenObject(values);
   const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
@@ -53,6 +100,13 @@ export async function buildProductPayload({
 
   const selectedColors = colorFieldName ? toStringArray(values[colorFieldName]) : [];
   const selectedSizes = sizeFieldName ? toStringArray(values[sizeFieldName]) : [];
+
+  // Forget deselected axes before reading a single cell: orphan leaves
+  // from removed colors/sizes must not resurrect in payload or draft.
+  const skuFlatValues = pruneOrphanVariantPaths(flatValues, [
+    ...(colorFieldName ? [{ key: colorFieldName, values: selectedColors }] : []),
+    ...(sizeFieldName ? [{ key: sizeFieldName, values: selectedSizes }] : []),
+  ]);
 
   // Upload main images and all per-color assets concurrently
   // (previously a serial for-of loop — one round trip per swatch/gallery).
@@ -84,10 +138,11 @@ export async function buildProductPayload({
 
   // Cover auto-derive: explicit main images win; otherwise the first
   // selected color gallery provides the cover (SHEIN card behavior).
+  // Updates honor explicit emptiness: a cleared cover stays cleared.
   const firstSelectedColor = selectedColors[0];
   const firstGalleryImages =
     firstSelectedColor !== undefined ? (uploadedColorAssets[firstSelectedColor]?.images ?? []) : [];
-  const effectiveMainImages = mainImages.length > 0 ? mainImages : firstGalleryImages;
+  const effectiveMainImages = mainImages.length > 0 || isUpdate ? mainImages : firstGalleryImages;
 
   const price = getFirstPrice(values, '.price');
   if (price === undefined) {
@@ -132,7 +187,7 @@ export async function buildProductPayload({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
           toNonNegativeInteger(
-            flatValues[
+            skuFlatValues[
               pathFor(colorFieldName as string, colorValue, sizeFieldName, sizeValue, 'stock')
             ],
           ) ?? defaultStock,
@@ -142,7 +197,7 @@ export async function buildProductPayload({
         {
           size: 'default',
           quantity:
-            toNonNegativeInteger(flatValues[pathFor(colorFieldName, colorValue, 'stock')]) ??
+            toNonNegativeInteger(skuFlatValues[pathFor(colorFieldName, colorValue, 'stock')]) ??
             defaultStock,
         },
       ];
@@ -150,7 +205,7 @@ export async function buildProductPayload({
       stocks = selectedSizes.map((sizeValue) => ({
         size: sizeLabelMap.get(sizeValue) || sizeValue,
         quantity:
-          toNonNegativeInteger(flatValues[pathFor(sizeFieldName, sizeValue, 'stock')]) ??
+          toNonNegativeInteger(skuFlatValues[pathFor(sizeFieldName, sizeValue, 'stock')]) ??
           defaultStock,
       }));
     } else {
@@ -171,7 +226,12 @@ export async function buildProductPayload({
       name: label,
       colorCode: resolveColorCode(rawColor),
       swatch: assets?.swatch || undefined,
-      images: assets?.images?.length ? assets.images : mainImages,
+      // Updates preserve emptied galleries; creates fall back to mains.
+      images: assets?.images?.length
+        ? assets.images
+        : isUpdate
+          ? (assets?.images ?? [])
+          : mainImages,
       stocks,
     };
   });
@@ -196,7 +256,7 @@ export async function buildProductPayload({
   const buildSkuCode = (fallbackParts: string[]): string =>
     generateCollisionProofBaseSku(brandForSku || undefined, fallbackParts.join(' '));
   const readCell = (parts: string[], field: string): unknown =>
-    flatValues[pathFor(...parts, field)];
+    skuFlatValues[pathFor(...parts, field)];
 
   const builtSkus: NonNullable<CreateProductRequest['skus']> = [];
   const pushSku = (selectedOptions: Record<string, string>, parts: string[], image?: string) => {
