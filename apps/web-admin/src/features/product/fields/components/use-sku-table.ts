@@ -103,7 +103,8 @@ export function useSkuTable(dataSource?: VariantDataSource) {
 
   const applyToAll = React.useCallback(() => {
     if (variants.length === 0) return;
-    const fill = (name: string, value: unknown) => setValue(name, value, { shouldDirty: true });
+    const fill = (name: string, value: unknown) =>
+      setValue(name, value, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
 
     if (variants.length === 1) {
       for (const opt of variants[0].values) {

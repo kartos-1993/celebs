@@ -23,6 +23,9 @@ export function VariantFieldInput({
   const { field, fieldState } = useController({
     name,
     control,
+    // Mount controlled from the first render: without a default the input
+    // flips uncontrolled→controlled on the first typed or bulk-filled value.
+    defaultValue: '',
     rules:
       type === 'number'
         ? {

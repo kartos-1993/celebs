@@ -22,6 +22,20 @@ export const isDraftExpired = (savedAt?: string, ttlMs: number = DRAFT_TTL_MS): 
 export const normalizeText = (value: unknown): string =>
   value !== null && value !== undefined ? String(value).trim() : '';
 
+/**
+ * Single key encoding for variant path segments (dots/brackets break RHF
+ * dot-path lookups). Writers (pathFor) and readers (validation, payload)
+ * must all go through this — never hand-roll the replacement inline.
+ */
+export function sanitizeVariantKey(segment: string): string {
+  return String(segment)
+    .replace(/\./g, '_')
+    .replace(/\[/g, '(')
+    .replace(/\]/g, ')')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export const toStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeText(entry)).filter(Boolean);

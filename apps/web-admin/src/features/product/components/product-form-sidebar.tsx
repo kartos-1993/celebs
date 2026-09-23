@@ -102,11 +102,17 @@ const ProductFormSidebar = ({
                 >
                   {section.label}
                 </span>
-                {!section.status && section.errors[0] ? (
-                  <span className="block text-xs text-destructive leading-tight truncate">
-                    {section.errors[0]}
-                  </span>
-                ) : null}
+                {!section.status
+                  ? section.errors.slice(0, 3).map((message) => (
+                      <span
+                        key={message}
+                        title={message}
+                        className="block text-xs text-destructive leading-tight"
+                      >
+                        {message}
+                      </span>
+                    ))
+                  : null}
               </span>
             </button>
           ))}

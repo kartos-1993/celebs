@@ -282,6 +282,21 @@ const AddProductFormBody = ({
     }
     if (firstInvalidSection) {
       logger.warn({ section: firstInvalidSection }, 'Submit blocked by section validation');
+
+      // Three variant axes can never satisfy the two-group matrix: point at
+      // the extra axis selectors directly instead of scrolling blind.
+      if (firstInvalidSection.key === 'pricing' && variantMeta.length > 2) {
+        const extras = variantMeta.slice(2);
+        for (const extra of extras) {
+          form.setError(extra.key as Path<ProductFormValues>, {
+            type: 'manual',
+            message: `Clear ${extra.label} values — the pricing matrix supports two variant groups`,
+          });
+        }
+        focusMissingField(extras[0].key, 'product-section-variant');
+        return;
+      }
+
       const focused = focusFirstError(form.formState.errors, firstInvalidSection.anchorId);
 
       // If RHF errors is empty, pinpoint missing dynamic/schema field in the section

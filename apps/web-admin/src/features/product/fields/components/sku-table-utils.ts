@@ -1,12 +1,9 @@
+import { sanitizeVariantKey } from '../../utils/add-product-helpers';
+
 import type { ScopeOption, VariantSelection } from './sku-table-types';
 
 export function sanitize(s: string): string {
-  return String(s)
-    .replace(/\./g, '_')
-    .replace(/\[/g, '(')
-    .replace(/\]/g, ')')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return sanitizeVariantKey(s);
 }
 
 export function pathFor(...parts: string[]): string {

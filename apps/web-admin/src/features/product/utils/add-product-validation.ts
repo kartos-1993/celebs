@@ -26,6 +26,7 @@ import {
   normalizeText,
   PageSectionKey,
   resolvePageSectionKey,
+  sanitizeVariantKey,
   toNonNegativeInteger,
   toPositiveNumber,
   toStringArray,
@@ -131,7 +132,12 @@ export const collectPricingErrors = ({
   };
 
   if (variantMeta.length > 2) {
-    pushError('Only two variant groups are supported in the pricing matrix.');
+    const labels = variantMeta.map((variant) => variant.label).join(', ');
+    const [first, second, ...rest] = variantMeta.map((variant) => variant.label);
+    pushError(
+      `Only two variant groups are supported in the pricing matrix (${first} × ${second}). ` +
+        `Clear values for ${rest.join(', ')} to continue. [${labels}]`,
+    );
   }
 
   const activeVariants = variantMeta.slice(0, 2).map((variant) => ({
@@ -150,7 +156,7 @@ export const collectPricingErrors = ({
       const label = activeVariants[0].labels.get(variantValue) || variantValue;
       validateRow(
         `${activeVariants[0].label}: ${label}`,
-        `sku.variants.${activeVariants[0].key}.${variantValue}`,
+        `sku.variants.${activeVariants[0].key}.${sanitizeVariantKey(variantValue)}`,
       );
     });
   } else {
@@ -161,7 +167,7 @@ export const collectPricingErrors = ({
 
         validateRow(
           `${activeVariants[0].label}: ${firstLabel}, ${activeVariants[1].label}: ${secondLabel}`,
-          `sku.variants.${activeVariants[0].key}.${firstValue}.${activeVariants[1].key}.${secondValue}`,
+          `sku.variants.${activeVariants[0].key}.${sanitizeVariantKey(firstValue)}.${activeVariants[1].key}.${sanitizeVariantKey(secondValue)}`,
         );
       });
     });
