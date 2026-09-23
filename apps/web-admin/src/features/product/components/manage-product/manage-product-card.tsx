@@ -9,7 +9,9 @@ import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import type { ProductListItem } from '../../types';
 import {
   formatShortDate,
+  getCategoryImage,
   getCategoryName,
+  getProductCover,
   getProductStock,
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
@@ -48,6 +50,7 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
   const price = Number(product.price ?? 0);
   const status = product.status ?? 'draft';
   const stock = getProductStock(product);
+  const coverImage = getProductCover(product);
   const updated = formatShortDate(
     (product as { updatedAt?: unknown }).updatedAt ??
       (product as { createdAt?: unknown }).createdAt,
@@ -63,7 +66,7 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
           className="mt-1 shrink-0"
         />
         <img
-          src={product.mainImages?.[0] || '/placeholder.svg'}
+          src={coverImage}
           alt={product.name ?? 'Product'}
           className="h-14 w-14 shrink-0 rounded-lg border bg-muted object-cover"
           onError={(e) => {
@@ -80,6 +83,17 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
             <div className="truncate text-xs text-muted-foreground">{product.brand}</div>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-1">
+            {getCategoryImage(product) ? (
+              <img
+                src={getCategoryImage(product)}
+                alt=""
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 rounded border bg-muted object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : null}
             <Badge variant="secondary">{getCategoryName(product)}</Badge>
             <Badge variant={statusBadgeVariant(status)}>{statusLabels[status] ?? status}</Badge>
           </div>
