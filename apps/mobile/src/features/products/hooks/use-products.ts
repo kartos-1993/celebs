@@ -11,6 +11,7 @@ export type {
   ProductFilterParams,
   ProductMeasurement,
   ProductSize,
+  ProductSku,
   ProductStock,
   ProductVariantOption,
 } from '../types';

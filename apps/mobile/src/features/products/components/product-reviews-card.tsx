@@ -40,35 +40,50 @@ export function ProductReviewsCard({
   const { data: reviews = [] } = useProductReviews(productId, 1, 3);
 
   const rawAvg = Number(summary?.averageRating ?? 0);
-  const avgRating = !isNaN(rawAvg) && rawAvg > 0 ? rawAvg.toFixed(1) : '4.8';
   const safeReviews = Array.isArray(reviews) ? reviews : [];
   const totalCount =
     summary?.totalReviews != null ? Number(summary.totalReviews) : safeReviews.length;
+  // No fabricated social proof: without real ratings show no score, no chips.
+  const hasRatingData = !isNaN(rawAvg) && rawAvg > 0 && totalCount > 0;
+  const avgRating = hasRatingData ? rawAvg.toFixed(1) : null;
   const previewReviews = safeReviews.slice(0, 2);
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <View style={styles.scoreRow}>
-          <ThemedText style={styles.scoreText}>{avgRating}</ThemedText>
-          <Star size={15} color={Palette.gold ?? '#F59E0B'} fill={Palette.gold ?? '#F59E0B'} />
-          <ThemedText style={styles.countText}>({totalCount} reviews)</ThemedText>
-        </View>
-        <TouchableOpacity style={styles.viewMoreBtn} onPress={handleOpenSheet} activeOpacity={0.7}>
-          <ThemedText style={styles.viewMoreText}>View more</ThemedText>
+      {hasRatingData ? (
+        <>
+          <View style={styles.headerRow}>
+            <View style={styles.scoreRow}>
+              <ThemedText style={styles.scoreText}>{avgRating}</ThemedText>
+              <Star size={15} color={Palette.gold ?? '#F59E0B'} fill={Palette.gold ?? '#F59E0B'} />
+              <ThemedText style={styles.countText}>({totalCount} reviews)</ThemedText>
+            </View>
+            <TouchableOpacity
+              style={styles.viewMoreBtn}
+              onPress={handleOpenSheet}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.viewMoreText}>View more</ThemedText>
+              <ChevronRight size={14} color={Palette.gray600} />
+            </TouchableOpacity>
+          </View>
+
+          {summary?.fitDistribution && <FitSpectrumBar fitDistribution={summary.fitDistribution} />}
+
+          <View style={styles.chipsRow}>
+            {SENTIMENT_CHIPS.map((chip, idx) => (
+              <View key={idx} style={styles.chip}>
+                <ThemedText style={styles.chipText}>{chip}</ThemedText>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : (
+        <TouchableOpacity style={styles.headerRow} onPress={handleOpenSheet} activeOpacity={0.7}>
+          <ThemedText style={styles.countText}>No ratings yet — tap to review</ThemedText>
           <ChevronRight size={14} color={Palette.gray600} />
         </TouchableOpacity>
-      </View>
-
-      {summary?.fitDistribution && <FitSpectrumBar fitDistribution={summary.fitDistribution} />}
-
-      <View style={styles.chipsRow}>
-        {SENTIMENT_CHIPS.map((chip, idx) => (
-          <View key={idx} style={styles.chip}>
-            <ThemedText style={styles.chipText}>{chip}</ThemedText>
-          </View>
-        ))}
-      </View>
+      )}
 
       {previewReviews.length > 0 ? (
         <View style={styles.previewReviewsContainer}>

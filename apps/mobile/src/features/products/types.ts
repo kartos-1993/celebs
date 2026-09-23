@@ -28,6 +28,14 @@ export interface ProductVariantOption {
   values: string[];
 }
 
+export interface ProductSku {
+  skuCode?: string;
+  selectedOptions?: Record<string, string>;
+  price: number;
+  discountedPrice?: number;
+  stock?: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -39,6 +47,7 @@ export interface Product {
   sizes?: ProductSize[];
   colorVariants?: ProductColorVariant[];
   variantOptions?: ProductVariantOption[];
+  skus?: ProductSku[];
   status: string;
   featured?: boolean;
 }

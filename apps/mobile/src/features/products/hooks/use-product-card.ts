@@ -14,6 +14,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
 import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
+import { resolveMinPrice } from '../utils/pricing';
 import { isProductFullyOutOfStock } from '../utils/stock';
 
 import { Product, resolveImageUrl } from './use-products';
@@ -167,11 +168,11 @@ export function useProductCard({
   const primaryImage = cardImages[0] || '';
   const resolvedPrimaryUrl = resolveImageUrl(primaryImage);
 
-  const rawPrice = Number(product.price ?? 0);
-  const rawDiscount =
-    product.discountedPrice != null && !isNaN(Number(product.discountedPrice))
-      ? Number(product.discountedPrice)
-      : null;
+  // SHEIN-style card figure: minimum across SKUs (the only honest single
+  // number without size context), product base when no SKUs exist.
+  const minResolved = resolveMinPrice(product);
+  const rawPrice = minResolved.price;
+  const rawDiscount = minResolved.discountedPrice ?? null;
   const currentPrice =
     rawDiscount != null && rawDiscount > 0 ? rawDiscount : isNaN(rawPrice) ? 0 : rawPrice;
   const hasDiscount = Boolean(rawDiscount != null && rawDiscount < rawPrice);

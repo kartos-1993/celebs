@@ -1,9 +1,5 @@
-import type {
-  Product,
-  ProductColorVariant,
-  ProductSize,
-  ProductVariantOption,
-} from '../hooks/use-products';
+import type { Product, ProductColorVariant, ProductSize } from '../hooks/use-products';
+import type { ProductVariantOption } from '../types';
 
 export interface ProductResolvableSizes {
   sizes?: ProductSize[];

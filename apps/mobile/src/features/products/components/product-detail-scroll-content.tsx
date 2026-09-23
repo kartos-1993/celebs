@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 
 import { styles } from '../styles/product.styles';
 import type { Product } from '../types';
+import { resolveVariantPrice } from '../utils/pricing';
 
 import { ProductDescriptionCard } from './product-description-card';
 import { ProductDetailGallerySection } from './product-detail-gallery-section';
@@ -38,6 +39,14 @@ export function ProductDetailScrollContent({
 }: ProductDetailScrollContentProps) {
   const [isReviewsSheetOpen, setIsReviewsSheetOpen] = useState(false);
 
+  // Exact per-combination figure: follows every swatch/size tap, falls
+  // back to the product base price when no SKU matches the selection.
+  const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
+  const resolvedPrice = useMemo(
+    () => resolveVariantPrice(product, selectedColorName, selectedSize || undefined),
+    [product, selectedColorName, selectedSize],
+  );
+
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
@@ -55,8 +64,8 @@ export function ProductDetailScrollContent({
       <ProductPriceCard
         productId={product.id}
         name={product.name}
-        price={product.price}
-        discountedPrice={product.discountedPrice}
+        price={resolvedPrice.price}
+        discountedPrice={resolvedPrice.discountedPrice}
         onOpenReviews={() => setIsReviewsSheetOpen(true)}
       />
 
