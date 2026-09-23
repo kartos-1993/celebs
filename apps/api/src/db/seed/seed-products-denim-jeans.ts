@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import prisma from '../../config/db.prisma';
+import { purgeProducts } from '../../modules/product/product-cache';
 
 const COLOR_HEX_MAP: Record<string, string> = {
   black: '#1A1A1A',
@@ -163,6 +164,14 @@ export async function seedProductsDenimJeans(): Promise<void> {
 
     count++;
   }
+
+  // Seeds bypass service-layer guarantees by design: refresh cached truth
+  // once at the end so reseeds never leave ghost grid/detail entries.
+  const seeded = await prisma.product.findMany({
+    where: { categoryId: { in: [categoryId, parentCategoryId].filter(Boolean) as string[] } },
+    select: { id: true },
+  });
+  purgeProducts(seeded.map((p) => p.id));
 
   console.log(`✅ Seeded Denim Jeans in Postgres: ${count} processed.`);
 }

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import prisma from '../../config/db.prisma';
+import { purgeProducts } from '../../modules/product/product-cache';
 
 export async function seedProductsDenimJackets(): Promise<void> {
   console.log('\n🧥 Seeding Denim Jackets Products via PostgreSQL Prisma...');
@@ -115,6 +116,14 @@ export async function seedProductsDenimJackets(): Promise<void> {
 
     count++;
   }
+
+  // Seeds bypass service-layer guarantees by design: refresh cached truth
+  // once at the end so reseeds never leave ghost grid/detail entries.
+  const seeded = await prisma.product.findMany({
+    where: { categoryId },
+    select: { id: true },
+  });
+  purgeProducts(seeded.map((p) => p.id));
 
   console.log(`✅ Seeded Denim Jackets in Postgres: ${count} processed.`);
 }

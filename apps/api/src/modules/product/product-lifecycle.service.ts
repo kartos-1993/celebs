@@ -14,7 +14,7 @@ import {
 } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
-import { purgeProduct } from './product-cache';
+import { isVisibilityFlip, purgeProduct, purgeProductLists } from './product-cache';
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
@@ -66,6 +66,7 @@ export class ProductLifecycleService {
 
     const updated = await this.products.update(id, { status: PRODUCT_STATUS.PENDING_REVIEW });
 
+    // Pending review is invisible: detail truth moved, lists ride TTL.
     purgeProduct(id);
 
     return formatProductResponse(updated);
@@ -121,6 +122,9 @@ export class ProductLifecycleService {
     }
 
     purgeProduct(id);
+    if (args.action === 'approve') {
+      purgeProductLists();
+    }
 
     return formatProductResponse(updated, { isElevated: true });
   }
@@ -279,6 +283,9 @@ export class ProductLifecycleService {
     });
 
     purgeProduct(id);
+    if (isVisibilityFlip(product.status, PRODUCT_STATUS.ARCHIVED)) {
+      purgeProductLists();
+    }
 
     if (product.status !== PRODUCT_STATUS.ARCHIVED) {
       await mediaRepository
@@ -326,7 +333,9 @@ export class ProductLifecycleService {
           : PRODUCT_STATUS.PUBLISHED,
     });
 
+    // Toggle always flips visibility by construction.
     purgeProduct(id);
+    purgeProductLists();
 
     return formatProductResponse(updated);
   }

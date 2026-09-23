@@ -59,3 +59,38 @@ export async function invalidateCacheKey(key: string): Promise<void> {
     logger.warn({ key, err }, '[RedisCache] Failed to delete cache key');
   }
 }
+
+/**
+ * Best-effort pattern sweep (e.g. hash-keyed list entries). Keyspace is
+ * small by design; never use for hot paths — only visibility flips and
+ * end-of-run seed hygiene.
+ */
+export async function scanDelByPattern(
+  pattern: string,
+  count = 100,
+  getClient: () => Redis | null = getRedisClient,
+): Promise<number> {
+  const client = getClient();
+  if (!client) return 0;
+  try {
+    let cursor = '0';
+    let deleted = 0;
+    do {
+      const [next, keys]: [string, string[]] = await client.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        count,
+      );
+      cursor = next;
+      if (keys.length > 0) {
+        deleted += await client.del(...keys);
+      }
+    } while (cursor !== '0');
+    return deleted;
+  } catch (err) {
+    logger.warn({ pattern, err }, '[RedisCache] Failed pattern sweep');
+    return 0;
+  }
+}

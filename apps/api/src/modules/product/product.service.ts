@@ -24,7 +24,12 @@ import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-
 import { getColorImageBlockers, sumVariantStock } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
-import { purgeProduct, purgeProductHome } from './product-cache';
+import {
+  isVisibilityFlip,
+  purgeProduct,
+  purgeProductHome,
+  purgeProductLists,
+} from './product-cache';
 import { ProductLifecycleService } from './product-lifecycle.service';
 import { buildProductCreateData, buildProductUpdateData } from './product-payloads';
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
@@ -217,8 +222,12 @@ export class ProductService {
 
     await this.linkMediaUsageOnCreate(createdProduct);
 
-    // New arrival on rails; detail key cannot exist yet.
+    // New arrival on rails; detail key cannot exist yet. Lists only need
+    // a sweep when the product is born visible.
     purgeProductHome();
+    if (input.status === PRODUCT_STATUS.PUBLISHED) {
+      purgeProductLists();
+    }
 
     return formatProductResponse(createdProduct);
   }
@@ -282,6 +291,9 @@ export class ProductService {
     await this.reconcileMediaUsageDiff(product, updateData, id);
 
     purgeProduct(id);
+    if (isVisibilityFlip(product.status, updated.status)) {
+      purgeProductLists();
+    }
 
     return formatProductResponse(updated);
   }

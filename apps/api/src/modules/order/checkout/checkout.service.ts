@@ -20,7 +20,7 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
-import { purgeProductDetail } from '@/modules/product/product-cache';
+import { purgeProductDetail, purgeProductHome } from '@/modules/product/product-cache';
 
 export class CheckoutService {
   constructor(
@@ -207,10 +207,11 @@ export class CheckoutService {
     }
 
     // Stock just moved: refresh cached PDP truth for the ordered products.
-    // Fire-and-forget; lists and rails ride their short TTLs.
+    // Home rails follow on the same beat: one DEL, ~1:100 write:read.
     for (const productId of new Set(itemDetails.map((item) => item.productId))) {
       purgeProductDetail(productId);
     }
+    purgeProductHome();
 
     // Create online payment intent when not COD
     let paymentResult = null;
@@ -268,6 +269,7 @@ export class CheckoutService {
           for (const productId of new Set(itemDetails.map((item) => item.productId))) {
             purgeProductDetail(productId);
           }
+          purgeProductHome();
         } catch (cancelErr) {
           logger.error(
             { orderId: order.id, cancelErr },

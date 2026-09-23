@@ -1,6 +1,8 @@
+import type { Redis } from 'ioredis';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  isVisibilityFlip,
   PRODUCT_DETAIL_TTL_SECONDS,
   PRODUCT_LIST_TTL_SECONDS,
   productDetailKey,
@@ -8,19 +10,26 @@ import {
   purgeProduct,
   purgeProductDetail,
   purgeProductHome,
+  purgeProducts,
   signListQuery,
   STOREFRONT_HOME_KEY,
 } from '../product-cache';
+
+import { scanDelByPattern } from '@/common/services/redis-cache.service';
 
 const del = vi.fn();
 const get = vi.fn();
 const set = vi.fn();
 
-vi.mock('@/common/services/redis-cache.service', () => ({
-  getCachedJson: (...args: unknown[]) => get(...args),
-  setCachedJson: (...args: unknown[]) => set(...args),
-  invalidateCacheKey: (...args: unknown[]) => del(...args),
-}));
+vi.mock('@/common/services/redis-cache.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/common/services/redis-cache.service')>();
+  return {
+    ...actual,
+    getCachedJson: (...args: unknown[]) => get(...args),
+    setCachedJson: (...args: unknown[]) => set(...args),
+    invalidateCacheKey: (...args: unknown[]) => del(...args),
+  };
+});
 
 describe('Product cache keys and purge wiring', () => {
   beforeEach(() => {
@@ -71,6 +80,36 @@ describe('Product cache keys and purge wiring', () => {
     await vi.waitFor(() => expect(del).toHaveBeenCalledTimes(3));
     expect(del).toHaveBeenCalledWith('product:detail:abc:pub');
     expect(del).toHaveBeenCalledWith('product:detail:abc:elev');
+    expect(del).toHaveBeenCalledWith('storefront:home');
+  });
+
+  it('detects storefront visibility flips in either direction', () => {
+    expect(isVisibilityFlip('draft', 'published')).toBe(true);
+    expect(isVisibilityFlip('published', 'archived')).toBe(true);
+    expect(isVisibilityFlip('published', 'deactivated')).toBe(true);
+    expect(isVisibilityFlip('draft', 'pending_review')).toBe(false);
+    expect(isVisibilityFlip('published', 'published')).toBe(false);
+    expect(isVisibilityFlip('archived', 'draft')).toBe(false);
+  });
+
+  it('sweeps list keys by pattern across scan pages', async () => {
+    const scan = vi
+      .fn()
+      .mockResolvedValueOnce(['42', ['product:list:aaa', 'product:list:bbb']])
+      .mockResolvedValueOnce(['0', ['product:list:ccc']]);
+    const client = { scan, del: vi.fn(async (...keys: unknown[]) => keys.length) };
+    const deleted = await scanDelByPattern('product:list:*', 100, () => client as unknown as Redis);
+    expect(deleted).toBe(3);
+    expect(scan).toHaveBeenCalledWith('0', 'MATCH', 'product:list:*', 'COUNT', 100);
+  });
+
+  it('batch purge dedupes ids and covers detail scopes plus home', async () => {
+    purgeProducts(['a', 'b', 'a', '']);
+    await vi.waitFor(() => expect(del).toHaveBeenCalledTimes(5));
+    expect(del).toHaveBeenCalledWith('product:detail:a:pub');
+    expect(del).toHaveBeenCalledWith('product:detail:a:elev');
+    expect(del).toHaveBeenCalledWith('product:detail:b:pub');
+    expect(del).toHaveBeenCalledWith('product:detail:b:elev');
     expect(del).toHaveBeenCalledWith('storefront:home');
   });
 });

@@ -1,4 +1,5 @@
 import prisma from '../../config/db.prisma';
+import { purgeProducts } from '../../modules/product/product-cache';
 
 export async function seedProductsMockCatalog(_isReset = false): Promise<void> {
   console.log('\n📦 Seeding Mock Product Catalog via PostgreSQL Prisma...');
@@ -43,6 +44,14 @@ export async function seedProductsMockCatalog(_isReset = false): Promise<void> {
       create: p,
     });
   }
+
+  // Seeds bypass service-layer guarantees by design: refresh cached truth
+  // once at the end so reseeds never leave ghost grid/detail entries.
+  const seeded = await prisma.product.findMany({
+    where: { slug: { in: sampleProducts.map((p) => p.slug) } },
+    select: { id: true },
+  });
+  purgeProducts(seeded.map((p) => p.id));
 
   console.log(`✅ Seeded ${sampleProducts.length} mock products in PostgreSQL.`);
 }
