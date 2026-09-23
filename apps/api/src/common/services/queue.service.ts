@@ -5,18 +5,42 @@ import { logger } from '@celebs/shared-utils';
 
 import { config } from '@/config/app.config';
 
+const redisHost = (config.REDIS.HOST || 'localhost')
+  .trim()
+  .replace(/^https?:\/\//, '')
+  .replace(/\/+$/, '');
+
 const isTls =
-  config.REDIS.HOST &&
-  (config.REDIS.HOST.includes('upstash.io') ||
+  redisHost &&
+  (redisHost.includes('upstash.io') ||
     config.NODE_ENV === 'production' ||
     config.NODE_ENV === 'staging');
 
+/**
+ * Single shared connection CONFIG for every BullMQ Queue/Worker in this
+ * process (AGENTS.md §9 — one definition, fanned out, not per-instance
+ * objects). BullMQ instantiates its own clients from it (including the
+ * blocking duplicates), which keeps us on BullMQ's bundled ioredis copy —
+ * passing a foreign ioredis client instance breaks both typing and BullMQ's
+ * internal instanceof checks under pnpm's nested node_modules layout.
+ * maxRetriesPerRequest: null is mandatory for BullMQ-managed connections.
+ */
 export const redisConnection = {
-  host: config.REDIS.HOST,
+  host: redisHost,
   port: config.REDIS.PORT,
   password: config.REDIS.PASSWORD || undefined,
   ...(isTls ? { tls: {} } : {}),
+  maxRetriesPerRequest: null,
 };
+
+/**
+ * Idle poll interval for workers (seconds). BullMQ wakes immediately when a
+ * real job lands (marker push), so a long drain only stretches the
+ * empty-queue sleep — roughly 2 commands per queue per interval instead of
+ * per 5s — with no added latency for real jobs. Staging queues sit empty most
+ * of the time; keep this high to stay quiet on metered Redis (Upstash).
+ */
+export const WORKER_DRAIN_DELAY_SECONDS = 60;
 
 export async function verifyRedisConnection(): Promise<void> {
   const client = new Redis({
@@ -113,11 +137,25 @@ export const orderMaintenanceQueue = new Queue('order-maintenance', {
   },
 });
 
+export const notificationQueue = new Queue('notification-delivery', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 5,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: false,
+  },
+});
+
 export async function closeQueues(): Promise<void> {
   await Promise.allSettled([
     assetQueue.close(),
     sessionQueue.close(),
     mailQueue.close(),
     orderMaintenanceQueue.close(),
+    notificationQueue.close(),
   ]);
 }

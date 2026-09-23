@@ -65,6 +65,11 @@ export const appConfig = () => {
       PORT: validatedEnv.REDIS_PORT,
       PASSWORD: validatedEnv.REDIS_PASSWORD,
     },
+    EXPO: {
+      PUSH_URL: validatedEnv.EXPO_PUSH_URL,
+      RECEIPTS_URL: validatedEnv.EXPO_RECEIPTS_URL,
+      ACCESS_TOKEN: validatedEnv.EXPO_ACCESS_TOKEN,
+    },
   };
 };
 

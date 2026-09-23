@@ -83,8 +83,10 @@ export class AuthRepository {
         user: {
           include: {
             vendorProfile: {
-              include: {
-                warehouses: true,
+              select: {
+                id: true,
+                shopName: true,
+                status: true,
               },
             },
           },

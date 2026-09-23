@@ -1,0 +1,169 @@
+version: '3.8'
+
+networks:
+  celebs-net:
+    name: celebs-net
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  minio_prod_data:
+  prometheus_data:
+  grafana_data:
+
+services:
+  # ─── DATABASE: POSTGRESQL 15 ───────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: celebs-postgres
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-celebs_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SuperSecretDbPassword123}
+      POSTGRES_DB: ${POSTGRES_DB:-celebs_prod}
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    command: >
+      postgres 
+      -c shared_buffers=512MB 
+      -c effective_cache_size=1536MB 
+      -c maintenance_work_mem=128MB 
+      -c checkpoint_completion_target=0.9 
+      -c wal_buffers=16MB 
+      -c default_statistics_target=100 
+      -c random_page_cost=1.1 
+      -c work_mem=16MB
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── CACHE & BULLMQ QUEUES: REDIS 7 ────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: celebs-redis
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    command: >
+      redis-server 
+      --requirepass ${REDIS_PASSWORD:-SuperSecretRedisPassword123} 
+      --maxmemory 512mb 
+      --maxmemory-policy noeviction 
+      --appendonly yes 
+      --appendfsync everysec
+    ports:
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a $${REDIS_PASSWORD} ping | grep PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── S3 COMPATIBLE OBJECT STORAGE: MINIO ───────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: celebs-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    networks:
+      - celebs-net
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-SuperSecretMinioPassword123}
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_prod_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9000/minio/health/live || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── HARDWARE METRICS: NODE EXPORTER ───────────────────────────────────────
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: celebs-node-exporter
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    command:
+      - '--path.rootfs=/host'
+    ports:
+      - '127.0.0.1:9100:9100'
+
+  # ─── CONTAINER METRICS: CADVISOR ───────────────────────────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: celebs-cadvisor
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - celebs-net
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - '127.0.0.1:8080:8080'
+
+  # ─── METRICS AGGREGATOR: PROMETHEUS ────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: celebs-prometheus
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - '127.0.0.1:9090:9090'
+
+  # ─── METRICS DASHBOARD: GRAFANA ────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: celebs-grafana
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-GrafanaSecretPassword123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - '3001:3000'
+
+  # ─── LIVE CONTAINER LOG VIEWER: DOZZLE ─────────────────────────────────────
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: celebs-dozzle
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - '8888:8080'

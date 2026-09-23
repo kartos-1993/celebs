@@ -16,9 +16,9 @@ import { useProductVariantSelection } from '@/features/products/hooks/use-produc
 import { useProduct } from '@/features/products/hooks/use-products';
 import { styles } from '@/features/products/styles/product.styles';
 import {
-  deriveSizesFromStocks,
   isProductFullyOutOfStock,
   isSelectedCombinationOutOfStock,
+  resolveProductSizes,
 } from '@/features/products/utils/stock';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 
@@ -43,12 +43,12 @@ export default function ProductDetailScreen() {
     }, [refetch]),
   );
 
-  // Display sizes fall back to the union of tracked stocks so the section
-  // can never blank while stock data exists.
+  // Display sizes fall back through variant options to tracked stocks,
+  // so the section can never blank while sizing data exists anywhere.
   const displayProduct = useMemo(
     () =>
       product && (!product.sizes || product.sizes.length === 0)
-        ? { ...product, sizes: deriveSizesFromStocks(product) }
+        ? { ...product, sizes: resolveProductSizes(product) }
         : product,
     [product],
   );

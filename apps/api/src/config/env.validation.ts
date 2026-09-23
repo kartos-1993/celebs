@@ -30,7 +30,15 @@ export const envSchema = z.object({
   SMTP_FROM: z.string().optional().default('info@celebs.com.np'),
   SMTP_API_KEY: z.string().optional().default(''),
   COOKIE_DOMAIN: z.string().optional().default(''),
-  REDIS_HOST: z.string().default('localhost'),
+  REDIS_HOST: z
+    .string()
+    .default('localhost')
+    .transform((val) =>
+      val
+        .trim()
+        .replace(/^https?:\/\//, '')
+        .replace(/\/+$/, ''),
+    ),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_PASSWORD: z.string().optional().default(''),
   S3_REGION: z.string().optional().default('ap-south-1'),
@@ -42,6 +50,9 @@ export const envSchema = z.object({
   GOOGLE_WEB_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_ANDROID_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_IOS_CLIENT_ID: z.string().optional().default(''),
+  EXPO_PUSH_URL: z.string().url().default('https://exp.host/--/api/v2/push/send'),
+  EXPO_RECEIPTS_URL: z.string().url().default('https://exp.host/--/api/v2/push/getReceipts'),
+  EXPO_ACCESS_TOKEN: z.string().optional().default(''),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

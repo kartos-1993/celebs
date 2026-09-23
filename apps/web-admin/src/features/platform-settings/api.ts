@@ -1,4 +1,6 @@
-import type { SDUIPageLayout } from '@celebs/shared-types';
+import type { IApiResponse, SDUIPageLayout } from '@celebs/shared-types';
+
+import type { PlatformSettingItem } from './types';
 
 import { axiosClient } from '@/lib/axios/axios-client';
 import { directUploadFile } from '@/lib/media-upload';
@@ -20,6 +22,12 @@ export interface SDUI_LAYOUT_META {
 
 export const SDUI_LAYOUT_KEYS: Record<string, SDUI_LAYOUT_META> = {
   layout_home: { key: 'layout_home', label: 'Home Page Layout (SDUI)' },
+};
+
+export const PLATFORM_SETTINGS_QUERY_KEYS = {
+  all: ['platform-settings'] as const,
+  group: (group: string) => [...PLATFORM_SETTINGS_QUERY_KEYS.all, 'group', group] as const,
+  audit: (key?: string) => [...PLATFORM_SETTINGS_QUERY_KEYS.all, 'audit', key] as const,
 };
 
 export interface PlatformSettingResponse<T = string> {
@@ -52,6 +60,52 @@ export class PlatformSettingsApiService {
    */
   static async uploadBannerImage(file: File): Promise<string> {
     return directUploadFile(file, 'platform', 'MARKETING');
+  }
+
+  /**
+   * Fetch platform settings by group (e.g. 'NOTIFICATIONS')
+   */
+  static async getSettingsByGroup(group: string): Promise<PlatformSettingItem[]> {
+    const response = await axiosClient.get<IApiResponse<PlatformSettingItem[]>>('/settings', {
+      params: { group },
+    });
+    return response.data?.data || [];
+  }
+
+  /**
+   * Bulk update platform settings with an audit reason
+   */
+  static async bulkUpdateSettings(
+    settings: { key: string; value: string }[],
+    reason?: string,
+  ): Promise<PlatformSettingItem[]> {
+    const response = await axiosClient.post<IApiResponse<PlatformSettingItem[]>>('/settings/bulk', {
+      settings,
+      reason: reason || 'Bulk update via web-admin settings center',
+    });
+    return response.data?.data || [];
+  }
+
+  /**
+   * Upsert a single platform setting
+   */
+  static async upsertSetting(setting: {
+    key: string;
+    value: string;
+    type?: 'BOOLEAN' | 'NUMBER' | 'STRING' | 'JSON';
+    group?: string;
+    label?: string;
+    description?: string;
+    reason?: string;
+  }): Promise<PlatformSettingItem> {
+    const response = await axiosClient.post<IApiResponse<PlatformSettingItem>>(
+      '/settings',
+      setting,
+    );
+    if (!response.data?.data) {
+      throw new Error(response.data?.message || 'Failed to upsert platform setting');
+    }
+    return response.data.data;
   }
 
   /**

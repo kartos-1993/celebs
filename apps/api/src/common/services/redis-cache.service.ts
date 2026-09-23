@@ -14,6 +14,8 @@ export function getRedisClient(): Redis | null {
         ...redisConnection,
         lazyConnect: true,
         enableOfflineQueue: false,
+        // Fail fast: this cache must never hold a request open. (The shared
+        // object carries maxRetriesPerRequest: null for BullMQ — override it.)
         maxRetriesPerRequest: 1,
       });
       redisClient.on('error', (err) => {

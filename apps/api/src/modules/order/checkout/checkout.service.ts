@@ -20,6 +20,10 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
+import {
+  NotificationService,
+  notificationService as defaultNotificationService,
+} from '@/modules/notification/notification.service';
 import { purgeProductDetail, purgeProductHome } from '@/modules/product/product-cache';
 
 export class CheckoutService {
@@ -29,6 +33,7 @@ export class CheckoutService {
     private paymentRepo: PaymentRepository = paymentRepository,
     private paymentSvc: PaymentService = paymentService,
     private coreOrderRepo: CoreOrderRepository = coreOrderRepository,
+    private notificationService: NotificationService = defaultNotificationService,
   ) {}
 
   async checkout(userId: string, input: CheckoutInput, requestHost?: string) {
@@ -165,7 +170,7 @@ export class CheckoutService {
       );
     }
 
-    // Enterprise SHEIN/Daraz order numbering: CEL-YYMMDD-XXXXXX
+    // Enterprise order numbering: CEL-YYMMDD-XXXXXX
     const orderNumber = generateOrderNumber();
     const isCOD = paymentMethod === 'COD';
     const orderStatus = isCOD ? 'CONFIRMED' : 'PENDING_PAYMENT';
@@ -300,6 +305,37 @@ export class CheckoutService {
     if (order.paymentMethod === 'COD') {
       await enqueueOrderConfirmationEmail(order, 'checkout-cod');
     }
+
+    // Dispatch in-app and push notification for customer
+    this.notificationService
+      .notifyOrderStatus({
+        userId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.paymentMethod === 'COD' ? 'CONFIRMED' : 'PENDING',
+        totalAmount: totalAmountDecimal.toNumber(),
+      })
+      .catch((notifErr) => {
+        logger.warn({ orderId: order.id, err: notifErr }, 'Failed to dispatch order notification');
+      });
+
+    // Dispatch in-app notification for platform admins and vendors
+    const vendorIds = Array.from(
+      new Set(order.items.map((i) => i.vendorId).filter((v): v is string => Boolean(v))),
+    );
+    this.notificationService
+      .notifyNewOrderForAdminsAndVendors({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        totalAmount: totalAmountDecimal.toNumber(),
+        vendorIds,
+      })
+      .catch((err) => {
+        logger.warn(
+          { orderId: order.id, err },
+          'Failed to dispatch admin/vendor order notification',
+        );
+      });
 
     return responseBody;
   }

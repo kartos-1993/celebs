@@ -4,6 +4,7 @@ import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { InventoryRepository, inventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
 import { VendorRepository, vendorRepository } from '../vendor/vendor.repository';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
@@ -19,6 +20,7 @@ import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
 import { enqueueMail } from '@/common/services/mail.queue';
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 
 export class ProductLifecycleService {
@@ -297,6 +299,10 @@ export class ProductLifecycleService {
           ),
         );
     }
+
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY).catch((err) =>
+      logger.warn({ err }, 'Failed to invalidate storefront home cache after product archive'),
+    );
 
     return formatProductResponse(updated);
   }

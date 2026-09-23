@@ -1,4 +1,59 @@
-import type { Product, ProductColorVariant, ProductSize } from '../hooks/use-products';
+import type {
+  Product,
+  ProductColorVariant,
+  ProductSize,
+  ProductVariantOption,
+} from '../hooks/use-products';
+
+export interface ProductResolvableSizes {
+  sizes?: ProductSize[];
+  variantOptions?: ProductVariantOption[];
+  colorVariants?: ProductColorVariant[];
+}
+
+/**
+ * Resolves available product sizes using a unified fallback hierarchy:
+ * 1. Explicit measurement sizes (`product.sizes`)
+ * 2. Variant option definitions (`product.variantOptions.find(name === 'Size').values`)
+ * 3. PostgreSQL inventory stocks (`colorVariants[...].stocks`) — single source of truth
+ */
+export function resolveProductSizes(
+  product: ProductResolvableSizes | null | undefined,
+  selectedColorIndex?: number,
+): ProductSize[] {
+  if (!product) return [];
+
+  // 1. Explicit sizes (measurements)
+  if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+    return product.sizes;
+  }
+
+  // 2. Variant options (Size)
+  const sizeOption = product.variantOptions?.find((opt) => opt.name.toLowerCase() === 'size');
+  if (sizeOption && Array.isArray(sizeOption.values) && sizeOption.values.length > 0) {
+    return sizeOption.values.map((val) => ({ name: val }));
+  }
+
+  // 3. Variant stocks from PostgreSQL ProductInventory
+  const stockSizes = new Set<string>();
+  const variants = product.colorVariants || [];
+
+  if (typeof selectedColorIndex === 'number' && variants[selectedColorIndex]?.stocks) {
+    variants[selectedColorIndex].stocks.forEach((s) => {
+      if (s.size) stockSizes.add(s.size);
+    });
+  }
+
+  if (stockSizes.size === 0) {
+    variants.forEach((v) => {
+      v.stocks?.forEach((s) => {
+        if (s.size) stockSizes.add(s.size);
+      });
+    });
+  }
+
+  return Array.from(stockSizes).map((name) => ({ name }));
+}
 
 export function isVariantOutOfStock(variant: ProductColorVariant | undefined): boolean {
   if (!variant) return false;
@@ -64,24 +119,4 @@ export function isSelectedCombinationOutOfStock(
     return isVariantOutOfStock(variant);
   }
   return isSizeOutOfStockForVariant(variant, selectedSize);
-}
-
-/**
- * Last-resort display sizes: when the product payload carries no `sizes`
- * array but variants track per-size stock, derive the size list from the
- * union of stock entries so the PDP can never render sizeless while stock
- * data exists. Entries carry no measurements — names and quantities only.
- */
-export function deriveSizesFromStocks(product: Product | null | undefined): ProductSize[] {
-  if (product?.sizes && product.sizes.length > 0) return product.sizes;
-  const seen = new Map<string, string>();
-  for (const variant of product?.colorVariants ?? []) {
-    for (const stock of variant.stocks ?? []) {
-      const name = stock.size?.trim();
-      if (name && !seen.has(name.toLowerCase())) {
-        seen.set(name.toLowerCase(), name);
-      }
-    }
-  }
-  return [...seen.values()].map((name) => ({ name }));
 }

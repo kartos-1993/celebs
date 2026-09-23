@@ -8,14 +8,15 @@ import { ComboRepository, comboRepository } from '../combo/combo.repository';
 import { PlatformSettingsService } from '../platform-settings/platform-settings.service';
 import { ProductService } from '../product/product.service';
 
+import { STOREFRONT_HOME_CACHE_KEY, STOREFRONT_HOME_TTL_SECONDS } from './storefront.constants';
+
 import {
   getCachedJson,
   invalidateCacheKey,
   setCachedJson,
 } from '@/common/services/redis-cache.service';
 
-export const STOREFRONT_HOME_CACHE_KEY = 'storefront:home';
-const STOREFRONT_HOME_TTL_SECONDS = 600; // 10 minutes
+export { STOREFRONT_HOME_CACHE_KEY, STOREFRONT_HOME_TTL_SECONDS };
 
 export class StorefrontService {
   constructor(

@@ -15,7 +15,7 @@ import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { getProductById, PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import type { Product } from '@/features/products/hooks/use-products';
 import { resolveImageUrl } from '@/features/products/hooks/use-products';
-import { isSizeOutOfStockForVariant } from '@/features/products/utils/stock';
+import { isSizeOutOfStockForVariant, resolveProductSizes } from '@/features/products/utils/stock';
 
 interface UseProductDetailCartParams {
   product: Product | null;
@@ -154,7 +154,8 @@ export function useProductDetailCart({
           showToast('No stock available', { type: 'error' });
           return;
         }
-        if (freshProduct.sizes && freshProduct.sizes.length > 0 && !finalSize) {
+        const availSizes = resolveProductSizes(freshProduct, selectedColorIndex);
+        if (availSizes.length > 0 && !finalSize) {
           onOpenSizeModal();
           return;
         }

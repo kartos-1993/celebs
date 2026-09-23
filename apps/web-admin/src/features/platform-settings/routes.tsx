@@ -30,4 +30,16 @@ export const platformSettingsRoutes: RouteObject[] = [
     ),
     handle: { title: 'Home Layout Editor', crumb: 'Layout Editor', skeleton: 'page' },
   },
+  {
+    path: 'platform-settings/notifications',
+    ...pageRoute(
+      () => import('./pages/notification-settings-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
+    ),
+    handle: { title: 'Notification Settings', crumb: 'Notifications', skeleton: 'form' },
+  },
 ];

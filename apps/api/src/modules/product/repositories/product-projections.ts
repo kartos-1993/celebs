@@ -16,6 +16,8 @@ export const PRODUCT_LIST_SELECT = {
   // Storefront cards derive color swatch dots from these two fields
   colorVariants: true,
   dynamicData: true,
+  sizes: true,
+  variantOptions: true,
   vendorId: true,
   vendorName: true,
   categoryId: true,
@@ -78,6 +80,8 @@ export const PRODUCT_FEED_SELECT = {
   mainImages: true,
   colorVariants: true,
   dynamicData: true,
+  sizes: true,
+  variantOptions: true,
   inventories: {
     select: {
       colorVariantName: true,

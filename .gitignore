@@ -81,3 +81,6 @@ GoogleService-Info.plist
 # Scratch files
 scratch/
 
+
+# Local MCP server config (machine paths + credentials)
+.agents/mcp_config.json

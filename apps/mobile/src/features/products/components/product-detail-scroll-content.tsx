@@ -68,6 +68,7 @@ export function ProductDetailScrollContent({
           selectedColorIndex={selectedColorIndex}
           onSelectColor={onSelectColor}
           sizes={product.sizes}
+          variantOptions={product.variantOptions}
           selectedSize={selectedSize}
           onSelectSize={onSelectSize}
         />

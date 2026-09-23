@@ -36,6 +36,7 @@ import { ProductQueryService, type QueryServiceOptions } from './product-query.s
 import type { ProductStatusValue } from './product-status';
 import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
+
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
 export type ProductSizeInput = ProductSizeType;
