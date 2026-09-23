@@ -1,10 +1,17 @@
-import type { Product, ProductSku } from '../hooks/use-products';
+import type { Product } from '../hooks/use-products';
 
 export interface ResolvedPrice {
   price: number;
   discountedPrice?: number;
-  /** Where the figure came from: an exact SKU match or the product base. */
-  source: 'sku' | 'product';
+  /** Where the figure came from: a declared combo or the product base. */
+  source: 'combo' | 'product';
+}
+
+export interface ComboPriceEntry {
+  options?: Record<string, string>;
+  price: number;
+  discountedPrice?: number;
+  stock?: number;
 }
 
 function validDiscount(price: number, discounted: unknown): number | undefined {
@@ -24,29 +31,21 @@ function optionValue(
   return undefined;
 }
 
-function matchesSelection(sku: ProductSku, colorName?: string, sizeName?: string): boolean {
+function matchesSelection(entry: ComboPriceEntry, colorName?: string, sizeName?: string): boolean {
   const same = (a?: string, b?: string) =>
     a !== undefined && b !== undefined && a.trim().toLowerCase() === b.trim().toLowerCase();
   if (colorName !== undefined) {
-    const skuColor = optionValue(sku.selectedOptions, /colou?r/i);
-    if (!same(skuColor, colorName)) return false;
+    if (!same(optionValue(entry.options, /colou?r/i), colorName)) return false;
   }
   if (sizeName !== undefined) {
-    const skuSize = optionValue(sku.selectedOptions, /size/i);
-    if (!same(skuSize, sizeName)) return false;
+    if (!same(optionValue(entry.options, /size/i), sizeName)) return false;
   }
   return true;
 }
 
-function effectiveOf(sku: ProductSku): { price: number; discountedPrice?: number } | null {
-  const price = Number(sku.price);
-  if (!Number.isFinite(price) || price <= 0) return null;
-  return { price, discountedPrice: validDiscount(price, sku.discountedPrice) };
-}
-
 /**
- * Exact per-combination price for a selected color/size, SHEIN PDP style.
- * Falls back to the product base figure when no SKU matches.
+ * Exact per-combination price from the backend-declared comboPrices.
+ * Falls back to the product base figure when nothing matches.
  */
 export function resolveVariantPrice(
   product: Product | null | undefined,
@@ -59,23 +58,27 @@ export function resolveVariantPrice(
     discountedPrice: validDiscount(base, product?.discountedPrice),
     source: 'product',
   };
-  const skus = Array.isArray(product?.skus) ? (product?.skus ?? []) : [];
+  const entries = Array.isArray(product?.comboPrices) ? (product?.comboPrices ?? []) : [];
   let best: { price: number; discountedPrice?: number; effective: number } | null = null;
-  for (const sku of skus) {
-    if (!matchesSelection(sku, colorName, sizeName)) continue;
-    const effective = effectiveOf(sku);
-    if (effective) {
-      const deal = effective.discountedPrice ?? effective.price;
-      if (!best || deal < best.effective) best = { ...effective, effective: deal };
-    }
+  for (const entry of entries) {
+    if (!matchesSelection(entry, colorName, sizeName)) continue;
+    const price = Number(entry.price);
+    if (!Number.isFinite(price) || price <= 0) continue;
+    const deal = validDiscount(price, entry.discountedPrice) ?? price;
+    if (!best || deal < best.effective)
+      best = {
+        price,
+        discountedPrice: validDiscount(price, entry.discountedPrice),
+        effective: deal,
+      };
   }
   if (!best) return fallback;
-  return { price: best.price, discountedPrice: best.discountedPrice, source: 'sku' };
+  return { price: best.price, discountedPrice: best.discountedPrice, source: 'combo' };
 }
 
 /**
- * Card price, SHEIN style: the minimum across all SKUs (the only honest
- * single number without size context). Falls back to the base figure.
+ * Card price, SHEIN style: the backend-declared minimum, falling back to
+ * the base figure. No client-side SKU math.
  */
 export function resolveMinPrice(product: Product | null | undefined): ResolvedPrice {
   const base = Number(product?.price ?? 0);
@@ -84,15 +87,15 @@ export function resolveMinPrice(product: Product | null | undefined): ResolvedPr
     discountedPrice: validDiscount(base, product?.discountedPrice),
     source: 'product',
   };
-  const skus = Array.isArray(product?.skus) ? (product?.skus ?? []) : [];
-  let best: { price: number; discountedPrice?: number; effective: number } | null = null;
-  for (const sku of skus) {
-    const effective = effectiveOf(sku);
-    if (effective) {
-      const deal = effective.discountedPrice ?? effective.price;
-      if (!best || deal < best.effective) best = { ...effective, effective: deal };
-    }
+  if (typeof product?.minPrice === 'number' && Number.isFinite(product.minPrice)) {
+    return {
+      price: product.minPrice,
+      discountedPrice:
+        typeof product?.minDiscounted === 'number'
+          ? product.minDiscounted
+          : fallback.discountedPrice,
+      source: 'combo',
+    };
   }
-  if (!best) return fallback;
-  return { price: best.price, discountedPrice: best.discountedPrice, source: 'sku' };
+  return fallback;
 }

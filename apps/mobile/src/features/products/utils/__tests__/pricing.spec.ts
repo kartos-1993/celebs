@@ -10,20 +10,12 @@ const product: Product = {
   discountedPrice: 1200,
   mainImages: [],
   status: 'published',
-  skus: [
-    { skuCode: 'A', selectedOptions: { Color: 'Red', Size: 'S' }, price: 1500 },
-    {
-      skuCode: 'B',
-      selectedOptions: { Color: 'Blue', Size: 'M' },
-      price: 1700,
-      discountedPrice: 1400,
-    },
-    {
-      skuCode: 'C',
-      selectedOptions: { Color: 'Blue', Size: 'L' },
-      price: 1700,
-      discountedPrice: 1900,
-    },
+  minPrice: 1400,
+  minDiscounted: 1400,
+  comboPrices: [
+    { options: { Color: 'Red', Size: 'S' }, price: 1500, stock: 3 },
+    { options: { Color: 'Blue', Size: 'M' }, price: 1700, discountedPrice: 1400, stock: 5 },
+    { options: { Color: 'Blue', Size: 'L' }, price: 1700, discountedPrice: 1900, stock: 2 },
   ],
 };
 
@@ -32,19 +24,19 @@ describe('resolveVariantPrice', () => {
     expect(resolveVariantPrice(product, 'Blue', 'M')).toEqual({
       price: 1700,
       discountedPrice: 1400,
-      source: 'sku',
+      source: 'combo',
     });
   });
 
   it('matches case-insensitively', () => {
-    expect(resolveVariantPrice(product, 'blue', 'm').source).toBe('sku');
+    expect(resolveVariantPrice(product, 'blue', 'm').source).toBe('combo');
   });
 
   it('rejects an invalid discount and keeps the list price', () => {
     expect(resolveVariantPrice(product, 'Blue', 'L')).toEqual({
       price: 1700,
       discountedPrice: undefined,
-      source: 'sku',
+      source: 'combo',
     });
   });
 
@@ -56,8 +48,8 @@ describe('resolveVariantPrice', () => {
     });
   });
 
-  it('falls back to base when the product carries no skus', () => {
-    expect(resolveVariantPrice({ ...product, skus: undefined }, 'Red', 'S')).toEqual({
+  it('falls back to base when the product declares no combos', () => {
+    expect(resolveVariantPrice({ ...product, comboPrices: undefined }, 'Red', 'S')).toEqual({
       price: 1500,
       discountedPrice: 1200,
       source: 'product',
@@ -66,16 +58,17 @@ describe('resolveVariantPrice', () => {
 });
 
 describe('resolveMinPrice', () => {
-  it('picks the minimum effective figure across skus', () => {
+  it('renders the backend-declared minimum', () => {
     expect(resolveMinPrice(product)).toEqual({
-      price: 1700,
+      price: 1400,
       discountedPrice: 1400,
-      source: 'sku',
+      source: 'combo',
     });
   });
 
-  it('falls back to base with no skus', () => {
-    expect(resolveMinPrice({ ...product, skus: [] })).toEqual({
+  it('falls back to base with no declared minimum', () => {
+    const { minPrice: _minPrice, minDiscounted: _minDiscounted, ...rest } = product;
+    expect(resolveMinPrice(rest)).toEqual({
       price: 1500,
       discountedPrice: 1200,
       source: 'product',

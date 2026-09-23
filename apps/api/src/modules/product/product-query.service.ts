@@ -5,6 +5,10 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { CategoryRepository, categoryRepository } from '../category/category.repository';
 
+import { formatAdminDetail } from './presenters/admin-detail';
+import { formatAdminListItem } from './presenters/admin-list';
+import { formatStorefrontCard } from './presenters/storefront-card';
+import { formatStorefrontDetail } from './presenters/storefront-detail';
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import { PRODUCT_FEED_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { decodeProductCursor, encodeProductCursor } from './utils/product-cursor';
@@ -56,8 +60,10 @@ export class ProductQueryService {
 
     if (!product) return null;
     const formatted = formatProductResponse(product, { isElevated });
-    await writeCachedJson(cacheKey, formatted, PRODUCT_DETAIL_TTL_SECONDS);
-    return formatted;
+    if (!formatted) return null;
+    const shaped = isElevated ? formatAdminDetail(formatted) : formatStorefrontDetail(formatted);
+    await writeCachedJson(cacheKey, shaped, PRODUCT_DETAIL_TTL_SECONDS);
+    return shaped;
   }
 
   async getProductsByVendor(
@@ -175,8 +181,14 @@ export class ProductQueryService {
       });
     }
 
+    const isPlatform = isPlatformActor(opts.actor);
+    const elevatedRead = this.resolveElevatedRead(opts, isPlatform);
     const result = {
-      products: products.map((p) => formatProductResponse(p, { isElevated: opts.isElevated })),
+      products: products.map((p) => {
+        const formatted = formatProductResponse(p, { isElevated: opts.isElevated });
+        if (!formatted) return null;
+        return elevatedRead ? formatAdminListItem(formatted) : formatStorefrontCard(formatted);
+      }),
       ...(totalCount !== undefined ? { total: totalCount } : {}),
       nextCursor,
       hasMore,
@@ -187,6 +199,12 @@ export class ProductQueryService {
     return result;
   }
 
+  private resolveElevatedRead(opts: QueryServiceOptions, isPlatform: boolean): boolean {
+    return (
+      opts.isElevated ?? (isPlatform || (Boolean(opts.actor) && Boolean(opts.isStoreManagement)))
+    );
+  }
+
   private applyScalarFilters(
     filters: ProductFilterType,
     where: Prisma.ProductWhereInput,
@@ -194,8 +212,7 @@ export class ProductQueryService {
     opts: QueryServiceOptions,
   ): void {
     const isPlatform = isPlatformActor(opts.actor);
-    const isElevated =
-      opts.isElevated ?? (isPlatform || (Boolean(opts.actor) && Boolean(opts.isStoreManagement)));
+    const isElevated = this.resolveElevatedRead(opts, isPlatform);
 
     if (!isPlatform && opts.storeId && opts.isStoreManagement) {
       where.vendorId = opts.storeId;

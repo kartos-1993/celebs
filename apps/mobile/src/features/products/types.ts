@@ -36,6 +36,13 @@ export interface ProductSku {
   stock?: number;
 }
 
+export interface ProductComboPrice {
+  options?: Record<string, string>;
+  price: number;
+  discountedPrice?: number;
+  stock?: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -48,6 +55,10 @@ export interface Product {
   colorVariants?: ProductColorVariant[];
   variantOptions?: ProductVariantOption[];
   skus?: ProductSku[];
+  comboPrices?: ProductComboPrice[];
+  minPrice?: number;
+  minDiscounted?: number;
+  cover?: string;
   status: string;
   featured?: boolean;
 }

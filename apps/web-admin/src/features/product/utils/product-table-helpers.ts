@@ -35,6 +35,10 @@ export function getInitials(name: string): string {
 }
 
 export function getProductStock(product: ProductListItem): number {
+  // Admin list rows carry the server-computed total; legacy full rows fall
+  // through to the client-side sum below.
+  const declared = (product as ProductListItem & { stockTotal?: unknown }).stockTotal;
+  if (typeof declared === 'number' && Number.isFinite(declared)) return declared;
   const skuStock = Array.isArray(product.skus)
     ? product.skus.reduce((sum, sku) => sum + (Number(sku?.stock) || 0), 0)
     : 0;
