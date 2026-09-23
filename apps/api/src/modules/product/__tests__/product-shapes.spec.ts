@@ -152,5 +152,40 @@ describe('Response shapes per consumer', () => {
     expect(item).toMatchObject({ id: 'p1', stockTotal: 10, cover: 'cover.jpg' });
     expect(item.skus).toBeUndefined();
     expect(item.colorVariants).toBeUndefined();
+    expect(Object.keys(item).sort()).toEqual(
+      [
+        'cover',
+        'category',
+        'discountedPrice',
+        'id',
+        'name',
+        'price',
+        'slug',
+        'status',
+        'stockTotal',
+        'updatedAt',
+        'vendorName',
+      ].sort(),
+    );
+  });
+
+  it('declares the category with image and totals variant stocks without skus', async () => {
+    const variantRow = {
+      ...row,
+      skus: [],
+      category: { id: 'c1', name: 'Denim', imageUrl: 'cat.jpg' },
+      colorVariants: [{ name: 'Red', stocks: [{ size: 'S', quantity: 4 }] }],
+    };
+    const { service } = serviceWith(null, [variantRow]);
+    const result = await service.getAllProducts({}, 1, 10, {
+      isElevated: true,
+      actor: { role: 'ADMIN' } as never,
+    });
+
+    const item = result.products[0] as Record<string, unknown>;
+    expect(item).toMatchObject({
+      stockTotal: 4,
+      category: { id: 'c1', name: 'Denim', imageUrl: 'cat.jpg' },
+    });
   });
 });

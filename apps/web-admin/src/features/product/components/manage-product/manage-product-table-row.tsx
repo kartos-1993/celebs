@@ -10,8 +10,10 @@ import { TableCell, TableRow } from '@celebs/shared-ui/components/table';
 import type { ProductListItem } from '../../types';
 import {
   formatShortDate,
+  getCategoryImage,
   getCategoryName,
   getInitials,
+  getProductCover,
   getProductStock,
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
@@ -54,6 +56,8 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   const status = product.status ?? 'draft';
   const vendor = getVendorDisplay(product);
   const stock = getProductStock(product);
+  const coverImage = getProductCover(product);
+  const categoryImage = getCategoryImage(product);
   const updated = formatShortDate(
     (product as { updatedAt?: unknown }).updatedAt ??
       (product as { createdAt?: unknown }).createdAt,
@@ -67,7 +71,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
       <TableCell>
         <div className="flex items-center gap-2">
           <img
-            src={product.mainImages?.[0] || '/placeholder.svg'}
+            src={coverImage}
             alt={product.name ?? 'Product'}
             className="h-8 w-8 shrink-0 rounded-md border bg-muted object-cover"
             onError={(e) => {
@@ -88,6 +92,17 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap items-center gap-1">
+          {categoryImage ? (
+            <img
+              src={categoryImage}
+              alt=""
+              aria-hidden="true"
+              className="h-5 w-5 shrink-0 rounded border bg-muted object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : null}
           <Badge variant="secondary">{getCategoryName(product)}</Badge>
           <Badge variant={statusBadgeVariant(status)}>{statusLabels[status] ?? status}</Badge>
         </div>

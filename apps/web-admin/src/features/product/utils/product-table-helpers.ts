@@ -23,6 +23,23 @@ export function getCategoryName(product: ProductListItem): string {
   return category?.name ?? 'Uncategorized';
 }
 
+export function getCategoryImage(product: ProductListItem): string | undefined {
+  const category = product.category;
+  if (category && typeof category === 'object' && typeof category.imageUrl === 'string') {
+    return category.imageUrl || undefined;
+  }
+  return undefined;
+}
+
+/** Declared cover first, legacy mains as fallback, placeholder last. */
+export function getProductCover(product: ProductListItem): string {
+  const declared = (product as ProductListItem & { cover?: unknown }).cover;
+  if (typeof declared === 'string' && declared) return declared;
+  const legacy = product.mainImages?.[0];
+  if (typeof legacy === 'string' && legacy) return legacy;
+  return '/placeholder.svg';
+}
+
 export function getVendorDisplay(product: { vendorName?: string | null }): string {
   return product.vendorName || 'Independent Seller';
 }

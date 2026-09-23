@@ -113,8 +113,24 @@ export function resolveCover(mainImages: unknown, colorVariants: unknown): strin
 }
 
 /** Total on-hand stock across skus (0 when none tracked). */
-export function resolveStockTotal(skus: unknown): number {
-  return asSkuList(skus).reduce((sum, sku) => sum + sku.stock, 0);
+export function resolveStockTotal(skus: unknown, colorVariants?: unknown): number {
+  const skuList = asSkuList(skus);
+  // skus[] and colorVariants[].stocks describe the same units twice —
+  // never sum both. Variant stocks are the fallback when skus are absent.
+  if (skuList.length > 0) {
+    return skuList.reduce((sum, sku) => sum + sku.stock, 0);
+  }
+  if (!Array.isArray(colorVariants)) return 0;
+  let total = 0;
+  for (const variant of colorVariants) {
+    const stocks = (variant as Record<string, unknown> | null)?.stocks;
+    if (!Array.isArray(stocks)) continue;
+    for (const entry of stocks) {
+      const quantity = Number((entry as Record<string, unknown> | null)?.quantity ?? 0);
+      if (Number.isFinite(quantity) && quantity > 0) total += quantity;
+    }
+  }
+  return total;
 }
 
 /** Strips a swatch URL duplicated as the gallery's first image. */

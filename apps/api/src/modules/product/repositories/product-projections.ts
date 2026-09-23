@@ -100,6 +100,7 @@ export const PRODUCT_FEED_SELECT = {
       id: true,
       name: true,
       slug: true,
+      imageUrl: true,
     },
   },
   subcategory: {
@@ -107,6 +108,7 @@ export const PRODUCT_FEED_SELECT = {
       id: true,
       name: true,
       slug: true,
+      imageUrl: true,
     },
   },
   brandRef: {
@@ -155,8 +157,12 @@ export const PRODUCT_DETAIL_SELECT = {
 } as const;
 
 export const PRODUCT_DETAIL_INCLUDE = {
-  category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-  subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+  category: {
+    select: { id: true, name: true, slug: true, path: true, level: true, imageUrl: true },
+  },
+  subcategory: {
+    select: { id: true, name: true, slug: true, path: true, level: true, imageUrl: true },
+  },
   brandRef: {
     select: {
       id: true,

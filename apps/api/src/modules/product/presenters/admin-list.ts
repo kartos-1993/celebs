@@ -1,5 +1,11 @@
 import { num, optStr, resolveCover, resolveStockTotal, str } from './shared';
 
+export interface AdminListCategory {
+  id: string;
+  name: string;
+  imageUrl?: string;
+}
+
 export interface AdminListItem extends Record<string, unknown> {
   id: string;
   name: string;
@@ -10,6 +16,7 @@ export interface AdminListItem extends Record<string, unknown> {
   status: string | null;
   stockTotal: number;
   vendorName: string | null;
+  category: AdminListCategory | null;
   updatedAt: unknown;
 }
 
@@ -27,8 +34,22 @@ export function formatAdminListItem(formatted: Record<string, unknown>): AdminLi
       typeof formatted.discountedPrice === 'number' ? formatted.discountedPrice : undefined,
     cover: resolveCover(formatted.mainImages, formatted.colorVariants),
     status: optStr(formatted.status) ?? null,
-    stockTotal: resolveStockTotal(formatted.skus),
+    stockTotal: resolveStockTotal(formatted.skus, formatted.colorVariants),
     vendorName: optStr(formatted.vendorName) ?? null,
+    category: toListCategory(formatted.category),
     updatedAt: formatted.updatedAt ?? null,
+  };
+}
+
+function toListCategory(value: unknown): AdminListCategory | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.id !== 'string' || typeof record.name !== 'string' || !record.name) {
+    return null;
+  }
+  return {
+    id: record.id,
+    name: record.name,
+    imageUrl: optStr(record.imageUrl),
   };
 }
