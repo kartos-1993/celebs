@@ -1,40 +1,19 @@
 import { useCallback, useMemo, useRef } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { can, Permission } from '@celebs/rbac';
 
 import { extractVariantsMeta } from '../../fields/variant-utils';
-import { useProductDraft } from '../../hooks/use-product-draft';
-import type { ProductFormValues } from '../../hooks/use-product-form';
-import type { FieldSpec } from '../../types';
 import { MANAGE_PRODUCTS_PATH } from '../../utils/add-product-helpers';
 import { DynamicProductForm, type DynamicProductFormHandle } from '../dynamic-product-form';
 
 import { AddProductBasicSection } from './add-product-basic-section';
+import type { AddProductFormBodyProps } from './add-product-form-body-types';
 import { ProductFormActionsContainer } from './form-actions-container';
 import { ProductSubmissionSidebar } from './product-submission-sidebar';
 import { useAddProductSubmit } from './use-add-product-submit';
 
-export interface AddProductFormBodyProps {
-  productId?: string;
-  isEditMode: boolean;
-  role?: string;
-  userPermissions?: string[];
-  form: UseFormReturn<ProductFormValues>;
-  schemaFields: FieldSpec[];
-  isSchemaLoading: boolean;
-  schemaError: Error | null;
-  schemaHasName: boolean;
-  schemaHasBrand: boolean;
-  draft: ReturnType<typeof useProductDraft>;
-  watchedCategoryId: string;
-  watchedSubcategoryId: string;
-  onCategoryChange: (categoryId: string) => void;
-  onSubcategoryChange: (subcategoryId: string) => void;
-  onBasicFieldChange: (name: 'name' | 'brand' | 'description', value: string) => void;
-  onDynamicValuesChange: (values: Record<string, unknown>) => void;
-}
+export { type AddProductFormBodyProps } from './add-product-form-body-types';
 
 export const AddProductFormBody = ({
   productId,
@@ -84,18 +63,16 @@ export const AddProductFormBody = ({
     isEditMode,
   });
 
+  const canPublish = can(role || 'STAFF', Permission.PRODUCT_PUBLISH, userPermissions);
+  const isCategoryLocked = isEditMode && form.getValues('status') === 'published';
+
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_190px]">
       <div className="space-y-6">
         <form
           noValidate
           onSubmit={form.handleSubmit(
-            () =>
-              handleSubmitProduct(
-                can(role || 'STAFF', Permission.PRODUCT_PUBLISH, userPermissions)
-                  ? 'published'
-                  : 'pending_review',
-              ),
+            () => handleSubmitProduct(canPublish ? 'published' : 'pending_review'),
             handleFormInvalid,
           )}
           className="space-y-6"
@@ -111,6 +88,7 @@ export const AddProductFormBody = ({
             categoryPath={draft.categoryPath}
             hideBrand={schemaHasBrand}
             hideName={schemaHasName}
+            isCategoryLocked={isCategoryLocked}
           />
 
           {canShowAdditionalSections ? (
@@ -133,6 +111,8 @@ export const AddProductFormBody = ({
               schemaReady={schemaReady}
               isDirty={form.formState.isDirty}
               isSubmitting={isSubmitting}
+              isEditMode={isEditMode}
+              canPublish={canPublish}
               onSaveAsDraft={draft.saveDraftNow}
               onCancel={() => navigate(MANAGE_PRODUCTS_PATH)}
             />

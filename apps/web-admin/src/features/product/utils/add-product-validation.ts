@@ -200,7 +200,16 @@ export const collectColorImageErrors = ({
     | undefined;
   const errors: string[] = [];
   for (const colorValue of selected) {
-    if (!isGalleryFilled(colorMeta?.[colorValue]?.images)) {
+    const sanitized = sanitizeVariantKey(colorValue);
+    const images =
+      colorMeta?.[colorValue]?.images ??
+      colorMeta?.[sanitized]?.images ??
+      getNestedValue(values, `variants.colorMeta.${colorValue}.images`) ??
+      getNestedValue(values, `variants.colorMeta.${sanitized}.images`) ??
+      values[`variants.colorMeta.${colorValue}.images`] ??
+      values[`variants.colorMeta.${sanitized}.images`];
+
+    if (!isGalleryFilled(images)) {
       errors.push(`Add at least one product photo for color ${colorValue}.`);
     }
   }
@@ -253,12 +262,9 @@ export const collectCoverError = ({
   values: Record<string, unknown>;
   schemaFields?: FieldSpec[];
 }): string[] => {
-  // Cover = explicit main images OR any per-color gallery (auto-derived).
-  // The main-image field name comes from the schema (MainImage uiType),
-  // never a hardcoded string, so renames keep validating.
   const coverFieldName =
     schemaFields.find((field) => normalizeGroup(field.uiType) === 'mainimage')?.name ?? 'mainImage';
-  const main = getNestedValue(values, coverFieldName);
+  const main = getNestedValue(values, coverFieldName) ?? values[coverFieldName];
   if (Array.isArray(main) && main.length > 0) return [];
   const colorMeta = getNestedValue(values, 'variants.colorMeta') as
     | Record<string, { images?: unknown }>
@@ -268,7 +274,16 @@ export const collectCoverError = ({
     Object.values(colorMeta).some(
       (entry) => Array.isArray(entry?.images) && entry.images.length > 0,
     );
-  return hasGallery ? [] : ['Add a cover photo or at least one color gallery photo.'];
+  if (hasGallery) return [];
+
+  const hasFlatGallery = Object.keys(values).some(
+    (key) =>
+      key.startsWith('variants.colorMeta.') &&
+      key.endsWith('.images') &&
+      Array.isArray(values[key]) &&
+      (values[key] as unknown[]).length > 0,
+  );
+  return hasFlatGallery ? [] : ['Add a cover photo or at least one color gallery photo.'];
 };
 
 export const buildSidebarSections = ({

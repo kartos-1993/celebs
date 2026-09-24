@@ -22,6 +22,24 @@ export const isDraftExpired = (savedAt?: string, ttlMs: number = DRAFT_TTL_MS): 
 export const normalizeText = (value: unknown): string =>
   value !== null && value !== undefined ? String(value).trim() : '';
 
+export function checkProductFormHasData(v: Record<string, unknown> | undefined): boolean {
+  if (!v) return false;
+  const hasTxt = (s: unknown) => typeof s === 'string' && s.trim().length > 0;
+  const hasArr = (a: unknown) => Array.isArray(a) && a.length > 0;
+  const hasObj = (o: unknown) => o !== null && typeof o === 'object' && Object.keys(o).length > 0;
+  return Boolean(
+    hasTxt(v.name) ||
+      hasTxt(v.brand) ||
+      hasTxt(v.description) ||
+      hasArr(v.mainImage) ||
+      hasArr(v.mainImages) ||
+      hasArr(v.variants) ||
+      (v.price !== undefined && v.price !== '' && v.price !== null) ||
+      hasObj(v.sku) ||
+      hasObj(v.attributes),
+  );
+}
+
 /** Single gallery-emptiness predicate shared by fields and collectors. */
 export function isGalleryFilled(images: unknown): boolean {
   return Array.isArray(images) && images.length > 0;

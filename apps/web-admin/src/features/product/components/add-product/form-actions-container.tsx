@@ -11,6 +11,8 @@ interface ProductFormActionsContainerProps {
   schemaReady: boolean;
   isDirty: boolean;
   isSubmitting: boolean;
+  isEditMode?: boolean;
+  canPublish?: boolean;
   onSaveAsDraft: () => void;
   onCancel: () => void;
 }
@@ -23,6 +25,8 @@ export const ProductFormActionsContainer = memo(
     schemaReady,
     isDirty,
     isSubmitting,
+    isEditMode = false,
+    canPublish = false,
     onSaveAsDraft,
     onCancel,
   }: ProductFormActionsContainerProps) => {
@@ -39,6 +43,8 @@ export const ProductFormActionsContainer = memo(
         onSaveAsDraft={onSaveAsDraft}
         onCancel={onCancel}
         isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        canPublish={canPublish}
       />
     );
   },

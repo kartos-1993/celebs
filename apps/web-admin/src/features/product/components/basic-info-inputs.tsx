@@ -9,7 +9,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { Input } from '@celebs/shared-ui/components/input';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 
 import { BrandSelector } from './brand-selector';
@@ -37,14 +36,8 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
           name="name"
           rules={{
             required: 'Product name is required',
-            minLength: {
-              value: 30,
-              message: 'Product name must be at least 30 characters',
-            },
-            maxLength: {
-              value: 200,
-              message: 'Product name must be less than 200 characters',
-            },
+            minLength: { value: 30, message: 'Product name must be at least 30 characters' },
+            maxLength: { value: 200, message: 'Product name must be less than 200 characters' },
           }}
           render={({ field }) => {
             const charCount = String(field.value || '').length;
@@ -65,16 +58,17 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
                   </span>
                 </div>
                 <FormControl>
-                  <Input
+                  <Textarea
                     placeholder="Enter a clear, searchable product title (min. 30 characters)"
                     data-testid="product-name-input"
                     maxLength={200}
+                    rows={2}
                     {...field}
                     onChange={(event) => {
                       field.onChange(event);
                       onFieldChange('name', event.target.value);
                     }}
-                    className="h-11 rounded-2xl border-border bg-card text-foreground"
+                    className="min-h-[58px] resize-y rounded-2xl border-border bg-card px-3.5 py-2.5 text-sm leading-relaxed text-foreground"
                   />
                 </FormControl>
                 <FormDescription className="text-xs text-muted-foreground">
@@ -113,10 +107,7 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
         control={control}
         name="description"
         rules={{
-          maxLength: {
-            value: 4000,
-            message: 'Description must be less than 4000 characters',
-          },
+          maxLength: { value: 4000, message: 'Description must be less than 4000 characters' },
         }}
         render={({ field }) => (
           <FormItem>

@@ -15,6 +15,7 @@ interface AddProductBasicSectionProps {
   categoryPath?: string[];
   hideBrand?: boolean;
   hideName?: boolean;
+  isCategoryLocked?: boolean;
 }
 
 export const AddProductBasicSection = memo(function AddProductBasicSection({
@@ -28,6 +29,7 @@ export const AddProductBasicSection = memo(function AddProductBasicSection({
   categoryPath,
   hideBrand,
   hideName,
+  isCategoryLocked,
 }: AddProductBasicSectionProps) {
   return (
     <section
@@ -57,6 +59,7 @@ export const AddProductBasicSection = memo(function AddProductBasicSection({
         categoryPath={categoryPath}
         hideBrand={hideBrand}
         hideName={hideName}
+        isCategoryLocked={isCategoryLocked}
       />
     </section>
   );

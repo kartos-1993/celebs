@@ -10,7 +10,13 @@ import type {
   VariantMetaItem,
   VariantSelection,
 } from './sku-table-types';
-import { buildScopeOptions, matchesScope, pathFor } from './sku-table-utils';
+import {
+  buildScopeOptions,
+  collectSkuPaths,
+  getSkuButtonState,
+  matchesScope,
+  pathFor,
+} from './sku-table-utils';
 
 import { axiosClient } from '@/lib/axios/axios-client';
 
@@ -153,33 +159,43 @@ export function useSkuTable(dataSource?: VariantDataSource) {
     }
   }, [variants, applyScope, applyAll, setValue]);
 
+  const skuPaths = React.useMemo(() => collectSkuPaths(variants), [variants]);
+
+  const watchedSkus = useWatch({
+    control: formControl,
+    name: skuPaths,
+  }) as Array<string | undefined> | undefined;
+
+  const skuButtonState = React.useMemo(() => {
+    const total = skuPaths.length;
+    let missing = 0;
+    skuPaths.forEach((path, i) => {
+      const val = (watchedSkus?.[i] ?? getValues(path) ?? '') as string;
+      if (!String(val).trim()) {
+        missing += 1;
+      }
+    });
+    return getSkuButtonState(total, missing);
+  }, [skuPaths, watchedSkus, getValues]);
+
   const handleAutoGenerateSkus = React.useCallback(() => {
-    const fill = (name: string, value: unknown) =>
-      setValue(name, value, { shouldDirty: true, shouldValidate: true });
+    const fillIfBlank = (name: string) => {
+      const existing = String(getValues(name) || '').trim();
+      if (!existing) {
+        setValue(name, generateCollisionProofBaseSku(brand, departmentHint), {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    };
 
     const departmentHint = String(getValues('categoryPath') || getValues('categoryId') || '');
     const brand = getValues('brand');
 
-    if (variants.length === 0) {
-      fill('sku.default.sellerSku', generateCollisionProofBaseSku(brand, departmentHint));
-    } else if (variants.length === 1) {
-      for (const opt of variants[0].values) {
-        fill(
-          pathFor(variants[0].key, opt, 'sellerSku'),
-          generateCollisionProofBaseSku(brand, departmentHint),
-        );
-      }
-    } else if (variants.length >= 2) {
-      for (const opt1 of variants[0].values) {
-        for (const opt2 of variants[1].values) {
-          fill(
-            pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku'),
-            generateCollisionProofBaseSku(brand, departmentHint),
-          );
-        }
-      }
+    for (const path of skuPaths) {
+      fillIfBlank(path);
     }
-  }, [variants, setValue, getValues]);
+  }, [skuPaths, setValue, getValues]);
 
   return {
     variants,
@@ -191,5 +207,6 @@ export function useSkuTable(dataSource?: VariantDataSource) {
     scopeOptions,
     applyToAll,
     handleAutoGenerateSkus,
+    skuButtonState,
   };
 }

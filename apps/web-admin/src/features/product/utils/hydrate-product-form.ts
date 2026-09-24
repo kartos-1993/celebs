@@ -190,6 +190,21 @@ export function hydrateProductForm(
     if (images.length > 0) values[`${prefix}.images`] = images;
     const hot = stored && (stored as { hot?: boolean }).hot;
     if (hot !== undefined) values[`${prefix}.hot`] = hot;
+
+    if (!values.variants || typeof values.variants !== 'object') {
+      values.variants = { colorMeta: {} };
+    }
+    const variantsObj = values.variants as Record<string, unknown>;
+    if (!variantsObj.colorMeta || typeof variantsObj.colorMeta !== 'object') {
+      variantsObj.colorMeta = {};
+    }
+    const colorMetaObj = variantsObj.colorMeta as Record<string, Record<string, unknown>>;
+    colorMetaObj[cName] = {
+      ...(colorMetaObj[cName] || {}),
+      ...(swatch ? { swatch } : {}),
+      ...(images.length > 0 ? { images } : {}),
+      ...(hot !== undefined ? { hot } : {}),
+    };
   }
 
   // 6. Hydrate SKU Matrix Table fallback for individual paths

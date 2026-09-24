@@ -48,3 +48,25 @@ export function rulesFrom(field: FieldSpec) {
   }
   return rules;
 }
+
+export interface ErrorLike {
+  message?: string;
+  type?: string;
+}
+
+/**
+ * React Hook Form stores errors as a NESTED tree (`errors.a.b.c.message`),
+ * while fields registered under dynamic paths (e.g. `variants.colorMeta.Red.images`)
+ * only know their dotted path. Resolve the path segment by segment.
+ */
+export function getPathError(errors: unknown, path: string): ErrorLike | undefined {
+  if (!errors || typeof errors !== 'object') return undefined;
+  const resolved = path.split('.').reduce<unknown>((acc, key) => {
+    if (acc === null || acc === undefined || typeof acc !== 'object') return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, errors);
+  if (resolved && typeof resolved === 'object' && 'message' in (resolved as ErrorLike)) {
+    return resolved as ErrorLike;
+  }
+  return undefined;
+}
