@@ -85,49 +85,32 @@ export function useProductCard({
 
   const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
 
-  const productRecord = product as Product & Record<string, unknown>;
-  const dynamicDataObj = productRecord.dynamicData as Record<string, unknown> | undefined;
-  const dynamicValuesObj = dynamicDataObj?.values as Record<string, unknown> | undefined;
-  const uploadedAssetsObj = productRecord.uploadedAssets as Record<string, unknown> | undefined;
-
   const activeColorImages = product.colorVariants?.[selectedColorIndex]?.images;
 
   const cardImages: string[] = useMemo(() => {
-    let rawList: unknown[] = [];
     if (Array.isArray(activeColorImages) && activeColorImages.length > 0) {
-      rawList = activeColorImages;
-    } else if (Array.isArray(product.mainImages) && product.mainImages.length > 0) {
-      rawList = product.mainImages;
-    } else if (
-      Array.isArray(dynamicValuesObj?.mainImage) &&
-      dynamicValuesObj.mainImage.length > 0
-    ) {
-      rawList = dynamicValuesObj.mainImage;
-    } else if (Array.isArray(dynamicDataObj?.mainImage) && dynamicDataObj.mainImage.length > 0) {
-      rawList = dynamicDataObj.mainImage;
-    } else if (
-      Array.isArray(uploadedAssetsObj?.mainImages) &&
-      uploadedAssetsObj.mainImages.length > 0
-    ) {
-      rawList = uploadedAssetsObj.mainImages;
-    } else if (
+      return activeColorImages.filter(
+        (img): img is string => typeof img === 'string' && img.trim().length > 0,
+      );
+    }
+    if (Array.isArray(product.mainImages) && product.mainImages.length > 0) {
+      return product.mainImages.filter(
+        (img): img is string => typeof img === 'string' && img.trim().length > 0,
+      );
+    }
+    if (product.cover) {
+      return [product.cover.trim()];
+    }
+    if (
       Array.isArray(product.colorVariants?.[0]?.images) &&
       product.colorVariants[0].images.length > 0
     ) {
-      rawList = product.colorVariants[0].images;
+      return product.colorVariants[0].images.filter(
+        (img): img is string => typeof img === 'string' && img.trim().length > 0,
+      );
     }
-
-    return rawList
-      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-      .map((item) => item.trim());
-  }, [
-    activeColorImages,
-    product.mainImages,
-    dynamicValuesObj,
-    dynamicDataObj,
-    uploadedAssetsObj,
-    product.colorVariants,
-  ]);
+    return [];
+  }, [activeColorImages, product.mainImages, product.cover, product.colorVariants]);
 
   const handleSelectColor = useCallback((idx: number, e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
@@ -177,16 +160,14 @@ export function useProductCard({
     rawDiscount != null && rawDiscount > 0 ? rawDiscount : isNaN(rawPrice) ? 0 : rawPrice;
   const hasDiscount = Boolean(rawDiscount != null && rawDiscount < rawPrice);
   const discountPercent =
-    hasDiscount && rawPrice > 0
-      ? Math.round(((rawPrice - rawDiscount!) / rawPrice) * 100)
-      : (productRecord.discountPercent as number | undefined) || 0;
+    hasDiscount && rawPrice > 0 ? Math.round(((rawPrice - rawDiscount!) / rawPrice) * 100) : 0;
 
   const priceColor = hasDiscount ? Palette.warning : Palette.black;
   const safePrice = isNaN(currentPrice) ? 0 : currentPrice;
   const integerPart = Math.floor(safePrice);
   const decimalPart = (safePrice % 1).toFixed(2).substring(1);
 
-  const storeName = product.brand || (productRecord.vendorName as string | undefined) || 'BODI';
+  const storeName = product.brand || 'BODI';
 
   const currentVariant = product.colorVariants?.[selectedColorIndex];
   const isSelectedVariantOutOfStock =

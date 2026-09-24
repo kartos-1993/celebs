@@ -1,3 +1,12 @@
+export type {
+  SkuPriceEntry,
+  StorefrontCard,
+  StorefrontCardColorVariant,
+  StorefrontDetail,
+  StorefrontDetailColorVariant,
+  StorefrontDetailSize,
+} from '@celebs/shared-types';
+
 export interface ProductMeasurement {
   name: string;
   value: string;
