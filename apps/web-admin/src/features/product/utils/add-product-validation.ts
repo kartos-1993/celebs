@@ -107,7 +107,6 @@ export const collectPricingErrors = ({
     const specialPrice = specialPriceRaw
       ? toPositiveNumber(getNestedValue(values, `${prefix}.specialPrice`))
       : undefined;
-    const stock = normalizeText(getNestedValue(values, `${prefix}.stock`));
     const freeItems = normalizeText(getNestedValue(values, `${prefix}.freeItems`));
 
     if (price === undefined) {
@@ -122,8 +121,10 @@ export const collectPricingErrors = ({
       pushError(`${label}: special price must be lower than price.`);
     }
 
-    if (stock && toNonNegativeInteger(getNestedValue(values, `${prefix}.stock`)) === undefined) {
-      pushError(`${label}: stock cannot be negative.`);
+    const stockVal = getNestedValue(values, `${prefix}.stock`);
+    const parsedStock = toNonNegativeInteger(stockVal);
+    if (parsedStock === undefined) {
+      pushError(`${label}: stock quantity is required.`);
     }
 
     if (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
@@ -12,10 +13,8 @@ import {
 } from '@celebs/shared-ui/components/dialog';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import type { ProductListItem } from '../../types';
-
 interface ManageProductDialogsProps {
-  archiveTarget: ProductListItem | null;
+  archiveTarget: AdminProductListItem | null;
   onCloseArchiveTarget: () => void;
   onConfirmArchiveTarget: () => void;
   isArchivePending: boolean;

@@ -1,12 +1,17 @@
-import type { IApiResponse } from '@celebs/shared-types';
-import type { CategoryAttributeType, CategoryTreeNode, RecentCategory } from '@celebs/shared-types';
+import type {
+  AdminProductDetail,
+  AdminProductListItem,
+  CategoryAttributeType,
+  CategoryTreeNode,
+  DropdownCategory,
+  IApiResponse,
+  RecentCategory,
+} from '@celebs/shared-types';
 
 import type {
   CreateProductRequest,
-  DropdownCategory,
   FieldSpec,
   ProductFilterRequest,
-  ProductRecord,
   ReviewProductRequestPayload,
   UpdateProductRequest,
 } from './types';
@@ -18,7 +23,7 @@ import { directUploadBatch } from '@/lib/media-upload';
 export type ProductApiResponse<T> = IApiResponse<T>;
 
 export interface PaginatedProductsResponse {
-  products: ProductRecord[];
+  products: AdminProductListItem[];
   total: number;
   page?: number;
   limit?: number;
@@ -32,8 +37,8 @@ const _UPLOAD_TIMEOUT_MS = 120_000;
 
 export async function createProduct(
   data: CreateProductRequest,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(BASE_PATH, data);
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.post<ProductApiResponse<AdminProductDetail>>(BASE_PATH, data);
   return response.data;
 }
 
@@ -46,16 +51,18 @@ export async function getProducts(
   return response.data;
 }
 
-export async function getProductById(id: string): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.get<ProductApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`);
+export async function getProductById(id: string): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.get<ProductApiResponse<AdminProductDetail>>(
+    `${BASE_PATH}/${id}`,
+  );
   return response.data;
 }
 
 export async function updateProduct(
   id: string,
   data: UpdateProductRequest,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.put<ProductApiResponse<ProductRecord>>(
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.put<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}`,
     data,
   );
@@ -75,8 +82,8 @@ export async function getProductReviewQueue(
 
 export async function submitProductForReview(
   id: string,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.post<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}/submit-for-review`,
   );
   return response.data;
@@ -86,26 +93,26 @@ export async function submitProductForReview(
 export async function reviewProduct(
   id: string,
   payload: ReviewProductRequestPayload,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.post<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}/review`,
     payload,
   );
   return response.data;
 }
 
-export async function archiveProduct(id: string): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/archive`,
+export async function archiveProduct(id: string): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.delete<ProductApiResponse<AdminProductDetail>>(
+    `${BASE_PATH}/${id}`,
   );
   return response.data;
 }
 
 export async function toggleProductActivation(
   id: string,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/toggle-activation`,
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.patch<ProductApiResponse<AdminProductDetail>>(
+    `${BASE_PATH}/${id}`,
   );
   return response.data;
 }

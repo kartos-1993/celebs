@@ -29,7 +29,9 @@ export function SkuSingleAxisTable({ variant, labelOf }: SkuSingleAxisTableProps
               Price <span className="text-destructive ml-0.5">*</span>
             </TableHead>
             <TableHead className="w-[16%] px-1.5 py-2">Special Price</TableHead>
-            <TableHead className="w-[11%] px-1.5 py-2">Stock</TableHead>
+            <TableHead className="w-[11%] px-1.5 py-2">
+              Stock <span className="text-destructive ml-0.5">*</span>
+            </TableHead>
             <TableHead className="w-[28%] px-1.5 py-2">SellerSKU</TableHead>
             <TableHead className="w-[10%] px-1.5 py-2">Free</TableHead>
             <TableHead className="w-[9%] px-1 py-2 text-center">Status</TableHead>
@@ -52,7 +54,11 @@ export function SkuSingleAxisTable({ variant, labelOf }: SkuSingleAxisTableProps
                 <VariantFieldInput name={pathFor(variant.key, opt, 'specialPrice')} type="number" />
               </TableCell>
               <TableCell className="p-1.5">
-                <VariantFieldInput name={pathFor(variant.key, opt, 'stock')} type="number" />
+                <VariantFieldInput
+                  name={pathFor(variant.key, opt, 'stock')}
+                  type="number"
+                  required
+                />
               </TableCell>
               <TableCell className="p-1.5">
                 <VariantFieldInput name={pathFor(variant.key, opt, 'sellerSku')} />

@@ -1,41 +1,8 @@
-import type {
-  CreateProductType,
-  ProductFilterType,
-  ProductType,
-  UpdateProductType,
-} from '@celebs/shared-types';
+import type { CreateProductType, ProductFilterType, UpdateProductType } from '@celebs/shared-types';
 
 export type CreateProductRequest = CreateProductType;
 export type UpdateProductRequest = UpdateProductType;
 export type ProductFilterRequest = ProductFilterType;
-export type ProductRecord = Partial<ProductType> & {
-  id?: string;
-  slug?: string;
-  name?: string;
-  price?: number;
-  category?: {
-    id?: string;
-    name?: string;
-    slug?: string;
-    path?: string | string[];
-    level?: number;
-  };
-  subcategory?: {
-    id?: string;
-    name?: string;
-    slug?: string;
-    path?: string | string[];
-    level?: number;
-  };
-};
-
-export type ProductStatus =
-  | 'draft'
-  | 'pending_review'
-  | 'published'
-  | 'rejected'
-  | 'deactivated'
-  | 'archived';
 
 export interface ReviewProductRequestPayload {
   action: 'approve' | 'reject';
@@ -103,8 +70,6 @@ export interface ProductDraft {
   values?: Record<string, unknown>;
 }
 
-export type ProductListItem = ProductRecord;
-
 // ── Cascading category dropdown UI state ────────────────────────────────
 export interface DropdownColumn {
   parentId: string | null;
@@ -124,5 +89,3 @@ export interface PreviewFilters {
   category: string;
   stock: PreviewStockFilter;
 }
-
-export type { DropdownCategory, RecentCategory } from '@celebs/shared-types';

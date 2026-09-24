@@ -1,13 +1,11 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
-import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { TableCell, TableRow } from '@celebs/shared-ui/components/table';
 
-import type { ProductListItem } from '../../types';
 import {
   formatShortDate,
   getCategoryImage,
@@ -18,12 +16,11 @@ import {
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
 
+import { ManageProductRowActions } from './manage-product-row-actions';
 import { statusBadgeVariant, statusLabels } from './product-status';
 
-import { RowActionsMenu } from '@/components/row-actions-menu';
-
 interface ManageProductTableRowProps {
-  product: ProductListItem;
+  product: AdminProductListItem;
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
   isSellerOrStaff: boolean;
@@ -33,7 +30,7 @@ interface ManageProductTableRowProps {
   isSubmitPending: boolean;
   onToggleActivation: (id: string) => void;
   isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
+  onSetArchiveTarget: (product: AdminProductListItem) => void;
 }
 
 export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
@@ -49,9 +46,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   isTogglePending,
   onSetArchiveTarget,
 }) => {
-  const navigate = useNavigate();
   if (!product.id) return null;
-  const productId = product.id;
   const price = Number(product.price ?? 0);
   const status = product.status ?? 'draft';
   const vendor = getVendorDisplay(product);
@@ -84,9 +79,6 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
             <div className="max-w-55 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
               {product.name ?? 'Untitled'}
             </div>
-            {product.brand && (
-              <div className="truncate text-xs text-muted-foreground">{product.brand}</div>
-            )}
           </div>
         </div>
       </TableCell>
@@ -126,40 +118,17 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
         </div>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-          {isSellerOrStaff && canCreate && (status === 'draft' || status === 'rejected') && (
-            <Button
-              size="sm"
-              className="h-7 px-2 text-xs"
-              disabled={isSubmitPending}
-              onClick={() => onSubmit(productId)}
-            >
-              Submit
-            </Button>
-          )}
-          {isSellerOrStaff && canEdit && (status === 'published' || status === 'deactivated') && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 px-2 text-xs"
-              disabled={isTogglePending}
-              onClick={() => onToggleActivation(productId)}
-            >
-              {status === 'published' ? 'Deactivate' : 'Activate'}
-            </Button>
-          )}
-          <RowActionsMenu
-            label={`Actions for ${product.name ?? 'product'}`}
-            items={[
-              { label: 'Edit', onSelect: () => navigate(`/products/edit/${productId}`) },
-              {
-                label: 'Archive (Delete)',
-                onSelect: () => onSetArchiveTarget(product),
-                destructive: true,
-              },
-            ]}
-          />
-        </div>
+        <ManageProductRowActions
+          product={product}
+          isSellerOrStaff={isSellerOrStaff}
+          canCreate={canCreate}
+          canEdit={canEdit}
+          onSubmit={onSubmit}
+          isSubmitPending={isSubmitPending}
+          onToggleActivation={onToggleActivation}
+          isTogglePending={isTogglePending}
+          onSetArchiveTarget={onSetArchiveTarget}
+        />
       </TableCell>
     </TableRow>
   );

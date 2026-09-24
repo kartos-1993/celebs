@@ -134,6 +134,12 @@ export function useProductDraft({
     return true;
   }, [categoryPath, draftKey, form, storeId]);
 
+  /** Clear saved draft from localStorage without resetting form state (e.g. after successful submit). */
+  const clearSavedDraft = useCallback(() => {
+    window.localStorage.removeItem(draftKey);
+    setRestoredDraftAt(null);
+  }, [draftKey]);
+
   /** Discard draft and reset to a blank form. */
   const discardDraft = useCallback(() => {
     window.localStorage.removeItem(draftKey);
@@ -177,6 +183,7 @@ export function useProductDraft({
     categoryPath,
     setCategoryPath,
     saveDraftNow,
+    clearSavedDraft,
     discardDraft,
     resetForNewCategory,
   };

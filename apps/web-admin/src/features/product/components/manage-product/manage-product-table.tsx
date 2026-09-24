@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
@@ -11,15 +12,13 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
-import type { ProductListItem } from '../../types';
-
 import { ManageProductCards } from './manage-product-cards';
 import { ManageProductTableRow } from './manage-product-table-row';
 
 import { TableSkeleton } from '@/components/table-skeleton';
 
 interface ManageProductTableProps {
-  products: ProductListItem[];
+  products: AdminProductListItem[];
   isLoading: boolean;
   isFetching: boolean;
   selectedProducts: string[];
@@ -32,7 +31,7 @@ interface ManageProductTableProps {
   isSubmitPending: boolean;
   onToggleActivation: (id: string) => void;
   isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
+  onSetArchiveTarget: (product: AdminProductListItem) => void;
   searchQuery: string;
 }
 

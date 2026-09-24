@@ -1,5 +1,6 @@
+import type { AdminProductDetail } from '@celebs/shared-types';
+
 import type { ProductFormValues } from '../hooks/use-product-form';
-import type { ProductRecord } from '../types';
 
 export const toCategoryPath = (cat: unknown): string[] => {
   if (!cat || typeof cat !== 'object') return [];
@@ -42,7 +43,7 @@ export function extractSkuOption(
  * for full edit-mode population (basic info, images, dynamic attrs, swatches, measurements, and SKU matrix).
  */
 export function hydrateProductForm(
-  product: ProductRecord,
+  product: AdminProductDetail,
   existingFormValues: ProductFormValues = {},
 ): ProductFormValues {
   const toId = (value: unknown): string => {
@@ -66,15 +67,18 @@ export function hydrateProductForm(
       product.discountedPrice !== undefined && product.discountedPrice !== null
         ? Number(product.discountedPrice)
         : undefined,
-    status: product.status ?? 'draft',
+    status: (product.status?.toLowerCase() as ProductFormValues['status']) ?? 'draft',
   };
 
   // 1. Hydrate Main Images
   if (Array.isArray(product.mainImages) && product.mainImages.length > 0) {
     values.mainImage = product.mainImages;
     values.mainImages = product.mainImages;
-  } else if ((product as Record<string, unknown>).mainImage) {
-    values.mainImage = [(product as Record<string, unknown>).mainImage as string];
+  } else {
+    const legacy = product as unknown as Record<string, unknown>;
+    if (typeof legacy.mainImage === 'string' && legacy.mainImage) {
+      values.mainImage = [legacy.mainImage];
+    }
   }
 
   // 2. Hydrate Dynamic Data attributes & SKU structure
@@ -95,10 +99,11 @@ export function hydrateProductForm(
   // 3. Hydrate Variant Selections (Color & Size keys)
   const colorNames = Array.isArray(product.colorVariants)
     ? product.colorVariants
-        .map(
-          (cv: { name?: string; colorName?: string } | undefined) =>
-            cv?.name || cv?.colorName || '',
-        )
+        .map((cv: unknown) => {
+          if (!cv || typeof cv !== 'object') return '';
+          const record = cv as { name?: string; colorName?: string };
+          return record.name || record.colorName || '';
+        })
         .filter(Boolean)
     : [];
 
@@ -111,9 +116,11 @@ export function hydrateProductForm(
 
   const sizeNames = Array.isArray(product.sizes)
     ? product.sizes
-        .map((s: { name?: string } | string | undefined) =>
-          typeof s === 'string' ? s : s?.name || '',
-        )
+        .map((s: unknown) => {
+          if (typeof s === 'string') return s;
+          if (s && typeof s === 'object') return (s as { name?: string }).name || '';
+          return '';
+        })
         .filter(Boolean)
     : [];
 
@@ -137,7 +144,7 @@ export function hydrateProductForm(
 
   // 4. Hydrate Sizes & Measurements table
   if (Array.isArray(product.sizes) && product.sizes.length > 0) {
-    values.sizes = product.sizes;
+    values.sizes = product.sizes as ProductFormValues['sizes'];
   }
 
   // 5. Hydrate Color Variants, Swatches & Gallery Images
@@ -155,7 +162,7 @@ export function hydrateProductForm(
   const variantsByName = new Map(
     (Array.isArray(product.colorVariants) ? product.colorVariants : [])
       .filter(Boolean)
-      .map((cv) => {
+      .map((cv: unknown) => {
         const record = cv as { name?: string; colorName?: string };
         return [record.name || record.colorName || 'Default', cv] as const;
       }),

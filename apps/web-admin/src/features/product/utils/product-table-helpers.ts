@@ -1,4 +1,6 @@
-import type { PreviewFilters, ProductListItem, ProductSortKey, StockState } from '../types';
+import type { AdminProductListItem } from '@celebs/shared-types';
+
+import type { PreviewFilters, ProductSortKey, StockState } from '../types';
 
 export function sortKeyToParams(sortKey: ProductSortKey): {
   sortBy: 'createdAt' | 'price' | 'name';
@@ -17,27 +19,17 @@ export function sortKeyToParams(sortKey: ProductSortKey): {
   }
 }
 
-export function getCategoryName(product: ProductListItem): string {
-  const category = product.category;
-  if (typeof category === 'string') return category;
-  return category?.name ?? 'Uncategorized';
+export function getCategoryName(product: AdminProductListItem): string {
+  return product.category?.name ?? 'Uncategorized';
 }
 
-export function getCategoryImage(product: ProductListItem): string | undefined {
-  const category = product.category;
-  if (category && typeof category === 'object' && typeof category.imageUrl === 'string') {
-    return category.imageUrl || undefined;
-  }
-  return undefined;
+export function getCategoryImage(product: AdminProductListItem): string | undefined {
+  return product.category?.imageUrl;
 }
 
-/** Declared cover first, legacy mains as fallback, placeholder last. */
-export function getProductCover(product: ProductListItem): string {
-  const declared = (product as ProductListItem & { cover?: unknown }).cover;
-  if (typeof declared === 'string' && declared) return declared;
-  const legacy = product.mainImages?.[0];
-  if (typeof legacy === 'string' && legacy) return legacy;
-  return '/placeholder.svg';
+/** Declared cover first, placeholder fallback. */
+export function getProductCover(product: AdminProductListItem): string {
+  return product.cover || '/placeholder.svg';
 }
 
 export function getVendorDisplay(product: { vendorName?: string | null }): string {
@@ -51,25 +43,8 @@ export function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function getProductStock(product: ProductListItem): number {
-  // Admin list rows carry the server-computed total; legacy full rows fall
-  // through to the client-side sum below.
-  const declared = (product as ProductListItem & { stockTotal?: unknown }).stockTotal;
-  if (typeof declared === 'number' && Number.isFinite(declared)) return declared;
-  const skuStock = Array.isArray(product.skus)
-    ? product.skus.reduce((sum, sku) => sum + (Number(sku?.stock) || 0), 0)
-    : 0;
-  const variantStock = Array.isArray(product.colorVariants)
-    ? product.colorVariants.reduce(
-        (sum, variant) =>
-          sum +
-          (Array.isArray(variant?.stocks)
-            ? variant.stocks.reduce((inner, s) => inner + (Number(s?.quantity) || 0), 0)
-            : 0),
-        0,
-      )
-    : 0;
-  return skuStock + variantStock;
+export function getProductStock(product: AdminProductListItem): number {
+  return product.stockTotal;
 }
 
 export function getStockState(total: number): StockState {
@@ -91,9 +66,9 @@ export function formatShortDate(value: unknown): string {
  * needs vendorId/category/stock params for that (see productFilterSchema).
  */
 export function applyPreviewFilters(
-  products: ProductListItem[],
+  products: AdminProductListItem[],
   filters: PreviewFilters,
-): ProductListItem[] {
+): AdminProductListItem[] {
   return products.filter((product) => {
     if (filters.vendor !== 'all' && getVendorDisplay(product) !== filters.vendor) return false;
     if (filters.category !== 'all' && getCategoryName(product) !== filters.category) return false;
@@ -104,19 +79,19 @@ export function applyPreviewFilters(
   });
 }
 
-export function uniqueVendors(products: ProductListItem[]): string[] {
+export function uniqueVendors(products: AdminProductListItem[]): string[] {
   return Array.from(new Set(products.map(getVendorDisplay))).sort();
 }
 
-export function uniqueCategories(products: ProductListItem[]): string[] {
+export function uniqueCategories(products: AdminProductListItem[]): string[] {
   return Array.from(new Set(products.map(getCategoryName))).sort();
 }
 
-export function sumPrices(products: ProductListItem[]): number {
+export function sumPrices(products: AdminProductListItem[]): number {
   return products.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
 }
 
-export function avgStock(products: ProductListItem[]): number {
+export function avgStock(products: AdminProductListItem[]): number {
   if (products.length === 0) return 0;
   const total = products.reduce((sum, p) => sum + getProductStock(p), 0);
   return Math.round((total / products.length) * 10) / 10;

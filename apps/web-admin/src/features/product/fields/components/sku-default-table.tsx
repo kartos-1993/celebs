@@ -21,7 +21,9 @@ export function SkuDefaultTable() {
               Price <span className="text-destructive ml-0.5">*</span>
             </TableHead>
             <TableHead className="w-[18%] px-1.5 py-2">Special Price</TableHead>
-            <TableHead className="w-[12%] px-1.5 py-2">Stock</TableHead>
+            <TableHead className="w-[12%] px-1.5 py-2">
+              Stock <span className="text-destructive ml-0.5">*</span>
+            </TableHead>
             <TableHead className="w-[30%] px-1.5 py-2">SellerSKU</TableHead>
             <TableHead className="w-[12%] px-1.5 py-2">Free</TableHead>
             <TableHead className="w-[13%] px-1.5 py-2">Status</TableHead>
@@ -36,7 +38,7 @@ export function SkuDefaultTable() {
               <VariantFieldInput name="sku.default.specialPrice" type="number" />
             </TableCell>
             <TableCell className="p-1.5">
-              <VariantFieldInput name="sku.default.stock" type="number" />
+              <VariantFieldInput name="sku.default.stock" type="number" required />
             </TableCell>
             <TableCell className="p-1.5">
               <VariantFieldInput name="sku.default.sellerSku" />

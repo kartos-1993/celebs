@@ -14,7 +14,7 @@ export interface CascadingDropdownProps {
   onSelect?: (category: DropdownCategory) => void;
   placeholder?: string;
   selectedCategory?: DropdownCategory | null;
-  isDirty?: boolean;
+  isDirty?: boolean | (() => boolean);
 }
 
 export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
@@ -75,6 +75,8 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
           </div>
         </PopoverContent>
       </Popover>
+
+      <RecentChips recentCategories={state.recentCategories} onSelect={state.handleRecentSelect} />
 
       <CategoryChangeDialog
         open={state.isConfirmModalOpen}

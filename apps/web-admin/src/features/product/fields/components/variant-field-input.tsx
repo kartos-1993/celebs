@@ -32,7 +32,10 @@ export function VariantFieldInput({
             validate: (value: unknown) => {
               const raw = String(value ?? '').trim();
               if (!raw) {
-                return required ? 'This field is required' : true;
+                if (!required) return true;
+                if (name.endsWith('.stock')) return 'Stock is required';
+                if (isPriceField) return 'Price is required';
+                return 'This field is required';
               }
               const numeric = Number(raw);
               if (!Number.isFinite(numeric)) {

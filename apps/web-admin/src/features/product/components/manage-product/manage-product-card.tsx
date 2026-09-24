@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card } from '@celebs/shared-ui/components/card';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 
-import type { ProductListItem } from '../../types';
 import {
   formatShortDate,
   getCategoryImage,
@@ -19,7 +19,7 @@ import {
 import { statusBadgeVariant, statusLabels } from './product-status';
 
 interface ManageProductCardProps {
-  product: ProductListItem;
+  product: AdminProductListItem;
   isSelected: boolean;
   onSelectProduct: (id: string, checked: boolean) => void;
   isSellerOrStaff: boolean;
@@ -29,7 +29,7 @@ interface ManageProductCardProps {
   isSubmitPending: boolean;
   onToggleActivation: (id: string) => void;
   isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
+  onSetArchiveTarget: (product: AdminProductListItem) => void;
 }
 
 export const ManageProductCard: React.FC<ManageProductCardProps> = ({
@@ -79,9 +79,6 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
           <div className="truncate text-sm font-medium leading-tight">
             {product.name ?? 'Untitled'}
           </div>
-          {product.brand && (
-            <div className="truncate text-xs text-muted-foreground">{product.brand}</div>
-          )}
           <div className="mt-1 flex flex-wrap items-center gap-1">
             {getCategoryImage(product) ? (
               <img

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 
 import { Permission } from '@celebs/rbac';
+import type { AdminProductListItem } from '@celebs/shared-types';
 
 import { useManageProductState } from '../hooks/use-manage-product-state';
 import { useProductBatchMutations } from '../hooks/use-product-batch-mutations';
 import { useProductMutations, useProductsQuery } from '../hooks/use-product-queries';
-import type { ProductListItem } from '../types';
 import { uniqueCategories, uniqueVendors } from '../utils/product-table-helpers';
 
 import { ManageProductBatchBar } from './manage-product/manage-product-batch-bar';
@@ -36,7 +36,7 @@ export const ManageProduct: React.FC = () => {
     handleBatchArchiveConfirm,
   } = useProductBatchMutations();
 
-  const products: ProductListItem[] = useMemo(() => data?.data?.products ?? [], [data]);
+  const products: AdminProductListItem[] = useMemo(() => data?.data?.products ?? [], [data]);
   const total = data?.data?.total ?? 0;
   const totalPages = Math.ceil(total / state.pageSize) || 1;
 
@@ -54,13 +54,13 @@ export const ManageProduct: React.FC = () => {
       <div className="space-y-4">
         <ManageProductFilterBar
           searchInput={state.searchInput}
-          onSearch={(value) => {
-            state.setSearchInput(value);
+          onSearch={(val) => {
+            state.setSearchInput(val);
             state.setPage(1);
           }}
           filterStatus={state.filterStatus}
-          onStatus={(value) => {
-            state.setFilterStatus(value);
+          onStatus={(val) => {
+            state.setFilterStatus(val);
             state.setPage(1);
           }}
           sortKey={state.sortKey}

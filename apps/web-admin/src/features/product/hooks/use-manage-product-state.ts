@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type {
-  PreviewFilters,
-  PreviewStockFilter,
-  ProductListItem,
-  ProductSortKey,
-  ProductStatus,
-} from '../types';
+import type { AdminProductListItem, ProductStatus } from '@celebs/shared-types';
+
+import type { PreviewFilters, PreviewStockFilter, ProductSortKey } from '../types';
 import { applyPreviewFilters, sortKeyToParams } from '../utils/product-table-helpers';
 
 import { useListQueryState } from '@/common/hooks/use-list-query-state';
@@ -52,7 +48,7 @@ export function useManageProductState() {
   const previewStock = (listQuery.extras.stock ?? 'all') as PreviewStockFilter;
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [archiveTarget, setArchiveTarget] = useState<ProductListItem | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<AdminProductListItem | null>(null);
   const [isBatchArchiveOpen, setIsBatchArchiveOpen] = useState(false);
 
   useEffect(() => {
@@ -79,10 +75,10 @@ export function useManageProductState() {
     [previewVendor, previewCategory, previewStock],
   );
 
-  const applyPreview = (products: ProductListItem[]) =>
+  const applyPreview = (products: AdminProductListItem[]) =>
     applyPreviewFilters(products, previewFilters);
 
-  const getSelectionCounts = (products: ProductListItem[]) => {
+  const getSelectionCounts = (products: AdminProductListItem[]) => {
     const selectedItems = products.filter((p) => p.id && selectedProducts.includes(p.id));
     return {
       selectedItems,
@@ -93,7 +89,7 @@ export function useManageProductState() {
     };
   };
 
-  const handleSelectAll = (products: ProductListItem[]) => {
+  const handleSelectAll = (products: AdminProductListItem[]) => {
     const validIds = products.map((p) => p.id).filter((id): id is string => Boolean(id));
     setSelectedProducts(
       selectedProducts.length === validIds.length && validIds.length > 0 ? [] : validIds,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ProductRecord } from '../../types';
+import type { AdminProductDetail } from '@celebs/shared-types';
+
 import { hydrateProductForm, toCategoryPath } from '../hydrate-product-form';
 
 describe('hydrateProductForm', () => {
@@ -20,7 +21,7 @@ describe('hydrateProductForm', () => {
   });
 
   it('should hydrate basic info, prices, main images, and dynamic attributes', () => {
-    const product: ProductRecord = {
+    const product: AdminProductDetail = {
       id: 'prod-123',
       slug: 'silk-evening-dress',
       name: 'Silk Evening Dress',
@@ -54,7 +55,7 @@ describe('hydrateProductForm', () => {
   });
 
   it('should hydrate 2D SKU matrix and color swatch metadata', () => {
-    const product: ProductRecord = {
+    const product: AdminProductDetail = {
       id: 'prod-456',
       slug: 'denim-jacket',
       name: 'Denim Jacket',

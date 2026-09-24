@@ -8,13 +8,20 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import {
   archiveProduct,
+  createProduct,
   getProductReviewQueue,
   getProducts,
   reviewProduct,
   submitProductForReview,
   toggleProductActivation,
+  updateProduct,
 } from '../api';
-import type { ProductFilterRequest, ReviewProductRequestPayload } from '../types';
+import type {
+  CreateProductRequest,
+  ProductFilterRequest,
+  ReviewProductRequestPayload,
+  UpdateProductRequest,
+} from '../types';
 
 import { useToast } from '@/hooks/use-toast';
 
@@ -117,5 +124,21 @@ export function useProductMutations() {
     },
   });
 
-  return { toggleActivation, archive, submitForReview, review };
+  const create = useMutation({
+    mutationFn: (payload: CreateProductRequest) => createProduct(payload),
+    onSuccess: () => {
+      invalidateLists();
+    },
+  });
+
+  const update = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateProductRequest }) =>
+      updateProduct(id, payload),
+    onSuccess: (_response, variables) => {
+      invalidateLists();
+      queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.detail(variables.id) });
+    },
+  });
+
+  return { toggleActivation, archive, submitForReview, review, create, update };
 }

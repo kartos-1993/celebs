@@ -1,6 +1,7 @@
-import { memo, useEffect, useMemo, useState } from 'react';
-import { Control, FieldValues, useFormContext, useFormState } from 'react-hook-form';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { type Control, type FieldValues, useFormContext } from 'react-hook-form';
 
+import type { DropdownCategory } from '@celebs/shared-types';
 import {
   FormControl,
   FormDescription,
@@ -9,13 +10,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@celebs/shared-ui/components/form';
-import { Input } from '@celebs/shared-ui/components/input';
-import { Textarea } from '@celebs/shared-ui/components/textarea';
 
-import type { DropdownCategory } from '../types';
-
-import { BrandSelector } from './brand-selector';
+import { BasicInfoInputs } from './basic-info-inputs';
 import { CascadingDropdown } from './cascading-dropdown';
+
 interface BasicInfoSectionProps {
   control: Control<FieldValues>;
   selectedCategoryId: string;
@@ -42,12 +40,26 @@ const BasicInfoSection = ({
   hideBrand,
 }: BasicInfoSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<DropdownCategory | null>(null);
-  const { isDirty } = useFormState({ control });
-  const { setValue, watch } = useFormContext();
-  const watchedName = watch('name');
-  const watchedBrand = watch('brand');
-  const watchedDescription = watch('description');
-  const watchedAttributes = watch('attributes');
+  const { setValue, getValues } = useFormContext();
+
+  const checkHasData = useCallback(() => {
+    const v = getValues() as Record<string, unknown>;
+    if (!v) return false;
+    const hasTxt = (s: unknown) => typeof s === 'string' && s.trim().length > 0;
+    const hasArr = (a: unknown) => Array.isArray(a) && a.length > 0;
+    const hasObj = (o: unknown) => o !== null && typeof o === 'object' && Object.keys(o).length > 0;
+    return Boolean(
+      hasTxt(v.name) ||
+        hasTxt(v.brand) ||
+        hasTxt(v.description) ||
+        hasArr(v.mainImage) ||
+        hasArr(v.mainImages) ||
+        hasArr(v.variants) ||
+        (v.price !== undefined && v.price !== '' && v.price !== null) ||
+        hasObj(v.sku) ||
+        hasObj(v.attributes),
+    );
+  }, [getValues]);
 
   useEffect(() => {
     if (categoryPath?.length && selectedSubcategoryId) {
@@ -65,18 +77,24 @@ const BasicInfoSection = ({
   }, [categoryPath, selectedSubcategoryId]);
 
   const hasCategory = useMemo(
-    () => !!selectedCategory || !!selectedSubcategoryId,
+    () => Boolean(selectedCategory || selectedSubcategoryId),
     [selectedCategory, selectedSubcategoryId],
   );
 
-  const isFormDirty =
-    isDirty ||
-    Boolean(
-      watchedName ||
-        watchedBrand ||
-        watchedDescription ||
-        (watchedAttributes && Object.keys(watchedAttributes).length > 0),
-    );
+  const handleBrandSelect = useCallback(
+    (brandName: string) => {
+      setValue('brand', brandName, { shouldDirty: true, shouldValidate: true });
+    },
+    [setValue],
+  );
+
+  const categoryPathDisplay = useMemo(() => {
+    const p = selectedCategory?.path || categoryPath;
+    if (!p) return '';
+    if (Array.isArray(p)) return p.join(' > ');
+    if (typeof p === 'string') return p.split('/').join(' > ');
+    return String(p);
+  }, [selectedCategory?.path, categoryPath]);
 
   return (
     <div className="space-y-6">
@@ -92,7 +110,7 @@ const BasicInfoSection = ({
             <FormControl>
               <CascadingDropdown
                 selectedCategory={selectedCategory ?? undefined}
-                isDirty={isFormDirty}
+                isDirty={checkHasData}
                 onSelect={(category) => {
                   setSelectedCategory(category);
                   onCategoryChange(category.id);
@@ -111,148 +129,25 @@ const BasicInfoSection = ({
               Pick the most specific category. The rest of the product form is generated from this
               selection.
             </FormDescription>
-            {hasCategory ? (
+            {hasCategory && categoryPathDisplay && (
               <div className="rounded-2xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-foreground">
-                Current selection:{' '}
-                <span className="font-semibold">
-                  {(() => {
-                    const p = selectedCategory?.path || categoryPath;
-                    if (!p) return '';
-                    if (Array.isArray(p)) return p.join(' > ');
-                    if (typeof p === 'string') return p.split('/').join(' > ');
-                    return String(p);
-                  })()}
-                </span>
+                Current selection: <span className="font-semibold">{categoryPathDisplay}</span>
               </div>
-            ) : null}
+            )}
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {hasCategory ? (
-        <div className="grid gap-6">
-          {!hideName ? (
-            <FormField
-              control={control}
-              name="name"
-              rules={{
-                required: 'Product name is required',
-                minLength: {
-                  value: 30,
-                  message: 'Product name must be at least 30 characters',
-                },
-                maxLength: {
-                  value: 200,
-                  message: 'Product name must be less than 200 characters',
-                },
-              }}
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between gap-3">
-                    <FormLabel>
-                      Product Name <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <span
-                      className={
-                        String(field.value || '').length > 0 &&
-                        String(field.value || '').length < 30
-                          ? 'text-xs font-medium text-warning'
-                          : 'text-xs text-muted-foreground'
-                      }
-                    >
-                      {String(field.value || '').length}/200
-                    </span>
-                  </div>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter a clear, searchable product title (min. 30 characters)"
-                      data-testid="product-name-input"
-                      maxLength={200}
-                      {...field}
-                      onChange={(event) => {
-                        field.onChange(event);
-                        onFieldChange('name', event.target.value);
-                      }}
-                      className="h-11 rounded-2xl border-border bg-card text-foreground"
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs text-muted-foreground">
-                    Include the key identifier, style, or collection name buyers would search for.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ) : null}
-
-          {!hideBrand ? (
-            <FormField
-              control={control}
-              name="brandId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <BrandSelector
-                      value={field.value}
-                      onChange={(brandId, brandName) => {
-                        field.onChange(brandId);
-                        setValue('brand', brandName || '', {
-                          shouldDirty: true,
-                          shouldValidate: true,
-                        });
-                        onFieldChange('brand', brandName || '');
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ) : null}
-
-          <FormField
-            control={control}
-            name="description"
-            rules={{
-              maxLength: {
-                value: 4000,
-                message: 'Description must be less than 4000 characters',
-              },
-            }}
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between gap-3">
-                  <FormLabel>
-                    Product Description{' '}
-                    <span className="font-normal text-xs text-muted-foreground">(Optional)</span>
-                  </FormLabel>
-                  <span className="text-xs text-muted-foreground">
-                    {String(field.value || '').length}/4000
-                  </span>
-                </div>
-                <FormControl>
-                  <Textarea
-                    placeholder="Describe the material, fit, standout features, and customer-facing details."
-                    data-testid="product-desc-input"
-                    {...field}
-                    onChange={(event) => {
-                      field.onChange(event);
-                      onFieldChange('description', event.target.value);
-                    }}
-                    className="min-h-36 rounded-3xl border-border bg-card px-4 py-3 text-foreground"
-                  />
-                </FormControl>
-                <FormDescription className="text-xs text-muted-foreground">
-                  This description is used for the published product page and should be specific
-                  enough for customers to understand the item.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      ) : null}
+      {hasCategory && (
+        <BasicInfoInputs
+          control={control}
+          hideName={hideName}
+          hideBrand={hideBrand}
+          onFieldChange={onFieldChange}
+          onBrandSelect={handleBrandSelect}
+        />
+      )}
     </div>
   );
 };
