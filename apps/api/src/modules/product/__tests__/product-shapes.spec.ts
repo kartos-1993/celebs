@@ -111,9 +111,13 @@ describe('Response shapes per consumer', () => {
     const { service } = serviceWith(row);
     const result = (await service.getProductById('p1', true)) as Record<string, unknown>;
 
+    expect(result.id).toBe('p1');
+    expect(result.name).toBe('Denim Shorts');
     expect(result.skus).toHaveLength(2);
     expect(result.dynamicData).toBeDefined();
     expect(result.status).toBe('published');
+    expect(result.cover).toBe('cover.jpg');
+    expect(result.inventories).toBeUndefined();
   });
 
   it('serves lean card rows on public lists', async () => {

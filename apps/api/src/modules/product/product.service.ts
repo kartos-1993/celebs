@@ -10,6 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
+import { PRODUCT_STATUS, type ProductStatus, VENDOR_EDITABLE_STATUSES } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { brandRepository } from '../brand/brand.repository';
@@ -33,9 +34,6 @@ import {
 import { ProductLifecycleService } from './product-lifecycle.service';
 import { buildProductCreateData, buildProductUpdateData } from './product-payloads';
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
-import type { ProductStatusValue } from './product-status';
-import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
-
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -188,15 +186,10 @@ export class ProductService {
               departmentHint,
             );
 
-            const inventories = await tx.productInventory.findMany({
-              where: { productId: product.id },
-              select: {
-                colorVariantName: true,
-                size: true,
-                quantity: true,
-                reservedQuantity: true,
-              },
-            });
+            const inventories = await this.inventoryRepository.findInventoriesByProductId(
+              product.id,
+              tx,
+            );
 
             return { ...product, inventories };
           },
@@ -323,10 +316,7 @@ export class ProductService {
           ErrorCode.FORBIDDEN_RESOURCE,
         );
       }
-      if (
-        !isPublisher &&
-        !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)
-      ) {
+      if (!isPublisher && !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatus)) {
         throw new AppError(
           'Cannot update product unless it is draft or rejected',
           HTTPSTATUS.BAD_REQUEST,

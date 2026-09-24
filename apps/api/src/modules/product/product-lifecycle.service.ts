@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 
+import { PRODUCT_STATUS, type ProductStatus, VENDOR_EDITABLE_STATUSES } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { InventoryRepository, inventoryRepository } from '../inventory/inventory.repository';
@@ -16,8 +17,6 @@ import {
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import { isVisibilityFlip, purgeProduct, purgeProductLists } from './product-cache';
-import type { ProductStatusValue } from './product-status';
-import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
 
 import { enqueueMail } from '@/common/services/mail.queue';
 import { invalidateCacheKey } from '@/common/services/redis-cache.service';
@@ -56,7 +55,7 @@ export class ProductLifecycleService {
       );
     }
 
-    if (!VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)) {
+    if (!VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatus)) {
       throw new AppError(
         'Product is not in a submittable state',
         HTTPSTATUS.BAD_REQUEST,

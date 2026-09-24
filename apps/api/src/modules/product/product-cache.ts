@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { PRODUCT_STATUS } from './product-status';
+import { PRODUCT_STATUS } from '@celebs/shared-types';
 
 import {
   getCachedJson,

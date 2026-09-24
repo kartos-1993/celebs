@@ -32,6 +32,28 @@ export class InventoryRepository {
     });
   }
 
+  public async findInventoriesByProductId(
+    productId: string,
+    tx: Prisma.TransactionClient = prisma,
+  ): Promise<
+    Array<{
+      colorVariantName: string;
+      size: string;
+      quantity: number;
+      reservedQuantity: number;
+    }>
+  > {
+    return tx.productInventory.findMany({
+      where: { productId },
+      select: {
+        colorVariantName: true,
+        size: true,
+        quantity: true,
+        reservedQuantity: true,
+      },
+    });
+  }
+
   public async findByProductVariantSize(
     productId: string,
     colorVariantName: string,

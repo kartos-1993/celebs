@@ -4,6 +4,7 @@ import { can, Permission } from '@celebs/rbac';
 import {
   createProductSchema,
   idParamSchema,
+  PRODUCT_STATUS,
   productFilterSchema,
   productReviewActionSchema,
   updateProductSchema,
@@ -11,7 +12,6 @@ import {
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { ProductService } from './product.service';
-import { PRODUCT_STATUS } from './product-status';
 
 import {
   is1PVendor,
@@ -89,9 +89,7 @@ export class ProductController {
         throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
       }
 
-      const isPublished =
-        product.status === 'published' ||
-        String(product.status).toLowerCase() === PRODUCT_STATUS.PUBLISHED;
+      const isPublished = product.status === PRODUCT_STATUS.PUBLISHED;
       if (!isPublished) {
         // Default-deny: only platform reviewers and the owning store may read unpublished products
         const ownsIt = !!req.store?.id && String(product.vendorId) === String(req.store.id);

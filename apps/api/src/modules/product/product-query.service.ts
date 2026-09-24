@@ -1,14 +1,18 @@
 import { Prisma } from '@prisma/client';
 
-import { ProductFilterType } from '@celebs/shared-types';
+import {
+  AdminListItem,
+  AdminProductDetail,
+  PaginatedProductResponse,
+  PRODUCT_STATUS,
+  ProductFilterType,
+  StorefrontCard,
+  StorefrontDetail,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { CategoryRepository, categoryRepository } from '../category/category.repository';
 
-import { formatAdminDetail } from './presenters/admin-detail';
-import { formatAdminListItem } from './presenters/admin-list';
-import { formatStorefrontCard } from './presenters/storefront-card';
-import { formatStorefrontDetail } from './presenters/storefront-detail';
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import { PRODUCT_FEED_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { decodeProductCursor, encodeProductCursor } from './utils/product-cursor';
@@ -23,7 +27,12 @@ import {
   signListQuery,
   writeCachedJson,
 } from './product-cache';
-import { PRODUCT_STATUS } from './product-status';
+import {
+  formatAdminDetail,
+  formatAdminListItem,
+  formatStorefrontCard,
+  formatStorefrontDetail,
+} from './product-presenters';
 
 import type { Actor } from '@/common/context/actor-context';
 import { isPlatformActor } from '@/common/context/actor-context';
@@ -48,12 +57,15 @@ export class ProductQueryService {
     return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, opts);
   }
 
-  async getProductById(id: string, isElevated = false) {
+  async getProductById(
+    id: string,
+    isElevated = false,
+  ): Promise<StorefrontDetail | AdminProductDetail | null> {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
     const cacheKey = productDetailKey(id, isElevated);
-    const cached = await readCachedJson<Record<string, unknown> | null>(cacheKey);
+    const cached = await readCachedJson<StorefrontDetail | AdminProductDetail | null>(cacheKey);
     if (cached) return cached;
 
     const product = await this.products.findDetailedById(id, isElevated);
@@ -80,12 +92,7 @@ export class ProductQueryService {
     page = 1,
     limit = 10,
     opts: QueryServiceOptions = {},
-  ): Promise<{
-    products: Array<Record<string, unknown> | null>;
-    total?: number;
-    nextCursor?: string;
-    hasMore?: boolean;
-  }> {
+  ): Promise<PaginatedProductResponse<StorefrontCard | AdminListItem>> {
     // List cache covers the public storefront scope only: elevated and
     // store-scoped reads vary per actor and must never share a key.
     const isPublicScope =
@@ -94,12 +101,8 @@ export class ProductQueryService {
       ? productListKey(signListQuery({ ...(filters as Record<string, unknown>), page, limit }))
       : null;
     if (cacheKey) {
-      const cached = await readCachedJson<{
-        products: Array<Record<string, unknown> | null>;
-        total?: number;
-        nextCursor?: string;
-        hasMore?: boolean;
-      }>(cacheKey);
+      const cached =
+        await readCachedJson<PaginatedProductResponse<StorefrontCard | AdminListItem>>(cacheKey);
       if (cached) return cached;
     }
 
@@ -183,12 +186,14 @@ export class ProductQueryService {
 
     const isPlatform = isPlatformActor(opts.actor);
     const elevatedRead = this.resolveElevatedRead(opts, isPlatform);
-    const result = {
-      products: products.map((p) => {
-        const formatted = formatProductResponse(p, { isElevated: opts.isElevated });
-        if (!formatted) return null;
-        return elevatedRead ? formatAdminListItem(formatted) : formatStorefrontCard(formatted);
-      }),
+    const result: PaginatedProductResponse<StorefrontCard | AdminListItem> = {
+      products: products
+        .map((p) => {
+          const formatted = formatProductResponse(p, { isElevated: opts.isElevated });
+          if (!formatted) return null;
+          return elevatedRead ? formatAdminListItem(formatted) : formatStorefrontCard(formatted);
+        })
+        .filter((p): p is StorefrontCard | AdminListItem => p !== null),
       ...(totalCount !== undefined ? { total: totalCount } : {}),
       nextCursor,
       hasMore,
