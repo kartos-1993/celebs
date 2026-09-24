@@ -35,3 +35,11 @@
 
 - In active development, build directly to the canonical `IApiResponse<T>` contract from scratch.
 - Do not create dual-schema parsing, backward-compatibility wrappers, or defensive fallback layers. Fail fast, fix at the root, and keep client models lean.
+
+## 8. StyleSheet Organization & Readability Mandates
+
+- **Zero Inline Style Objects in Render**: Inline style declarations (`style={{ flex: 1, padding: 12 }}`) allocate new objects on each render pass and clutter JSX. All styles must use `StyleSheet.create` defined outside the component function or in an adjacent `[component].styles.ts` file.
+- **Theme Token Discipline**: Never hardcode hex colors (`#1E293B`) or arbitrary spacing units. Always bind styles to central design tokens (`colors`, `spacing`, `typography`, `radii`).
+- **Semantic Style Hierarchy**: Order and name style keys according to visual structure: `container`, `contentWrapper`, `header`, `title`, `badgeRow`, `actionButton`, `buttonText`.
+- **Dynamic Styling via Clean Style Arrays**: Compose dynamic/conditional styles via array syntax: `style={[styles.base, isActive && styles.active]}`. Avoid complex inline ternary style objects.
+- **Isolated List & Gesture Renderers**: `renderItem` callbacks in `FlatList` or `FlashList` must be dedicated, memoized components (`ProductListItem`), not monolithic inline JSX render functions.

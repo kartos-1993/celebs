@@ -7,8 +7,9 @@
 > 1. **web-admin & mobile**: max 150 lines/tsx, no inline mutations/apiClient in UI, use `<RESOURCE>_QUERY_KEYS` factory.
 > 2. **api**: Clean Architecture (`routes` -> `controller` -> `service` -> `repository`), zero Prisma in controllers, port 6543 pool preservation.
 > 3. **REST**: standard verbs (`GET`/`POST`/`PUT`/`PATCH`/`DELETE`) and plural nouns.
+> 4. **Code Readability**: Refactor over patch code, zero nested JSX ternaries, zero magic style numbers, zero inline style allocations in mobile render loops.
 
-Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 13 gates:
+Before outputting ANY implementation plan, refactoring proposal, or code modification, you MUST explicitly audit your proposed changes against the following 14 gates:
 
 1. **Domain Scoping**: Are you respecting the domain's scoped rules (`apps/web-admin/AGENTS.md`, `apps/api/AGENTS.md`, `apps/mobile/AGENTS.md`)?
 2. **File Budget**: Is any `.tsx` file exceeding 150 lines or Cyclomatic Complexity > 8? If so, STOP and decompose into FSD slices.
@@ -27,6 +28,7 @@ Before outputting ANY implementation plan, refactoring proposal, or code modific
     - **Priority 2 — Cost & Compute Reduction**: Preserve PostgreSQL port 6543 connection pool; eliminate redundant DB roundtrips via Redis-first caches; reject invalid requests at HTTP gateway with zero database query cost; eliminate N+1 queries.
     - **Priority 3 — Verification Plan First**: Test matrix and resource impact must be planned and agreed upon before writing any solution code.
 13. **Clean & Descriptive Test Naming**: Zero meta-labels, ticket codes (e.g. `P0-H3`, `RED`), or generic slogans (e.g. `"auth hardening"`, `"Item 6"`) in test titles or descriptions. Test suites and cases must clearly and plainly state the exact functional behavior, boundary constraint, or failure scenario under test (e.g., `'allows only a single successful refresh when identical tokens are sent concurrently'`).
+14. **Code Readability over Patchwork**: Zero symptom band-aids, zero nested JSX ternaries, zero magic style numbers, zero inline style allocations in mobile render loops. When editing an existing file that violates line budgets or readability rules, refactor and decompose the unit first rather than appending patch logic.
 
 ---
 
@@ -37,6 +39,7 @@ Specific domain mandates are strictly isolated into local configuration files:
 - **Monorepo Boundaries & Types**: [`.agents/rules/monorepo-boundaries.md`](file:///C:/celebs/celebs/.agents/rules/monorepo-boundaries.md)
 - **Commit & Testing Protocol**: [`.agents/rules/commit-protocol.md`](file:///C:/celebs/celebs/.agents/rules/commit-protocol.md)
 - **Ponytail Anti-Overengineering**: [`.agents/rules/ponytail.md`](file:///C:/celebs/celebs/.agents/rules/ponytail.md)
+- **Code Readability & Anti-Patching**: [`.agents/rules/code-readability.md`](file:///C:/celebs/celebs/.agents/rules/code-readability.md)
 - **Frontend / Web-Admin**: [`apps/web-admin/AGENTS.md`](file:///C:/celebs/celebs/apps/web-admin/AGENTS.md)
 - **Backend / API**: [`apps/api/AGENTS.md`](file:///C:/celebs/celebs/apps/api/AGENTS.md)
 - **Mobile / Expo**: [`apps/mobile/AGENTS.md`](file:///C:/celebs/celebs/apps/mobile/AGENTS.md)

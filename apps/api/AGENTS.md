@@ -80,3 +80,11 @@ Whenever writing, modifying, or reviewing backend database code, repositories, o
 - **Active MCP Verification**:
   - Leverage the `postgres` MCP (`explain_query`, `analyze_workload_indexes`, `execute_sql`) to verify query execution plans and index utilization.
   - Leverage the `prisma` MCP (`search_prisma_documentation`, `introspect_database_schema`) to verify official API semantics and live database schema alignment.
+
+## 12. Code Readability & Anti-Patch Architecture
+
+- **Thin Controllers (<40 lines)**: Express controllers must only validate DTOs, call the domain service, and return canonical envelopes (`sendSuccess`, `sendCreated`, `sendPaginated`). Zero business logic, zero data formatting calculations, zero database access.
+- **Single Level of Abstraction in Services**: Service methods must orchestrate business domain workflows at a single level of abstraction. Complex mathematical formulas, slug generation, or string manipulation must be extracted into dedicated pure helper functions with isolated unit tests.
+- **Typed Domain Errors over Generic Try/Catch**: Throw explicit domain errors (`NotFoundError`, `BadRequestError`, `ConflictError`, `ForbiddenError`) instead of catching errors to return generic `{ error: string }` or masking errors with client-side fallbacks.
+- **Self-Documenting Conditionals**: Replace compound conditional expressions with well-named boolean constants (`const hasSufficientStock = ...`).
+- **Refactor-First on High-Complexity Services**: When modifying existing service methods with Cyclomatic Complexity > 8 or deeply nested `if/else` ladders, refactor with early guard returns before adding new business rules.
