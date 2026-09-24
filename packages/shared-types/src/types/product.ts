@@ -91,7 +91,7 @@ export interface AdminListCategory {
   imageUrl?: string;
 }
 
-export interface AdminListItem {
+export interface AdminProductListItem {
   id: string;
   name: string;
   slug: string | null;
@@ -104,6 +104,8 @@ export interface AdminListItem {
   category: AdminListCategory | null;
   updatedAt: unknown;
 }
+
+export type AdminListItem = AdminProductListItem;
 
 // ── Admin Elevated Detail Contract (Form Hydration) ─────────────────────────
 export interface AdminProductDetail {

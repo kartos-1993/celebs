@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type AdminListCategory,
-  type AdminListItem,
   type AdminProductDetail,
+  type AdminProductListItem,
   type PaginatedProductResponse,
   PRODUCT_STATUS,
   type ProductStatus,
@@ -149,14 +149,14 @@ describe('Product Canonical Types (TDD Contract Specification)', () => {
     );
   });
 
-  it('validates AdminListItem exact contract (11 keys)', () => {
+  it('validates AdminProductListItem exact contract (11 keys)', () => {
     const category: AdminListCategory = {
       id: 'cat-shirts',
       name: 'Shirts',
       imageUrl: 'https://cdn.example.com/cat-shirts.webp',
     };
 
-    const adminItem: AdminListItem = {
+    const adminItem: AdminProductListItem = {
       id: 'prod-001',
       name: 'Denim Overshirt',
       slug: 'denim-overshirt-001',
