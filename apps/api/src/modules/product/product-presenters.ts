@@ -1,7 +1,7 @@
 import type {
   AdminListCategory,
-  AdminListItem,
   AdminProductDetail,
+  AdminProductListItem,
   SkuPriceEntry,
   StorefrontCard,
   StorefrontDetail,
@@ -273,7 +273,9 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
  * Manage-table row: 11 exact declared fields.
  * One cover, one stock number, no galleries or drafts.
  */
-export function formatAdminListItem(formatted: Record<string, unknown>): AdminListItem {
+export function formatAdminProductListItem(
+  formatted: Record<string, unknown>,
+): AdminProductListItem {
   return {
     id: str(formatted.id),
     name: str(formatted.name),
@@ -288,6 +290,8 @@ export function formatAdminListItem(formatted: Record<string, unknown>): AdminLi
     updatedAt: formatted.updatedAt ?? null,
   };
 }
+
+export const formatAdminListItem = formatAdminProductListItem;
 
 /**
  * Admin detail (add/edit form): elevated consumer that sees everything,

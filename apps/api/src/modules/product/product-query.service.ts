@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client';
 
 import {
-  AdminListItem,
   AdminProductDetail,
+  AdminProductListItem,
   PaginatedProductResponse,
   PRODUCT_STATUS,
   ProductFilterType,
@@ -29,7 +29,7 @@ import {
 } from './product-cache';
 import {
   formatAdminDetail,
-  formatAdminListItem,
+  formatAdminProductListItem,
   formatStorefrontCard,
   formatStorefrontDetail,
 } from './product-presenters';
@@ -92,7 +92,7 @@ export class ProductQueryService {
     page = 1,
     limit = 10,
     opts: QueryServiceOptions = {},
-  ): Promise<PaginatedProductResponse<StorefrontCard | AdminListItem>> {
+  ): Promise<PaginatedProductResponse<StorefrontCard | AdminProductListItem>> {
     // List cache covers the public storefront scope only: elevated and
     // store-scoped reads vary per actor and must never share a key.
     const isPublicScope =
@@ -102,7 +102,9 @@ export class ProductQueryService {
       : null;
     if (cacheKey) {
       const cached =
-        await readCachedJson<PaginatedProductResponse<StorefrontCard | AdminListItem>>(cacheKey);
+        await readCachedJson<PaginatedProductResponse<StorefrontCard | AdminProductListItem>>(
+          cacheKey,
+        );
       if (cached) return cached;
     }
 
@@ -186,14 +188,16 @@ export class ProductQueryService {
 
     const isPlatform = isPlatformActor(opts.actor);
     const elevatedRead = this.resolveElevatedRead(opts, isPlatform);
-    const result: PaginatedProductResponse<StorefrontCard | AdminListItem> = {
+    const result: PaginatedProductResponse<StorefrontCard | AdminProductListItem> = {
       products: products
         .map((p) => {
           const formatted = formatProductResponse(p, { isElevated: opts.isElevated });
           if (!formatted) return null;
-          return elevatedRead ? formatAdminListItem(formatted) : formatStorefrontCard(formatted);
+          return elevatedRead
+            ? formatAdminProductListItem(formatted)
+            : formatStorefrontCard(formatted);
         })
-        .filter((p): p is StorefrontCard | AdminListItem => p !== null),
+        .filter((p): p is StorefrontCard | AdminProductListItem => p !== null),
       ...(totalCount !== undefined ? { total: totalCount } : {}),
       nextCursor,
       hasMore,
