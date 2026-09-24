@@ -92,4 +92,5 @@ export * from './types/marketing';
 export * from './types/media';
 export * from './types/notification';
 export * from './types/platform-settings';
+export * from './types/product';
 export * from './types/user';
