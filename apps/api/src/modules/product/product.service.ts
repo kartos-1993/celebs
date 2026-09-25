@@ -327,6 +327,27 @@ export class ProductService {
         updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
       }
     }
+
+    if (product.status === PRODUCT_STATUS.PUBLISHED) {
+      if (updateData.categoryId && updateData.categoryId !== product.categoryId) {
+        throw new AppError(
+          'Category cannot be changed once a product is published',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+      if (
+        updateData.subcategoryId &&
+        product.subcategoryId &&
+        updateData.subcategoryId !== product.subcategoryId
+      ) {
+        throw new AppError(
+          'Category cannot be changed once a product is published',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+    }
   }
 
   private applyUpdateTransaction(
@@ -347,13 +368,29 @@ export class ProductService {
   ) {
     return this.products.transaction(
       async (tx) => {
-        if (updateData.colorVariants) {
+        const effectiveColorVariants =
+          updateData.colorVariants ??
+          (Array.isArray(product.colorVariants)
+            ? (product.colorVariants as Array<{
+                name?: string;
+                stocks?: Array<{ size?: string; quantity?: number }>;
+              }>)
+            : undefined);
+
+        if (effectiveColorVariants) {
           await this.inventoryRepository.syncProductInventory(
             tx,
             id,
-            updateData.colorVariants,
-            updateData.skus,
+            effectiveColorVariants,
+            updateData.skus ??
+              (Array.isArray(product.skus)
+                ? (product.skus as Array<{
+                    skuCode?: string;
+                    selectedOptions?: Record<string, unknown>;
+                  }>)
+                : undefined),
             opts.resolvedCategoryId,
+            { isPublished: product.status === PRODUCT_STATUS.PUBLISHED },
           );
         }
 

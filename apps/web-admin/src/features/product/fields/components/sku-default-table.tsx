@@ -11,7 +11,11 @@ import {
 
 import { VariantAvailability, VariantFieldInput } from './variant-field-input';
 
-export function SkuDefaultTable() {
+interface SkuDefaultTableProps {
+  isSkuLocked?: (path: string) => boolean;
+}
+
+export function SkuDefaultTable({ isSkuLocked }: SkuDefaultTableProps) {
   return (
     <div className="border rounded-md overflow-x-auto mb-4">
       <Table className="w-full min-w-[650px] table-fixed text-xs">
@@ -41,7 +45,10 @@ export function SkuDefaultTable() {
               <VariantFieldInput name="sku.default.stock" type="number" required />
             </TableCell>
             <TableCell className="p-1.5">
-              <VariantFieldInput name="sku.default.sellerSku" />
+              <VariantFieldInput
+                name="sku.default.sellerSku"
+                isLocked={isSkuLocked?.('sku.default.sellerSku')}
+              />
             </TableCell>
             <TableCell className="p-1.5">
               <VariantFieldInput name="sku.default.freeItems" type="number" />

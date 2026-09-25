@@ -123,3 +123,24 @@ export function getSkuButtonState(total: number, missing: number): SkuButtonStat
     tooltip: `Fills collision-proof SKUs for ${missing} variant(s) without a code. Existing SKUs are preserved.`,
   };
 }
+
+export function getNestedValue(obj: unknown, path: string): unknown {
+  if (!obj || typeof obj !== 'object') return undefined;
+  const parts = path.split('.');
+  let current: unknown = obj;
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+}
+
+export function isSkuFieldLocked(
+  status: string | undefined,
+  defaultValues: Record<string, unknown> | undefined,
+  path: string,
+): boolean {
+  if (status !== 'published') return false;
+  const originalSku = getNestedValue(defaultValues, path);
+  return typeof originalSku === 'string' && originalSku.trim().length > 0;
+}

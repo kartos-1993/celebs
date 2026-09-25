@@ -4,7 +4,9 @@ import type { VariantSelection } from '../sku-table-types';
 import {
   buildScopeOptions,
   collectSkuPaths,
+  getNestedValue,
   getSkuButtonState,
+  isSkuFieldLocked,
   matchesScope,
 } from '../sku-table-utils';
 
@@ -145,6 +147,61 @@ describe('SKU Table Batch Edit Scope Utilities', () => {
       expect(state.label).toBe('Generate Missing (2)');
       expect(state.isDisabled).toBe(false);
       expect(state.icon).toBe('sparkles');
+    });
+  });
+
+  describe('isSkuFieldLocked and getNestedValue', () => {
+    const defaultValues = {
+      sku: {
+        default: {
+          sellerSku: 'c-app-DEFAULT-001',
+        },
+        variants: {
+          color: {
+            red: {
+              size: {
+                S: { sellerSku: 'c-app-RED-S-001' },
+                M: { sellerSku: '   ' },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    it('retrieves nested property by dot notation path', () => {
+      expect(getNestedValue(defaultValues, 'sku.default.sellerSku')).toBe('c-app-DEFAULT-001');
+      expect(getNestedValue(defaultValues, 'sku.variants.color.red.size.S.sellerSku')).toBe(
+        'c-app-RED-S-001',
+      );
+      expect(getNestedValue(defaultValues, 'non.existent.path')).toBeUndefined();
+    });
+
+    it('locks SKU field only when product is published and variant had an existing non-empty SKU', () => {
+      expect(
+        isSkuFieldLocked('published', defaultValues, 'sku.variants.color.red.size.S.sellerSku'),
+      ).toBe(true);
+      expect(isSkuFieldLocked('published', defaultValues, 'sku.default.sellerSku')).toBe(true);
+
+      expect(
+        isSkuFieldLocked('draft', defaultValues, 'sku.variants.color.red.size.S.sellerSku'),
+      ).toBe(false);
+
+      expect(
+        isSkuFieldLocked(
+          'pending_review',
+          defaultValues,
+          'sku.variants.color.red.size.S.sellerSku',
+        ),
+      ).toBe(false);
+
+      expect(
+        isSkuFieldLocked('published', defaultValues, 'sku.variants.color.blue.size.L.sellerSku'),
+      ).toBe(false);
+
+      expect(
+        isSkuFieldLocked('published', defaultValues, 'sku.variants.color.red.size.M.sellerSku'),
+      ).toBe(false);
     });
   });
 });

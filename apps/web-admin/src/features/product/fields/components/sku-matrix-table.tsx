@@ -17,9 +17,15 @@ interface SkuMatrixTableProps {
   primaryVariant: VariantSelection;
   secondaryVariant: VariantSelection;
   labelOf: (axisKey: string, value: string) => string;
+  isSkuLocked?: (path: string) => boolean;
 }
 
-export function SkuMatrixTable({ primaryVariant, secondaryVariant, labelOf }: SkuMatrixTableProps) {
+export function SkuMatrixTable({
+  primaryVariant,
+  secondaryVariant,
+  labelOf,
+  isSkuLocked,
+}: SkuMatrixTableProps) {
   return (
     <div className="border rounded-md overflow-x-auto">
       <Table className="w-full min-w-[750px] table-fixed text-xs">
@@ -45,76 +51,77 @@ export function SkuMatrixTable({ primaryVariant, secondaryVariant, labelOf }: Sk
         </TableHeader>
         <TableBody>
           {primaryVariant.values.flatMap((opt1) =>
-            secondaryVariant.values.map((opt2) => (
-              <TableRow key={`${opt1}-${opt2}`}>
-                <TableCell className="capitalize font-medium text-xs px-1.5 py-1.5 truncate">
-                  {labelOf(primaryVariant.key, opt1)}
-                </TableCell>
-                <TableCell className="capitalize font-medium text-xs px-0.5 py-1.5 text-center truncate">
-                  {labelOf(secondaryVariant.key, opt2)}
-                </TableCell>
-                <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name={pathFor(primaryVariant.key, opt1, secondaryVariant.key, opt2, 'price')}
-                    type="number"
-                    required
-                  />
-                </TableCell>
-                <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name={pathFor(
-                      primaryVariant.key,
-                      opt1,
-                      secondaryVariant.key,
-                      opt2,
-                      'specialPrice',
-                    )}
-                    type="number"
-                  />
-                </TableCell>
-                <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name={pathFor(primaryVariant.key, opt1, secondaryVariant.key, opt2, 'stock')}
-                    type="number"
-                    required
-                  />
-                </TableCell>
-                <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name={pathFor(
-                      primaryVariant.key,
-                      opt1,
-                      secondaryVariant.key,
-                      opt2,
-                      'sellerSku',
-                    )}
-                  />
-                </TableCell>
-                <TableCell className="p-1.5">
-                  <VariantFieldInput
-                    name={pathFor(
-                      primaryVariant.key,
-                      opt1,
-                      secondaryVariant.key,
-                      opt2,
-                      'freeItems',
-                    )}
-                    type="number"
-                  />
-                </TableCell>
-                <TableCell className="p-0.5 text-center">
-                  <VariantAvailability
-                    name={pathFor(
-                      primaryVariant.key,
-                      opt1,
-                      secondaryVariant.key,
-                      opt2,
-                      'available',
-                    )}
-                  />
-                </TableCell>
-              </TableRow>
-            )),
+            secondaryVariant.values.map((opt2) => {
+              const skuPath = pathFor(
+                primaryVariant.key,
+                opt1,
+                secondaryVariant.key,
+                opt2,
+                'sellerSku',
+              );
+              return (
+                <TableRow key={`${opt1}-${opt2}`}>
+                  <TableCell className="capitalize font-medium text-xs px-1.5 py-1.5 truncate">
+                    {labelOf(primaryVariant.key, opt1)}
+                  </TableCell>
+                  <TableCell className="capitalize font-medium text-xs px-0.5 py-1.5 text-center truncate">
+                    {labelOf(secondaryVariant.key, opt2)}
+                  </TableCell>
+                  <TableCell className="p-1.5">
+                    <VariantFieldInput
+                      name={pathFor(primaryVariant.key, opt1, secondaryVariant.key, opt2, 'price')}
+                      type="number"
+                      required
+                    />
+                  </TableCell>
+                  <TableCell className="p-1.5">
+                    <VariantFieldInput
+                      name={pathFor(
+                        primaryVariant.key,
+                        opt1,
+                        secondaryVariant.key,
+                        opt2,
+                        'specialPrice',
+                      )}
+                      type="number"
+                    />
+                  </TableCell>
+                  <TableCell className="p-1.5">
+                    <VariantFieldInput
+                      name={pathFor(primaryVariant.key, opt1, secondaryVariant.key, opt2, 'stock')}
+                      type="number"
+                      required
+                    />
+                  </TableCell>
+                  <TableCell className="p-1.5">
+                    <VariantFieldInput name={skuPath} isLocked={isSkuLocked?.(skuPath)} />
+                  </TableCell>
+                  <TableCell className="p-1.5">
+                    <VariantFieldInput
+                      name={pathFor(
+                        primaryVariant.key,
+                        opt1,
+                        secondaryVariant.key,
+                        opt2,
+                        'freeItems',
+                      )}
+                      type="number"
+                    />
+                  </TableCell>
+                  <TableCell className="p-0.5 text-center">
+                    <VariantAvailability
+                      name={pathFor(
+                        primaryVariant.key,
+                        opt1,
+                        secondaryVariant.key,
+                        opt2,
+                        'available',
+                      )}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            }),
           )}
         </TableBody>
       </Table>

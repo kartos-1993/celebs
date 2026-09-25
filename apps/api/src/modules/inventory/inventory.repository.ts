@@ -1,6 +1,6 @@
 import { ProductInventory } from '@prisma/client';
 
-import { generateSku } from '@celebs/shared-utils';
+import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
@@ -107,6 +107,7 @@ export class InventoryRepository {
     }>,
     skus?: Array<{ skuCode?: string; selectedOptions?: Record<string, unknown> }>,
     departmentHint?: string,
+    options?: { isPublished?: boolean },
   ): Promise<void> {
     if (!colorVariants || !Array.isArray(colorVariants)) return;
 
@@ -155,6 +156,28 @@ export class InventoryRepository {
       }
     }
 
+    const existingInventories = await tx.productInventory.findMany({
+      where: { productId },
+      select: { id: true, colorVariantName: true, size: true, sku: true },
+    });
+
+    if (options?.isPublished && existingInventories.length > 0) {
+      const incomingKeySet = new Set(
+        rows.map((k) => `${k.colorVariantName.toLowerCase()}:::${k.size.toLowerCase()}`),
+      );
+      const isRemoving = existingInventories.some(
+        (inv) =>
+          !incomingKeySet.has(`${inv.colorVariantName.toLowerCase()}:::${inv.size.toLowerCase()}`),
+      );
+      if (isRemoving) {
+        throw new AppError(
+          'Cannot remove variants from an already published product. Set stock quantity to 0 instead.',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+    }
+
     if (rows.length === 0) return;
 
     // Deterministic lock order eliminates 40P01 deadlocks under concurrent saves.
@@ -163,14 +186,10 @@ export class InventoryRepository {
         a.colorVariantName.localeCompare(b.colorVariantName) || a.size.localeCompare(b.size),
     );
 
-    const existingInventories = await tx.productInventory.findMany({
-      where: { productId },
-      select: { id: true, colorVariantName: true, size: true },
-    });
     const existingByKey = new Map(
       existingInventories.map((inv) => [
         `${inv.colorVariantName.toLowerCase()}:::${inv.size.toLowerCase()}`,
-        inv.id,
+        inv,
       ]),
     );
 
@@ -183,11 +202,23 @@ export class InventoryRepository {
     }> = [];
     const toUpdate: Array<{ id: string; sku: string; quantity: number }> = [];
     for (const row of rows) {
-      const id = existingByKey.get(
+      const existing = existingByKey.get(
         `${row.colorVariantName.toLowerCase()}:::${row.size.toLowerCase()}`,
       );
-      if (id) {
-        toUpdate.push({ id, sku: row.sku, quantity: row.quantity });
+      if (existing) {
+        if (
+          options?.isPublished &&
+          existing.sku &&
+          row.sku &&
+          existing.sku.trim() !== row.sku.trim()
+        ) {
+          throw new AppError(
+            `Cannot modify SKU for published variant "${row.colorVariantName} / ${row.size}". Existing SKU is "${existing.sku}", received "${row.sku}".`,
+            HTTPSTATUS.BAD_REQUEST,
+            ErrorCode.INVALID_REQUEST,
+          );
+        }
+        toUpdate.push({ id: existing.id, sku: existing.sku, quantity: row.quantity });
       } else {
         toCreate.push({ productId, ...row });
       }
@@ -227,6 +258,14 @@ export class InventoryRepository {
     }
 
     if (toDeleteIds.length > 0) {
+      if (options?.isPublished) {
+        throw new AppError(
+          'Cannot remove variants from an already published product. Set stock quantity to 0 instead.',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+
       await tx.productInventory
         .deleteMany({
           where: {

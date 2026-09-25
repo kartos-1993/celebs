@@ -25,6 +25,7 @@ export function SkuTableInputField({ field }: UiProps) {
     applyToAll,
     handleAutoGenerateSkus,
     skuButtonState,
+    isSkuLocked,
   } = useSkuTable(ds);
 
   return (
@@ -57,7 +58,7 @@ export function SkuTableInputField({ field }: UiProps) {
         </Button>
       </div>
 
-      {variants.length === 0 && <SkuDefaultTable />}
+      {variants.length === 0 && <SkuDefaultTable isSkuLocked={isSkuLocked} />}
 
       {variants.length > 0 && (
         <SkuBatchEditBar
@@ -70,13 +71,16 @@ export function SkuTableInputField({ field }: UiProps) {
         />
       )}
 
-      {variants.length === 1 && <SkuSingleAxisTable variant={variants[0]} labelOf={labelOf} />}
+      {variants.length === 1 && (
+        <SkuSingleAxisTable variant={variants[0]} labelOf={labelOf} isSkuLocked={isSkuLocked} />
+      )}
 
       {variants.length >= 2 && (
         <SkuMatrixTable
           primaryVariant={variants[0]}
           secondaryVariant={variants[1]}
           labelOf={labelOf}
+          isSkuLocked={isSkuLocked}
         />
       )}
     </div>

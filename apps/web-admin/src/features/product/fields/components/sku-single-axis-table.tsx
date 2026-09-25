@@ -16,9 +16,10 @@ import { VariantAvailability, VariantFieldInput } from './variant-field-input';
 interface SkuSingleAxisTableProps {
   variant: VariantSelection;
   labelOf: (axisKey: string, value: string) => string;
+  isSkuLocked?: (path: string) => boolean;
 }
 
-export function SkuSingleAxisTable({ variant, labelOf }: SkuSingleAxisTableProps) {
+export function SkuSingleAxisTable({ variant, labelOf, isSkuLocked }: SkuSingleAxisTableProps) {
   return (
     <div className="border rounded-md overflow-x-auto">
       <Table className="w-full min-w-[700px] table-fixed text-xs">
@@ -61,7 +62,10 @@ export function SkuSingleAxisTable({ variant, labelOf }: SkuSingleAxisTableProps
                 />
               </TableCell>
               <TableCell className="p-1.5">
-                <VariantFieldInput name={pathFor(variant.key, opt, 'sellerSku')} />
+                <VariantFieldInput
+                  name={pathFor(variant.key, opt, 'sellerSku')}
+                  isLocked={isSkuLocked?.(pathFor(variant.key, opt, 'sellerSku'))}
+                />
               </TableCell>
               <TableCell className="p-1.5">
                 <VariantFieldInput name={pathFor(variant.key, opt, 'freeItems')} type="number" />

@@ -14,6 +14,7 @@ import {
   buildScopeOptions,
   collectSkuPaths,
   getSkuButtonState,
+  isSkuFieldLocked,
   matchesScope,
   pathFor,
 } from './sku-table-utils';
@@ -21,7 +22,7 @@ import {
 import { axiosClient } from '@/lib/axios/axios-client';
 
 export function useSkuTable(dataSource?: VariantDataSource) {
-  const { control: formControl, setValue, getValues } = useFormContext();
+  const { control: formControl, setValue, getValues, formState } = useFormContext();
 
   const labelsMap = React.useMemo(
     () => (dataSource?.labels ?? {}) as Record<string, Record<string, string>>,
@@ -197,6 +198,18 @@ export function useSkuTable(dataSource?: VariantDataSource) {
     }
   }, [skuPaths, setValue, getValues]);
 
+  const isSkuLocked = React.useCallback(
+    (path: string) => {
+      const status = getValues('status') as string | undefined;
+      return isSkuFieldLocked(
+        status,
+        formState.defaultValues as Record<string, unknown> | undefined,
+        path,
+      );
+    },
+    [getValues, formState.defaultValues],
+  );
+
   return {
     variants,
     labelOf,
@@ -208,5 +221,6 @@ export function useSkuTable(dataSource?: VariantDataSource) {
     applyToAll,
     handleAutoGenerateSkus,
     skuButtonState,
+    isSkuLocked,
   };
 }

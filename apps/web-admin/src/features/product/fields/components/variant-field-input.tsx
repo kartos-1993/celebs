@@ -1,5 +1,6 @@
 import React from 'react';
 import { useController, useFormContext } from 'react-hook-form';
+import { Lock } from 'lucide-react';
 
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Input } from '@celebs/shared-ui/components/input';
@@ -11,10 +12,12 @@ export function VariantFieldInput({
   name,
   type,
   required,
+  isLocked,
 }: {
   name: string;
   type?: 'number';
   required?: boolean;
+  isLocked?: boolean;
 }) {
   const { control, getValues } = useFormContext();
   const isPriceField = name.endsWith('.price');
@@ -72,15 +75,31 @@ export function VariantFieldInput({
           {...field}
         />
       ) : (
-        <Input
-          required={required}
-          placeholder=""
-          title={String(field.value ?? '')}
-          className={`font-mono text-xs px-1.5 h-7 sm:h-8 ${
-            fieldState.error ? 'border-destructive focus-visible:ring-destructive' : ''
-          }`}
-          {...field}
-        />
+        <div className="relative">
+          <Input
+            required={required}
+            readOnly={isLocked}
+            tabIndex={isLocked ? -1 : undefined}
+            placeholder=""
+            title={
+              isLocked
+                ? `SKU is locked for live products to maintain warehouse barcodes: ${String(field.value ?? '')}`
+                : String(field.value ?? '')
+            }
+            className={`font-mono text-xs px-1.5 h-7 sm:h-8 ${
+              isLocked ? 'bg-muted/60 text-muted-foreground cursor-not-allowed pr-6 select-all' : ''
+            } ${fieldState.error ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+            {...field}
+          />
+          {isLocked && (
+            <div
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              title="Locked for published product"
+            >
+              <Lock className="h-3 w-3 text-muted-foreground/70" />
+            </div>
+          )}
+        </div>
       )}
       <FieldError message={fieldState.error?.message} />
     </div>
