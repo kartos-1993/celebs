@@ -12,26 +12,19 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { ManageProductCards } from './manage-product-cards';
 import { ManageProductTableRow } from './manage-product-table-row';
 
 import { TableSkeleton } from '@/components/table-skeleton';
 
-interface ManageProductTableProps {
+export interface ManageProductTableProps extends ManageProductActionHandlers {
   products: AdminProductListItem[];
   isLoading: boolean;
   isFetching: boolean;
   selectedProducts: string[];
   onSelectAll: () => void;
   onSelectProduct: (id: string, checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: AdminProductListItem) => void;
   searchQuery: string;
 }
 
@@ -50,6 +43,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   onToggleActivation,
   isTogglePending,
   onSetArchiveTarget,
+  onPrintBarcodes,
   searchQuery,
 }) => {
   if (isLoading) {
@@ -109,6 +103,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
                 onToggleActivation={onToggleActivation}
                 isTogglePending={isTogglePending}
                 onSetArchiveTarget={onSetArchiveTarget}
+                onPrintBarcodes={onPrintBarcodes}
               />
             ))}
           </TableBody>

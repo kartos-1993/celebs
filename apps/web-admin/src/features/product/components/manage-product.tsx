@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { Permission } from '@celebs/rbac';
 import type { AdminProductListItem } from '@celebs/shared-types';
@@ -6,15 +6,11 @@ import type { AdminProductListItem } from '@celebs/shared-types';
 import { useManageProductState } from '../hooks/use-manage-product-state';
 import { useProductBatchMutations } from '../hooks/use-product-batch-mutations';
 import { useProductMutations, useProductsQuery } from '../hooks/use-product-queries';
-import { uniqueCategories, uniqueVendors } from '../utils/product-table-helpers';
 
-import { ManageProductBatchBar } from './manage-product/manage-product-batch-bar';
+import { ManageProductContent } from './manage-product/manage-product-content';
 import { ManageProductDialogs } from './manage-product/manage-product-dialogs';
-import { ManageProductFilterBar } from './manage-product/manage-product-filter-bar';
 import { ManageProductHeader } from './manage-product/manage-product-header';
-import { ManageProductTable } from './manage-product/manage-product-table';
 
-import { DataTablePagination } from '@/components/data-table-pagination';
 import { useAuthContext } from '@/context/auth-provider';
 import { usePermission } from '@/hooks/use-permission';
 
@@ -27,126 +23,56 @@ export const ManageProduct: React.FC = () => {
   const canDelete = usePermission(Permission.PRODUCT_DELETE);
 
   const state = useManageProductState();
+  const [barcodeTarget, setBarcodeTarget] = useState<AdminProductListItem | null>(null);
+
   const { data, isLoading, isFetching } = useProductsQuery(state.filterParams);
-  const { toggleActivation, archive, submitForReview } = useProductMutations();
-  const {
-    isBatchProcessing,
-    handleBatchSubmit,
-    handleBatchToggleStatus,
-    handleBatchArchiveConfirm,
-  } = useProductBatchMutations();
+  const mutations = useProductMutations();
+  const batch = useProductBatchMutations();
 
   const products: AdminProductListItem[] = useMemo(() => data?.data?.products ?? [], [data]);
   const total = data?.data?.total ?? 0;
-  const totalPages = Math.ceil(total / state.pageSize) || 1;
-
-  const vendorOptions = useMemo(() => uniqueVendors(products), [products]);
-  const categoryOptions = useMemo(() => uniqueCategories(products), [products]);
-  const visibleProducts = useMemo(() => state.applyPreview(products), [products, state]);
-
-  const { selectedItems, submittableCount, activatableCount, deactivatableCount } =
-    state.getSelectionCounts(visibleProducts);
 
   return (
     <div className="space-y-6">
       <ManageProductHeader total={total} canCreate={canCreate} />
 
-      <div className="space-y-4">
-        <ManageProductFilterBar
-          searchInput={state.searchInput}
-          onSearch={(val) => {
-            state.setSearchInput(val);
-            state.setPage(1);
-          }}
-          filterStatus={state.filterStatus}
-          onStatus={(val) => {
-            state.setFilterStatus(val);
-            state.setPage(1);
-          }}
-          sortKey={state.sortKey}
-          onSortKey={state.setSortKey}
-          vendorOptions={vendorOptions}
-          vendor={state.previewVendor}
-          onVendor={state.setPreviewVendor}
-          categoryOptions={categoryOptions}
-          category={state.previewCategory}
-          onCategory={state.setPreviewCategory}
-          stock={state.previewStock}
-          onStock={state.setPreviewStock}
-          previewActive={state.previewActive}
-          onResetPreview={state.resetPreviewFilters}
-          showVendorFilter={!isSellerOrStaff}
-        />
-
-        <ManageProductBatchBar
-          selectedCount={state.selectedProducts.length}
-          submittableCount={submittableCount}
-          activatableCount={activatableCount}
-          deactivatableCount={deactivatableCount}
-          isSellerOrStaff={isSellerOrStaff}
-          canCreate={canCreate}
-          canEdit={canEdit}
-          canDelete={canDelete}
-          isBatchProcessing={isBatchProcessing}
-          onSubmit={() => handleBatchSubmit(selectedItems, () => state.setSelectedProducts([]))}
-          onActivate={() =>
-            handleBatchToggleStatus('activate', selectedItems, () => state.setSelectedProducts([]))
-          }
-          onDeactivate={() =>
-            handleBatchToggleStatus('deactivate', selectedItems, () =>
-              state.setSelectedProducts([]),
-            )
-          }
-          onOpenArchive={() => state.setIsBatchArchiveOpen(true)}
-          onClear={() => state.setSelectedProducts([])}
-        />
-
-        <ManageProductTable
-          products={visibleProducts}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          selectedProducts={state.selectedProducts}
-          onSelectAll={() => state.handleSelectAll(visibleProducts)}
-          onSelectProduct={state.handleSelectProduct}
-          isSellerOrStaff={isSellerOrStaff}
-          canCreate={canCreate}
-          canEdit={canEdit}
-          onSubmit={(id) => submitForReview.mutate(id)}
-          isSubmitPending={submitForReview.isPending}
-          onToggleActivation={(id) => toggleActivation.mutate(id)}
-          isTogglePending={toggleActivation.isPending}
-          onSetArchiveTarget={(target) => state.setArchiveTarget(target)}
-          searchQuery={state.debouncedSearch}
-        />
-
-        <DataTablePagination
-          page={state.page}
-          totalPages={totalPages}
-          total={total}
-          pageSize={state.pageSize}
-          onPageChange={(newPage) => state.setPage(newPage)}
-          onPageSizeChange={state.setPageSize}
-        />
-      </div>
+      <ManageProductContent
+        state={state}
+        products={products}
+        total={total}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        isSellerOrStaff={isSellerOrStaff}
+        canCreate={canCreate}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        mutations={mutations}
+        batch={batch}
+        onPrintBarcodes={(product) => setBarcodeTarget(product)}
+      />
 
       <ManageProductDialogs
         archiveTarget={state.archiveTarget}
         onCloseArchiveTarget={() => state.setArchiveTarget(null)}
         onConfirmArchiveTarget={() => {
           if (!state.archiveTarget?.id) return;
-          archive.mutate(state.archiveTarget.id, { onSuccess: () => state.setArchiveTarget(null) });
+          mutations.archive.mutate(state.archiveTarget.id, {
+            onSuccess: () => state.setArchiveTarget(null),
+          });
         }}
-        isArchivePending={archive.isPending}
+        isArchivePending={mutations.archive.isPending}
         isBatchArchiveOpen={state.isBatchArchiveOpen}
         onCloseBatchArchive={() => state.setIsBatchArchiveOpen(false)}
         onConfirmBatchArchive={() =>
-          handleBatchArchiveConfirm(state.selectedProducts, () => {
+          batch.handleBatchArchiveConfirm(state.selectedProducts, () => {
             state.setSelectedProducts([]);
             state.setIsBatchArchiveOpen(false);
           })
         }
         selectedCount={state.selectedProducts.length}
-        isBatchProcessing={isBatchProcessing}
+        isBatchProcessing={batch.isBatchProcessing}
+        barcodeTarget={barcodeTarget}
+        onCloseBarcodeTarget={() => setBarcodeTarget(null)}
       />
     </div>
   );

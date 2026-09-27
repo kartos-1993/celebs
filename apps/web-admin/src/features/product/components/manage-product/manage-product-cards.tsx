@@ -4,24 +4,17 @@ import { ShoppingBag } from 'lucide-react';
 import type { AdminProductListItem } from '@celebs/shared-types';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { ManageProductCard } from './manage-product-card';
 
 import { CardListSkeleton } from '@/components/table-skeleton';
 
-interface ManageProductCardsProps {
+export interface ManageProductCardsProps extends ManageProductActionHandlers {
   products: AdminProductListItem[];
   isLoading: boolean;
   isFetching: boolean;
   selectedProducts: string[];
   onSelectProduct: (id: string, checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: AdminProductListItem) => void;
   searchQuery: string;
 }
 

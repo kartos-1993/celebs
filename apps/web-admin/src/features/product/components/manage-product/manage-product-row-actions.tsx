@@ -4,18 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import type { AdminProductListItem } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 
+import { canPrintBarcodes } from '../barcode/barcode-builder';
+
+import type { ManageProductActionHandlers } from './manage-product-action-types';
+
 import { RowActionsMenu } from '@/components/row-actions-menu';
 
-interface ManageProductRowActionsProps {
+export interface ManageProductRowActionsProps extends ManageProductActionHandlers {
   product: AdminProductListItem;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: AdminProductListItem) => void;
 }
 
 export const ManageProductRowActions: React.FC<ManageProductRowActionsProps> = ({
@@ -28,10 +24,12 @@ export const ManageProductRowActions: React.FC<ManageProductRowActionsProps> = (
   onToggleActivation,
   isTogglePending,
   onSetArchiveTarget,
+  onPrintBarcodes,
 }) => {
   const navigate = useNavigate();
   const productId = product.id;
   const status = product.status ?? 'draft';
+  const canPrint = canPrintBarcodes(product);
 
   return (
     <div className="flex items-center justify-end gap-1 whitespace-nowrap">
@@ -60,6 +58,9 @@ export const ManageProductRowActions: React.FC<ManageProductRowActionsProps> = (
         label={`Actions for ${product.name ?? 'product'}`}
         items={[
           { label: 'Edit', onSelect: () => navigate(`/products/edit/${productId}`) },
+          ...(canPrint && onPrintBarcodes
+            ? [{ label: 'Print Barcodes (50x30mm)', onSelect: () => onPrintBarcodes(product) }]
+            : []),
           {
             label: 'Archive (Delete)',
             onSelect: () => onSetArchiveTarget(product),

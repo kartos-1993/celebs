@@ -16,20 +16,13 @@ import {
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
 
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { statusBadgeVariant, statusLabels } from './product-status';
 
-interface ManageProductCardProps {
+export interface ManageProductCardProps extends ManageProductActionHandlers {
   product: AdminProductListItem;
   isSelected: boolean;
   onSelectProduct: (id: string, checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: AdminProductListItem) => void;
 }
 
 export const ManageProductCard: React.FC<ManageProductCardProps> = ({

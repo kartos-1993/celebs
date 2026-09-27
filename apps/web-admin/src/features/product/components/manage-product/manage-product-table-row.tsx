@@ -16,21 +16,14 @@ import {
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
 
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { ManageProductRowActions } from './manage-product-row-actions';
 import { statusBadgeVariant, statusLabels } from './product-status';
 
-interface ManageProductTableRowProps {
+export interface ManageProductTableRowProps extends ManageProductActionHandlers {
   product: AdminProductListItem;
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: AdminProductListItem) => void;
 }
 
 export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
@@ -45,6 +38,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   onToggleActivation,
   isTogglePending,
   onSetArchiveTarget,
+  onPrintBarcodes,
 }) => {
   if (!product.id) return null;
   const price = Number(product.price ?? 0);
@@ -128,6 +122,7 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
           onToggleActivation={onToggleActivation}
           isTogglePending={isTogglePending}
           onSetArchiveTarget={onSetArchiveTarget}
+          onPrintBarcodes={onPrintBarcodes}
         />
       </TableCell>
     </TableRow>
