@@ -19,6 +19,28 @@ interface ApiErrorBody {
 }
 
 /**
+ * Aggregate upload failure carrying one error per file, in input order.
+ * (The app tsconfig targets ES2020, where the built-in `AggregateError` type
+ * is unavailable, so the shape is declared explicitly: `message` joins every
+ * per-file message, `errors` keeps them individually addressable.)
+ */
+export class UploadAggregateError extends Error {
+  readonly errors: Error[];
+
+  constructor(errors: Error[]) {
+    super(errors.map((error) => error.message).join('. '));
+    this.name = 'UploadAggregateError';
+    this.errors = errors;
+  }
+}
+
+/** Narrows an unknown throw into a per-file list of errors. */
+export function aggregateErrors(value: unknown): Error[] {
+  if (value instanceof UploadAggregateError && Array.isArray(value.errors)) return value.errors;
+  return [];
+}
+
+/**
  * Pulls a human-readable message out of an axios/API error:
  * prefers the server's field validation message, then its message,
  * then the JS error, then the caller's fallback.
@@ -151,97 +173,177 @@ export async function directUploadFile(
  * Backend caps batch presign requests at 12 files — stay under it and
  * process chunks sequentially to keep server load predictable.
  */
-const PRESIGN_BATCH_SIZE = 10;
+export const PRESIGN_BATCH_SIZE = 10;
 
 /**
- * Uploads any number of files directly to Cloudflare R2 via presigned PUT
- * URLs, transparently splitting into <=10-file batches.
- * Result order matches the input order.
+ * Per-file upload result. Exactly one of `url` / `error` is set, and `file`
+ * keeps the ORIGINAL File instance so a failure can always be attributed to
+ * the file the user actually picked.
  */
-export async function directUploadBatch(
-  files: File[],
-  folder = 'celebs/products',
-  scope: ConfirmUploadInput['scope'] = 'PRODUCT',
-): Promise<string[]> {
-  if (!files.length) return [];
+export interface UploadOutcome {
+  file: File;
+  url?: string;
+  error?: Error;
+}
 
-  const allUrls: string[] = [];
-  for (let start = 0; start < files.length; start += PRESIGN_BATCH_SIZE) {
-    const chunk = files.slice(start, start + PRESIGN_BATCH_SIZE);
-    const urls = await directUploadChunk(chunk, folder, scope);
-    allUrls.push(...urls);
-  }
-  return allUrls;
+function namedError(file: File, message: string): Error {
+  return new Error(`"${file.name}" ${message}`);
+}
+
+function toError(value: unknown, file: File, fallback: string): Error {
+  return value instanceof Error ? value : namedError(file, fallback);
 }
 
 /**
- * Uploads a single (<=12 file) batch in parallel via one presign request.
+ * Splits a file list into sequential <=batchSize chunks.
+ * Pure slicing helper; the caller still uploads chunks one at a time.
  */
-async function directUploadChunk(
+export function splitIntoBatches<T>(items: T[], batchSize: number = PRESIGN_BATCH_SIZE): T[][] {
+  const batches: T[][] = [];
+  for (let start = 0; start < items.length; start += batchSize) {
+    batches.push(items.slice(start, start + batchSize));
+  }
+  return batches;
+}
+
+/**
+ * Uploads one already-encoded file to its presigned URL and confirms it with
+ * the backend. Throws with a per-file message; the caller turns that into an
+ * outcome so one bad file never discards its neighbours' URLs.
+ */
+async function uploadEncodedFile(
+  source: File,
+  encoded: { file: File; mimeType: string; originalName: string },
+  item: PresignFileResponse,
+  scope: ConfirmUploadInput['scope'],
+): Promise<string> {
+  const putRes = await fetch(item.uploadUrl, {
+    method: 'PUT',
+    body: encoded.file,
+    headers: {
+      'Content-Type': encoded.mimeType,
+    },
+  });
+
+  if (!putRes.ok) {
+    throw namedError(source, `failed to transfer (status ${putRes.status})`);
+  }
+
+  try {
+    const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>('/media/confirm', {
+      key: item.key,
+      originalname: encoded.originalName,
+      mimeType: encoded.mimeType as PresignFileInput['mimeType'],
+      size: encoded.file.size,
+      scope,
+    });
+    return confirmRes.data?.data?.url || item.publicUrl;
+  } catch (error) {
+    throw new Error(
+      `"${source.name}" uploaded but registration failed — ${extractApiErrorMessage(error, 'try again')}`,
+    );
+  }
+}
+
+/**
+ * Uploads a single (<=12 file) chunk and reports one outcome per file.
+ * Settle-all semantics: the PUTs run in parallel, but a rejected one resolves
+ * to that file's own error instead of aborting the whole chunk, and a chunk
+ * that never got presign items attributes the batch error to each of its files.
+ */
+async function directUploadChunkOutcomes(
   files: File[],
   folder: string,
   scope: ConfirmUploadInput['scope'],
-): Promise<string[]> {
+): Promise<UploadOutcome[]> {
   // Browser-encode all images to WebP before presign (parallel)
   const encodedFiles = await Promise.all(files.map((f) => encodeToWebP(f)));
-
-  const presignPayload = {
-    files: encodedFiles.map(({ file, mimeType, originalName }) => ({
-      originalname: originalName,
-      mimeType: mimeType as PresignFileInput['mimeType'],
-      size: file.size,
-      folder,
-      scope,
-    })),
-  };
 
   // 1. Request batch presigned URLs
   let presignItems: PresignFileResponse[];
   try {
     const batchRes = await axiosClient.post<ApiResponse<PresignFileResponse[]>>(
       '/media/batch-presign',
-      presignPayload,
+      {
+        files: encodedFiles.map(({ file, mimeType, originalName }) => ({
+          originalname: originalName,
+          mimeType: mimeType as PresignFileInput['mimeType'],
+          size: file.size,
+          folder,
+          scope,
+        })),
+      },
     );
     presignItems = batchRes.data?.data || [];
   } catch (error) {
-    throw new Error(extractApiErrorMessage(error, 'The server rejected this upload batch'));
+    // One batch request covers the whole chunk, so its rejection belongs to
+    // every file in it — each still gets its own named outcome.
+    const message = extractApiErrorMessage(error, 'The server rejected this upload batch');
+    return files.map((file) => ({ file, error: namedError(file, message) }));
   }
 
-  // 2. Parallel upload and confirmation (using WebP-encoded files)
-  const uploadPromises = encodedFiles.map(
-    async ({ file: encFile, mimeType, originalName }, idx) => {
-      const item = presignItems[idx];
-      const origName = files[idx]?.name ?? originalName;
-      if (!item) throw new Error(`"${origName}" was not accepted for upload`);
-
-      const putRes = await fetch(item.uploadUrl, {
-        method: 'PUT',
-        body: encFile,
-        headers: {
-          'Content-Type': mimeType,
-        },
-      });
-
-      if (!putRes.ok) {
-        throw new Error(`"${origName}" failed to transfer (status ${putRes.status})`);
-      }
-
-      try {
-        const confirmRes = await axiosClient.post<ApiResponse<MediaAsset>>('/media/confirm', {
-          key: item.key,
-          originalname: originalName,
-          mimeType: mimeType as PresignFileInput['mimeType'],
-          size: encFile.size,
-          scope,
-        });
-        return confirmRes.data?.data?.url || item.publicUrl;
-      } catch (error) {
-        throw new Error(
-          `"${origName}" uploaded but registration failed — ${extractApiErrorMessage(error, 'try again')}`,
-        );
-      }
-    },
+  // 2. Parallel upload and confirmation, settled per file
+  const targets = encodedFiles.map((encoded, idx) => ({
+    source: files[idx],
+    encoded,
+    item: presignItems[idx],
+  }));
+  const settled = await Promise.allSettled(
+    targets.map(({ source, encoded, item }) =>
+      item
+        ? uploadEncodedFile(source, encoded, item, scope)
+        : Promise.reject(namedError(source, 'was not accepted for upload')),
+    ),
   );
 
-  return Promise.all(uploadPromises);
+  return settled.map((entry, idx) =>
+    entry.status === 'fulfilled'
+      ? { file: targets[idx].source, url: entry.value }
+      : {
+          file: targets[idx].source,
+          error: toError(entry.reason, targets[idx].source, 'upload failed'),
+        },
+  );
+}
+
+/**
+ * Uploads any number of files directly to Cloudflare R2 via presigned PUT
+ * URLs, transparently splitting into <=10-file batches, and reports a
+ * per-file outcome for every input file in input order. Never rejects for a
+ * single file's failure — inspect the outcomes instead.
+ */
+export async function directUploadFiles(
+  files: File[],
+  folder = 'celebs/products',
+  scope: ConfirmUploadInput['scope'] = 'PRODUCT',
+): Promise<UploadOutcome[]> {
+  if (!files.length) return [];
+
+  const outcomes: UploadOutcome[] = [];
+  for (const chunk of splitIntoBatches(files)) {
+    outcomes.push(...(await directUploadChunkOutcomes(chunk, folder, scope)));
+  }
+  return outcomes;
+}
+
+/**
+ * Throwing wrapper over `directUploadFiles` (unchanged contract for current
+ * callers: an ordered URL list, or a rejection). Failures are aggregated into
+ * an `UploadAggregateError` that carries the per-file entries, so the caller
+ * can name every file that lost its URL.
+ */
+export async function directUploadBatch(
+  files: File[],
+  folder = 'celebs/products',
+  scope: ConfirmUploadInput['scope'] = 'PRODUCT',
+): Promise<string[]> {
+  const outcomes = await directUploadFiles(files, folder, scope);
+  const failures = outcomes.filter((outcome) => !outcome.url);
+  if (failures.length > 0) {
+    const errors = failures.map(
+      (outcome) => outcome.error ?? namedError(outcome.file, 'upload failed'),
+    );
+    throw new UploadAggregateError(errors);
+  }
+  return outcomes.flatMap((outcome) => (outcome.url ? [outcome.url] : []));
 }
