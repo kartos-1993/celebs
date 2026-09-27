@@ -7,6 +7,9 @@ import { styles } from './product-card.styles';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
+/** 44pt-min touch target for the compact cart button. */
+const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+
 interface ProductCardInfoProps {
   storeName: string;
   productName: string;
@@ -35,7 +38,13 @@ export function ProductCardInfo({
   onAddToCart,
 }: ProductCardInfoProps) {
   return (
-    <Pressable onPressIn={onPressIn} onPress={onPress} style={styles.detailsContainer}>
+    <Pressable
+      onPressIn={onPressIn}
+      onPress={onPress}
+      style={styles.detailsContainer}
+      accessibilityRole="button"
+      accessibilityLabel={`${storeName} ${productName}`}
+    >
       <View style={styles.brandBadgeRow}>
         <View style={styles.trendsBadge}>
           <ThemedText style={styles.trendsText}>Trends</ThemedText>
@@ -71,13 +80,17 @@ export function ProductCardInfo({
 
         <TouchableOpacity
           activeOpacity={0.85}
+          hitSlop={HIT_SLOP}
           style={[
             styles.cartActionButton,
             { backgroundColor: Palette.gray100, borderColor: Palette.gray200 },
             isOutOfStock && styles.cartActionButtonDisabled,
           ]}
           onPress={onAddToCart}
-          accessibilityLabel={isOutOfStock ? 'Out of stock' : 'Add to cart'}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isOutOfStock ? `${productName} is out of stock` : `Add ${productName} to cart`
+          }
           accessibilityState={{ disabled: isOutOfStock }}
         >
           <ShoppingBag size={14} color={Palette.gray900} strokeWidth={2.2} />

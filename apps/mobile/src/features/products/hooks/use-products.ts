@@ -4,6 +4,8 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { getProductById, getProducts, PRODUCT_QUERY_KEYS } from '../api';
 import type { Product, ProductFilterParams } from '../types';
 
+import { isNonRetryableApiError } from '@/api/response';
+
 export { PRODUCT_QUERY_KEYS } from '../api';
 export type {
   Product,
@@ -16,6 +18,17 @@ export type {
   ProductVariantOption,
 } from '../types';
 export { resolveImageUrl } from '@/constants/config';
+
+/**
+ * Keep the window bounded so a runaway catalog cannot exhaust memory, but never
+ * let the cap look like the end of the catalog: `hasNextPage` staying true with
+ * every page full is the signal that results were truncated.
+ */
+const MAX_PAGES = 4;
+const MAX_RETRIES = 3;
+
+const retryUnlessDefinitive = (failureCount: number, error: unknown): boolean =>
+  failureCount < MAX_RETRIES && !isNonRetryableApiError(error);
 
 export function useProducts(
   limitOrParams: number | ProductFilterParams = 10,
@@ -38,7 +51,7 @@ export function useProducts(
     return PRODUCT_QUERY_KEYS.list(params);
   }, [params]);
 
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
+  const { data, isLoading, isFetchingNextPage, hasNextPage, isFetching, fetchNextPage, refetch } =
     useInfiniteQuery({
       queryKey,
       queryFn: ({ pageParam = null }: { pageParam: string | null }) =>
@@ -47,17 +60,23 @@ export function useProducts(
           cursor: pageParam,
         }),
       initialPageParam: null as string | null,
-      getNextPageParam: (lastPage) => {
-        return lastPage.nextCursor ?? null;
-      },
-      maxPages: 4,
+      getNextPageParam: (lastPage) =>
+        // The server flag wins: a stale cursor on a page that says there is no
+        // more must not keep paginating past the end of the catalog.
+        lastPage.hasMore === false ? null : (lastPage.nextCursor ?? null),
+      maxPages: MAX_PAGES,
       staleTime: 1000 * 60 * 2,
+      retry: retryUnlessDefinitive,
     });
 
   const products: Product[] = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page.products ?? []);
+    return data.pages.flatMap((page) => page.products);
   }, [data]);
+
+  // The window is full and the server still has pages: the user is seeing a
+  // truncated slice, not the whole catalog. Surfaced so the UI can say so.
+  const isResultsCapped = Boolean(data?.pages && data.pages.length >= MAX_PAGES && hasNextPage);
 
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -70,8 +89,10 @@ export function useProducts(
     loading: isLoading,
     loadingMore: isFetchingNextPage,
     hasMore: !!hasNextPage,
+    resultsCapped: isResultsCapped,
     loadMore,
     refetch,
+    refreshing: isFetching,
   };
 }
 
@@ -89,13 +110,14 @@ export function useProduct(id: string) {
     queryFn: () => getProductById(id),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 5,
+    retry: retryUnlessDefinitive,
     placeholderData: () => {
       // Look up product in any cached products lists (infinite query pages or direct lists)
       const listQueries = queryClient.getQueriesData<{
         pages?: { products?: Product[] }[];
         products?: Product[];
       }>({
-        queryKey: ['products', 'list'],
+        queryKey: PRODUCT_QUERY_KEYS.lists(),
       });
 
       for (const [, cache] of listQueries) {

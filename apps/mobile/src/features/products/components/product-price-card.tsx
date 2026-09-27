@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { LayoutAnimation, TouchableOpacity, View } from 'react-native';
 import { ChevronRight, Star } from 'lucide-react-native';
+
+import { validDiscount } from '@celebs/shared-utils';
 
 import { styles } from '../styles/product.styles';
 
@@ -13,7 +15,18 @@ interface ProductPriceCardProps {
   name: string;
   price: number;
   discountedPrice?: number;
+  /**
+   * True when `price` is the low end of a range (no size chosen) rather than a
+   * single SKU figure — rendered as "from {price}" instead of quoting the
+   * cheapest size as if it were the only price.
+   */
+  isRange?: boolean;
   onOpenReviews?: () => void;
+}
+
+/** A dash for anything that is not a finite number, so NaN never reaches the UI. */
+function formatAmount(value: number | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString() : '—';
 }
 
 export function ProductPriceCard({
@@ -21,31 +34,37 @@ export function ProductPriceCard({
   name,
   price,
   discountedPrice,
+  isRange = false,
   onOpenReviews,
 }: ProductPriceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data: summary } = useProductReviewSummary(productId);
 
-  const currentPrice = discountedPrice || price;
-  const hasDiscount = Boolean(discountedPrice && discountedPrice < price);
-  const discountPercent = hasDiscount ? Math.round(((price - discountedPrice!) / price) * 100) : 0;
+  // Single shared discount choke point: an above-list, zero, NaN or absent
+  // discountedPrice can never render as a deal or inflate the current price.
+  const deal = validDiscount(price, discountedPrice);
+  const currentPrice = deal ?? (Number.isFinite(price) ? price : 0);
+  const hasDiscount = deal !== undefined;
+  const discountPercent = hasDiscount && price > 0 ? Math.round(((price - deal) / price) * 100) : 0;
 
   const totalReviews = summary?.totalReviews != null ? Number(summary.totalReviews) : 0;
   const rawAvg = Number(summary?.averageRating ?? 0);
   const avgRating = !isNaN(rawAvg) && rawAvg > 0 ? rawAvg.toFixed(1) : '0.0';
 
-  const handleToggleExpand = () => {
+  const handleToggleExpand = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded((prev) => !prev);
-  };
+  }, []);
 
   return (
     <View style={styles.detailsContainer}>
       <View style={styles.priceRow}>
-        <ThemedText style={styles.currentPrice}>Rs. {currentPrice.toLocaleString()}</ThemedText>
+        <ThemedText style={styles.currentPrice}>
+          {isRange ? 'from ' : ''}Rs. {formatAmount(currentPrice)}
+        </ThemedText>
         {hasDiscount && (
           <>
-            <ThemedText style={styles.originalPrice}>Rs. {price.toLocaleString()}</ThemedText>
+            <ThemedText style={styles.originalPrice}>Rs. {formatAmount(price)}</ThemedText>
             <View style={styles.discountBadge}>
               <ThemedText style={styles.discountText}>{discountPercent}% OFF</ThemedText>
             </View>

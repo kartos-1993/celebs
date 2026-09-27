@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { Product } from '../types';
+import { resolveVariantPrice } from '../utils/pricing';
 import { isSizeOutOfStockForVariant, resolveProductSizes } from '../utils/stock';
 
 import { SizeRequiredModal } from './size-required-modal';
@@ -22,10 +23,22 @@ export function ProductDetailSizeModal({
   selectedSize,
   onSelectSizeAndConfirm,
 }: ProductDetailSizeModalProps) {
-  const availableSizes = resolveProductSizes(product, selectedColorIndex).map((s) => s.name);
+  const availableSizes = useMemo(
+    () => resolveProductSizes(product, selectedColorIndex).map((s) => s.name),
+    [product, selectedColorIndex],
+  );
   const variant = product.colorVariants?.[selectedColorIndex];
   const disabledSizes = availableSizes.filter((s) => isSizeOutOfStockForVariant(variant, s));
   const imageUrl = variant?.images?.[0] || product.mainImages?.[0];
+
+  // Price the sheet for the selected COLOR, not the product base: the base
+  // figure belongs to whatever SKU happens to be cheapest and would quote a
+  // price the shopper cannot buy. With no size chosen this is the low end of
+  // the per-color range.
+  const { price, discountedPrice } = useMemo(
+    () => resolveVariantPrice(product, variant?.name),
+    [product, variant?.name],
+  );
 
   return (
     <SizeRequiredModal
@@ -36,8 +49,8 @@ export function ProductDetailSizeModal({
       productName={product.name}
       initialSize={selectedSize}
       imageUrl={imageUrl}
-      price={product.price}
-      discountedPrice={product.discountedPrice}
+      price={price}
+      discountedPrice={discountedPrice}
       selectedColorName={variant?.name}
       onSelectSizeAndConfirm={onSelectSizeAndConfirm}
     />

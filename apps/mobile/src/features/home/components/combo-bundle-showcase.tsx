@@ -4,14 +4,12 @@ import { ArrowRight, Plane, Sparkles, Tag } from 'lucide-react-native';
 
 import { useCombos } from '../hooks/use-home-queries';
 import type { ComboBundleData } from '../types';
-import { DEMO_COMBOS } from '../utils/combo-demo-data';
 
 import { styles } from './combo-bundle-showcase.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
-export { DEMO_COMBOS };
 export type { ComboBundleData, ComboItemData, HydratedProduct } from '../types';
 
 interface ComboBundleShowcaseProps {
@@ -20,9 +18,43 @@ interface ComboBundleShowcaseProps {
 }
 
 export function ComboBundleShowcase({ onSelectCombo, initialCombos }: ComboBundleShowcaseProps) {
-  const { combos: fetchedCombos } = useCombos();
+  const { combos: fetchedCombos, loading, refetch } = useCombos();
   const availableCombos = initialCombos && initialCombos.length > 0 ? initialCombos : fetchedCombos;
-  const combos = availableCombos.length > 0 ? availableCombos : DEMO_COMBOS;
+  const combos = availableCombos;
+
+  // A failed fetch and a genuinely empty catalog both land here: no data. That
+  // state used to be masked by three demo bundles with Unsplash photography,
+  // which made a backend outage look like a healthy homepage. `useCombos` does
+  // not surface the error, so this covers both and offers a real retry.
+  if (!loading && combos.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerContent}>
+            <View style={styles.iconCircle}>
+              <Sparkles size={16} color={Palette.accent} />
+            </View>
+            <View>
+              <ThemedText style={styles.sectionTitle}>Curated Combo Bundles</ThemedText>
+              <ThemedText style={styles.sectionSubtitle}>
+                Bundles are unavailable right now
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.9}
+          onPress={() => refetch()}
+          accessibilityRole="button"
+          accessibilityLabel="Retry loading combo bundles"
+        >
+          <ThemedText style={styles.cardTitle}>No bundles to show</ThemedText>
+          <ThemedText style={styles.cardSubtitle}>Tap to try again</ThemedText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -48,7 +80,8 @@ export function ComboBundleShowcase({ onSelectCombo, initialCombos }: ComboBundl
         {combos.map((item) => {
           const isTravel = item.tag === 'abroad-travel';
           const isPercentage = item.discountType === 'PERCENTAGE';
-          const itemCount = item.itemDetails?.length || item.items?.length || 3;
+          const itemCount = item.itemDetails?.length || item.items?.length || 0;
+          const bannerImage = item.bannerImage;
 
           return (
             <TouchableOpacity
@@ -56,12 +89,15 @@ export function ComboBundleShowcase({ onSelectCombo, initialCombos }: ComboBundl
               style={styles.card}
               activeOpacity={0.9}
               onPress={() => onSelectCombo?.(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`View bundle ${item.title}`}
             >
               <View style={styles.imageBox}>
-                <Image
-                  source={{ uri: item.bannerImage || DEMO_COMBOS[0].bannerImage }}
-                  style={styles.cardImage}
-                />
+                {/* No demo banner fallback: imageBox already paints a neutral
+                    surface, and a fake photo would misrepresent the bundle. */}
+                {bannerImage ? (
+                  <Image source={{ uri: bannerImage }} style={styles.cardImage} />
+                ) : null}
 
                 <View style={styles.tagBadge}>
                   {isTravel ? (

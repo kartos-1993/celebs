@@ -2,9 +2,12 @@ import { useMemo } from 'react';
 
 import type { CartItemHydrated } from '@celebs/shared-types';
 
-import { COD_MAX_LIMIT, FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from '../constants';
+import { COD_MAX_LIMIT, SHIPPING_FEE } from '../constants';
 
-import { formatPrice } from '@/features/cart/utils/cart-selectors';
+import {
+  CHECKOUT_FREE_SHIPPING_THRESHOLD,
+  formatPrice,
+} from '@/features/cart/utils/cart-selectors';
 
 interface CheckoutPricingParams {
   selectedItems: CartItemHydrated[];
@@ -23,15 +26,18 @@ export function useCheckoutPricing({
   isLoggedIn,
   effectiveAddressId,
 }: CheckoutPricingParams) {
+  // An empty selection means "nothing chosen", not "everything". Falling back
+  // to the whole cart silently billed items the shopper never picked.
+  const hasSelection = selectedItems.length > 0;
   const checkoutItems = useMemo(
-    () => (selectedItems.length > 0 ? selectedItems : cartItems),
-    [selectedItems, cartItems],
+    () => (hasSelection ? selectedItems : []),
+    [hasSelection, selectedItems],
   );
 
   const itemsCount = checkoutItems.reduce((sum, item) => sum + item.quantity, 0);
-  const itemsSubtotal = selectedItems.length > 0 ? selectedSubtotal : subtotal;
+  const itemsSubtotal = hasSelection ? selectedSubtotal : 0;
   const shippingFee =
-    itemsSubtotal >= FREE_SHIPPING_THRESHOLD || itemsSubtotal === 0 ? 0 : SHIPPING_FEE;
+    itemsSubtotal >= CHECKOUT_FREE_SHIPPING_THRESHOLD || itemsSubtotal === 0 ? 0 : SHIPPING_FEE;
   const grandTotal = itemsSubtotal + shippingFee;
   const isCodDisabled = grandTotal > COD_MAX_LIMIT;
   const blockedItems = checkoutItems.filter((item) => item.isAvailable === false);
@@ -45,6 +51,9 @@ export function useCheckoutPricing({
     checkoutItems,
     itemsCount,
     itemsSubtotal,
+    /** The full cart total, kept for callers that still display it. */
+    cartSubtotal: subtotal,
+    cartItems,
     shippingFee,
     grandTotal,
     isCodDisabled,

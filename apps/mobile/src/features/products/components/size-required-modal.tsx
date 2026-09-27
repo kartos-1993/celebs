@@ -1,17 +1,25 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { ShoppingBag, X } from 'lucide-react-native';
+
+import { validDiscount } from '@celebs/shared-utils';
 
 import { SizePillsGrid } from './size-pills-grid';
 import { styles } from './size-required-modal.styles';
 
 import { BottomSheet } from '@/components/bottom-sheet';
 import { ThemedText } from '@/components/themed-text';
+import { showToast } from '@/components/toast/toast';
 import { Palette } from '@/constants/theme';
 import { resolveImageUrl } from '@/features/products/hooks/use-products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+/** A dash for anything that is not a finite number, so NaN never reaches the UI. */
+function formatAmount(value: number | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString() : '—';
+}
 
 interface SizeRequiredModalProps {
   visible: boolean;
@@ -41,34 +49,44 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
   onSelectSizeAndConfirm,
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>(initialSize);
-  const [prevVisible, setPrevVisible] = useState(visible);
-  const [prevInitialSize, setPrevInitialSize] = useState(initialSize);
   const confirmBtnRef = useRef<View>(null);
 
-  if (visible !== prevVisible || initialSize !== prevInitialSize) {
-    setPrevVisible(visible);
-    setPrevInitialSize(initialSize);
-    if (visible) {
-      setSelectedSize(initialSize);
-    }
-  }
+  // Re-seed the draft whenever the sheet opens or the incoming size changes.
+  // Derived from an effect, never from setState inside the render body.
+  useEffect(() => {
+    if (visible) setSelectedSize(initialSize);
+  }, [visible, initialSize]);
+
+  const handleSelectSize = useCallback((size: string) => setSelectedSize(size), []);
 
   const handleConfirm = useCallback(() => {
-    if (!selectedSize || disabledSizes.includes(selectedSize)) return;
-    if (confirmBtnRef.current) {
-      confirmBtnRef.current.measureInWindow((x, y, width, height) => {
-        const startX =
-          typeof x === 'number' && !isNaN(x) && x !== 0 ? x + width / 2 : SCREEN_WIDTH / 2;
-        const startY = typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : 500;
-        onSelectSizeAndConfirm(selectedSize, { x: startX, y: startY });
-      });
-    } else {
-      onSelectSizeAndConfirm(selectedSize);
+    // A tap on a disabled size must still explain itself — silently doing
+    // nothing is indistinguishable from a broken button.
+    if (disabledSizes.includes(selectedSize)) {
+      showToast('No stock available', { type: 'error' });
+      return;
     }
+    if (!selectedSize) {
+      showToast('Please select a size', { type: 'error' });
+      return;
+    }
+    if (!confirmBtnRef.current) {
+      onSelectSizeAndConfirm(selectedSize);
+      return;
+    }
+    confirmBtnRef.current.measureInWindow((x, y, width, height) => {
+      const startX =
+        typeof x === 'number' && !isNaN(x) && x !== 0 ? x + width / 2 : SCREEN_WIDTH / 2;
+      const startY = typeof y === 'number' && !isNaN(y) && y !== 0 ? y + height / 2 : 500;
+      onSelectSizeAndConfirm(selectedSize, { x: startX, y: startY });
+    });
   }, [disabledSizes, onSelectSizeAndConfirm, selectedSize]);
 
-  const currentPrice = discountedPrice || price || 0;
-  const hasDiscount = Boolean(discountedPrice && price && discountedPrice < price);
+  // Single shared discount choke point, same as the PDP price card.
+  const listPrice = Number.isFinite(price) ? price : undefined;
+  const deal = validDiscount(listPrice ?? 0, discountedPrice);
+  const currentPrice = deal ?? listPrice ?? 0;
+  const hasDiscount = deal !== undefined;
 
   return (
     <BottomSheet
@@ -89,11 +107,9 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
               {productName}
             </ThemedText>
             <View style={styles.priceRow}>
-              <ThemedText style={styles.currentPrice}>
-                NPR {currentPrice.toLocaleString()}
-              </ThemedText>
+              <ThemedText style={styles.currentPrice}>NPR {formatAmount(currentPrice)}</ThemedText>
               {hasDiscount && (
-                <ThemedText style={styles.originalPrice}>NPR {price?.toLocaleString()}</ThemedText>
+                <ThemedText style={styles.originalPrice}>NPR {formatAmount(price)}</ThemedText>
               )}
             </View>
             <ThemedText style={styles.selectedVariantText} numberOfLines={1}>
@@ -137,7 +153,7 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
         availableSizes={availableSizes}
         disabledSizes={disabledSizes}
         selectedSize={selectedSize}
-        onSelectSize={setSelectedSize}
+        onSelectSize={handleSelectSize}
       />
     </BottomSheet>
   );

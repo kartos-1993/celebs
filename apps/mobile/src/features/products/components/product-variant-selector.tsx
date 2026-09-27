@@ -1,15 +1,20 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { ChevronRight, Ruler, ScanLine } from 'lucide-react-native';
 
 import type { ProductColorVariant, ProductSize, ProductVariantOption } from '../types';
-import { resolveProductSizes } from '../utils/stock';
+import { isPlaceholderSelection, resolveProductSizes } from '../utils/stock';
 
 import { ColorSwatchItem } from './color-swatch-item';
 import { styles } from './product-variant-selector.styles';
 import { SizeBoxItem } from './size-box-item';
 
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
+
+const COLOR_PROMPT = 'Select a color';
+const SIZE_PROMPT = 'Select a size';
+const noop = () => {};
 
 export interface ProductVariantSelectorProps {
   colorVariants?: ProductColorVariant[];
@@ -39,39 +44,68 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     [sizes, colorVariants, variantOptions, selectedColorIndex],
   );
 
-  const getStockQtyForSize = (sizeName: string): number | null => {
-    if (!stocks || stocks.length === 0) return null;
-    const item = stocks.find((st) => st.size.toLowerCase() === sizeName.toLowerCase());
-    return item ? item.quantity : null;
-  };
+  const getStockQtyForSize = useCallback(
+    (sizeName: string): number | null => {
+      if (!stocks || stocks.length === 0) return null;
+      const item = stocks.find((st) => st.size.toLowerCase() === sizeName.toLowerCase());
+      return item ? item.quantity : null;
+    },
+    [stocks],
+  );
 
-  const selectedSizeQty = selectedSize ? getStockQtyForSize(selectedSize) : null;
-  const selectedSizeData = effectiveSizes.find(
-    (s) => s.name.toLowerCase() === selectedSize.toLowerCase(),
+  // Nothing selected is a prompt, never a sentinel label. A legacy
+  // 'Default'/'Standard' value counts as nothing selected too.
+  const hasSize = Boolean(selectedSize) && !isPlaceholderSelection(selectedSize);
+  const hasColor = !isPlaceholderSelection(currentColorVariant?.name);
+  const colorLabel = hasColor ? currentColorVariant?.name : COLOR_PROMPT;
+  const sizeLabel = hasSize ? selectedSize : SIZE_PROMPT;
+
+  const selectedSizeQty = hasSize ? getStockQtyForSize(selectedSize) : null;
+  const selectedSizeData = useMemo(
+    () => effectiveSizes.find((s) => s.name.toLowerCase() === selectedSize.toLowerCase()),
+    [effectiveSizes, selectedSize],
   );
   const selectedMeasurements = selectedSizeData?.productMeasurements ?? [];
+
+  /**
+   * Stable per-size press handlers. `SizeBoxItem` takes a bare `onSelect`, so
+   * an inline arrow in the map would allocate a new gesture handler on every
+   * render (mobile AGENTS.md §2). Keyed by size name, so the identity only
+   * changes when the size list or the parent callback changes.
+   */
+  const sizeHandlers = useMemo(() => {
+    const handlers = new Map<string, () => void>();
+    for (const size of effectiveSizes) {
+      handlers.set(size.name, () => onSelectSize(size.name));
+    }
+    return handlers;
+  }, [effectiveSizes, onSelectSize]);
+
+  const hasRealColorVariants = Boolean(
+    colorVariants &&
+      colorVariants.length > 0 &&
+      !(colorVariants.length === 1 && colorVariants[0].name.toLowerCase() === 'default'),
+  );
 
   return (
     <View style={styles.container}>
       {/* Color Variants */}
-      {colorVariants && colorVariants.length > 0 && (
+      {hasRealColorVariants && (
         <View style={styles.section}>
           <View style={styles.labelRow}>
             <ThemedText style={styles.sectionLabel}>
-              Color:{' '}
-              <ThemedText style={styles.valueText}>
-                {currentColorVariant?.name || 'Standard'}
-              </ThemedText>
+              Color: <ThemedText style={styles.valueText}>{colorLabel}</ThemedText>
             </ThemedText>
-            <ChevronRight size={14} color="#9CA3AF" />
+            <ChevronRight size={14} color={Palette.gray400} />
           </View>
           <View style={styles.variantRow}>
-            {colorVariants.map((c, idx) => (
+            {colorVariants?.map((c, idx) => (
               <ColorSwatchItem
                 key={`${c.name}-${idx}`}
                 variant={c}
                 isSelected={selectedColorIndex === idx}
-                onSelect={() => onSelectColor(idx)}
+                variantIndex={idx}
+                onSelectColor={onSelectColor}
               />
             ))}
           </View>
@@ -83,9 +117,9 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
         <View style={styles.section}>
           <View style={styles.labelRow}>
             <ThemedText style={styles.sectionLabel}>
-              Size: <ThemedText style={styles.valueText}>{selectedSize || 'Default'}</ThemedText>
+              Size: <ThemedText style={styles.valueText}>{sizeLabel}</ThemedText>
             </ThemedText>
-            <ChevronRight size={14} color="#9CA3AF" />
+            <ChevronRight size={14} color={Palette.gray400} />
           </View>
 
           <View style={styles.variantRow}>
@@ -95,14 +129,19 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                 sizeName={s.name}
                 isSelected={selectedSize === s.name}
                 quantity={getStockQtyForSize(s.name)}
-                onSelect={() => onSelectSize(s.name)}
+                onSelect={sizeHandlers.get(s.name) ?? noop}
               />
             ))}
           </View>
 
           {/* Product Measurements — shown underneath once a size is selected */}
-          {selectedSize && selectedMeasurements.length > 0 && (
-            <TouchableOpacity style={styles.measurementBox} activeOpacity={0.9}>
+          {hasSize && selectedMeasurements.length > 0 && (
+            <TouchableOpacity
+              style={styles.measurementBox}
+              activeOpacity={0.9}
+              accessibilityRole="button"
+              accessibilityLabel={`Size measurements for size ${selectedSize}`}
+            >
               <View style={styles.measurementTextWrap}>
                 {selectedMeasurements.map((m) => (
                   <ThemedText key={m.name} style={styles.measurementText}>
@@ -111,26 +150,26 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                   </ThemedText>
                 ))}
               </View>
-              <ChevronRight size={14} color="#9CA3AF" />
+              <ChevronRight size={14} color={Palette.gray400} />
             </TouchableOpacity>
           )}
 
           {/* Size Guide Links */}
-          {selectedSize && (
+          {hasSize && (
             <View style={styles.sizeGuideRow}>
               <View style={styles.sizeGuideLink}>
-                <Ruler size={14} color="#18181B" />
+                <Ruler size={14} color={Palette.gray900} />
                 <ThemedText style={styles.sizeGuideText}>Size Guide</ThemedText>
               </View>
               <View style={styles.sizeGuideLink}>
-                <ScanLine size={14} color="#18181B" />
+                <ScanLine size={14} color={Palette.gray900} />
                 <ThemedText style={styles.sizeGuideText}>Check My Size</ThemedText>
               </View>
             </View>
           )}
 
           {/* Out of stock notice */}
-          {selectedSize && selectedSizeQty !== null && selectedSizeQty <= 0 && (
+          {hasSize && selectedSizeQty !== null && selectedSizeQty <= 0 && (
             <View style={styles.stockNoticeBox}>
               <ThemedText style={styles.outOfStockText}>No stock available</ThemedText>
             </View>

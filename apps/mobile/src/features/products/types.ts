@@ -56,6 +56,7 @@ export interface Product {
   id: string;
   name: string;
   brand?: string;
+  slug?: string;
   description?: string;
   price: number;
   discountedPrice?: number;
@@ -68,7 +69,12 @@ export interface Product {
   minPrice?: number;
   minDiscounted?: number;
   cover?: string;
-  status: string;
+  /**
+   * Publication status. Optional because some surfaces (e.g. the wishlist) get
+   * a product-hydated view that legitimately carries no status — they must
+   * never invent a 'published' value to satisfy a required field.
+   */
+  status?: string;
   featured?: boolean;
 }
 

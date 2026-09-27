@@ -13,9 +13,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
+import { validDiscount } from '@celebs/shared-utils';
+
 import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
 import { resolveMinPrice } from '../utils/pricing';
-import { isProductFullyOutOfStock } from '../utils/stock';
+import { isProductFullyOutOfStock, isVariantOutOfStock } from '../utils/stock';
 
 import { Product, resolveImageUrl } from './use-products';
 
@@ -73,10 +75,31 @@ export function useProductCard({
       if (isFavorite) {
         removeFromWishlist.mutate(product.id);
       } else {
-        addToWishlist.mutate(product.id);
+        // Hand over the real snapshot so the optimistic wishlist row renders a
+        // real card instead of a blank name/0-price tile.
+        addToWishlist.mutate({
+          productId: product.id,
+          product: {
+            name: product.name,
+            slug: product.slug,
+            brand: product.brand ?? null,
+            price: product.price,
+            discountedPrice: product.discountedPrice ?? null,
+            mainImages: product.mainImages,
+          },
+        });
       }
     },
-    [isLoggedIn, isFavorite, isWishlistBusy, router, product.id, addToWishlist, removeFromWishlist],
+    [
+      isLoggedIn,
+      isFavorite,
+      isWishlistBusy,
+      router,
+      navigateSafely,
+      product,
+      addToWishlist,
+      removeFromWishlist,
+    ],
   );
 
   const imageRef = useRef<View>(null);
@@ -153,27 +176,28 @@ export function useProductCard({
 
   // SHEIN-style card figure: minimum across SKUs (the only honest single
   // number without size context), product base when no SKUs exist.
+  // The discount goes through the same shared choke point as the PDP, so an
+  // above-list/zero/NaN discountedPrice can never inflate the card total.
   const minResolved = resolveMinPrice(product);
   const rawPrice = minResolved.price;
-  const rawDiscount = minResolved.discountedPrice ?? null;
-  const currentPrice =
-    rawDiscount != null && rawDiscount > 0 ? rawDiscount : isNaN(rawPrice) ? 0 : rawPrice;
-  const hasDiscount = Boolean(rawDiscount != null && rawDiscount < rawPrice);
+  const rawDiscount = validDiscount(rawPrice, minResolved.discountedPrice) ?? null;
+  const currentPrice = rawDiscount ?? (Number.isFinite(rawPrice) ? rawPrice : 0);
+  const hasDiscount = rawDiscount !== null;
   const discountPercent =
     hasDiscount && rawPrice > 0 ? Math.round(((rawPrice - rawDiscount!) / rawPrice) * 100) : 0;
 
   const priceColor = hasDiscount ? Palette.warning : Palette.black;
-  const safePrice = isNaN(currentPrice) ? 0 : currentPrice;
+  const safePrice = Number.isFinite(currentPrice) ? currentPrice : 0;
   const integerPart = Math.floor(safePrice);
   const decimalPart = (safePrice % 1).toFixed(2).substring(1);
 
   const storeName = product.brand || 'BODI';
 
   const currentVariant = product.colorVariants?.[selectedColorIndex];
+  // Same fail-closed rule as the PDP: an untracked variant is unknown stock,
+  // never "in stock".
   const isSelectedVariantOutOfStock =
-    currentVariant && Array.isArray(currentVariant.stocks) && currentVariant.stocks.length > 0
-      ? currentVariant.stocks.every((s) => (s.quantity ?? 0) <= 0)
-      : false;
+    Boolean(currentVariant) && isVariantOutOfStock(currentVariant);
 
   const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
 

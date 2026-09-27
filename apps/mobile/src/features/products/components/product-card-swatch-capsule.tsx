@@ -9,6 +9,12 @@ import { styles } from './product-card.styles';
 
 import { ThemedText } from '@/components/themed-text';
 
+/** iOS system grey. No Palette token carries this exact value. */
+const DEFAULT_DOT_COLOR = '#8e8e93';
+
+/** 44pt-min touch target for the small swatch dots. */
+const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+
 interface ProductCardSwatchCapsuleProps {
   variants?: ProductColorVariant[] | null;
   selectedColorIndex: number;
@@ -31,10 +37,15 @@ export function ProductCardSwatchCapsule({
           <TouchableOpacity
             key={idx}
             activeOpacity={0.8}
+            hitSlop={HIT_SLOP}
             onPress={(e) => onSelectColor(idx, e)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedColorIndex === idx }}
+            accessibilityLabel={`Select color ${variant.name}`}
             style={[
               styles.capsuleColorDot,
-              !dotImage && { backgroundColor: variant.colorCode || '#8e8e93' },
+              !dotImage && { backgroundColor: variant.colorCode || DEFAULT_DOT_COLOR },
               selectedColorIndex === idx && styles.capsuleColorDotActive,
             ]}
           >

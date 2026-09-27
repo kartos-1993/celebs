@@ -25,6 +25,7 @@ describe('resolveVariantPrice', () => {
       price: 1700,
       discountedPrice: 1400,
       source: 'combo',
+      isRange: false,
     });
   });
 
@@ -37,6 +38,7 @@ describe('resolveVariantPrice', () => {
       price: 1700,
       discountedPrice: undefined,
       source: 'combo',
+      isRange: false,
     });
   });
 
@@ -45,6 +47,7 @@ describe('resolveVariantPrice', () => {
       price: 1500,
       discountedPrice: 1200,
       source: 'product',
+      isRange: false,
     });
   });
 
@@ -53,17 +56,35 @@ describe('resolveVariantPrice', () => {
       price: 1500,
       discountedPrice: 1200,
       source: 'product',
+      isRange: false,
     });
   });
 });
 
 describe('resolveMinPrice', () => {
-  it('renders the backend-declared minimum', () => {
+  it('rejects a minDiscounted that is not below the minimum (shared validDiscount)', () => {
+    // 1400-on-1400 is not a deal — it must not render as one.
     expect(resolveMinPrice(product)).toEqual({
       price: 1400,
-      discountedPrice: 1400,
+      discountedPrice: undefined,
       source: 'combo',
+      isRange: false,
     });
+  });
+
+  it('keeps a genuinely below-list minDiscounted', () => {
+    expect(resolveMinPrice({ ...product, minPrice: 1400, minDiscounted: 1100 })).toEqual({
+      price: 1400,
+      discountedPrice: 1100,
+      source: 'combo',
+      isRange: false,
+    });
+  });
+
+  it('never inherits the base discount for a minimum that declares none', () => {
+    // The base 1200 deal belongs to the 1500 base SKU, not the 1400 minimum.
+    const { minDiscounted: _minDiscounted, ...rest } = product;
+    expect(resolveMinPrice(rest).discountedPrice).toBeUndefined();
   });
 
   it('falls back to base with no declared minimum', () => {
@@ -72,6 +93,7 @@ describe('resolveMinPrice', () => {
       price: 1500,
       discountedPrice: 1200,
       source: 'product',
+      isRange: false,
     });
   });
 });

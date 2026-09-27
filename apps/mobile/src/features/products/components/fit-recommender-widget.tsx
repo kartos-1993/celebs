@@ -7,6 +7,9 @@ import { styles } from './fit-recommender-widget.styles';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
+/** 44pt-min touch target for the icon-only close button. */
+const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+
 interface FitRecommenderWidgetProps {
   availableSizes?: string[];
   selectedSize?: string;
@@ -78,6 +81,14 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
     setRecommendedResult({ size: finalSize, confidence });
   }, [heightCm, weightKg, fitPreference, availableSizes]);
 
+  const handleSelectPreference = useCallback(
+    (pref: 'slim' | 'regular' | 'loose') => setFitPreference(pref),
+    [],
+  );
+
+  const handleOpen = useCallback(() => setIsOpen(true), []);
+  const handleClose = useCallback(() => setIsOpen(false), []);
+
   const handleApplySize = useCallback(() => {
     if (recommendedResult) {
       onSelectSize(recommendedResult.size);
@@ -89,8 +100,15 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
     <>
       <TouchableOpacity
         style={styles.triggerButton}
-        onPress={() => setIsOpen(true)}
+        onPress={handleOpen}
         activeOpacity={0.7}
+        hitSlop={HIT_SLOP}
+        accessibilityRole="button"
+        accessibilityLabel={
+          recommendedResult
+            ? `My Fit: size ${recommendedResult.size}. Tap to recalculate`
+            : 'Find my size with the AI fit calculator'
+        }
       >
         <Ruler size={14} color={Palette.accent} />
         <ThemedText style={styles.triggerText}>
@@ -99,13 +117,8 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
         <Sparkles size={12} color={Palette.accent} />
       </TouchableOpacity>
 
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsOpen(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
+      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={handleClose}>
+        <TouchableWithoutFeedback onPress={handleClose}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalCard}>
@@ -114,7 +127,13 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
                     <Ruler size={20} color={Palette.accent} />
                     <ThemedText style={styles.title}>Fashion Fit Engine</ThemedText>
                   </View>
-                  <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.closeBtn}>
+                  <TouchableOpacity
+                    onPress={handleClose}
+                    style={styles.closeBtn}
+                    hitSlop={HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close fit calculator"
+                  >
                     <X size={18} color={Palette.gray500} />
                   </TouchableOpacity>
                 </View>
@@ -155,7 +174,10 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
                     <TouchableOpacity
                       key={pref}
                       style={[styles.fitPill, fitPreference === pref && styles.fitPillActive]}
-                      onPress={() => setFitPreference(pref)}
+                      onPress={() => handleSelectPreference(pref)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: fitPreference === pref }}
+                      accessibilityLabel={`${pref} fit preference`}
                     >
                       <ThemedText
                         style={[
@@ -170,7 +192,12 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
                 </View>
 
                 {/* Calculate Button */}
-                <TouchableOpacity style={styles.calcButton} onPress={calculateSize}>
+                <TouchableOpacity
+                  style={styles.calcButton}
+                  onPress={calculateSize}
+                  accessibilityRole="button"
+                  accessibilityLabel="Calculate best fit size"
+                >
                   <ThemedText style={styles.calcButtonText}>Calculate Best Fit</ThemedText>
                 </TouchableOpacity>
 
@@ -192,7 +219,12 @@ export const FitRecommenderWidget = memo(function FitRecommenderWidget({
                       </View>
                     </View>
 
-                    <TouchableOpacity style={styles.applyButton} onPress={handleApplySize}>
+                    <TouchableOpacity
+                      style={styles.applyButton}
+                      onPress={handleApplySize}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Apply recommended size ${recommendedResult.size}`}
+                    >
                       <ThemedText style={styles.applyButtonText}>
                         Apply Size {recommendedResult.size}
                       </ThemedText>

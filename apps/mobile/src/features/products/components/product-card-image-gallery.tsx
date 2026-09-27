@@ -69,6 +69,8 @@ export function ProductCardImageGallery({
   onSelectColor,
 }: ProductCardImageGalleryProps) {
   return (
+    // NOTE: the inline style objects below are pre-existing and out of this
+    // stream's file list to fix — product-card.styles.ts is not editable here.
     <View
       ref={imageRef}
       collapsable={false}
@@ -104,6 +106,8 @@ export function ProductCardImageGallery({
                   onPressIn={onPressIn}
                   onPress={onPress}
                   style={{ width: cardWidth, height: '100%' }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${product.name}`}
                 >
                   {inWindow && finalUri ? (
                     <Image
@@ -128,7 +132,13 @@ export function ProductCardImageGallery({
           </ScrollView>
         </Animated.View>
       ) : (
-        <Pressable onPressIn={onPressIn} onPress={onPress} style={styles.placeholderImage}>
+        <Pressable
+          onPressIn={onPressIn}
+          onPress={onPress}
+          style={styles.placeholderImage}
+          accessibilityRole="button"
+          accessibilityLabel={`${product.name} — image unavailable`}
+        >
           <ThemedText type="small" style={{ opacity: 0.4 }}>
             No Image
           </ThemedText>

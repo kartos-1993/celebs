@@ -50,46 +50,89 @@ export function useWishlistStatus() {
   return { isWishlisted };
 }
 
+/**
+ * What the caller can supply for the optimistic row. Passing the real product
+ * snapshot is what keeps the card from flashing blank (name "" / price 0)
+ * between the tap and the server echo; without it the cache is left untouched.
+ */
+export interface WishlistAddSnapshot {
+  name?: string;
+  slug?: string;
+  brand?: string | null;
+  price?: number;
+  discountedPrice?: number | null;
+  mainImages?: string[];
+}
+
+export type WishlistAddInput = string | { productId: string; product?: WishlistAddSnapshot };
+
+const OPTIMISTIC_ID_PREFIX = 'optimistic-';
+
+function toProductId(input: WishlistAddInput): string {
+  return typeof input === 'string' ? input : input.productId;
+}
+
+function toSnapshot(input: WishlistAddInput): WishlistAddSnapshot | undefined {
+  return typeof input === 'string' ? undefined : input.product;
+}
+
 /** Optimistic add/remove against /wishlist with rollback context */
 export function useWishlistActions() {
   const queryClient = useQueryClient();
 
-  const applyOptimistic = useCallback(
-    (productId: string, adding: boolean) => {
+  const applyOptimisticAdd = useCallback(
+    (productId: string, snapshot: WishlistAddSnapshot | undefined) => {
+      // No snapshot means nothing honest to render — inserting a blank card
+      // would flash a nameless 0-price tile, so the cache stays as-is until the
+      // server answers.
+      if (!snapshot) return;
       queryClient.setQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEYS.all, (previous) => {
         const current = previous ?? [];
-        if (adding) {
-          if (current.some((entry) => entry.productId === productId)) return current;
-          return [
-            {
-              id: `optimistic-${productId}`,
-              productId,
-              addedAt: new Date().toISOString(),
-              product: {
-                id: productId,
-                name: '',
-                slug: '',
-                price: 0,
-                mainImages: [],
-              },
+        if (current.some((entry) => entry.productId === productId)) return current;
+        return [
+          {
+            id: `${OPTIMISTIC_ID_PREFIX}${productId}`,
+            productId,
+            addedAt: new Date().toISOString(),
+            product: {
+              id: productId,
+              name: snapshot.name ?? '',
+              ...(snapshot.brand ? { brand: snapshot.brand } : {}),
+              slug: snapshot.slug ?? '',
+              price: Number.isFinite(Number(snapshot.price)) ? Number(snapshot.price) : 0,
+              ...(snapshot.discountedPrice != null
+                ? { discountedPrice: Number(snapshot.discountedPrice) }
+                : {}),
+              mainImages: Array.isArray(snapshot.mainImages) ? snapshot.mainImages : [],
             },
-            ...current,
-          ];
-        }
-        return current.filter((entry) => entry.productId !== productId);
+          },
+          ...current,
+        ];
       });
     },
     [queryClient],
   );
 
-  const addMutation = useMutation({
-    mutationFn: (productId: string) => addToWishlist(productId),
-    onMutate: async (productId: string) => {
-      await queryClient.cancelQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
-      const previousWishlist = queryClient.getQueryData<WishlistEntryView[]>(
-        WISHLIST_QUERY_KEYS.all,
+  const applyOptimisticRemove = useCallback(
+    (productId: string) => {
+      queryClient.setQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEYS.all, (previous) =>
+        (previous ?? []).filter((entry) => entry.productId !== productId),
       );
-      applyOptimistic(productId, true);
+    },
+    [queryClient],
+  );
+
+  const snapshotPrevious = useCallback(
+    () => queryClient.getQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEYS.all),
+    [queryClient],
+  );
+
+  const addMutation = useMutation({
+    mutationFn: (input: WishlistAddInput) => addToWishlist(toProductId(input)),
+    onMutate: async (input: WishlistAddInput) => {
+      await queryClient.cancelQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
+      const previousWishlist = snapshotPrevious();
+      applyOptimisticAdd(toProductId(input), toSnapshot(input));
       return { previousWishlist };
     },
     onSuccess: (savedEntry) => {
@@ -106,9 +149,12 @@ export function useWishlistActions() {
         });
       }
     },
-    onError: (_err, _productId, context) => {
+    onError: (_err, _input, context) => {
       if (context?.previousWishlist) {
-        queryClient.setQueryData(WISHLIST_QUERY_KEYS.all, context.previousWishlist);
+        queryClient.setQueryData<WishlistEntryView[]>(
+          WISHLIST_QUERY_KEYS.all,
+          context.previousWishlist,
+        );
       }
     },
   });
@@ -117,20 +163,19 @@ export function useWishlistActions() {
     mutationFn: (productId: string) => removeFromWishlist(productId),
     onMutate: async (productId: string) => {
       await queryClient.cancelQueries({ queryKey: WISHLIST_QUERY_KEYS.all });
-      const previousWishlist = queryClient.getQueryData<WishlistEntryView[]>(
-        WISHLIST_QUERY_KEYS.all,
-      );
-      applyOptimistic(productId, false);
+      const previousWishlist = snapshotPrevious();
+      applyOptimisticRemove(productId);
       return { previousWishlist };
     },
     onSuccess: (_data, productId) => {
-      queryClient.setQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEYS.all, (previous) =>
-        (previous ?? []).filter((entry) => entry.productId !== productId),
-      );
+      applyOptimisticRemove(productId);
     },
     onError: (_err, _productId, context) => {
       if (context?.previousWishlist) {
-        queryClient.setQueryData(WISHLIST_QUERY_KEYS.all, context.previousWishlist);
+        queryClient.setQueryData<WishlistEntryView[]>(
+          WISHLIST_QUERY_KEYS.all,
+          context.previousWishlist,
+        );
       }
     },
   });

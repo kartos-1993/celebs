@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { StyleProp, TouchableOpacity, View, ViewStyle } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +9,9 @@ import { styles } from '../styles/product.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
+
+/** 44pt-min touch target for the compact header icon buttons. */
+const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 
 interface ProductDetailHeaderProps {
   itemCount: number;
@@ -29,12 +33,16 @@ export function ProductDetailHeader({
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const handleBack = useCallback(() => router.back(), [router]);
+  const handleSearch = useCallback(() => router.push('/(tabs)/explore'), [router]);
+
   return (
     <View style={[styles.headerBar, { paddingTop: insets.top }]}>
       <View style={styles.headerRow}>
         <TouchableOpacity
           style={styles.headerIconButton}
-          onPress={() => router.back()}
+          hitSlop={HIT_SLOP}
+          onPress={handleBack}
           accessible={true}
           accessibilityRole="button"
           accessibilityLabel="Go back"
@@ -44,7 +52,8 @@ export function ProductDetailHeader({
 
         <TouchableOpacity
           style={styles.headerSearchPill}
-          onPress={() => router.push('/(tabs)/explore')}
+          hitSlop={HIT_SLOP}
+          onPress={handleSearch}
           accessible={true}
           accessibilityRole="button"
           accessibilityLabel="Search products"
@@ -58,6 +67,7 @@ export function ProductDetailHeader({
             <View ref={topCartBtnRef} collapsable={false} onLayout={onLayoutCartIcon}>
               <TouchableOpacity
                 style={styles.headerIconButton}
+                hitSlop={HIT_SLOP}
                 onPress={onOpenCart}
                 accessible={true}
                 accessibilityRole="button"
@@ -82,6 +92,7 @@ export function ProductDetailHeader({
 
           <TouchableOpacity
             style={styles.headerIconButton}
+            hitSlop={HIT_SLOP}
             onPress={onShare}
             accessible={true}
             accessibilityRole="button"

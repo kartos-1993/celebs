@@ -18,6 +18,9 @@ import { resolveImageUrl } from '@/constants/config';
 import { Colors, Spacing } from '@/constants/theme';
 import { useNavigationGuard } from '@/utils/navigation-guard';
 
+/** 44pt-min touch target for the small category tiles. */
+const HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 } as const;
+
 export function CategoryGrid({ initialCategories }: { initialCategories?: Category[] } = {}) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
@@ -74,7 +77,10 @@ export function CategoryGrid({ initialCategories }: { initialCategories?: Catego
                   key={cat.id}
                   style={styles.categoryItem}
                   activeOpacity={0.7}
+                  hitSlop={HIT_SLOP}
                   onPress={() => handleCategoryPress(cat)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Browse ${cat.displayName || cat.name || 'category'}`}
                 >
                   <View style={styles.categoryImageContainer}>
                     {cat.imageUrl ? (
