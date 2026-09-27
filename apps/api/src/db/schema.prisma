@@ -88,6 +88,7 @@ model VendorProfile {
   holidayMode            Boolean @default(false)
   onboardingStep         Int     @default(1)
   rejectionReason        String?
+  storeCode              String? @unique @map("store_code")
   recentCategories       Json?   @default("[]")
 
   // Relations
@@ -707,6 +708,21 @@ model Product {
   skus           Json? // Array of ISkuItem
   variantOptions Json? // Array of IVariantOption
   dynamicData    Json? // Category dynamic attribute values
+
+  // Shipping & Logistics Physical Specifications
+  packageWeightKg    Float?   @default(0.3) @map("package_weight_kg")
+  packageLengthCm    Float?   @map("package_length_cm")
+  packageWidthCm     Float?   @map("package_width_cm")
+  packageHeightCm    Float?   @map("package_height_cm")
+  packagingType      String?  @default("FLYER_SMALL") @map("packaging_type")
+  isFragile          Boolean  @default(false) @map("is_fragile")
+  hasBatteryOrLiquid Boolean  @default(false) @map("has_battery_or_liquid")
+
+  // Warranty & Returns Guard
+  warrantyType       String   @default("NO_WARRANTY") @map("warranty_type")
+  warrantyPeriod     String?  @map("warranty_period")
+  warrantyPolicy     String?  @map("warranty_policy")
+  isNonReturnable    Boolean  @default(false) @map("is_non_returnable")
 
   // Moderation & QC
   qualityScore            Float?
