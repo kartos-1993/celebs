@@ -1,8 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 
 import { useProductDraft } from '../../hooks/use-product-draft';
-import type { ProductFormValues } from '../../hooks/use-product-form';
-import type { FieldSpec } from '../../types';
+import type { FieldSpec, ProductFormValues } from '../../types';
 
 export interface AddProductFormBodyProps {
   productId?: string;

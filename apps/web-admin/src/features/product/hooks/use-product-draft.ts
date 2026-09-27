@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Path, UseFormReturn } from 'react-hook-form';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
 
 import { logger } from '@celebs/shared-utils';
 
-import type { ProductDraft } from '../types';
+import type { ProductDraft, ProductFormValues } from '../types';
 import {
   getDraftStorageKey,
   isDraftExpired,
   serializeDraftValue,
 } from '../utils/add-product-helpers';
-
-import type { ProductFormValues } from './use-product-form';
 
 interface UseProductDraftOptions {
   form: UseFormReturn<ProductFormValues>;
@@ -18,6 +16,19 @@ interface UseProductDraftOptions {
   storeId?: string;
   isEditMode: boolean;
   initialCategoryPath?: string[];
+  /** Visible schema field names re-validated after a discard/reset. */
+  visibleFieldNames?: string[];
+}
+
+/**
+ * Fields the basic-info section owns; always part of the post-reset
+ * validation scope so a blank reset cannot read as "valid".
+ */
+const RESET_SCOPE_FIELDS = ['name', 'brand', 'description', 'categoryId', 'subcategoryId'];
+
+/** Merges caller-supplied field names with the always-validated base scope. */
+export function resolveResetValidationScope(visibleFieldNames: string[] = []): string[] {
+  return [...new Set([...RESET_SCOPE_FIELDS, ...visibleFieldNames])];
 }
 
 export function useProductDraft({
@@ -26,11 +37,28 @@ export function useProductDraft({
   storeId,
   isEditMode,
   initialCategoryPath,
+  visibleFieldNames: visibleFieldNamesOption,
 }: UseProductDraftOptions) {
   const [draftRestored, setDraftRestored] = useState(false);
   const [restoredDraftAt, setRestoredDraftAt] = useState<string | null>(null);
   const [categoryPath, setCategoryPath] = useState<string[] | undefined>(initialCategoryPath);
   const draftAppliedRef = useRef(false);
+
+  const validationScope = useMemo(
+    () => resolveResetValidationScope(visibleFieldNamesOption),
+    [visibleFieldNamesOption],
+  );
+
+  /**
+   * `clearErrors()` alone leaves the form looking pristine-but-valid: a
+   * freshly blanked required field would slip past the submit gate. Re-run
+   * validation over the visible scope so the cleared state is re-derived
+   * from the values instead of trusted.
+   */
+  const clearErrorsAndRevalidate = useCallback(() => {
+    form.clearErrors();
+    void form.trigger(validationScope);
+  }, [form, validationScope]);
 
   useEffect(() => {
     if (initialCategoryPath?.length && !categoryPath?.length) {
@@ -46,7 +74,7 @@ export function useProductDraft({
       value: unknown,
       options?: { shouldDirty?: boolean; shouldValidate?: boolean },
     ) => {
-      form.setValue(key as Path<ProductFormValues>, value as never, options);
+      form.setValue(key, value, options);
     },
     [form],
   );
@@ -153,8 +181,8 @@ export function useProductDraft({
     });
     setCategoryPath(undefined);
     setRestoredDraftAt(null);
-    form.clearErrors();
-  }, [draftKey, form]);
+    clearErrorsAndRevalidate();
+  }, [clearErrorsAndRevalidate, draftKey, form]);
 
   /** Full reset when the seller switches category (draft is invalidated). */
   const resetForNewCategory = useCallback(
@@ -172,9 +200,9 @@ export function useProductDraft({
       });
       setCategoryPath(undefined);
       setRestoredDraftAt(null);
-      form.clearErrors();
+      clearErrorsAndRevalidate();
     },
-    [draftKey, form],
+    [clearErrorsAndRevalidate, draftKey, form],
   );
 
   return {

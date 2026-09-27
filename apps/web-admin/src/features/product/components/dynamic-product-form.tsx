@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { type Control, type FieldValues, useFormContext, useWatch } from 'react-hook-form';
 import { FileText, ImageIcon, Package, Palette, Ruler } from 'lucide-react';
 
@@ -12,6 +12,16 @@ import {
 import { uiTypeRegistry } from '../fields/ui-registry';
 import type { FieldSpec } from '../types';
 
+import {
+  buildNameToGroup,
+  collectServerDefaults,
+  getValueAtPath,
+  groupFieldsByGroup,
+  resolveFieldName,
+  type ServerDefaultEntry,
+  sortVariantFields,
+} from './dynamic-form-helpers';
+
 export interface DynamicProductFormHandle {
   /** Scrolls the section owning the anchor into view.
    *  Returns false when the anchor is not found in the DOM. */
@@ -24,6 +34,16 @@ interface DynamicProductFormProps {
   isSchemaLoading?: boolean;
   schemaError?: Error | null;
   onValuesChange?: (values: Record<string, unknown>, sectionKey: string) => void;
+}
+
+/** Applies one server default and reports it to the parent. */
+function applyServerDefault(
+  form: ReturnType<typeof useFormContext>,
+  entry: ServerDefaultEntry,
+  onValuesChange: DynamicProductFormProps['onValuesChange'],
+): void {
+  form.setValue(entry.name, entry.value, { shouldDirty: false, shouldValidate: false });
+  onValuesChange?.({ [entry.name]: entry.value }, entry.group);
 }
 
 export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicProductFormProps>(
@@ -40,42 +60,23 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       [schemaFields],
     );
 
-    // Apply server-provided default values once per category without destructive form.reset()
+    // Apply server-provided default values once per category without
+    // destructive form.reset(), then re-validate EXACTLY those names so an
+    // invalid default (e.g. a price the schema forbids) surfaces at once
+    // instead of waiting for the next keystroke.
     React.useEffect(() => {
       if (!catId || appliedDefaultsRef.current === catId) return;
-      const currentVals = (form.getValues() || {}) as Record<string, unknown>;
-      const defaults: Record<string, unknown> = {};
-
-      fields.forEach((field) => {
-        if (field.value !== undefined && field.value !== null) {
-          if (
-            currentVals[field.name] === undefined ||
-            currentVals[field.name] === null ||
-            currentVals[field.name] === ''
-          ) {
-            defaults[field.name] = field.value;
-          }
-        }
-      });
-
-      if (Object.keys(defaults).length > 0) {
-        Object.entries(defaults).forEach(([key, value]) => {
-          form.setValue(key, value, { shouldDirty: false, shouldValidate: false });
-          const sectionKey = fields.find((field) => field.name === key)?.group ?? '';
-          onValuesChange?.({ [key]: value }, sectionKey);
-        });
+      const defaults = collectServerDefaults(fields, form.getValues() || {});
+      for (const entry of defaults) {
+        applyServerDefault(form, entry, onValuesChange);
+      }
+      if (defaults.length > 0) {
+        void form.trigger(defaults.map((entry) => entry.name));
       }
       appliedDefaultsRef.current = catId;
     }, [catId, fields, form, onValuesChange]);
 
-    const grouped = React.useMemo(() => {
-      const acc: Record<string, FieldSpec[]> = {};
-      fields.forEach((field) => {
-        const key = field.group || 'details';
-        (acc[key] = acc[key] || []).push(field);
-      });
-      return acc;
-    }, [fields]);
+    const grouped = React.useMemo(() => groupFieldsByGroup(fields), [fields]);
 
     // ── Auto-expand specifications when an error lands in collapsed fields ──
     const detailsFields = React.useMemo(() => grouped.details || [], [grouped.details]);
@@ -109,43 +110,13 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     );
 
     // ── Change propagation (name/brand sync consumed by the parent) ───────
-    const nameToGroup = React.useMemo(() => {
-      const map: Record<string, string> = {};
-      fields.forEach((field) => {
-        map[field.name] = field.group || 'details';
-      });
-      return map;
-    }, [fields]);
-
-    const getValueAtPath = useCallback((obj: Record<string, unknown>, path: string): unknown => {
-      if (!obj || !path) return undefined;
-      if (path in obj) return obj[path];
-      const keys = path.split('.');
-      let current: unknown = obj;
-      for (const key of keys) {
-        if (current === null || current === undefined || typeof current !== 'object') {
-          return undefined;
-        }
-        current = (current as Record<string, unknown>)[key];
-      }
-      return current;
-    }, []);
-
-    const resolveFieldName = useCallback(
-      (path: string): string => {
-        if (nameToGroup[path]) return path;
-        const rootKey = path.split('.')[0];
-        if (nameToGroup[rootKey]) return rootKey;
-        return path;
-      },
-      [nameToGroup],
-    );
+    const nameToGroup = React.useMemo(() => buildNameToGroup(fields), [fields]);
 
     React.useEffect(() => {
       if (!form) return;
       const subscription = form.watch((values, { name: changedName }) => {
         if (!changedName) return;
-        const fieldName = resolveFieldName(changedName);
+        const fieldName = resolveFieldName(changedName, nameToGroup);
         const sectionKey = nameToGroup[fieldName];
         if (!sectionKey) return;
         onValuesChange?.(
@@ -154,7 +125,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
         );
       });
       return () => subscription.unsubscribe();
-    }, [form, getValueAtPath, nameToGroup, onValuesChange, resolveFieldName]);
+    }, [form, nameToGroup, onValuesChange]);
 
     // ── Guards ─────────────────────────────────────────────────────────────
     if (!catId) {
@@ -195,14 +166,7 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
       });
 
     // Consistent order across categories: color → size → other variants
-    const kindRank = (field: FieldSpec) => {
-      const name = field.name?.toLowerCase() ?? '';
-      const label = field.label?.toLowerCase() ?? '';
-      if (name.includes('color') || label.includes('color')) return 0;
-      if (name.includes('size') || label.includes('size')) return 1;
-      return 2;
-    };
-    const variantFields = [...(grouped.variant || [])].sort((a, b) => kindRank(a) - kindRank(b));
+    const variantFields = sortVariantFields(grouped.variant || []);
 
     const otherMediaFields = [...(grouped.base || []), ...(grouped.media || [])];
     const imageFields = otherMediaFields.filter((field) => field.uiType === 'MainImage');

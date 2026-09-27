@@ -1,16 +1,22 @@
 import { memo } from 'react';
+import { Printer } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
+
+import { canPrintBarcodes } from '../barcode/barcode-builder';
 
 interface AddProductHeaderProps {
   isEditMode: boolean;
   onAutofill?: () => void;
+  onPrintBarcodes?: () => void;
 }
 
 export const AddProductHeader = memo(function AddProductHeader({
   isEditMode,
   onAutofill,
+  onPrintBarcodes,
 }: AddProductHeaderProps) {
+  const canPrint = canPrintBarcodes(undefined, { isEditMode });
   return (
     <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
@@ -27,6 +33,18 @@ export const AddProductHeader = memo(function AddProductHeader({
               className="h-8 rounded-full border-warning/30 bg-warning/10 px-3 text-xs font-semibold text-warning hover:bg-warning/20"
             >
               Autofill Form
+            </Button>
+          )}
+          {canPrint && onPrintBarcodes && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onPrintBarcodes}
+              className="h-8 gap-1.5 rounded-full text-xs font-semibold"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Print Barcodes
             </Button>
           )}
         </div>

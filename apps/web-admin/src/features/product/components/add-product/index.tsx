@@ -3,34 +3,48 @@ import { useParams } from 'react-router-dom';
 
 import { Form } from '@celebs/shared-ui/components/form';
 
+import { useProductBarcodeModal } from '../../hooks/use-product-barcode-modal';
 import { useProductDraft } from '../../hooks/use-product-draft';
 import { useProductForm } from '../../hooks/use-product-form';
 import { useProductSchema } from '../../hooks/use-product-schema';
+import { BarcodePrintModal } from '../barcode/barcode-print-modal';
+import {
+  schemaDeclaresBrand,
+  schemaDeclaresName,
+  visibleFieldNames,
+} from '../dynamic-form-helpers';
 
 import { AddProductFormBody } from './add-product-form-body';
 import { AddProductHeader } from './add-product-header';
-import { autofillProductForm } from './dev-autofill';
+import { autofillProductForm, notifyAutofillApplied } from './dev-autofill';
 import { DraftAutoSaver } from './draft-autosaver';
 import { DraftBanner } from './draft-banner';
+import { syncDynamicTitleAndBrand } from './sync-dynamic-values';
 
 import { PageLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
-import { useToast } from '@/hooks/use-toast';
 
+/** `storeId` is served by some vendor payloads but is absent from `UserData`. */
+type DraftUserScope = { vendorId?: string; storeId?: string };
+
+// WONTFIX: renaming this `index.tsx` (FSD allows no barrel files) and folding the
+// duplicated `effectiveCatId` derivation below into one helper are deliberate
+// no-touches — the second owner is add-product-form-body.tsx, another stream's
+// file. effective-cat-id.spec.ts pins both expressions byte-identical.
 export const AddProduct = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const { toast } = useToast();
   const { role, user } = useAuthContext();
   const userId = user?.id || user?.email;
-  const storeId =
-    (user as unknown as { vendorId?: string; storeId?: string })?.vendorId ??
-    (user as unknown as { vendorId?: string; storeId?: string })?.storeId;
+  // Widen (no cast) so the optional `storeId` is readable on the signed-in user.
+  const userScope: DraftUserScope | undefined = user;
+  const storeId = userScope?.vendorId ?? userScope?.storeId;
 
   const {
     form,
     isLoading,
     categoryPath: productCategoryPath,
+    product,
     updateBasicField,
     handleSubcategoryChange,
   } = useProductForm(id);
@@ -45,54 +59,32 @@ export const AddProduct = () => {
     error: schemaError,
   } = useProductSchema(effectiveCatId, id);
 
+  const visibleSchemaFieldNames = useMemo(() => visibleFieldNames(schemaFields), [schemaFields]);
+  const schemaHasName = useMemo(() => schemaDeclaresName(schemaFields), [schemaFields]);
+  const schemaHasBrand = useMemo(() => schemaDeclaresBrand(schemaFields), [schemaFields]);
+
   const draft = useProductDraft({
     form,
     userId,
     storeId,
     isEditMode,
     initialCategoryPath: productCategoryPath,
+    visibleFieldNames: visibleSchemaFieldNames,
   });
 
-  const schemaHasName = useMemo(() => {
-    const names = new Set(schemaFields.map((field) => field.name.toLowerCase()));
-    return names.has('name') || names.has('productname') || names.has('title');
-  }, [schemaFields]);
-
-  const schemaHasBrand = useMemo(() => {
-    const names = new Set(schemaFields.map((field) => field.name.toLowerCase()));
-    return names.has('brand') || names.has('productbrand');
-  }, [schemaFields]);
+  const barcode = useProductBarcodeModal(product, isEditMode);
 
   const handleDynamicValuesChange = useCallback(
     (values: Record<string, unknown>) => {
-      const normalized = Object.fromEntries(
-        Object.entries(values).map(([key, value]) => [key.toLowerCase(), value]),
-      );
-      const nameKey = ['name', 'productname', 'title'].find((key) => key in normalized);
-      if (nameKey) {
-        const newValue = String(normalized[nameKey] ?? '');
-        if (form.getValues('name') !== newValue) {
-          form.setValue('name', newValue, { shouldDirty: true, shouldValidate: true });
-        }
-      }
-      const brandKey = ['brand', 'productbrand'].find((key) => key in normalized);
-      if (brandKey) {
-        const newValue = String(normalized[brandKey] ?? '');
-        if (form.getValues('brand') !== newValue) {
-          form.setValue('brand', newValue, { shouldDirty: true, shouldValidate: true });
-        }
-      }
+      syncDynamicTitleAndBrand(form, values);
     },
     [form],
   );
 
   const handleAutofillClick = useCallback(() => {
     autofillProductForm(form, schemaFields);
-    toast({
-      title: 'Form autofilled',
-      description: 'Populated with sample values for testing.',
-    });
-  }, [form, schemaFields, toast]);
+    notifyAutofillApplied();
+  }, [form, schemaFields]);
 
   if (isLoading) {
     return <PageLoader />;
@@ -113,7 +105,11 @@ export const AddProduct = () => {
       />
 
       <div className="space-y-6">
-        <AddProductHeader isEditMode={isEditMode} onAutofill={handleAutofillClick} />
+        <AddProductHeader
+          isEditMode={isEditMode}
+          onAutofill={handleAutofillClick}
+          onPrintBarcodes={barcode.openModal}
+        />
 
         {draft.restoredDraftAt ? (
           <DraftBanner restoredDraftAt={draft.restoredDraftAt} onDiscard={draft.discardDraft} />
@@ -139,6 +135,14 @@ export const AddProduct = () => {
           onDynamicValuesChange={handleDynamicValuesChange}
         />
       </div>
+
+      {isEditMode && (
+        <BarcodePrintModal
+          isOpen={barcode.isOpen}
+          onClose={barcode.closeModal}
+          items={barcode.items}
+        />
+      )}
     </Form>
   );
 };

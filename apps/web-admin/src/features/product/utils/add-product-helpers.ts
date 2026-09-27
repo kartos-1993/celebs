@@ -49,6 +49,13 @@ export function isGalleryFilled(images: unknown): boolean {
  * Single key encoding for variant path segments (dots/brackets break RHF
  * dot-path lookups). Writers (pathFor) and readers (validation, payload)
  * must all go through this — never hand-roll the replacement inline.
+ *
+ * CASE IS DELIBERATELY PRESERVED. `buildVariantKey` (shared-utils) lowercases
+ * and sorts because it is a backend *matching* key; this is a form *path*
+ * segment, and the paths already stored by hydrate/sku-table readers are
+ * case-sensitive (`sku.variants.Color.Red.stock`). Lowercasing here would
+ * orphan every live path. The two encoders must not be "unified" onto a
+ * shared case rule.
  */
 export function sanitizeVariantKey(segment: string): string {
   return String(segment)
@@ -57,6 +64,23 @@ export function sanitizeVariantKey(segment: string): string {
     .replace(/\]/g, ')')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Single builder for `sku.default.*` form paths so readers never compare
+ * raw dotted literals across files. Returns the identical strings.
+ */
+export function defaultSkuPath(field: string): string {
+  return `sku.default.${field}`;
+}
+
+/**
+ * Single builder for `sku.variants.*` form paths. Re-exported from
+ * `sku-table-utils` as `pathFor`, and consumed directly by the batch-apply
+ * path builder so both writers can never drift.
+ */
+export function variantSkuPath(...parts: string[]): string {
+  return ['sku', 'variants', ...parts.map(sanitizeVariantKey)].join('.');
 }
 
 export const toStringArray = (value: unknown): string[] => {
@@ -170,6 +194,12 @@ export const flattenObject = (obj: unknown, prefix = ''): Record<string, unknown
   return result;
 };
 
+/**
+ * Single nested-or-flat reader for form values. The form carries both shapes:
+ * RHF values are nested objects, while flattened form/draft records use literal
+ * dotted keys (`'sku.default.price'`). A flat key wins over deep traversal so
+ * a hand-flattened record never resolves to a stale nested sibling.
+ */
 export const getNestedValue = (obj: unknown, path: string): unknown => {
   if (!obj || typeof obj !== 'object') return undefined;
   const record = obj as Record<string, unknown>;
@@ -191,6 +221,15 @@ export const getNestedValue = (obj: unknown, path: string): unknown => {
   return undefined;
 };
 
+/**
+ * Product-level price resolution, in strict priority order:
+ * root value → `sku.default.*` → the first-INSERTED variant cell.
+ *
+ * Insertion order, never alphabetical: the flat key order of the form values
+ * is the order the merchant picked the variants, so the first picked variant
+ * wins. Sorting here silently made the alphabetically-first variant (e.g.
+ * "Apple" over the selected-first "Zebra") define the product price.
+ */
 export const getFirstPrice = (
   values: Record<string, unknown>,
   suffix: '.price' | '.specialPrice',
@@ -203,13 +242,9 @@ export const getFirstPrice = (
 
   const flat = flattenObject(values);
   const preferredKeys = [
-    `sku.default${suffix}`,
-    ...Object.keys(flat)
-      .filter((key) => key.startsWith('sku.variants.') && key.endsWith(suffix))
-      .sort(),
-    ...Object.keys(values)
-      .filter((key) => key.endsWith(suffix) || key.endsWith(rootKey))
-      .sort(),
+    defaultSkuPath(rootKey),
+    ...Object.keys(flat).filter((key) => key.startsWith('sku.variants.') && key.endsWith(suffix)),
+    ...Object.keys(values).filter((key) => key.endsWith(suffix) || key.endsWith(rootKey)),
   ];
 
   for (const key of preferredKeys) {

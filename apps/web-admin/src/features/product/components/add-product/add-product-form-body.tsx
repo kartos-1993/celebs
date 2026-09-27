@@ -5,15 +5,15 @@ import { can, Permission } from '@celebs/rbac';
 
 import { extractVariantsMeta } from '../../fields/variant-utils';
 import { MANAGE_PRODUCTS_PATH } from '../../utils/add-product-helpers';
+import { PRODUCT_SECTION_ANCHORS } from '../../utils/add-product-validation';
 import { DynamicProductForm, type DynamicProductFormHandle } from '../dynamic-product-form';
+import { ShippingWarrantySection } from '../shipping-warranty-section';
 
 import { AddProductBasicSection } from './add-product-basic-section';
 import type { AddProductFormBodyProps } from './add-product-form-body-types';
 import { ProductFormActionsContainer } from './form-actions-container';
 import { ProductSubmissionSidebar } from './product-submission-sidebar';
 import { useAddProductSubmit } from './use-add-product-submit';
-
-export { type AddProductFormBodyProps } from './add-product-form-body-types';
 
 export const AddProductFormBody = ({
   productId,
@@ -47,7 +47,10 @@ export const AddProductFormBody = ({
   const canShowAdditionalSections = Boolean(effectiveCatId && draft.draftRestored);
 
   const scrollToSection = useCallback((anchorId: string) => {
-    if (anchorId !== 'product-section-basic' && dynamicFormRef.current?.scrollToSection(anchorId)) {
+    if (
+      anchorId !== PRODUCT_SECTION_ANCHORS.basic &&
+      dynamicFormRef.current?.scrollToSection(anchorId)
+    ) {
       return;
     }
     document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -92,15 +95,18 @@ export const AddProductFormBody = ({
           />
 
           {canShowAdditionalSections ? (
-            <DynamicProductForm
-              key={effectiveCatId}
-              ref={dynamicFormRef}
-              catId={effectiveCatId}
-              schemaFields={schemaFields}
-              isSchemaLoading={isSchemaLoading}
-              schemaError={schemaError}
-              onValuesChange={onDynamicValuesChange}
-            />
+            <>
+              <DynamicProductForm
+                key={effectiveCatId}
+                ref={dynamicFormRef}
+                catId={effectiveCatId}
+                schemaFields={schemaFields}
+                isSchemaLoading={isSchemaLoading}
+                schemaError={schemaError}
+                onValuesChange={onDynamicValuesChange}
+              />
+              <ShippingWarrantySection />
+            </>
           ) : null}
 
           {canShowAdditionalSections ? (

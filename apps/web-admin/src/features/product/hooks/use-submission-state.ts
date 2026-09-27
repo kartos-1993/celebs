@@ -23,7 +23,7 @@ export function useSubmissionState({
 }: UseSubmissionStateOptions) {
   const {
     control,
-    formState: { errors },
+    formState: { errors, submitCount, isSubmitted, touchedFields },
   } = useFormContext();
   // Synchronous watch on purpose: the checklist must agree with RHF errors
   // on the same render. A deferred value here shows stale red/green for a
@@ -52,12 +52,20 @@ export function useSubmissionState({
     sections.length === 0 ? 0 : Math.round((completedCount / sections.length) * 100);
   const firstInvalidSection = sections.find((section) => !section.status);
   const isReady = sections.length > 0 && !firstInvalidSection;
+  const hasAttemptedSubmit = submitCount > 0 || isSubmitted;
+  // Pristine forms stay clean (submitCount gate); touched-field errors show
+  // immediately once the user interacts, even before the first submit.
+  const hasTouchedFields = Object.keys(touchedFields || {}).length > 0;
+  const showErrors = hasAttemptedSubmit || hasTouchedFields;
 
   return {
     sections,
     completionPercentage,
     firstInvalidSection,
     isReady,
+    hasAttemptedSubmit,
+    hasTouchedFields,
+    showErrors,
     formValues,
     fieldErrors,
   };

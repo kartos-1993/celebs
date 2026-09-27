@@ -1,6 +1,8 @@
 import { memo, useEffect } from 'react';
 import { type Control, type FieldValues, useWatch } from 'react-hook-form';
 
+import { logger } from '@celebs/shared-utils';
+
 import { getDraftStorageKey, serializeDraftValue } from '../../utils/add-product-helpers';
 
 interface DraftAutoSaverProps {
@@ -46,8 +48,12 @@ export const DraftAutoSaver = memo(
                 values: serializeDraftValue(values),
               }),
             );
-          } catch {
-            // Private mode / quota — autosave is best-effort, explicit save surfaces errors.
+          } catch (error) {
+            // Private mode / quota — autosave stays best-effort, but the
+            // failure is logged so a silently-never-saving draft is
+            // diagnosable instead of invisible. Explicit "Save Draft"
+            // surfaces the same failure to the seller.
+            logger.warn({ error }, 'Draft autosave skipped: storage unavailable or quota exceeded');
           }
         }
       }, 1000);

@@ -8,17 +8,20 @@ interface SubmissionProgressChecklistProps {
   sections: ProductSidebarSection[];
   completionPercentage: number;
   onSectionClick: (anchorId: string) => void;
+  showErrors?: boolean;
 }
 
 const SubmissionProgressChecklistComponent = ({
   sections,
   completionPercentage,
   onSectionClick,
+  showErrors = false,
 }: SubmissionProgressChecklistProps) => (
   <ProductFormSidebar
     completionPercentage={completionPercentage}
     sections={sections}
     onSectionClick={onSectionClick}
+    showErrors={showErrors}
     tips={['Upload 3+ clear images.', 'Fill category specs.', 'Verify discount prices.']}
   />
 );

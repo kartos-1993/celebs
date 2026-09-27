@@ -1,17 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
 
-import { baseProductSchema } from '@celebs/shared-types';
-
-import { getProductById } from '../api';
+import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
+import type { ProductFormValues } from '../types';
 import { hydrateProductForm, toCategoryPath } from '../utils/hydrate-product-form';
 
-import { PRODUCT_QUERY_KEYS } from './use-product-queries';
-
-export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> &
-  Record<string, unknown>;
+export type { ProductFormValues };
 
 /**
  * NOTE: intentionally no `resolver` here. React Hook Form skips ALL
@@ -19,6 +14,10 @@ export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> &
  * which silently hid every dynamic-field error (images, swatches, SKU
  * matrix...) at submit time. Field rules declared in the field components
  * are now the single source of truth for inline validation.
+ *
+ * WONTFIX: migrating to a zod resolver from `@celebs/shared-types` (AGENTS §3)
+ * is explicitly out of scope for this change — it would re-introduce the hidden
+ * dynamic-field errors above unless every field component is rewritten first.
  */
 export const useProductForm = (productId?: string) => {
   const form = useForm<ProductFormValues>({

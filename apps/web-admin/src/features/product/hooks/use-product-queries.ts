@@ -11,6 +11,7 @@ import {
   createProduct,
   getProductReviewQueue,
   getProducts,
+  PRODUCT_QUERY_KEYS,
   reviewProduct,
   submitProductForReview,
   toggleProductActivation,
@@ -25,20 +26,12 @@ import type {
 
 import { useToast } from '@/hooks/use-toast';
 
-export const PRODUCT_QUERY_KEYS = {
-  all: ['products'] as const,
-  lists: () => [...PRODUCT_QUERY_KEYS.all, 'list'] as const,
-  list: (params: ProductFilterRequest) => [...PRODUCT_QUERY_KEYS.all, 'list', params] as const,
-  selector: (search?: string) => [...PRODUCT_QUERY_KEYS.all, 'selector', search] as const,
-  reviewQueues: () => [...PRODUCT_QUERY_KEYS.all, 'review-queue'] as const,
-  reviewQueue: (page: number, limit: number) =>
-    [...PRODUCT_QUERY_KEYS.all, 'review-queue', { page, limit }] as const,
-  details: () => [...PRODUCT_QUERY_KEYS.all, 'detail'] as const,
-  detail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', id] as const,
-  categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
-  categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
-  categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
-};
+/**
+ * Legacy alias — the canonical factory lives in `../api` (FSD §9). Kept so
+ * call sites in this feature that import the name from here keep compiling;
+ * this is the SAME object identity, so cache keys cannot drift.
+ */
+export { PRODUCT_QUERY_KEYS };
 
 export function useProductSelectorQuery(search?: string, enabled = true) {
   return useQuery({

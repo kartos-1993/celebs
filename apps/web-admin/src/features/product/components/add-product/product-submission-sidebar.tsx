@@ -17,7 +17,7 @@ export const ProductSubmissionSidebar = memo(function ProductSubmissionSidebar({
   variantMeta,
   onSectionClick,
 }: ProductSubmissionSidebarProps) {
-  const { sections, completionPercentage } = useSubmissionState({
+  const { sections, completionPercentage, showErrors } = useSubmissionState({
     schemaFields,
     schemaHasName,
     variantMeta,
@@ -29,6 +29,7 @@ export const ProductSubmissionSidebar = memo(function ProductSubmissionSidebar({
         sections={sections}
         completionPercentage={completionPercentage}
         onSectionClick={onSectionClick}
+        showErrors={showErrors}
       />
     </aside>
   );

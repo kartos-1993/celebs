@@ -1,8 +1,17 @@
-import type { CreateProductType, ProductFilterType, UpdateProductType } from '@celebs/shared-types';
+import type { z } from 'zod';
+
+import type {
+  baseProductSchema,
+  CreateProductType,
+  ProductFilterType,
+  UpdateProductType,
+} from '@celebs/shared-types';
 
 export type CreateProductRequest = CreateProductType;
 export type UpdateProductRequest = UpdateProductType;
 export type ProductFilterRequest = ProductFilterType;
+export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> &
+  Record<string, unknown>;
 
 export interface ReviewProductRequestPayload {
   action: 'approve' | 'reject';

@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { FieldSpec } from '../../types';
 import { isGalleryFilled, sanitizeVariantKey } from '../add-product-helpers';
 import { buildProductPayload, pruneOrphanVariantPaths } from '../add-product-payload';
-import { buildSidebarSections, collectPricingErrors } from '../add-product-validation';
+import {
+  buildSidebarSections,
+  collectPricingErrors,
+  collectShippingErrors,
+} from '../add-product-validation';
 
 const variantFields: FieldSpec[] = [
   { name: 'Color', uiType: 'multiselect', label: 'Color', group: 'variant' },
@@ -56,9 +60,11 @@ describe('pruneOrphanVariantPaths', () => {
     expect(pruned.name).toBe('Shirt');
   });
 
-  it('returns input untouched when no axis carries values', () => {
+  it('drops stale variant paths when no axis carries values', () => {
     const flat = { 'sku.variants.Color.Red.Size.S.price': '100' };
-    expect(pruneOrphanVariantPaths(flat, [])).toBe(flat);
+    const out = pruneOrphanVariantPaths(flat, []);
+    expect(out).not.toBe(flat);
+    expect(out['sku.variants.Color.Red.Size.S.price']).toBeUndefined();
   });
 });
 
@@ -71,12 +77,30 @@ describe('collectPricingErrors', () => {
         Size: ['28.5'],
         sku: {
           variants: {
-            Color: { Red: { Size: { '28_5': { price: '1200', stock: '10' } } } },
+            Color: {
+              Red: { Size: { '28_5': { price: '1200', stock: '10', sellerSku: 'CLB-RED-28_5' } } },
+            },
           },
         },
       },
     });
     expect(errors).toEqual([]);
+  });
+
+  it('flags missing SKU code on variant rows', () => {
+    const errors = collectPricingErrors({
+      ...baseArgs,
+      values: {
+        Color: ['Red'],
+        Size: ['28.5'],
+        sku: {
+          variants: {
+            Color: { Red: { Size: { '28_5': { price: '1200', stock: '10' } } } },
+          },
+        },
+      },
+    });
+    expect(errors).toContain('Color: Red, Size: 28.5: SKU code is required.');
   });
 
   it('still flags truly missing prices on dotted rows', () => {
@@ -206,5 +230,103 @@ describe('buildSidebarSections pricing anchor', () => {
     const pricing = sections.find((section) => section.key === 'pricing');
     expect(pricing?.status).toBe(false);
     expect(pricing?.errors.some((message) => message.includes('two variant groups'))).toBe(true);
+  });
+});
+
+describe('shipping and warranty validation and score calculation', () => {
+  it('accepts a blank package weight because the server defaults it to 0.3', () => {
+    expect(collectShippingErrors({ values: {} })).toEqual([]);
+  });
+
+  it('rejects an explicit non-positive package weight', () => {
+    expect(collectShippingErrors({ values: { packageWeightKg: 0 } })).toEqual([
+      'Package weight must be greater than 0 kg (leave blank to use the 0.3 kg default).',
+    ]);
+  });
+
+  it('identifies invalid warranty details when warranty type is set without specifying duration', () => {
+    const errors = collectShippingErrors({
+      values: { packageWeightKg: 0.5, warrantyType: 'BRAND_WARRANTY', warrantyPeriod: '' },
+    });
+    expect(errors).toContain('Specify warranty duration when warranty is offered.');
+  });
+
+  it('returns no errors when valid physical weight and warranty terms are provided', () => {
+    const errors = collectShippingErrors({
+      values: {
+        packageWeightKg: 0.75,
+        packageLengthCm: 30,
+        packageWidthCm: 20,
+        packageHeightCm: 5,
+        warrantyType: 'NO_WARRANTY',
+      },
+    });
+    expect(errors).toHaveLength(0);
+  });
+
+  it('keeps the shipping section complete on a blank form (server-defaulted weight)', () => {
+    const sections = buildSidebarSections({
+      fieldErrors: [],
+      schemaFields: variantFields,
+      schemaHasName: true,
+      values: {},
+      variantMeta: [],
+    });
+    const shippingSection = sections.find((section) => section.key === 'shipping');
+    expect(shippingSection).toBeDefined();
+    expect(shippingSection?.status).toBe(true);
+    expect(shippingSection?.errors).toHaveLength(0);
+  });
+
+  it('marks shipping and warranty section complete when required data is populated', () => {
+    const sections = buildSidebarSections({
+      fieldErrors: [],
+      schemaFields: variantFields,
+      schemaHasName: true,
+      values: {
+        packageWeightKg: 0.35,
+        warrantyType: 'NO_WARRANTY',
+      },
+      variantMeta: [],
+    });
+    const shippingSection = sections.find((section) => section.key === 'shipping');
+    expect(shippingSection).toBeDefined();
+    expect(shippingSection?.status).toBe(true);
+    expect(shippingSection?.errors).toHaveLength(0);
+  });
+});
+
+describe('buildSidebarSections specification attributes threshold', () => {
+  const specFields: FieldSpec[] = [
+    { name: 'Fabric', uiType: 'input', label: 'Fabric', group: 'details' },
+    { name: 'Occasion', uiType: 'input', label: 'Occasion', group: 'details' },
+    { name: 'FitType', uiType: 'input', label: 'Fit Type', group: 'details' },
+    { name: 'Collar', uiType: 'input', label: 'Collar Style', group: 'details' },
+  ];
+
+  it('marks specification section invalid when fewer than 3 attributes are populated', () => {
+    const sections = buildSidebarSections({
+      fieldErrors: [],
+      schemaFields: specFields,
+      schemaHasName: true,
+      values: { Fabric: 'Pure Cotton', Occasion: 'Casual' },
+      variantMeta: [],
+    });
+    const specs = sections.find((section) => section.key === 'specification');
+    expect(specs?.status).toBe(false);
+    expect(specs?.errors[0]).toBe('Fill at least 3 specification attributes (currently 2 filled).');
+  });
+
+  it('marks specification section complete once at least 3 attributes are populated', () => {
+    const sections = buildSidebarSections({
+      fieldErrors: [],
+      schemaFields: specFields,
+      schemaHasName: true,
+      values: { Fabric: 'Pure Cotton', Occasion: 'Casual', FitType: 'Regular Fit' },
+      variantMeta: [],
+    });
+    const specs = sections.find((section) => section.key === 'specification');
+    expect(specs?.status).toBe(true);
+    expect(specs?.errors).toHaveLength(0);
   });
 });

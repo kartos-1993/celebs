@@ -4,12 +4,18 @@
  * Pipeline: server `product-render` fields → category-attribute fallbacks
  * → group normalization → variant infrastructure injection (ColorMeta +
  * SkuTableV2) → baseline safety net (media/pricing) if still empty.
+ *
+ * Error contract: the pipeline NEVER falls back to `BASELINE_SCHEMA` on
+ * failure. A fetch that cannot be completed rejects, the query surfaces
+ * `error`, and callers render an explicit schema-error state. Submit is
+ * blocked because `schemaFields` stays empty (see the gate in
+ * `use-add-product-submit.ts`) — silently rendering fabricated baseline
+ * fields would let a seller submit a product against a schema the server
+ * never described.
  */
 import { useQuery } from '@tanstack/react-query';
 
-import { logger } from '@celebs/shared-utils';
-
-import { fetchProductRenderSchema } from '../api';
+import { fetchProductRenderSchema, PRODUCT_QUERY_KEYS } from '../api';
 import {
   addFallbackFields,
   ensureVariantSupportFields,
@@ -17,16 +23,21 @@ import {
 } from '../components/dynamic-form-utils';
 import type { FieldSpec } from '../types';
 
+/**
+ * Legacy alias — schema keys now live in the single `PRODUCT_QUERY_KEYS`
+ * factory in `../api`. Same object identity, so a category-feature caller
+ * invalidating `PRODUCT_SCHEMA_QUERY_KEYS.all` still hits the render cache.
+ */
 export const PRODUCT_SCHEMA_QUERY_KEYS = {
-  all: ['product-schema'] as const,
-  render: (catId: string, productId?: string) =>
-    [...PRODUCT_SCHEMA_QUERY_KEYS.all, 'render', catId, productId ?? 'new'] as const,
+  all: PRODUCT_QUERY_KEYS.schemaAll,
+  render: PRODUCT_QUERY_KEYS.schemaRender,
 };
 
 /**
  * Guaranteed minimum selling fields when a category has no configured
  * attributes. name/brand/description are intentionally excluded —
  * BasicInfoSection renders them whenever the schema doesn't declare them.
+ * SUCCESS-path only: never used to paper over a failed fetch.
  */
 const BASELINE_SCHEMA: FieldSpec[] = [
   {
@@ -60,21 +71,13 @@ const BASELINE_SCHEMA: FieldSpec[] = [
 
 export function useProductSchema(catId: string, productId?: string) {
   return useQuery({
-    queryKey: PRODUCT_SCHEMA_QUERY_KEYS.render(catId, productId),
+    queryKey: PRODUCT_QUERY_KEYS.schemaRender(catId, productId),
     queryFn: async (): Promise<FieldSpec[]> => {
-      try {
-        const res = await fetchProductRenderSchema(catId, productId);
-        const serverFields: FieldSpec[] = res.data?.fields ?? [];
-        const withFallbacks = await addFallbackFields(catId, serverFields);
-        const merged = ensureVariantSupportFields(normalizeSchema(withFallbacks));
-        return merged.length > 0 ? merged : [...BASELINE_SCHEMA];
-      } catch (error) {
-        logger.warn(
-          { error, catId },
-          'Failed to load category schema; falling back to baseline schema',
-        );
-        return [...BASELINE_SCHEMA];
-      }
+      const res = await fetchProductRenderSchema(catId, productId);
+      const serverFields: FieldSpec[] = res.data?.fields ?? [];
+      const withFallbacks = await addFallbackFields(catId, serverFields);
+      const merged = ensureVariantSupportFields(normalizeSchema(withFallbacks));
+      return merged.length > 0 ? merged : [...BASELINE_SCHEMA];
     },
     enabled: Boolean(catId),
     staleTime: 2 * 60 * 1000,
