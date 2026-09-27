@@ -28,8 +28,7 @@ export function SkuDefaultTable({ isSkuLocked }: SkuDefaultTableProps) {
             <TableHead className="w-[12%] px-1.5 py-2">
               Stock <span className="text-destructive ml-0.5">*</span>
             </TableHead>
-            <TableHead className="w-[30%] px-1.5 py-2">SellerSKU</TableHead>
-            <TableHead className="w-[12%] px-1.5 py-2">Free</TableHead>
+            <TableHead className="w-[42%] px-1.5 py-2">SellerSKU</TableHead>
             <TableHead className="w-[13%] px-1.5 py-2">Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -49,9 +48,6 @@ export function SkuDefaultTable({ isSkuLocked }: SkuDefaultTableProps) {
                 name="sku.default.sellerSku"
                 isLocked={isSkuLocked?.('sku.default.sellerSku')}
               />
-            </TableCell>
-            <TableCell className="p-1.5">
-              <VariantFieldInput name="sku.default.freeItems" type="number" />
             </TableCell>
             <TableCell className="p-1.5">
               <VariantAvailability name="sku.default.available" />

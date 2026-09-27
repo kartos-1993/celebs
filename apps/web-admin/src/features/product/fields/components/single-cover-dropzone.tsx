@@ -6,9 +6,12 @@ import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { MediaLibraryButton } from '../../components/media-library-button';
 
+import { resolveAcceptAttr } from './shared-utils';
+
 interface SingleCoverDropzoneProps {
   preview?: string;
   isUploading: boolean;
+  accept?: string[];
   onReplaceFile: (idx: number, f: File | null) => void;
   onRemoveFile: (idx: number) => void;
   onAddFiles: (
@@ -21,12 +24,14 @@ interface SingleCoverDropzoneProps {
 export function SingleCoverDropzone({
   preview,
   isUploading,
+  accept,
   onReplaceFile,
   onRemoveFile,
   onAddFiles,
   handlePickerSelect,
   fileInputs,
 }: SingleCoverDropzoneProps) {
+  const acceptAttr = resolveAcceptAttr(accept);
   return (
     <div className="space-y-2">
       {preview ? (
@@ -100,13 +105,19 @@ export function SingleCoverDropzone({
         }}
         type="file"
         data-testid="main-image-upload-input"
-        accept="image/*"
+        accept={acceptAttr}
         className="hidden"
         onChange={(e) => {
-          const f = e.target.files?.[0] || null;
-          e.target.value = '';
-          if (preview) onReplaceFile(0, f);
-          else if (f) onAddFiles({ target: { files: [f] } });
+          // Single validated path: forward the REAL ChangeEvent so the
+          // `value`-reset branch in onAddFiles runs (no synthetic lazy
+          // wrapper — eager and lazy picks share one code path).
+          if (preview) {
+            const f = e.target.files?.[0] || null;
+            e.target.value = '';
+            onReplaceFile(0, f);
+          } else {
+            onAddFiles(e);
+          }
         }}
       />
     </div>

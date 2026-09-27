@@ -1,14 +1,20 @@
-import { sanitizeVariantKey } from '../../utils/add-product-helpers';
+import { defaultSkuPath, getNestedValue, variantSkuPath } from '../../utils/add-product-helpers';
 
-import type { ScopeOption, VariantSelection } from './sku-table-types';
+import { collectVariantCombos, comboMatchesScope } from './apply-sku-scope';
+import type { ScopeOption, SkuFieldItem, VariantSelection } from './sku-table-types';
 
-export function sanitize(s: string): string {
-  return sanitizeVariantKey(s);
-}
+export {
+  APPLY_ALL_FIELD_NAMES,
+  collectApplyAssignments,
+  collectApplyPaths,
+  countBlankSkuCodes,
+  fillMissingSkuCodes,
+  parseVariantAxesResponse,
+} from './apply-sku-scope';
+export type { SkuFieldItem } from './sku-table-types';
 
-export function pathFor(...parts: string[]): string {
-  return ['sku', 'variants', ...parts.map(sanitize)].join('.');
-}
+/** `sku.variants.*` path builder — see `variantSkuPath` for the single encoder. */
+export const pathFor = variantSkuPath;
 
 export function matchesScope(
   applyScope: string,
@@ -17,18 +23,8 @@ export function matchesScope(
   bKey?: string,
   bVal?: string,
 ): boolean {
-  if (applyScope === 'ALL') return true;
-  if (!applyScope.includes('||')) {
-    const [k, v] = applyScope.split('::');
-    return (k === aKey && v === aVal) || (k === bKey && v === bVal);
-  }
-  const [p1, p2] = applyScope.split('||');
-  const [k1, v1] = p1.split('::');
-  const [k2, v2] = p2.split('::');
-  return (
-    (k1 === aKey && v1 === aVal && k2 === bKey && v2 === bVal) ||
-    (k2 === aKey && v2 === aVal && k1 === bKey && v1 === bVal)
-  );
+  const combo = bKey === undefined || bVal === undefined ? [aKey, aVal] : [aKey, aVal, bKey, bVal];
+  return comboMatchesScope(combo, applyScope);
 }
 
 export function buildScopeOptions(
@@ -76,20 +72,42 @@ export function buildScopeOptions(
   return opts;
 }
 
-export function collectSkuPaths(variants: VariantSelection[]): string[] {
-  if (variants.length === 0) {
-    return ['sku.default.sellerSku'];
+/**
+ * sellerSku-scoped by contract. The only consumers are the SKU auto-generate
+ * flow and the "missing SKU" button state in `use-sku-table`, and both need the
+ * sellerSku path plus the ordered option values used to build a retail code.
+ *
+ * price / specialPrice / stock / freeItems are deliberately NOT tracked here:
+ * `collectPricingErrors` validates each of them per matrix row and
+ * `buildPayloadSkus` reads them from the same `pathFor` prefixes, so widening
+ * this helper to "every editable cell" would duplicate both and put cell
+ * ownership in two places. Generalizes to N axes via `collectVariantCombos`.
+ */
+export function collectSellerSkuItems(variants: VariantSelection[]): SkuFieldItem[] {
+  const combos = collectVariantCombos(variants);
+  if (combos.length === 0) {
+    return [{ path: defaultSkuPath('sellerSku'), options: [] }];
   }
-  if (variants.length === 1) {
-    return variants[0].values.map((v) => pathFor(variants[0].key, v, 'sellerSku'));
-  }
-  const paths: string[] = [];
-  for (const a of variants[0].values) {
-    for (const b of variants[1].values) {
-      paths.push(pathFor(variants[0].key, a, variants[1].key, b, 'sellerSku'));
+  return combos.map((combo) => {
+    const options: string[] = [];
+    for (let index = 1; index < combo.length; index += 2) {
+      options.push(combo[index]);
     }
-  }
-  return paths;
+    return { path: pathFor(...combo, 'sellerSku'), options };
+  });
+}
+
+/** Historical alias for {@link collectSellerSkuItems}. */
+export const collectSkuItems = collectSellerSkuItems;
+
+/**
+ * Kept intentionally ( review): covered by `__tests__/sku-table-utils.spec.ts`
+ * and reserved for consumers that need paths without item options. Prod currently
+ * inlines the equivalent via `collectSkuItems(variants).map((item) => item.path)`
+ * in `use-sku-table.ts`; do not remove one without the other.
+ */
+export function collectSkuPaths(variants: VariantSelection[]): string[] {
+  return collectSellerSkuItems(variants).map((item) => item.path);
 }
 
 export interface SkuButtonState {
@@ -124,16 +142,8 @@ export function getSkuButtonState(total: number, missing: number): SkuButtonStat
   };
 }
 
-export function getNestedValue(obj: unknown, path: string): unknown {
-  if (!obj || typeof obj !== 'object') return undefined;
-  const parts = path.split('.');
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (!current || typeof current !== 'object') return undefined;
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
-}
+/** Unified with `add-product-helpers` — the flat-key-aware reader is the only one. */
+export { getNestedValue };
 
 export function isSkuFieldLocked(
   status: string | undefined,

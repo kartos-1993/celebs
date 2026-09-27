@@ -33,8 +33,7 @@ export function SkuSingleAxisTable({ variant, labelOf, isSkuLocked }: SkuSingleA
             <TableHead className="w-[11%] px-1.5 py-2">
               Stock <span className="text-destructive ml-0.5">*</span>
             </TableHead>
-            <TableHead className="w-[28%] px-1.5 py-2">SellerSKU</TableHead>
-            <TableHead className="w-[10%] px-1.5 py-2">Free</TableHead>
+            <TableHead className="w-[38%] px-1.5 py-2">SellerSKU</TableHead>
             <TableHead className="w-[9%] px-1 py-2 text-center">Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -66,9 +65,6 @@ export function SkuSingleAxisTable({ variant, labelOf, isSkuLocked }: SkuSingleA
                   name={pathFor(variant.key, opt, 'sellerSku')}
                   isLocked={isSkuLocked?.(pathFor(variant.key, opt, 'sellerSku'))}
                 />
-              </TableCell>
-              <TableCell className="p-1.5">
-                <VariantFieldInput name={pathFor(variant.key, opt, 'freeItems')} type="number" />
               </TableCell>
               <TableCell className="p-1 text-center">
                 <VariantAvailability name={pathFor(variant.key, opt, 'available')} />

@@ -4,13 +4,15 @@ import { Plus, RefreshCw, X } from 'lucide-react';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import { ImageValue, imageValueKey } from './shared';
+import { type ImageValue, imageValueKey } from './shared';
+import { resolveAcceptAttr } from './shared-utils';
 
 interface MultiImageGridProps {
   previews: string[];
   files: ImageValue[];
   maxItems: number;
   isUploading: boolean;
+  accept?: string[];
   onReplaceFile: (idx: number, f: File | null) => void;
   onRemoveFile: (idx: number) => void;
   onAddFiles: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -22,11 +24,13 @@ export function MultiImageGrid({
   files,
   maxItems,
   isUploading,
+  accept,
   onReplaceFile,
   onRemoveFile,
   onAddFiles,
   fileInputs,
 }: MultiImageGridProps) {
+  const acceptAttr = resolveAcceptAttr(accept);
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {previews.map((src, idx) => (
@@ -62,7 +66,7 @@ export function MultiImageGrid({
               fileInputs.current[idx] = el;
             }}
             type="file"
-            accept="image/*"
+            accept={acceptAttr}
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0] || null;
@@ -86,7 +90,7 @@ export function MultiImageGrid({
           <input
             type="file"
             data-testid="main-image-upload-input"
-            accept="image/*"
+            accept={acceptAttr}
             multiple
             className="hidden"
             onChange={onAddFiles}

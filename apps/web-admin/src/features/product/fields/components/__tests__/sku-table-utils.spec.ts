@@ -177,6 +177,12 @@ describe('SKU Table Batch Edit Scope Utilities', () => {
       expect(getNestedValue(defaultValues, 'non.existent.path')).toBeUndefined();
     });
 
+    it('also resolves flat dot-keys (unified helpers implementation)', () => {
+      expect(getNestedValue({ 'sku.default.sellerSku': 'FLAT-001' }, 'sku.default.sellerSku')).toBe(
+        'FLAT-001',
+      );
+    });
+
     it('locks SKU field only when product is published and variant had an existing non-empty SKU', () => {
       expect(
         isSkuFieldLocked('published', defaultValues, 'sku.variants.color.red.size.S.sellerSku'),

@@ -17,7 +17,11 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
 
   if (state.selectedSizes.length === 0) {
     return (
-      <div className="mt-4 rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground col-span-full">
+      <div
+        className="mt-4 rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground col-span-full"
+        data-error-path={field.name}
+        tabIndex={-1}
+      >
         Select product sizes in the section above to enter size chart measurements.
       </div>
     );
@@ -26,7 +30,16 @@ export function SizeMeasurementsInputField({ field }: UiProps) {
   const activeChart = state.charts.find((c) => c.key === state.activeTabKey) || state.charts[0];
 
   return (
-    <div className="col-span-full space-y-4 rounded-xl border bg-card p-4 shadow-2xs">
+    // This field owns no single control: its value is spread over
+    // `sizes.<i>.<listKey>.<j>.value` cells, which each carry their own RHF
+    // `name` and resolve first. `data-error-path` on the card covers an error
+    // on the `sizes` list itself; `tabIndex={-1}` makes the card
+    // programmatically focusable without adding a tab stop.
+    <div
+      className="col-span-full space-y-4 rounded-xl border bg-card p-4 shadow-2xs"
+      data-error-path={field.name}
+      tabIndex={-1}
+    >
       <SizeMeasurementHeader unit={state.unit} onUnitToggle={state.handleUnitToggle} />
 
       {/* Tabs for Multiple Charts */}

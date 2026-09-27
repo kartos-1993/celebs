@@ -27,7 +27,13 @@ export function SizeMeasurementTable({ chart, selectedSizes, unit }: SizeMeasure
     chart.key === 'body' ? 'bodyMeasurements' : 'productMeasurements';
 
   return (
-    <Table>
+    // The value cells below already carry their exact RHF path via `register`,
+    // so every rendered cell resolves first. This anchor covers an error raised
+    // on the `sizes` list itself. NOTE: form-focus' data-error-path walk only
+    // matches a node strictly longer than a popped path prefix, so `sizes` can
+    // never absorb a nested `sizes.0.<list>.<i>.value`; those depend on the
+    // cell being rendered (inactive tab / blank column still falls back).
+    <Table data-error-path="sizes" tabIndex={-1}>
       <TableHeader>
         <TableRow className="bg-muted/40">
           <TableHead className="w-24">Size</TableHead>

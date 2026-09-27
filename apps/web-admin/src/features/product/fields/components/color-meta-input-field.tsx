@@ -37,7 +37,12 @@ export function ColorMetaInputField({ field }: UiProps) {
       : [];
 
   return (
-    <div className="space-y-2 col-span-full">
+    // This field owns no single control: its value is spread over
+    // `variants.colorMeta.<color>.*` rows, so it is addressed for
+    // `focusFirstError` with `data-error-path`, whose prefix walk resolves any
+    // nested color path back to this wrapper. `tabIndex={-1}` makes the wrapper
+    // programmatically focusable without adding a tab stop.
+    <div className="space-y-2 col-span-full" data-error-path={field.name} tabIndex={-1}>
       <div className="flex items-center gap-2 text-sm">
         <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
         {limits.maxImages != null ? (

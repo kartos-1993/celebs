@@ -22,7 +22,7 @@ export function VariantFieldInput({
   const { control, getValues } = useFormContext();
   const isPriceField = name.endsWith('.price');
   const isSpecialPriceField = name.endsWith('.specialPrice');
-  const isNonNegativeField = name.endsWith('.stock') || name.endsWith('.freeItems');
+  const isNonNegativeField = name.endsWith('.stock');
   const { field, fieldState } = useController({
     name,
     control,

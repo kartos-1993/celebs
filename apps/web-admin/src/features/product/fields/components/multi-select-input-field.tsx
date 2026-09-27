@@ -17,7 +17,10 @@ export function MultiSelectInputField({ field, control }: UiProps) {
   const opts = useOptions(field);
   const value: string[] = Array.isArray(f.value) ? f.value : [];
   return (
-    <div className="space-y-1">
+    // Multiselect takes a fixed prop set (no name/rest spread), so the field is
+    // addressed for `focusFirstError` via `data-field-name`; `tabIndex={-1}`
+    // makes this wrapper programmatically focusable without a tab stop.
+    <div className="space-y-1" data-field-name={field.name} tabIndex={-1}>
       <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <Multiselect
         options={opts}

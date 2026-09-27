@@ -1,9 +1,15 @@
 import React from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 
-import { generateCollisionProofBaseSku } from '../../utils/generate-sku-helpers';
-
+import {
+  collectApplyAssignments,
+  countBlankSkuCodes,
+  fillMissingSkuCodes,
+  normalizeVariantMetaItem,
+  parseVariantAxesResponse,
+  toVariantSelection,
+} from './apply-sku-scope';
 import type {
   ApplyAllState,
   VariantDataSource,
@@ -12,17 +18,63 @@ import type {
 } from './sku-table-types';
 import {
   buildScopeOptions,
-  collectSkuPaths,
+  collectSellerSkuItems,
   getSkuButtonState,
   isSkuFieldLocked,
-  matchesScope,
-  pathFor,
 } from './sku-table-utils';
 
+import { AuthContext } from '@/context/auth-provider';
 import { axiosClient } from '@/lib/axios/axios-client';
+
+function resolveStoreCode(auth: {
+  user?: { storeCode?: string; vendorProfile?: { storeCode?: string } };
+}): string | undefined {
+  return auth?.user?.vendorProfile?.storeCode || auth?.user?.storeCode;
+}
+
+function useVariantAxes(formControl: Control, dataSource?: VariantDataSource): VariantSelection[] {
+  const staticVariants = dataSource?.variants;
+  const staticVariantMeta = React.useMemo(
+    () =>
+      Array.isArray(staticVariants) ? staticVariants.map(normalizeVariantMetaItem) : undefined,
+    [staticVariants],
+  );
+
+  const fetchUrl = typeof dataSource?.fetch === 'string' ? dataSource.fetch : undefined;
+  const fetchParams = dataSource?.params;
+
+  const { data: asyncVariantMeta } = useQuery<VariantMetaItem[]>({
+    queryKey: ['sku-table-variants', fetchUrl, fetchParams],
+    // No `??` cascade (AGENTS.md §8): a malformed envelope throws here and
+    // surfaces as a query error instead of silently rendering no axes.
+    queryFn: async () => {
+      if (!fetchUrl) return [];
+      const response = await axiosClient.get(fetchUrl, { params: fetchParams });
+      return parseVariantAxesResponse(response.data).map((entry) =>
+        normalizeVariantMetaItem(entry),
+      );
+    },
+    enabled: !staticVariantMeta && !!fetchUrl,
+  });
+
+  const variantMeta = staticVariantMeta ?? asyncVariantMeta ?? [];
+
+  const watchedValues = useWatch({
+    control: formControl,
+    name: variantMeta.map((axis) => axis.key),
+  }) as unknown[] | undefined;
+
+  const variantSelections = variantMeta.map((axis, index) =>
+    toVariantSelection(axis, watchedValues?.[index]),
+  );
+
+  return variantSelections.filter((axis) => axis.values.length > 0);
+}
 
 export function useSkuTable(dataSource?: VariantDataSource) {
   const { control: formControl, setValue, getValues, formState } = useFormContext();
+  const auth = React.useContext(AuthContext);
+  const storeCode = resolveStoreCode(auth);
 
   const labelsMap = React.useMemo(
     () => (dataSource?.labels ?? {}) as Record<string, Record<string, string>>,
@@ -34,71 +86,7 @@ export function useSkuTable(dataSource?: VariantDataSource) {
     [labelsMap],
   );
 
-  const staticVariantMeta = React.useMemo<VariantMetaItem[] | undefined>(() => {
-    if (Array.isArray(dataSource?.variants)) {
-      return dataSource.variants.map((a) => ({
-        key: a.key ?? a.name ?? a.value ?? '',
-        label: a.label ?? a.name ?? a.key ?? String(a.value ?? ''),
-      }));
-    }
-    return undefined;
-  }, [dataSource?.variants]);
-
-  const fetchUrl = typeof dataSource?.fetch === 'string' ? dataSource.fetch : undefined;
-
-  const { data: asyncVariantMeta } = useQuery({
-    queryKey: ['sku-table-variants', fetchUrl, dataSource?.params],
-    queryFn: async () => {
-      if (!fetchUrl) return [];
-      const res = await axiosClient.get(fetchUrl, { params: dataSource?.params });
-      const data = res.data;
-      const raw =
-        data?.data?.variants ??
-        data?.variants ??
-        data?.data?.axes ??
-        data?.axes ??
-        data?.data ??
-        data;
-      const list = Array.isArray(raw) ? raw : [];
-      return list.map((a: Record<string, unknown>) => ({
-        key: String(a.key ?? a.name ?? a.value ?? ''),
-        label: String(a.label ?? a.name ?? a.key ?? a.value ?? ''),
-      }));
-    },
-    enabled: !staticVariantMeta && !!fetchUrl,
-  });
-
-  const variantMeta = staticVariantMeta ?? asyncVariantMeta ?? [];
-
-  const watchedValues = useWatch({
-    control: formControl,
-    name: variantMeta.map((a) => a.key),
-  }) as unknown[] | undefined;
-
-  const variantSelections: VariantSelection[] = variantMeta.map((a, idx) => {
-    const v = watchedValues?.[idx];
-    if (Array.isArray(v)) {
-      const arr = v.map((x) => {
-        if (typeof x === 'string') return x;
-        if (typeof x === 'object' && x !== null) {
-          const obj = x as Record<string, unknown>;
-          return String(obj.value ?? obj.label ?? x);
-        }
-        return String(x);
-      });
-      return { key: a.key, label: a.label, values: arr };
-    }
-    if (typeof v === 'string' && v) {
-      const parts = v
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      return { key: a.key, label: a.label, values: parts.length ? parts : [v] };
-    }
-    return { key: a.key, label: a.label, values: [] as string[] };
-  });
-
-  const variants = variantSelections.filter((a) => a.values.length > 0);
+  const variants = useVariantAxes(formControl, dataSource);
 
   const [applyAll, setApplyAll] = React.useState<ApplyAllState>({});
   const [applyScope, setApplyScope] = React.useState<string>('ALL');
@@ -109,104 +97,53 @@ export function useSkuTable(dataSource?: VariantDataSource) {
   );
 
   const applyToAll = React.useCallback(() => {
-    if (variants.length === 0) return;
-    const fill = (name: string, value: unknown) =>
-      setValue(name, value, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-
-    if (variants.length === 1) {
-      for (const opt of variants[0].values) {
-        if (!matchesScope(applyScope, variants[0].key, opt)) continue;
-        if (applyAll.price != null) fill(pathFor(variants[0].key, opt, 'price'), applyAll.price);
-        if (applyAll.specialPrice != null)
-          fill(pathFor(variants[0].key, opt, 'specialPrice'), applyAll.specialPrice);
-        if (applyAll.stock != null) fill(pathFor(variants[0].key, opt, 'stock'), applyAll.stock);
-        if (applyAll.sellerSku != null)
-          fill(pathFor(variants[0].key, opt, 'sellerSku'), applyAll.sellerSku);
-        if (applyAll.freeItems != null)
-          fill(pathFor(variants[0].key, opt, 'freeItems'), applyAll.freeItems);
-        if (applyAll.available != null)
-          fill(pathFor(variants[0].key, opt, 'available'), applyAll.available);
-      }
-    } else if (variants.length >= 2) {
-      for (const opt1 of variants[0].values) {
-        for (const opt2 of variants[1].values) {
-          if (!matchesScope(applyScope, variants[0].key, opt1, variants[1].key, opt2)) continue;
-          if (applyAll.price != null)
-            fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'price'), applyAll.price);
-          if (applyAll.specialPrice != null)
-            fill(
-              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'specialPrice'),
-              applyAll.specialPrice,
-            );
-          if (applyAll.stock != null)
-            fill(pathFor(variants[0].key, opt1, variants[1].key, opt2, 'stock'), applyAll.stock);
-          if (applyAll.sellerSku != null)
-            fill(
-              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'sellerSku'),
-              applyAll.sellerSku,
-            );
-          if (applyAll.freeItems != null)
-            fill(
-              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'freeItems'),
-              applyAll.freeItems,
-            );
-          if (applyAll.available != null)
-            fill(
-              pathFor(variants[0].key, opt1, variants[1].key, opt2, 'available'),
-              applyAll.available,
-            );
-        }
-      }
+    for (const assignment of collectApplyAssignments(variants, applyScope, applyAll)) {
+      setValue(assignment.path, assignment.value, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
     }
   }, [variants, applyScope, applyAll, setValue]);
 
-  const skuPaths = React.useMemo(() => collectSkuPaths(variants), [variants]);
+  const skuItems = React.useMemo(() => collectSellerSkuItems(variants), [variants]);
+  const skuPaths = React.useMemo(() => skuItems.map((item) => item.path), [skuItems]);
 
   const watchedSkus = useWatch({
     control: formControl,
     name: skuPaths,
   }) as Array<string | undefined> | undefined;
 
-  const skuButtonState = React.useMemo(() => {
-    const total = skuPaths.length;
-    let missing = 0;
-    skuPaths.forEach((path, i) => {
-      const val = (watchedSkus?.[i] ?? getValues(path) ?? '') as string;
-      if (!String(val).trim()) {
-        missing += 1;
-      }
-    });
-    return getSkuButtonState(total, missing);
-  }, [skuPaths, watchedSkus, getValues]);
+  const readSkuCode = React.useCallback(
+    (path: string, index: number) => watchedSkus?.[index] ?? getValues(path) ?? '',
+    [watchedSkus, getValues],
+  );
 
-  const handleAutoGenerateSkus = React.useCallback(() => {
-    const fillIfBlank = (name: string) => {
-      const existing = String(getValues(name) || '').trim();
-      if (!existing) {
-        setValue(name, generateCollisionProofBaseSku(brand, departmentHint), {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-    };
+  const skuButtonState = React.useMemo(
+    () => getSkuButtonState(skuPaths.length, countBlankSkuCodes(skuPaths, readSkuCode)),
+    [skuPaths, readSkuCode],
+  );
 
-    const departmentHint = String(getValues('categoryPath') || getValues('categoryId') || '');
-    const brand = getValues('brand');
-
-    for (const path of skuPaths) {
-      fillIfBlank(path);
-    }
-  }, [skuPaths, setValue, getValues]);
+  const handleAutoGenerateSkus = React.useCallback(
+    () =>
+      fillMissingSkuCodes({
+        items: skuItems,
+        read: getValues,
+        write: (path, value) => setValue(path, value, { shouldDirty: true, shouldValidate: true }),
+        brand: String(getValues('brand') ?? ''),
+        productName: String(getValues('name') ?? ''),
+        storeCode,
+      }),
+    [skuItems, setValue, getValues, storeCode],
+  );
 
   const isSkuLocked = React.useCallback(
-    (path: string) => {
-      const status = getValues('status') as string | undefined;
-      return isSkuFieldLocked(
-        status,
+    (path: string) =>
+      isSkuFieldLocked(
+        getValues('status') as string | undefined,
         formState.defaultValues as Record<string, unknown> | undefined,
         path,
-      );
-    },
+      ),
     [getValues, formState.defaultValues],
   );
 

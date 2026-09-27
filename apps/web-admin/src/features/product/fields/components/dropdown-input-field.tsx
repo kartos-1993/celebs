@@ -8,7 +8,6 @@ import type { UiProps } from '../ui-registry';
 import { FieldError, LabelWithRequired, rulesFrom } from './shared';
 import { useOptions } from './use-options';
 
-// eslint-disable-next-line react-refresh/only-export-components
 export { useOptions };
 
 export function DropdownInputField({ field, control }: UiProps) {
@@ -19,7 +18,11 @@ export function DropdownInputField({ field, control }: UiProps) {
   });
   const opts = useOptions(field);
   return (
-    <div className="space-y-1">
+    // SearchableSelect takes a fixed prop set (no name/rest spread), so the
+    // field is addressed for `focusFirstError` via `data-field-name`;
+    // `tabIndex={-1}` makes this wrapper programmatically focusable without
+    // adding a tab stop.
+    <div className="space-y-1" data-field-name={field.name} tabIndex={-1}>
       <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <SearchableSelect
         options={opts}

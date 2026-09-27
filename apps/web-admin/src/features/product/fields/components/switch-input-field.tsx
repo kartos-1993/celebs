@@ -16,8 +16,12 @@ export function SwitchInputField({ field, control }: UiProps) {
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
+        {/* Radix Checkbox reroutes a `name` prop to a hidden form-control input
+            (only rendered inside a form and not focusable), so the focusable
+            button itself carries `data-field-name` for `focusFirstError`. */}
         <Checkbox
           id={`field-${field.name}`}
+          data-field-name={field.name}
           checked={!!f.value}
           onCheckedChange={(val) => f.onChange(!!val)}
         />

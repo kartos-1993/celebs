@@ -6,11 +6,18 @@ import type { UiProps } from '../ui-registry';
 
 import { MultiImageGrid } from './multi-image-grid';
 import { FieldError, LabelWithRequired } from './shared';
+import { asAcceptList } from './shared-utils';
 import { SingleCoverDropzone } from './single-cover-dropzone';
 import { useMainImageState } from './use-main-image-state';
 
 export const MainImageInputField = memo(function MainImageInputField({ field }: UiProps) {
   const state = useMainImageState({ field });
+  // The dropzones take the rule's MIME list (`accept?: string[]`) and resolve
+  // the `accept` attribute themselves via `resolveAcceptAttr`, so they get the
+  // list, not the hook's already-joined `state.acceptAttr` string. Both paths
+  // render the identical attribute: a field's `rule.accept` allowlist reaches
+  // the DOM, with `image/*` only as the no-rule fallback.
+  const acceptList = asAcceptList(field.rule?.accept);
 
   return (
     <div className="space-y-2 col-span-full" data-error-path={field.name}>
@@ -42,6 +49,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
           <SingleCoverDropzone
             preview={state.previews[0]}
             isUploading={state.isUploading}
+            accept={acceptList}
             onReplaceFile={state.onReplaceFile}
             onRemoveFile={state.onRemoveFile}
             onAddFiles={state.onAddFiles}
@@ -54,6 +62,7 @@ export const MainImageInputField = memo(function MainImageInputField({ field }: 
             files={state.files}
             maxItems={state.maxItems}
             isUploading={state.isUploading}
+            accept={acceptList}
             onReplaceFile={state.onReplaceFile}
             onRemoveFile={state.onRemoveFile}
             onAddFiles={state.onAddFiles}

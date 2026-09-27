@@ -1,7 +1,6 @@
 import React from 'react';
 
 import { Button } from '@celebs/shared-ui/components/button';
-import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Input } from '@celebs/shared-ui/components/input';
 import { NumberInput } from '@celebs/shared-ui/components/number-input';
 import {
@@ -36,7 +35,10 @@ export function SkuBatchEditBar({
       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         Batch Edit Variants
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 items-end">
+      {/* 6 explicit tracks, not 5: the scope select spans two, the four inputs
+          span one each. `md:grid-cols-7` left a dead track at the end of the
+          row; 5 would push SellerSKU onto a second row. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 items-end">
         <div className="col-span-2 sm:col-span-2 md:col-span-2">
           <div className="text-xs text-muted-foreground mb-1">Select Scope</div>
           <Select value={applyScope} onValueChange={setApplyScope}>
@@ -94,24 +96,12 @@ export function SkuBatchEditBar({
             placeholder="SKU"
           />
         </div>
-        <div>
-          <div className="text-xs text-muted-foreground mb-1">Free</div>
-          <NumberInput
-            className="bg-background h-8 text-xs"
-            value={applyAll.freeItems ?? ''}
-            onChange={(e) => setApplyAll((p) => ({ ...p, freeItems: e.target.value }))}
-            placeholder="0"
-          />
-        </div>
       </div>
-      <div className="flex items-center justify-between pt-1">
-        <label className="flex items-center gap-2 text-xs cursor-pointer">
-          <Checkbox
-            checked={!!applyAll.available}
-            onCheckedChange={(v) => setApplyAll((p) => ({ ...p, available: !!v }))}
-          />
-          <span className="text-xs font-medium">Mark as Available</span>
-        </label>
+      {/* `freeItems`/`available` are gone: no `skuItemSchema` key and no
+          API/Prisma column exists for them, so they were collected, applied and
+          then silently dropped by the payload. The scope narrowed to
+          price/specialPrice/stock/sellerSku. */}
+      <div className="flex items-center justify-end pt-1">
         <Button
           type="button"
           size="sm"

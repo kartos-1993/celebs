@@ -16,16 +16,27 @@ export interface VariantSelection {
   values: string[];
 }
 
+/**
+ * Batch-apply draft state. Every key here is written by
+ * `collectApplyAssignments` (see `APPLY_ALL_FIELD_NAMES`) and read back by
+ * `buildPayloadSkus` into `skus[]`. `freeItems`/`available` were removed: no
+ * `skuItemSchema` key and no API/Prisma column exists for them, so they were
+ * collected, applied, and then silently dropped by the payload.
+ */
 export interface ApplyAllState {
   price?: string;
   specialPrice?: string;
   stock?: string;
   sellerSku?: string;
-  freeItems?: string;
-  available?: boolean;
 }
 
 export interface ScopeOption {
   value: string;
   label: string;
+}
+
+/** One editable variant cell: its RHF path plus the option values behind the path. */
+export interface SkuFieldItem {
+  path: string;
+  options: string[];
 }
