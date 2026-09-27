@@ -42,6 +42,15 @@ export class ProductRepository {
                 countryOfOrigin: true,
               },
             },
+            inventories: {
+              select: {
+                id: true,
+                colorVariantName: true,
+                size: true,
+                sku: true,
+                quantity: true,
+              },
+            },
           },
         })
       : getDelegate(db).findUnique({

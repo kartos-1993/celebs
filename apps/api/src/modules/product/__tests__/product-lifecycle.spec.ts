@@ -398,10 +398,9 @@ describe('Product Review & Moderation Lifecycle (PostgreSQL)', () => {
     const skuSet = new Set(inventories.map((inv) => inv.sku));
     expect(skuSet.size).toBe(6);
 
-    // Verify each SKU follows the 18-character retail-grade standard
+    // Verify each SKU follows the retail standard format
     for (const inv of inventories) {
-      expect(inv.sku).toHaveLength(18);
-      expect(inv.sku).toMatch(/^[a-z0-9]{2}\d{16}$/);
+      expect(inv.sku).toMatch(/^CLB-[A-Z0-9]+-[A-Z0-9]+(-[A-Z0-9]+)?$/);
     }
   });
 

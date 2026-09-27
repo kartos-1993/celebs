@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
 
 import { can, Permission } from '@celebs/rbac';
 import {
@@ -13,14 +14,25 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { ProductService } from './product.service';
 
-import {
-  is1PVendor,
-  PLATFORM_VENDOR_ID,
-  PLATFORM_VENDOR_NAME,
-} from '@/common/constants/platform-vendor';
 import { isPlatformActor } from '@/common/context/actor-context';
 import { resolveTargetStoreId } from '@/common/guards/store.guards';
 import { sendCreated, sendSuccess } from '@/common/utils/response.util';
+
+/**
+ * Review-queue pagination DTO. Coerces repeated/garbage query values to safe
+ * integers so `?page=abc` can never reach the service as NaN. Mirrors the
+ * productFilterSchema page/limit contract (1-based page, max 100 per page).
+ */
+const productReviewQueueQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(100, 'Limit cannot exceed 100')
+    .optional()
+    .default(10),
+});
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -37,32 +49,18 @@ export class ProductController {
       }
 
       const payload = createProductSchema.parse(req.body);
-      const isPublisher = can(
-        actor.role as Parameters<typeof can>[0],
-        Permission.PRODUCT_PUBLISH,
-        actor.permissions,
-      );
 
-      // Non-publisher accounts (Vendors, Staff without explicit publish permission) cannot publish directly
-      let initialStatus = payload.status;
-      if (!isPublisher && initialStatus === PRODUCT_STATUS.PUBLISHED) {
-        initialStatus = PRODUCT_STATUS.PENDING_REVIEW;
-      }
-
-      // Canonical store target resolution: sellers are scoped to their store; platform actors default to 1P (PLATFORM_VENDOR_ID)
-      const effectiveVendorId = resolveTargetStoreId(req, 'body') || PLATFORM_VENDOR_ID;
-      const effectiveVendorName =
-        req.store?.shopName || (is1PVendor(effectiveVendorId) ? PLATFORM_VENDOR_NAME : undefined);
-
+      // the fix (controller thinning): the non-publisher PUBLISHED→PENDING_REVIEW
+      // downgrade and the platform (1P) store fallback now live in
+      // ProductService.createProduct, so every entry point shares one rule.
+      // The controller only forwards request context; it decides nothing.
       const product = await this.productService.createProduct(
-        {
-          ...payload,
-          status: initialStatus,
-        },
+        payload,
         actor.userId,
-        effectiveVendorId,
-        effectiveVendorName,
+        resolveTargetStoreId(req, 'body'),
+        req.store?.shopName,
         actor.role,
+        actor.permissions,
       );
 
       sendCreated(res, product, 'Product created successfully');
@@ -267,10 +265,10 @@ export class ProductController {
 
   getProductReviewQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const pageQuery = Array.isArray(req.query.page) ? req.query.page[0] : req.query.page;
-      const limitQuery = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
-      const page = Math.max(1, Number(pageQuery) || 1);
-      const limit = Math.min(100, Math.max(1, Number(limitQuery) || 10));
+      // the fix (controller thinning): page/limit coercion + clamping moved into
+      // the shared-types schema, so the controller no longer hand-parses query
+      // strings (or can leak NaN into the service).
+      const { page, limit } = productReviewQueueQuerySchema.parse(req.query);
       const result = await this.productService.getProductReviewQueue(page, limit);
       sendSuccess(res, result, 'Product review queue retrieved successfully');
     } catch (error) {

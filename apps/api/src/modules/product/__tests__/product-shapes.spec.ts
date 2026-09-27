@@ -58,6 +58,18 @@ function serviceWith(rowValue: unknown, listValue: unknown[] = []) {
   return { service, products };
 }
 
+/**
+ * Flattens a consumer-specific union to a plain bag so the exact key set can be
+ * asserted. Taking `unknown` keeps this a single cast (the union members have no
+ * index signature) and the non-null assertion replaces the silent `null` the old
+ * cast allowed straight through.
+ */
+function shape(value: unknown): Record<string, unknown> {
+  expect(value).not.toBeNull();
+  expect(value).not.toBeUndefined();
+  return value as Record<string, unknown>;
+}
+
 describe('Response shapes per consumer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,12 +77,15 @@ describe('Response shapes per consumer', () => {
 
   it('serves the PDP shape publicly: declared pricing, no draft mirror', async () => {
     const { service } = serviceWith(row);
-    const result = (await service.getProductById('p1', false)) as Record<string, unknown>;
+    const result = shape(await service.getProductById('p1', false));
 
     expect(result).toMatchObject({
       id: 'p1',
       cover: 'cover.jpg',
-      inStock: true,
+      // Unified rule: inStock is derived from the variant stock matrix, so a row
+      // with no tracked variant stock (colorVariants: []) is untracked => false,
+      // even though the SKU price matrix carries its own stock numbers.
+      inStock: false,
       status: 'published',
       vendorId: 'v1',
     });
@@ -109,7 +124,7 @@ describe('Response shapes per consumer', () => {
 
   it('serves the full admin shape when elevated', async () => {
     const { service } = serviceWith(row);
-    const result = (await service.getProductById('p1', true)) as Record<string, unknown>;
+    const result = shape(await service.getProductById('p1', true));
 
     expect(result.id).toBe('p1');
     expect(result.name).toBe('Denim Shorts');
@@ -125,7 +140,7 @@ describe('Response shapes per consumer', () => {
     const result = await service.getAllProducts({}, 1, 10, {});
 
     expect(result.products).toHaveLength(1);
-    const card = result.products[0] as Record<string, unknown>;
+    const card = shape(result.products[0]);
     expect(card).toMatchObject({ id: 'p1', cover: 'cover.jpg', minPrice: 1900 });
     expect(Object.keys(card).sort()).toEqual(
       [
@@ -152,7 +167,7 @@ describe('Response shapes per consumer', () => {
       actor: { role: 'ADMIN' } as never,
     });
 
-    const item = result.products[0] as Record<string, unknown>;
+    const item = shape(result.products[0]);
     expect(item).toMatchObject({ id: 'p1', stockTotal: 10, cover: 'cover.jpg' });
     expect(item.skus).toBeUndefined();
     expect(item.colorVariants).toBeUndefined();
@@ -186,7 +201,7 @@ describe('Response shapes per consumer', () => {
       actor: { role: 'ADMIN' } as never,
     });
 
-    const item = result.products[0] as Record<string, unknown>;
+    const item = shape(result.products[0]);
     expect(item).toMatchObject({
       stockTotal: 4,
       category: { id: 'c1', name: 'Denim', imageUrl: 'cat.jpg' },

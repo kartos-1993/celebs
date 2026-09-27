@@ -1,14 +1,22 @@
-import type {
-  AdminListCategory,
-  AdminProductDetail,
-  AdminProductListItem,
-  SkuPriceEntry,
-  StorefrontCard,
-  StorefrontDetail,
-  StorefrontDetailColorVariant,
+import {
+  type AdminListCategory,
+  type AdminProductDetail,
+  type AdminProductListItem,
+  SHIPPING_DEFAULTS,
+  type ShippingPackagingType,
+  type SkuPriceEntry,
+  type StorefrontCard,
+  type StorefrontDetail,
+  type StorefrontDetailColorVariant,
+  type WarrantyType,
 } from '@celebs/shared-types';
+import { buildVariantKey, isPlaceholderVariant, validDiscount } from '@celebs/shared-utils';
 
 type PriceRange = { min: number; max: number };
+
+// Every `discountedPrice` emitted below goes through the shared `validDiscount`
+// choke point (`@celebs/shared-utils`): no presenter read path can emit an
+// invalid deal, so the persistence-side check stays in its own stream.
 
 // ── Private Type Coercion & Extraction Helpers ──────────────────────────────
 
@@ -36,11 +44,6 @@ function optNum(value: unknown): number | undefined {
 function toPositiveNumber(value: unknown): number | undefined {
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function validDiscount(price: number, discounted: unknown): number | undefined {
-  const value = Number(discounted);
-  return Number.isFinite(value) && value > 0 && value < price ? value : undefined;
 }
 
 function cleanStringArray(items: unknown): string[] {
@@ -94,6 +97,12 @@ function resolvePriceRange(
   return { range: { min, max }, minDiscounted: cheapest?.discountedPrice };
 }
 
+/**
+ * COVER ORDER (canonical contract — client implements the same):
+ * cover = mainImages[0] ?? first-color-gallery-image.
+ * Every card/admin/detail cover site resolves through this one function with
+ * the RAW (pre-strip) colorVariants so stripping never changes the cover.
+ */
 function resolveCover(mainImages: unknown, colorVariants: unknown): string | undefined {
   if (Array.isArray(mainImages)) {
     const first = mainImages.find(
@@ -181,6 +190,17 @@ function toListCategory(value: unknown): AdminListCategory | null {
   };
 }
 
+// CONTRACT: category/subcategory surface as the loaded object or NULL.
+// A raw UUID string (no relation object loaded) is never passed through.
+function objectOrNull(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+// One strip rule everywhere: drop a leading swatch duplicate from gallery images.
+function stripVariantImages(variant: Record<string, unknown>): string[] {
+  return stripSwatchDupe(variant.images, optStr(variant.swatch));
+}
+
 // ── Canonical Presenters per Consumer ───────────────────────────────────────
 
 /**
@@ -202,17 +222,17 @@ export function formatStorefrontCard(formatted: Record<string, unknown>): Storef
     brand: nullStr(formatted.brand),
     cover: resolveCover(formatted.mainImages, colorVariants),
     price,
-    discountedPrice: optNum(formatted.discountedPrice),
+    discountedPrice: validDiscount(price, formatted.discountedPrice),
     minPrice: range.min,
     minDiscounted,
     ratingAverage: optNum(formatted.ratingAverage),
     ratingCount: optNum(formatted.ratingCount),
-    inStock: formatted.inStock !== false,
+    inStock: formatted.inStock === true,
     colorVariants: colorVariants.map((entry) => {
       const variant = (entry ?? {}) as Record<string, unknown>;
       return {
         name: str(variant.name, 'Variant'),
-        images: cleanStringArray(variant.images),
+        images: stripVariantImages(variant),
       };
     }),
   };
@@ -252,8 +272,8 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
     brand: nullStr(formatted.brand),
     description: str(formatted.description),
     price,
-    discountedPrice: optNum(formatted.discountedPrice),
-    cover: resolveCover(formatted.mainImages, colorVariants),
+    discountedPrice: validDiscount(price, formatted.discountedPrice),
+    cover: resolveCover(formatted.mainImages, colorVariantsRaw),
     sizes: resolveDisplaySizes(formatted.sizes, colorVariants),
     colorVariants,
     comboPrices,
@@ -261,9 +281,9 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
     minDiscounted,
     ratingAverage: optNum(formatted.ratingAverage),
     ratingCount: optNum(formatted.ratingCount),
-    inStock: formatted.inStock !== false,
-    category: formatted.category ?? formatted.categoryId ?? null,
-    subcategory: formatted.subcategory ?? formatted.subcategoryId ?? null,
+    inStock: formatted.inStock === true,
+    category: objectOrNull(formatted.category),
+    subcategory: objectOrNull(formatted.subcategory),
     status: nullStr(formatted.status),
     vendorId: nullStr(formatted.vendorId),
   };
@@ -281,7 +301,7 @@ export function formatAdminProductListItem(
     name: str(formatted.name),
     slug: nullStr(formatted.slug),
     price: num(formatted.price),
-    discountedPrice: optNum(formatted.discountedPrice),
+    discountedPrice: validDiscount(num(formatted.price), formatted.discountedPrice),
     cover: resolveCover(formatted.mainImages, formatted.colorVariants),
     status: nullStr(formatted.status),
     stockTotal: resolveStockTotal(formatted.skus, formatted.colorVariants),
@@ -291,7 +311,150 @@ export function formatAdminProductListItem(
   };
 }
 
-export const formatAdminListItem = formatAdminProductListItem;
+function optDate(value: unknown): Date | string | undefined {
+  return value instanceof Date || typeof value === 'string' ? value : undefined;
+}
+
+function hasExplicitDefaultFlag(values: unknown[]): boolean {
+  return values.some((v) => typeof v === 'boolean');
+}
+
+// CONTRACT: missing SKU price surfaces as NULL (never a base-price fallback).
+function adminSkuPrice(matched: Record<string, unknown> | undefined): number | null {
+  return toPositiveNumber(matched?.price) ?? null;
+}
+
+function adminSkuDiscounted(
+  skuPrice: number | null,
+  matched: Record<string, unknown> | undefined,
+): number | undefined {
+  if (skuPrice === null) return undefined;
+  return validDiscount(skuPrice, matched?.discountedPrice);
+}
+
+// Missing stock stays 0; reason: no usable inventory/SKU quantity was supplied.
+function adminSkuStock(quantity: unknown): number {
+  return typeof quantity === 'number' && Number.isFinite(quantity) ? quantity : 0;
+}
+
+function matchInventorySku(
+  rawSkus: Array<Record<string, unknown>>,
+  expectedKey: string,
+  isColorDummy: boolean,
+  isSizeDummy: boolean,
+): Record<string, unknown> | undefined {
+  return rawSkus.find((s) => {
+    if (!s.selectedOptions || typeof s.selectedOptions !== 'object') {
+      return isColorDummy && isSizeDummy;
+    }
+    const optValues = Object.values(s.selectedOptions as Record<string, unknown>).map(String);
+    return buildVariantKey(optValues) === expectedKey;
+  });
+}
+
+function buildInventorySku(
+  inv: Record<string, unknown>,
+  idx: number,
+  rawSkus: Array<Record<string, unknown>>,
+  useFlag: boolean,
+): Record<string, unknown> {
+  const color = str(inv.colorVariantName);
+  const size = str(inv.size);
+  const isColorDummy = isPlaceholderVariant(color);
+  const isSizeDummy = isPlaceholderVariant(size);
+  const matched = matchInventorySku(
+    rawSkus,
+    buildVariantKey([color, size]),
+    isColorDummy,
+    isSizeDummy,
+  );
+  const selectedOptions: Record<string, string> = {};
+  if (!isColorDummy) selectedOptions['Color'] = color;
+  if (!isSizeDummy) selectedOptions['Size'] = size;
+  const skuPrice = adminSkuPrice(matched);
+  const invDefault = typeof inv.isDefault === 'boolean' ? inv.isDefault : undefined;
+  const clientDefault =
+    matched && typeof matched.isDefault === 'boolean' ? (matched.isDefault as boolean) : undefined;
+  return {
+    skuCode: str(inv.sku),
+    selectedOptions,
+    price: skuPrice,
+    discountedPrice: adminSkuDiscounted(skuPrice, matched),
+    stock: adminSkuStock(inv.quantity),
+    image: typeof matched?.image === 'string' ? matched.image : undefined,
+    isDefault: useFlag ? (invDefault ?? clientDefault ?? false) : idx === 0,
+  };
+}
+
+// Pipeline path (inventories were stripped by the base layer): normalize raw
+// SKUs deterministically with the same clamp/flag rules instead of passing through.
+function normalizeRawSku(
+  entry: Record<string, unknown>,
+  idx: number,
+  useFlag: boolean,
+): Record<string, unknown> {
+  const skuPrice = toPositiveNumber(entry.price) ?? null;
+  const selectedOptions: Record<string, string> = {};
+  const rawOptions = entry.selectedOptions;
+  if (rawOptions && typeof rawOptions === 'object') {
+    for (const [key, value] of Object.entries(rawOptions as Record<string, unknown>)) {
+      if (value !== undefined && value !== null) selectedOptions[key] = String(value);
+    }
+  }
+  return {
+    skuCode: str(entry.skuCode ?? entry.sku),
+    selectedOptions,
+    price: skuPrice,
+    discountedPrice: adminSkuDiscounted(skuPrice, entry),
+    stock: adminSkuStock(entry.stock ?? entry.quantity),
+    image: typeof entry.image === 'string' ? entry.image : undefined,
+    isDefault: useFlag
+      ? typeof entry.isDefault === 'boolean'
+        ? entry.isDefault
+        : false
+      : idx === 0,
+  };
+}
+
+function resolveAdminSkus(
+  rawInventories: unknown,
+  rawSkus: Array<Record<string, unknown>>,
+): AdminProductDetail['skus'] {
+  const invList = Array.isArray(rawInventories)
+    ? (rawInventories as Array<Record<string, unknown>>)
+    : [];
+  // Flag-first: row-index-0 wins ONLY when no explicit flag exists anywhere.
+  const useFlag =
+    hasExplicitDefaultFlag(invList.map((inv) => inv.isDefault)) ||
+    hasExplicitDefaultFlag(rawSkus.map((s) => s.isDefault));
+  if (invList.length > 0) {
+    return invList.map((inv, idx) => buildInventorySku(inv, idx, rawSkus, useFlag));
+  }
+  if (rawSkus.length > 0) {
+    return rawSkus.map((entry, idx) => normalizeRawSku(entry, idx, useFlag));
+  }
+  return undefined;
+}
+
+function resolveShippingAndWarranty(formatted: Record<string, unknown>) {
+  return {
+    packageWeightKg: optNum(formatted.packageWeightKg) ?? SHIPPING_DEFAULTS.packageWeightKg,
+    packageLengthCm: optNum(formatted.packageLengthCm),
+    packageWidthCm: optNum(formatted.packageWidthCm),
+    packageHeightCm: optNum(formatted.packageHeightCm),
+    packagingType:
+      (optStr(formatted.packagingType) as ShippingPackagingType) ?? SHIPPING_DEFAULTS.packagingType,
+    isFragile: typeof formatted.isFragile === 'boolean' ? formatted.isFragile : false,
+    hasBatteryOrLiquid:
+      typeof formatted.hasBatteryOrLiquid === 'boolean' ? formatted.hasBatteryOrLiquid : false,
+    warrantyType:
+      (optStr(formatted.warrantyType) as WarrantyType) ?? SHIPPING_DEFAULTS.warrantyType,
+    warrantyPeriod: nullStr(formatted.warrantyPeriod),
+    warrantyPolicy: nullStr(formatted.warrantyPolicy),
+    isNonReturnable:
+      typeof formatted.isNonReturnable === 'boolean' ? formatted.isNonReturnable : false,
+  };
+}
 
 /**
  * Admin detail (add/edit form): elevated consumer that sees everything,
@@ -299,18 +462,22 @@ export const formatAdminListItem = formatAdminProductListItem;
  */
 export function formatAdminDetail(formatted: Record<string, unknown>): AdminProductDetail {
   const price = num(formatted.price);
-  const colorVariants = Array.isArray(formatted.colorVariants) ? formatted.colorVariants : [];
+  const colorVariantsRaw = Array.isArray(formatted.colorVariants) ? formatted.colorVariants : [];
+  // One strip rule everywhere: admin galleries strip the leading swatch dupe too.
+  const colorVariants = colorVariantsRaw.map((entry) => {
+    const variant = ((entry ?? {}) as Record<string, unknown>) ?? {};
+    return { ...variant, images: stripVariantImages(variant) };
+  });
   const mainImagesRaw = cleanStringArray(formatted.mainImages);
   const mainImages = mainImagesRaw.length > 0 ? mainImagesRaw : undefined;
 
-  const createdAt =
-    formatted.createdAt instanceof Date || typeof formatted.createdAt === 'string'
-      ? formatted.createdAt
-      : undefined;
-  const updatedAt =
-    formatted.updatedAt instanceof Date || typeof formatted.updatedAt === 'string'
-      ? formatted.updatedAt
-      : undefined;
+  const rawInventories = formatted.inventories;
+  const rawSkus = Array.isArray(formatted.skus)
+    ? (formatted.skus as Array<Record<string, unknown>>)
+    : [];
+
+  const skus = resolveAdminSkus(rawInventories, rawSkus);
+  const shippingAndWarranty = resolveShippingAndWarranty(formatted);
 
   return {
     id: str(formatted.id),
@@ -320,12 +487,12 @@ export function formatAdminDetail(formatted: Record<string, unknown>): AdminProd
     brandId: nullStr(formatted.brandId),
     description: optStr(formatted.description),
     price,
-    discountedPrice: optNum(formatted.discountedPrice),
-    cover: resolveCover(formatted.mainImages, colorVariants),
+    discountedPrice: validDiscount(price, formatted.discountedPrice),
+    cover: resolveCover(formatted.mainImages, colorVariantsRaw),
     mainImages,
     sizes: Array.isArray(formatted.sizes) ? formatted.sizes : undefined,
     colorVariants,
-    skus: Array.isArray(formatted.skus) ? formatted.skus : undefined,
+    skus,
     variantOptions: Array.isArray(formatted.variantOptions) ? formatted.variantOptions : undefined,
     dynamicData:
       formatted.dynamicData && typeof formatted.dynamicData === 'object'
@@ -340,8 +507,8 @@ export function formatAdminDetail(formatted: Record<string, unknown>): AdminProd
     vendorName: nullStr(formatted.vendorName),
     categoryId: optStr(formatted.categoryId),
     subcategoryId: optStr(formatted.subcategoryId),
-    category: formatted.category ?? formatted.categoryId ?? null,
-    subcategory: formatted.subcategory ?? formatted.subcategoryId ?? null,
+    category: objectOrNull(formatted.category),
+    subcategory: objectOrNull(formatted.subcategory),
     reviewNote: nullStr(formatted.reviewNote),
     rejectionReasonCategory: nullStr(formatted.rejectionReasonCategory),
     rejectionSubcategories: Array.isArray(formatted.rejectionSubcategories)
@@ -350,7 +517,8 @@ export function formatAdminDetail(formatted: Record<string, unknown>): AdminProd
     rejectionFields: Array.isArray(formatted.rejectionFields)
       ? formatted.rejectionFields.filter((f): f is string => typeof f === 'string')
       : undefined,
-    createdAt,
-    updatedAt,
+    ...shippingAndWarranty,
+    createdAt: optDate(formatted.createdAt),
+    updatedAt: optDate(formatted.updatedAt),
   };
 }

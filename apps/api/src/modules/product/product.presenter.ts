@@ -1,5 +1,7 @@
 import { Prisma, type Product } from '@prisma/client';
 
+import { validDiscount } from '@celebs/shared-utils';
+
 import { HEX_COLOR_PATTERN, isFilledString } from './product-assets';
 
 /**
@@ -10,8 +12,17 @@ import { HEX_COLOR_PATTERN, isFilledString } from './product-assets';
  * CRITICAL FIX: Preserves the `stocks` array and merges live Postgres
  * `ProductInventory` quantities (quantity - reservedQuantity) so mobile & web
  * storefronts evaluate real-time out-of-stock and inventory states accurately.
+ *
+ * WONTFIX: client must satisfy `colorVariantSchema` (required `colorCode`,
+ * `url()`-only `swatch`/`images`). This read path is stored-data-only by design:
+ * it never invents a missing `colorCode`, never validates image URLs, and never
+ * coerces a rejected payload. Fixing the payload is client work, not presenter
+ * work — the schema stays strict.
+ *
+ * Module-private: zero external importers (grep-verified), so the export keyword
+ * would only be dead public surface.
  */
-export const resolveStorefrontColorVariants = (
+const resolveStorefrontColorVariants = (
   legacyVariants: unknown,
   dynamicData: unknown,
   inventories?: unknown,
@@ -74,12 +85,11 @@ export const resolveStorefrontColorVariants = (
         const matchingLegacy = legacyList.find(
           (l) => l.name === name || (typeof l.colorCode === 'string' && l.colorCode === key),
         );
-        const images = [
-          ...(isFilledString(metaObj.swatch) ? [metaObj.swatch] : []),
-          ...(Array.isArray(metaObj.images)
-            ? (metaObj.images as unknown[]).filter(isFilledString)
-            : []),
-        ];
+        // Stored-data-only: images are exactly what was stored; the swatch is
+        // never prepended into the gallery (no invented duplicates).
+        const images = Array.isArray(metaObj.images)
+          ? (metaObj.images as unknown[]).filter(isFilledString)
+          : [];
         const initialStocks = Array.isArray(metaObj.stocks)
           ? (metaObj.stocks as Array<{ size: string; quantity: number }>)
           : Array.isArray(matchingLegacy?.stocks)
@@ -90,9 +100,8 @@ export const resolveStorefrontColorVariants = (
         return {
           name,
           colorCode: HEX_COLOR_PATTERN.test(key) ? key : undefined,
-          // Dots fall back to the variant's first product image when no
-          // dedicated swatch was uploaded
-          swatch: isFilledString(metaObj.swatch) ? metaObj.swatch : images[0],
+          // Stored-data-only: no `images[0]` fallback when no swatch was stored.
+          swatch: isFilledString(metaObj.swatch) ? metaObj.swatch : undefined,
           images,
           stocks,
         };
@@ -114,7 +123,8 @@ export const resolveStorefrontColorVariants = (
       return {
         name,
         colorCode: isFilledString(variant.colorCode) ? variant.colorCode : undefined,
-        swatch: isFilledString(variant.swatch) ? variant.swatch : images[0],
+        // Stored-data-only: no `images[0]` fallback when no swatch was stored.
+        swatch: isFilledString(variant.swatch) ? variant.swatch : undefined,
         images,
         stocks,
       };
@@ -134,6 +144,10 @@ export const formatProductResponse = (
 ): Record<string, unknown> | null => {
   if (!product) return null;
   const prod = product as Record<string, unknown>;
+  // WONTFIX: client must satisfy `idSchema` (UUID) for `categoryId` /
+  // `subcategoryId` on write. This read path never invents an id: a relation that
+  // was not loaded surfaces as null, and a raw UUID string never leaks as a
+  // category object. The schema stays strict.
   const categoryObj =
     prod.category && typeof prod.category === 'object'
       ? (prod.category as Record<string, unknown>)
@@ -153,27 +167,27 @@ export const formatProductResponse = (
     prod.inventories,
   );
 
-  const hasTrackedStock = colorVariants.some(
-    (cv) => Array.isArray(cv.stocks) && cv.stocks.length > 0,
+  const hasPositiveStock = colorVariants.some(
+    (cv) => Array.isArray(cv.stocks) && cv.stocks.some((stk) => (stk.quantity ?? 0) > 0),
   );
-  const inStock = hasTrackedStock
-    ? colorVariants.some(
-        (cv) => Array.isArray(cv.stocks) && cv.stocks.some((stk) => (stk.quantity ?? 0) > 0),
-      )
-    : true;
+  // Safer default: untracked / no-stock products report false (mobile guards on this).
+  const inStock = hasPositiveStock;
 
+  const price = prod.price != null ? Number(prod.price) : 0;
   const base: Record<string, unknown> = {
     ...prod,
     id: prod.id,
     brandId: prod.brandId || null,
     brand: prod.brand || (brandRefObj ? brandRefObj.name : null),
     brandRef: brandRefObj,
-    price: prod.price != null ? Number(prod.price) : 0,
+    price,
     colorVariants,
     inStock,
-    discountedPrice: prod.discountedPrice != null ? Number(prod.discountedPrice) : undefined,
-    category: categoryObj || prod.categoryId,
-    subcategory: subcategoryObj || prod.subcategoryId,
+    // Presenters hide invalid deals: only 0 < discounted < price is emitted.
+    discountedPrice: validDiscount(price, prod.discountedPrice),
+    // CONTRACT: non-object categories surface as NULL (never a raw UUID string).
+    category: categoryObj ?? null,
+    subcategory: subcategoryObj ?? null,
   };
 
   // Strip raw relation objects that were only needed for computation

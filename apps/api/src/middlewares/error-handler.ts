@@ -12,6 +12,32 @@ function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === 'object' && val !== null;
 }
 
+/** Shape of one entry in the additive `errors: [{ field?, message }]` array. */
+interface ErrorDetail {
+  field?: string;
+  message: string;
+}
+
+/**
+ * Additive structured detail attached to domain AppErrors via
+ * `Object.assign(err, { details })`. Unknown/malformed entries are dropped
+ * rather than echoed, so a hand-rolled `details` can never inject junk shapes
+ * into the response. `field` stays absent (not `''`) when not supplied.
+ */
+function normalizeDetails(value: unknown): ErrorDetail[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!isRecord(entry) || typeof entry.message !== 'string' || entry.message === '') return [];
+    const field = typeof entry.field === 'string' && entry.field !== '' ? entry.field : undefined;
+    return [{ ...(field !== undefined ? { field } : {}), message: entry.message }];
+  });
+}
+
+/** Reads `details` off an error without widening AppError's constructor contract. */
+function detailsOf(error: unknown): unknown {
+  return isRecord(error) ? error.details : undefined;
+}
+
 function buildErrorResponse(opts: {
   message: string;
   errorCode?: ErrorCode;
@@ -22,7 +48,10 @@ function buildErrorResponse(opts: {
     success: false,
     message: opts.message,
     errorCode: opts.errorCode,
-    errors: opts.errors,
+    // Omitted entirely (not `errors: undefined`) when there are no details, so
+    // the pre-existing envelope is byte-identical for every error that does not
+    // opt into the additive field list.
+    ...(opts.errors !== undefined ? { errors: opts.errors } : {}),
     data: null,
     requestId: opts.requestId,
     timestamp: new Date().toISOString(),
@@ -110,10 +139,15 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
     }
 
     // Branch 3: AppError & Custom Domain Exceptions (BadRequest, Unauthorized, Forbidden, NotFound, Conflict)
+    // Additive (the fix): a domain error may carry `details: [{ field?, message }]`.
+    // It is serialized ALONGSIDE the unchanged `message`/`errorCode` pair and is
+    // simply omitted when absent, so the pre-existing envelope is untouched.
     if (error instanceof AppError) {
+      const details = normalizeDetails(detailsOf(error));
       const response = buildErrorResponse({
         message: error.message || 'An error occurred',
         errorCode: error.errorCode as ErrorCode,
+        ...(details.length > 0 ? { errors: details } : {}),
         requestId,
       });
       return res.status(error.statusCode || HTTPSTATUS.INTERNAL_SERVER_ERROR).json(response);
@@ -121,9 +155,11 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next): Respo
 
     if (isRecord(error) && typeof error.statusCode === 'number' && error.errorCode) {
       const statusCode = error.statusCode;
+      const details = normalizeDetails(detailsOf(error));
       const response = buildErrorResponse({
         message: typeof error.message === 'string' ? error.message : 'An error occurred',
         errorCode: error.errorCode as ErrorCode,
+        ...(details.length > 0 ? { errors: details } : {}),
         requestId,
       });
       return res.status(statusCode).json(response);
