@@ -37,7 +37,8 @@
     "seed:products-mock": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products-mock-catalog.ts",
     "//_QUALITY": "=== Code Quality & Testing ===",
     "test": "dotenv -e .env.test -- prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && dotenv -e .env.test -- vitest run",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
+    "typecheck:specs": "tsc -p tsconfig.spec.json --noEmit",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\""
   },

@@ -16,6 +16,8 @@ describe('NotificationService', () => {
     getUnreadCount: ReturnType<typeof vi.fn>;
     markAsRead: ReturnType<typeof vi.fn>;
     markAllAsRead: ReturnType<typeof vi.fn>;
+    getAdminUserIds: ReturnType<typeof vi.fn>;
+    getVendorNotificationsForAdmin: ReturnType<typeof vi.fn>;
   };
   let mockQueue: {
     add: ReturnType<typeof vi.fn>;
@@ -34,6 +36,7 @@ describe('NotificationService', () => {
       markAsRead: vi.fn(),
       markAllAsRead: vi.fn(),
       getAdminUserIds: vi.fn(),
+      getVendorNotificationsForAdmin: vi.fn(),
     };
     mockQueue = {
       add: vi.fn(),

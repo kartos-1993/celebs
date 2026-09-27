@@ -98,7 +98,7 @@ describe('Template Interpolator & Validator (TDD Phase 2)', () => {
         mockSettingsRepo as unknown as PlatformSettingsRepository,
       );
 
-      expect(resolved.title).toBe(DEFAULT_NOTIFICATION_TEMPLATES.ORDER_CONFIRMED.title);
+      expect(resolved.title).toBe(DEFAULT_NOTIFICATION_TEMPLATES.ORDER_CONFIRMED?.title);
       expect(resolved.body).toContain('#10042');
       expect(resolved.severity).toBe('INFO');
     });

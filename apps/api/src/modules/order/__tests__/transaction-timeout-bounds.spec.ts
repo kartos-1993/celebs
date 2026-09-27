@@ -5,12 +5,17 @@ import { fulfillmentRepository } from '../fulfillment/fulfillment.repository';
 
 import prisma from '@/config/db.prisma';
 
+// `prisma.$transaction` is overloaded, so the spy's own return type is the only
+// one that fits; naming it here keeps the declared variable and the assignment
+// from drifting into the generic `MockInstance` default.
+const spyOnTransaction = () => vi.spyOn(prisma, '$transaction');
+
 describe('Order Transaction Timeout and Connection Pool Bounds', () => {
-  let transactionSpy: ReturnType<typeof vi.spyOn>;
+  let transactionSpy: ReturnType<typeof spyOnTransaction>;
 
   beforeEach(() => {
     // Intercept $transaction without breaking actual execution if invoked
-    transactionSpy = vi.spyOn(prisma, '$transaction');
+    transactionSpy = spyOnTransaction();
   });
 
   afterEach(() => {

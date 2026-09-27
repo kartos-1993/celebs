@@ -68,10 +68,27 @@ describe('EsewaAdapter', () => {
     expect(intent.paymentId).toBe('order-123');
     expect(intent.redirectUrl).toContain('rc-epay.esewa.com.np');
     const fields = intent.rawResponse as Record<string, string>;
-    expect(fields.total_amount).toBe('1650.00');
+    const field = (name: string): string => {
+      const value = fields[name];
+      if (typeof value !== 'string') throw new Error(`adapter returned no ${name} field`);
+      return value;
+    };
+    expect(field('total_amount')).toBe('1650.00');
+    // The canonical form fields the adapter signs are the same set the callback
+    // verifier recomputes over (`signed_field_names` names exactly those three),
+    // so the signature it attached must verify through that verifier too. The
+    // callback-only `transaction_code`/`status` are outside the signed set.
     expect(
       verifyEsewaCallbackSignature(
-        { ...fields, signature: fields.signature, signed_field_names: fields.signed_field_names },
+        {
+          transaction_code: '',
+          status: '',
+          total_amount: field('total_amount'),
+          transaction_uuid: field('transaction_uuid'),
+          product_code: field('product_code'),
+          signature: field('signature'),
+          signed_field_names: field('signed_field_names'),
+        },
         ESEWA_TEST_SECRET,
       ),
     ).toBe(true);

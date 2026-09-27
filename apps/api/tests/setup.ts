@@ -1,5 +1,11 @@
-import prisma from '@/config/db.prisma';
 import { afterAll, beforeEach } from 'vitest';
+
+import prisma from '@/config/db.prisma';
+
+// TRUNCATE ... CASCADE across every public table contends for the single local test database and
+// can exceed vitest's default 10s hookTimeout under parallel load, failing suites for reasons that
+// have nothing to do with the code under test. Raise the timeout for this hook only.
+const TRUNCATE_HOOK_TIMEOUT_MS = 120_000;
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -18,4 +24,4 @@ beforeEach(async () => {
   } catch {
     // Fallback if test DB connection is not available in isolated unit runs
   }
-});
+}, TRUNCATE_HOOK_TIMEOUT_MS);

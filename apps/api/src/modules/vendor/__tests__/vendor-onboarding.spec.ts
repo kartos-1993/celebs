@@ -2,6 +2,8 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { authedMutation } from '../../../../tests/support/csrf-origin';
+
 import app from '@/app';
 import prisma from '@/config/db.prisma';
 
@@ -80,7 +82,7 @@ describe('Vendor Onboarding API Integration Tests', () => {
   });
 
   it('should update profile info and advance onboardingStep', async () => {
-    const res = await request(app).put('/api/v1/vendor/profile').set('Cookie', authCookie).send({
+    const res = await authedMutation(request(app).put('/api/v1/vendor/profile'), authCookie).send({
       shopDescription: 'New Description',
       phoneNumber: '9849999999',
       storeLogo: 'http://cloudinary.com/logo.png',
@@ -106,16 +108,18 @@ describe('Vendor Onboarding API Integration Tests', () => {
       data: { onboardingStep: 2 },
     });
 
-    const res = await request(app).put('/api/v1/vendor/warehouse').set('Cookie', authCookie).send({
-      label: 'Primary Warehouse',
-      contactName: 'Ram Shrestha',
-      contactPhone: '9840001112',
-      addressLine1: 'Maitighar',
-      city: 'Kathmandu',
-      district: 'Kathmandu',
-      province: 'Bagmati',
-      postalCode: '44600',
-    });
+    const res = await authedMutation(request(app).put('/api/v1/vendor/warehouse'), authCookie).send(
+      {
+        label: 'Primary Warehouse',
+        contactName: 'Ram Shrestha',
+        contactPhone: '9840001112',
+        addressLine1: 'Maitighar',
+        city: 'Kathmandu',
+        district: 'Kathmandu',
+        province: 'Bagmati',
+        postalCode: '44600',
+      },
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -136,13 +140,15 @@ describe('Vendor Onboarding API Integration Tests', () => {
       data: { onboardingStep: 3 },
     });
 
-    const res = await request(app).put('/api/v1/vendor/documents').set('Cookie', authCookie).send({
-      panDocumentUrl: 'http://cloudinary.com/pan.png',
-      citizenshipDocumentUrl: 'http://cloudinary.com/citizen.png',
-      vatDocumentUrl: 'http://cloudinary.com/vat.png',
-      businessRegDocumentUrl: 'http://cloudinary.com/bizreg.png',
-      ownerPhotoUrl: 'http://cloudinary.com/photo.png',
-    });
+    const res = await authedMutation(request(app).put('/api/v1/vendor/documents'), authCookie).send(
+      {
+        panDocumentUrl: 'http://cloudinary.com/pan.png',
+        citizenshipDocumentUrl: 'http://cloudinary.com/citizen.png',
+        vatDocumentUrl: 'http://cloudinary.com/vat.png',
+        businessRegDocumentUrl: 'http://cloudinary.com/bizreg.png',
+        ownerPhotoUrl: 'http://cloudinary.com/photo.png',
+      },
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -163,14 +169,14 @@ describe('Vendor Onboarding API Integration Tests', () => {
       data: { onboardingStep: 4 },
     });
 
-    const res = await request(app)
-      .put('/api/v1/vendor/business-info')
-      .set('Cookie', authCookie)
-      .send({
-        businessName: 'Ram Store Pvt Ltd',
-        businessRegNumber: '123456/079/080',
-        businessPhoneNumber: '9840009999',
-      });
+    const res = await authedMutation(
+      request(app).put('/api/v1/vendor/business-info'),
+      authCookie,
+    ).send({
+      businessName: 'Ram Store Pvt Ltd',
+      businessRegNumber: '123456/079/080',
+      businessPhoneNumber: '9840009999',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -190,9 +196,10 @@ describe('Vendor Onboarding API Integration Tests', () => {
       data: { onboardingStep: 5 },
     });
 
-    const res = await request(app)
-      .post('/api/v1/vendor/submit-for-review')
-      .set('Cookie', authCookie);
+    const res = await authedMutation(
+      request(app).post('/api/v1/vendor/submit-for-review'),
+      authCookie,
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);

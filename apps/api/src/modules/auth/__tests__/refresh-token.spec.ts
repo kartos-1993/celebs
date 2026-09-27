@@ -5,9 +5,19 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
+import type { AccessTPayload, RefreshTPayload } from '@/common/utils/jwt';
 import { signJwtToken } from '@/common/utils/jwt';
 import { config } from '@/config/app.config';
 import prisma from '@/config/db.prisma';
+
+/**
+ * Deliberately under-filled JWT payload. Several cases here sign a token the
+ * type system refuses to describe — wrong secret, or no `jti` at all — and the
+ * payload shape is the variable under test, not the field. Keeps the escape
+ * named instead of scattering bare `as never`.
+ */
+const partialPayload = (sessionId: string) =>
+  ({ sessionId }) as unknown as AccessTPayload | RefreshTPayload;
 
 describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
   let createdUserId: string | null = null;
@@ -101,8 +111,8 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       },
     });
 
-    // Sign with ACCESS token secret instead of REFRESH token secret
-    const tamperedToken = signJwtToken({ sessionId: session.id }, { secret: config.JWT.SECRET });
+    // Sign with ACCESS token secret instead of REFRESH token secret.
+    const tamperedToken = signJwtToken(partialPayload(session.id), { secret: config.JWT.SECRET });
 
     const res = await authedRefresh(tamperedToken);
 
@@ -236,11 +246,10 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       },
     });
 
-    // Sign legacy token without jti
-    const legacyToken = signJwtToken(
-      { sessionId: session.id },
-      { secret: config.JWT.REFRESH_SECRET },
-    );
+    // Sign legacy token without jti. The missing `jti` IS the fixture.
+    const legacyToken = signJwtToken(partialPayload(session.id), {
+      secret: config.JWT.REFRESH_SECRET,
+    });
 
     const res = await authedRefresh(legacyToken);
 

@@ -30,7 +30,9 @@ describe('TokenService Unit Tests', () => {
 
   it('should reject refresh token signed with wrong secret', () => {
     const wrongSecretToken = signJwtToken(
-      { sessionId: 'test-session-id' },
+      // Deliberately under-filled: only the secret differs from a real refresh
+      // token, and `signJwtToken` accepts no partial payload type.
+      { sessionId: 'test-session-id' } as unknown as Parameters<typeof signJwtToken>[0],
       { secret: config.JWT.SECRET }, // Signed with Access secret instead of Refresh secret
     );
 

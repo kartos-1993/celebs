@@ -2,6 +2,8 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { authedMutation } from '../../../../tests/support/csrf-origin';
+
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
@@ -119,7 +121,7 @@ describe('Staff Management API Integration Tests', () => {
 
   it('should allow VENDOR 1 to create staff linked to their own vendor profile', async () => {
     const staffEmail = faker.internet.email().toLowerCase();
-    const res = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+    const res = await authedMutation(request(app).post('/api/v1/staff'), vendor1Cookie).send({
       name: 'Staff Member A',
       email: staffEmail,
       password: 'Password123!',
@@ -145,7 +147,7 @@ describe('Staff Management API Integration Tests', () => {
   it('should allow VENDOR 1 to list only their own staff', async () => {
     const staffEmail = faker.internet.email().toLowerCase();
     // VENDOR 1 creates staff
-    const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+    const createRes = await authedMutation(request(app).post('/api/v1/staff'), vendor1Cookie).send({
       name: 'Staff Member A',
       email: staffEmail,
       password: 'Password123!',
@@ -170,7 +172,7 @@ describe('Staff Management API Integration Tests', () => {
   it('should prevent VENDOR 2 from deleting VENDOR 1 staff', async () => {
     const staffEmail = faker.internet.email().toLowerCase();
     // VENDOR 1 creates staff
-    const createRes = await request(app).post('/api/v1/staff').set('Cookie', vendor1Cookie).send({
+    const createRes = await authedMutation(request(app).post('/api/v1/staff'), vendor1Cookie).send({
       name: 'Staff Member A',
       email: staffEmail,
       password: 'Password123!',
@@ -181,9 +183,10 @@ describe('Staff Management API Integration Tests', () => {
     createdStaffIds.push(targetStaffId);
 
     // VENDOR 2 attempts delete
-    const deleteRes = await request(app)
-      .delete(`/api/v1/staff/${targetStaffId}`)
-      .set('Cookie', vendor2Cookie);
+    const deleteRes = await authedMutation(
+      request(app).delete(`/api/v1/staff/${targetStaffId}`),
+      vendor2Cookie,
+    );
 
     expect(deleteRes.status).toBe(403);
   });
@@ -191,16 +194,16 @@ describe('Staff Management API Integration Tests', () => {
   it('should allow STAFF sub-user and SUPERADMIN to retrieve staff list', async () => {
     const staffEmail = faker.internet.email().toLowerCase();
     // 1. Create a staff member under VENDOR 1 with staff:view permission
-    const createStaffRes = await request(app)
-      .post('/api/v1/staff')
-      .set('Cookie', vendor1Cookie)
-      .send({
-        name: 'Staff Sub-User One',
-        email: staffEmail,
-        password: 'Password123!',
-        confirmPassword: 'Password123!',
-        permissions: ['staff:view'],
-      });
+    const createStaffRes = await authedMutation(
+      request(app).post('/api/v1/staff'),
+      vendor1Cookie,
+    ).send({
+      name: 'Staff Sub-User One',
+      email: staffEmail,
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+      permissions: ['staff:view'],
+    });
     expect(createStaffRes.status).toBe(201);
     const subUserStaffId = createStaffRes.body.data.id;
     createdStaffIds.push(subUserStaffId);
@@ -257,24 +260,21 @@ describe('Staff Management API Integration Tests', () => {
 
   it('should allow VENDOR 1 to update permissions for their staff member', async () => {
     const staffEmail = faker.internet.email().toLowerCase();
-    const createRes = await request(app)
-      .post('/api/v1/staff')
-      .set('Cookie', vendor1Cookie)
-      .send({
-        name: 'Staff Member B',
-        email: staffEmail,
-        password: 'Password123!',
-        confirmPassword: 'Password123!',
-        permissions: ['product:view'],
-      });
+    const createRes = await authedMutation(request(app).post('/api/v1/staff'), vendor1Cookie).send({
+      name: 'Staff Member B',
+      email: staffEmail,
+      password: 'Password123!',
+      confirmPassword: 'Password123!',
+      permissions: ['product:view'],
+    });
 
     const targetStaffId = createRes.body.data.id;
     createdStaffIds.push(targetStaffId);
 
-    const patchRes = await request(app)
-      .patch(`/api/v1/staff/${targetStaffId}`)
-      .set('Cookie', vendor1Cookie)
-      .send({ permissions: ['product:view', 'finance:view'] });
+    const patchRes = await authedMutation(
+      request(app).patch(`/api/v1/staff/${targetStaffId}`),
+      vendor1Cookie,
+    ).send({ permissions: ['product:view', 'finance:view'] });
 
     expect(patchRes.status).toBe(200);
     expect(patchRes.body.success).toBe(true);
