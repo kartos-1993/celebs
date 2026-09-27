@@ -81,6 +81,7 @@ describe('Media binary magic-byte inspection on upload confirmation', () => {
         key: testKey,
         originalname: 'trojan.jpg',
         mimeType: 'image/jpeg',
+        size: exeBuffer.length,
         vendorId: vendorProfileId,
         scope: 'PRODUCT',
       }),
@@ -120,6 +121,7 @@ describe('Media binary magic-byte inspection on upload confirmation', () => {
         key: testKey,
         originalname: 'spoofed.jpg',
         mimeType: 'image/jpeg',
+        size: pdfBuffer.length,
         vendorId: vendorProfileId,
         scope: 'PRODUCT',
       }),
@@ -154,6 +156,7 @@ describe('Media binary magic-byte inspection on upload confirmation', () => {
       key: testKey,
       originalname: 'valid-photo.png',
       mimeType: 'image/png',
+      size: pngBuffer.length,
       vendorId: vendorProfileId,
       scope: 'PRODUCT',
     });
@@ -161,5 +164,71 @@ describe('Media binary magic-byte inspection on upload confirmation', () => {
     expect(result.key).toBeDefined();
     expect(result.url).toBeDefined();
     expect(result.contentType).toBe('image/png');
+  });
+
+  it('rejects confirmation when the client declares no size at all', async () => {
+    // A missing size used to be defaulted to 1 byte, which skipped every size
+    // limit check below and let the client lie about how big the object is.
+    const pngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    ]);
+    const testKey = `vendors/${vendorProfileId}/product/sizeless.png`;
+
+    let headCalled = false;
+    vi.spyOn(s3Client, 'send').mockImplementation(async (command: unknown) => {
+      if (command instanceof HeadObjectCommand) headCalled = true;
+      return { ContentLength: pngBuffer.length } as unknown as never;
+    });
+
+    await expect(
+      confirmUploadedObject({
+        key: testKey,
+        originalname: 'sizeless.png',
+        mimeType: 'image/png',
+        vendorId: vendorProfileId,
+        scope: 'PRODUCT',
+      }),
+    ).rejects.toThrow(/size must be a positive number/);
+
+    // Fails before touching R2 — no orphan object is ever created.
+    expect(headCalled).toBe(false);
+  });
+
+  it('rejects confirmation and purges the object when the declared size mismatches the stored bytes', async () => {
+    const pngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    ]);
+    const testKey = `vendors/${vendorProfileId}/product/liar.png`;
+
+    let deleteCalled = false;
+    vi.spyOn(s3Client, 'send').mockImplementation(async (command: unknown) => {
+      if (command instanceof HeadObjectCommand) {
+        return {
+          ContentLength: pngBuffer.length,
+          ContentType: 'image/png',
+        } as unknown as never;
+      }
+      if (command instanceof DeleteObjectCommand) {
+        deleteCalled = true;
+        return {} as unknown as never;
+      }
+      return {} as unknown as never;
+    });
+
+    await expect(
+      confirmUploadedObject({
+        key: testKey,
+        originalname: 'liar.png',
+        mimeType: 'image/png',
+        // Declares 1 byte for a 16-byte object.
+        size: 1,
+        vendorId: vendorProfileId,
+        scope: 'PRODUCT',
+      }),
+    ).rejects.toThrow(
+      new RegExp(`File size mismatch: uploaded ${pngBuffer.length} bytes but declared 1`),
+    );
+
+    expect(deleteCalled).toBe(true);
   });
 });

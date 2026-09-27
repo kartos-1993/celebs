@@ -32,6 +32,11 @@ import { config } from '@/config/app.config';
 
 export const MAX_UPLOAD_BYTES = MAX_MEDIA_FILE_BYTES;
 export const PRESIGN_EXPIRES_IN = 15 * 60; // 15 minutes
+// WONTFIX: no server-side pixel-dimension allowlist and no per-domain MIME
+// allowlist. Both are a product/infra decision (which categories may carry
+// SVG/HEIC, and the minimum storefront render size). Until that lands, clients
+// send min/max dimensions for UI feedback only and confirm-time trust stays on
+// magic bytes + byte size. Do not add one here ad hoc.
 export const ALLOWED_IMAGE_MIME = new Set([
   'image/jpeg',
   'image/png',
@@ -92,6 +97,17 @@ async function streamToBuffer(stream: unknown): Promise<Buffer> {
     chunks.push(Buffer.from(chunk));
   }
   return Buffer.concat(chunks);
+}
+
+/**
+ * Best-effort object removal: every rejection path that refuses a confirmation
+ * purges the uploaded bytes so a rejected upload never lingers in R2 (the
+ * age-cutoff orphan reaper is only the backstop).
+ */
+async function deleteQuietly(key: string): Promise<void> {
+  await s3Client
+    .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
+    .catch(() => null);
 }
 
 const ALLOWED_KEY_PREFIXES = [
@@ -197,7 +213,33 @@ export function validateImageMagicBytes(buffer: Buffer): boolean {
 }
 
 /**
+ * Confirm-time size check. The declared size is client metadata and therefore
+ * untrusted, so it must be present (a missing size used to be defaulted to 1,
+ * which let a client declare one byte and slip past every size limit) and it
+ * must equal the byte count R2 actually stored. A mismatch means the object is
+ * not what was declared, so the object is purged (same orphan-safety as the
+ * magic-byte rejection) and the confirmation is refused.
+ */
+async function assertDeclaredSizeMatchesObject(
+  key: string,
+  declaredSize: number,
+  actualBytes: number,
+): Promise<void> {
+  if (actualBytes === declaredSize) return;
+  await deleteQuietly(key);
+  throw new BadRequestException(
+    `File size mismatch: uploaded ${actualBytes} bytes but declared ${declaredSize}`,
+  );
+}
+
+/**
  * Upload an image buffer to S3/R2 and return key + public URL.
+ *
+ * @deprecated DEAD CODE — the upload pipeline is presign → browser PUT →
+ *   `confirmUploadedObject` (bytes are encoded to WebP in the browser). Nothing
+ *   calls `putImage` anymore, so the `sharp` re-encode path is orphaned. Left
+ *   untouched on purpose: reviving it would drag `sharp` into the request
+ *   path. Delete it (and the `sharp` import) once no consumer is left.
  */
 export async function putImage(input: PutImageInput): Promise<PutImageResult> {
   const { originalname } = assertUploadMeta({
@@ -371,10 +413,17 @@ export async function confirmUploadedObject(
   // Defense in depth: clients could bypass presign and confirm arbitrary keys.
   const key = validateObjectKey(input.key);
 
-  const { originalname, mimeType } = assertUploadMeta({
+  // `size` is mandatory here (no default): a missing or non-positive declared
+  // size is rejected outright rather than defaulted, because every size limit
+  // below would otherwise be computed from a value the client invented.
+  const {
+    originalname,
+    mimeType,
+    size: declaredSize,
+  } = assertUploadMeta({
     originalname: input.originalname,
     mimeType: input.mimeType,
-    size: input.size && input.size > 0 ? input.size : 1,
+    size: input.size,
     scope: input.scope || 'PRODUCT',
   });
 
@@ -392,7 +441,8 @@ export async function confirmUploadedObject(
     }),
   );
 
-  const bytes = Number(head.ContentLength ?? input.size ?? 0);
+  const bytes = Number(head.ContentLength ?? declaredSize);
+  await assertDeclaredSizeMatchesObject(key, declaredSize, bytes);
   const effectiveScope = (input.scope as MediaScope) || 'PRODUCT';
   const scopeLimit = SCOPE_MAX_BYTES[effectiveScope] ?? MAX_UPLOAD_BYTES;
   if (bytes > scopeLimit) {
@@ -416,18 +466,14 @@ export async function confirmUploadedObject(
 
   const detectedMime = detectMimeFromMagicBytes(contentBytes);
   if (!detectedMime) {
-    await s3Client
-      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
-      .catch(() => null);
+    await deleteQuietly(key);
     throw new BadRequestException(
       'File failed binary magic byte inspection: unrecognized or forbidden file format',
     );
   }
 
   if (detectedMime !== mimeType) {
-    await s3Client
-      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
-      .catch(() => null);
+    await deleteQuietly(key);
     throw new BadRequestException(
       `File MIME mismatch: detected ${detectedMime} but declared ${mimeType}`,
     );
@@ -445,9 +491,7 @@ export async function confirmUploadedObject(
     if (existing) {
       // Temp upload key is unreferenced — best-effort removal (age-cutoff
       // reaper is the backstop).
-      await s3Client
-        .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
-        .catch(() => null);
+      await deleteQuietly(key);
       return {
         key: existing.key,
         url: existing.url,
@@ -467,9 +511,7 @@ export async function confirmUploadedObject(
         MetadataDirective: 'REPLACE',
       }),
     );
-    await s3Client
-      .send(new DeleteObjectCommand({ Bucket: config.S3.BUCKET_NAME, Key: key }))
-      .catch(() => null);
+    await deleteQuietly(key);
   }
 
   // Immutable public URL — no version stamp, ever. Same bytes = same URL.

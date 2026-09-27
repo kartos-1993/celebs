@@ -141,8 +141,8 @@ describe('Media cumulative storage quota and batch limits', () => {
 
     expect(responseData).toBeDefined();
     expect(responseData?.data.length).toBe(2);
-    expect(responseData?.data[0].uploadUrl).toBeDefined();
-    expect(responseData?.data[1].uploadUrl).toBeDefined();
+    expect(responseData?.data[0]?.uploadUrl).toBeDefined();
+    expect(responseData?.data[1]?.uploadUrl).toBeDefined();
   });
 
   it('rejects batch presign when batch item count exceeds 12 files', async () => {

@@ -147,9 +147,9 @@ describe('Media folder scoping and cross-tenant isolation', () => {
     await controller.createFolder(req, res);
 
     expect(createdFolder).toBeDefined();
-    expect(createdFolder.name).toBe('Vendor A Valid Child Folder');
-    expect(createdFolder.parentId).toBe(folderAVendorAId);
-    expect(createdFolder.vendorId).toBe(vendorAProfileId);
+    expect(createdFolder?.name).toBe('Vendor A Valid Child Folder');
+    expect(createdFolder?.parentId).toBe(folderAVendorAId);
+    expect(createdFolder?.vendorId).toBe(vendorAProfileId);
   });
 
   it('rejects confirming an upload into a folder owned by another vendor', async () => {
@@ -159,6 +159,7 @@ describe('Media folder scoping and cross-tenant isolation', () => {
         key: `vendors/${vendorBProfileId}/product/test-file.jpg`,
         originalname: 'test-file.jpg',
         mimeType: 'image/jpeg',
+        size: 1024,
         vendorId: vendorBProfileId,
         folderId: folderAVendorAId, // belongs to Vendor A
         scope: 'PRODUCT',
