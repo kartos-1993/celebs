@@ -7,3 +7,4 @@ export * from './utils/get-env';
 export * from './utils/image-url';
 export * from './utils/logger';
 export * from './utils/sku-generator';
+export * from './utils/variant-helpers';

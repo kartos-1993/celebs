@@ -28,7 +28,7 @@ describe('Apparel Image URL Pipeline & Dynamic CDN Configuration', () => {
       expect(result).toBe(r2Url);
     });
 
-    it('returns empty string for empty inputs', () => {
+    it('returns blank input unchanged (no placeholder asset exists in-repo)', () => {
       expect(getOptimizedImageUrl('')).toBe('');
       expect(getOptimizedImageUrl(null)).toBe('');
       expect(getOptimizedImageUrl(undefined)).toBe('');

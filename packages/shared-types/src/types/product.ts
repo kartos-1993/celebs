@@ -1,3 +1,5 @@
+import type { ShippingPackagingType, WarrantyType } from '../validators/product.validator';
+
 /**
  * Canonical product lifecycle states.
  * Single source of truth across api, web-admin, and mobile apps.
@@ -137,6 +139,17 @@ export interface AdminProductDetail {
   rejectionReasonCategory?: string | null;
   rejectionSubcategories?: string[];
   rejectionFields?: string[];
+  packageWeightKg?: number;
+  packageLengthCm?: number | null;
+  packageWidthCm?: number | null;
+  packageHeightCm?: number | null;
+  packagingType?: ShippingPackagingType;
+  isFragile?: boolean;
+  hasBatteryOrLiquid?: boolean;
+  warrantyType?: WarrantyType;
+  warrantyPeriod?: string | null;
+  warrantyPolicy?: string | null;
+  isNonReturnable?: boolean;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

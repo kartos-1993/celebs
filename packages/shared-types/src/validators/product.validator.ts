@@ -71,6 +71,46 @@ export const findMySizeInputSchema = z.object({
   gender: z.enum(['MEN', 'WOMEN', 'UNISEX']).default('UNISEX'),
 });
 
+export const shippingPackagingTypeSchema = z.enum([
+  'FLYER_SMALL',
+  'FLYER_MEDIUM',
+  'BOX_STANDARD',
+  'BOX_LARGE',
+]);
+
+export const warrantyTypeSchema = z.enum(['NO_WARRANTY', 'BRAND_WARRANTY', 'SELLER_WARRANTY']);
+
+export const SHIPPING_DEFAULTS = {
+  packageWeightKg: 0.3,
+  packagingType: 'FLYER_SMALL' as const,
+  warrantyType: 'NO_WARRANTY' as const,
+  isFragile: false,
+  hasBatteryOrLiquid: false,
+  isNonReturnable: false,
+} as const;
+
+// Shipping physical and logistics schema
+export const shippingDetailsSchema = z.object({
+  packageWeightKg: z
+    .number()
+    .positive('Package weight must be greater than 0')
+    .default(SHIPPING_DEFAULTS.packageWeightKg),
+  packageLengthCm: z.number().positive('Length must be positive').optional().nullable(),
+  packageWidthCm: z.number().positive('Width must be positive').optional().nullable(),
+  packageHeightCm: z.number().positive('Height must be positive').optional().nullable(),
+  packagingType: shippingPackagingTypeSchema.default(SHIPPING_DEFAULTS.packagingType),
+  isFragile: z.boolean().default(SHIPPING_DEFAULTS.isFragile),
+  hasBatteryOrLiquid: z.boolean().default(SHIPPING_DEFAULTS.hasBatteryOrLiquid),
+});
+
+// Warranty and returns guarantee schema
+export const warrantyDetailsSchema = z.object({
+  warrantyType: warrantyTypeSchema.default(SHIPPING_DEFAULTS.warrantyType),
+  warrantyPeriod: z.string().trim().max(100).optional().nullable(),
+  warrantyPolicy: z.string().trim().max(2000).optional().nullable(),
+  isNonReturnable: z.boolean().default(SHIPPING_DEFAULTS.isNonReturnable),
+});
+
 export type ProductMeasurementType = z.infer<typeof productMeasurementSchema>;
 export type BodyMeasurementType = z.infer<typeof bodyMeasurementSchema>;
 export type ProductSizeType = z.infer<typeof sizeSchema>;
@@ -80,6 +120,10 @@ export type SkuItemType = z.infer<typeof skuItemSchema>;
 export type VariantOptionType = z.infer<typeof variantOptionSchema>;
 export type DynamicVariantMetaType = z.infer<typeof dynamicVariantMetaSchema>;
 export type FindMySizeInputType = z.infer<typeof findMySizeInputSchema>;
+export type ShippingPackagingType = z.infer<typeof shippingPackagingTypeSchema>;
+export type WarrantyType = z.infer<typeof warrantyTypeSchema>;
+export type ShippingDetailsType = z.infer<typeof shippingDetailsSchema>;
+export type WarrantyDetailsType = z.infer<typeof warrantyDetailsSchema>;
 
 // Base product schema fields
 const baseProductSchemaFields = {
@@ -110,6 +154,8 @@ const baseProductSchemaFields = {
     .default('draft'),
   vendorId: z.string().optional(),
   vendorName: z.string().optional(),
+  ...shippingDetailsSchema.shape,
+  ...warrantyDetailsSchema.shape,
 };
 
 // Base product object schema (without refinements)

@@ -1,56 +1,81 @@
 import { describe, expect, it } from 'vitest';
 
-import { generateSku, resolveDepartmentCode } from '../sku-generator';
+import { buildProductStyleRef, cleanVariantCode, generateRetailSku } from '../sku-generator';
 
-describe('Retail Standard SKU Generator', () => {
-  it('resolves department codes accurately from category/department names', () => {
-    expect(resolveDepartmentCode("Men's Fashion")).toBe('m');
-    expect(resolveDepartmentCode("Men's Tops")).toBe('m');
-    expect(resolveDepartmentCode('Women Dresses')).toBe('w');
-    expect(resolveDepartmentCode('Ladies Footwear')).toBe('w');
-    expect(resolveDepartmentCode('Kids & Baby Clothing')).toBe('k');
-    expect(resolveDepartmentCode('Children Toys')).toBe('k');
-    expect(resolveDepartmentCode('Fashion Accessories')).toBe('a');
-    expect(resolveDepartmentCode('Jewelry')).toBe('a');
-    expect(resolveDepartmentCode('Home & Living')).toBe('h');
-    expect(resolveDepartmentCode('Electronics')).toBe('e');
-    expect(resolveDepartmentCode('Beauty & Personal Care')).toBe('b');
-    expect(resolveDepartmentCode('Stationery')).toBe('s');
-    expect(resolveDepartmentCode('')).toBe('u');
-    expect(resolveDepartmentCode(undefined)).toBe('u');
+describe('Professional Retail SKU Generator (generateRetailSku)', () => {
+  it('generates 1P flagship SKU without vendor store tag', () => {
+    const sku = generateRetailSku({
+      brandToken: 'CLB',
+      styleRef: '00RT',
+      options: ['BLK', 'L'],
+    });
+    expect(sku).toBe('CLB-00RT-BLK-L');
   });
 
-  it('generates standard 18-character SKU with brand, dept, date, and 10-digit ID', () => {
-    const fixedDate = new Date('2026-08-14T00:00:00Z');
-    const sku = generateSku({
-      brandPrefix: 'c',
-      department: "Men's Apparel",
-      date: fixedDate,
-      customSequence: '0051059585',
+  it('generates 3P vendor SKU with storeCode included', () => {
+    const sku = generateRetailSku({
+      brandToken: 'CLB',
+      storeCode: 'URF',
+      styleRef: '00RT',
+      options: ['BLK', 'L'],
+    });
+    expect(sku).toBe('CLB-URF-00RT-BLK-L');
+  });
+
+  it('generates standard variant tag when options array is empty or omitted', () => {
+    const sku = generateRetailSku({
+      brandToken: 'CLB',
+      storeCode: 'URF',
+      styleRef: '00RT',
+    });
+    expect(sku).toBe('CLB-URF-00RT-STD');
+  });
+
+  it('cleans and formats dynamic variant codes consistently', () => {
+    expect(cleanVariantCode('256GB')).toBe('256GB');
+    expect(cleanVariantCode('Space Gray')).toBe('SPACEGRA');
+    expect(cleanVariantCode('100ml')).toBe('100ML');
+    expect(cleanVariantCode('6-Pack')).toBe('6PACK');
+    expect(cleanVariantCode('Vintage Black')).toBe('VINTAGEB');
+    expect(cleanVariantCode('Large')).toBe('LARGE');
+    expect(cleanVariantCode('32')).toBe('32');
+  });
+
+  it('derives collision-proof style references for products sharing name prefixes', () => {
+    const style1 = buildProductStyleRef('Cotton T-Shirt', 'A1B2');
+    const style2 = buildProductStyleRef('Cotton Slim Jeans', 'C3D4');
+
+    expect(style1).toBe('COTTA1B2');
+    expect(style2).toBe('COTTC3D4');
+    expect(style1).not.toBe(style2);
+
+    const sku1 = generateRetailSku({
+      brandToken: 'CLB',
+      storeCode: 'URF',
+      styleRef: style1,
+      options: ['BLK', 'M'],
+    });
+    const sku2 = generateRetailSku({
+      brandToken: 'CLB',
+      storeCode: 'URF',
+      styleRef: style2,
+      options: ['BLK', 'M'],
     });
 
-    expect(sku).toBe('cm2608140051059585');
-    expect(sku).toHaveLength(18);
-    expect(sku).toMatch(/^[a-z0-9]{2}\d{16}$/);
+    expect(sku1).toBe('CLB-URF-COTTA1B2-BLK-M');
+    expect(sku2).toBe('CLB-URF-COTTC3D4-BLK-M');
+    expect(sku1).not.toBe(sku2);
   });
 
-  it('guarantees collision-free random SKUs across 1000 generated samples', () => {
-    const generated = new Set<string>();
-    const count = 1000;
-
-    for (let i = 0; i < count; i++) {
-      const sku = generateSku({
-        brandPrefix: 'c',
-        department: 'women',
-      });
-
-      expect(sku).toHaveLength(18);
-      expect(sku.startsWith('cw')).toBe(true);
-      expect(sku).toMatch(/^cw\d{16}$/);
-
-      generated.add(sku);
+  it('generates high-entropy style references across repeated calls without custom seed', () => {
+    const generatedStyles = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      const style = buildProductStyleRef('Cotton T-Shirt');
+      expect(style).toHaveLength(8);
+      expect(style.startsWith('COTT')).toBe(true);
+      generatedStyles.add(style);
     }
-
-    expect(generated.size).toBe(count);
+    // High-entropy random suffix guarantees all 50 are unique
+    expect(generatedStyles.size).toBe(50);
   });
 });

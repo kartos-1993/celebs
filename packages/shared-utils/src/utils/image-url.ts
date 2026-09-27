@@ -110,6 +110,110 @@ export function isEdgeTransformableUrl(sourceUrl: string): boolean {
 }
 
 /**
+ * Maps a local-dev image URL to its prebuilt static derivative (-thumb/-card/-zoom).
+ *
+ * The extension is matched on the pathname with any query string or hash
+ * preserved, so `/img.jpg?token=abc` still rewrites to
+ * `/img-card.webp?token=abc`. URLs without a rewritable image extension are
+ * returned untouched with a dev-only warning instead of a silently
+ * unoptimized (or corruptly rewritten) URL.
+ *
+ * NOTE: there is currently no local placeholder image asset in the repo
+ * (apps/mobile/assets holds only icons/logos), so a blank input is returned
+ * UNCHANGED and image-less products must be handled by the caller (skeleton,
+ * initials, or nothing) — never by inventing a remote URL here.
+ */
+function mapLocalDerivative(trimmed: string, effectiveWidth: number): string {
+  const suffix =
+    effectiveWidth <= 180 ? '-thumb.webp' : effectiveWidth <= 800 ? '-card.webp' : '-zoom.webp';
+  const hashIdx = trimmed.indexOf('#');
+  const queryIdx = trimmed.indexOf('?');
+  let endIdx = trimmed.length;
+  if (queryIdx !== -1) endIdx = Math.min(endIdx, queryIdx);
+  if (hashIdx !== -1) endIdx = Math.min(endIdx, hashIdx);
+  const head = trimmed.slice(0, endIdx);
+  const tail = trimmed.slice(endIdx);
+  if (/\.(webp|jpg|jpeg|png)$/i.test(head)) {
+    return `${head.replace(/\.(webp|jpg|jpeg|png)$/i, suffix)}${tail}`;
+  }
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+    console.warn(
+      `[image-url] leaving local URL untouched (no rewritable image extension): ${trimmed}`,
+    );
+  }
+  return trimmed;
+}
+
+/**
+ * Returns the input unchanged when it carries no transformable variant.
+ *
+ * Previously a local URL that failed the extension rewrite fell through to the
+ * "clean master" branch and was returned indistinguishable from an optimized
+ * one, so callers had no way to tell a real derivative from a raw original.
+ * Keeping the skip explicit means the caller can decide.
+ */
+export function isRewritableLocalDerivative(sourceUrl: string): boolean {
+  const head = sourceUrl.split(/[?#]/)[0] ?? '';
+  return /\.(webp|jpg|jpeg|png)$/i.test(head);
+}
+
+/**
+ * Resolves the effective rendering width, or undefined when nothing was asked
+ * for (no preset and no explicit width) — the signal that no optimization
+ * branch applies.
+ */
+function resolveTransform(options: ImageTransformOptions): {
+  presetConfig: (typeof IMAGE_PRESETS)[ImagePreset] | null;
+  width?: number;
+  height?: number;
+  quality: number;
+  fit: NonNullable<ImageTransformOptions['fit']>;
+  format: NonNullable<ImageTransformOptions['format']>;
+  dpr: NonNullable<ImageTransformOptions['dpr']>;
+} {
+  const presetConfig = options.preset ? IMAGE_PRESETS[options.preset] : null;
+  return {
+    presetConfig,
+    width: options.width ?? presetConfig?.width,
+    height: options.height ?? presetConfig?.height,
+    quality: options.quality ?? presetConfig?.quality ?? 80,
+    fit: options.fit ?? presetConfig?.fit ?? 'cover',
+    format: options.format ?? 'auto',
+    dpr: options.dpr ?? 1,
+  };
+}
+
+/** Builds a Cloudflare /cdn-cgi/image/ URL, or null when the host is not an edge host. */
+function buildEdgeTransformUrl(
+  trimmed: string,
+  transform: ReturnType<typeof resolveTransform>,
+): string | null {
+  if (!transform.presetConfig && !transform.width) return null;
+  try {
+    const urlObj = new URL(trimmed);
+    // Strip an existing /cdn-cgi/image/... prefix to prevent nesting.
+    const match = urlObj.pathname.match(/^\/cdn-cgi\/image\/[^/]+(\/.*)$/);
+    const cleanPathname = match?.[1] ?? urlObj.pathname;
+
+    const params: string[] = [];
+    if (transform.width) params.push(`width=${transform.width * transform.dpr}`);
+    if (transform.height) params.push(`height=${transform.height * transform.dpr}`);
+    params.push(`quality=${transform.quality}`);
+    params.push(`fit=${transform.fit}`);
+    params.push(`format=${transform.format}`);
+
+    return `${urlObj.origin}/cdn-cgi/image/${params.join(',')}${cleanPathname}${urlObj.search}`;
+  } catch {
+    return null;
+  }
+}
+
+/** True for MinIO/localhost dev origins and root-relative asset paths. */
+function isLocalDevUrl(trimmed: string): boolean {
+  return trimmed.includes('localhost') || trimmed.includes('127.0.0.1') || trimmed.startsWith('/');
+}
+
+/**
  * Generates an optimized Cloudflare /cdn-cgi/image/ transformation URL,
  * a local static derivative fallback, or returns the original clean master URL.
  */
@@ -117,67 +221,41 @@ export function getOptimizedImageUrl(
   sourceUrl: string | null | undefined,
   options: ImageTransformOptions = {},
 ): string {
-  if (!sourceUrl) return '';
-
-  const trimmed = sourceUrl.trim();
-  if (!trimmed) return '';
+  // No placeholder asset exists in this repo, so a blank input is returned
+  // EXACTLY as it arrived (never ''), keeping the caller's input falsy-check
+  // meaningful instead of handing it a silently different value.
+  if (sourceUrl === null || sourceUrl === undefined) return '';
+  const raw = String(sourceUrl);
+  const trimmed = raw.trim();
+  if (!trimmed) return raw;
 
   // Data URLs (base64) or blob URLs are returned as-is
   if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
 
-  const presetConfig = options.preset ? IMAGE_PRESETS[options.preset] : null;
-
-  const width = options.width ?? presetConfig?.width;
-  const height = options.height ?? presetConfig?.height;
-  const quality = options.quality ?? presetConfig?.quality ?? 80;
-  const fit = options.fit ?? presetConfig?.fit ?? 'cover';
-  const format = options.format ?? 'auto';
-  const dpr = options.dpr ?? 1;
-
+  const transform = resolveTransform(options);
+  const wantsTransform = Boolean(transform.width || transform.presetConfig);
   const edgeActive = options.enableEdgeTransform ?? isEdgeTransformActive();
 
-  // 1. Cloudflare CDN Edge Transformation (Only if enabled AND host is configured)
-  if (edgeActive && isEdgeTransformableUrl(trimmed)) {
-    try {
-      const urlObj = new URL(trimmed);
-
-      // Strip existing /cdn-cgi/image/... prefix if present to prevent nesting
-      let cleanPathname = urlObj.pathname;
-      const cdnCgiMatch = cleanPathname.match(/^\/cdn-cgi\/image\/[^/]+(\/.*)$/);
-      if (cdnCgiMatch && cdnCgiMatch[1]) {
-        cleanPathname = cdnCgiMatch[1];
-      }
-
-      const params: string[] = [];
-      if (width) params.push(`width=${width * dpr}`);
-      if (height) params.push(`height=${height * dpr}`);
-      params.push(`quality=${quality}`);
-      params.push(`fit=${fit}`);
-      params.push(`format=${format}`);
-
-      return `${urlObj.origin}/cdn-cgi/image/${params.join(',')}${cleanPathname}${urlObj.search}`;
-    } catch {
-      return trimmed;
-    }
+  // 1. Cloudflare CDN Edge Transformation (only if enabled AND host is configured)
+  if (edgeActive && wantsTransform && isEdgeTransformableUrl(trimmed)) {
+    const edgeUrl = buildEdgeTransformUrl(trimmed, transform);
+    if (edgeUrl) return edgeUrl;
   }
 
-  // 2. Local Development / MinIO Static Derivative Mapping (if local path with .webp/.jpg)
-  const isLocalDevUrl =
-    trimmed.includes('localhost') || trimmed.includes('127.0.0.1') || trimmed.startsWith('/');
-
-  if (isLocalDevUrl && (width || presetConfig)) {
-    const effectiveWidth = (width || 360) * dpr;
-    if (effectiveWidth <= 180) {
-      return trimmed.replace(/\.(webp|jpg|jpeg|png)$/i, '-thumb.webp');
+  // 2. Local Development / MinIO Static Derivative Mapping
+  if (wantsTransform && isLocalDevUrl(trimmed)) {
+    // An unrewritable local URL is returned verbatim, but the skip is explicit
+    // so callers can tell it apart from a real derivative.
+    if (!isRewritableLocalDerivative(trimmed)) {
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(`[image-url] no rewritable local derivative for: ${trimmed}`);
+      }
+      return trimmed;
     }
-    if (effectiveWidth <= 800) {
-      return trimmed.replace(/\.(webp|jpg|jpeg|png)$/i, '-card.webp');
-    }
-    if (effectiveWidth > 800) {
-      return trimmed.replace(/\.(webp|jpg|jpeg|png)$/i, '-zoom.webp');
-    }
+    const effectiveWidth = (transform.width || 360) * transform.dpr;
+    return mapLocalDerivative(trimmed, effectiveWidth);
   }
 
   // 3. Clean Master URL fallback (Safe default if edge transformation is not active)
