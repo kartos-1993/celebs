@@ -22,8 +22,6 @@ export const addressSchema = z.object({
 
 export const updateAddressSchema = addressSchema.partial();
 
-export const COD_MAX_LIMIT = 5000;
-
 export const PAYMENT_METHODS = ['COD', 'KHALTI', 'ESEWA'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 

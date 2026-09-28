@@ -66,6 +66,9 @@ export interface CommercePolicyParseResult {
 /**
  * Reads a numeric policy value.
  *
+ * Accepts the raw stored string or the already-parsed number the settings
+ * service produces for a `NUMBER` setting, so either payload shape works.
+ *
  * Rejects an empty string, non-numeric text, and any value below `min` instead
  * of coercing them. Note this deliberately does NOT use the common
  * `parseInt(raw) || DEFAULT` shape: `parseInt('0')` is `0`, and `0 || DEFAULT`
@@ -78,7 +81,7 @@ export interface CommercePolicyParseResult {
  * an intent.
  */
 function readPolicyNumber(
-  raw: string | undefined,
+  raw: string | number | undefined,
   key: string,
   fallback: number,
   min: number,
@@ -86,13 +89,8 @@ function readPolicyNumber(
 ): number {
   if (raw === undefined) return fallback;
 
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    invalidKeys.push(key);
-    return fallback;
-  }
+  const parsed = typeof raw === 'number' ? raw : Number(raw.trim() === '' ? NaN : raw.trim());
 
-  const parsed = Number(trimmed);
   if (!Number.isInteger(parsed) || parsed < min) {
     invalidKeys.push(key);
     return fallback;
@@ -115,9 +113,13 @@ function isSettingArray(value: unknown): value is readonly CommercePolicySetting
  * so the commerce policy can share the settings table with unrelated groups.
  */
 export function parseCommercePolicy(
-  settings: readonly CommercePolicySetting[] | Readonly<Record<string, string>> | undefined | null,
+  settings:
+    | readonly CommercePolicySetting[]
+    | Readonly<Record<string, string | number>>
+    | undefined
+    | null,
 ): CommercePolicyParseResult {
-  const values: Readonly<Record<string, string>> = isSettingArray(settings)
+  const values: Readonly<Record<string, string | number>> = isSettingArray(settings)
     ? Object.fromEntries(
         settings
           .filter((setting): setting is CommercePolicySetting => Boolean(setting?.key))

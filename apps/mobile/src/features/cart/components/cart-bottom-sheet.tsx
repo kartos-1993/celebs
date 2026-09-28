@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useCart } from '../context/cart-context';
-import { FREE_SHIPPING_THRESHOLD } from '../utils/cart-selectors';
 
 import { styles } from './cart-bottom-sheet.styles';
 import { CartCheckoutBar } from './cart-checkout-bar';
@@ -12,6 +11,7 @@ import { CartItemsSection } from './cart-items-section';
 import { CartPromoBanner } from './cart-promo-banner';
 
 import { BottomSheet } from '@/components/bottom-sheet';
+import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
 
 interface CartBottomSheetProps {
   visible: boolean;
@@ -20,6 +20,7 @@ interface CartBottomSheetProps {
 
 export function CartBottomSheet({ visible, onClose }: CartBottomSheetProps) {
   const router = useRouter();
+  const commercePolicy = useCommercePolicy();
   const {
     itemCount,
     selectedItems,
@@ -70,7 +71,10 @@ export function CartBottomSheet({ visible, onClose }: CartBottomSheetProps) {
         <CartPromoBanner
           savings={selectedSavings}
           savingsPercent={selectedSavingsPercent}
-          freeShippingRemaining={Math.max(0, FREE_SHIPPING_THRESHOLD - selectedSubtotal)}
+          freeShippingRemaining={Math.max(
+            0,
+            commercePolicy.freeShippingThreshold - selectedSubtotal,
+          )}
         />
         <CartCheckoutBar
           itemCount={selectedCount}

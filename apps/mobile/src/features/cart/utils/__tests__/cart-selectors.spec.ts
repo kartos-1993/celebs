@@ -5,10 +5,8 @@ import { describe, expect, it } from 'vitest';
 import type { CartItemHydrated } from '@celebs/shared-types';
 
 import {
-  CHECKOUT_FREE_SHIPPING_THRESHOLD,
   computeTotals,
   formatPrice,
-  FREE_SHIPPING_THRESHOLD,
   getDiscountPercent,
   getUnitPrice,
   groupItemsByBrand,
@@ -92,15 +90,13 @@ describe('cart selectors', () => {
     expect(groups[0].items.map((i) => i.id)).toEqual(['a', 'c']);
   });
 
-  it('free-shipping thresholds live in ONE module and keep their historical values', () => {
-    // WONTFIX: single free-shipping threshold value (owner: product)
-    // The two values are intentionally NOT unified. They are declared together
-    // so the product owner only has to change one file, but neither number was
-    // chosen by this change.
-    expect(FREE_SHIPPING_THRESHOLD).toBe(999);
-    expect(CHECKOUT_FREE_SHIPPING_THRESHOLD).toBe(3000);
+  it('holds no free-shipping threshold of its own', () => {
+    // The cart and checkout once declared two different thresholds here (999 and
+    // 3000), which is how the app came to promise free delivery the server then
+    // charged for. The number now comes from the server's commerce policy.
     const src = readFileSync(resolve(__dirname, '../cart-selectors.ts'), 'utf8');
-    expect(src).toContain('WONTFIX: single free-shipping threshold value (owner: product)');
+    expect(src).not.toContain('FREE_SHIPPING_THRESHOLD');
+    expect(src).not.toContain('999');
   });
 
   it('formatPrice renders 2 decimals via toLocaleString (inconsistent w/ combo NPR ints — pinned)', () => {

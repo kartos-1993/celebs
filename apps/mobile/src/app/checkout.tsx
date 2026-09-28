@@ -25,13 +25,17 @@ import {
   type CheckoutPaymentMethod,
   SelectPaymentMethodModal,
 } from '@/features/checkout/components/select-payment-method-modal';
-import { COD_MAX_LIMIT, FREE_SHIPPING_THRESHOLD } from '@/features/checkout/constants';
 import { useCheckoutAddressForm } from '@/features/checkout/hooks/use-checkout-address-form';
 import { useCheckoutMutation } from '@/features/checkout/hooks/use-checkout-mutation';
 import { useCheckoutPricing } from '@/features/checkout/hooks/use-checkout-pricing';
+import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
 import { styles } from '@/features/checkout/styles/checkout.styles';
 
 export default function CheckoutScreen() {
+  // The server owns these numbers; the app reads them so it displays the same
+  // figures it will be charged, and falls back to the shipped defaults until the
+  // policy arrives.
+  const commercePolicy = useCommercePolicy();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { cart, subtotal, selectedItems, selectedSubtotal, refreshCart } = useCart();
@@ -65,6 +69,9 @@ export default function CheckoutScreen() {
     subtotal,
     isLoggedIn,
     effectiveAddressId: addrForm.effectiveSelectedId,
+    policy: commercePolicy,
+    serverShippingFee: cart?.shippingFee,
+    serverTotal: cart?.total,
   });
 
   // Preflight: revalidate cart truth on mount and every foreground so
@@ -158,7 +165,7 @@ export default function CheckoutScreen() {
           paymentMethod={paymentMethod}
           isCodDisabled={isCodDisabled}
           grandTotal={grandTotal}
-          codMaxLimit={COD_MAX_LIMIT}
+          codMaxLimit={commercePolicy.codMaxLimit}
           onOpenModal={() => setPaymentModalOpen(true)}
         />
         <View style={styles.sectionBand} />
@@ -167,7 +174,7 @@ export default function CheckoutScreen() {
           itemsSubtotal={itemsSubtotal}
           shippingFee={shippingFee}
           grandTotal={grandTotal}
-          freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
+          freeShippingThreshold={commercePolicy.freeShippingThreshold}
         />
       </ScrollView>
 
@@ -199,7 +206,7 @@ export default function CheckoutScreen() {
         subtotal={itemsSubtotal}
         grandTotal={grandTotal}
         isCodDisabled={isCodDisabled}
-        codMaxLimit={COD_MAX_LIMIT}
+        codMaxLimit={commercePolicy.codMaxLimit}
       />
 
       <InAppPaymentSheet

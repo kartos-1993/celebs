@@ -13,13 +13,14 @@ import { CartItemsSection } from '@/features/cart/components/cart-items-section'
 import { CartPromoBanner } from '@/features/cart/components/cart-promo-banner';
 import { useCart } from '@/features/cart/context/cart-context';
 import { styles } from '@/features/cart/styles/cart.styles';
-import { FREE_SHIPPING_THRESHOLD } from '@/features/cart/utils/cart-selectors';
+import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
 
 // Mirrors TAB_BAR_CONTENT_HEIGHT in (tabs)/_layout.tsx
 const TAB_BAR_CONTENT_HEIGHT = 56;
 
 export default function CartScreen() {
   const router = useRouter();
+  const commercePolicy = useCommercePolicy();
   const insets = useSafeAreaInsets();
 
   const {
@@ -152,7 +153,10 @@ export default function CartScreen() {
         <CartPromoBanner
           savings={selectedSavings}
           savingsPercent={selectedSavingsPercent}
-          freeShippingRemaining={Math.max(0, FREE_SHIPPING_THRESHOLD - selectedSubtotal)}
+          freeShippingRemaining={Math.max(
+            0,
+            commercePolicy.freeShippingThreshold - selectedSubtotal,
+          )}
         />
         <CartCheckoutBar
           itemCount={selectedCount}

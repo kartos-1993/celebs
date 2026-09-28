@@ -4,12 +4,13 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import type { CartItemHydrated } from '@celebs/shared-types';
+import {
+  type CartItemHydrated,
+  COMMERCE_POLICY_DEFAULTS,
+  type CommercePolicy,
+} from '@celebs/shared-types';
 
-import { COD_MAX_LIMIT, FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from '../../constants';
 import { useCheckoutPricing } from '../use-checkout-pricing';
-
-import { CHECKOUT_FREE_SHIPPING_THRESHOLD } from '@/features/cart/utils/cart-selectors';
 
 const HOOK_SRC = readFileSync(
   fileURLToPath(new URL('../use-checkout-pricing.ts', import.meta.url)),
@@ -55,6 +56,7 @@ interface PricingBase {
   cartItems: CartItemHydrated[];
   isLoggedIn: boolean;
   effectiveAddressId?: string | null;
+  policy: CommercePolicy;
 }
 
 function pricingBase(): PricingBase {
@@ -63,6 +65,7 @@ function pricingBase(): PricingBase {
     cartItems: [],
     isLoggedIn: true,
     effectiveAddressId: 'a1',
+    policy: COMMERCE_POLICY_DEFAULTS,
   };
 }
 
@@ -77,6 +80,7 @@ describe('useCheckoutPricing', () => {
       subtotal: 9000,
       isLoggedIn: true,
       effectiveAddressId: 'a1',
+      policy: COMMERCE_POLICY_DEFAULTS,
     });
     expect(r.checkoutItems).toBe(selected);
     expect(r.itemsSubtotal).toBe(1600);
@@ -93,6 +97,7 @@ describe('useCheckoutPricing', () => {
       subtotal: 1600,
       isLoggedIn: true,
       effectiveAddressId: 'a1',
+      policy: COMMERCE_POLICY_DEFAULTS,
     });
     expect(r.checkoutItems).toEqual([]);
     expect(r.itemsSubtotal).toBe(0);
@@ -102,17 +107,65 @@ describe('useCheckoutPricing', () => {
     expect(r.cartSubtotal).toBe(1600);
   });
 
-  it('uses the shared free-shipping constant (checkout keeps its 3000 value)', () => {
-    // WONTFIX: single free-shipping threshold value (owner: product)
-    // checkout/constants keeps exporting 3000; both surfaces now declare their
-    // threshold in cart-selectors.ts. Neither value was changed.
-    expect(FREE_SHIPPING_THRESHOLD).toBe(3000);
-    expect(CHECKOUT_FREE_SHIPPING_THRESHOLD).toBe(3000);
-    expect(SHIPPING_FEE).toBe(150);
-    expect(COD_MAX_LIMIT).toBe(5000);
-    expect(HOOK_SRC).toContain('CHECKOUT_FREE_SHIPPING_THRESHOLD');
-    expect(HOOK_SRC).toContain("from '@/features/cart/utils/cart-selectors'");
-    expect(HOOK_SRC).toContain('import { COD_MAX_LIMIT, SHIPPING_FEE } from ');
+  it('reads the numbers from the policy the server published, not local constants', () => {
+    // The hardcoded copies are gone: the app has no threshold of its own to fall
+    // out of step with the server.
+    expect(HOOK_SRC).not.toContain('SHIPPING_FEE');
+    expect(HOOK_SRC).not.toContain('COD_MAX_LIMIT');
+    expect(HOOK_SRC).not.toContain('CHECKOUT_FREE_SHIPPING_THRESHOLD');
+    expect(HOOK_SRC).toContain('resolveShippingFee');
+    expect(HOOK_SRC).toContain('isCodAllowed');
+  });
+
+  it('follows a policy the admin changed, with no app release', () => {
+    const raised: CommercePolicy = {
+      codMaxLimit: 12000,
+      freeShippingThreshold: 8000,
+      flatShippingFee: 300,
+    };
+    const base = pricingBase();
+
+    // 4000 was below the old threshold of 3000, so it used to be free.
+    const before = renderPricing({ ...base, selectedSubtotal: 4000, subtotal: 0 });
+    expect(before.shippingFee).toBe(0);
+
+    const after = renderPricing({
+      ...base,
+      selectedSubtotal: 4000,
+      subtotal: 0,
+      policy: raised,
+    });
+    expect(after.shippingFee).toBe(300);
+    expect(after.grandTotal).toBe(4300);
+  });
+
+  it('prefers the server-reported total when the whole cart is selected', () => {
+    // Optimistic reconciliation: the server's own figure wins, so the shopper
+    // never sees a locally-derived number for the same order.
+    const base = pricingBase();
+    const r = renderPricing({
+      ...base,
+      selectedSubtotal: 4000,
+      subtotal: 4000,
+      serverShippingFee: 150,
+      serverTotal: 4150,
+    });
+
+    expect(r.shippingFee).toBe(150);
+    expect(r.grandTotal).toBe(4150);
+  });
+
+  it('keeps the local figure while a partial selection is priced', () => {
+    const base = pricingBase();
+    const r = renderPricing({
+      ...base,
+      selectedSubtotal: 1000,
+      subtotal: 4000,
+      serverShippingFee: 0,
+      serverTotal: 4000,
+    });
+
+    expect(r.grandTotal).toBe(1150);
   });
 
   it('free shipping at/above threshold or zero subtotal; fee otherwise', () => {
@@ -149,6 +202,7 @@ describe('useCheckoutPricing', () => {
       subtotal: 0,
       isLoggedIn: true,
       effectiveAddressId: 'a1',
+      policy: COMMERCE_POLICY_DEFAULTS,
     });
     expect(rb.canPlaceOrder).toBe(false);
     expect(rb.blockedItems).toHaveLength(1);
@@ -165,6 +219,7 @@ describe('useCheckoutPricing', () => {
       subtotal: 0,
       isLoggedIn: true,
       effectiveAddressId: 'a1',
+      policy: COMMERCE_POLICY_DEFAULTS,
     });
     expect(r.deliveryCaption).toContain('150');
     const free = renderPricing({
@@ -174,6 +229,7 @@ describe('useCheckoutPricing', () => {
       subtotal: 0,
       isLoggedIn: true,
       effectiveAddressId: 'a1',
+      policy: COMMERCE_POLICY_DEFAULTS,
     });
     expect(free.deliveryCaption).toBe('Free delivery applied');
   });

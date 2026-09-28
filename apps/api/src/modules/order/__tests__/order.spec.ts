@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { addressSchema, checkoutSchema, COD_MAX_LIMIT } from '@celebs/shared-types';
+import { addressSchema, checkoutSchema, COMMERCE_POLICY_DEFAULTS } from '@celebs/shared-types';
 
 describe('Order & Checkout Validation Rules', () => {
-  it('enforces maximum COD limit of NPR 5,000', () => {
-    expect(COD_MAX_LIMIT).toBe(5000);
+  it('enforces the COD ceiling through the commerce policy, not a constant', () => {
+    // The ceiling is admin-editable now; this pins the shipped default only, so
+    // a test failure means the default itself changed, not that the app hardcodes
+    // a limit that no longer exists in code.
+    expect(COMMERCE_POLICY_DEFAULTS.codMaxLimit).toBe(5000);
   });
 
   it('validates Nepal address fields (Province, District, City/Area)', () => {
