@@ -14,6 +14,7 @@ import { extractVariantsMeta } from '../fields/variant-utils';
 import type { CreateProductRequest, FieldSpec } from '../types';
 
 import {
+  assignDeep,
   defaultSkuPath,
   flattenObject,
   getFirstPrice,
@@ -22,17 +23,60 @@ import {
   isHexColor,
   normalizeText,
   resolveColorCode,
+  resolveMatrixAxes,
+  skuVariantPath,
   toNonNegativeInteger,
   toPositiveNumber,
   toStringArray,
-  variantSkuPath,
 } from './add-product-helpers';
 
 const VARIANT_PATH_PREFIX = 'sku.variants.';
 
+/**
+ * The name the shared (product-level) gallery is stored under — the SAME key the
+ * product write contract accepts (`mainImages` in `@celebs/shared-types`) and
+ * the same name the server's dynamic-form field spec now publishes. It is read
+ * from the schema by {@link resolveCoverFieldName} rather than hardcoded, so
+ * this constant is only the fallback for a schema that declares no cover field.
+ */
+export const COVER_FIELD_NAME = 'mainImages';
+
+/**
+ * The pre-unification spelling. `useProductSchema`'s success-path
+ * FALLBACK_FIELD_SCHEMA — outside this file's lane — still declares its cover
+ * field as `mainImage`, so a schema served through that path registers the
+ * gallery under the singular key. Kept as a READ alias only; the value written
+ * to the server is always `mainImages` either way.
+ */
+const LEGACY_COVER_FIELD_NAME = 'mainImage';
+
 interface VariantAxisSelection {
   key: string;
   values: string[];
+}
+
+/**
+ * The form path the shared gallery is registered under.
+ *
+ * `MainImage` is the one uiType that owns the shared gallery, so the field
+ * spec's `name` IS its RHF path. Reading it off the schema (instead of
+ * hardcoding `values.mainImage`) is what removes the client-side bridge between
+ * the published field-spec name and the write-contract name: both are `mainImages`
+ * now, and the client follows the spec instead of translating it.
+ */
+export function resolveCoverFieldName(fields: FieldSpec[]): string {
+  return fields.find((field) => field.uiType === 'MainImage')?.name ?? COVER_FIELD_NAME;
+}
+
+/** The cover gallery the form currently holds, read through the schema's path. */
+function readCoverFieldValue(
+  values: Record<string, unknown>,
+  coverFieldName: string,
+): Array<File | string> {
+  const fromSpec = values[coverFieldName];
+  if (Array.isArray(fromSpec)) return fromSpec as Array<File | string>;
+  const legacy = values[LEGACY_COVER_FIELD_NAME];
+  return Array.isArray(legacy) ? (legacy as Array<File | string>) : [];
 }
 
 /** First usable (non-blank) URL in a list, or undefined. */
@@ -102,7 +146,7 @@ export function pruneOrphanVariantPaths(
   flat: Record<string, unknown>,
   axes: VariantAxisSelection[],
 ): Record<string, unknown> {
-  const livePrefixes = liveVariantSegments(axes).map((segments) => variantSkuPath(...segments));
+  const livePrefixes = liveVariantSegments(axes).map((segments) => skuVariantPath(...segments));
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(flat)) {
     if (isLiveVariantPath(key, livePrefixes)) {
@@ -192,7 +236,7 @@ export function resolveVariantStockList({
       quantity:
         toNonNegativeInteger(
           skuFlatValues[
-            variantSkuPath(colorFieldName as string, colorValue, sizeFieldName, sizeValue, 'stock')
+            skuVariantPath(colorFieldName as string, colorValue, sizeFieldName, sizeValue, 'stock')
           ],
         ) ?? defaultStock,
     }));
@@ -203,7 +247,7 @@ export function resolveVariantStockList({
         size: 'default',
         quantity:
           toNonNegativeInteger(
-            skuFlatValues[variantSkuPath(colorFieldName, colorValue, 'stock')],
+            skuFlatValues[skuVariantPath(colorFieldName, colorValue, 'stock')],
           ) ?? defaultStock,
       },
     ];
@@ -212,7 +256,7 @@ export function resolveVariantStockList({
     return selectedSizes.map((sizeValue) => ({
       size: sizeLabelMap.get(sizeValue) || sizeValue,
       quantity:
-        toNonNegativeInteger(skuFlatValues[variantSkuPath(sizeFieldName, sizeValue, 'stock')]) ??
+        toNonNegativeInteger(skuFlatValues[skuVariantPath(sizeFieldName, sizeValue, 'stock')]) ??
         defaultStock,
     }));
   }
@@ -366,7 +410,7 @@ export function buildPayloadSkus({
     });
 
   const readCell = (parts: string[], field: string): unknown =>
-    skuFlatValues[variantSkuPath(...parts, field)];
+    skuFlatValues[skuVariantPath(...parts, field)];
 
   // CANONICAL COVER ORDER (see resolveCoverImages): `effectiveMainImages` is the
   // cover list built there, so its head IS the cover — mainImages[0], else the
@@ -399,7 +443,7 @@ export function buildPayloadSkus({
       image: image || effectiveMainImages[0] || undefined,
       isDefault: builtSkus.length === 0,
     });
-    sellerSkuPaths.push(variantSkuPath(...parts, 'sellerSku'));
+    sellerSkuPaths.push(skuVariantPath(...parts, 'sellerSku'));
   };
 
   if (colorFieldName && sizeFieldName && selectedColors.length > 0 && selectedSizes.length > 0) {
@@ -417,7 +461,7 @@ export function buildPayloadSkus({
       for (const sizeValue of selectedSizes) {
         const sizeLabel = sizeLabelMap.get(sizeValue) || sizeValue;
         pushSku(
-          { Color: colorLabel, Size: sizeLabel },
+          { [colorFieldName]: colorLabel, [sizeFieldName]: sizeLabel },
           [colorFieldName, colorValue, sizeFieldName, sizeValue],
           colorImages[0],
         );
@@ -430,14 +474,14 @@ export function buildPayloadSkus({
       const colorImages = uploadedColorAssets[colorValue]?.images?.length
         ? uploadedColorAssets[colorValue].images
         : effectiveMainImages;
-      pushSku({ Color: colorLabel }, [colorFieldName, colorValue], colorImages[0]);
+      pushSku({ [colorFieldName]: colorLabel }, [colorFieldName, colorValue], colorImages[0]);
     }
   } else if (sizeFieldName && selectedSizes.length > 0) {
     for (const sizeValue of selectedSizes) {
       const sizeLabel = sizeLabelMap.get(sizeValue) || sizeValue;
       // Size-only products have no per-color gallery, so every row's image is
       // the canonical cover resolved above.
-      pushSku({ Size: sizeLabel }, [sizeFieldName, sizeValue], coverImage);
+      pushSku({ [sizeFieldName]: sizeLabel }, [sizeFieldName, sizeValue], coverImage);
     }
   } else {
     // The product truly has no variants: `sku.default.*` is its own row, so
@@ -496,7 +540,11 @@ const EXCLUDED_DYNAMIC_FIELD_NAMES = new Set([
   'specialPrice',
   'categoryId',
   'subcategoryId',
+  // Canonical gallery name is `mainImages` (COVER_FIELD_NAME); the singular
+  // entry stays because `useProductSchema`'s success-path FALLBACK_FIELD_SCHEMA
+  // — which this file does not own — still declares a `mainImage` cover field.
   'mainImage',
+  'mainImages',
   'sizes',
   'skus',
   'status',
@@ -524,24 +572,6 @@ export const DYNAMIC_AXES_KEY = 'variantAxes';
 function isReservedDynamicPath(name: string): boolean {
   const root = name.split('.')[0] ?? name;
   return RESERVED_DYNAMIC_PREFIXES.has(root);
-}
-
-/**
- * Writes `dotted.name` as nested objects, so no key in the result can ever be
- * read back as an RHF dot-path.
- */
-function assignDeep(target: Record<string, unknown>, dottedName: string, value: unknown): void {
-  const parts = dottedName.split('.').filter(Boolean);
-  let cursor = target;
-  for (const part of parts.slice(0, -1)) {
-    const child = cursor[part];
-    if (!child || typeof child !== 'object' || Array.isArray(child)) {
-      cursor[part] = {};
-    }
-    cursor = cursor[part] as Record<string, unknown>;
-  }
-  const leaf = parts[parts.length - 1];
-  if (leaf) cursor[leaf] = value;
 }
 
 function collectAxisValues(
@@ -598,8 +628,45 @@ export function buildPayloadDynamicValues(
   return result;
 }
 
+interface UploadedColorAsset {
+  hot: boolean;
+  images: string[];
+  swatch?: string;
+}
+
+/**
+ * Puts back the gallery head the edit form's DISPLAY strip removed.
+ *
+ * A stored gallery that still carries its swatch as `images[0]` renders that
+ * photo twice in the form (once as the swatch tile, once as a gallery
+ * thumbnail), so `hydrateColorVariantsAndGallery` drops the head for display and
+ * records the exact URL it removed under
+ * `variants.colorMeta.<color>.strippedSwatchHead`. This restores precisely that
+ * recorded URL on save, so a save-without-touching-images round trip is
+ * byte-identical instead of permanently deleting one stored image per round
+ * trip.
+ *
+ * Only a RECORDED head is ever restored, and only while the colour still has a
+ * swatch: the swatch is never invented, and a gallery the seller curated is
+ * posted exactly as they left it.
+ */
+function restoreStrippedSwatchHeads(
+  assets: Record<string, UploadedColorAsset>,
+  flatValues: Record<string, unknown>,
+): Record<string, UploadedColorAsset> {
+  const restored: Record<string, UploadedColorAsset> = { ...assets };
+  for (const [color, asset] of Object.entries(restored)) {
+    if (!asset.swatch) continue;
+    const head = flatValues[`variants.colorMeta.${color}.strippedSwatchHead`];
+    if (typeof head === 'string' && head.length > 0 && asset.images[0] !== head) {
+      restored[color] = { ...asset, images: [head, ...asset.images] };
+    }
+  }
+  return restored;
+}
+
 export function buildCanonicalColorMeta(
-  uploadedColorAssets: Record<string, { hot: boolean; images: string[]; swatch?: string }>,
+  uploadedColorAssets: Record<string, UploadedColorAsset>,
 ): Record<string, { swatch?: string; images: string[]; hot: boolean }> {
   const result: Record<string, { swatch?: string; images: string[]; hot: boolean }> = {};
   for (const [colorValue, assets] of Object.entries(uploadedColorAssets)) {
@@ -620,8 +687,16 @@ export async function buildProductPayload({
   isUpdate = false,
 }: BuildProductPayloadOptions): Promise<CreateProductRequest> {
   const flatValues = flattenObject(values);
-  const { variants: variantMeta, colorFieldName } = extractVariantsMeta(fields);
-  const sizeFieldName = variantMeta.find((variant) => variant.kind === 'size')?.key;
+  const { variants: variantMeta } = extractVariantsMeta(fields);
+  // The shared gallery is read through the SCHEMA's own field name, so the
+  // client no longer has to know which spelling the spec publishes.
+  const coverFieldName = resolveCoverFieldName(fields);
+  // Axis keys resolved through the SHARED resolver, not through the literal
+  // `Color`/`Size` names: a category whose axes are `Shade`/`Length` has
+  // `detectVariantKind` infer `'other'` for both, which used to collapse the
+  // product to its single `sku.default` row. `kind` still wins when the schema
+  // carries it, so an axis literally named `Color` resolves exactly as before.
+  const { color: colorFieldName, size: sizeFieldName } = resolveMatrixAxes(variantMeta);
   const colorLabelMap = getLabelMap(fields, colorFieldName);
   const sizeLabelMap = getLabelMap(fields, sizeFieldName);
 
@@ -634,7 +709,7 @@ export async function buildProductPayload({
   ]);
 
   const [mainImages, ...colorAssetEntries] = await Promise.all([
-    upload(Array.isArray(values.mainImage) ? (values.mainImage as Array<File | string>) : []),
+    upload(readCoverFieldValue(values, coverFieldName)),
     ...selectedColors.map(async (colorValue) => {
       const prefix = `variants.colorMeta.${colorValue}`;
       const [swatchUrls, images] = await Promise.all([
@@ -656,8 +731,10 @@ export async function buildProductPayload({
     }),
   ]);
 
-  const uploadedColorAssets: Record<string, { hot: boolean; images: string[]; swatch?: string }> =
-    Object.fromEntries(colorAssetEntries);
+  const uploadedColorAssets: Record<string, UploadedColorAsset> = restoreStrippedSwatchHeads(
+    Object.fromEntries(colorAssetEntries),
+    flatValues,
+  );
 
   // COVER ORDER (canonical rule documented once on resolveCoverImages): the
   // cover is `mainImages[0]`, and only a product with no main image at all falls

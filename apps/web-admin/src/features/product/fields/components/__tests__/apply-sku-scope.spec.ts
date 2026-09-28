@@ -150,6 +150,56 @@ describe('fillMissingSkuCodes', () => {
     expect(write).toHaveBeenCalledTimes(1);
     expect(String(write.mock.calls[0][1])).toMatch(/^CLB-/);
   });
+
+  it('reads each cell through its INDEX so a watched read wins over the flat form', () => {
+    // The regression: the fill read `form.getValues`, which cannot resolve a
+    // cell the matrix holds under a legacy flat dot-key, so every code looked
+    // blank. The reader is now the indexed one the button's count uses, and the
+    // index is what tells it WHICH cell it is looking at.
+    const write = vi.fn();
+    const items = [
+      { path: 'sku.variants.Color.Red.sellerSku', options: ['Red'] },
+      { path: 'sku.variants.Color.Blue.sellerSku', options: ['Blue'] },
+    ];
+    const seen: Array<[string, number | undefined]> = [];
+    const watched = ['CLB-KEEP', ''];
+
+    const filled = fillMissingSkuCodes({
+      items,
+      read: (path, index) => {
+        seen.push([path, index]);
+        return watched[index];
+      },
+      write,
+    });
+
+    expect(seen).toEqual([
+      ['sku.variants.Color.Red.sellerSku', 0],
+      ['sku.variants.Color.Blue.sellerSku', 1],
+    ]);
+    expect(filled).toBe(1);
+    expect(write.mock.calls[0][0]).toBe('sku.variants.Color.Blue.sellerSku');
+  });
+
+  it('never writes a readOnly/locked cell and does not count it as filled', () => {
+    const write = vi.fn();
+    const items = [
+      { path: 'sku.variants.Color.Red.sellerSku', options: ['Red'] },
+      { path: 'sku.variants.Color.Blue.sellerSku', options: ['Blue'] },
+    ];
+    const locked = new Set(['sku.variants.Color.Red.sellerSku']);
+
+    const filled = fillMissingSkuCodes({
+      items,
+      read: () => '',
+      write,
+      canWrite: (item) => !locked.has(item.path),
+    });
+
+    expect(filled).toBe(1);
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(write.mock.calls[0][0]).toBe('sku.variants.Color.Blue.sellerSku');
+  });
 });
 
 describe('normalizeVariantMetaItem + toVariantSelection', () => {

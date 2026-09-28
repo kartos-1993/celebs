@@ -21,13 +21,46 @@ export interface SizeEntry {
   bodyMeasurements?: MeasurementItem[];
 }
 
+export type SizeUnit = 'CM' | 'IN';
+
+const INCHES_PER_CM = 1 / 2.54;
+
+/** Rounded to 1dp: garment measurements are read off a tape, not computed. */
+function convertMeasurementValue(raw: string | number, from: SizeUnit, to: SizeUnit): string {
+  const trimmed = String(raw ?? '').trim();
+  if (!trimmed) return trimmed;
+  const numeric = Number(trimmed);
+  if (!Number.isFinite(numeric)) return trimmed;
+  if (from === to) return trimmed;
+  const converted = to === 'IN' ? numeric * INCHES_PER_CM : numeric * 2.54;
+  return String(Math.round(converted * 10) / 10);
+}
+
+/**
+ * Relabelling a measurement without converting it is silent data corruption:
+ * a seller who types chest 40 and taps IN would publish 40 INCHES under a field
+ * the size chart claims is in inches. The value and the unit move together, and
+ * a non-numeric or blank cell is left byte-identical rather than becoming NaN.
+ */
+function convertMeasurementList(
+  list: MeasurementItem[] | undefined,
+  from: SizeUnit,
+  to: SizeUnit,
+): MeasurementItem[] {
+  return (list || []).map((m) => ({
+    ...m,
+    value: convertMeasurementValue(m.value, from, to),
+    unit: to.toLowerCase(),
+  }));
+}
+
 interface UseSizeMeasurementsStateProps {
   field: UiProps['field'];
 }
 
 export function useSizeMeasurementsState({ field }: UseSizeMeasurementsStateProps) {
   const { setValue, getValues, formState } = useFormContext();
-  const [unit, setUnit] = useState<'CM' | 'IN'>('CM');
+  const [unit, setUnit] = useState<SizeUnit>('CM');
   const dataSource = field.dataSource || {};
 
   const charts: MeasurementChartSpec[] = useMemo(() => {
@@ -169,19 +202,15 @@ export function useSizeMeasurementsState({ field }: UseSizeMeasurementsStateProp
     }
   }, [selectedSizes, charts, setValue, getValues, unit]);
 
-  const handleUnitToggle = (nextUnit: 'CM' | 'IN') => {
+  const handleUnitToggle = (nextUnit: SizeUnit) => {
     if (nextUnit === unit) return;
     setUnit(nextUnit);
     const currentSizes = (getValues('sizes') || []) as SizeEntry[];
-    const updated = currentSizes.map((sizeObj) => {
-      const updateUnit = (list: MeasurementItem[] | undefined): MeasurementItem[] =>
-        (list || []).map((m) => ({ ...m, unit: nextUnit.toLowerCase() }));
-      return {
-        ...sizeObj,
-        productMeasurements: updateUnit(sizeObj.productMeasurements),
-        bodyMeasurements: updateUnit(sizeObj.bodyMeasurements),
-      };
-    });
+    const updated = currentSizes.map((sizeObj) => ({
+      ...sizeObj,
+      productMeasurements: convertMeasurementList(sizeObj.productMeasurements, unit, nextUnit),
+      bodyMeasurements: convertMeasurementList(sizeObj.bodyMeasurements, unit, nextUnit),
+    }));
     setValue('sizes', updated, { shouldValidate: true, shouldDirty: true });
   };
 

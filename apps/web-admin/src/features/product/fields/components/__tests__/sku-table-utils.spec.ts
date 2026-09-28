@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { VariantSelection } from '../sku-table-types';
 import {
   buildScopeOptions,
-  collectSkuPaths,
   getNestedValue,
   getSkuButtonState,
   isSkuFieldLocked,
@@ -103,27 +102,6 @@ describe('SKU Table Batch Edit Scope Utilities', () => {
       expect(matchesScope(exactScope, 'color', 'red', 'size', 'M')).toBe(true);
       expect(matchesScope(exactScope, 'color', 'red', 'size', 'S')).toBe(false);
       expect(matchesScope(exactScope, 'color', 'blue', 'size', 'M')).toBe(false);
-    });
-  });
-
-  describe('collectSkuPaths', () => {
-    it('returns default SKU path when no variants exist', () => {
-      expect(collectSkuPaths([])).toEqual(['sku.default.sellerSku']);
-    });
-
-    it('returns paths for single variant axis', () => {
-      const singleAxis: VariantSelection[] = [{ key: 'size', label: 'Size', values: ['S', 'M'] }];
-      expect(collectSkuPaths(singleAxis)).toEqual([
-        'sku.variants.size.S.sellerSku',
-        'sku.variants.size.M.sellerSku',
-      ]);
-    });
-
-    it('returns cross-product paths for multi-axis variants', () => {
-      const paths = collectSkuPaths(variants);
-      expect(paths).toHaveLength(6);
-      expect(paths).toContain('sku.variants.color.red.size.S.sellerSku');
-      expect(paths).toContain('sku.variants.color.blue.size.L.sellerSku');
     });
   });
 

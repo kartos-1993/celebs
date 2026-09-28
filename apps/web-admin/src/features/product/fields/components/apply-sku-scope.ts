@@ -1,6 +1,6 @@
 import { buildProductStyleRef, generateRetailSku } from '@celebs/shared-utils';
 
-import { normalizeText, variantSkuPath } from '../../utils/add-product-helpers';
+import { normalizeText, skuVariantPath } from '../../utils/add-product-helpers';
 
 import type {
   ApplyAllState,
@@ -86,7 +86,7 @@ export function collectApplyAssignments(
     for (const fieldName of APPLY_ALL_FIELD_NAMES) {
       const value = applyAll[fieldName];
       if (!value) continue;
-      assignments.push({ path: variantSkuPath(...combo, fieldName), value });
+      assignments.push({ path: skuVariantPath(...combo, fieldName), value });
     }
   }
   return assignments;
@@ -174,36 +174,46 @@ export function countBlankSkuCodes(
 
 export interface FillSkuCodesOptions {
   items: SkuFieldItem[];
-  read: (path: string) => unknown;
+  /**
+   * Indexed exactly like `countBlankSkuCodes`'s reader, and it MUST be the same
+   * reader: the button label is computed from the watched SKU paths while the
+   * fill used to read `form.getValues`, so a cell the label counted as filled
+   * still looked blank to the fill and got a second, generated code.
+   */
+  read: (path: string, index: number) => unknown;
   write: (path: string, value: string) => void;
+  /** Cells this returns `false` for are left exactly as they are. */
+  canWrite?: (item: SkuFieldItem, index: number) => boolean;
   brand?: string;
   productName?: string;
   storeCode?: string;
 }
 
-/** Fills only the blank sellerSku cells; existing codes are never touched. */
+/**
+ * Fills only the blank sellerSku cells; existing codes are never touched.
+ *
+ * A cell is left alone when it already carries a code, when `canWrite` refuses
+ * it (a `readOnly`/locked cell on a published product), or when the reader says
+ * its value is blank whitespace. A refused cell is not counted as filled, so the
+ * caller's return value stays "how many cells this action actually wrote".
+ */
 export function fillMissingSkuCodes({
   items,
   read,
   write,
+  canWrite,
   brand = 'CLB',
   productName = 'ITEM',
   storeCode,
 }: FillSkuCodesOptions): number {
   const styleRef = buildProductStyleRef(normalizeText(productName) || 'ITEM');
+  const brandToken = normalizeText(brand) || 'CLB';
   let filled = 0;
-  for (const item of items) {
-    if (normalizeText(read(item.path))) continue;
-    write(
-      item.path,
-      generateRetailSku({
-        brandToken: normalizeText(brand) || 'CLB',
-        storeCode,
-        styleRef,
-        options: item.options,
-      }),
-    );
+  items.forEach((item, index) => {
+    if (normalizeText(read(item.path, index))) return;
+    if (canWrite && !canWrite(item, index)) return;
+    write(item.path, generateRetailSku({ brandToken, storeCode, styleRef, options: item.options }));
     filled += 1;
-  }
+  });
   return filled;
 }

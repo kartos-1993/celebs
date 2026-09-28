@@ -16,28 +16,27 @@ const labelOf = (axisKey: string, value: string) => {
 
 const {
   buildScopeOptions,
-  collectSkuItems,
-  collectSkuPaths,
+  collectSellerSkuItems,
   getNestedValue,
   getSkuButtonState,
   matchesScope,
-  pathFor,
+  skuVariantPath,
 } = skuTableUtils;
 
-describe('sanitize + pathFor', () => {
-  it('verbatim-duplicate sanitize() is deleted; pathFor uses sanitizeVariantKey', () => {
-    // sanitize() duplicating sanitizeVariantKey was deleted and pathFor
+describe('sanitize + skuVariantPath', () => {
+  it('verbatim-duplicate sanitize() is deleted; skuVariantPath uses sanitizeVariantKey', () => {
+    // sanitize() duplicating sanitizeVariantKey was deleted and skuVariantPath
     // repoints to sanitizeVariantKey (its only caller).
     expect((skuTableUtils as Record<string, unknown>).sanitize).toBeUndefined();
-    expect(pathFor('Size', '28.5', 'price')).toBe(
+    expect(skuVariantPath('Size', '28.5', 'price')).toBe(
       `sku.variants.Size.${sanitizeVariantKey('28.5')}.price`,
     );
   });
 
-  it('pathFor prefixes sku.variants and sanitizes every segment', () => {
-    expect(pathFor('Color', 'Red', 'price')).toBe('sku.variants.Color.Red.price');
-    expect(pathFor('Size', '28.5', 'price')).toBe('sku.variants.Size.28_5.price');
-    expect(pathFor('Color', 'Red', 'Size', 'S', 'stock')).toBe(
+  it('skuVariantPath prefixes sku.variants and sanitizes every segment', () => {
+    expect(skuVariantPath('Color', 'Red', 'price')).toBe('sku.variants.Color.Red.price');
+    expect(skuVariantPath('Size', '28.5', 'price')).toBe('sku.variants.Size.28_5.price');
+    expect(skuVariantPath('Color', 'Red', 'Size', 'S', 'stock')).toBe(
       'sku.variants.Color.Red.Size.S.stock',
     );
   });
@@ -72,15 +71,14 @@ describe('matchesScope + buildScopeOptions', () => {
   });
 });
 
-describe('collectSkuItems', () => {
+describe('collectSellerSkuItems', () => {
   it('returns the default sellerSku path when no variants exist', () => {
-    expect(collectSkuItems([])).toEqual([{ path: 'sku.default.sellerSku', options: [] }]);
-    expect(collectSkuPaths([])).toEqual(['sku.default.sellerSku']);
+    expect(collectSellerSkuItems([])).toEqual([{ path: 'sku.default.sellerSku', options: [] }]);
   });
 
   it('is explicitly sellerSku-scoped (price/stock live in validation + payload)', () => {
     const single: VariantSelection[] = [{ key: 'size', label: 'Size', values: ['S', 'M'] }];
-    const items = collectSkuItems(single);
+    const items = collectSellerSkuItems(single);
     // the fix decision (fix #10): the only consumer is the SKU auto-generate
     // flow in use-sku-table; price/stock/availability are validated per row by
     // collectPricingErrors and read by buildPayloadSkus, so this helper stays
@@ -90,7 +88,7 @@ describe('collectSkuItems', () => {
       { path: 'sku.variants.size.M.sellerSku', options: ['M'] },
     ]);
     expect(items.every((item) => item.path.endsWith('.sellerSku'))).toBe(true);
-    const cross = collectSkuItems(twoAxis);
+    const cross = collectSellerSkuItems(twoAxis);
     expect(cross).toHaveLength(6);
     expect(cross[0]).toEqual({
       path: 'sku.variants.color.red.size.S.sellerSku',

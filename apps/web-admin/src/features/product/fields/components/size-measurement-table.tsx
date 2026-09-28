@@ -11,6 +11,9 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
+
+import { FieldErrorCompact } from './shared';
 import type { MeasurementChartSpec } from './use-size-measurements-state';
 
 import { cn } from '@/lib/utils';
@@ -22,9 +25,12 @@ interface SizeMeasurementTableProps {
 }
 
 export function SizeMeasurementTable({ chart, selectedSizes, unit }: SizeMeasurementTableProps) {
-  const { register, formState } = useFormContext();
+  const { register, formState, control } = useFormContext();
   const listKey: 'bodyMeasurements' | 'productMeasurements' =
     chart.key === 'body' ? 'bodyMeasurements' : 'productMeasurements';
+  // Gated on the CELL's own path (`sizes.0.bodyMeasurements.1.value`), so
+  // typing a bust measurement never surfaces the waist complaint next to it.
+  const { revealError } = useFieldErrorReveal(control);
 
   return (
     // The value cells below already carry their exact RHF path via `register`,
@@ -60,14 +66,19 @@ export function SizeMeasurementTable({ chart, selectedSizes, unit }: SizeMeasure
                 />
               </TableCell>
               {chart.columns.map((c, colIndex) => {
+                const cellPath = `sizes.${sizeIndex}.${listKey}.${colIndex}.value`;
                 const sizesErrors = formState.errors.sizes as
                   | Record<string, Record<string, Array<{ value?: { message?: string } }>>>
                   | undefined;
-                const cellError = sizesErrors?.[sizeIndex]?.[listKey]?.[colIndex]?.value?.message;
+                const cellError = revealError(cellPath)
+                  ? sizesErrors?.[sizeIndex]?.[listKey]?.[colIndex]?.value?.message
+                  : undefined;
 
                 return (
-                  <TableCell key={c}>
-                    <div className="space-y-1 py-1">
+                  // `align-top` pins each control to the top of its own cell, so
+                  // no cell can re-centre the inputs beside it.
+                  <TableCell key={c} className="align-top">
+                    <div className="py-1">
                       <input
                         type="hidden"
                         value={c}
@@ -84,17 +95,18 @@ export function SizeMeasurementTable({ chart, selectedSizes, unit }: SizeMeasure
                         placeholder={
                           listKey === 'bodyMeasurements' ? 'e.g. 70 or 70-80' : 'e.g. 70'
                         }
+                        title={cellError}
+                        aria-invalid={!!cellError}
                         className={cn(
                           'h-8 text-xs',
                           cellError && 'border-destructive focus-visible:ring-destructive',
                         )}
                         {...register(`sizes.${sizeIndex}.${listKey}.${colIndex}.value` as const)}
                       />
-                      {cellError && (
-                        <span className="text-xs text-destructive block font-medium">
-                          {cellError}
-                        </span>
-                      )}
+                      {/* Out of flow on purpose: an in-flow message here made
+                          every cell below it reflow. The `title` above carries
+                          it for sighted hover. */}
+                      <FieldErrorCompact message={cellError} />
                     </div>
                   </TableCell>
                 );

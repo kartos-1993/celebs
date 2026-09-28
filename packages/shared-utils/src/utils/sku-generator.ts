@@ -17,47 +17,39 @@ export interface SkuOptions {
   customSequence?: string | number;
 }
 
+/**
+ * One keyword bucket in the department lookup. Array order is precedence:
+ * the first rule that matches wins, so the buckets must stay in the order the
+ * original if-ladder tested them (menswear before accessories, etc.).
+ */
+interface DepartmentRule {
+  keywords: readonly string[];
+  /** Keywords that veto a rule — "men" must never claim "women". */
+  excludes?: readonly string[];
+  code: string;
+}
+
+const DEPARTMENT_RULES: ReadonlyArray<DepartmentRule> = [
+  { keywords: ['men'], excludes: ['women'], code: 'm' },
+  { keywords: ['women', 'female', 'ladies'], code: 'w' },
+  { keywords: ['kid', 'child', 'baby', 'boy', 'girl'], code: 'k' },
+  { keywords: ['access', 'jewelry', 'bag', 'shoe', 'footwear'], code: 'a' },
+  { keywords: ['home', 'decor', 'living'], code: 'h' },
+  { keywords: ['elect', 'gadget', 'phone', 'tech'], code: 'e' },
+  { keywords: ['beauty', 'cosmetic', 'care', 'personal'], code: 'b' },
+];
+
+function matchesDepartmentRule(clean: string, rule: DepartmentRule): boolean {
+  if (!rule.keywords.some((keyword) => clean.includes(keyword))) return false;
+  return !(rule.excludes ?? []).some((keyword) => clean.includes(keyword));
+}
+
 export function resolveDepartmentCode(departmentOrCategory?: string): string {
   if (!departmentOrCategory) return 'u';
   const clean = departmentOrCategory.toLowerCase().trim();
 
-  if (clean.includes('men') && !clean.includes('women')) return 'm';
-  if (clean.includes('women') || clean.includes('female') || clean.includes('ladies')) return 'w';
-  if (
-    clean.includes('kid') ||
-    clean.includes('child') ||
-    clean.includes('baby') ||
-    clean.includes('boy') ||
-    clean.includes('girl')
-  ) {
-    return 'k';
-  }
-  if (
-    clean.includes('access') ||
-    clean.includes('jewelry') ||
-    clean.includes('bag') ||
-    clean.includes('shoe') ||
-    clean.includes('footwear')
-  ) {
-    return 'a';
-  }
-  if (clean.includes('home') || clean.includes('decor') || clean.includes('living')) return 'h';
-  if (
-    clean.includes('elect') ||
-    clean.includes('gadget') ||
-    clean.includes('phone') ||
-    clean.includes('tech')
-  ) {
-    return 'e';
-  }
-  if (
-    clean.includes('beauty') ||
-    clean.includes('cosmetic') ||
-    clean.includes('care') ||
-    clean.includes('personal')
-  ) {
-    return 'b';
-  }
+  const matched = DEPARTMENT_RULES.find((rule) => matchesDepartmentRule(clean, rule));
+  if (matched) return matched.code;
 
   // Single letter prefix fallback if already a valid 1-char code
   if (clean.length === 1 && /[a-z0-9]/.test(clean)) return clean;

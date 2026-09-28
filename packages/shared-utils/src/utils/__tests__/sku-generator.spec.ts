@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildProductStyleRef, cleanVariantCode, generateRetailSku } from '../sku-generator';
+import {
+  buildProductStyleRef,
+  cleanVariantCode,
+  generateRetailSku,
+  resolveDepartmentCode,
+} from '../sku-generator';
 
 describe('Professional Retail SKU Generator (generateRetailSku)', () => {
   it('generates 1P flagship SKU without vendor store tag', () => {
@@ -77,5 +82,95 @@ describe('Professional Retail SKU Generator (generateRetailSku)', () => {
     }
     // High-entropy random suffix guarantees all 50 are unique
     expect(generatedStyles.size).toBe(50);
+  });
+});
+
+/**
+ * Pins the department-code contract. The lookup is data-driven now, so this
+ * covers every keyword bucket, the empty-input fallback, both 1-char and
+ * first-alphanumeric fallbacks, and — critically — the precedence the array
+ * order encodes.
+ */
+describe('resolveDepartmentCode', () => {
+  it('falls back to "u" for empty input', () => {
+    expect(resolveDepartmentCode()).toBe('u');
+    expect(resolveDepartmentCode('')).toBe('u');
+    expect(resolveDepartmentCode('   ')).toBe('u');
+  });
+
+  it('resolves menswear to "m"', () => {
+    expect(resolveDepartmentCode('Men')).toBe('m');
+    expect(resolveDepartmentCode('Menswear')).toBe('m');
+    expect(resolveDepartmentCode('  MEN  ')).toBe('m');
+  });
+
+  it('resolves womenswear to "w" — the "men" veto must not claim it', () => {
+    expect(resolveDepartmentCode('Women')).toBe('w');
+    expect(resolveDepartmentCode('Ladies')).toBe('w');
+    expect(resolveDepartmentCode('Female')).toBe('w');
+    expect(resolveDepartmentCode('Womens Footwear')).toBe('w');
+  });
+
+  it('resolves every kids keyword to "k"', () => {
+    expect(resolveDepartmentCode('Kids')).toBe('k');
+    expect(resolveDepartmentCode('Children')).toBe('k');
+    expect(resolveDepartmentCode('Baby')).toBe('k');
+    expect(resolveDepartmentCode('Boys')).toBe('k');
+    expect(resolveDepartmentCode('Girls')).toBe('k');
+  });
+
+  it('resolves every accessories keyword to "a"', () => {
+    expect(resolveDepartmentCode('Accessories')).toBe('a');
+    expect(resolveDepartmentCode('Jewelry')).toBe('a');
+    expect(resolveDepartmentCode('Handbag')).toBe('a');
+    expect(resolveDepartmentCode('Shoes')).toBe('a');
+    expect(resolveDepartmentCode('Footwear')).toBe('a');
+  });
+
+  it('resolves every home keyword to "h"', () => {
+    expect(resolveDepartmentCode('Home')).toBe('h');
+    expect(resolveDepartmentCode('Home Decor')).toBe('h');
+    expect(resolveDepartmentCode('Living Room')).toBe('h');
+  });
+
+  it('resolves every electronics keyword to "e"', () => {
+    expect(resolveDepartmentCode('Electronics')).toBe('e');
+    expect(resolveDepartmentCode('Gadgets')).toBe('e');
+    expect(resolveDepartmentCode('Phone')).toBe('e');
+    expect(resolveDepartmentCode('Tech')).toBe('e');
+  });
+
+  it('resolves every beauty keyword to "b"', () => {
+    expect(resolveDepartmentCode('Beauty')).toBe('b');
+    expect(resolveDepartmentCode('Cosmetics')).toBe('b');
+    expect(resolveDepartmentCode('Skin Care')).toBe('b');
+    expect(resolveDepartmentCode('Personal Care')).toBe('b');
+  });
+
+  it('keeps rule precedence: earlier buckets win over later ones', () => {
+    // menswear before accessories / home
+    expect(resolveDepartmentCode("Men's Shoes")).toBe('m');
+    expect(resolveDepartmentCode("Men's Home Decor")).toBe('m');
+    // kids before accessories
+    expect(resolveDepartmentCode('Kids Shoes')).toBe('k');
+    // accessories before electronics
+    expect(resolveDepartmentCode('Tech Bags')).toBe('a');
+  });
+
+  it('passes a 1-char alnum code through unchanged', () => {
+    expect(resolveDepartmentCode('x')).toBe('x');
+    expect(resolveDepartmentCode('5')).toBe('5');
+    expect(resolveDepartmentCode('M')).toBe('m');
+  });
+
+  it('falls back to the first alphanumeric character', () => {
+    expect(resolveDepartmentCode('Saree')).toBe('s');
+    expect(resolveDepartmentCode('123abc')).toBe('1');
+    expect(resolveDepartmentCode('--x')).toBe('x');
+  });
+
+  it('falls back to "u" when nothing alphanumeric survives', () => {
+    expect(resolveDepartmentCode('!')).toBe('u');
+    expect(resolveDepartmentCode('***')).toBe('u');
   });
 });

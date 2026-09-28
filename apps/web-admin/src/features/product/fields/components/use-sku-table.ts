@@ -2,6 +2,8 @@ import React from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 
+import { getVariantAxes, PRODUCT_QUERY_KEYS } from '../../api';
+
 import {
   collectApplyAssignments,
   countBlankSkuCodes,
@@ -24,12 +26,30 @@ import {
 } from './sku-table-utils';
 
 import { AuthContext } from '@/context/auth-provider';
-import { axiosClient } from '@/lib/axios/axios-client';
 
 function resolveStoreCode(auth: {
   user?: { storeCode?: string; vendorProfile?: { storeCode?: string } };
 }): string | undefined {
   return auth?.user?.vendorProfile?.storeCode || auth?.user?.storeCode;
+}
+
+/**
+ * How long a fetched axis list stays authoritative. Matches the render-schema
+ * query's own window: the axes only change when the category/product schema
+ * does, and a fresh identity is what re-keys the matrix's watched SKU paths.
+ */
+export const VARIANT_AXES_STALE_TIME_MS = 2 * 60 * 1000;
+
+/**
+ * Stable query-key fragment for `dataSource.params`. The render schema hands
+ * the params over as an inline object, so keying the query on the object
+ * identity would re-key the cache on every render; serialising with sorted
+ * keys makes one logical param set always produce one key.
+ */
+export function serializeQueryParams(params?: Record<string, unknown>): string {
+  if (!params) return '';
+  const entries = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(Object.fromEntries(entries));
 }
 
 function useVariantAxes(formControl: Control, dataSource?: VariantDataSource): VariantSelection[] {
@@ -40,21 +60,31 @@ function useVariantAxes(formControl: Control, dataSource?: VariantDataSource): V
     [staticVariants],
   );
 
-  const fetchUrl = typeof dataSource?.fetch === 'string' ? dataSource.fetch : undefined;
-  const fetchParams = dataSource?.params;
+  const fetchPath = typeof dataSource?.fetch === 'string' ? dataSource.fetch : undefined;
+  const params = dataSource?.params;
+  const paramsKey = serializeQueryParams(params);
 
+  // `params` reaches the key as its serialised form on purpose: the render
+  // schema hands it over as an inline object, so keying on the object itself
+  // would re-key the cache on every render. The serialisation is value-stable.
   const { data: asyncVariantMeta } = useQuery<VariantMetaItem[]>({
-    queryKey: ['sku-table-variants', fetchUrl, fetchParams],
-    // No `??` cascade (AGENTS.md §8): a malformed envelope throws here and
-    // surfaces as a query error instead of silently rendering no axes.
+    queryKey: PRODUCT_QUERY_KEYS.variantAxes(fetchPath ?? '', paramsKey),
+    // Envelope validation lives in `parseVariantAxesResponse` (AGENTS.md §8):
+    // a malformed payload throws there and surfaces as a query error instead
+    // of silently rendering no axes.
     queryFn: async () => {
-      if (!fetchUrl) return [];
-      const response = await axiosClient.get(fetchUrl, { params: fetchParams });
-      return parseVariantAxesResponse(response.data).map((entry) =>
-        normalizeVariantMetaItem(entry),
-      );
+      if (!fetchPath) return [];
+      const payload = await getVariantAxes(fetchPath, params);
+      return parseVariantAxesResponse(payload).map((entry) => normalizeVariantMetaItem(entry));
     },
-    enabled: !staticVariantMeta && !!fetchUrl,
+    // The axes are schema-shaped metadata, not live form state, and they drive
+    // `skuPaths` — the exact path list the matrix watches. A routine refetch
+    // that mints a new `productResponse`/axes identity mid-edit therefore
+    // re-resolves the watch list underneath the seller's hands. Holding the
+    // cache for the same window `use-product-schema` uses keeps a background
+    // refetch from rebuilding the grid while a cell is being typed into.
+    staleTime: VARIANT_AXES_STALE_TIME_MS,
+    enabled: !staticVariantMeta && !!fetchPath,
   });
 
   const variantMeta = staticVariantMeta ?? asyncVariantMeta ?? [];
@@ -124,19 +154,6 @@ export function useSkuTable(dataSource?: VariantDataSource) {
     [skuPaths, readSkuCode],
   );
 
-  const handleAutoGenerateSkus = React.useCallback(
-    () =>
-      fillMissingSkuCodes({
-        items: skuItems,
-        read: getValues,
-        write: (path, value) => setValue(path, value, { shouldDirty: true, shouldValidate: true }),
-        brand: String(getValues('brand') ?? ''),
-        productName: String(getValues('name') ?? ''),
-        storeCode,
-      }),
-    [skuItems, setValue, getValues, storeCode],
-  );
-
   const isSkuLocked = React.useCallback(
     (path: string) =>
       isSkuFieldLocked(
@@ -145,6 +162,26 @@ export function useSkuTable(dataSource?: VariantDataSource) {
         path,
       ),
     [getValues, formState.defaultValues],
+  );
+
+  const handleAutoGenerateSkus = React.useCallback(
+    () =>
+      fillMissingSkuCodes({
+        items: skuItems,
+        // The SAME reader the button's count uses. `getValues(path)` alone
+        // cannot see a cell the matrix holds under a legacy flat dot-key, so
+        // every code read as blank and the action rewrote rows the seller had
+        // already named.
+        read: readSkuCode,
+        write: (path, value) => setValue(path, value, { shouldDirty: true, shouldValidate: true }),
+        // A published product's existing warehouse barcodes are `readOnly` in
+        // the matrix; generating into one is an overwrite the seller cannot see.
+        canWrite: (item) => !isSkuLocked(item.path),
+        brand: String(getValues('brand') ?? ''),
+        productName: String(getValues('name') ?? ''),
+        storeCode,
+      }),
+    [skuItems, readSkuCode, setValue, isSkuLocked, getValues, storeCode],
   );
 
   return {

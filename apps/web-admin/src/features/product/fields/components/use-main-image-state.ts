@@ -3,6 +3,7 @@ import { useFormContext } from 'react-hook-form';
 
 import { useInvalidateMediaLibrary } from '../../hooks/use-media-assets';
 import { isGalleryFilled } from '../../utils/add-product-helpers';
+import { collectCoverError } from '../../utils/add-product-validation';
 import type { UiProps } from '../ui-registry';
 
 import { ImageValue, imageValueKey, uploadErrorMessage, uploadImageFiles } from './shared';
@@ -26,8 +27,26 @@ interface UseMainImageStateProps {
   field: UiProps['field'];
 }
 
+/**
+ * The cover is only REQUIRED when the field says required AND nothing else
+ * satisfies it. `collectCoverError` is the single source of truth for "this
+ * product has a cover" — it already accepts a full colour gallery as one — so
+ * the field rule asks it instead of re-implementing the gallery walk. Without
+ * this, a product whose colour galleries are all filled still carried a
+ * permanent "Main Product Image is required" on a field marked required.
+ */
+function isCoverRequired(
+  field: UiProps['field'],
+  images: ImageValue[],
+  values: Record<string, unknown>,
+): boolean {
+  if (!field.required || isGalleryFilled(images)) return false;
+  return collectCoverError({ values, schemaFields: [field] }).length > 0;
+}
+
 export function useMainImageState({ field }: UseMainImageStateProps) {
-  const { setValue, watch, register, trigger, formState, setError, clearErrors } = useFormContext();
+  const { setValue, watch, getValues, register, trigger, formState, setError, clearErrors } =
+    useFormContext();
 
   const maxItems = useMemo(
     () => (typeof field.rule?.maxItems === 'number' ? field.rule.maxItems : 1),
@@ -120,7 +139,7 @@ export function useMainImageState({ field }: UseMainImageStateProps) {
     register(field.name, {
       validate: (v: unknown) => {
         const arr = toImageValues(v);
-        if (!isGalleryFilled(arr)) return `${field.label} is required`;
+        if (isCoverRequired(field, arr, getValues())) return `${field.label} is required`;
         if (typeof maxItems === 'number' && arr.length > maxItems) return `Max ${maxItems} images`;
         if (accept && arr.some((f) => f instanceof File && !accept.includes(f.type))) {
           return 'One or more files have invalid formats';
@@ -128,7 +147,7 @@ export function useMainImageState({ field }: UseMainImageStateProps) {
         return true;
       },
     });
-  }, [register, field.name, field.required, field.label, field.rule]);
+  }, [register, getValues, field]);
 
   useEffect(() => {
     let active = true;

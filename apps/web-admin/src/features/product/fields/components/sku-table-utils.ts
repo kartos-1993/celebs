@@ -1,4 +1,4 @@
-import { defaultSkuPath, getNestedValue, variantSkuPath } from '../../utils/add-product-helpers';
+import { defaultSkuPath, getNestedValue, skuVariantPath } from '../../utils/add-product-helpers';
 
 import { collectVariantCombos, comboMatchesScope } from './apply-sku-scope';
 import type { ScopeOption, SkuFieldItem, VariantSelection } from './sku-table-types';
@@ -13,8 +13,13 @@ export {
 } from './apply-sku-scope';
 export type { SkuFieldItem } from './sku-table-types';
 
-/** `sku.variants.*` path builder — see `variantSkuPath` for the single encoder. */
-export const pathFor = variantSkuPath;
+/**
+ * `skuVariantPath` is imported above from `add-product-helpers`, where the single
+ * implementation lives, and re-exported here so the field components can import
+ * their path builder from the module that owns their types. A path is therefore
+ * encoded in exactly one place.
+ */
+export { skuVariantPath };
 
 export function matchesScope(
   applyScope: string,
@@ -79,7 +84,7 @@ export function buildScopeOptions(
  *
  * price / specialPrice / stock / freeItems are deliberately NOT tracked here:
  * `collectPricingErrors` validates each of them per matrix row and
- * `buildPayloadSkus` reads them from the same `pathFor` prefixes, so widening
+ * `buildPayloadSkus` reads them from the same `skuVariantPath` prefixes, so widening
  * this helper to "every editable cell" would duplicate both and put cell
  * ownership in two places. Generalizes to N axes via `collectVariantCombos`.
  */
@@ -93,23 +98,15 @@ export function collectSellerSkuItems(variants: VariantSelection[]): SkuFieldIte
     for (let index = 1; index < combo.length; index += 2) {
       options.push(combo[index]);
     }
-    return { path: pathFor(...combo, 'sellerSku'), options };
+    return { path: skuVariantPath(...combo, 'sellerSku'), options };
   });
 }
 
-/** Historical alias for {@link collectSellerSkuItems}. */
-export const collectSkuItems = collectSellerSkuItems;
-
 /**
- * Kept intentionally ( review): covered by `__tests__/sku-table-utils.spec.ts`
- * and reserved for consumers that need paths without item options. Prod currently
- * inlines the equivalent via `collectSkuItems(variants).map((item) => item.path)`
- * in `use-sku-table.ts`; do not remove one without the other.
+ * One item per seller-SKU cell that can be auto-filled. Generalizes to N axes
+ * via `collectVariantCombos`, and the option values are the odd segments of each
+ * combo, so `options` is always the list of chosen values (not axis keys).
  */
-export function collectSkuPaths(variants: VariantSelection[]): string[] {
-  return collectSellerSkuItems(variants).map((item) => item.path);
-}
-
 export interface SkuButtonState {
   label: string;
   isDisabled: boolean;

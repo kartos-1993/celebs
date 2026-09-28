@@ -267,6 +267,11 @@ export function useColorInlineRowState({
     removeAt,
     appendImages,
     setError,
+    // Exposed so a caller can settle the row's async validation BEFORE writing
+    // its own message. `appendImages` finishes with a `trigger` that clears the
+    // images error a microtask later, which erased an overflow notice written
+    // straight after it (see `ColorInlineRow`'s library `onSelect`).
+    trigger,
     rowError,
   };
 }

@@ -1,10 +1,12 @@
 import React from 'react';
+import { useFormContext, useFormState } from 'react-hook-form';
 
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { MediaLibraryButton } from '../../components/media-library-button';
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
 
-import { AddFromFileTile, FieldError, imageValueKey, VariantThumb } from './shared';
+import { AddFromFileTile, FieldError, getPathError, imageValueKey, VariantThumb } from './shared';
 import { useColorInlineRowState } from './use-color-inline-row-state';
 
 interface ColorInlineRowProps {
@@ -15,8 +17,18 @@ interface ColorInlineRowProps {
 }
 
 export function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlineRowProps) {
+  const { control } = useFormContext();
+  const { errors } = useFormState({ control });
   const state = useColorInlineRowState({ color, namePrefix, accept, limits });
   const acceptStr = Array.isArray(accept) ? accept.join(',') : undefined;
+  // Gated per PATH, `images` first — the same precedence the state hook's merged
+  // `rowError` uses, so a Red gallery edit never shows Red's swatch complaint.
+  const imagesPath = `${namePrefix}.images`;
+  const swatchPath = `${namePrefix}.swatch`;
+  const { revealError } = useFieldErrorReveal(control);
+  const revealedMessage = (path: string) =>
+    revealError(path) ? getPathError(errors, path)?.message : undefined;
+  const rowError = revealedMessage(imagesPath) ?? revealedMessage(swatchPath);
 
   return (
     <div className="px-3 py-2.5" data-error-path={`${namePrefix}.images`}>
@@ -98,13 +110,20 @@ export function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlin
               }
               scope="PRODUCT"
               initialSelectedUrls={state.images.filter((v): v is string => typeof v === 'string')}
-              onSelect={(urls) => {
+              onSelect={async (urls) => {
                 const capped =
                   typeof state.remainingSlots === 'number'
                     ? urls.slice(0, state.remainingSlots)
                     : urls;
                 if (capped.length) state.appendImages(capped);
                 if (urls.length > capped.length) {
+                  // `appendImages` ends in a `trigger` whose async validation
+                  // clears this row's error a microtask later, so a `setError`
+                  // written straight after it flashed and vanished while the
+                  // dropped images were silently gone. Settle validation FIRST,
+                  // then publish the notice naming the drop — the same order
+                  // `addFiles` uses for the file-pick path.
+                  await state.trigger(`${namePrefix}.images`);
                   state.setError(`${namePrefix}.images`, {
                     type: 'validate',
                     message: `Only ${capped.length} of ${urls.length} images added — Max ${state.maxImages}`,
@@ -127,11 +146,10 @@ export function ColorInlineRow({ color, namePrefix, accept, limits }: ColorInlin
         </div>
       </div>
 
-      {state.rowError && (
-        <div className="pt-1.5">
-          <FieldError message={state.rowError} />
-        </div>
-      )}
+      {/* No `pt-*` wrapper: `FieldError` carries its own `mt-1`, so the old
+          `pt-1.5` stacked 10px of gap. A full-width stacked block, not a table
+          cell, so the message stays in flow where it can be read. */}
+      {rowError ? <FieldError message={rowError} /> : null}
     </div>
   );
 }

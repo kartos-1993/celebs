@@ -3,6 +3,7 @@ import { useController } from 'react-hook-form';
 
 import { SearchableSelect } from '@celebs/shared-ui/components/searchable-select';
 
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
 import type { UiProps } from '../ui-registry';
 
 import { FieldError, LabelWithRequired, rulesFrom } from './shared';
@@ -17,6 +18,10 @@ export function DropdownInputField({ field, control }: UiProps) {
     rules: rulesFrom(field),
   });
   const opts = useOptions(field);
+  // Gated on THIS field's path, never on the form: a sibling being worked on
+  // is not consent to render this select's error.
+  const { revealError } = useFieldErrorReveal(control);
+  const visibleError = revealError(field.name) ? fieldState.error : undefined;
   return (
     // SearchableSelect takes a fixed prop set (no name/rest spread), so the
     // field is addressed for `focusFirstError` via `data-field-name`;
@@ -30,7 +35,7 @@ export function DropdownInputField({ field, control }: UiProps) {
         onChange={(val) => f.onChange(val)}
         placeholder={`Select ${field.label}`}
       />
-      <FieldError message={fieldState.error?.message} />
+      <FieldError message={visibleError?.message} />
     </div>
   );
 }

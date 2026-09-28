@@ -6,7 +6,11 @@ import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { Input } from '@celebs/shared-ui/components/input';
 import { NumberInput } from '@celebs/shared-ui/components/number-input';
 
-import { FieldError } from './shared';
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
+
+import { FieldErrorCompact } from './shared';
+
+import { cn } from '@/lib/utils';
 
 export function VariantFieldInput({
   name,
@@ -20,6 +24,10 @@ export function VariantFieldInput({
   isLocked?: boolean;
 }) {
   const { control, getValues } = useFormContext();
+  // ONE gate for all three render sites below. The SKU cell is addressed by its
+  // OWN path (`sku.variants.Color.Red.price`), so editing a Red price never
+  // lights up the Blue cell sitting next to it.
+  const { revealError } = useFieldErrorReveal(control);
   const isPriceField = name.endsWith('.price');
   const isSpecialPriceField = name.endsWith('.specialPrice');
   const isNonNegativeField = name.endsWith('.stock');
@@ -63,15 +71,29 @@ export function VariantFieldInput({
           ? { required: 'This field is required' }
           : undefined,
   });
+  const visibleError = revealError(name) ? fieldState.error : undefined;
+  const errorMessage = visibleError?.message;
+  // The cell is a grid track, not a stacked field: the message rides the
+  // control's `title` instead of a block under it, so a failing cell never
+  // grows the row. Sighted hover and screen readers both get the text.
+  const lockedNote = isLocked
+    ? `SKU is locked for live products to maintain warehouse barcodes: ${String(field.value ?? '')}`
+    : String(field.value ?? '');
 
   return (
-    <div className="space-y-1">
+    <>
       {type === 'number' ? (
+        // `size="sm"` sizes BOTH the wrapper and the inner input. The old
+        // `h-7 sm:h-8` on the wrapper alone left the primitive's hardcoded
+        // inner `h-9` overflowing the border and taller than its row siblings.
         <NumberInput
           required={required}
           placeholder="0"
-          invalid={!!fieldState.error}
-          className="text-xs px-1 h-7 sm:h-8"
+          size="sm"
+          invalid={!!visibleError}
+          aria-invalid={!!visibleError}
+          title={errorMessage}
+          className="px-1 text-xs"
           {...field}
         />
       ) : (
@@ -81,19 +103,21 @@ export function VariantFieldInput({
             readOnly={isLocked}
             tabIndex={isLocked ? -1 : undefined}
             placeholder=""
-            title={
-              isLocked
-                ? `SKU is locked for live products to maintain warehouse barcodes: ${String(field.value ?? '')}`
-                : String(field.value ?? '')
-            }
-            className={`font-mono text-xs px-1.5 h-7 sm:h-8 ${
-              isLocked ? 'bg-muted/60 text-muted-foreground cursor-not-allowed pr-6 select-all' : ''
-            } ${fieldState.error ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+            title={errorMessage ?? lockedNote}
+            aria-invalid={!!visibleError}
+            className={cn(
+              // `h-8` (was `h-7 sm:h-8`) so every cell in the row shares one
+              // height and the checkbox below them cannot drift.
+              'h-8 px-1.5 font-mono text-xs',
+              isLocked && 'cursor-not-allowed select-all bg-muted/60 pr-6 text-muted-foreground',
+              !!errorMessage && 'border-destructive focus-visible:ring-destructive',
+            )}
             {...field}
           />
+
           {isLocked && (
             <div
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2"
               title="Locked for published product"
             >
               <Lock className="h-3 w-3 text-muted-foreground/70" />
@@ -101,8 +125,8 @@ export function VariantFieldInput({
           )}
         </div>
       )}
-      <FieldError message={fieldState.error?.message} />
-    </div>
+      <FieldErrorCompact message={errorMessage} />
+    </>
   );
 }
 

@@ -3,6 +3,7 @@ import { useController } from 'react-hook-form';
 
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
 import type { UiProps } from '../ui-registry';
 
 import { FieldError, LabelWithRequired, rulesFrom } from './shared';
@@ -13,6 +14,10 @@ export function SwitchInputField({ field, control }: UiProps) {
     control,
     rules: rulesFrom(field),
   });
+  // Gated on THIS field's path, never on the form: a sibling being worked on
+  // is not consent to render this switch's error.
+  const { revealError } = useFieldErrorReveal(control);
+  const visibleError = revealError(field.name) ? fieldState.error : undefined;
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
@@ -29,7 +34,7 @@ export function SwitchInputField({ field, control }: UiProps) {
           {field.label}
         </LabelWithRequired>
       </div>
-      <FieldError message={fieldState.error?.message} />
+      <FieldError message={visibleError?.message} />
     </div>
   );
 }

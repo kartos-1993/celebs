@@ -26,7 +26,6 @@ export function useColorMetaItem({ color, namePrefix, accept, limits }: UseColor
   const imagesVal: ImageValue[] = watch(`${namePrefix}.images`) || [];
   const [isUploadingSwatch, setIsUploadingSwatch] = React.useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = React.useState(false);
-  const [isEditingColor, setIsEditingColor] = React.useState(false);
 
   const swatchUrl = useObjectUrl(swatchVal);
   const safeLimits = React.useMemo(() => limits || {}, [limits]);
@@ -231,13 +230,6 @@ export function useColorMetaItem({ color, namePrefix, accept, limits }: UseColor
     trigger(`${namePrefix}.images`);
   };
 
-  const onUpdateColorName = (val: string) => {
-    setIsEditingColor(false);
-    if (val && val !== color) {
-      setValue(`${namePrefix}.name`, val, { shouldDirty: true });
-    }
-  };
-
   const onSetSwatchFromUrl = (url?: string) => {
     if (!url) return;
     if (!isHttpUrl(url)) {
@@ -263,8 +255,6 @@ export function useColorMetaItem({ color, namePrefix, accept, limits }: UseColor
     imagePreviews,
     isUploadingSwatch,
     isUploadingGallery,
-    isEditingColor,
-    setIsEditingColor,
     canAddMore,
     remainingSlots,
     maxImages,
@@ -274,7 +264,6 @@ export function useColorMetaItem({ color, namePrefix, accept, limits }: UseColor
     onReplaceImage,
     onRemoveImage,
     appendImages,
-    onUpdateColorName,
     onSetSwatchFromUrl,
   };
 }

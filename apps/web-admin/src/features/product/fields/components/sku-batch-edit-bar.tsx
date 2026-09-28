@@ -59,7 +59,8 @@ export function SkuBatchEditBar({
             Price <span className="text-destructive ml-0.5">*</span>
           </div>
           <NumberInput
-            className="bg-background h-8 text-xs"
+            className="bg-background text-xs"
+            size="sm"
             data-testid="sku-bulk-price-input"
             value={applyAll.price ?? ''}
             onChange={(e) => setApplyAll((p) => ({ ...p, price: e.target.value }))}
@@ -69,7 +70,8 @@ export function SkuBatchEditBar({
         <div>
           <div className="text-xs text-muted-foreground mb-1">Spl Price</div>
           <NumberInput
-            className="bg-background h-8 text-xs"
+            className="bg-background text-xs"
+            size="sm"
             data-testid="sku-bulk-special-price-input"
             value={applyAll.specialPrice ?? ''}
             onChange={(e) => setApplyAll((p) => ({ ...p, specialPrice: e.target.value }))}
@@ -79,7 +81,8 @@ export function SkuBatchEditBar({
         <div>
           <div className="text-xs text-muted-foreground mb-1">Stock</div>
           <NumberInput
-            className="bg-background h-8 text-xs"
+            className="bg-background text-xs"
+            size="sm"
             data-testid="sku-bulk-stock-input"
             value={applyAll.stock ?? ''}
             onChange={(e) => setApplyAll((p) => ({ ...p, stock: e.target.value }))}

@@ -47,7 +47,7 @@ export function isGalleryFilled(images: unknown): boolean {
 
 /**
  * Single key encoding for variant path segments (dots/brackets break RHF
- * dot-path lookups). Writers (pathFor) and readers (validation, payload)
+ * dot-path lookups). Writers (skuVariantPath) and readers (validation, payload)
  * must all go through this — never hand-roll the replacement inline.
  *
  * CASE IS DELIBERATELY PRESERVED. `buildVariantKey` (shared-utils) lowercases
@@ -76,11 +76,111 @@ export function defaultSkuPath(field: string): string {
 
 /**
  * Single builder for `sku.variants.*` form paths. Re-exported from
- * `sku-table-utils` as `pathFor`, and consumed directly by the batch-apply
+ * `sku-table-utils` as `skuVariantPath`, and consumed directly by the batch-apply
  * path builder so both writers can never drift.
  */
-export function variantSkuPath(...parts: string[]): string {
+export function skuVariantPath(...parts: string[]): string {
   return ['sku', 'variants', ...parts.map(sanitizeVariantKey)].join('.');
+}
+
+/** A declared SKU-matrix axis, as the schema or a stored record spells it. */
+export interface SkuAxisDescriptor {
+  key?: string;
+  kind?: string;
+}
+
+/**
+ * The axis keys a `sku.variants.*` path is built from, in the order the cells
+ * walk them, plus the two axes the legacy column fallbacks need.
+ */
+export interface SkuMatrixAxes {
+  /** Declared axis keys in declaration order — the cell path's segment order. */
+  keys: string[];
+  /** The colour axis, for the pre-`selectedOptions` `colorVariantName` column. */
+  color?: string;
+  /** The size axis, for the pre-`selectedOptions` `size` column. */
+  size?: string;
+}
+
+/** Declared axes with blank keys dropped — a stored record can carry junk. */
+function declaredAxes(
+  axes: ReadonlyArray<SkuAxisDescriptor | null | undefined>,
+): Array<{ key: string; kind?: string }> {
+  return axes
+    .map((axis) => ({ key: normalizeText(axis?.key), kind: axis?.kind }))
+    .filter((axis) => axis.key !== '');
+}
+
+const keyOfKind = (
+  axes: ReadonlyArray<{ key: string; kind?: string }>,
+  kind: string,
+): string | undefined => axes.find((axis) => axis.kind === kind)?.key;
+
+/**
+ * The ONE resolver for "which axes does this product's matrix have", shared by
+ * the writer (`hydrateProductForm`) and the reader (`buildProductPayload`).
+ *
+ * It exists because a matrix path is only correct if the writer emits the SAME
+ * segments the cells registered, and the cells build theirs from the axis keys
+ * the schema declares — in declaration order, via `skuVariantPath`. So the
+ * writer must not go looking for the literals `Color`/`Size`, and it must not
+ * invent its own order: both sides read `keys` here.
+ *
+ * `kind` wins when the declaration carries it (`dynamicData.variantFields` does,
+ * and that is the persisted authority). When it does not — `buildProductPayload`
+ * only receives `FieldSpec[]`, whose `kind` is inferred from the axis NAME by
+ * `detectVariantKind`, and an axis named `Shade` or `Length` is inferred as
+ * `'other'` — the first two declared axes take the colour/size slots. That
+ * positional fallback is not a second opinion: it is the same contract the cell
+ * side already relies on, where `variants[0]` is the primary axis and
+ * `variants[1]` the secondary (`buildScopeOptions`, `collectVariantCombos`).
+ *
+ * `defaultKeys` is the fallback for a product that declares NO axis at all
+ * (`buildPayloadSkus` has always stored `selectedOptions: { Color, Size }`, so
+ * those are the keys its rows are actually under).
+ */
+export function resolveMatrixAxes(
+  axes: ReadonlyArray<SkuAxisDescriptor | null | undefined>,
+  defaultKeys: readonly string[] = [],
+): SkuMatrixAxes {
+  const declared = declaredAxes(axes);
+  const keys = declared.length > 0 ? declared.map((axis) => axis.key) : [...defaultKeys];
+  return {
+    keys,
+    color: keyOfKind(declared, 'color') ?? keys[0],
+    size: keyOfKind(declared, 'size') ?? keys[1],
+  };
+}
+
+/**
+ * The ONE dotted-path → nested-object writer. Every form-value writer routes
+ * its paths through here so no value is ever stored under a literal dotted key.
+ *
+ * That invariant is load-bearing, not cosmetic: React Hook Form resolves a
+ * registered `useController` name (`sku.variants.Color.Blue.Size.M.price`) by
+ * NESTED lookup, so a flat sibling copy of the same logical field is invisible
+ * to the cell. It used to be worse than invisible — `getNestedValue` was
+ * flat-first, so the hydration copy won over the value the seller just typed and
+ * the payload shipped the stored number. Nested-only writers plus
+ * {@link flattenObject} as the single boundary flatten make that shape
+ * unrepresentable.
+ */
+export function assignDeep(
+  target: Record<string, unknown>,
+  dottedPath: string,
+  value: unknown,
+): void {
+  const parts = dottedPath.split('.').filter(Boolean);
+  let cursor = target;
+  for (const part of parts.slice(0, -1)) {
+    const child = cursor[part];
+    if (!child || typeof child !== 'object' || Array.isArray(child)) {
+      cursor[part] = {};
+    }
+    cursor = cursor[part] as Record<string, unknown>;
+  }
+  const leaf = parts[parts.length - 1];
+  if (leaf) cursor[leaf] = value;
 }
 
 export const toStringArray = (value: unknown): string[] => {
@@ -195,16 +295,24 @@ export const flattenObject = (obj: unknown, prefix = ''): Record<string, unknown
 };
 
 /**
- * Single nested-or-flat reader for form values. The form carries both shapes:
- * RHF values are nested objects, while flattened form/draft records use literal
- * dotted keys (`'sku.default.price'`). A flat key wins over deep traversal so
- * a hand-flattened record never resolves to a stale nested sibling.
+ * Single reader for form values. The form is NESTED-only (every writer goes
+ * through {@link assignDeep}), so deep traversal is the real path.
+ *
+ * The flat-key first branch is a tolerant legacy fallback for hand-built records
+ * and flattened drafts — never for form state, where a dotted key can no longer
+ * be produced. It is deliberately KEPT: removing it is not safe on this wave,
+ * because `payload-builders.spec.ts` (outside this file's lane) pins the
+ * flat-wins ordering directly, and a hand-flattened record is still a thing
+ * callers may pass. No writer in the form write path can hit the branch, which
+ * is what closes the stale-price hazard — the branch is the reason a legacy
+ * record still resolves, not a second source of truth for the form.
  */
 export const getNestedValue = (obj: unknown, path: string): unknown => {
   if (!obj || typeof obj !== 'object') return undefined;
   const record = obj as Record<string, unknown>;
 
-  // 1. Direct match (flat key in object, e.g. record['sku.default.price'])
+  // 1. Legacy flat key (e.g. record['sku.default.price'] from a hand-flattened
+  //    record). Unreachable from hydrated form state — see assignDeep.
   if (path in record && record[path] !== undefined && record[path] !== null) {
     return record[path];
   }

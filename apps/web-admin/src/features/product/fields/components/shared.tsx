@@ -30,6 +30,7 @@ export function LabelWithRequired({
   );
 }
 
+/** Stacked-field error. Stays in normal flow so the message is readable. */
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
@@ -40,7 +41,24 @@ export function FieldError({ message }: { message?: string }) {
   );
 }
 
-// ── Compact image tiles shared by color variant rows ────────────────────────
+/**
+ * Grid-cell error. Takes ZERO layout space: inside a `TableCell` a taller cell
+ * re-centres every sibling control in the row, so one failing cell used to jump
+ * the whole matrix. A blanket `min-h` is not the fix either — it would park
+ * ~20px of dead space under every cell forever. The text is kept out of flow
+ * (still in the DOM, still announced) and the control carries `title` for
+ * sighted hover, the same compact idiom as the locked-SKU glyph.
+ */
+export function FieldErrorCompact({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <span role="alert" className="sr-only">
+      {message}
+    </span>
+  );
+}
+
+// ── Compact image tiles shared by color variant rows ─────────────────────────
 
 const TILE = 'h-12 w-12';
 
