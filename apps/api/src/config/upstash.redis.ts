@@ -131,11 +131,3 @@ const restAdapter: CacheClient = {
 };
 
 export const cacheRedis: CacheClient = isUpstash ? restAdapter : tcpAdapter;
-
-/** Kept for backward-compatible imports (session-store, ttl-cache). */
-export const upstashRedis = {
-  get: <T>(key: string) => cacheRedis.get<T>(key),
-  set: (key: string, value: unknown, opts?: { ex?: number }) => cacheRedis.set(key, value, opts),
-  del: (...keys: string[]) => cacheRedis.del(...keys),
-  expire: (key: string, ttlSec: number) => cacheRedis.expire(key, ttlSec),
-};

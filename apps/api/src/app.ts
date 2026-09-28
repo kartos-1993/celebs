@@ -4,7 +4,6 @@ import cors from 'cors';
 import { randomUUID } from 'crypto';
 import express from 'express';
 import { json } from 'express';
-import session from 'express-session';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
@@ -17,7 +16,6 @@ import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 import { getBullBoardRouter } from './common/services/bull-board.service';
 import { authenticateJWT } from './common/strategies/jwt.strategy';
 import { config } from './config/app.config';
-import { UpstashRedisStore } from './config/session-store';
 import { csrfOriginGuard } from './middlewares/csrf-origin-guard.middleware';
 import { errorHandler } from './middlewares/error-handler';
 import passport from './middlewares/passport';
@@ -181,37 +179,12 @@ app.use(
 );
 app.use(globalRateLimiter);
 
-// Session management setup
+// Fail fast rather than signing with an undefined secret. The identity layer
+// is stateless JWT (`jwt.strategy.ts` verifies, `utils/jwt.ts` signs), so this
+// guards token issuance - not a server-side session store.
 if (!config.JWT.SECRET) {
-  throw new Error('JWT_SECRET environment variable is required for session management');
+  throw new Error('JWT_SECRET environment variable is required to issue and verify tokens');
 }
-
-let sessionStore;
-
-// Any reachable Redis host qualifies (local Memurai/Docker runs passwordless)
-if (config.REDIS.HOST) {
-  sessionStore = new UpstashRedisStore('celebs_sess:', 86400);
-} else {
-  logger.warn(
-    'No Redis configuration found. Using in-memory session store (not recommended for production/staging)',
-  );
-}
-
-app.use(
-  session({
-    store: sessionStore,
-    secret: config.JWT.SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: config.COOKIE.SECURE,
-      httpOnly: config.COOKIE.HTTPONLY,
-      sameSite: config.COOKIE.SAME_SITE,
-      domain: config.COOKIE.DOMAIN || undefined,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
-  }),
-);
 
 app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
