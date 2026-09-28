@@ -76,6 +76,36 @@ describe('parseCommercePolicy', () => {
     expect(invalidKeys).toEqual([COMMERCE_SETTING_KEYS.flatShippingFee]);
   });
 
+  // `Number('')` is 0, not NaN, so accepting a blank would quietly turn an
+  // empty delivery-fee setting into "free delivery" and waive charges.
+  it('never reads a blank value as zero', () => {
+    const { policy, invalidKeys } = parseCommercePolicy([
+      { key: COMMERCE_SETTING_KEYS.flatShippingFee, value: '' },
+    ]);
+
+    expect(policy.flatShippingFee).toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
+    expect(invalidKeys).toEqual([COMMERCE_SETTING_KEYS.flatShippingFee]);
+  });
+
+  it('accepts numbers from a settings payload that parsed them already', () => {
+    const { policy } = parseCommercePolicy({
+      [COMMERCE_SETTING_KEYS.codMaxLimit]: 8000,
+      [COMMERCE_SETTING_KEYS.flatShippingFee]: 0,
+    });
+
+    expect(policy.codMaxLimit).toBe(8000);
+    expect(policy.flatShippingFee).toBe(0);
+  });
+
+  it('reports a value of an unexpected type instead of coercing it', () => {
+    const { policy, invalidKeys } = parseCommercePolicy({
+      [COMMERCE_SETTING_KEYS.codMaxLimit]: { nested: true },
+    });
+
+    expect(policy.codMaxLimit).toBe(COMMERCE_POLICY_DEFAULTS.codMaxLimit);
+    expect(invalidKeys).toEqual([COMMERCE_SETTING_KEYS.codMaxLimit]);
+  });
+
   // The regression this parser exists to prevent: `parseInt('0') || DEFAULT`
   // turns a deliberately-zeroed setting back into the default, because `0` is
   // falsy. A flat fee of 0 (free delivery) is exactly the value an admin is

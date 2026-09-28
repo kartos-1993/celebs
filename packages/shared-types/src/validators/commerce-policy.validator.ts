@@ -81,15 +81,28 @@ export interface CommercePolicyParseResult {
  * an intent.
  */
 function readPolicyNumber(
-  raw: string | number | undefined,
+  raw: unknown,
   key: string,
   fallback: number,
   min: number,
   invalidKeys: string[],
 ): number {
-  if (raw === undefined) return fallback;
+  if (raw === undefined || raw === null) return fallback;
 
-  const parsed = typeof raw === 'number' ? raw : Number(raw.trim() === '' ? NaN : raw.trim());
+  // Accepts the raw stored string, or the already-parsed number the settings
+  // service produces for a `NUMBER` setting, so either payload shape works.
+  // Anything else is reported rather than coerced: this is the boundary with an
+  // untyped settings payload, and a number that arrives as something unexpected
+  // must not become a charge.
+  //
+  // A blank string is rejected explicitly because `Number('')` is `0`, not NaN —
+  // an empty setting must not silently mean a zero fee.
+  let parsed = Number.NaN;
+  if (typeof raw === 'number') {
+    parsed = raw;
+  } else if (typeof raw === 'string' && raw.trim() !== '') {
+    parsed = Number(raw.trim());
+  }
 
   if (!Number.isInteger(parsed) || parsed < min) {
     invalidKeys.push(key);
@@ -113,13 +126,9 @@ function isSettingArray(value: unknown): value is readonly CommercePolicySetting
  * so the commerce policy can share the settings table with unrelated groups.
  */
 export function parseCommercePolicy(
-  settings:
-    | readonly CommercePolicySetting[]
-    | Readonly<Record<string, string | number>>
-    | undefined
-    | null,
+  settings: readonly CommercePolicySetting[] | Readonly<Record<string, unknown>> | undefined | null,
 ): CommercePolicyParseResult {
-  const values: Readonly<Record<string, string | number>> = isSettingArray(settings)
+  const values: Readonly<Record<string, unknown>> = isSettingArray(settings)
     ? Object.fromEntries(
         settings
           .filter((setting): setting is CommercePolicySetting => Boolean(setting?.key))
