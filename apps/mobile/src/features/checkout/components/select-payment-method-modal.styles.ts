@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 
+import { BrandColor } from '@/constants/brand-colors';
 import { FontSize, FontWeight, Palette, Spacing } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
@@ -86,6 +87,6 @@ export const styles = StyleSheet.create({
   totalValue: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.black,
-    color: '#f95738',
+    color: BrandColor.pathao,
   },
 });

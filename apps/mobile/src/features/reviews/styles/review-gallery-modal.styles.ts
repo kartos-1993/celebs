@@ -7,7 +7,7 @@ const { width, height } = Dimensions.get('window');
 export const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: Palette.black ?? '#000000',
+    backgroundColor: Palette.black,
   },
   headerBar: {
     position: 'absolute',

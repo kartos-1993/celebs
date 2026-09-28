@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Banknote, ChevronRight, CreditCard } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { BrandColor } from '@/constants/brand-colors';
 import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
 export type PaymentMethodKey = 'CARD' | 'KHALTI' | 'ESEWA' | 'COD';
@@ -19,12 +20,12 @@ interface PaymentMethodCardProps {
 function MethodIcon({ methodKey }: { methodKey: PaymentMethodKey }) {
   const bg =
     methodKey === 'CARD'
-      ? '#0284c7'
+      ? BrandColor.esewaCard
       : methodKey === 'KHALTI'
-        ? '#5c2d91'
+        ? BrandColor.khalti
         : methodKey === 'ESEWA'
-          ? '#60bb46'
-          : '#0ea5e9';
+          ? BrandColor.esewa
+          : BrandColor.cod;
   return (
     <View style={[styles.iconWrap, { backgroundColor: bg }]}>
       {methodKey === 'CARD' && <CreditCard size={18} color={Palette.white} />}
@@ -62,8 +63,13 @@ export function PaymentMethodCard({
         <View style={styles.cardBadges}>
           <ThemedText style={styles.visaText}>VISA</ThemedText>
           <View style={styles.mcCircles}>
-            <View style={[styles.mcCircle, { backgroundColor: '#eb001b' }]} />
-            <View style={[styles.mcCircle, { backgroundColor: '#f79e1b', marginLeft: -4 }]} />
+            <View style={[styles.mcCircle, { backgroundColor: BrandColor.mastercardRed }]} />
+            <View
+              style={[
+                styles.mcCircle,
+                { backgroundColor: BrandColor.mastercardAmber, marginLeft: -4 },
+              ]}
+            />
           </View>
         </View>
       )}
@@ -106,7 +112,7 @@ const styles = StyleSheet.create({
   visaText: {
     fontSize: FontSize.caption,
     fontWeight: FontWeight.black,
-    color: '#1a1f71',
+    color: BrandColor.visa,
     fontStyle: 'italic',
   },
   mcCircles: { flexDirection: 'row', alignItems: 'center' },

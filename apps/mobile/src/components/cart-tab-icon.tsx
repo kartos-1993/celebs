@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ShoppingCart } from 'lucide-react-native';
 
+import { BrandColor } from '@/constants/brand-colors';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#FF3B30',
+    backgroundColor: BrandColor.iosSystemRed,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,

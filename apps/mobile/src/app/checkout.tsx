@@ -134,7 +134,7 @@ export default function CheckoutScreen() {
               marginTop: 12,
               padding: 12,
               borderRadius: 12,
-              backgroundColor: '#FEF2F2',
+              backgroundColor: Palette.dangerTint,
             }}
           >
             <AlertTriangle size={18} color={Palette.danger} />

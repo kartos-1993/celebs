@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 
 /**
  * SHEIN-style transient toast: a semi-transparent dark pill floating near the
@@ -41,7 +41,7 @@ export const toastStyles = StyleSheet.create({
     elevation: 6,
   },
   message: {
-    color: '#FFFFFF',
+    color: Palette.white,
     fontSize: 13,
     fontWeight: '500',
     flexShrink: 1,

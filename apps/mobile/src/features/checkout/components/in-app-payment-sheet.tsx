@@ -5,6 +5,7 @@ import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { BrandColor } from '@/constants/brand-colors';
 import { FontSize, FontWeight, Palette, Spacing } from '@/constants/theme';
 
 /** 44pt-min touch target for the icon-only close button. */
@@ -110,7 +111,7 @@ export function InAppPaymentSheet({
                 <View style={styles.loadingOverlay}>
                   {/* #f95738 is the gateway brand colour; no Palette token
                       carries that exact value, so it stays a literal. */}
-                  <ActivityIndicator size="large" color="#f95738" />
+                  <ActivityIndicator size="large" color={BrandColor.pathao} />
                   <ThemedText style={styles.loadingText}>Loading payment gateway...</ThemedText>
                 </View>
               )}

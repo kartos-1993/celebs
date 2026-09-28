@@ -13,10 +13,10 @@ export const FALLBACK_COLOR_OPTIONS = [
   { name: 'Blue', code: '#2563eb' },
   { name: 'Light Wash', code: '#93c5fd' },
   { name: 'Dark Wash', code: '#1e3a8a' },
-  { name: 'Black', code: '#18181b' },
+  { name: 'Black', code: Palette.gray900 },
   { name: 'Grey', code: '#71717a' },
   { name: 'Beige', code: '#d4b996' },
-  { name: 'White', code: '#ffffff' },
+  { name: 'White', code: Palette.white },
   { name: 'Multicolor', code: 'gradient' },
 ];
 

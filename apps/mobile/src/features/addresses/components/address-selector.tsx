@@ -3,9 +3,11 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Check, Pencil, Plus } from 'lucide-react-native';
 
 import type { SavedAddress } from '../types';
+
 import { styles } from './address-selector.styles';
 
 import { ThemedText } from '@/components/themed-text';
+import { Palette } from '@/constants/theme';
 
 interface AddressSelectorProps {
   addresses: SavedAddress[];
@@ -46,7 +48,7 @@ export function AddressSelector({
               accessibilityState={{ selected: isSelected }}
             >
               <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
-                {isSelected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+                {isSelected && <Check size={12} color={Palette.white} strokeWidth={3} />}
               </View>
               <View style={styles.infoGroup}>
                 <View style={styles.chipRow}>
@@ -74,7 +76,7 @@ export function AddressSelector({
               accessibilityRole="button"
               accessibilityLabel={`Edit ${address.label} address`}
             >
-              <Pencil size={14} color="#4B5563" />
+              <Pencil size={14} color={Palette.gray600} />
               <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -88,7 +90,7 @@ export function AddressSelector({
         accessibilityRole="button"
         accessibilityLabel="Add new address"
       >
-        <Plus size={16} color="#18181B" strokeWidth={2.4} />
+        <Plus size={16} color={Palette.gray900} strokeWidth={2.4} />
         <ThemedText style={styles.addRowText}>Add New Address</ThemedText>
       </TouchableOpacity>
     </View>
