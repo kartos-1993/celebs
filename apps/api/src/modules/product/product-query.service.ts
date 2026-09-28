@@ -17,7 +17,6 @@ import { ProductRepository, productRepository } from './repositories/product.rep
 import { PRODUCT_FEED_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { decodeProductCursor, encodeProductCursor } from './utils/product-cursor';
 import { calculateProductQCScore } from './utils/product-qc';
-import { formatProductResponse } from './product.presenter';
 import {
   PRODUCT_DETAIL_TTL_SECONDS,
   PRODUCT_LIST_TTL_SECONDS,
@@ -27,12 +26,13 @@ import {
   signListQuery,
   writeCachedJson,
 } from './product-cache';
+import { formatProductResponse } from './product-format';
 import {
   formatAdminDetail,
   formatAdminProductListItem,
   formatStorefrontCard,
   formatStorefrontDetail,
-} from './product-presenters';
+} from './product-response-shapes';
 
 import type { Actor } from '@/common/context/actor-context';
 import { isPlatformActor } from '@/common/context/actor-context';

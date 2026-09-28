@@ -16,9 +16,9 @@ import {
   type PublishFloorInput,
   sumVariantStock,
 } from './utils/product-qc';
-import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import { isVisibilityFlip, purgeProduct, purgeProductLists } from './product-cache';
+import { formatProductResponse } from './product-format';
 
 import { enqueueMail } from '@/common/services/mail.queue';
 import { invalidateCacheKey } from '@/common/services/redis-cache.service';

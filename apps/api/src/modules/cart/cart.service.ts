@@ -4,7 +4,7 @@ import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-t
 import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
-import { resolveCover } from '../product/product-presenters';
+import { resolveCover } from '../product/utils/product-image.util';
 
 import { cartRepository } from './cart.repository';
 
@@ -100,7 +100,7 @@ export class CartService {
       const discountedPrice = rawDiscounted && rawDiscounted < rawPrice ? rawDiscounted : undefined;
 
       // Canonical product cover, from the SINGLE process-wide resolver
-      // (`product/product-presenters.resolveCover`):
+      // (`product/utils/product-image.util.resolveCover`):
       //
       //   cover = mainImages[0] ?? first colour variant's first image
       //

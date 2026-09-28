@@ -1,10 +1,10 @@
-import { resolveCover } from '../../product/product-presenters';
+import { resolveCover } from '../../product/utils/product-image.util';
 
 /**
  * Resolves the product image an order email / order confirmation renders.
  *
  * DELEGATES to the single canonical cover resolver
- * (`product/product-presenters.resolveCover`) instead of re-deriving an
+ * (`product/utils/product-image.util.resolveCover`) instead of re-deriving an
  * ordering here:
  *
  *   cover = mainImages[0] ?? first-colour-gallery-image

@@ -8,8 +8,8 @@ import {
   PLATFORM_VENDOR_NAME,
 } from '@/common/constants/platform-vendor';
 import prisma from '@/config/db.prisma';
-import { formatProductResponse } from '@/modules/product/product.presenter';
 import { ProductService } from '@/modules/product/product.service';
+import { formatProductResponse } from '@/modules/product/product-format';
 import { isCrossStoreProductEdit } from '@/modules/product/utils/product-audit';
 
 vi.mock('@/mailers/mailer', () => ({

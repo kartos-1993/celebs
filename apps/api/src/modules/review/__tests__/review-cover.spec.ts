@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
-import { resolveCover } from '@/modules/product/product-presenters';
+import { resolveCover } from '@/modules/product/utils/product-image.util';
 import { reviewRepository } from '@/modules/review/review.repository';
 
 /**

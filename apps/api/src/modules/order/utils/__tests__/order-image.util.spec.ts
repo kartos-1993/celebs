@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveCover } from '../../../product/product-presenters';
+import { resolveCover } from '../../../product/utils/product-image.util';
 import { resolveOrderItemImageUrl } from '../order-image.util';
 
 /**

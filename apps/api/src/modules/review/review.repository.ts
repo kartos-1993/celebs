@@ -3,7 +3,7 @@ import { Prisma, ReviewFitRating, ReviewStatus } from '@prisma/client';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import prisma from '@/config/db.prisma';
-import { resolveCover } from '@/modules/product/product-presenters';
+import { resolveCover } from '@/modules/product/utils/product-image.util';
 
 export interface CreateReviewData {
   userId: string;
@@ -447,7 +447,7 @@ export class ReviewRepository {
       // to read `mainImages?.[0] ?? ''` while the `select` above never loaded
       // `colorVariants`, so the canonical fallback was not even reachable and a
       // gallery-only product got a blank tile instead of its real picture.
-      // Delegated rather than mirrored — see `product-presenters.resolveCover`.
+      // Delegated rather than mirrored — see `product-image.util.resolveCover`.
       productImage:
         resolveCover(item.inventory?.product?.mainImages, item.inventory?.product?.colorVariants) ??
         '',

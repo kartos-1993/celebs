@@ -1,7 +1,7 @@
 // Pins UNIFIED formatProductResponse output on shared fixtures (the fix).
 import { describe, expect, it } from 'vitest';
 
-import { formatProductResponse } from '../product.presenter';
+import { formatProductResponse } from '../product-format';
 
 import {
   baseRow,

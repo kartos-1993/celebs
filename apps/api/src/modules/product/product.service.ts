@@ -28,7 +28,6 @@ import {
   type PublishFloorInput,
   sumVariantStock,
 } from './utils/product-qc';
-import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import {
   isVisibilityFlip,
@@ -36,6 +35,7 @@ import {
   purgeProductHome,
   purgeProductLists,
 } from './product-cache';
+import { formatProductResponse } from './product-format';
 import { ProductLifecycleService } from './product-lifecycle.service';
 import { buildProductCreateData, buildProductUpdateData } from './product-payloads';
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';

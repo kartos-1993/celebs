@@ -3,13 +3,13 @@
 // formatAdminDetail) on the SAME fixtures as the base layer (the fix).
 import { describe, expect, it } from 'vitest';
 
-import { formatProductResponse } from '../product.presenter';
+import { formatProductResponse } from '../product-format';
 import {
   formatAdminDetail,
   formatAdminProductListItem,
   formatStorefrontCard,
   formatStorefrontDetail,
-} from '../product-presenters';
+} from '../product-response-shapes';
 
 import {
   adminSkuRow,

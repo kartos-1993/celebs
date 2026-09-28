@@ -12,6 +12,8 @@ import {
 } from '@celebs/shared-types';
 import { buildVariantKey, isPlaceholderVariant, validDiscount } from '@celebs/shared-utils';
 
+import { resolveCover } from './utils/product-image.util';
+
 type PriceRange = { min: number; max: number };
 
 // Every `discountedPrice` emitted below goes through the shared `validDiscount`
@@ -95,39 +97,6 @@ function resolvePriceRange(
   const max = Math.max(...list.map((s) => s.price));
   const cheapest = list.find((s) => (s.discountedPrice ?? s.price) === min);
   return { range: { min, max }, minDiscounted: cheapest?.discountedPrice };
-}
-
-/**
- * COVER ORDER (canonical contract — client implements the same):
- * cover = mainImages[0] ?? first-color-gallery-image.
- * Every card/admin/detail cover site resolves through this one function with
- * the RAW (pre-strip) colorVariants so stripping never changes the cover.
- *
- * EXPORTED because it is the process-wide single cover resolver: out-of-module
- * product renderers (e.g. `order/utils/order-image.util.ts`, which backs order
- * emails and confirmations) delegate here instead of re-deriving a precedence
- * that can then drift from the storefront's. A mirrored copy is not an
- * equivalent — the whole point is that there is exactly one ordering.
- */
-export function resolveCover(mainImages: unknown, colorVariants: unknown): string | undefined {
-  if (Array.isArray(mainImages)) {
-    const first = mainImages.find(
-      (item): item is string => typeof item === 'string' && item.trim().length > 0,
-    );
-    if (first) return first.trim();
-  }
-  if (Array.isArray(colorVariants)) {
-    for (const variant of colorVariants) {
-      const images = (variant as Record<string, unknown> | null)?.images;
-      if (Array.isArray(images)) {
-        const first = images.find(
-          (item): item is string => typeof item === 'string' && item.trim().length > 0,
-        );
-        if (first) return first.trim();
-      }
-    }
-  }
-  return undefined;
 }
 
 function resolveStockTotal(skus: unknown, colorVariants?: unknown): number {

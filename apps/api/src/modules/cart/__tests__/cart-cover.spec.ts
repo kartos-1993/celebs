@@ -2,14 +2,14 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import prisma from '@/config/db.prisma';
 import { CartService } from '@/modules/cart/cart.service';
-import { resolveCover } from '@/modules/product/product-presenters';
+import { resolveCover } from '@/modules/product/utils/product-image.util';
 
 /**
  * A cart row must show the SAME picture as the storefront card, the PDP, the
  * admin list and the order email for that product.
  *
  * The canonical order is owned by exactly one function,
- * `product/product-presenters.resolveCover`:
+ * `product/utils/product-image.util.resolveCover`:
  *
  *   cover = mainImages[0] ?? first colour variant's first image
  *
