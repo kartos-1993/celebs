@@ -188,6 +188,11 @@ export class AuthService {
 
     await storeLifecycle.assertSellerLoginAllowed(updatedUser);
 
+    // The identity layer caches `isEmailVerified`, and this flow issues a brand
+    // new token pair immediately. Without dropping the cached principal, the
+    // first request on that new token would still read `isEmailVerified: false`.
+    await authCache.invalidateUser(updatedUser.id);
+
     logger.info({ userId: updatedUser.id }, 'Creating session after email verification');
     const userAgent = 'Email Verification Auto-Login';
     const jti = randomUUID();

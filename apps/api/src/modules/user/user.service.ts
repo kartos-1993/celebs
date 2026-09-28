@@ -8,6 +8,7 @@ import { NotFoundException } from '@celebs/shared-utils';
 
 import { type UserRepository, userRepository } from './user.repository';
 
+import { authCache } from '@/common/cache/auth-cache';
 import { hashValue } from '@/common/utils/bcrypt';
 
 export interface UserServiceDeps {
@@ -66,10 +67,16 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return this.userRepo.updateUserRoleAndPermissions(id, {
+    const updated = await this.userRepo.updateUserRoleAndPermissions(id, {
       role: (data.role as Role) !== undefined ? (data.role as Role) : user.role,
       permissions: data.permissions !== undefined ? data.permissions : user.permissions,
     });
+
+    // The identity layer serves `role`/`permissions` from a 30s cache, so a
+    // promotion would otherwise keep the old authority until the TTL expired.
+    await authCache.invalidateUser(id);
+
+    return updated;
   }
 }
 
