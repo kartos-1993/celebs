@@ -11,19 +11,6 @@ import { cartRepository } from './cart.repository';
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
 
-/**
- * The cart line exactly as this service emits it: the shared
- * `CartItemHydrated` plus the canonical `cover` the line now carries, so a
- * client can render the row's picture without a second product lookup.
- *
- * `CartItemHydrated` does not declare `cover` yet — the field is purely
- * additive and belongs on the shared contract; declaring the intersection here
- * keeps the emitted payload honest (the key is on the wire) instead of silently
- * dropping it. Once the shared type gains the optional field this collapses
- * back to `CartItemHydrated` with no other change.
- */
-type HydratedCartLine = CartItemHydrated & { cover?: string };
-
 export class CartService {
   /**
    * Helper to resolve or create a Cart record in PostgreSQL
@@ -89,7 +76,7 @@ export class CartService {
     let itemCount = 0;
     let hasStockIssues = false;
 
-    const hydratedItems: HydratedCartLine[] = cartWithItems.items.map((item) => {
+    const hydratedItems: CartItemHydrated[] = cartWithItems.items.map((item) => {
       const product = item.inventory.product;
       const availableStock = item.inventory.quantity - item.inventory.reservedQuantity;
       const isAvailable = availableStock > 0 && availableStock >= item.quantity;
@@ -144,8 +131,9 @@ export class CartService {
         discountedPrice,
         colorVariantName: item.inventory.colorVariantName,
         colorCode: '#000000',
-        // The legacy `image` snapshot and the new `cover` are the same value:
-        // one canonical cover, never two orderings on the same line.
+        // `cover` is the canonical field; `image` carries the same value for
+        // clients that read that name, so one line can never show two
+        // different orderings.
         image: cover ?? '',
         cover,
         size: item.inventory.size,
