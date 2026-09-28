@@ -48,6 +48,18 @@ const _UPLOAD_TIMEOUT_MS = 120_000;
  * object under their legacy names so call sites outside this feature's owned
  * file set keep compiling; both names therefore resolve to ONE identity.
  */
+/**
+ * Stable query-key fragment for `dataSource.params`. The render schema hands
+ * params over as an inline object, so keying a query on the object identity
+ * would re-key the cache on every render; serialising with sorted keys makes
+ * one logical param set always produce one key.
+ */
+export function serializeQueryParams(params?: Record<string, unknown>): string {
+  if (!params) return '';
+  const entries = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(Object.fromEntries(entries));
+}
+
 export const PRODUCT_QUERY_KEYS = {
   all: ['products'] as const,
   lists: () => [...PRODUCT_QUERY_KEYS.all, 'list'] as const,
@@ -61,8 +73,13 @@ export const PRODUCT_QUERY_KEYS = {
   categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
   categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
   categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
-  variantAxes: (path: string, paramsKey: string) =>
-    [...PRODUCT_QUERY_KEYS.all, 'variant-axes', path, paramsKey] as const,
+  // Serialises `params` itself rather than taking a pre-serialised string: the
+  // render schema hands `params` over as an inline object, so React Query would
+  // see a new identity every render and re-key the cache each time. Serialising
+  // inside the factory keeps the key value-stable while leaving the caller
+  // passing the value the rule can verify is represented.
+  variantAxes: (path: string, params?: Record<string, unknown>) =>
+    [...PRODUCT_QUERY_KEYS.all, 'variant-axes', path, serializeQueryParams(params)] as const,
   schemaAll: ['product-schema'] as const,
   schemaRender: (catId: string, productId?: string) =>
     [...PRODUCT_QUERY_KEYS.schemaAll, 'render', catId, productId ?? 'new'] as const,

@@ -31,7 +31,7 @@ const DATA_SOURCE = {
   labels: { Color: { Red: 'Red', Blue: 'Blue' } },
 } as unknown as VariantDataSource;
 
-const AXES_KEY = PRODUCT_QUERY_KEYS.variantAxes(AXES_PATH, JSON.stringify({ productId: 'p1' }));
+const AXES_KEY = PRODUCT_QUERY_KEYS.variantAxes(AXES_PATH, { productId: 'p1' });
 
 let setPrice: ((value: number) => void) | null = null;
 let getPrice: (() => unknown) | null = null;

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PRODUCT_QUERY_KEYS } from '../../../api';
-import { serializeQueryParams } from '../use-sku-table';
+import { PRODUCT_QUERY_KEYS, serializeQueryParams } from '../../../api';
 
 /**
  * The variant-axis read is keyed off `dataSource`, whose `params` arrive as an
@@ -28,10 +27,12 @@ describe('variant-axis query key', () => {
   });
 
   it('comes from the centralised factory and stays stable across renders', () => {
-    const first = PRODUCT_QUERY_KEYS.variantAxes('/option-sets/9', '{"catId":"c1"}');
-    const second = PRODUCT_QUERY_KEYS.variantAxes('/option-sets/9', '{"catId":"c1"}');
+    // The caller passes the object; the factory serialises, so a fresh object
+    // literal on every render still yields one stable key.
+    const first = PRODUCT_QUERY_KEYS.variantAxes('/option-sets/9', { catId: 'c1' });
+    const second = PRODUCT_QUERY_KEYS.variantAxes('/option-sets/9', { catId: 'c1' });
     expect(first).toEqual(second);
     expect(first).toEqual(['products', 'variant-axes', '/option-sets/9', '{"catId":"c1"}']);
-    expect(PRODUCT_QUERY_KEYS.variantAxes('/option-sets/9', '{"catId":"c2"}')).not.toEqual(first);
+    expect(PRODUCT_QUERY_KEYS.variantAxes('/option-sets/9', { catId: 'c2' })).not.toEqual(first);
   });
 });

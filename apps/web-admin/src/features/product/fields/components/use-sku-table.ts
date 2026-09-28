@@ -40,18 +40,6 @@ function resolveStoreCode(auth: {
  */
 export const VARIANT_AXES_STALE_TIME_MS = 2 * 60 * 1000;
 
-/**
- * Stable query-key fragment for `dataSource.params`. The render schema hands
- * the params over as an inline object, so keying the query on the object
- * identity would re-key the cache on every render; serialising with sorted
- * keys makes one logical param set always produce one key.
- */
-export function serializeQueryParams(params?: Record<string, unknown>): string {
-  if (!params) return '';
-  const entries = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
-  return JSON.stringify(Object.fromEntries(entries));
-}
-
 function useVariantAxes(formControl: Control, dataSource?: VariantDataSource): VariantSelection[] {
   const staticVariants = dataSource?.variants;
   const staticVariantMeta = React.useMemo(
@@ -62,13 +50,9 @@ function useVariantAxes(formControl: Control, dataSource?: VariantDataSource): V
 
   const fetchPath = typeof dataSource?.fetch === 'string' ? dataSource.fetch : undefined;
   const params = dataSource?.params;
-  const paramsKey = serializeQueryParams(params);
 
-  // `params` reaches the key as its serialised form on purpose: the render
-  // schema hands it over as an inline object, so keying on the object itself
-  // would re-key the cache on every render. The serialisation is value-stable.
   const { data: asyncVariantMeta } = useQuery<VariantMetaItem[]>({
-    queryKey: PRODUCT_QUERY_KEYS.variantAxes(fetchPath ?? '', paramsKey),
+    queryKey: PRODUCT_QUERY_KEYS.variantAxes(fetchPath ?? '', params),
     // Envelope validation lives in `parseVariantAxesResponse` (AGENTS.md §8):
     // a malformed payload throws there and surfaces as a query error instead
     // of silently rendering no axes.
