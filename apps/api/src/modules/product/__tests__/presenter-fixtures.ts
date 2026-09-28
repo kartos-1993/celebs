@@ -59,6 +59,25 @@ export function legacySwatchRow(): Record<string, unknown> {
   });
 }
 
+// Legacy gallery that still carries the swatch as its first photo — the only
+// shape the leading-swatch-duplicate strip ever fires on. The storefront
+// shapes hide the duplicate; the admin detail must NOT, because the edit form
+// posts `colorVariants` straight back and a strip there deletes a stored image.
+export function leadingSwatchDupeRow(): Record<string, unknown> {
+  return baseRow({
+    mainImages: [],
+    colorVariants: [
+      {
+        name: 'Red',
+        colorCode: '#ff0000',
+        swatch: 'sw-red.jpg',
+        images: ['sw-red.jpg', 'red-1.jpg', 'red-2.jpg'],
+        stocks: [{ size: 'M', quantity: 4 }],
+      },
+    ],
+  });
+}
+
 export function legacyNoSwatchRow(): Record<string, unknown> {
   return baseRow({
     colorVariants: [{ name: 'Red', images: ['red-1.jpg'] }],
@@ -152,4 +171,42 @@ export function sizesFallbackRow(): Record<string, unknown> {
 
 export function noCoverRow(): Record<string, unknown> {
   return baseRow({ mainImages: [], colorVariants: [] });
+}
+
+// Size-only carrier: one gallery, three sizes, NO colour axis. The single
+// `Default` entry is storage plumbing (the inventory matrix and the publish
+// floor depend on it) and must never reach a client as a colour.
+export function carrierOnlyRow(): Record<string, unknown> {
+  return baseRow({
+    colorVariants: [
+      {
+        name: 'Default',
+        colorCode: '#000000',
+        images: ['cover.jpg', 'jacket-2.jpg'],
+        stocks: [{ size: 'M', quantity: 3 }],
+      },
+    ],
+  });
+}
+
+// A REAL colour axis that still stores the carrier alongside it — the shape a
+// product passes through while it gains its first colour. The carrier must be
+// dropped without taking the real colour (or the declared axis) with it.
+export function carrierPlusColorRow(): Record<string, unknown> {
+  return baseRow({
+    colorVariants: [
+      {
+        name: 'Default',
+        colorCode: '#000000',
+        images: ['cover.jpg'],
+        stocks: [{ size: 'M', quantity: 3 }],
+      },
+      {
+        name: 'Red',
+        colorCode: '#ff0000',
+        images: ['red-1.jpg'],
+        stocks: [{ size: 'M', quantity: 1 }],
+      },
+    ],
+  });
 }

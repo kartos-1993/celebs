@@ -102,8 +102,14 @@ function resolvePriceRange(
  * cover = mainImages[0] ?? first-color-gallery-image.
  * Every card/admin/detail cover site resolves through this one function with
  * the RAW (pre-strip) colorVariants so stripping never changes the cover.
+ *
+ * EXPORTED because it is the process-wide single cover resolver: out-of-module
+ * product renderers (e.g. `order/utils/order-image.util.ts`, which backs order
+ * emails and confirmations) delegate here instead of re-deriving a precedence
+ * that can then drift from the storefront's. A mirrored copy is not an
+ * equivalent — the whole point is that there is exactly one ordering.
  */
-function resolveCover(mainImages: unknown, colorVariants: unknown): string | undefined {
+export function resolveCover(mainImages: unknown, colorVariants: unknown): string | undefined {
   if (Array.isArray(mainImages)) {
     const first = mainImages.find(
       (item): item is string => typeof item === 'string' && item.trim().length > 0,
@@ -340,12 +346,12 @@ function adminSkuStock(quantity: unknown): number {
 function matchInventorySku(
   rawSkus: Array<Record<string, unknown>>,
   expectedKey: string,
-  isColorDummy: boolean,
-  isSizeDummy: boolean,
+  isPlaceholderColor: boolean,
+  isPlaceholderSize: boolean,
 ): Record<string, unknown> | undefined {
   return rawSkus.find((s) => {
     if (!s.selectedOptions || typeof s.selectedOptions !== 'object') {
-      return isColorDummy && isSizeDummy;
+      return isPlaceholderColor && isPlaceholderSize;
     }
     const optValues = Object.values(s.selectedOptions as Record<string, unknown>).map(String);
     return buildVariantKey(optValues) === expectedKey;
@@ -360,17 +366,17 @@ function buildInventorySku(
 ): Record<string, unknown> {
   const color = str(inv.colorVariantName);
   const size = str(inv.size);
-  const isColorDummy = isPlaceholderVariant(color);
-  const isSizeDummy = isPlaceholderVariant(size);
+  const isPlaceholderColor = isPlaceholderVariant(color);
+  const isPlaceholderSize = isPlaceholderVariant(size);
   const matched = matchInventorySku(
     rawSkus,
     buildVariantKey([color, size]),
-    isColorDummy,
-    isSizeDummy,
+    isPlaceholderColor,
+    isPlaceholderSize,
   );
   const selectedOptions: Record<string, string> = {};
-  if (!isColorDummy) selectedOptions['Color'] = color;
-  if (!isSizeDummy) selectedOptions['Size'] = size;
+  if (!isPlaceholderColor) selectedOptions['Color'] = color;
+  if (!isPlaceholderSize) selectedOptions['Size'] = size;
   const skuPrice = adminSkuPrice(matched);
   const invDefault = typeof inv.isDefault === 'boolean' ? inv.isDefault : undefined;
   const clientDefault =
@@ -463,11 +469,18 @@ function resolveShippingAndWarranty(formatted: Record<string, unknown>) {
 export function formatAdminDetail(formatted: Record<string, unknown>): AdminProductDetail {
   const price = num(formatted.price);
   const colorVariantsRaw = Array.isArray(formatted.colorVariants) ? formatted.colorVariants : [];
-  // One strip rule everywhere: admin galleries strip the leading swatch dupe too.
-  const colorVariants = colorVariantsRaw.map((entry) => {
-    const variant = ((entry ?? {}) as Record<string, unknown>) ?? {};
-    return { ...variant, images: stripVariantImages(variant) };
-  });
+  // THE STRIP IS PRESENTATION-ONLY, AND ADMIN IS NOT A PRESENTATION SURFACE.
+  //
+  // `colorVariants` on the admin detail is an INPUT: the edit form hydrates it
+  // and POSTS it straight back. Stripping the leading swatch duplicate here
+  // therefore dropped one stored image from the saved gallery every round trip,
+  // permanently, with the seller having touched nothing. The strip stays where
+  // it belongs — the two storefront shapes (`formatStorefrontCard` /
+  // `formatStorefrontDetail`). Admin gets the stored array verbatim; the edit
+  // form performs the display strip on hydration and the payload builder puts
+  // the removed head back on save, so a save-without-touching-images is
+  // byte-identical.
+  const colorVariants = colorVariantsRaw.map((entry) => (entry ?? {}) as Record<string, unknown>);
   const mainImagesRaw = cleanStringArray(formatted.mainImages);
   const mainImages = mainImagesRaw.length > 0 ? mainImagesRaw : undefined;
 

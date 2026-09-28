@@ -4,11 +4,25 @@ import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-t
 import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
+import { resolveCover } from '../product/product-presenters';
 
 import { cartRepository } from './cart.repository';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
+
+/**
+ * The cart line exactly as this service emits it: the shared
+ * `CartItemHydrated` plus the canonical `cover` the line now carries, so a
+ * client can render the row's picture without a second product lookup.
+ *
+ * `CartItemHydrated` does not declare `cover` yet — the field is purely
+ * additive and belongs on the shared contract; declaring the intersection here
+ * keeps the emitted payload honest (the key is on the wire) instead of silently
+ * dropping it. Once the shared type gains the optional field this collapses
+ * back to `CartItemHydrated` with no other change.
+ */
+type HydratedCartLine = CartItemHydrated & { cover?: string };
 
 export class CartService {
   /**
@@ -75,7 +89,7 @@ export class CartService {
     let itemCount = 0;
     let hasStockIssues = false;
 
-    const hydratedItems: CartItemHydrated[] = cartWithItems.items.map((item) => {
+    const hydratedItems: HydratedCartLine[] = cartWithItems.items.map((item) => {
       const product = item.inventory.product;
       const availableStock = item.inventory.quantity - item.inventory.reservedQuantity;
       const isAvailable = availableStock > 0 && availableStock >= item.quantity;
@@ -98,16 +112,19 @@ export class CartService {
       const price = rawDiscounted || rawPrice;
       const discountedPrice = rawDiscounted && rawDiscounted < rawPrice ? rawDiscounted : undefined;
 
-      let variantImage = product?.mainImages?.[0] || '';
-      if (product && Array.isArray(product.colorVariants)) {
-        const variants = product.colorVariants as Array<{ name: string; images?: string[] }>;
-        const variant = variants.find(
-          (v) => v.name.toLowerCase() === item.inventory.colorVariantName.toLowerCase(),
-        );
-        if (variant && variant.images && variant.images.length > 0 && variant.images[0]) {
-          variantImage = variant.images[0];
-        }
-      }
+      // Canonical product cover, from the SINGLE process-wide resolver
+      // (`product/product-presenters.resolveCover`):
+      //
+      //   cover = mainImages[0] ?? first colour variant's first image
+      //
+      // This used to start at `mainImages[0]` and then OVERWRITE it with the
+      // line's own colour gallery — the exact inverse of the canonical order —
+      // so a cart row could show a different picture than the storefront card,
+      // the PDP, the admin list and the order email for the same product. The
+      // colour-specific override disagrees with the canonical order in every
+      // case where `mainImages` is non-empty, so it is deleted rather than kept
+      // as a second ordering that can drift again.
+      const cover = resolveCover(product?.mainImages, product?.colorVariants);
 
       if (isAvailable) {
         const priceDecimal = new Prisma.Decimal(price);
@@ -127,7 +144,10 @@ export class CartService {
         discountedPrice,
         colorVariantName: item.inventory.colorVariantName,
         colorCode: '#000000',
-        image: variantImage,
+        // The legacy `image` snapshot and the new `cover` are the same value:
+        // one canonical cover, never two orderings on the same line.
+        image: cover ?? '',
+        cover,
         size: item.inventory.size,
         quantity: item.quantity,
         availableStock: availableStock > 0 ? availableStock : 0,

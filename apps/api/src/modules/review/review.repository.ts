@@ -3,6 +3,7 @@ import { Prisma, ReviewFitRating, ReviewStatus } from '@prisma/client';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import prisma from '@/config/db.prisma';
+import { resolveCover } from '@/modules/product/product-presenters';
 
 export interface CreateReviewData {
   userId: string;
@@ -419,6 +420,11 @@ export class ReviewRepository {
                   name: true,
                   slug: true,
                   mainImages: true,
+                  // Loaded so the row's thumbnail can be resolved by the single
+                  // canonical cover resolver below. Without it a product that
+                  // has colour galleries but no `mainImages` renders a BLANK
+                  // "review this" tile while the storefront shows it fine.
+                  colorVariants: true,
                 },
               },
             },
@@ -436,7 +442,15 @@ export class ReviewRepository {
       productId: item.inventory?.productId ?? '',
       productName: item.productName,
       productSlug: item.inventory?.product?.slug ?? '',
-      productImage: item.inventory?.product?.mainImages?.[0] ?? '',
+      // Same canonical cover the storefront card, the PDP and the order email
+      // render: `mainImages[0] ?? first colour variant's first image`. This used
+      // to read `mainImages?.[0] ?? ''` while the `select` above never loaded
+      // `colorVariants`, so the canonical fallback was not even reachable and a
+      // gallery-only product got a blank tile instead of its real picture.
+      // Delegated rather than mirrored — see `product-presenters.resolveCover`.
+      productImage:
+        resolveCover(item.inventory?.product?.mainImages, item.inventory?.product?.colorVariants) ??
+        '',
       colorVariantName: item.colorVariantName,
       size: item.size,
       quantity: item.quantity,

@@ -8,6 +8,7 @@ import {
   generateRetailSku,
   HTTPSTATUS,
   logger,
+  PRODUCT_CARRIER_VARIANT,
 } from '@celebs/shared-utils';
 
 import prisma, { Prisma } from '@/config/db.prisma';
@@ -15,6 +16,79 @@ import prisma, { Prisma } from '@/config/db.prisma';
 export interface DecrementResult {
   id: string;
   quantity: number;
+}
+
+interface SkuLike {
+  skuCode?: string;
+  selectedOptions?: Record<string, unknown>;
+  stock?: number;
+  isDefault?: boolean;
+}
+
+interface VariantLike {
+  name?: string;
+  stocks?: Array<{ size?: string; quantity?: number }>;
+}
+
+/**
+ * Size axis of a colourless SKU: its `Size` option, or the carrier name when the
+ * SKU carries no size at all. Kept lenient (`size`/`Size`/`SIZE`) because the
+ * option key is authored by the dynamic form.
+ */
+function carrierSizeOf(selectedOptions: Record<string, unknown> | undefined): string {
+  if (!selectedOptions || typeof selectedOptions !== 'object') return PRODUCT_CARRIER_VARIANT;
+  for (const [key, value] of Object.entries(selectedOptions)) {
+    if (!/size/i.test(key)) continue;
+    const size = value == null ? '' : String(value).trim();
+    if (size) return size;
+  }
+  return PRODUCT_CARRIER_VARIANT;
+}
+
+/**
+ * A product with NO colour axis still owns inventory: it needs one row per size,
+ * under the carrier name. `buildVariantKey` strips the carrier segment, so those
+ * rows bind to the size-only SKUs exactly like a colour row binds to a
+ * color+size SKU — and every downstream guard (duplicate-SKU, published
+ * removal lock, SKU immutability, orphan prune, sort order) then applies
+ * unchanged because the rows are built by the same loop.
+ */
+function carrierVariantFromSkus(skus?: SkuLike[]): VariantLike[] | undefined {
+  if (!Array.isArray(skus) || skus.length === 0) return undefined;
+  const stocks: Array<{ size: string; quantity: number }> = [];
+  for (const sku of skus) {
+    stocks.push({ size: carrierSizeOf(sku?.selectedOptions), quantity: Number(sku?.stock) || 0 });
+  }
+  return [{ name: PRODUCT_CARRIER_VARIANT, stocks }];
+}
+
+/** Canonical option values of a SKU, or none when it carries no options. */
+function optionValues(sku: SkuLike): string[] {
+  const options = sku.selectedOptions;
+  if (!options || typeof options !== 'object') return [];
+  return Object.values(options).map(String);
+}
+
+/** Canonical SKU lookup: every code, plus the fallback for a product with one SKU. */
+function buildSkuIndex(skus?: SkuLike[]): {
+  skuMap: Map<string, string>;
+  singleFallbackSku: string | undefined;
+} {
+  const skuMap = new Map<string, string>();
+  let singleFallbackSku: string | undefined;
+  if (!Array.isArray(skus)) return { skuMap, singleFallbackSku };
+
+  for (const s of skus) {
+    const code = s?.skuCode?.trim();
+    if (!code) continue;
+
+    if (!singleFallbackSku || s.isDefault) {
+      singleFallbackSku = code;
+    }
+
+    skuMap.set(buildVariantKey(optionValues(s)), code);
+  }
+  return { skuMap, singleFallbackSku };
 }
 
 export class InventoryRepository {
@@ -100,6 +174,9 @@ export class InventoryRepository {
 
   /**
    * Reconciles inventory rows with the product's current variant/size combos.
+   *
+   * A colourless product (no colour axis) is NOT skipped: its SKUs become one
+   * carrier-named row per size, so it keeps stock, `inStock` and checkout.
    * Batched: the loop below is memory-only (dedupe + SKU resolution); all writes
    * execute as set-based statements (createMany + one UPDATE + prune), so a
    * 3-color x 5-size matrix holds the pooled connection for ~4 round-trips
@@ -109,19 +186,18 @@ export class InventoryRepository {
   public async syncProductInventory(
     tx: Prisma.TransactionClient,
     productId: string,
-    colorVariants?: Array<{
-      name?: string;
-      stocks?: Array<{ size?: string; quantity?: number }>;
-    }>,
-    skus?: Array<{
-      skuCode?: string;
-      selectedOptions?: Record<string, unknown>;
-      isDefault?: boolean;
-    }>,
+    colorVariants?: VariantLike[],
+    skus?: SkuLike[],
     departmentHint?: string,
     options?: { isPublished?: boolean; styleSalt?: string },
   ): Promise<void> {
-    if (!colorVariants || !Array.isArray(colorVariants)) return;
+    if (!Array.isArray(colorVariants)) return;
+
+    // No colour axis → the carrier variant carries the size axis instead. A
+    // product with neither variants nor SKUs keeps the stored list (usually
+    // empty), which lands on the orphan-prune path exactly as before.
+    const effectiveVariants =
+      colorVariants.length > 0 ? colorVariants : (carrierVariantFromSkus(skus) ?? colorVariants);
 
     const seenVariantNames = new Map<string, number>();
 
@@ -132,33 +208,13 @@ export class InventoryRepository {
     // DIFFERENT raw `${lower}:::${lower}` template (Scheme B) that keeps
     // 'default' segments and is order-sensitive.
     // @todo-fix: unify on one canonical key builder.
-    const skuMap = new Map<string, string>();
-    let singleFallbackSku: string | undefined;
-
-    if (Array.isArray(skus)) {
-      for (const s of skus) {
-        if (!s?.skuCode) continue;
-        const code = s.skuCode.trim();
-        if (!code) continue;
-
-        if (!singleFallbackSku || s.isDefault) {
-          singleFallbackSku = code;
-        }
-
-        const options = s.selectedOptions;
-        const values =
-          options && typeof options === 'object' ? Object.values(options).map(String) : [];
-
-        const valueKey = buildVariantKey(values);
-        skuMap.set(valueKey, code);
-      }
-    }
+    const { skuMap, singleFallbackSku } = buildSkuIndex(skus);
 
     // Memory-only pass: dedupe combos + resolve SKUs, no I/O.
     const rows: Array<{ colorVariantName: string; size: string; sku: string; quantity: number }> =
       [];
-    for (const variant of colorVariants) {
-      const baseName = variant.name?.trim() || 'Default';
+    for (const variant of effectiveVariants) {
+      const baseName = variant.name?.trim() || PRODUCT_CARRIER_VARIANT;
       const count = seenVariantNames.get(baseName) || 0;
       seenVariantNames.set(baseName, count + 1);
       const colorVariantName = count > 0 ? `${baseName} (${count + 1})` : baseName;
@@ -168,7 +224,7 @@ export class InventoryRepository {
       const seenSizes = new Set<string>();
 
       for (const stockItem of variant.stocks) {
-        const size = stockItem.size?.trim() || 'Default';
+        const size = stockItem.size?.trim() || PRODUCT_CARRIER_VARIANT;
         const normSize = size.toLowerCase();
         if (seenSizes.has(normSize)) continue;
         seenSizes.add(normSize);

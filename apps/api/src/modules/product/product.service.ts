@@ -21,7 +21,13 @@ import { mediaRepository } from '../media/media.repository';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
-import { getColorImageBlockers, sumVariantStock } from './utils/product-qc';
+import {
+  COVER_PHOTO_BLOCKER,
+  getColorImageBlockers,
+  NO_STOCK_BLOCKER,
+  type PublishFloorInput,
+  sumVariantStock,
+} from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
 import {
@@ -187,7 +193,7 @@ export class ProductService {
     // Direct publish (publish-capable actors) must clear the same floor as
     // submit/review — otherwise zero-stock products bypass the strict rule.
     if (effectiveInput.status === PRODUCT_STATUS.PUBLISHED) {
-      this.assertPublishFloor(effectiveInput.colorVariants);
+      this.assertPublishFloor(effectiveInput);
     }
 
     const maxAttempts = 3;
@@ -307,7 +313,12 @@ export class ProductService {
     // be flipped straight to PUBLISHED with zero stock and no variant photos.
     // Runs after assertUpdateAuthorization so it sees the post-downgrade status.
     if (this.transitionsToPublished(product, updateData)) {
-      this.assertPublishFloor(updateData.colorVariants ?? product.colorVariants);
+      this.assertPublishFloor({
+        colorVariants: updateData.colorVariants ?? product.colorVariants,
+        dynamicData: updateData.dynamicData ?? product.dynamicData,
+        mainImages: updateData.mainImages ?? product.mainImages,
+        skus: updateData.skus ?? product.skus,
+      });
     }
 
     // Audit trail
@@ -565,21 +576,26 @@ export class ProductService {
 
   /**
    * Hard publish floor, shared by create and the draft→published update
-   * transition: every selected color needs a gallery photo, and at least one
-   * size somewhere must hold a positive quantity.
+   * transition: a product with a colour axis needs a gallery photo per real
+   * colour, a product WITHOUT one needs a cover photo instead, and somewhere
+   * must hold a positive quantity — read from the variant matrix or, for a
+   * colourless product, from its SKUs.
    */
-  private assertPublishFloor(colorVariants: unknown): void {
-    const blockers = [...getColorImageBlockers(colorVariants)];
-    const hasStock = sumVariantStock(colorVariants) > 0;
+  private assertPublishFloor(input: PublishFloorInput): void {
+    const blockers = [...getColorImageBlockers(input.colorVariants, input)];
+    const hasStock = sumVariantStock(input.colorVariants, input.skus) > 0;
     if (!hasStock) {
-      blockers.push('Add at least 1 unit in one size to publish.');
+      blockers.push(NO_STOCK_BLOCKER);
     }
 
     if (blockers.length > 0) {
       const message = blockers.join(' ');
       throw withDetails(
         new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST),
-        blockers.map((blocker) => ({ field: 'colorVariants', message: blocker })),
+        blockers.map((blocker) => ({
+          field: blocker === COVER_PHOTO_BLOCKER ? 'mainImages' : 'colorVariants',
+          message: blocker,
+        })),
       );
     }
   }

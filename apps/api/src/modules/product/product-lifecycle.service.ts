@@ -12,6 +12,8 @@ import { ProductRepository, productRepository } from './repositories/product.rep
 import {
   calculateProductQCScore,
   getColorImageBlockers,
+  NO_STOCK_BLOCKER,
+  type PublishFloorInput,
   sumVariantStock,
 } from './utils/product-qc';
 import { formatProductResponse } from './product.presenter';
@@ -63,7 +65,7 @@ export class ProductLifecycleService {
       );
     }
 
-    await this.assertPublishable(product.id, product.colorVariants);
+    await this.assertPublishable(product.id, product);
 
     const updated = await this.products.update(id, { status: PRODUCT_STATUS.PENDING_REVIEW });
 
@@ -105,7 +107,7 @@ export class ProductLifecycleService {
 
     const args = this.parseReviewArgs(actionOrPayload, reviewerIdArg, noteArg);
     if (args.action === 'approve') {
-      await this.assertPublishable(product.id, product.colorVariants);
+      await this.assertPublishable(product.id, product);
     }
     const qcResult = calculateProductQCScore(formatProductResponse(product));
 
@@ -131,20 +133,21 @@ export class ProductLifecycleService {
   }
 
   /**
-   * Strict publish floor: per-size 0 is fine, but all-zero stock or a color
-   * without photos stays out of review and out of the storefront. Live
-   * ProductInventory rows are authoritative when present, JSON otherwise.
+   * Strict publish floor: a colour axis needs a photo per colour, a colourless
+   * product needs a cover photo instead, and per-size 0 is fine but all-zero
+   * stock stays out of review and out of the storefront. Live ProductInventory
+   * rows are authoritative when present, JSON/SKU matrices otherwise.
    */
-  private async assertPublishable(productId: string, colorVariants: unknown): Promise<void> {
-    const blockers = [...getColorImageBlockers(colorVariants)];
+  private async assertPublishable(productId: string, product: PublishFloorInput): Promise<void> {
+    const blockers = [...getColorImageBlockers(product.colorVariants, product)];
 
     const liveRows = await this.inventoryRepository.findQuantitiesByProductId(productId);
     const total =
       liveRows.length > 0
         ? liveRows.reduce((sum, row) => sum + row.quantity, 0)
-        : sumVariantStock(colorVariants);
+        : sumVariantStock(product.colorVariants, product.skus);
     if (total <= 0) {
-      blockers.push('Add at least 1 unit in one size to publish.');
+      blockers.push(NO_STOCK_BLOCKER);
     }
 
     if (blockers.length > 0) {

@@ -5,6 +5,8 @@ import { formatProductResponse } from '../product.presenter';
 
 import {
   baseRow,
+  carrierOnlyRow,
+  carrierPlusColorRow,
   categoryObjectRow,
   dynamicSwatchRow,
   emptyStockRow,
@@ -80,6 +82,43 @@ describe('strict zod rules (read path, not validation)', () => {
     expect(base.categoryId).toBe('not-a-uuid');
     expect(base.category).toBeNull();
     expect(base.subcategory).toBeNull();
+  });
+});
+
+describe('the size-only carrier is plumbing, not a colour', () => {
+  it('emits no variant and declares the axis absent, instead of a "Default" colour', () => {
+    const base = present(carrierOnlyRow());
+
+    expect(base.colorVariants).toEqual([]);
+    expect(base.hasColorAxis).toBe(false);
+  });
+
+  it('still reports the stock the carrier row holds', () => {
+    // Stock is read before the carrier is dropped: this is the only place a
+    // colourless product's quantity is recorded.
+    expect(present(carrierOnlyRow()).inStock).toBe(true);
+  });
+
+  it('keeps a real colour and declares the axis present', () => {
+    const base = present(legacySwatchRow());
+
+    expect(base.hasColorAxis).toBe(true);
+    expect(firstVariant(base).name).toBe('Red');
+  });
+
+  it('drops the carrier beside a real colour, keeping the colour and the axis', () => {
+    // Mixed storage: the filter is per-variant, so one stored carrier must not
+    // cost a real colour its place (or flip the axis to absent).
+    const base = present(carrierPlusColorRow());
+
+    expect(base.hasColorAxis).toBe(true);
+    expect((base.colorVariants as Array<Record<string, unknown>>).map((v) => v.name)).toEqual([
+      'Red',
+    ]);
+  });
+
+  it('declares the axis absent for a product that stores no variant at all', () => {
+    expect(present(emptyStockRow()).hasColorAxis).toBe(false);
   });
 });
 

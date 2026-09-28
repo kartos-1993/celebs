@@ -21,6 +21,18 @@ export class CartRepository {
     });
   }
 
+  /**
+   * The hydrated cart line, with everything the canonical cover resolver needs.
+   *
+   * `cover` is DERIVED, not a column, so it cannot be projected here — but it
+   * cannot be derived upstream either unless both of its inputs are loaded.
+   * That is exactly what this `select` does: `mainImages` AND `colorVariants`
+   * travel together so `CartService.getCart` can hand both to the single
+   * process-wide resolver (`product/product-presenters.resolveCover`) and
+   * derive the line's `cover`. Dropping either column here silently
+   * downgrades every cover-less product to a blank tile; it is a single-query
+   * payload on a product already joined, not a second round trip.
+   */
   async findUniqueWithHydratedItems(where: Prisma.CartWhereUniqueInput) {
     return prisma.cart.findUnique({
       where,

@@ -1,11 +1,24 @@
-interface ColorVariantImage {
-  name?: string;
-  images?: string[];
-}
+import { resolveCover } from '../../product/product-presenters';
 
 /**
- * Resolves the exact product image matching the selected color variant,
- * gracefully falling back to the product's primary mainImages[0].
+ * Resolves the product image an order email / order confirmation renders.
+ *
+ * DELEGATES to the single canonical cover resolver
+ * (`product/product-presenters.resolveCover`) instead of re-deriving an
+ * ordering here:
+ *
+ *   cover = mainImages[0] ?? first-colour-gallery-image
+ *
+ * This used to prefer the SELECTED COLOUR's gallery over `mainImages[0]` — the
+ * exact inverse of the canonical rule — so any product carrying a shared cover
+ * shipped a different picture in the customer's order email and confirmation
+ * than the one the storefront card, PDP, and admin list showed. Delegating
+ * rather than mirroring is deliberate: a mirrored copy is a second ordering
+ * that can drift again, which is the defect this replaces.
+ *
+ * `colorVariantName` is still part of the accepted item shape because callers
+ * (`order/core/order.repository.ts`) pass whole Prisma rows; it no longer
+ * influences the answer, since the cover is a PRODUCT-level rendering.
  */
 export function resolveOrderItemImageUrl(item: {
   colorVariantName?: string | null;
@@ -20,20 +33,5 @@ export function resolveOrderItemImageUrl(item: {
   const product = item.inventory?.product;
   if (!product) return null;
 
-  const targetColor = item.colorVariantName || item.inventory?.colorVariantName;
-  if (targetColor && Array.isArray(product.colorVariants)) {
-    const variants = product.colorVariants as ColorVariantImage[];
-    const match = variants.find(
-      (v) => v.name?.trim().toLowerCase() === targetColor.trim().toLowerCase(),
-    );
-    if (match?.images && match.images.length > 0 && match.images[0]) {
-      return match.images[0];
-    }
-  }
-
-  if (product.mainImages && product.mainImages.length > 0 && product.mainImages[0]) {
-    return product.mainImages[0];
-  }
-
-  return null;
+  return resolveCover(product.mainImages, product.colorVariants) ?? null;
 }

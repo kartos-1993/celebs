@@ -1,8 +1,16 @@
 import { Prisma, type Product } from '@prisma/client';
 
-import { validDiscount } from '@celebs/shared-utils';
+import { isPlaceholderVariant, validDiscount } from '@celebs/shared-utils';
 
 import { HEX_COLOR_PATTERN, isFilledString } from './product-assets';
+
+type StorefrontColorVariant = {
+  name: string;
+  colorCode?: string;
+  swatch?: string;
+  images: string[];
+  stocks?: Array<{ size: string; quantity: number }>;
+};
 
 /**
  * Derives storefront color variants from dynamic-form color metadata
@@ -23,16 +31,10 @@ import { HEX_COLOR_PATTERN, isFilledString } from './product-assets';
  * would only be dead public surface.
  */
 const resolveStorefrontColorVariants = (
-  legacyVariants: unknown,
+  storedColorVariants: unknown,
   dynamicData: unknown,
   inventories?: unknown,
-): Array<{
-  name: string;
-  colorCode?: string;
-  swatch?: string;
-  images: string[];
-  stocks?: Array<{ size: string; quantity: number }>;
-}> => {
+): StorefrontColorVariant[] => {
   const dynamicDataObj =
     dynamicData && typeof dynamicData === 'object'
       ? (dynamicData as Record<string, unknown>)
@@ -40,8 +42,8 @@ const resolveStorefrontColorVariants = (
   const variantsRoot = dynamicDataObj?.variants as Record<string, unknown> | undefined;
   const colorMetaMap = variantsRoot?.colorMeta as Record<string, unknown> | undefined;
 
-  const legacyList = Array.isArray(legacyVariants)
-    ? (legacyVariants as Array<Record<string, unknown>>)
+  const storedColorVariantsList = Array.isArray(storedColorVariants)
+    ? (storedColorVariants as Array<Record<string, unknown>>)
     : [];
 
   // Build live inventory lookup map if Postgres ProductInventory records are loaded
@@ -82,7 +84,7 @@ const resolveStorefrontColorVariants = (
       .map(([key, meta]) => {
         const metaObj = meta as Record<string, unknown>;
         const name = isFilledString(metaObj.name) ? metaObj.name.trim() : key;
-        const matchingLegacy = legacyList.find(
+        const matchingStored = storedColorVariantsList.find(
           (l) => l.name === name || (typeof l.colorCode === 'string' && l.colorCode === key),
         );
         // Stored-data-only: images are exactly what was stored; the swatch is
@@ -92,8 +94,8 @@ const resolveStorefrontColorVariants = (
           : [];
         const initialStocks = Array.isArray(metaObj.stocks)
           ? (metaObj.stocks as Array<{ size: string; quantity: number }>)
-          : Array.isArray(matchingLegacy?.stocks)
-            ? (matchingLegacy.stocks as Array<{ size: string; quantity: number }>)
+          : Array.isArray(matchingStored?.stocks)
+            ? (matchingStored.stocks as Array<{ size: string; quantity: number }>)
             : [];
         const stocks = applyLiveStock(name, initialStocks);
 
@@ -109,8 +111,8 @@ const resolveStorefrontColorVariants = (
     if (derived.length > 0) return derived;
   }
 
-  if (legacyList.length > 0) {
-    return legacyList.map((variant) => {
+  if (storedColorVariantsList.length > 0) {
+    return storedColorVariantsList.map((variant) => {
       const images = Array.isArray(variant.images)
         ? (variant.images as unknown[]).filter(isFilledString)
         : [];
@@ -161,17 +163,26 @@ export const formatProductResponse = (
       ? (prod.brandRef as Record<string, unknown>)
       : null;
 
-  const colorVariants = resolveStorefrontColorVariants(
+  const resolvedVariants = resolveStorefrontColorVariants(
     prod.colorVariants,
     prod.dynamicData,
     prod.inventories,
   );
 
-  const hasPositiveStock = colorVariants.some(
+  // Stock is read BEFORE the carrier is dropped: a colourless product holds its
+  // quantity on the carrier row, and that is exactly the stock the storefront
+  // must see.
+  const hasPositiveStock = resolvedVariants.some(
     (cv) => Array.isArray(cv.stocks) && cv.stocks.some((stk) => (stk.quantity ?? 0) > 0),
   );
   // Safer default: untracked / no-stock products report false (mobile guards on this).
   const inStock = hasPositiveStock;
+
+  // CONTRACT: the size-only carrier is NOT a colour. It stays in storage (the
+  // inventory matrix and the publish floor need it) but never reaches a client:
+  // a product whose only variant is the carrier reports no colour axis.
+  const colorVariants = resolvedVariants.filter((cv) => !isPlaceholderVariant(cv.name));
+  const hasColorAxis = colorVariants.length > 0;
 
   const price = prod.price != null ? Number(prod.price) : 0;
   const base: Record<string, unknown> = {
@@ -182,6 +193,7 @@ export const formatProductResponse = (
     brandRef: brandRefObj,
     price,
     colorVariants,
+    hasColorAxis,
     inStock,
     // Presenters hide invalid deals: only 0 < discounted < price is emitted.
     discountedPrice: validDiscount(price, prod.discountedPrice),

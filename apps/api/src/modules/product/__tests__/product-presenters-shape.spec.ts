@@ -14,11 +14,13 @@ import {
 import {
   adminSkuRow,
   baseRow,
+  carrierOnlyRow,
   categoryObjectRow,
   comboRow,
   dynamicSwatchRow,
   emptyStockRow,
   invalidDiscountRow,
+  leadingSwatchDupeRow,
   legacySwatchRow,
   noCategoryObjectRow,
   noCoverRow,
@@ -65,6 +67,33 @@ describe('downstream shape (presenters layer)', () => {
       name: 'Red',
       images: ['red-1.jpg'],
     });
+  });
+
+  it('strips a real leading swatch duplicate for the storefront but NOT for admin', () => {
+    // The strip is PRESENTATION-only. Card/PDP are display surfaces, so hiding
+    // the swatch photo (already rendered as its own swatch) is correct there.
+    const base = present(leadingSwatchDupeRow());
+
+    expect(at(formatStorefrontDetail(base).colorVariants, 0).images).toEqual([
+      'red-1.jpg',
+      'red-2.jpg',
+    ]);
+    expect(at(formatStorefrontCard(base).colorVariants, 0).images).toEqual([
+      'red-1.jpg',
+      'red-2.jpg',
+    ]);
+
+    // The admin detail is an EDIT surface: the form hydrates `colorVariants`
+    // and POSTS it back, so stripping here deleted one stored image from the
+    // saved gallery on every save that did not touch images. Verbatim.
+    const admin = formatAdminDetail(base);
+    expect(at(admin.colorVariants as Array<Record<string, unknown>>, 0).images).toEqual([
+      'sw-red.jpg',
+      'red-1.jpg',
+      'red-2.jpg',
+    ]);
+    // The cover still resolves from the RAW (pre-strip) gallery.
+    expect(admin.cover).toBe('sw-red.jpg');
   });
 
   it('keeps legacy images identical across card and detail when no prepend happened', () => {
@@ -242,6 +271,18 @@ describe('downstream shape (presenters layer)', () => {
     expect(detail.comboPrices).toEqual([]);
     expect(detail.priceRange).toEqual({ min: 2000, max: 2000 });
     expect(detail.minDiscounted).toBe(1800);
+  });
+
+  it('never serves the size-only carrier as a colour', () => {
+    // The carrier exists in storage (inventory rows + the publish floor need
+    // it) but the storefront gets an empty list instead of a fake "Default"
+    // colour. The cover still resolves from the product gallery.
+    const base = present(carrierOnlyRow());
+
+    expect(formatStorefrontCard(base).colorVariants).toEqual([]);
+    expect(formatStorefrontDetail(base).colorVariants).toEqual([]);
+    expect(formatStorefrontDetail(base).cover).toBe('cover.jpg');
+    expect(formatStorefrontDetail(base).inStock).toBe(true);
   });
 
   it('treats a missing inStock flag as false downstream and respects an explicit true', () => {
