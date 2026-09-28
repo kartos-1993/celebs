@@ -21,6 +21,7 @@ import {
   resolveProductSizes,
 } from '@/features/products/utils/stock';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
+import { hasRenderableImage } from '@/utils/image';
 
 export default function ProductDetailScreen() {
   const { id, color } = useLocalSearchParams<{ id: string; color?: string }>();
@@ -107,15 +108,22 @@ export default function ProductDetailScreen() {
     }
   };
 
+  // `cover` is the derived primary the API sends to storefront clients; the
+  // selected colour's own gallery wins when it has photos. `mainImages` is
+  // never part of this payload, so it must not appear in the chain. Declared
+  // above the loading early-return because it is a hook.
+  const galleryImages = useMemo(() => {
+    const variantImages = product?.colorVariants?.[selectedColorIndex]?.images;
+    if (Array.isArray(variantImages) && variantImages.length > 0) {
+      return variantImages.filter((img): img is string => hasRenderableImage(img));
+    }
+    const cover = product?.cover?.trim();
+    return cover ? [cover] : [];
+  }, [product, selectedColorIndex]);
+
   if (loading || error || !product) {
     return <ProductDetailState loading={loading} error={error} onBack={() => router.back()} />;
   }
-
-  const selectedVariantImages = product.colorVariants?.[selectedColorIndex]?.images;
-  const galleryImages =
-    Array.isArray(selectedVariantImages) && selectedVariantImages.length > 0
-      ? selectedVariantImages
-      : product.mainImages || [];
 
   return (
     <ThemedView style={styles.container}>

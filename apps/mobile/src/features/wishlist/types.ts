@@ -5,7 +5,13 @@ export interface WishlistProductView {
   slug: string;
   price: number;
   discountedPrice?: number;
-  mainImages: string[];
+  /**
+   * Wishlist rows are the ONLY storefront payload that still carries the raw
+   * `mainImages` gallery. `toProduct` folds it into the derived `cover` so the
+   * grid card never has to know which payload it came from.
+   */
+  mainImages?: string[];
+  cover?: string;
 }
 
 export interface WishlistEntryView {
@@ -29,7 +35,8 @@ export interface WishlistApiResponse {
       slug: string;
       price: number;
       discountedPrice?: number | null;
-      mainImages: string[];
+      mainImages?: string[];
+      cover?: string;
     };
   }[];
 }

@@ -1,16 +1,13 @@
 import React from 'react';
 import { GestureResponderEvent, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 
-import { resolveImageUrl } from '../hooks/use-products';
 import type { ProductColorVariant } from '../types';
+import { swatchDotColor, swatchDotImage } from '../utils/swatch';
 
 import { styles } from './product-card.styles';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
-
-/** iOS system grey. No Palette token carries this exact value. */
-const DEFAULT_DOT_COLOR = '#8e8e93';
 
 /** 44pt-min touch target for the small swatch dots. */
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
@@ -31,8 +28,7 @@ export function ProductCardSwatchCapsule({
   return (
     <View style={styles.imageColorCapsule}>
       {variants.slice(0, 4).map((variant, idx) => {
-        // Canonical dot source: explicit swatch, else first gallery photo.
-        const dotImage = variant.swatch ?? variant.images?.[0];
+        const dotImage = swatchDotImage(variant);
         return (
           <TouchableOpacity
             key={idx}
@@ -45,17 +41,16 @@ export function ProductCardSwatchCapsule({
             accessibilityLabel={`Select color ${variant.name}`}
             style={[
               styles.capsuleColorDot,
-              !dotImage && { backgroundColor: variant.colorCode || DEFAULT_DOT_COLOR },
+              !dotImage && { backgroundColor: swatchDotColor(variant) },
               selectedColorIndex === idx && styles.capsuleColorDotActive,
             ]}
           >
             {dotImage ? (
-              <Image
-                source={{ uri: resolveImageUrl(dotImage) }}
-                style={styles.capsuleSwatchImage}
-                contentFit="cover"
-                transition={100}
-                cachePolicy="memory-disk"
+              <MobileApparelImage
+                src={dotImage}
+                preset="swatch"
+                containerStyle={styles.capsuleSwatchImage}
+                alt={`${variant.name} swatch`}
               />
             ) : null}
           </TouchableOpacity>

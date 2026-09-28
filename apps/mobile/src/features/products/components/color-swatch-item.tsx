@@ -1,15 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 
 import type { ProductColorVariant } from '../types';
 import { isVariantOutOfStock } from '../utils/stock';
+import { swatchDotColor, swatchDotImage } from '../utils/swatch';
 
 import { styles } from './product-variant-selector.styles';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { showToast } from '@/components/toast/toast';
-import { resolveImageUrl } from '@/constants/config';
-import { Palette } from '@/constants/theme';
 
 export interface ColorSwatchItemProps {
   variant: ProductColorVariant;
@@ -26,11 +25,7 @@ export const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({
   onSelectColor,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const rawImage =
-    (variant as { swatch?: string }).swatch ||
-    variant.images?.[0] ||
-    (variant as { image?: string }).image;
-  const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
+  const rawImage = swatchDotImage(variant) ?? (variant as { image?: string }).image;
   const variantOos = isVariantOutOfStock(variant);
 
   const handlePress = useCallback(() => {
@@ -57,15 +52,17 @@ export const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({
       accessibilityState={{ selected: isSelected, disabled: variantOos }}
       accessibilityLabel={`Select color ${variant.name}${variantOos ? ' — out of stock' : ''}`}
     >
-      {imageUrl && !imageFailed ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.colorThumbnail}
+      {rawImage && !imageFailed ? (
+        <MobileApparelImage
+          src={rawImage}
+          preset="swatch"
+          containerStyle={styles.colorThumbnail}
           contentFit="cover"
+          alt={`${variant.name} colour`}
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <View style={[styles.colorDot, { backgroundColor: variant.colorCode || Palette.black }]} />
+        <View style={[styles.colorDot, { backgroundColor: swatchDotColor(variant) }]} />
       )}
       {variantOos && (
         <View style={styles.colorChipDisabledOverlay} pointerEvents="none">

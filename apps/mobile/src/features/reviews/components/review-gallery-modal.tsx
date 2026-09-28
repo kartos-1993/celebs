@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -9,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { X } from 'lucide-react-native';
 
 import { styles } from '../styles/review-gallery-modal.styles';
@@ -17,10 +16,31 @@ import type { ReviewGalleryItem } from '../types';
 
 import { ReviewGalleryDetails } from './review-gallery-details';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
+
+/** Dedicated, memoized FlatList renderer (mobile AGENTS.md §8). */
+const ReviewGallerySlide = React.memo(function ReviewGallerySlide({
+  item,
+}: {
+  item: ReviewGalleryItem;
+}) {
+  return (
+    <View style={styles.slide}>
+      <MobileApparelImage
+        src={item.imageUrl}
+        preset="zoom"
+        containerStyle={styles.slideImage}
+        contentFit="contain"
+        alt="Review photo"
+        priority="high"
+      />
+    </View>
+  );
+});
 
 interface ReviewGalleryModalProps {
   visible: boolean;
@@ -46,9 +66,14 @@ export function ReviewGalleryModal({
     setCurrentIndex(initialIndex);
   }
 
-  if (!visible || items.length === 0) return null;
-
   const currentItem = items[currentIndex] ?? items[0];
+
+  const renderGallerySlide = useCallback(
+    ({ item }: { item: ReviewGalleryItem }) => <ReviewGallerySlide item={item} />,
+    [],
+  );
+
+  if (!visible || items.length === 0) return null;
 
   const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -86,17 +111,7 @@ export function ReviewGalleryModal({
           keyExtractor={(item) => item.id}
           getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
           onMomentumScrollEnd={handleScrollEnd}
-          renderItem={({ item }) => (
-            <View style={styles.slide}>
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.slideImage}
-                contentFit="contain"
-                transition={200}
-                priority="high"
-              />
-            </View>
-          )}
+          renderItem={renderGallerySlide}
         />
 
         {/* Bottom Review Details & Sticky Add-to-Cart */}

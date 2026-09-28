@@ -8,8 +8,8 @@ import { getItemStatusMeta } from '../utils/order-status';
 import { styles } from './order-item-row.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
+import { resolveImageUrl } from '@/utils/image';
 
 interface OrderItemRowProps {
   item: OrderItemView;

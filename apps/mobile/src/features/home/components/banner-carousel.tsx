@@ -8,15 +8,40 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 
 import { useBanners } from '../hooks/use-home-queries';
 import { styles } from '../styles/home.styles';
 import type { Banner } from '../types';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { showToast } from '@/components/toast/toast';
-import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
+
+interface BannerSlideProps {
+  banner: Banner;
+  onPress: (banner: Banner) => void;
+}
+
+/**
+ * Dedicated, memoized FlatList renderer (mobile AGENTS.md §8): no inline JSX
+ * render function, and the press handler is a stable prop instead of a
+ * per-render closure.
+ */
+const BannerSlide = React.memo(function BannerSlide({ banner, onPress }: BannerSlideProps) {
+  const handlePress = useCallback(() => onPress(banner), [onPress, banner]);
+
+  return (
+    <TouchableOpacity activeOpacity={0.95} onPress={handlePress} style={styles.bannerWrapper}>
+      <MobileApparelImage
+        src={banner.imageUrl}
+        preset="grid-card"
+        containerStyle={styles.bannerImage}
+        contentFit="cover"
+        alt={banner.title ?? 'Promotion'}
+      />
+    </TouchableOpacity>
+  );
+});
 
 export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] } = {}) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -85,6 +110,11 @@ export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] }
     [activeIndex],
   );
 
+  const renderBannerSlide = useCallback(
+    ({ item }: { item: Banner }) => <BannerSlide banner={item} onPress={handleBannerPress} />,
+    [handleBannerPress],
+  );
+
   return (
     <View style={styles.carouselContainer}>
       {loading ? (
@@ -104,20 +134,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] }
             keyExtractor={(item) => item.id}
             onScrollBeginDrag={stopAutoPlay}
             onScrollEndDrag={startAutoPlay}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                activeOpacity={0.95}
-                onPress={() => handleBannerPress(item)}
-                style={styles.bannerWrapper}
-              >
-                <Image
-                  source={{ uri: resolveImageUrl(item.imageUrl) }}
-                  style={styles.bannerImage}
-                  contentFit="cover"
-                  transition={300}
-                />
-              </TouchableOpacity>
-            )}
+            renderItem={renderBannerSlide}
           />
 
           <View style={styles.dotContainer}>

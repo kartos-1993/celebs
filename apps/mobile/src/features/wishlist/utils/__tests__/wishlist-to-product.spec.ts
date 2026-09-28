@@ -19,11 +19,14 @@ function entry(overrides: Partial<WishlistEntryView> = {}): WishlistEntryView {
 
 describe('toProduct', () => {
   it('maps hydrated product fields through and never hardcodes a status', () => {
+    // The wishlist row is the one payload that still arrives with the raw
+    // `mainImages` gallery; it is folded into the single derived `cover` the
+    // grid card reads.
     expect(toProduct(entry())).toEqual({
       id: 'p1',
       name: 'Tee',
       price: 1000,
-      mainImages: ['img'],
+      cover: 'img',
     });
     expect(toProduct(entry())).not.toHaveProperty('status');
     expect(SRC).not.toContain("status: 'published'");
@@ -77,11 +80,30 @@ describe('toProduct', () => {
     ).toBe('Nike');
   });
 
-  it('coerces non-array mainImages to []', () => {
-    const p = toProduct(
+  it('derives no cover from a malformed / empty gallery instead of inventing one', () => {
+    const malformed = toProduct(
       entry({ product: { id: 'p', name: 'N', slug: '', price: 1, mainImages: 'x' as never } }),
     );
-    expect(p.mainImages).toEqual([]);
+    expect(malformed.cover).toBeUndefined();
+    expect(SRC).not.toContain("cover: '");
+    const empty = toProduct(
+      entry({ product: { id: 'p', name: 'N', slug: '', price: 1, mainImages: [] } }),
+    );
+    expect(empty.cover).toBeUndefined();
+  });
+
+  it('prefers the row cover, then falls back to the first gallery photo', () => {
+    expect(
+      toProduct(
+        entry({
+          product: { id: 'p', name: 'N', slug: '', price: 1, mainImages: ['a'], cover: 'b' },
+        }),
+      ).cover,
+    ).toBe('b');
+    expect(
+      toProduct(entry({ product: { id: 'p', name: 'N', slug: '', price: 1, mainImages: ['a'] } }))
+        .cover,
+    ).toBe('a');
   });
 
   it('never invents a fallback name or id from the entry', () => {

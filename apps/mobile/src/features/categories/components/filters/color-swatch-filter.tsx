@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 
 import { QuickFilterItem } from '../../types';
 
 import { styles } from './color-swatch-filter.styles';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
+import { Palette } from '@/constants/theme';
+import { SWATCH_DOT_FALLBACK_COLOR } from '@/features/products/utils/swatch';
 
 interface ColorSwatchFilterProps {
   items: QuickFilterItem[];
@@ -15,17 +16,24 @@ interface ColorSwatchFilterProps {
   onSelectItem: (item: QuickFilterItem) => void;
 }
 
-const COLOR_HEX_MAP: Record<string, string> = {
-  blue: '#2563eb',
-  black: '#18181b',
-  white: '#ffffff',
-  red: '#dc2626',
-  green: '#16a34a',
-  yellow: '#eab308',
-  grey: '#6b7280',
-  gray: '#6b7280',
-  beige: '#d4b996',
-  multicolor: '#9333ea',
+/**
+ * Quick filters carry no `colorCode` (the shared contract is `name` + `image`),
+ * so a filter value with no artwork falls back to a flat dot. These are the
+ * quick-filter names that already have a home in the design tokens: every entry
+ * below resolves to a Palette token whose VALUE IS BYTE-IDENTICAL to the hex it
+ * replaced (`#18181b`→gray900 `#18181B`, `#ffffff`→white, `#dc2626`→danger,
+ * `#16a34a`→success, `#eab308`→gold, `#6b7280`→gray500), so no colour on screen
+ * moved. Names with no identical token are deliberately absent and fall
+ * through to `SWATCH_DOT_FALLBACK_COLOR` rather than borrowing a near-miss.
+ */
+const COLOR_TOKEN_MAP: Record<string, string> = {
+  black: Palette.gray900,
+  white: Palette.white,
+  red: Palette.danger,
+  green: Palette.success,
+  yellow: Palette.gold,
+  grey: Palette.gray500,
+  gray: Palette.gray500,
 };
 
 interface ColorSwatchChipProps {
@@ -36,10 +44,8 @@ interface ColorSwatchChipProps {
 
 const ColorSwatchChip: React.FC<ColorSwatchChipProps> = ({ item, isSelected, onSelect }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const rawImage = item.image;
-  const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
   const lowerName = item.name.toLowerCase();
-  const hexColor = COLOR_HEX_MAP[lowerName] || '#94a3b8';
+  const dotColor = COLOR_TOKEN_MAP[lowerName] || SWATCH_DOT_FALLBACK_COLOR;
 
   return (
     <TouchableOpacity
@@ -47,15 +53,17 @@ const ColorSwatchChip: React.FC<ColorSwatchChipProps> = ({ item, isSelected, onS
       activeOpacity={0.8}
       onPress={onSelect}
     >
-      {imageUrl && !imageFailed ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.colorThumbnail}
+      {item.image && !imageFailed ? (
+        <MobileApparelImage
+          src={item.image}
+          preset="swatch"
+          containerStyle={styles.colorThumbnail}
           contentFit="cover"
+          alt={item.name}
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <View style={[styles.colorDot, { backgroundColor: hexColor }]} />
+        <View style={[styles.colorDot, { backgroundColor: dotColor }]} />
       )}
       <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
         {item.name}

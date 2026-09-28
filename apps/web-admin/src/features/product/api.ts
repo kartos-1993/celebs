@@ -61,6 +61,8 @@ export const PRODUCT_QUERY_KEYS = {
   categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
   categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
   categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
+  variantAxes: (path: string, paramsKey: string) =>
+    [...PRODUCT_QUERY_KEYS.all, 'variant-axes', path, paramsKey] as const,
   schemaAll: ['product-schema'] as const,
   schemaRender: (catId: string, productId?: string) =>
     [...PRODUCT_QUERY_KEYS.schemaAll, 'render', catId, productId ?? 'new'] as const,
@@ -279,6 +281,22 @@ export async function fetchProductRenderSchema(
   return response.data;
 }
 
+/**
+ * Variant-axis read backing the SKU matrix. The render schema supplies the
+ * path at runtime (`dataSource.fetch`, e.g. `/option-sets/:id`), so this stays
+ * a pass-through — but the request still lives here so no hook calls
+ * `axiosClient` directly (AGENTS.md §9). Returns `response.data` like every
+ * other client function (§8); envelope shape is validated by the caller
+ * (`parseVariantAxesResponse`) and never guessed here.
+ */
+export async function getVariantAxes(
+  path: string,
+  params?: Record<string, unknown>,
+): Promise<unknown> {
+  const response = await axiosClient.get(path, { params });
+  return response.data;
+}
+
 /** Structured per-field error detail (server sends `errors[]` additively). */
 export interface SubmitErrorDetail {
   field?: string;
@@ -376,4 +394,5 @@ export const ProductApiService = {
   getDropdownRecentCategories,
   recordDropdownRecentCategory,
   fetchProductRenderSchema,
+  getVariantAxes,
 };

@@ -60,7 +60,13 @@ export interface Product {
   description?: string;
   price: number;
   discountedPrice?: number;
-  mainImages: string[];
+  /**
+   * Product gallery. The storefront product payload does NOT send this — the
+   * only field a storefront client gets is the derived `cover` below. It is
+   * kept optional because a wishlist row (the single payload that still carries
+   * it) is projected onto this same shape.
+   */
+  mainImages?: string[];
   sizes?: ProductSize[];
   colorVariants?: ProductColorVariant[];
   variantOptions?: ProductVariantOption[];
@@ -68,6 +74,13 @@ export interface Product {
   comboPrices?: ProductComboPrice[];
   minPrice?: number;
   minDiscounted?: number;
+  /**
+   * THE primary image field. A single derived URL the API sends to every
+   * storefront client: `mainImages[0]`, or the first colour's first photo when
+   * the product has colour galleries but no explicit cover. Optional because a
+   * product can legitimately carry no picture at all — callers must render an
+   * empty state, never an invented remote placeholder.
+   */
   cover?: string;
   /**
    * Publication status. Optional because some surfaces (e.g. the wishlist) get

@@ -46,6 +46,16 @@ function applyCartPatch(
 const OPTIMISTIC_ITEM_PREFIX = 'optimistic-';
 
 /**
+ * `CartItemHydrated.image` is a REQUIRED field of the shared cart contract, but
+ * it is a frozen denormalised snapshot that the cart deliberately never reads:
+ * the row thumbnail is resolved live from the product (see
+ * `resolveCartLineImage`). The optimistic row therefore has no honest image to
+ * put here, and the value is a named constant rather than a bare `image: ''` so
+ * the "nothing to show yet" is obvious at the call site.
+ */
+const NO_LINE_IMAGE = '';
+
+/**
  * Placeholder row for the optimistic add. The cart schema needs a full item
  * shape, but the only facts known before the server replies are the ones the
  * caller submitted — everything else stays empty rather than invented.
@@ -61,7 +71,7 @@ function buildOptimisticItem(input: AddToCartInput): CartItemHydrated {
     price: 0,
     colorVariantName: input.colorVariantName,
     colorCode: '',
-    image: '',
+    image: NO_LINE_IMAGE,
     size: input.size,
     quantity: input.quantity,
     availableStock: 0,

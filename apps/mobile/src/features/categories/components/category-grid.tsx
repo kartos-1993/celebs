@@ -6,15 +6,14 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
 import { useCategories } from '../hooks/use-categories';
 import { styles } from '../styles/categories.styles';
 import type { Category } from '../types';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
 import { Colors, Spacing } from '@/constants/theme';
 import { useNavigationGuard } from '@/utils/navigation-guard';
 
@@ -83,17 +82,13 @@ export function CategoryGrid({ initialCategories }: { initialCategories?: Catego
                   accessibilityLabel={`Browse ${cat.displayName || cat.name || 'category'}`}
                 >
                   <View style={styles.categoryImageContainer}>
-                    {cat.imageUrl ? (
-                      <Image
-                        source={{ uri: resolveImageUrl(cat.imageUrl) }}
-                        style={styles.categoryImage}
-                        contentFit="cover"
-                      />
-                    ) : (
-                      <View
-                        style={[styles.categoryImage, { backgroundColor: 'rgba(150,150,150,0.1)' }]}
-                      />
-                    )}
+                    <MobileApparelImage
+                      src={cat.imageUrl}
+                      preset="avatar"
+                      containerStyle={styles.categoryImage}
+                      contentFit="cover"
+                      alt={cat.displayName || cat.name || 'category'}
+                    />
                   </View>
                   <ThemedText
                     style={styles.categoryName}

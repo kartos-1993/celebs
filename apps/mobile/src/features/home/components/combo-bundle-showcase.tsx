@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { ArrowRight, Plane, Sparkles, Tag } from 'lucide-react-native';
 
 import { useCombos } from '../hooks/use-home-queries';
@@ -7,6 +7,7 @@ import type { ComboBundleData } from '../types';
 
 import { styles } from './combo-bundle-showcase.styles';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
@@ -95,9 +96,12 @@ export function ComboBundleShowcase({ onSelectCombo, initialCombos }: ComboBundl
               <View style={styles.imageBox}>
                 {/* No demo banner fallback: imageBox already paints a neutral
                     surface, and a fake photo would misrepresent the bundle. */}
-                {bannerImage ? (
-                  <Image source={{ uri: bannerImage }} style={styles.cardImage} />
-                ) : null}
+                <MobileApparelImage
+                  src={bannerImage}
+                  preset="grid-card"
+                  containerStyle={styles.cardImage}
+                  alt={item.title}
+                />
 
                 <View style={styles.tagBadge}>
                   {isTravel ? (

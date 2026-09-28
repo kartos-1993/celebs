@@ -1,8 +1,9 @@
 import React from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 
 import { styles } from './combo-bundle-modal.styles';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 
 export interface RenderableBundleItem {
@@ -32,7 +33,12 @@ export function ComboBundleItemCard({
   return (
     <View style={styles.itemCard}>
       <View style={styles.itemRow}>
-        <Image source={{ uri: item.image }} style={styles.itemImage} />
+        <MobileApparelImage
+          src={item.image}
+          preset="thumbnail"
+          containerStyle={styles.itemImage}
+          alt={item.name}
+        />
         <View style={styles.itemInfo}>
           <ThemedText style={styles.itemName}>{item.name}</ThemedText>
           <ThemedText style={styles.itemOriginalPrice}>

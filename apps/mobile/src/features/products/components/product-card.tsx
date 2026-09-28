@@ -32,7 +32,6 @@ export const ProductCard = React.memo(function ProductCard({
     imageRef,
     scrollViewRef,
     hintAnim,
-    dpr,
     cardImages,
     priceColor,
     integerPart,
@@ -56,7 +55,6 @@ export const ProductCard = React.memo(function ProductCard({
         cardImages={cardImages}
         activeImageIndex={activeImageIndex}
         hintAnim={hintAnim}
-        dpr={dpr}
         isOutOfStock={isOutOfStock}
         isFavorite={isFavorite}
         isWishlistBusy={isWishlistBusy}

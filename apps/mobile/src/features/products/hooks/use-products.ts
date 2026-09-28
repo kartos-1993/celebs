@@ -17,7 +17,6 @@ export type {
   ProductStock,
   ProductVariantOption,
 } from '../types';
-export { resolveImageUrl } from '@/constants/config';
 
 /**
  * Keep the window bounded so a runaway catalog cannot exhaust memory, but never

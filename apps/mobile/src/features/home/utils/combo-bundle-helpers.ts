@@ -1,6 +1,8 @@
 import { RenderableBundleItem } from '../components/combo-bundle-item-card';
 import { ComboBundleData } from '../components/combo-bundle-showcase';
 
+import { firstRenderableImage } from '@/utils/image';
+
 /** Finite non-negative number, or undefined. Tolerates a NULL API price. */
 function finiteOrZero(value: unknown): number {
   const parsed = Number(value);
@@ -23,7 +25,9 @@ export function getComboDisplayItems(combo: ComboBundleData | null): RenderableB
     if (!prod?.id) return [];
 
     const colorImages = prod.colorVariants?.flatMap((cv) => cv.images ?? []) ?? [];
-    const image = prod.mainImages?.[0] ?? colorImages[0] ?? '';
+    // The derived `cover` is the field the API sends; a colour gallery is the
+    // per-colour override that only some bundle rows carry.
+    const image = prod.cover?.trim() ?? firstRenderableImage(colorImages) ?? '';
     const sizes = Array.from(
       new Set(
         (prod.colorVariants ?? []).flatMap(

@@ -4,7 +4,6 @@ import {
   GestureResponderEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  PixelRatio,
   ScrollView,
   useWindowDimensions,
   View,
@@ -19,13 +18,14 @@ import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
 import { resolveMinPrice } from '../utils/pricing';
 import { isProductFullyOutOfStock, isVariantOutOfStock } from '../utils/stock';
 
-import { Product, resolveImageUrl } from './use-products';
+import { Product } from './use-products';
 
 import { showToast } from '@/components/toast/toast';
 import { Palette } from '@/constants/theme';
 import { useAuth } from '@/features/auth/context/auth-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
+import { resolveImageUrl } from '@/utils/image';
 import { useNavigationGuard } from '@/utils/navigation-guard';
 
 const GRID_PADDING = 12;
@@ -85,7 +85,7 @@ export function useProductCard({
             brand: product.brand ?? null,
             price: product.price,
             discountedPrice: product.discountedPrice ?? null,
-            mainImages: product.mainImages,
+            cover: product.cover,
           },
         });
       }
@@ -106,8 +106,6 @@ export function useProductCard({
   const scrollViewRef = useRef<ScrollView>(null);
   const hintAnim = useMemo(() => new Animated.Value(0), []);
 
-  const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
-
   const activeColorImages = product.colorVariants?.[selectedColorIndex]?.images;
 
   const cardImages: string[] = useMemo(() => {
@@ -116,24 +114,13 @@ export function useProductCard({
         (img): img is string => typeof img === 'string' && img.trim().length > 0,
       );
     }
-    if (Array.isArray(product.mainImages) && product.mainImages.length > 0) {
-      return product.mainImages.filter(
-        (img): img is string => typeof img === 'string' && img.trim().length > 0,
-      );
-    }
-    if (product.cover) {
-      return [product.cover.trim()];
-    }
-    if (
-      Array.isArray(product.colorVariants?.[0]?.images) &&
-      product.colorVariants[0].images.length > 0
-    ) {
-      return product.colorVariants[0].images.filter(
-        (img): img is string => typeof img === 'string' && img.trim().length > 0,
-      );
-    }
-    return [];
-  }, [activeColorImages, product.mainImages, product.cover, product.colorVariants]);
+    // `cover` is the ONLY gallery field the storefront product payload sends
+    // (`mainImages` is deliberately absent), so it is the sole non-colour tier.
+    const cover = product.cover?.trim();
+    if (cover) return [cover];
+    const fallbackColorImage = product.colorVariants?.[0]?.images?.[0]?.trim();
+    return fallbackColorImage ? [fallbackColorImage] : [];
+  }, [activeColorImages, product.cover, product.colorVariants]);
 
   const handleSelectColor = useCallback((idx: number, e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
@@ -280,7 +267,6 @@ export function useProductCard({
     imageRef,
     scrollViewRef,
     hintAnim,
-    dpr,
     cardImages,
     primaryImage,
     resolvedPrimaryUrl,

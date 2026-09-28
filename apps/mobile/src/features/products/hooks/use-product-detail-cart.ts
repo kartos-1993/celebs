@@ -16,8 +16,8 @@ import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { getProductById, PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import type { Product } from '@/features/products/hooks/use-products';
-import { resolveImageUrl } from '@/features/products/hooks/use-products';
 import { planCartAdd } from '@/features/products/utils/stock';
+import { resolveImageUrl } from '@/utils/image';
 
 /** Revalidates the detail entry; a failed revalidation falls back to the cached copy. */
 async function fetchFreshProduct(

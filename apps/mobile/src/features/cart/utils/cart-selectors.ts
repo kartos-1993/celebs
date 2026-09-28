@@ -63,3 +63,49 @@ export const computeTotals = (items: CartItemHydrated[]): CartTotals => {
   const savingsPercent = originalTotal > 0 ? Math.round((savings / originalTotal) * 100) : 0;
   return { count, total, originalTotal, savings, savingsPercent };
 };
+
+/**
+ * The slice of a product a cart line needs in order to show a picture. Kept
+ * structural (not `Product`) so the resolver stays a pure function of
+ * (line, product) and unit-testable without a component tree.
+ */
+export interface CartLineImageSource {
+  /** Derived single image the API sends to storefront clients. */
+  cover?: string | null;
+  colorVariants?: { name?: string; images?: string[] | null }[] | null;
+}
+
+const firstUsable = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+/**
+ * The display image for a cart row, derived LIVE from the product rather than
+ * read off the line.
+ *
+ * `CartItemHydrated.image` is a frozen denormalised snapshot: it is `''` on the
+ * optimistic "adding…" row (nothing has been echoed back yet) and stale on any
+ * row hydrated before the seller swapped the gallery. A cart row must still
+ * show a picture in both cases, so the picture is resolved here — the line's
+ * own colour variant photo when it has a colour, the product cover otherwise.
+ *
+ * Returns the RAW stored source (not a URL) so the caller feeds it to the one
+ * canonical resolver, and `undefined` — never `''` — when the product carries
+ * no picture at all, so the card can render a neutral tile instead of a broken
+ * `<Image source={{ uri: '' }} />`.
+ */
+export function resolveCartLineImage(
+  item: Pick<CartItemHydrated, 'colorVariantName'>,
+  product: CartLineImageSource | null | undefined,
+): string | undefined {
+  const wantedColor = firstUsable(item?.colorVariantName)?.toLowerCase();
+
+  if (wantedColor && Array.isArray(product?.colorVariants)) {
+    const match = product.colorVariants.find(
+      (variant) => firstUsable(variant?.name)?.toLowerCase() === wantedColor,
+    );
+    const variantImage = firstUsable(match?.images?.[0]);
+    if (variantImage) return variantImage;
+  }
+
+  return firstUsable(product?.cover);
+}

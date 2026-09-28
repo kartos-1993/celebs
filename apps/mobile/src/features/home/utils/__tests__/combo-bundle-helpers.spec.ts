@@ -41,9 +41,7 @@ describe('combo-bundle-helpers', () => {
   it('never substitutes a demo image or a default price for a missing field', () => {
     const partial = getComboDisplayItems(
       combo({
-        itemDetails: [
-          { id: 'x', productId: 'p', product: { id: 'p', name: 'Parka', mainImages: [] } },
-        ],
+        itemDetails: [{ id: 'x', productId: 'p', product: { id: 'p', name: 'Parka' } }],
       }),
     );
     expect(partial[0].image).toBe('');
@@ -63,7 +61,7 @@ describe('combo-bundle-helpers', () => {
               id: 'p',
               name: 'Parka',
               price: 5000,
-              mainImages: ['m1'],
+              cover: 'm1',
               colorVariants: [
                 { name: 'Black', images: [], stocks: [{ size: 'M', quantity: 2 }] },
                 { name: '', images: [], stocks: [{ size: '', quantity: 1 }] },
@@ -81,9 +79,7 @@ describe('combo-bundle-helpers', () => {
   it('tolerates a NULL API price without producing NaN', () => {
     const out = getComboDisplayItems(
       combo({
-        itemDetails: [
-          { id: 'x', productId: 'p', product: { id: 'p', name: 'Parka', mainImages: ['m'] } },
-        ],
+        itemDetails: [{ id: 'x', productId: 'p', product: { id: 'p', name: 'Parka', cover: 'm' } }],
       }),
     );
     expect(Number.isFinite(out[0].originalPrice)).toBe(true);

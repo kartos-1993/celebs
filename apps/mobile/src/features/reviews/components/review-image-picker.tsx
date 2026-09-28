@@ -7,6 +7,7 @@ import { styles } from '../styles/review-modal.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
+import { hasRenderableImage } from '@/utils/image';
 
 interface ReviewImagePickerProps {
   images: string[];
@@ -34,7 +35,14 @@ export function ReviewImagePicker({
       >
         {images.map((uri, idx) => (
           <View key={idx} style={styles.photoThumbnailWrap}>
-            <Image source={{ uri }} style={styles.photoThumbnail} contentFit="cover" />
+            {/* Local `file://` picker URI: deliberately NOT routed through
+                resolveImageUrl, which only understands remote media. Guarded so a
+                blank entry never reaches expo-image as `{ uri: '' }`. */}
+            {hasRenderableImage(uri) ? (
+              <Image source={{ uri }} style={styles.photoThumbnail} contentFit="cover" />
+            ) : (
+              <View style={styles.photoThumbnail} />
+            )}
             <TouchableOpacity
               style={styles.removePhotoBtn}
               onPress={() => onRemoveImage(idx)}

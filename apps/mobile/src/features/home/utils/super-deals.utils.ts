@@ -1,5 +1,7 @@
 import type { HydratedProduct } from '../types';
 
+import { firstRenderableImage, hasRenderableImage } from '@/utils/image';
+
 /**
  * Calculates human-readable discount percentage tag (e.g. "25% OFF").
  * Returns null if product does not have an active discount.
@@ -15,13 +17,15 @@ export function dealTag(product: HydratedProduct): string | null {
 }
 
 /**
- * Resolves the primary photo URI for a deal tile, preferring first variant image.
+ * Resolves the primary photo source for a deal tile: a colour gallery's first
+ * photo when the product has one, otherwise the derived `cover`. Returns
+ * `undefined` (never `''`) so the caller can render a neutral tile.
  */
-export function tilePhoto(product: HydratedProduct): string {
-  const firstVariantPhoto = product.colorVariants?.find(
-    (v) => Array.isArray(v.images) && v.images.length > 0,
-  )?.images?.[0];
-  return firstVariantPhoto ?? product.mainImages?.[0] ?? '';
+export function tilePhoto(product: HydratedProduct): string | undefined {
+  const withPhotos = product.colorVariants?.find((variant) =>
+    hasRenderableImage(firstRenderableImage(variant.images)),
+  );
+  return firstRenderableImage(withPhotos?.images) ?? product.cover?.trim() ?? undefined;
 }
 
 /**

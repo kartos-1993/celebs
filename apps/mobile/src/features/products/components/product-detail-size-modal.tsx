@@ -6,6 +6,8 @@ import { isSizeOutOfStockForVariant, resolveProductSizes } from '../utils/stock'
 
 import { SizeRequiredModal } from './size-required-modal';
 
+import { firstRenderableImage } from '@/utils/image';
+
 interface ProductDetailSizeModalProps {
   visible: boolean;
   onClose: () => void;
@@ -29,7 +31,9 @@ export function ProductDetailSizeModal({
   );
   const variant = product.colorVariants?.[selectedColorIndex];
   const disabledSizes = availableSizes.filter((s) => isSizeOutOfStockForVariant(variant, s));
-  const imageUrl = variant?.images?.[0] || product.mainImages?.[0];
+  // Selected colour's own photo first, then the derived `cover`. `mainImages`
+  // is not part of the storefront payload and must not be consulted.
+  const imageUrl = firstRenderableImage(variant?.images) ?? product.cover?.trim();
 
   // Price the sheet for the selected COLOR, not the product base: the base
   // figure belongs to whatever SKU happens to be cheapest and would quote a

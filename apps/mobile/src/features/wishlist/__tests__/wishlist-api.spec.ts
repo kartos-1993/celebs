@@ -91,6 +91,10 @@ describe('wishlist api', () => {
     );
     expect(cardHook).toContain('addToWishlist.mutate({');
     expect(cardHook).toContain('productId: product.id');
-    expect(cardHook).toContain('mainImages: product.mainImages');
+    // `cover` is the only image field a storefront product carries. Handing
+    // over `mainImages: product.mainImages` snapshotted `undefined` for every
+    // real product, so the optimistic row always rendered picture-less.
+    expect(cardHook).toContain('cover: product.cover');
+    expect(cardHook).not.toContain('mainImages: product.mainImages');
   });
 });

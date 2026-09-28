@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { ShoppingBag, X } from 'lucide-react-native';
 
 import { validDiscount } from '@celebs/shared-utils';
@@ -9,10 +8,10 @@ import { SizePillsGrid } from './size-pills-grid';
 import { styles } from './size-required-modal.styles';
 
 import { BottomSheet } from '@/components/bottom-sheet';
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { showToast } from '@/components/toast/toast';
 import { Palette } from '@/constants/theme';
-import { resolveImageUrl } from '@/features/products/hooks/use-products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -96,11 +95,12 @@ export const SizeRequiredModal: React.FC<SizeRequiredModalProps> = ({
       accessibilityLabel="Select product size"
       header={
         <View style={styles.header}>
-          <Image
-            source={{ uri: resolveImageUrl(imageUrl || '') }}
-            style={styles.thumbnail}
+          <MobileApparelImage
+            src={imageUrl}
+            preset="thumbnail"
+            containerStyle={styles.thumbnail}
             contentFit="cover"
-            transition={150}
+            alt={`${productName} thumbnail`}
           />
           <View style={styles.headerInfo}>
             <ThemedText style={styles.productName} numberOfLines={1}>

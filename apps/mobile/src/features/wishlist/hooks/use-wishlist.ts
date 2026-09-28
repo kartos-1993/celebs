@@ -61,7 +61,8 @@ export interface WishlistAddSnapshot {
   brand?: string | null;
   price?: number;
   discountedPrice?: number | null;
-  mainImages?: string[];
+  /** The derived primary photo — the only image field a storefront product has. */
+  cover?: string;
 }
 
 export type WishlistAddInput = string | { productId: string; product?: WishlistAddSnapshot };
@@ -86,6 +87,7 @@ export function useWishlistActions() {
       // would flash a nameless 0-price tile, so the cache stays as-is until the
       // server answers.
       if (!snapshot) return;
+      const cover = snapshot.cover?.trim();
       queryClient.setQueryData<WishlistEntryView[]>(WISHLIST_QUERY_KEYS.all, (previous) => {
         const current = previous ?? [];
         if (current.some((entry) => entry.productId === productId)) return current;
@@ -103,7 +105,9 @@ export function useWishlistActions() {
               ...(snapshot.discountedPrice != null
                 ? { discountedPrice: Number(snapshot.discountedPrice) }
                 : {}),
-              mainImages: Array.isArray(snapshot.mainImages) ? snapshot.mainImages : [],
+              // The optimistic row carries the single `cover` the caller had;
+              // the server echo replaces it with the real gallery + cover.
+              ...(cover ? { cover } : {}),
             },
           },
           ...current,

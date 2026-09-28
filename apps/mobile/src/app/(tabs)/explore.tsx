@@ -7,14 +7,13 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 
 import { AppHeader } from '@/components/app-header';
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { resolveImageUrl } from '@/constants/config';
 import { Colors, Palette } from '@/constants/theme';
 import { CategoryGrid } from '@/features/categories/components/category-grid';
 import { useCategories } from '@/features/categories/hooks/use-categories';
@@ -62,7 +61,6 @@ export default function CategoryExploreScreen() {
             {categories.map((cat) => {
               const catSlug = cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-');
               const catTitle = cat.displayName || cat.name;
-              const imageUrl = resolveImageUrl(cat.imageUrl);
 
               return (
                 <TouchableOpacity
@@ -71,11 +69,12 @@ export default function CategoryExploreScreen() {
                   style={[styles.categoryCard, { backgroundColor: Palette.white }]}
                   onPress={() => handleCategoryClick(catSlug, catTitle)}
                 >
-                  <Image
-                    source={{ uri: imageUrl }}
-                    style={styles.cardImage}
+                  <MobileApparelImage
+                    src={cat.imageUrl}
+                    preset="avatar"
+                    containerStyle={styles.cardImage}
                     contentFit="cover"
-                    transition={200}
+                    alt={catTitle}
                   />
                   <View style={styles.cardContent}>
                     <View style={styles.cardHeaderRow}>

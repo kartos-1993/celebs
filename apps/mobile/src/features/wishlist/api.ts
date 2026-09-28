@@ -4,6 +4,7 @@ import type { WishlistEntryView } from './types';
 
 import { apiClient } from '@/api/client';
 import { handleApiResponse } from '@/api/response';
+import { firstRenderableImage } from '@/utils/image';
 
 export const WISHLIST_QUERY_KEYS = {
   all: ['wishlist'] as const,
@@ -19,6 +20,7 @@ interface WishlistProductPayload {
   price?: number | null;
   discountedPrice?: number | null;
   mainImages?: string[];
+  cover?: string;
 }
 
 interface WishlistEntryPayload {
@@ -34,13 +36,17 @@ function finiteOrZero(value: unknown): number {
 }
 
 /**
- * Maps one wishlist row. Nothing is invented: a row the API did not hydrate
- * (no product) or did not identify is dropped rather than backfilled with a
- * placeholder name, a 0 price, or an empty gallery.
+ * Wishlist rows are the one payload that still arrives with the raw
+ * `mainImages` gallery instead of a derived `cover`, so the gallery is kept
+ * AND folded into a `cover` here. Every downstream surface then reads the
+ * single primary field and never has to branch on which payload it got.
  */
 function mapWishlistEntry(entry: WishlistEntryPayload): WishlistEntryView | null {
   const product = entry?.product;
   if (!entry?.id || !entry.productId || !product?.id) return null;
+
+  const gallery = Array.isArray(product.mainImages) ? product.mainImages : [];
+  const cover = firstRenderableImage(gallery) ?? (product.cover?.trim() || undefined);
 
   return {
     id: entry.id,
@@ -55,7 +61,8 @@ function mapWishlistEntry(entry: WishlistEntryPayload): WishlistEntryView | null
       ...(product.discountedPrice != null
         ? { discountedPrice: finiteOrZero(product.discountedPrice) }
         : {}),
-      mainImages: Array.isArray(product.mainImages) ? product.mainImages : [],
+      mainImages: gallery,
+      ...(cover ? { cover } : {}),
     },
   };
 }
