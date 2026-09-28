@@ -1,8 +1,11 @@
+import type { RouteObject } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import { Permission } from '@celebs/rbac';
 
 import { getMenuList } from '../menu-data';
+
+import { routesConfig } from '@/routes/routes-config';
 
 // Helper to extract top-level menu labels
 function getMenuLabels(role?: string, permissions?: string[]): string[] {
@@ -216,4 +219,54 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       }
     });
   });
+
+  describe('every sidebar link reaches a real route', () => {
+    /**
+     * A page can compile, pass typecheck and be fully wired while being
+     * unreachable, because nothing links it. This compares the sidebar against
+     * the router so a new page cannot ship without an entry point.
+     */
+    const hrefs = (): string[] =>
+      getMenuList('SUPERADMIN')
+        .flatMap((group) => group.menus)
+        .flatMap((menu) => [menu.href, ...(menu.submenus ?? []).map((sub) => sub.href)])
+        .filter((href) => href.startsWith('/'));
+
+    it('resolves every menu href to a registered route', () => {
+      const registered = new Set(collectRoutePaths(routesConfig).map(normalisePath));
+
+      for (const href of hrefs()) {
+        expect(registered.has(normalisePath(href)), `sidebar href "${href}" has no route`).toBe(
+          true,
+        );
+      }
+    });
+
+    it('links the commerce settings page a user can actually open', () => {
+      // Regression guard: the Commerce settings route was registered and fully
+      // built before the sidebar had a link, leaving it unreachable.
+      expect(getSubmenuLabels('Platform Layout', 'SUPERADMIN')).toContain('Commerce Settings');
+      expect(collectRoutePaths(routesConfig).map(normalisePath)).toContain(
+        'platform-settings/commerce',
+      );
+    });
+  });
 });
+
+/** Both sides are compared without a leading or trailing slash. */
+const normalisePath = (path: string): string => path.replace(/^\/+|\/+$/g, '');
+
+/**
+ * Flattens nested route definitions into the paths a sidebar href can match.
+ * A layout contributes a `/` parent, so joining without collapsing would yield
+ * `//products/manage` and match nothing.
+ */
+function collectRoutePaths(routes: RouteObject[], parent = ''): string[] {
+  return routes.flatMap((route) => {
+    const full = [parent, route.path]
+      .filter(Boolean)
+      .join('/')
+      .replace(/\/{2,}/g, '/');
+    return [full, ...collectRoutePaths(route.children ?? [], full)];
+  });
+}
