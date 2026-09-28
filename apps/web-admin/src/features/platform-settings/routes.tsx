@@ -42,4 +42,16 @@ export const platformSettingsRoutes: RouteObject[] = [
     ),
     handle: { title: 'Notification Settings', crumb: 'Notifications', skeleton: 'form' },
   },
+  {
+    path: 'platform-settings/commerce',
+    ...pageRoute(
+      () => import('./pages/commerce-settings-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
+    ),
+    handle: { title: 'Commerce Settings', crumb: 'Commerce', skeleton: 'form' },
+  },
 ];
