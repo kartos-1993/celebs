@@ -1,7 +1,7 @@
 # Code Review — Product Shipping & Warranty Feature
 
 **Branch:** `feat/product-shipping-and-warranty`
-**Date:** 2026-09-25 (audit) · remediation completed 2026-09-27
+**Date:** 2026-09-25 (audit) · remediation completed 2026-09-28
 **Scope:** 51 changed files — 34 modified (`982 + / 168 −`) + 17 untracked (`1,356 lines`)
 **Mode:** Review only. No source file was modified. This document is the sole artifact produced.
 
@@ -9,19 +9,19 @@
 
 ## 0. Remediation Status (added after remediation)
 
-Everything below sections 1–10 describes the branch **as it was on 2026-09-25**. It is preserved unchanged as the historical baseline. This section records what the two remediation waves actually changed, so the findings are not read as current defects.
+Everything below sections 1–10 describes the branch **as it was on 2026-09-25**. It is preserved unchanged as the historical baseline. This section records what the remediation waves actually changed, so the findings are not read as current defects.
 
 ### Verification after remediation
 
-| Check                                 | Before                                            | After                                                    |
-| ------------------------------------- | ------------------------------------------------- | -------------------------------------------------------- |
-| `web-admin` tests                     | 149 passing (shared pkgs never ran)               | **531 passing / 51 files**                               |
-| `api` tests                           | 536 passing / **20 failing**                      | **599 passing / 104 files**                              |
-| `mobile` tests                        | 2 spec files total                                | **159 passing / 15 files**                               |
-| `shared-types` / `shared-utils` tests | not executed by any pipeline task                 | **29 / 33 passing** (both now have a `test` script)      |
-| Lint errors (`web-admin`, `api`)      | 11 + 1                                            | **0** (11 + 14 warnings remain)                          |
-| Spec typecheck                        | never performed (`*.spec.ts` excluded everywhere) | **wired into `api` `typecheck`**; 66 latent errors fixed |
-| Prettier (changed files)              | 16 of 50 failing                                  | **0 failing**                                            |
+| Check                                      | Before                                            | After                                                                   |
+| ------------------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------- |
+| `web-admin` tests                          | 149 passing (shared pkgs never ran)               | **751 passing / 84 files**                                              |
+| `api` tests                                | 536 passing / **20 failing**                      | **632 passing / 108 files**                                             |
+| `mobile` tests                             | 2 spec files total                                | **204 passing / 19 files**                                              |
+| `shared-types` / `shared-utils` tests      | not executed by any pipeline task                 | **29 / 5 files** and **47 / 5 files**, both wired into `turbo run test` |
+| Typecheck                                  | never performed (`*.spec.ts` excluded everywhere) | **0 errors across all five packages**; 66 latent spec errors fixed      |
+| Lint errors (`web-admin`, `api`, `mobile`) | 11 + 1                                            | **0**                                                                   |
+| Prettier (changed files)                   | 16 of 50 failing                                  | **0 failing** (enforced by the pre-commit hook)                         |
 
 ### Resolved
 
@@ -40,17 +40,36 @@ Everything below sections 1–10 describes the branch **as it was on 2026-09-25*
 - **Mobile audit** — selection staleness, out-of-stock defaults, placeholder sentinels, discount math duplication, cart/checkout, wishlist fabrication, response-envelope error loss, query keys, and token/style/a11y sweeps.
 - **20 API failures** — root cause was the CSRF origin guard (not RBAC) plus a hardcoded setup secret in a test; fixed in fixtures with zero assertion changes.
 
+### Resolved in the second remediation pass (product journey + image pipeline)
+
+- **Form value encoding was ambiguous** — hydration wrote flat dotted keys while React Hook Form always wrote nested, so the form held two representations of one field and the winner depended on key insertion order. All hydration now goes through one shared dotted-path writer: nested-only in the form, flat-only in the payload, one conversion at the boundary.
+- **SKU cells rendered blank in edit mode for non-default axis names** — variant path prefixes were hardcoded to `Color`/`Size` instead of being resolved from the real axis keys (sanitised the same way the cells sanitise).
+- **Sections reported "done" when merely error-free** — an empty Shipping & Warranty section read as complete. Replaced with a tri-state (`untouched` / `incomplete` / `complete`); Terms no longer hardcodes "never complete"; loading no longer renders as a user error; the completion percentage counts only genuinely finished sections.
+- **Error storm on first load** — inline errors are now gated per field rather than per form, so touching one field no longer surfaces errors across unrelated sections.
+- **Category switch left stale errors and a resurrected draft** — programmatic `shouldTouch` and the unawaited old-schema validation are gone, the draft autosave can no longer undo the discard, and a failed draft save is reported instead of failing silently.
+- **Refetch discarded unsaved edits** — routine refetch no longer re-hydrates over the seller's in-progress changes.
+- **Cover computed three different ways** — one exported `resolveCover` is now the single rule (`mainImages[0] ?? first colour image`), used by the presenters, order images, review tiles and the cart.
+- **Gallery lost one image per save** — the admin view strips a duplicate swatch for display but was saving the stripped list; the payload now restores exactly the URL the view hides, and a round-trip test asserts byte-for-byte equality.
+- **Colourless products could never publish** — the internal `Default` size-only carrier is no longer presented as a colour, the API reports an explicit `hasColorAxis`, and the publish floor requires a cover only when there is no colour axis. Colourless products create one inventory row per size and work for stock, checkout and in-stock.
+- **Cart rows could show a different picture than the storefront** — the cart overwrote the canonical cover with the line's own colour gallery (the inverse of the canonical order). The cart now resolves one canonical cover live from the current product, declared on the shared `CartItemHydrated` type as `cover?: string`.
+- **Layout shift and focus defects** — the SKU matrix no longer reserves global error height; errors are announced accessibly; `subcategoryId`, cover, SKU paths and nested dynamic fields focus correctly.
+- **Misc** — CM/IN conversion precision and copy, fake `Rs. 0` / "in stock" placeholders, the dead colour-rename control, a duplicated shipping anchor, and the colour-overflow notice vanishing under its own validation.
+
 ### Known remaining (deliberate, documented in code)
 
-| Item                                    | Where                                                     | Why it remains                                                                                                                                                     |
-| --------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Canonical SKU key-builder unification   | `inventory.repository.ts`                                 | Two key dialects coexist (canonical for SKU matching, raw lowercase for row identity). Verified they never compare across, so it is consolidation, not a live bug. |
-| `dynamic-product-form.tsx` at 425 lines | web-admin §4 150-line cap                                 | Pre-existing. Decomposition needs new sub-component files and its own test wave.                                                                                   |
-| `freeItems` field removed               | SKU matrix tables                                         | The field was collected and validated but never persisted; it is now removed rather than silently discarded. **User-visible change.**                              |
-| Free-shipping threshold `999` vs `3000` | mobile cart vs checkout                                   | Both surfaces keep their current value in one shared location; the single correct number is a product decision.                                                    |
-| Thermal sticker print CSS               | `barcode-sticker.tsx`                                     | `text-[7pt]` / `font-black` are physical 50×30mm print constraints and need a documented §7 exemption, not a token swap.                                           |
-| Strict Zod rules                        | `colorCode`, `url()`-only images, required category UUIDs | Deliberately not tightened — the client does not yet satisfy them; changing them would reject current payloads.                                                    |
-| 1 remaining spec type error guard       | api                                                       | `typecheck` now includes specs, so any future drift fails loudly.                                                                                                  |
+| Item                                               | Where                                                             | Why it remains                                                                                                                                                     |
+| -------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Canonical SKU key-builder unification              | `inventory.repository.ts`                                         | Two key dialects coexist (canonical for SKU matching, raw lowercase for row identity). Verified they never compare across, so it is consolidation, not a live bug. |
+| `dynamic-product-form.tsx` at 430 lines            | web-admin §4 150-line cap                                         | Pre-existing. Decomposition needs new sub-component files and its own test wave.                                                                                   |
+| Two active presenters                              | `product.presenter.ts` (222) + `product-presenters.ts` (537)      | Outputs are aligned and both route through the same image resolver, but the split is structural duplication that a future change can still desynchronise.          |
+| Hardcoded hex colors in mobile                     | ~19 files, e.g. `order-card-badge.tsx`, `payment-method-card.tsx` | Pre-existing and app-wide. The product-journey files are clean, but the mobile-wide token sweep is a separate mechanical change.                                   |
+| `freeItems` field removed                          | SKU matrix tables                                                 | The field was collected and validated but never persisted; it is now removed rather than silently discarded. **User-visible change.**                              |
+| Free-shipping threshold `999` vs `3000`            | mobile cart vs checkout                                           | Both surfaces keep their current value in one shared location; the single correct number is a product decision.                                                    |
+| Thermal sticker print CSS                          | `barcode-sticker.tsx`                                             | `text-[7pt]` / `font-black` are physical 50×30mm print constraints and need a documented §7 exemption, not a token swap.                                           |
+| Crop output format and quality                     | `media-crop/crop-canvas.ts`                                       | A product + infra decision (format, quality, max dimensions), not a code defect.                                                                                   |
+| Strict Zod rules                                   | `colorCode`, `url()`-only images, required category UUIDs         | Deliberately not tightened — the client does not yet satisfy them; changing them would reject current payloads.                                                    |
+| Zod resolver migration                             | `use-product-form.ts`                                             | The form still uses manual client-side collectors aligned to the schema; migrating to `@hookform/resolvers` is a structural change with its own wave.              |
+| `index.tsx` barrel under the add-product component | web-admin FSD layer rule                                          | FSD disallows barrels; `add-product/index.tsx` (151 lines) still needs renaming and folding.                                                                       |
 
 ---
 
