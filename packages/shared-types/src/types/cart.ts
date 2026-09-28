@@ -34,6 +34,15 @@ export interface CartResponse {
   sessionId?: string | null;
   items: CartItemHydrated[];
   subtotal: number;
+  /**
+   * Delivery the server would charge for this cart, from the commerce policy.
+   * Advisory: checkout recomputes from the database and is the authority. It is
+   * published here so the app can show a server-derived figure instead of one
+   * it calculated from its own constants, which is how the displayed total and
+   * the charged total drifted apart.
+   */
+  shippingFee: number;
+  total: number;
   itemCount: number;
   hasStockIssues: boolean;
   createdAt: string;

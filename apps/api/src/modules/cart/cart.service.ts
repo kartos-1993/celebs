@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
+import {
+  AddToCartInput,
+  CartItemHydrated,
+  CartResponse,
+  resolveShippingFee,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
@@ -10,6 +15,7 @@ import { cartRepository } from './cart.repository';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
+import { platformSettingsService } from '@/modules/platform-settings/platform-settings.service';
 
 export class CartService {
   /**
@@ -65,6 +71,9 @@ export class CartService {
         sessionId: cartRecord.sessionId,
         items: [],
         subtotal: 0,
+        // An empty cart is never charged delivery.
+        shippingFee: 0,
+        total: 0,
         itemCount: 0,
         hasStockIssues: false,
         createdAt: cartRecord.createdAt.toISOString(),
@@ -146,12 +155,22 @@ export class CartService {
       };
     });
 
+    // Delivery and total are stated here, from the same policy and the same
+    // shared rule checkout charges with, so the figure the shopper is shown is
+    // the figure they are billed. Advisory only — checkout recomputes from the
+    // database and remains the authority.
+    const policy = await platformSettingsService.getCommercePolicy();
+    const subtotal = subtotalDecimal.toNumber();
+    const shippingFee = resolveShippingFee(subtotal, policy);
+
     return {
       id: cartRecord.id,
       userId: cartRecord.userId,
       sessionId: cartRecord.sessionId,
       items: hydratedItems,
-      subtotal: subtotalDecimal.toNumber(),
+      subtotal,
+      shippingFee,
+      total: subtotal + shippingFee,
       itemCount,
       hasStockIssues,
       createdAt: cartRecord.createdAt.toISOString(),

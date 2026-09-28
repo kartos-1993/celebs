@@ -85,6 +85,8 @@ export class CartController {
           sessionId: null,
           items: [],
           subtotal: 0,
+          shippingFee: 0,
+          total: 0,
           itemCount: 0,
           hasStockIssues: false,
           createdAt: new Date().toISOString(),
