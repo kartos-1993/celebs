@@ -1,6 +1,6 @@
 import { PaymentMethod } from '@prisma/client';
 
-import { CheckoutInput, COD_MAX_LIMIT } from '@celebs/shared-types';
+import { CheckoutInput, isCodAllowed, resolveShippingFee } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { AddressRepository, addressRepository } from '../address/address.repository';
@@ -24,6 +24,10 @@ import {
   NotificationService,
   notificationService as defaultNotificationService,
 } from '@/modules/notification/notification.service';
+import {
+  PlatformSettingsService,
+  platformSettingsService as defaultPlatformSettingsService,
+} from '@/modules/platform-settings/platform-settings.service';
 import { purgeProductDetail, purgeProductHome } from '@/modules/product/product-cache';
 
 export class CheckoutService {
@@ -34,6 +38,7 @@ export class CheckoutService {
     private paymentSvc: PaymentService = paymentService,
     private coreOrderRepo: CoreOrderRepository = coreOrderRepository,
     private notificationService: NotificationService = defaultNotificationService,
+    private platformSettingsService: PlatformSettingsService = defaultPlatformSettingsService,
   ) {}
 
   async checkout(userId: string, input: CheckoutInput, requestHost?: string) {
@@ -156,15 +161,21 @@ export class CheckoutService {
       });
     }
 
-    // Enforce COD Maximum Limit with Decimal Precision
-    const shippingFeeDecimal = subtotalDecimal.gt(3000)
-      ? new Prisma.Decimal(0)
-      : new Prisma.Decimal(150);
+    // Money is decided here, not in the app. The delivery fee and the cash-on-
+    // delivery ceiling come from the commerce policy so an admin can change
+    // them without a deploy, and the boundary rule is the shared
+    // `resolveShippingFee` the app also displays — the previous inline
+    // `gt(3000)` disagreed with the app's `>=` and billed a cart sitting
+    // exactly on the threshold that it had been told was free.
+    const policy = await this.platformSettingsService.getCommercePolicy();
+    const shippingFeeDecimal = new Prisma.Decimal(
+      resolveShippingFee(subtotalDecimal.toNumber(), policy),
+    );
     const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
 
-    if (paymentMethod === 'COD' && totalAmountDecimal.gt(COD_MAX_LIMIT)) {
+    if (paymentMethod === 'COD' && !isCodAllowed(totalAmountDecimal.toNumber(), policy)) {
       throw new AppError(
-        `Cash on Delivery (COD) is limited to maximum NPR ${COD_MAX_LIMIT}. Please pay the total of NPR ${totalAmountDecimal.toFixed(2)} with eSewa or Khalti.`,
+        `Cash on Delivery (COD) is limited to maximum NPR ${policy.codMaxLimit}. Please pay the total of NPR ${totalAmountDecimal.toFixed(2)} with eSewa or Khalti.`,
         HTTPSTATUS.BAD_REQUEST,
         ErrorCode.INVALID_REQUEST,
       );

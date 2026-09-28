@@ -3,6 +3,7 @@ import prisma from '../../config/db.prisma';
 import { connectDb, disconnectDb } from './config';
 import { seedBrands } from './seed-brands';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
+import { seedCommerceSettings } from './seed-commerce-settings';
 import { seedCategoriesMen } from './seed-categories-men';
 import { seedOptionSets } from './seed-option-sets';
 import { seedProductsDenimJackets } from './seed-products-denim-jackets';
@@ -25,14 +26,17 @@ export async function runMasterSeed(): Promise<void> {
     await ensurePlatformVendor(prisma);
     await seedBrands();
 
-    // Step 1: Option Sets (Colors, Sizes, Shoe Sizes)
+    // Step 1: Commerce Policy (COD limit, delivery fee, free-delivery threshold)
+    await seedCommerceSettings();
+
+    // Step 2: Option Sets (Colors, Sizes, Shoe Sizes)
     await seedOptionSets();
 
-    // Step 2: Category Hierarchy & Schema Attributes
+    // Step 3: Category Hierarchy & Schema Attributes
     await seedCategoriesMen(isReset);
     await seedCategoriesJewelry();
 
-    // Step 3: Products Catalog
+    // Step 4: Products Catalog
     if (isReset) {
       console.log('\n⚠️ [--reset active] Wiping Product collection...');
       const prisma = (await import('../../config/db.prisma')).default;
@@ -43,7 +47,7 @@ export async function runMasterSeed(): Promise<void> {
     await seedProductsDenimJackets();
     await seedProductsDenimJeans();
 
-    // Step 4: Category Quick Filters
+    // Step 5: Category Quick Filters
     await seedQuickFilters(isReset);
 
     console.log('\n================================================================');

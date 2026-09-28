@@ -101,6 +101,12 @@ function readPolicyNumber(
   return parsed;
 }
 
+/** `Array.isArray` does not narrow `readonly T[]` out of a union, so the
+ *  array branch needs an explicit guard. */
+function isSettingArray(value: unknown): value is readonly CommercePolicySetting[] {
+  return Array.isArray(value);
+}
+
 /**
  * Builds a `CommercePolicy` from raw `key`/`value` settings.
  *
@@ -111,7 +117,7 @@ function readPolicyNumber(
 export function parseCommercePolicy(
   settings: readonly CommercePolicySetting[] | Readonly<Record<string, string>> | undefined | null,
 ): CommercePolicyParseResult {
-  const values: Readonly<Record<string, string>> = Array.isArray(settings)
+  const values: Readonly<Record<string, string>> = isSettingArray(settings)
     ? Object.fromEntries(
         settings
           .filter((setting): setting is CommercePolicySetting => Boolean(setting?.key))
