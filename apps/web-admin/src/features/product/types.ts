@@ -64,12 +64,24 @@ export type PageSectionKey =
   | 'shipping'
   | 'terms';
 
+/**
+ * Section completeness is three-state, not yes/no:
+ *   'untouched'  nothing in the section has been answered yet
+ *   'incomplete' the seller started it and something is still missing
+ *   'complete'   nothing is missing
+ *
+ * A boolean cannot express this: an empty section collects zero errors (the
+ * server defaults the package weight), so "no errors" used to read as "done"
+ * and an empty form rendered as finished.
+ */
+export type SidebarSectionStatus = 'untouched' | 'incomplete' | 'complete';
+
 export interface ProductSidebarSection {
   anchorId: string;
   errors: string[];
   key: string;
   label: string;
-  status: boolean;
+  status: SidebarSectionStatus;
 }
 
 export interface ProductDraft {

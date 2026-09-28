@@ -70,12 +70,12 @@ const BasicInfoSection = ({
                       <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>{categoryPathDisplay || selectedCategory?.name}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Category is locked for live products to maintain warehouse barcodes, tax
                       codes, and order history.
                     </p>
                   </div>
-                  <span className="rounded-full border border-border bg-card px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     Locked
                   </span>
                 </div>

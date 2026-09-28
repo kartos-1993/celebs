@@ -35,10 +35,20 @@ export function CategoryChangeDialog({
             </div>
             <DialogTitle>Change Category?</DialogTitle>
           </div>
-          <DialogDescription className="pt-2 text-sm leading-relaxed text-muted-foreground">
-            You have already entered product details for this category. Switching to{' '}
-            <span className="font-semibold text-foreground">{pendingCategoryName}</span> will
-            regenerate the form schema and may reset category-specific fields and variants.
+          {/* The full reset, named in full. "May reset category-specific fields
+              and variants" under-warned badly: `resetForNewCategory` also clears
+              the basics, every packaging/warranty answer, the parcel
+              dimensions, every image and colour/size row with its SKU codes,
+              prices and stock, and DELETES the saved draft. Prose only — the
+              primitive renders a `<p>`, so a list inside it would be invalid
+              nesting. */}
+          <DialogDescription className="pt-2 leading-relaxed text-muted-foreground">
+            Switching to{' '}
+            <span className="font-semibold text-foreground">{pendingCategoryName}</span> clears
+            everything you have entered for this product: the name, brand and description; all
+            packaging and warranty answers, including the parcel weight and dimensions; every
+            product image; and every colour and size row, along with their SKU codes, prices and
+            stock. Your saved draft is deleted too, and cannot be recovered.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">

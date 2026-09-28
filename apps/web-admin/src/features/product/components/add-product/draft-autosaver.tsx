@@ -9,6 +9,12 @@ interface DraftAutoSaverProps {
   control: Control<FieldValues>;
   draftRestored: boolean;
   isEditMode: boolean;
+  /**
+   * True from a `discardDraft` / `resetForNewCategory` until the seller's first
+   * real edit. Without it the 1s debounce below rewrites the BLANK form those
+   * two just emptied, and the discarded work returns as a "restored draft".
+   */
+  suppressAutosave: boolean;
   watchedCategoryId: string;
   watchedSubcategoryId: string;
   categoryPath: string[] | undefined;
@@ -22,6 +28,7 @@ export const DraftAutoSaver = memo(
     control,
     draftRestored,
     isEditMode,
+    suppressAutosave,
     watchedCategoryId,
     watchedSubcategoryId,
     categoryPath,
@@ -32,7 +39,13 @@ export const DraftAutoSaver = memo(
     const watchedFormValues = useWatch({ control });
 
     useEffect(() => {
-      if (!draftRestored || isEditMode || !watchedCategoryId || !watchedSubcategoryId) {
+      if (
+        suppressAutosave ||
+        !draftRestored ||
+        isEditMode ||
+        !watchedCategoryId ||
+        !watchedSubcategoryId
+      ) {
         return;
       }
       const timer = setTimeout(() => {
@@ -60,6 +73,7 @@ export const DraftAutoSaver = memo(
       return () => clearTimeout(timer);
     }, [
       draftRestored,
+      suppressAutosave,
       watchedFormValues,
       categoryPath,
       isEditMode,

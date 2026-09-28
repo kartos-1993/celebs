@@ -12,6 +12,7 @@ import {
   getCategoryName,
   getInitials,
   getProductCover,
+  getProductPrice,
   getProductStock,
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
@@ -41,10 +42,12 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   onPrintBarcodes,
 }) => {
   if (!product.id) return null;
-  const price = Number(product.price ?? 0);
+  // A missing total/price is a gap in the record, not a zero the seller set:
+  // `Number(null ?? 0)` used to publish "Rs. 0" for a product that has no price.
+  const price = getProductPrice(product);
+  const stock = getProductStock(product);
   const status = product.status ?? 'draft';
   const vendor = getVendorDisplay(product);
-  const stock = getProductStock(product);
   const coverImage = getProductCover(product);
   const categoryImage = getCategoryImage(product);
   const updated = formatShortDate(
@@ -101,9 +104,11 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
           <span className="max-w-32 truncate text-sm text-foreground">{vendor}</span>
         </div>
       </TableCell>
-      <TableCell className="text-right font-mono text-xs tabular-nums">{stock}</TableCell>
       <TableCell className="text-right font-mono text-xs tabular-nums">
-        Rs. {price.toLocaleString()}
+        {stock === null ? '—' : stock}
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs tabular-nums">
+        {price === null ? '—' : `Rs. ${price.toLocaleString()}`}
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground">

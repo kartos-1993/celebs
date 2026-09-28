@@ -11,6 +11,8 @@ import {
 } from '@celebs/shared-ui/components/form';
 import { Textarea } from '@celebs/shared-ui/components/textarea';
 
+import { useFieldErrorReveal } from '../hooks/use-submission-state';
+
 import { BrandSelector } from './brand-selector';
 
 interface BasicInfoInputsProps {
@@ -28,6 +30,8 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
   onFieldChange,
   onBrandSelect,
 }: BasicInfoInputsProps) {
+  // Gated PER FIELD: typing a product name must not surface its siblings' errors.
+  const { revealError } = useFieldErrorReveal(control);
   return (
     <div className="grid gap-6">
       {!hideName && (
@@ -35,8 +39,8 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
           control={control}
           name="name"
           rules={{
-            required: 'Product name is required',
-            minLength: { value: 30, message: 'Product name must be at least 30 characters' },
+            required: 'Product name is required', // zod: z.string().trim().min(2).max(200)
+            minLength: { value: 2, message: 'Product name must be at least 2 characters' },
             maxLength: { value: 200, message: 'Product name must be less than 200 characters' },
           }}
           render={({ field }) => {
@@ -49,7 +53,7 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
                   </FormLabel>
                   <span
                     className={
-                      charCount > 0 && charCount < 30
+                      charCount > 0 && charCount < 2
                         ? 'text-xs font-medium text-warning'
                         : 'text-xs text-muted-foreground'
                     }
@@ -59,7 +63,7 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
                 </div>
                 <FormControl>
                   <Textarea
-                    placeholder="Enter a clear, searchable product title (min. 30 characters)"
+                    placeholder="Enter a clear, searchable product title (min. 2 characters)"
                     data-testid="product-name-input"
                     maxLength={200}
                     rows={2}
@@ -74,7 +78,7 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
                 <FormDescription className="text-xs text-muted-foreground">
                   Include the key identifier, style, or collection name buyers would search for.
                 </FormDescription>
-                <FormMessage />
+                {revealError('name') && <FormMessage />}
               </FormItem>
             );
           }}
@@ -97,7 +101,7 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
                   }}
                 />
               </FormControl>
-              <FormMessage />
+              {revealError('brandId') && <FormMessage />}
             </FormItem>
           )}
         />
@@ -136,7 +140,7 @@ export const BasicInfoInputs = memo(function BasicInfoInputs({
               This description is used for the published product page and should be specific enough
               for customers to understand the item.
             </FormDescription>
-            <FormMessage />
+            {revealError('description') && <FormMessage />}
           </FormItem>
         )}
       />

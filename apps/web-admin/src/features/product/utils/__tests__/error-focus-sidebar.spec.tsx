@@ -161,14 +161,14 @@ describe('ProductFormSidebar status derivation and error truncation', () => {
       key: 'basic',
       label: 'Basic Information',
       anchorId: 'product-section-basic',
-      status: false,
+      status: 'untouched',
       errors: ['e1', 'e2', 'e3', 'e4', 'e5'],
     },
     {
       key: 'images',
       label: 'Product Images',
       anchorId: 'product-section-base',
-      status: true,
+      status: 'complete',
       errors: [],
     },
   ];
@@ -185,7 +185,7 @@ describe('ProductFormSidebar status derivation and error truncation', () => {
     render(
       <ProductFormSidebar
         completionPercentage={100}
-        sections={sections.map((s) => ({ ...s, status: true, errors: [] }))}
+        sections={sections.map((s) => ({ ...s, status: 'complete' as const, errors: [] }))}
         showErrors
       />,
     );
@@ -194,12 +194,21 @@ describe('ProductFormSidebar status derivation and error truncation', () => {
   });
 
   it('hides errors until attempted submit, then slices each section to 3 with an exact count', () => {
+    // `untouched` is the "nothing answered yet" state, so it stays silent
+    // until the seller commits. Only a submit attempt escalates it.
     const { rerender } = render(
       <ProductFormSidebar completionPercentage={50} sections={sections} showErrors={false} />,
     );
     expect(screen.queryByText('e1')).toBeNull();
 
-    rerender(<ProductFormSidebar completionPercentage={50} sections={sections} showErrors />);
+    rerender(
+      <ProductFormSidebar
+        completionPercentage={50}
+        sections={sections}
+        hasAttemptedSubmit
+        showErrors
+      />,
+    );
     expect(screen.getByText('e1')).toBeDefined();
     expect(screen.getByText('e2')).toBeDefined();
     expect(screen.getByText('e3')).toBeDefined();
@@ -213,6 +222,7 @@ describe('ProductFormSidebar status derivation and error truncation', () => {
     render(
       <ProductFormSidebar
         completionPercentage={0}
+        hasAttemptedSubmit
         sections={[{ ...sections[0], errors: ['only', 'two'] }]}
         showErrors
       />,
@@ -222,10 +232,14 @@ describe('ProductFormSidebar status derivation and error truncation', () => {
     expect(screen.queryByText(/more/)).toBeNull();
   });
 
-  it('derives completion as round(done/total*100), 0 when empty', () => {
-    // Mirrors use-submission-state.ts completionPercentage derivation.
+  it('derives completion as round(complete/total*100), 0 when empty', () => {
+    // Mirrors use-submission-state.ts completionPercentage derivation: only
+    // `complete` counts. `untouched` is not a failure and must never inflate
+    // the score.
     const pct = (list: ProductSidebarSection[]) =>
-      list.length === 0 ? 0 : Math.round((list.filter((s) => s.status).length / list.length) * 100);
+      list.length === 0
+        ? 0
+        : Math.round((list.filter((s) => s.status === 'complete').length / list.length) * 100);
     expect(pct(sections)).toBe(50);
     expect(pct([])).toBe(0);
   });

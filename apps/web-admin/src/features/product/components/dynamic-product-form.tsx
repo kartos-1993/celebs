@@ -21,6 +21,7 @@ import {
   type ServerDefaultEntry,
   sortVariantFields,
 } from './dynamic-form-helpers';
+import { excludeOwnerOwnedFields } from './dynamic-form-parcel-guard';
 
 export interface DynamicProductFormHandle {
   /** Scrolls the section owning the anchor into view.
@@ -172,7 +173,9 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
     const imageFields = otherMediaFields.filter((field) => field.uiType === 'MainImage');
     const swatchMediaFields = otherMediaFields.filter((field) => field.uiType !== 'MainImage');
     const saleFields = grouped.sale || [];
-    const packageFields = grouped.package || [];
+    // Parcel paths are owned by `ShippingDimensionsCard`; an attribute reusing
+    // one of those names is dropped here, never rendered as a second input.
+    const packageFields = excludeOwnerOwnedFields(grouped.package || []);
     const termFields = grouped.termcondition || [];
 
     const hasAnyFields = fields.length > 0;
@@ -278,12 +281,14 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
           </div>
         )}
 
-        {/* Section: Shipping & Warranty */}
+        {/* Section: Shipping & Warranty attributes. NO section anchor here:
+            `ShippingWarrantySection` owns `PRODUCT_SECTION_ANCHORS.shipping`
+            and renders unconditionally beside this block, which only exists for
+            a category declaring `package`-group attributes. Two elements with
+            one id meant the sidebar jump resolved to whichever came first and
+            the other card was unreachable. Plain content under the owner. */}
         {packageFields.length > 0 && (
-          <div
-            id="product-section-package"
-            className="scroll-mt-24 rounded-3xl border border-border bg-card p-6 shadow-xs"
-          >
+          <div className="space-y-6 rounded-3xl border border-border bg-card p-6 shadow-xs">
             <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Package className="h-4 w-4" />
@@ -291,11 +296,11 @@ export const DynamicProductForm = forwardRef<DynamicProductFormHandle, DynamicPr
               <div>
                 <h3 className="text-base font-semibold text-foreground">Shipping & Warranty</h3>
                 <p className="text-xs text-muted-foreground">
-                  Parcel dimensions, weight, and guarantee options
+                  Parcel Dimensions, weight, and guarantee options
                 </p>
               </div>
             </div>
-            <div className="space-y-6">{renderFieldNodes(packageFields)}</div>
+            {renderFieldNodes(packageFields)}
           </div>
         )}
 

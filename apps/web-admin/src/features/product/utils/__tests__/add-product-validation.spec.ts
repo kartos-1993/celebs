@@ -228,7 +228,7 @@ describe('buildSidebarSections pricing anchor', () => {
       ],
     });
     const pricing = sections.find((section) => section.key === 'pricing');
-    expect(pricing?.status).toBe(false);
+    expect(pricing?.status).toBe('incomplete');
     expect(pricing?.errors.some((message) => message.includes('two variant groups'))).toBe(true);
   });
 });
@@ -264,7 +264,10 @@ describe('shipping and warranty validation and score calculation', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it('keeps the shipping section complete on a blank form (server-defaulted weight)', () => {
+  it('never reports the shipping section complete on a blank form', () => {
+    // A blank shipping section collects ZERO errors (the server defaults the
+    // weight), so "no errors" alone used to read as done. Validity is
+    // necessary, not sufficient: nothing has been answered here yet.
     const sections = buildSidebarSections({
       fieldErrors: [],
       schemaFields: variantFields,
@@ -274,7 +277,7 @@ describe('shipping and warranty validation and score calculation', () => {
     });
     const shippingSection = sections.find((section) => section.key === 'shipping');
     expect(shippingSection).toBeDefined();
-    expect(shippingSection?.status).toBe(true);
+    expect(shippingSection?.status).toBe('untouched');
     expect(shippingSection?.errors).toHaveLength(0);
   });
 
@@ -291,7 +294,7 @@ describe('shipping and warranty validation and score calculation', () => {
     });
     const shippingSection = sections.find((section) => section.key === 'shipping');
     expect(shippingSection).toBeDefined();
-    expect(shippingSection?.status).toBe(true);
+    expect(shippingSection?.status).toBe('complete');
     expect(shippingSection?.errors).toHaveLength(0);
   });
 });
@@ -313,7 +316,7 @@ describe('buildSidebarSections specification attributes threshold', () => {
       variantMeta: [],
     });
     const specs = sections.find((section) => section.key === 'specification');
-    expect(specs?.status).toBe(false);
+    expect(specs?.status).toBe('incomplete');
     expect(specs?.errors[0]).toBe('Fill at least 3 specification attributes (currently 2 filled).');
   });
 
@@ -326,7 +329,7 @@ describe('buildSidebarSections specification attributes threshold', () => {
       variantMeta: [],
     });
     const specs = sections.find((section) => section.key === 'specification');
-    expect(specs?.status).toBe(true);
+    expect(specs?.status).toBe('complete');
     expect(specs?.errors).toHaveLength(0);
   });
 });

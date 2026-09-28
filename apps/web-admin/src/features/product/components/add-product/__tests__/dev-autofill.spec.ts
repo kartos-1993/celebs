@@ -37,7 +37,11 @@ describe('autofillProductForm', () => {
     expect(values.name).toContain('Manfinity Hypemode');
     expect(values.brand).toBe('Manfinity');
     expect(values.description).toContain('ribbed knit polo shirt');
-    expect(values.mainImage).toHaveLength(2);
+    // The canonical PLURAL gallery key. Autofill used to write the singular
+    // `mainImage`, which nothing downstream reads — the mock photos looked
+    // applied in dev and published an empty gallery.
+    expect(values.mainImages).toHaveLength(2);
+    expect(values.mainImage).toBeUndefined();
     expect(values.sku).toEqual({
       default: { price: '1200', stock: '15', sellerSku: 'POLO-SHIRT-MOCK', available: true },
     });

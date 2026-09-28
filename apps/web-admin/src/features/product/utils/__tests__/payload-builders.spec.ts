@@ -699,7 +699,7 @@ describe('buildProductPayload skus', () => {
     expect(sanitizeVariantKey('Light Blue')).toBe('Light Blue');
   });
 
-  it('reads back the exact case that pathFor and the stored form values use', () => {
+  it('reads back the exact case that skuVariantPath and the stored form values use', () => {
     // fix: the round-trip proof for the case decision — the payload
     // writer, the payload reader, and the validator must all agree with the
     // case the hydrated/stored form paths already use.

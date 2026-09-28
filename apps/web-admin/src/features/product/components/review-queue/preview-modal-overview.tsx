@@ -71,11 +71,11 @@ export function PdpOverviewPreview({
           <Badge variant="outline" className="mb-2">
             {product.brand || 'No Brand'}
           </Badge>
-          <h3 className="text-2xl font-bold text-foreground">{product.name}</h3>
+          <h3 className="text-base font-semibold text-foreground">{product.name}</h3>
           <div className="mt-2 flex flex-wrap items-baseline gap-3">
             {product.discountedPrice ? (
               <>
-                <span className="text-2xl font-extrabold text-foreground">
+                <span className="text-2xl font-bold text-foreground">
                   Rs. {product.discountedPrice.toLocaleString()}
                 </span>
                 <span className="text-base text-muted-foreground line-through">
@@ -86,7 +86,7 @@ export function PdpOverviewPreview({
                 </Badge>
               </>
             ) : (
-              <span className="text-2xl font-extrabold text-foreground">
+              <span className="text-2xl font-bold text-foreground">
                 Rs. {product.price.toLocaleString()}
               </span>
             )}

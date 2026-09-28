@@ -17,6 +17,17 @@ export interface CascadingDropdownProps {
   isDirty?: boolean | (() => boolean);
 }
 
+/**
+ * The RHF field this dropdown IS. It matches the `FormField name` in
+ * `BasicInfoSection`, which is the only place `CascadingDropdown` is rendered.
+ *
+ * It has to be declared here because shared-ui's `FormControl` clones its child
+ * through Radix `Slot` and only forwards `id`/`aria-*` — no `name` and no
+ * `data-field-name` reach the DOM, so `form-focus.locateErrorElement` had
+ * nothing to resolve for the required `subcategoryId` path.
+ */
+const CATEGORY_FIELD_NAME = 'subcategoryId';
+
 export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   onSelect,
   placeholder = 'Please select category or search with keyword',
@@ -27,10 +38,18 @@ export const CascadingDropdown: React.FC<CascadingDropdownProps> = ({
   const showColumns = state.globalSearchQuery.trim().length === 0;
 
   return (
-    <div className="space-y-2">
+    // `tabIndex={-1}`: this is the element `FormControl`'s Slot props land on,
+    // so it is the focus target for the `subcategoryId` error. Out of the tab
+    // order (the trigger button is the interactive element), but focusable
+    // programmatically by `form-focus`.
+    <div className="space-y-2" tabIndex={-1}>
       <Popover open={state.isOpen} onOpenChange={state.handleOpenChange}>
         <PopoverTrigger asChild>
-          <CategoryTrigger selectedCategory={selectedCategory} placeholder={placeholder} />
+          <CategoryTrigger
+            data-field-name={CATEGORY_FIELD_NAME}
+            selectedCategory={selectedCategory}
+            placeholder={placeholder}
+          />
         </PopoverTrigger>
 
         <PopoverContent

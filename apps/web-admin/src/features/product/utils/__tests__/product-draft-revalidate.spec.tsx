@@ -54,10 +54,11 @@ describe('resolveResetValidationScope', () => {
 });
 
 describe('useProductDraft reset paths', () => {
-  it('re-validates visible fields after clearing errors on discard', async () => {
-    // Registered rules are what `trigger` re-runs: an unregistered field has
-    // nothing to validate against, which is exactly why clearing alone used to
-    // look like "valid".
+  it('clears errors instead of re-deriving them on discard', async () => {
+    // A reset must hand back a BLANK form, not a freshly-validated one: a mass
+    // `trigger(scope)` here was the last writer to publish errors, and its
+    // scope is built from the previous category's still-mounted schema. The
+    // submit path owns validation; a reset owns clearing.
     const { result } = renderHook(() => {
       const form = useForm<ProductFormValues>({ mode: 'onChange', shouldUnregister: false });
       form.register('name', { required: 'Name is required' });
@@ -79,16 +80,19 @@ describe('useProductDraft reset paths', () => {
       result.current.draft.discardDraft();
     });
 
-    // Errors are cleared AND re-derived: a blanked required field is invalid
-    // again instead of looking like a cleared-but-valid field.
     expect(result.current.form.getValues('name')).toBe('');
-    await waitFor(() => {
-      expect(result.current.form.formState.errors.name?.message).toBe('Name is required');
-      expect(result.current.form.formState.errors.price?.message).toBe('Price is required');
+    await waitFor(() => expect(result.current.form.formState.errors.name).toBeUndefined());
+    expect(result.current.form.formState.errors.price).toBeUndefined();
+
+    // The rule is not thrown away: it is still enforced the moment anything
+    // actually validates, so a blanked required field cannot pass the gate.
+    await act(async () => {
+      await result.current.form.trigger('name');
     });
+    expect(result.current.form.formState.errors.name?.message).toBe('Name is required');
   });
 
-  it('re-validates the visible scope after a category reset', async () => {
+  it('leaves the visible scope clean after a category reset', async () => {
     const { result } = renderHook(() => {
       const form = useForm<ProductFormValues>({ mode: 'onChange', shouldUnregister: false });
       form.register('Color', { required: 'Pick a color' });
@@ -108,9 +112,35 @@ describe('useProductDraft reset paths', () => {
 
     expect(result.current.form.getValues('categoryId')).toBe('cat-9');
     expect(result.current.form.getValues('subcategoryId')).toBe('cat-9');
-    await waitFor(() =>
-      expect(result.current.form.formState.errors.Color?.message).toBe('Pick a color'),
+    await waitFor(() => expect(result.current.form.formState.errors.Color).toBeUndefined());
+  });
+
+  it('prunes errors for schema fields the new category no longer has', async () => {
+    // `shouldUnregister: false` means unmounting never clears an error, so a
+    // path from the previous category would otherwise survive every switch and
+    // pin the General section incomplete forever.
+    const { result, rerender } = renderHook(
+      ({ visibleFieldNames }: { visibleFieldNames: string[] }) => {
+        const form = useForm<ProductFormValues>({ mode: 'onChange', shouldUnregister: false });
+        form.register('Color', { required: 'Pick a color' });
+        form.register('Fabric', { required: 'Fabric is required' });
+        return { form, draft: useProductDraft({ form, isEditMode: false, visibleFieldNames }) };
+      },
+      { initialProps: { visibleFieldNames: ['Color', 'Fabric'] } },
     );
+
+    act(() => {
+      result.current.form.setError('Color', { type: 'manual', message: 'Pick a color' });
+      result.current.form.setError('Fabric', { type: 'manual', message: 'Fabric is required' });
+    });
+
+    rerender({ visibleFieldNames: ['Color'] });
+
+    // `getFieldState` reads RHF's error store directly; `formState.errors` is a
+    // subscription that has not necessarily flushed at this point.
+    await waitFor(() => expect(result.current.form.getFieldState('Fabric').error).toBeUndefined());
+    // The field the new category still has keeps its error.
+    expect(result.current.form.getFieldState('Color').error?.message).toBe('Pick a color');
   });
 
   it('clears errors for fields outside the reset scope', async () => {

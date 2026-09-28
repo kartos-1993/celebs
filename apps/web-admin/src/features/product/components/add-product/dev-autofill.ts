@@ -4,14 +4,21 @@ import type { FieldSpec, ProductFormValues } from '../../types';
 
 import { toast } from '@/hooks/use-toast';
 
-/** Basic fields the autofiller owns directly (never schema-driven). */
+/**
+ * Basic fields the autofiller owns directly (never schema-driven).
+ *
+ * `mainImages` is the canonical gallery key — the same name the server's field
+ * spec publishes and the write contract accepts. The singular spelling
+ * registered the mock photos under a different RHF path than the one the
+ * payload reads, so autofill appeared to work and published an empty gallery.
+ */
 const BASE_FIELD_NAMES = [
   'name',
   'brand',
   'description',
   'categoryId',
   'subcategoryId',
-  'mainImage',
+  'mainImages',
 ];
 
 const DEFAULT_COLORS = ['Blue', 'White'];
@@ -86,7 +93,7 @@ export function autofillProductForm(
   );
   form.setValue('brand', 'Manfinity', { shouldValidate: true });
   form.setValue(
-    'mainImage',
+    'mainImages',
     [
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941142/celebs/products/bln3u0xtadrgtioonfsn.png',
       'https://res.cloudinary.com/celebsnp/image/upload/v1783941153/celebs/products/dy4aw7qrlnj3uzglqbk5.png',

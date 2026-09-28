@@ -1,22 +1,15 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo } from 'react';
 
 import type { MediaAsset, MediaScope } from '@celebs/shared-types';
 import { Dialog, DialogContent } from '@celebs/shared-ui/components/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@celebs/shared-ui/components/tabs';
-
-import {
-  useInvalidateMediaLibrary,
-  useMediaAssets,
-  useMediaQuota,
-} from '../hooks/use-media-assets';
+import { Tabs } from '@celebs/shared-ui/components/tabs';
 
 import { MediaPickerFooter } from './media-picker/media-picker-footer';
 import { MediaPickerHeader } from './media-picker/media-picker-header';
 import { MediaPickerLibraryTab } from './media-picker/media-picker-library-tab';
+import { type MediaPickerTab, MediaPickerTabBar } from './media-picker/media-picker-tab-bar';
 import { MediaPickerUploadTab } from './media-picker/media-picker-upload-tab';
-
-import { useDebounce } from '@/hooks/use-debounce';
-import { directUploadBatch } from '@/lib/media-upload';
+import { useMediaPickerState } from './media-picker/use-media-picker-state';
 
 interface MediaPickerDialogProps {
   open: boolean;
@@ -27,6 +20,16 @@ interface MediaPickerDialogProps {
   scope?: MediaScope;
 }
 
+/**
+ * LAYOUT ONLY. Every piece of state and every handler lives in
+ * `useMediaPickerState`; the tab strip is `MediaPickerTabBar`. This file used to
+ * be 189 lines, over AGENTS §4's 150-line budget, and a new patch here would
+ * have made it worse — so the behaviour was moved, not appended (§11).
+ *
+ * `memo` is kept: the dialog is mounted permanently by every
+ * `MediaLibraryButton` call site and only rendered when open, so a re-render
+ * must not churn it.
+ */
 export const MediaPickerDialog = memo(function MediaPickerDialog({
   open,
   onOpenChange,
@@ -35,145 +38,55 @@ export const MediaPickerDialog = memo(function MediaPickerDialog({
   initialSelectedUrls = [],
   scope = 'PRODUCT',
 }: MediaPickerDialogProps) {
-  const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
-  const [selectedUrls, setSelectedUrls] = useState<string[]>(initialSelectedUrls);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  const debouncedSearch = useDebounce(searchTerm, 350);
-
-  const { data: assetsData, isLoading: isLoadingAssets } = useMediaAssets({
-    search: debouncedSearch || undefined,
+  const picker = useMediaPickerState({
+    open,
+    onOpenChange,
+    onSelect,
+    maxSelect,
+    initialSelectedUrls,
     scope,
-    limit: 30,
   });
-
-  const { data: quota } = useMediaQuota();
-  const invalidateMediaLibrary = useInvalidateMediaLibrary();
-  const assets = useMemo(() => assetsData?.items || [], [assetsData]);
-
-  useEffect(() => {
-    if (open) {
-      setSelectedUrls(initialSelectedUrls ?? []);
-      setSelectedAssets([]);
-      setActiveTab('library');
-      setUploadError(null);
-    }
-  }, [open, initialSelectedUrls]);
-
-  const toggleSelectAsset = useCallback(
-    (asset: MediaAsset) => {
-      setSelectedUrls((prev) => {
-        const exists = prev.includes(asset.url);
-        if (exists) {
-          setSelectedAssets((assetsPrev) => assetsPrev.filter((a) => a.id !== asset.id));
-          return prev.filter((u) => u !== asset.url);
-        }
-        if (prev.length >= maxSelect) return prev;
-        setSelectedAssets((assetsPrev) => [...assetsPrev, asset]);
-        return [...prev, asset.url];
-      });
-    },
-    [maxSelect],
-  );
-
-  const handleConfirmSelection = useCallback(() => {
-    onSelect(selectedUrls, selectedAssets);
-    onOpenChange(false);
-  }, [onSelect, selectedUrls, selectedAssets, onOpenChange]);
-
-  const handleDirectFilesUpload = useCallback(
-    async (files: FileList | File[]) => {
-      const fileArray = Array.from(files);
-      if (!fileArray.length) return;
-      setIsUploading(true);
-      setUploadError(null);
-      try {
-        const uploadedUrls = await directUploadBatch(fileArray, 'celebs/products', scope);
-        // Library grid + quota would otherwise keep showing stale data.
-        invalidateMediaLibrary();
-        setSelectedUrls((prev) => [...prev, ...uploadedUrls].slice(0, maxSelect));
-        setActiveTab('library');
-      } catch (err: unknown) {
-        setUploadError(err instanceof Error ? err.message : 'Failed to upload images');
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [invalidateMediaLibrary, maxSelect, scope],
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.dataTransfer.files?.length) handleDirectFilesUpload(e.dataTransfer.files);
-    },
-    [handleDirectFilesUpload],
-  );
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const quotaPct =
-    quota && quota.maxBytes > 0
-      ? Math.min(100, Math.round((quota.usedBytes / quota.maxBytes) * 100))
-      : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
         <MediaPickerHeader
-          quotaPct={quotaPct}
-          selectedCount={selectedUrls.length}
+          quotaPct={picker.quotaPct}
+          selectedCount={picker.selectedUrls.length}
           maxSelect={maxSelect}
         />
         <Tabs
-          value={activeTab}
-          onValueChange={(val) => setActiveTab(val as 'library' | 'upload')}
+          value={picker.activeTab}
+          onValueChange={(val) => picker.setActiveTab(val as MediaPickerTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 bg-muted/30 px-4 py-2">
-            <TabsList className="h-8">
-              <TabsTrigger value="library" className="h-7 px-3 text-xs">
-                Library
-              </TabsTrigger>
-              <TabsTrigger value="upload" className="h-7 px-3 text-xs">
-                Upload New
-              </TabsTrigger>
-            </TabsList>
-            {activeTab === 'library' && selectedUrls.length >= maxSelect && (
-              <span className="text-xs font-medium text-warning">
-                Selection limit reached ({maxSelect})
-              </span>
-            )}
-          </div>
-          <MediaPickerLibraryTab
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            isLoading={isLoadingAssets}
-            assets={assets}
-            selectedUrls={selectedUrls}
+          <MediaPickerTabBar
+            activeTab={picker.activeTab}
+            selectedCount={picker.selectedUrls.length}
             maxSelect={maxSelect}
-            onToggleSelect={toggleSelectAsset}
-            onGoToUpload={() => setActiveTab('upload')}
+          />
+          <MediaPickerLibraryTab
+            searchTerm={picker.searchTerm}
+            onSearchChange={picker.setSearchTerm}
+            isLoading={picker.isLoadingAssets}
+            assets={picker.assets}
+            selectedUrls={picker.selectedUrls}
+            maxSelect={maxSelect}
+            onToggleSelect={picker.toggleSelectAsset}
+            onGoToUpload={() => picker.setActiveTab('upload')}
           />
           <MediaPickerUploadTab
-            isUploading={isUploading}
-            uploadError={uploadError}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onFilesSelected={handleDirectFilesUpload}
+            isUploading={picker.isUploading}
+            uploadError={picker.uploadError}
+            onDrop={picker.handleDrop}
+            onDragOver={picker.handleDragOver}
+            onFilesSelected={picker.handleDirectFilesUpload}
           />
         </Tabs>
         <MediaPickerFooter
-          selectedCount={selectedUrls.length}
-          onCancel={() => onOpenChange(false)}
-          onConfirm={handleConfirmSelection}
+          selectedCount={picker.selectedUrls.length}
+          onCancel={picker.handleCancel}
+          onConfirm={picker.handleConfirmSelection}
         />
       </DialogContent>
     </Dialog>

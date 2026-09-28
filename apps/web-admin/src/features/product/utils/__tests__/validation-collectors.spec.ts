@@ -548,19 +548,23 @@ describe('buildSidebarSections', () => {
       variantMeta: [],
     });
     const byKey = Object.fromEntries(sections.map((s) => [s.key, s]));
-    expect(byKey.basic.status).toBe(false);
-    expect(byKey.images.status).toBe(false);
-    expect(byKey.specification.status).toBe(false);
-    expect(byKey.pricing.status).toBe(false);
-    // Shipping passes on a blank form: packageWeightKg is server-defaulted.
-    expect(byKey.shipping.status).toBe(true);
-    const completedCount = sections.filter((s) => s.status).length;
-    expect(Math.round((completedCount / sections.length) * 100)).toBe(20);
+    // Nothing has been answered anywhere, so nothing is `incomplete` yet.
+    // Shipping used to read `true` here purely because it collects zero
+    // errors (packageWeightKg is server-defaulted) — which is the defect.
+    expect(byKey.basic.status).toBe('untouched');
+    expect(byKey.images.status).toBe('untouched');
+    expect(byKey.specification.status).toBe('untouched');
+    expect(byKey.pricing.status).toBe('untouched');
+    expect(byKey.shipping.status).toBe('untouched');
+    const completedCount = sections.filter((s) => s.status === 'complete').length;
+    expect(Math.round((completedCount / sections.length) * 100)).toBe(0);
   });
 
-  it('surfaces every section as incomplete when the schema is empty', () => {
+  it('surfaces every section as untouched, and errorless, when the schema is empty', () => {
     // The old code returned ONLY the basic section, hiding images/pricing/
-    // shipping failures behind a ready-looking checklist.
+    // shipping failures behind a ready-looking checklist. A still-loading
+    // schema knows nothing either, so it can only report `untouched` — it can
+    // never report a user error.
     const sections = buildSidebarSections({
       fieldErrors: [{ path: 'sku.default.price', message: 'bad' }],
       schemaFields: [],
@@ -575,8 +579,9 @@ describe('buildSidebarSections', () => {
       'pricing',
       'shipping',
     ]);
-    expect(sections.every((s) => s.status === false)).toBe(true);
-    const completedCount = sections.filter((s) => s.status).length;
+    expect(sections.every((s) => s.status === 'untouched')).toBe(true);
+    expect(sections.every((s) => s.errors.length === 0)).toBe(true);
+    const completedCount = sections.filter((s) => s.status === 'complete').length;
     expect(Math.round((completedCount / sections.length) * 100)).toBe(0);
   });
 
@@ -647,10 +652,11 @@ describe('buildSidebarSections', () => {
     const general = sections.find((s) => s.key === 'general');
     expect(general).toBeDefined();
     expect(general?.errors).toEqual(['x']);
-    expect(general?.status).toBe(false);
+    // The bucket is errors by definition, so it is always `incomplete`.
+    expect(general?.status).toBe('incomplete');
     // The 5 original sections are still complete, so the score drops by the
     // one unmappable error instead of being silently ignored.
-    const completedCount = sections.filter((s) => s.status).length;
+    const completedCount = sections.filter((s) => s.status === 'complete').length;
     expect(Math.round((completedCount / sections.length) * 100)).toBe(83);
   });
 });

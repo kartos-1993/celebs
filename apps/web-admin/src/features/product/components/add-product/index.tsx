@@ -96,6 +96,7 @@ export const AddProduct = () => {
         control={form.control}
         draftRestored={draft.draftRestored}
         isEditMode={isEditMode}
+        suppressAutosave={draft.isDraftAutosaveSuppressed}
         watchedCategoryId={watchedCategoryId}
         watchedSubcategoryId={watchedSubcategoryId}
         categoryPath={draft.categoryPath}

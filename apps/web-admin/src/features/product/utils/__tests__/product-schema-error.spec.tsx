@@ -15,7 +15,8 @@ import { useProductSchema } from '../../hooks/use-product-schema';
 const mockedRender = vi.mocked(fetchProductRenderSchema);
 const mockedById = vi.mocked(getDropdownCategoryById);
 
-const BASELINE_NAMES = ['mainImage', 'price', 'specialPrice'];
+/** The success-path baseline, in schema order. */
+const BASELINE_NAMES = ['mainImages', 'price', 'specialPrice'];
 
 const wrapper = ({ children }: { children: React.ReactNode }) => {
   const client = new QueryClient({

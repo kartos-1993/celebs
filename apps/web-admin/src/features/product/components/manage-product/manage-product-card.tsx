@@ -12,6 +12,7 @@ import {
   getCategoryImage,
   getCategoryName,
   getProductCover,
+  getProductPrice,
   getProductStock,
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
@@ -40,7 +41,10 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
 }) => {
   if (!product.id) return null;
   const productId = product.id;
-  const price = Number(product.price ?? 0);
+  // A missing price/stock is a gap in the record, not a zero the seller set:
+  // `Number(product.price ?? 0)` published "Rs. 0" for a product that simply has
+  // no price yet. Same contract as `ManageProductTableRow` and `avgStock`.
+  const price = getProductPrice(product);
   const status = product.status ?? 'draft';
   const stock = getProductStock(product);
   const coverImage = getProductCover(product);
@@ -89,7 +93,7 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
           </div>
         </div>
         <div className="shrink-0 text-right font-mono text-sm tabular-nums">
-          Rs. {price.toLocaleString()}
+          {price === null ? '—' : `Rs. ${price.toLocaleString()}`}
         </div>
       </div>
 
@@ -97,7 +101,9 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
         <span className="min-w-0 truncate">
           {getVendorDisplay(product)} · Updated {updated}
         </span>
-        <span className="shrink-0 font-mono tabular-nums">Stock {stock}</span>
+        <span className="shrink-0 font-mono tabular-nums">
+          {stock === null ? '—' : `Stock ${stock}`}
+        </span>
       </div>
 
       <div className="flex flex-wrap gap-2">

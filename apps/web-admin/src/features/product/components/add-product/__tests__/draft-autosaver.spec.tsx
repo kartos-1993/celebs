@@ -21,9 +21,14 @@ const formValues = { categoryId: 'cat-1', subcategoryId: 'cat-2', name: 'Tee' };
 interface HarnessProps {
   isEditMode?: boolean;
   draftRestored?: boolean;
+  suppressAutosave?: boolean;
 }
 
-const Harness = ({ isEditMode = false, draftRestored = true }: HarnessProps) => {
+const Harness = ({
+  isEditMode = false,
+  draftRestored = true,
+  suppressAutosave = false,
+}: HarnessProps) => {
   const form = useForm<ProductFormValues>({ shouldUnregister: false });
   const control = useMemo(() => form.control, [form]);
   return (
@@ -32,6 +37,7 @@ const Harness = ({ isEditMode = false, draftRestored = true }: HarnessProps) => 
         control={control}
         draftRestored={draftRestored}
         isEditMode={isEditMode}
+        suppressAutosave={suppressAutosave}
         watchedCategoryId="cat-1"
         watchedSubcategoryId="cat-2"
         categoryPath={['Root', 'Shirts']}
@@ -105,6 +111,22 @@ describe('DraftAutoSaver', () => {
     );
     act(() => {
       vi.advanceTimersByTime(1000);
+    });
+
+    expect(setItem).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing while autosave is suppressed, even past the debounce', () => {
+    // The bug this guards: after `discardDraft` / `resetForNewCategory` the form
+    // is blank and the draft is gone, but the autosave is a 1s debounce over the
+    // whole form — so it rewrote that blank form and the discarded work came
+    // back on the next visit as a "restored draft".
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
+
+    render(<Harness suppressAutosave />);
+    act(() => {
+      vi.advanceTimersByTime(5000);
     });
 
     expect(setItem).not.toHaveBeenCalled();

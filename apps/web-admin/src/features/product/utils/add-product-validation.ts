@@ -17,7 +17,7 @@ import type { FieldErrors } from 'react-hook-form';
 
 import type { FieldSpec } from '../fields/ui-registry';
 import { resolveColorAxisKey } from '../fields/variant-utils';
-import type { ProductSidebarSection } from '../types';
+import type { ProductSidebarSection, SidebarSectionStatus } from '../types';
 
 import {
   extractHexColor,
@@ -703,16 +703,143 @@ export const collectTermsSectionErrors = ({
   return uniqueMessages([...errors, ...getRequiredFieldErrors(termsFields, values)]);
 };
 
-const SCHEMA_LOADING_ERROR = 'Form fields are still loading.';
+// ── Section completeness (three-state) ───────────────────────────────────────
 
-// With no schema fields the checklist knows nothing: every section (basic
-// included) reports incomplete so the score can never read inflated green.
+/**
+ * A value the sidebar owns that no `FieldSpec` describes. These are the
+ * fixed-shape form blocks (cover gallery, SKU matrix, parcel, warranty) that
+ * exist for every category, so their specs are declared here rather than
+ * waited for from a schema query.
+ */
+const valueSlot = (name: string, uiType: FieldSpec['uiType'] = 'input'): FieldSpec => ({
+  name,
+  uiType,
+  label: name,
+  group: 'sidebar',
+});
+
+const IMAGE_SLOTS: FieldSpec[] = [
+  valueSlot('mainImage', 'MainImage'),
+  valueSlot('mainImages', 'MainImage'),
+  valueSlot('variants.colorMeta', 'ColorMeta'),
+];
+
+const PRICING_SLOTS: FieldSpec[] = [valueSlot('sku', 'SkuTableV2')];
+
+const SHIPPING_SLOTS: FieldSpec[] = [
+  valueSlot('packageWeightKg', 'number'),
+  valueSlot('packageLengthCm', 'number'),
+  valueSlot('packageWidthCm', 'number'),
+  valueSlot('packageHeightCm', 'number'),
+  valueSlot('packagingType', 'select'),
+  valueSlot('isFragile', 'Switch'),
+  valueSlot('hasBatteryOrLiquid', 'Switch'),
+];
+
+const TERMS_SLOTS: FieldSpec[] = [
+  valueSlot('warrantyType', 'select'),
+  valueSlot('warrantyPeriod'),
+  valueSlot('warrantyPolicy'),
+  valueSlot('isNonReturnable', 'Switch'),
+];
+
+/**
+ * Basic info is never schema-driven, so its slots (and their required flags)
+ * are declared here. The category pair is a PREREQUISITE, not an answer: it is
+ * written by the same click that resets the form, so treating it as an answer
+ * is what made a single category selection light the section up as started.
+ */
+const basicAnsweredSlots = (): FieldSpec[] => [
+  { name: 'name', uiType: 'input', label: 'Product Name', group: 'basic' },
+  { name: 'brand', uiType: 'input', label: 'Brand', group: 'basic' },
+  { name: 'description', uiType: 'input', label: 'Description', group: 'basic' },
+];
+
+const basicRequiredSlots = (schemaHasName: boolean): FieldSpec[] => [
+  {
+    name: 'name',
+    uiType: 'input',
+    label: 'Product Name',
+    group: 'basic',
+    required: !schemaHasName,
+  },
+  { name: 'categoryId', uiType: 'input', label: 'Category', group: 'basic', required: true },
+  {
+    name: 'subcategoryId',
+    uiType: 'input',
+    label: 'Subcategory',
+    group: 'basic',
+    required: true,
+  },
+];
+
+const isAnsweredLeaf = (value: unknown, isNested: boolean): boolean => {
+  if (typeof value === 'boolean') return !isNested && value;
+  if (typeof value === 'number') return Number.isFinite(value);
+  return normalizeText(value).length > 0;
+};
+
+/**
+ * "Has the seller put something real in here?"
+ *
+ * Engagement cannot be asked with `isRequiredFieldFilled`, which reads a single
+ * slot: these sections are subtrees, not scalars. `sku` is
+ * `{ default: { price, stock, sellerSku, available: true } }` and
+ * `variants.colorMeta` is `{ Red: { images: [...] } }`, so a shape-specific
+ * predicate sees nothing.
+ *
+ * Booleans count only at the top level and only when true: a nested
+ * `available: true` and a freshly-reset `isFragile: false` are defaults the
+ * seller never chose, and treating them as answers is what made a just-reset
+ * form read as "started".
+ */
+const hasRealAnswer = (value: unknown, isNested = false): boolean => {
+  if (Array.isArray(value)) return value.some((entry) => hasRealAnswer(entry, true));
+  if (value !== null && typeof value === 'object') {
+    return Object.values(value).some((entry) => hasRealAnswer(entry, true));
+  }
+  return isAnsweredLeaf(value, isNested);
+};
+
+const isSlotAnswered = (slot: FieldSpec, values: Record<string, unknown>): boolean =>
+  hasRealAnswer(getNestedValue(values, slot.name));
+
+/**
+ * The single source of truth for "is this section done?".
+ *
+ * `errors.length === 0` can never mean done on its own — that is the bug this
+ * replaces. Validity is necessary, not sufficient: a section is complete only
+ * once nothing is missing AND the seller has actually answered something in
+ * it; a section where nothing has been answered is `untouched` rather than a
+ * failure, because it must not read as done and must not be red.
+ */
+const deriveSectionStatus = ({
+  answeredSlots,
+  errors,
+  requiredSlots,
+  values,
+}: {
+  answeredSlots: FieldSpec[];
+  errors: string[];
+  requiredSlots: FieldSpec[];
+  values: Record<string, unknown>;
+}): SidebarSectionStatus => {
+  if (!answeredSlots.some((slot) => isSlotAnswered(slot, values))) return 'untouched';
+  if (errors.length > 0) return 'incomplete';
+  const required = requiredSlots.filter((slot) => slot.required && slot.visible !== false);
+  const decisive = required.length > 0 ? required : answeredSlots;
+  return decisive.some((slot) => isSlotAnswered(slot, values)) ? 'complete' : 'incomplete';
+};
+
+/**
+ * With no schema fields the checklist knows nothing: every section is
+ * `untouched` and carries no error, because a rule derived from an empty
+ * schema (or from a still-loading one) is never a user error. Painting the
+ * sidebar red — or worse, "Form fields are still loading." as a failure —
+ * before the seller has seen a field is the failure mode this prevents.
+ */
 const markSchemaLoading = (sections: ProductSidebarSection[]): ProductSidebarSection[] =>
-  sections.map((section) => ({
-    ...section,
-    status: false,
-    errors: section.errors.length > 0 ? section.errors : [SCHEMA_LOADING_ERROR],
-  }));
+  sections.map((section) => ({ ...section, status: 'untouched', errors: [] }));
 
 export const buildSidebarSections = ({
   fieldErrors,
@@ -778,35 +905,60 @@ export const buildSidebarSections = ({
       key: 'basic',
       label: 'Basic Information',
       anchorId: PRODUCT_SECTION_ANCHORS.basic,
-      status: basicErrors.length === 0,
+      status: deriveSectionStatus({
+        answeredSlots: basicAnsweredSlots(),
+        errors: basicErrors,
+        requiredSlots: basicRequiredSlots(schemaHasName),
+        values,
+      }),
       errors: basicErrors,
     },
     {
       key: 'images',
       label: 'Product Images',
       anchorId: PRODUCT_SECTION_ANCHORS.images,
-      status: imageErrors.length === 0,
+      status: deriveSectionStatus({
+        answeredSlots: [...groupedFields.base, ...IMAGE_SLOTS],
+        errors: imageErrors,
+        requiredSlots: groupedFields.base,
+        values,
+      }),
       errors: imageErrors,
     },
     {
       key: 'specification',
       label: 'Product Specification',
       anchorId: PRODUCT_SECTION_ANCHORS.specification,
-      status: specificationErrors.length === 0,
+      status: deriveSectionStatus({
+        answeredSlots: groupedFields.details,
+        errors: specificationErrors,
+        requiredSlots: groupedFields.details,
+        values,
+      }),
       errors: specificationErrors,
     },
     {
       key: 'pricing',
       label: 'Price, Stock & Variants',
       anchorId: pricingAnchorId,
-      status: pricingErrors.length === 0,
+      status: deriveSectionStatus({
+        answeredSlots: [...groupedFields.variant, ...PRICING_SLOTS],
+        errors: pricingErrors,
+        requiredSlots: groupedFields.variant,
+        values,
+      }),
       errors: pricingErrors,
     },
     {
       key: 'shipping',
       label: 'Shipping & Warranty',
       anchorId: PRODUCT_SECTION_ANCHORS.shipping,
-      status: shippingErrors.length === 0,
+      status: deriveSectionStatus({
+        answeredSlots: [...groupedFields.package, ...SHIPPING_SLOTS],
+        errors: shippingErrors,
+        requiredSlots: groupedFields.package,
+        values,
+      }),
       errors: shippingErrors,
     },
   ];
@@ -815,27 +967,38 @@ export const buildSidebarSections = ({
     (field) => field.required || field.visible !== false,
   );
   if (hasVisibleTerms) {
+    const termsErrors = collectTermsSectionErrors({
+      errors: groupedErrors.terms,
+      termsFields: groupedFields.terms,
+      values,
+    });
     sections.push({
       key: 'terms',
       label: 'Terms & Conditions',
       anchorId: PRODUCT_SECTION_ANCHORS.terms,
-      status: false,
-      errors: collectTermsSectionErrors({
-        errors: groupedErrors.terms,
-        termsFields: groupedFields.terms,
+      // Derived like every other section: a hardcoded `false` here meant the
+      // section could never complete, so `isReady` was permanently false.
+      status: deriveSectionStatus({
+        answeredSlots: [...groupedFields.terms, ...TERMS_SLOTS],
+        errors: termsErrors,
+        requiredSlots: groupedFields.terms,
         values,
       }),
+      errors: termsErrors,
     });
   }
 
   // Unmappable errors surface under a visible "General" bucket (never hidden
-  // in details) and count against completion via their section status.
-  if (groupedErrors.general.length > 0) {
+  // in details) and count against completion via their section status. Only
+  // meaningful once a schema exists to be "unmappable" from.
+  if (schemaFields.length > 0 && groupedErrors.general.length > 0) {
     sections.push({
       key: 'general',
       label: 'General',
       anchorId: PRODUCT_SECTION_ANCHORS.basic,
-      status: false,
+      // Always `incomplete`: this bucket is errors by definition, so it is
+      // engaged whether or not the seller has answered anything.
+      status: 'incomplete',
       errors: groupedErrors.general,
     });
   }

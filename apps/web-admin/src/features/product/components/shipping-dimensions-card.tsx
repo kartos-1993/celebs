@@ -6,15 +6,29 @@ import { Badge } from '@celebs/shared-ui/components/badge';
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
 
+import { useFieldErrorReveal } from '../hooks/use-submission-state';
+
 // Standard volumetric weight divisor used by domestic courier partners (Pathao / Nepal Post)
 const PATHAO_VOLUMETRIC_DIVISOR = 5000;
 
+/**
+ * THE OWNER of the four parcel paths: `packageWeightKg`, `packageLengthCm`,
+ * `packageWidthCm`, `packageHeightCm`.
+ *
+ * These are fixed-shape form values (not category attributes), so they live
+ * here rather than in the schema-driven dynamic form — a second renderer for
+ * the same RHF path would put two inputs for one value on screen. See
+ * `shipping-warranty-section.tsx` for the section-anchor ownership.
+ */
 export const ShippingDimensionsCard: React.FC = () => {
   const {
     register,
     control,
     formState: { errors },
   } = useFormContext();
+  // Gated PER FIELD: each of the four boxes speaks only for its own path, so
+  // typing a length never surfaces the weight complaint beside it.
+  const { revealError } = useFieldErrorReveal(control);
 
   const length = useWatch({ control, name: 'packageLengthCm' }) || 0;
   const width = useWatch({ control, name: 'packageWidthCm' }) || 0;
@@ -38,7 +52,7 @@ export const ShippingDimensionsCard: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+        <h4 className="text-sm font-semibold leading-tight tracking-wide text-foreground">
           Package Weight & Dimensions
         </h4>
         <Badge variant="outline" className="text-xs font-mono font-medium">
@@ -59,7 +73,7 @@ export const ShippingDimensionsCard: React.FC = () => {
             placeholder="0.30"
             {...register('packageWeightKg', { valueAsNumber: true })}
           />
-          {errors.packageWeightKg?.message && (
+          {revealError('packageWeightKg') && errors.packageWeightKg?.message && (
             <p className="text-xs text-destructive">{String(errors.packageWeightKg.message)}</p>
           )}
         </div>
@@ -75,7 +89,7 @@ export const ShippingDimensionsCard: React.FC = () => {
             placeholder="25"
             {...register('packageLengthCm', { valueAsNumber: true })}
           />
-          {errors.packageLengthCm?.message && (
+          {revealError('packageLengthCm') && errors.packageLengthCm?.message && (
             <p className="text-xs text-destructive">{String(errors.packageLengthCm.message)}</p>
           )}
         </div>
@@ -91,7 +105,7 @@ export const ShippingDimensionsCard: React.FC = () => {
             placeholder="20"
             {...register('packageWidthCm', { valueAsNumber: true })}
           />
-          {errors.packageWidthCm?.message && (
+          {revealError('packageWidthCm') && errors.packageWidthCm?.message && (
             <p className="text-xs text-destructive">{String(errors.packageWidthCm.message)}</p>
           )}
         </div>
@@ -107,7 +121,7 @@ export const ShippingDimensionsCard: React.FC = () => {
             placeholder="5"
             {...register('packageHeightCm', { valueAsNumber: true })}
           />
-          {errors.packageHeightCm?.message && (
+          {revealError('packageHeightCm') && errors.packageHeightCm?.message && (
             <p className="text-xs text-destructive">{String(errors.packageHeightCm.message)}</p>
           )}
         </div>
