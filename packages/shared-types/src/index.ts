@@ -40,6 +40,7 @@ export * from './validators/campaign.validator';
 export * from './validators/cart.validator';
 export * from './validators/category.validator';
 export * from './validators/combo.validator';
+export * from './validators/commerce-policy.validator';
 export * from './validators/common.validator';
 export * from './validators/layout.validator';
 export * from './validators/logistics.validator';
