@@ -4,6 +4,7 @@ import { connectDb, disconnectDb } from './config';
 import { seedBrands } from './seed-brands';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
 import { seedCommerceSettings } from './seed-commerce-settings';
+import { seedLogisticsLocations } from './seed-logistics-locations';
 import { seedCategoriesMen } from './seed-categories-men';
 import { seedOptionSets } from './seed-option-sets';
 import { seedProductsDenimJackets } from './seed-products-denim-jackets';
@@ -26,8 +27,11 @@ export async function runMasterSeed(): Promise<void> {
     await ensurePlatformVendor(prisma);
     await seedBrands();
 
-    // Step 1: Commerce Policy (COD limit, delivery fee, free-delivery threshold)
+    // Step 1: Commerce Policy (COD limit, delivery fee fallback)
     await seedCommerceSettings();
+
+    // Step 1b: Delivery Areas (Nepal districts, superseded by a courier sync)
+    await seedLogisticsLocations();
 
     // Step 2: Option Sets (Colors, Sizes, Shoe Sizes)
     await seedOptionSets();
