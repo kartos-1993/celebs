@@ -15,6 +15,7 @@ import { cartRepository } from './cart.repository';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
+import { UNRESOLVED_FREE_DELIVERY_THRESHOLD } from '@/modules/logistics/delivery-pricing.repository';
 import { platformSettingsService } from '@/modules/platform-settings/platform-settings.service';
 
 export class CartService {
@@ -73,6 +74,7 @@ export class CartService {
         subtotal: 0,
         // An empty cart is never charged delivery.
         shippingFee: 0,
+        freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
         total: 0,
         itemCount: 0,
         hasStockIssues: false,
@@ -161,7 +163,10 @@ export class CartService {
     // database and remains the authority.
     const policy = await platformSettingsService.getCommercePolicy();
     const subtotal = subtotalDecimal.toNumber();
-    const shippingFee = resolveShippingFee(subtotal, policy);
+    // The cart does not know the destination yet, so it quotes the conservative
+    // threshold: promising free delivery the server would then decline is the
+    // same bug as promising it and charging for it.
+    const shippingFee = resolveShippingFee(subtotal, policy, UNRESOLVED_FREE_DELIVERY_THRESHOLD);
 
     return {
       id: cartRecord.id,
@@ -170,6 +175,7 @@ export class CartService {
       items: hydratedItems,
       subtotal,
       shippingFee,
+      freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
       total: subtotal + shippingFee,
       itemCount,
       hasStockIssues,

@@ -14,6 +14,12 @@ interface CheckoutPricingParams {
   effectiveAddressId?: string | null;
   policy: CommercePolicy;
   /**
+   * Free-delivery threshold as the server quoted it. Supplied by the API rather
+   * than read from a local copy, so the figure the shopper sees is the one the
+   * server will apply.
+   */
+  freeShippingThreshold: number;
+  /**
    * Delivery and total as the server last reported them for the whole cart.
    * Shown in preference to a local figure when the selection covers the entire
    * cart; checkout remains the authority and recomputes regardless.
@@ -30,6 +36,7 @@ export function useCheckoutPricing({
   isLoggedIn,
   effectiveAddressId,
   policy,
+  freeShippingThreshold,
   serverShippingFee,
   serverTotal,
 }: CheckoutPricingParams) {
@@ -52,7 +59,7 @@ export function useCheckoutPricing({
   const shippingFee =
     coversWholeCart && typeof serverShippingFee === 'number'
       ? serverShippingFee
-      : resolveShippingFee(itemsSubtotal, policy);
+      : resolveShippingFee(itemsSubtotal, policy, freeShippingThreshold);
 
   const grandTotal =
     coversWholeCart && typeof serverTotal === 'number' ? serverTotal : itemsSubtotal + shippingFee;

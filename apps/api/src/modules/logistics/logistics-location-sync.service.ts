@@ -19,6 +19,8 @@ import { prisma } from '@/config/db.prisma';
 export interface ExternalCity {
   id: number;
   name: string;
+  /** Optional: a courier's own taxonomy may not map cleanly onto ours. */
+  province?: string;
 }
 
 export interface ExternalZone {
@@ -69,14 +71,17 @@ export class LogisticsLocationSyncService {
 
     for (const city of cities) {
       // A city is created once. On later syncs only the name is refreshed, so an
-      // admin's `isValley` correction survives.
+      // admin's `isValley` correction and the free-delivery threshold they may
+      // have tuned survive a sync.
       const record = await prisma.logisticsCity.upsert({
         where: { externalId: city.id },
         update: { name: city.name, syncedAt },
         create: {
           externalId: city.id,
           name: city.name,
+          province: city.province ?? '',
           isValley: isValleyCityName(city.name),
+          source: 'COURIER',
           syncedAt,
         },
         select: { id: true },

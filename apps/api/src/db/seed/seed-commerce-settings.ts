@@ -3,11 +3,13 @@ import { COMMERCE_POLICY_DEFAULTS, COMMERCE_SETTING_KEYS } from '@celebs/shared-
 import prisma from '../../config/db.prisma';
 
 /**
- * Commerce policy seed — the business numbers that decide what a customer pays.
- *google
- * Upsert on `key`, and only ever write the descriptive fields. An existing
- * value is left alone on purpose: re-seeding must never silently reset a limit a
- * platform admin deliberately raised.
+ * Platform-wide commerce policy — the business numbers that are not tied to a
+ * delivery zone.
+ *
+ * The free-delivery threshold is deliberately absent: it is higher outside the
+ * Kathmandu Valley, so it lives on the delivery city rather than here, and a
+ * single platform-wide number would either over-promise in the valley or
+ * overcharge everywhere else.
  */
 const COMMERCE_SETTINGS = [
   {
@@ -18,21 +20,19 @@ const COMMERCE_SETTINGS = [
       'Highest order total that may be paid cash on delivery. A total above this is refused at checkout.',
   },
   {
-    key: COMMERCE_SETTING_KEYS.freeShippingThreshold,
-    value: String(COMMERCE_POLICY_DEFAULTS.freeShippingThreshold),
-    label: 'Free delivery threshold',
-    description:
-      'Order subtotal at or above which the delivery fee is waived. Charged below this amount.',
-  },
-  {
     key: COMMERCE_SETTING_KEYS.flatShippingFee,
     value: String(COMMERCE_POLICY_DEFAULTS.flatShippingFee),
-    label: 'Flat delivery fee',
+    label: 'Flat delivery fee (fallback)',
     description:
-      'Delivery fee in NPR charged on orders below the free delivery threshold. Set 0 for free delivery.',
+      'Delivery fee in NPR used when no rate matches a parcel, so checkout never fails for want of a price. Set 0 for free delivery.',
   },
 ] as const;
 
+/**
+ * Upsert on `key`, and only ever write the descriptive fields. An existing value
+ * is left alone on purpose: re-seeding must never silently reset a limit a
+ * platform admin deliberately raised.
+ */
 export async function seedCommerceSettings(): Promise<void> {
   console.log('\n--- 💳 Seeding Commerce Policy Settings ---');
 

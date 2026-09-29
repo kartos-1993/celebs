@@ -17,7 +17,6 @@ import { z } from 'zod';
  *  (vouchers, zone delivery rates) can join them without a new mechanism. */
 export const COMMERCE_SETTING_KEYS = {
   codMaxLimit: 'commerce.cod_max_limit',
-  freeShippingThreshold: 'commerce.free_shipping_threshold',
   flatShippingFee: 'commerce.flat_shipping_fee',
 } as const;
 
@@ -27,19 +26,20 @@ export const COMMERCE_SETTING_KEYS = {
  * charge. A threshold of 0 would mean "always free", which is never intended,
  * so `0` is rejected as invalid rather than honoured — that is the one case
  * where the correct answer is genuinely "not a real value".
+ *
+ * The free-delivery threshold is deliberately absent. It is not a single number:
+ * it is higher outside the Kathmandu Valley, so it belongs to the delivery zone
+ * rather than to the platform-wide policy.
  */
 export const COMMERCE_POLICY_DEFAULTS = {
   codMaxLimit: 5000,
-  freeShippingThreshold: 3000,
   flatShippingFee: 150,
 } as const;
 
 export const commercePolicySchema = z.object({
   /** Highest order total that may be paid cash on delivery. */
   codMaxLimit: z.number().int().positive(),
-  /** Order subtotal at or above which the delivery fee is waived. */
-  freeShippingThreshold: z.number().int().positive(),
-  /** Flat delivery fee charged below the threshold. */
+  /** Flat delivery fee charged below the zone's free-delivery threshold. */
   flatShippingFee: z.number().int().nonnegative(),
 });
 
@@ -146,13 +146,6 @@ export function parseCommercePolicy(
       1,
       invalidKeys,
     ),
-    freeShippingThreshold: readPolicyNumber(
-      values[COMMERCE_SETTING_KEYS.freeShippingThreshold],
-      COMMERCE_SETTING_KEYS.freeShippingThreshold,
-      COMMERCE_POLICY_DEFAULTS.freeShippingThreshold,
-      1,
-      invalidKeys,
-    ),
     flatShippingFee: readPolicyNumber(
       values[COMMERCE_SETTING_KEYS.flatShippingFee],
       COMMERCE_SETTING_KEYS.flatShippingFee,
@@ -169,13 +162,22 @@ export function parseCommercePolicy(
  * The one delivery-fee rule, shared by the server that charges and the app that
  * displays, so the two can never disagree on the boundary.
  *
+ * `freeShippingThreshold` is passed in rather than read from the policy because
+ * it is per delivery zone: higher outside the Kathmandu Valley, where the
+ * courier's rate is. A single platform-wide number would either over-promise in
+ * the valley or overcharge everywhere else.
+ *
  * `atOrAbove` matters: the app previously used `>=` and the server `>`, so a
  * cart sitting exactly on the threshold was told delivery was free and then
  * charged for it.
  */
-export function resolveShippingFee(subtotal: number, policy: CommercePolicy): number {
+export function resolveShippingFee(
+  subtotal: number,
+  policy: Pick<CommercePolicy, 'flatShippingFee'>,
+  freeShippingThreshold: number,
+): number {
   if (!Number.isFinite(subtotal) || subtotal <= 0) return 0;
-  return subtotal >= policy.freeShippingThreshold ? 0 : policy.flatShippingFee;
+  return subtotal >= freeShippingThreshold ? 0 : policy.flatShippingFee;
 }
 
 /** Cash on delivery is refused above the limit; the limit itself is allowed. */

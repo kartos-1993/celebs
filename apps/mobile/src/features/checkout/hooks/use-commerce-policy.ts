@@ -26,7 +26,7 @@ import { handleApiResponse } from '@/api/response';
 export const COMMERCE_POLICY_QUERY_KEY = ['commerce-policy'] as const;
 
 interface PublicSettingsPayload {
-  raw?: Array<{ key: string; value: string }>;
+  raw?: { key: string; value: string }[];
   parsed?: Record<string, unknown>;
 }
 

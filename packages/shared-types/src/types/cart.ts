@@ -43,6 +43,13 @@ export interface CartResponse {
    */
   shippingFee: number;
   total: number;
+  /**
+   * The free-delivery threshold this cart was quoted against, so the app shows
+   * the same number the server used rather than one of its own. The cart has no
+   * destination yet, so this is the conservative threshold; checkout re-quotes
+   * against the delivery zone actually selected.
+   */
+  freeDeliveryThreshold: number;
   itemCount: number;
   hasStockIssues: boolean;
   createdAt: string;

@@ -11,7 +11,8 @@ import { CartItemsSection } from './cart-items-section';
 import { CartPromoBanner } from './cart-promo-banner';
 
 import { BottomSheet } from '@/components/bottom-sheet';
-import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
+/** Shown only before the server has quoted; never used to compute a charge. */
+const UNKNOWN_DELIVERY_THRESHOLD = 5000;
 
 interface CartBottomSheetProps {
   visible: boolean;
@@ -20,8 +21,8 @@ interface CartBottomSheetProps {
 
 export function CartBottomSheet({ visible, onClose }: CartBottomSheetProps) {
   const router = useRouter();
-  const commercePolicy = useCommercePolicy();
   const {
+    cart,
     itemCount,
     selectedItems,
     selectedCount,
@@ -73,7 +74,7 @@ export function CartBottomSheet({ visible, onClose }: CartBottomSheetProps) {
           savingsPercent={selectedSavingsPercent}
           freeShippingRemaining={Math.max(
             0,
-            commercePolicy.freeShippingThreshold - selectedSubtotal,
+            (cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD) - selectedSubtotal,
           )}
         />
         <CartCheckoutBar

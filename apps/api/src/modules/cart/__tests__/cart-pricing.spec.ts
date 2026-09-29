@@ -4,6 +4,7 @@ import { COMMERCE_POLICY_DEFAULTS, resolveShippingFee } from '@celebs/shared-typ
 
 import prisma from '@/config/db.prisma';
 import { CartService } from '@/modules/cart/cart.service';
+import { UNRESOLVED_FREE_DELIVERY_THRESHOLD } from '@/modules/logistics/delivery-pricing.repository';
 
 /**
  * The cart states the delivery fee and total the server would charge, so the
@@ -70,18 +71,33 @@ describe('cart states the delivery fee and total it would be charged', () => {
     const cart = await cartFor(productId, 1);
 
     expect(cart.subtotal).toBe(1200);
-    expect(cart.shippingFee).toBe(resolveShippingFee(1200, COMMERCE_POLICY_DEFAULTS) as number);
+    expect(cart.shippingFee).toBe(
+      resolveShippingFee(1200, COMMERCE_POLICY_DEFAULTS, UNRESOLVED_FREE_DELIVERY_THRESHOLD),
+    );
     expect(cart.total).toBe(cart.subtotal + cart.shippingFee);
   });
 
-  it('waives the fee exactly on the threshold, matching checkout', async () => {
+  it('quotes the conservative threshold, because the destination is unknown', async () => {
     const productId = await seedProduct(1000);
     const cart = await cartFor(productId, 3);
 
     expect(cart.subtotal).toBe(3000);
-    // The boundary the app and server used to disagree on.
+    // The cart has no address yet, so it cannot claim the lower in-valley
+    // threshold. Quoting the higher one means it never advertises free delivery
+    // the server would then decline to grant - the same bug as promising it and
+    // charging for it. Checkout re-quotes against the real zone.
+    expect(cart.shippingFee).toBe(
+      resolveShippingFee(3000, COMMERCE_POLICY_DEFAULTS, UNRESOLVED_FREE_DELIVERY_THRESHOLD),
+    );
+    expect(cart.shippingFee).toBe(150);
+  });
+
+  it('waives delivery once the cart clears even the conservative threshold', async () => {
+    const productId = await seedProduct(1000);
+    const cart = await cartFor(productId, 5);
+
+    expect(cart.subtotal).toBe(5000);
     expect(cart.shippingFee).toBe(0);
-    expect(cart.total).toBe(3000);
   });
 
   it('keeps total equal to subtotal plus fee', async () => {

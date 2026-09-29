@@ -311,17 +311,28 @@ model Address {
 
 model LogisticsCity {
   id         String  @id @default(uuid())
-  externalId Int     @unique
+  externalId Int?    @unique
   name       String
+  province   String
   // Kathmandu Valley drives the free-delivery threshold, so it is a property we
   // hold rather than infer. Seeded by name, then correctable by an admin.
   isValley   Boolean @default(false) @map("is_valley")
+  // Order subtotal at or above which delivery is free to this city. Higher
+  // outside the valley, where the courier's rate is. Belongs to the city rather
+  // than to a platform-wide policy because it is not one number.
+  freeDeliveryThreshold Int @default(5000) @map("free_delivery_threshold")
+  // BOOTSTRAP rows come from our own reference data and have no courier id yet;
+  // a courier sync supersedes them. Recording the origin keeps a later sync from
+  // being mistaken for ground truth we already had.
+  source     LogisticsSource @default(BOOTSTRAP)
   isActive   Boolean @default(true) @map("is_active")
   syncedAt   DateTime @default(now()) @map("synced_at")
 
-  zones LogisticsZone[]
+  zones  LogisticsZone[]
+  rates  ShippingRate[]
 
   @@index([isActive, isValley])
+  @@index([province])
 }
 
 model LogisticsZone {
@@ -351,6 +362,34 @@ model LogisticsArea {
   // stores the zone. Areas are mirrored so the courier's full hierarchy is on
   // record for when quoting or routing needs finer granularity.
   @@index([zoneId, isActive])
+}
+
+// ── Delivery pricing ────────────────────────────────────────────────────────
+//
+// Our rate card, authoritative when a courier quote is unavailable. It exists
+// because checkout must never depend on a third party being up, and because
+// Pathao's charges are published and revised on their schedule rather than ours.
+
+model ShippingRate {
+  id        String   @id @default(uuid())
+  // Null means every active city. A specific row overrides it.
+  cityId    String?  @map("city_id")
+  city      LogisticsCity? @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  // Half-open band [minWeightKg, maxWeightKg). The lowest band starts at 0 and
+  // the highest ends at the courier maximum, so a parcel always matches exactly
+  // one band rather than falling through a gap.
+  minWeightKg Decimal @map("min_weight_kg") @db.Decimal(8, 3)
+  maxWeightKg Decimal @map("max_weight_kg") @db.Decimal(8, 3)
+  fee         Decimal @db.Decimal(12, 2)
+  // Charged by the courier on collection, so it is a cost we absorb rather than
+  // a fee the customer sees.
+  codFee      Decimal @default(0) @map("cod_fee") @db.Decimal(12, 2)
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt
+
+  @@index([cityId, isActive, minWeightKg])
+  @@index([isActive, minWeightKg])
 }
 
 model Order {
@@ -405,6 +444,14 @@ enum CodStatus {
   PENDING_COLLECTION
   COLLECTED_BY_COURIER
   COD_SETTLED
+}
+
+enum LogisticsSource {
+  // Our own reference data. Lets the address form offer real districts before a
+  // courier location list has ever been synced.
+  BOOTSTRAP
+  // Mirrored from a courier's published location list.
+  COURIER
 }
 
 model OrderTrackingEvent {

@@ -31,6 +31,9 @@ import { useCheckoutPricing } from '@/features/checkout/hooks/use-checkout-prici
 import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
 import { styles } from '@/features/checkout/styles/checkout.styles';
 
+/** Shown only before the server has quoted; never used to compute a charge. */
+const UNKNOWN_DELIVERY_THRESHOLD = 5000;
+
 export default function CheckoutScreen() {
   // The server owns these numbers; the app reads them so it displays the same
   // figures it will be charged, and falls back to the shipped defaults until the
@@ -70,6 +73,7 @@ export default function CheckoutScreen() {
     isLoggedIn,
     effectiveAddressId: addrForm.effectiveSelectedId,
     policy: commercePolicy,
+    freeShippingThreshold: cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD,
     serverShippingFee: cart?.shippingFee,
     serverTotal: cart?.total,
   });
@@ -174,7 +178,7 @@ export default function CheckoutScreen() {
           itemsSubtotal={itemsSubtotal}
           shippingFee={shippingFee}
           grandTotal={grandTotal}
-          freeShippingThreshold={commercePolicy.freeShippingThreshold}
+          freeShippingThreshold={cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD}
         />
       </ScrollView>
 

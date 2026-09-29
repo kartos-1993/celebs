@@ -11,12 +11,10 @@ import {
 describe('commerce settings form', () => {
   it('edits exactly the keys the policy reads', () => {
     // A field bound to the wrong key would save a value checkout never sees.
+    // The free-delivery threshold is absent on purpose: it is per delivery zone,
+    // not a platform-wide number.
     expect(COMMERCE_FIELDS.map((field) => field.key).sort()).toEqual(
-      [
-        COMMERCE_SETTING_KEYS.codMaxLimit,
-        COMMERCE_SETTING_KEYS.flatShippingFee,
-        COMMERCE_SETTING_KEYS.freeShippingThreshold,
-      ].sort(),
+      [COMMERCE_SETTING_KEYS.codMaxLimit, COMMERCE_SETTING_KEYS.flatShippingFee].sort(),
     );
   });
 

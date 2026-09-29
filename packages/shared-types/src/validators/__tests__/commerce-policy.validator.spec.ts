@@ -12,33 +12,24 @@ describe('parseCommercePolicy', () => {
   it('falls back to the pre-policy numbers when nothing is stored', () => {
     const { policy, invalidKeys } = parseCommercePolicy([]);
 
-    expect(policy).toEqual({
-      codMaxLimit: 5000,
-      freeShippingThreshold: 3000,
-      flatShippingFee: 150,
-    });
+    expect(policy).toEqual({ codMaxLimit: 5000, flatShippingFee: 150 });
     expect(invalidKeys).toEqual([]);
   });
 
   it('reads every stored value', () => {
     const { policy } = parseCommercePolicy([
       { key: COMMERCE_SETTING_KEYS.codMaxLimit, value: '9000' },
-      { key: COMMERCE_SETTING_KEYS.freeShippingThreshold, value: '5000' },
       { key: COMMERCE_SETTING_KEYS.flatShippingFee, value: '200' },
     ]);
 
-    expect(policy).toEqual({
-      codMaxLimit: 9000,
-      freeShippingThreshold: 5000,
-      flatShippingFee: 200,
-    });
+    expect(policy).toEqual({ codMaxLimit: 9000, flatShippingFee: 200 });
   });
 
   it('accepts a key/value map as well as an array', () => {
     const { policy } = parseCommercePolicy({ [COMMERCE_SETTING_KEYS.codMaxLimit]: '7500' });
 
     expect(policy.codMaxLimit).toBe(7500);
-    expect(policy.freeShippingThreshold).toBe(COMMERCE_POLICY_DEFAULTS.freeShippingThreshold);
+    expect(policy.flatShippingFee).toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
   });
 
   it('ignores settings from unrelated groups', () => {
@@ -122,12 +113,12 @@ describe('parseCommercePolicy', () => {
   it('rejects a negative or fractional value', () => {
     const { invalidKeys } = parseCommercePolicy([
       { key: COMMERCE_SETTING_KEYS.codMaxLimit, value: '-100' },
-      { key: COMMERCE_SETTING_KEYS.freeShippingThreshold, value: '1500.5' },
+      { key: COMMERCE_SETTING_KEYS.flatShippingFee, value: '-5' },
     ]);
 
     expect(invalidKeys).toEqual([
       COMMERCE_SETTING_KEYS.codMaxLimit,
-      COMMERCE_SETTING_KEYS.freeShippingThreshold,
+      COMMERCE_SETTING_KEYS.flatShippingFee,
     ]);
   });
 });
@@ -136,35 +127,34 @@ describe('resolveShippingFee', () => {
   const policy = { codMaxLimit: 5000, freeShippingThreshold: 3000, flatShippingFee: 150 };
 
   it('charges the flat fee below the threshold', () => {
-    expect(resolveShippingFee(2999, policy)).toBe(150);
+    expect(resolveShippingFee(2999, policy, 3000)).toBe(150);
   });
 
   // The off-by-one that made a customer feel cheated: the app used `>=` and
-  // said "free delivery applied" at exactly 3000, while the server used `>` and
-  // charged 150. One shared rule means one answer.
+  // said "free delivery applied" at exactly the threshold, while the server used
+  // `>` and charged 150. One shared rule means one answer.
   it('waives the fee exactly on the threshold', () => {
-    expect(resolveShippingFee(3000, policy)).toBe(0);
+    expect(resolveShippingFee(3000, policy, 3000)).toBe(0);
   });
 
   it('waives the fee above the threshold', () => {
-    expect(resolveShippingFee(3001, policy)).toBe(0);
+    expect(resolveShippingFee(3001, policy, 3000)).toBe(0);
   });
 
   it('charges nothing for an empty or non-finite subtotal', () => {
-    expect(resolveShippingFee(0, policy)).toBe(0);
-    expect(resolveShippingFee(Number.NaN, policy)).toBe(0);
+    expect(resolveShippingFee(0, policy, 3000)).toBe(0);
+    expect(resolveShippingFee(Number.NaN, policy, 3000)).toBe(0);
   });
 
-  it('follows a policy whose threshold moved', () => {
-    const raised = { ...policy, freeShippingThreshold: 5000 };
-
-    expect(resolveShippingFee(4000, policy)).toBe(0);
-    expect(resolveShippingFee(4000, raised)).toBe(150);
+  // The threshold is per delivery zone: lower in the valley, higher elsewhere.
+  it('follows the threshold of the destination zone', () => {
+    expect(resolveShippingFee(4000, policy, 2500)).toBe(0);
+    expect(resolveShippingFee(4000, policy, 5000)).toBe(150);
   });
 });
 
 describe('isCodAllowed', () => {
-  const policy = { codMaxLimit: 5000, freeShippingThreshold: 3000, flatShippingFee: 150 };
+  const policy = { codMaxLimit: 5000, flatShippingFee: 150 };
 
   it('allows a total on the limit', () => {
     expect(isCodAllowed(5000, policy)).toBe(true);

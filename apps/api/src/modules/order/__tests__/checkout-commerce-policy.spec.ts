@@ -12,8 +12,9 @@ import { CheckoutService } from '@/modules/order/checkout/checkout.service';
  * hardcoded, so a change in the admin panel moves them without a deploy.
  */
 
-const { mockPolicy } = vi.hoisted(() => ({
+const { mockPolicy, mockThresholdForAddress } = vi.hoisted(() => ({
   mockPolicy: vi.fn(),
+  mockThresholdForAddress: vi.fn(),
 }));
 
 vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
@@ -21,6 +22,11 @@ vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
     getCommercePolicy = mockPolicy;
   },
   platformSettingsService: { getCommercePolicy: mockPolicy },
+}));
+
+vi.mock('@/modules/logistics/delivery-pricing.repository', () => ({
+  UNRESOLVED_FREE_DELIVERY_THRESHOLD: 5000,
+  deliveryPricingRepository: { thresholdForAddress: mockThresholdForAddress },
 }));
 
 const USER_ID = '33333333-3333-4333-8333-333333333333';
@@ -93,6 +99,16 @@ describe('checkout charges from the commerce policy', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPolicy.mockResolvedValue({ ...COMMERCE_POLICY_DEFAULTS });
+    // A default zone threshold of 3000 keeps the original assertions meaningful;
+    // the per-zone cases override it.
+    mockThresholdForAddress.mockResolvedValue({
+      cityId: 'city-1',
+      zoneId: 'zone-1',
+      cityName: 'Kathmandu',
+      isValley: true,
+      freeDeliveryThreshold: 3000,
+      absorbedCost: 0,
+    });
   });
 
   it('waives delivery on the threshold, matching what the app displays', async () => {
@@ -115,11 +131,34 @@ describe('checkout charges from the commerce policy', () => {
     expect(call?.shippingFee.toNumber()).toBe(150);
   });
 
-  it('follows a policy an admin changed, with no code change', async () => {
-    mockPolicy.mockResolvedValue({
-      codMaxLimit: 9000,
-      freeShippingThreshold: 5000,
-      flatShippingFee: 250,
+  it('follows what an admin changed, with no code change', async () => {
+    // The threshold is the zone's, so an admin raising the out-of-valley
+    // promise changes the charge without a deploy.
+    mockThresholdForAddress.mockResolvedValue({
+      cityId: 'city-2',
+      zoneId: 'zone-2',
+      cityName: 'Biratnagar',
+      isValley: false,
+      freeDeliveryThreshold: 8000,
+      absorbedCost: 0,
+    });
+    const { service, createOrderWithReservation } = buildService({ subtotal: 4000 });
+
+    await service.checkout(USER_ID, baseInput).catch(() => undefined);
+
+    const call = createOrderWithReservation.mock.calls[0]?.[0];
+    expect(call?.shippingFee.toNumber()).toBe(150);
+  });
+
+  it('follows a changed fallback fee when no rate band matches', async () => {
+    mockPolicy.mockResolvedValue({ codMaxLimit: 9000, flatShippingFee: 250 });
+    mockThresholdForAddress.mockResolvedValue({
+      cityId: 'city-1',
+      zoneId: 'zone-1',
+      cityName: 'Kathmandu',
+      isValley: true,
+      freeDeliveryThreshold: 9000,
+      absorbedCost: 0,
     });
     const { service, createOrderWithReservation } = buildService({ subtotal: 4000 });
 
@@ -196,9 +235,29 @@ describe('checkout charges from the commerce policy', () => {
     // Guards against checkout re-deriving its own comparison and drifting from
     // the display rule again.
     const policy = COMMERCE_POLICY_DEFAULTS;
-    expect(resolveShippingFee(3000, policy)).toBe(0);
+    expect(resolveShippingFee(3000, policy, 3000)).toBe(0);
     expect(isCodAllowed(5000, policy)).toBe(true);
     expect(isCodAllowed(5001, policy)).toBe(false);
+  });
+
+  // The threshold is the destination's, not a platform-wide number: delivery
+  // outside the valley costs the courier far more, so the promise starts higher.
+  it('applies the threshold of the destination zone, not a global one', async () => {
+    mockThresholdForAddress.mockResolvedValue({
+      cityId: 'city-2',
+      zoneId: 'zone-2',
+      cityName: 'Biratnagar',
+      isValley: false,
+      freeDeliveryThreshold: 5000,
+      absorbedCost: 0,
+    });
+    const { service, createOrderWithReservation } = buildService({ subtotal: 3000 });
+
+    await service.checkout(USER_ID, baseInput).catch(() => undefined);
+
+    const call = createOrderWithReservation.mock.calls[0]?.[0];
+    // 3000 clears the valley threshold but not the out-of-valley one.
+    expect(call?.shippingFee.toNumber()).toBe(150);
   });
 
   it('snapshots the billable weight onto the order item', async () => {

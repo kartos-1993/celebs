@@ -13,14 +13,15 @@ import { CartItemsSection } from '@/features/cart/components/cart-items-section'
 import { CartPromoBanner } from '@/features/cart/components/cart-promo-banner';
 import { useCart } from '@/features/cart/context/cart-context';
 import { styles } from '@/features/cart/styles/cart.styles';
-import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
+
+/** Shown only before the server has quoted; never used to compute a charge. */
+const UNKNOWN_DELIVERY_THRESHOLD = 5000;
 
 // Mirrors TAB_BAR_CONTENT_HEIGHT in (tabs)/_layout.tsx
 const TAB_BAR_CONTENT_HEIGHT = 56;
 
 export default function CartScreen() {
   const router = useRouter();
-  const commercePolicy = useCommercePolicy();
   const insets = useSafeAreaInsets();
 
   const {
@@ -155,7 +156,7 @@ export default function CartScreen() {
           savingsPercent={selectedSavingsPercent}
           freeShippingRemaining={Math.max(
             0,
-            commercePolicy.freeShippingThreshold - selectedSubtotal,
+            (cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD) - selectedSubtotal,
           )}
         />
         <CartCheckoutBar

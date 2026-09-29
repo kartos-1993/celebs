@@ -9,6 +9,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repository';
 import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
@@ -187,9 +188,19 @@ export class CheckoutService {
     // `resolveShippingFee` the app also displays — the previous inline
     // `gt(3000)` disagreed with the app's `>=` and billed a cart sitting
     // exactly on the threshold that it had been told was free.
+    // The COD ceiling comes from the commerce policy so an admin can change it
+    // without a deploy. The delivery fee is quoted against the destination's own
+    // zone: the threshold is higher outside the Kathmandu Valley, where the
+    // courier's rate is, and the boundary rule is the shared `resolveShippingFee`
+    // the app also displays — the previous inline `gt(3000)` disagreed with the
+    // app's `>=` and billed a cart sitting exactly on the threshold that it had
+    // been told was free.
     const policy = await this.platformSettingsService.getCommercePolicy();
+    const destination = await deliveryPricingRepository.thresholdForAddress({
+      logisticsZoneId: address.logisticsZoneId,
+    });
     const shippingFeeDecimal = new Prisma.Decimal(
-      resolveShippingFee(subtotalDecimal.toNumber(), policy),
+      resolveShippingFee(subtotalDecimal.toNumber(), policy, destination.freeDeliveryThreshold),
     );
     const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
 

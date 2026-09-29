@@ -8,7 +8,6 @@ import { COMMERCE_POLICY_DEFAULTS, type CommercePolicy } from '@celebs/shared-ty
  */
 export const POLICY_FIELD_BY_KEY = {
   'commerce.cod_max_limit': 'codMaxLimit',
-  'commerce.free_shipping_threshold': 'freeShippingThreshold',
   'commerce.flat_shipping_fee': 'flatShippingFee',
 } as const satisfies Record<string, keyof CommercePolicy>;
 
@@ -32,16 +31,10 @@ export const COMMERCE_FIELDS: readonly CommerceField[] = [
     allowZero: false,
   },
   {
-    key: 'commerce.free_shipping_threshold',
-    label: 'Free delivery threshold',
-    description: 'Order subtotal at or above which delivery is free.',
-    defaultValue: COMMERCE_POLICY_DEFAULTS.freeShippingThreshold,
-    allowZero: false,
-  },
-  {
     key: 'commerce.flat_shipping_fee',
-    label: 'Flat delivery fee (NPR)',
-    description: 'Delivery fee below the threshold. Use 0 for free delivery.',
+    label: 'Flat delivery fee (fallback)',
+    description:
+      'Used only when no delivery rate matches the parcel, so checkout never fails for want of a price.',
     defaultValue: COMMERCE_POLICY_DEFAULTS.flatShippingFee,
     allowZero: true,
   },

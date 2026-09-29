@@ -57,6 +57,7 @@ interface PricingBase {
   isLoggedIn: boolean;
   effectiveAddressId?: string | null;
   policy: CommercePolicy;
+  freeShippingThreshold: number;
 }
 
 function pricingBase(): PricingBase {
@@ -66,6 +67,7 @@ function pricingBase(): PricingBase {
     isLoggedIn: true,
     effectiveAddressId: 'a1',
     policy: COMMERCE_POLICY_DEFAULTS,
+    freeShippingThreshold: 3000,
   };
 }
 
@@ -81,6 +83,7 @@ describe('useCheckoutPricing', () => {
       isLoggedIn: true,
       effectiveAddressId: 'a1',
       policy: COMMERCE_POLICY_DEFAULTS,
+      freeShippingThreshold: 3000,
     });
     expect(r.checkoutItems).toBe(selected);
     expect(r.itemsSubtotal).toBe(1600);
@@ -98,6 +101,7 @@ describe('useCheckoutPricing', () => {
       isLoggedIn: true,
       effectiveAddressId: 'a1',
       policy: COMMERCE_POLICY_DEFAULTS,
+      freeShippingThreshold: 3000,
     });
     expect(r.checkoutItems).toEqual([]);
     expect(r.itemsSubtotal).toBe(0);
@@ -118,22 +122,21 @@ describe('useCheckoutPricing', () => {
   });
 
   it('follows a policy the admin changed, with no app release', () => {
-    const raised: CommercePolicy = {
-      codMaxLimit: 12000,
-      freeShippingThreshold: 8000,
-      flatShippingFee: 300,
-    };
+    const raisedFee: CommercePolicy = { codMaxLimit: 12000, flatShippingFee: 300 };
     const base = pricingBase();
 
-    // 4000 was below the old threshold of 3000, so it used to be free.
+    // 4000 clears the in-valley threshold of 3000.
     const before = renderPricing({ ...base, selectedSubtotal: 4000, subtotal: 0 });
     expect(before.shippingFee).toBe(0);
 
+    // The same order, sent to a zone whose threshold is 8000. The threshold is
+    // the destination's, delivered by the server, not a number in the bundle.
     const after = renderPricing({
       ...base,
       selectedSubtotal: 4000,
       subtotal: 0,
-      policy: raised,
+      policy: raisedFee,
+      freeShippingThreshold: 8000,
     });
     expect(after.shippingFee).toBe(300);
     expect(after.grandTotal).toBe(4300);
@@ -203,6 +206,7 @@ describe('useCheckoutPricing', () => {
       isLoggedIn: true,
       effectiveAddressId: 'a1',
       policy: COMMERCE_POLICY_DEFAULTS,
+      freeShippingThreshold: 3000,
     });
     expect(rb.canPlaceOrder).toBe(false);
     expect(rb.blockedItems).toHaveLength(1);
@@ -220,6 +224,7 @@ describe('useCheckoutPricing', () => {
       isLoggedIn: true,
       effectiveAddressId: 'a1',
       policy: COMMERCE_POLICY_DEFAULTS,
+      freeShippingThreshold: 3000,
     });
     expect(r.deliveryCaption).toContain('150');
     const free = renderPricing({
@@ -230,6 +235,7 @@ describe('useCheckoutPricing', () => {
       isLoggedIn: true,
       effectiveAddressId: 'a1',
       policy: COMMERCE_POLICY_DEFAULTS,
+      freeShippingThreshold: 3000,
     });
     expect(free.deliveryCaption).toBe('Free delivery applied');
   });
