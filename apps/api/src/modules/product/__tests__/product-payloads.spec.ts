@@ -81,7 +81,8 @@ describe('product payload builders', () => {
         createdBy: 'user-1',
         updatedBy: 'user-1',
       });
-      expect(data.packageWeightKg).toBe(0.3);
+      // The courier minimum, not the old 0.3 which no courier would accept.
+      expect(data.packageWeightKg).toBe(0.5);
       expect(data.packagingType).toBe('FLYER_SMALL');
       expect(data.isFragile).toBe(false);
     });

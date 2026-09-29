@@ -8,9 +8,12 @@ import {
 
 describe('Shipping and Warranty Validation Specifications', () => {
   describe('Shipping Details Schema', () => {
-    it('applies default standard flyer and weight when shipping properties are omitted', () => {
+    it('applies default standard flyer and the courier minimum weight when shipping properties are omitted', () => {
       const parsed = shippingDetailsSchema.parse({});
-      expect(parsed.packageWeightKg).toBe(0.3);
+      // 0.5 kg is the floor a domestic courier will accept. The previous 0.3
+      // default sat below it, so a product with no recorded weight could not be
+      // quoted for delivery at all.
+      expect(parsed.packageWeightKg).toBe(0.5);
       expect(parsed.packagingType).toBe('FLYER_SMALL');
       expect(parsed.isFragile).toBe(false);
       expect(parsed.hasBatteryOrLiquid).toBe(false);

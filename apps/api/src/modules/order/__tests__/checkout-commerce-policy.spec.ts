@@ -26,7 +26,11 @@ vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
 const USER_ID = '33333333-3333-4333-8333-333333333333';
 const ADDRESS_ID = '44444444-4444-4444-8444-444444444444';
 
-function buildService(overrides: { subtotal: number }) {
+function buildService(overrides: {
+  subtotal: number;
+  quantity?: number;
+  product?: Record<string, unknown>;
+}) {
   const product = {
     id: 'prod-1',
     name: 'Jacket',
@@ -34,13 +38,18 @@ function buildService(overrides: { subtotal: number }) {
     discountedPrice: null,
     vendorId: 'vendor-1',
     isActive: true,
+    packageWeightKg: 0.5,
+    packageLengthCm: null,
+    packageWidthCm: null,
+    packageHeightCm: null,
+    ...overrides.product,
   };
 
   // The cart line carries an inventory reference and a quantity; the service
   // resolves product rows through its own batched lookup.
   const cartItem = {
     id: 'line-1',
-    quantity: 1,
+    quantity: overrides.quantity ?? 1,
     inventory: {
       id: 'inv-1',
       productId: product.id,
@@ -190,5 +199,56 @@ describe('checkout charges from the commerce policy', () => {
     expect(resolveShippingFee(3000, policy)).toBe(0);
     expect(isCodAllowed(5000, policy)).toBe(true);
     expect(isCodAllowed(5001, policy)).toBe(false);
+  });
+
+  it('snapshots the billable weight onto the order item', async () => {
+    // A courier quote is derived from weight, and a product's weight can change
+    // after the order is placed. The weight that was paid for has to ship.
+    // 1200 x 3 keeps the order under the COD ceiling so checkout completes.
+    const { service, createOrderWithReservation } = buildService({
+      subtotal: 1200,
+      quantity: 3,
+      product: { packageWeightKg: 1.2 },
+    });
+
+    await service.checkout(USER_ID, baseInput).catch(() => undefined);
+
+    const item = createOrderWithReservation.mock.calls[0]?.[0]?.items?.[0];
+    expect(item?.unitWeightKg.toNumber()).toBe(1.2);
+    // 1.2 kg x 3 units
+    expect(item?.billableWeightKg.toNumber()).toBeCloseTo(3.6, 3);
+  });
+
+  it('never snapshots a zero weight for a product that never had one', async () => {
+    // The pre-existing default of 0.3 kg sat below the 0.5 kg every courier
+    // enforces, so a legacy product must still be quoted, not rejected.
+    const { service, createOrderWithReservation } = buildService({
+      subtotal: 2000,
+      product: { packageWeightKg: null },
+    });
+
+    await service.checkout(USER_ID, baseInput).catch(() => undefined);
+
+    const item = createOrderWithReservation.mock.calls[0]?.[0]?.items?.[0];
+    expect(item?.unitWeightKg.toNumber()).toBe(0.5);
+    expect(item?.billableWeightKg.toNumber()).toBe(0.5);
+  });
+
+  it('uses volumetric weight when a bulky product outweighs its mass', async () => {
+    const { service, createOrderWithReservation } = buildService({
+      subtotal: 2000,
+      product: {
+        packageWeightKg: 0.6,
+        packageLengthCm: 50,
+        packageWidthCm: 30,
+        packageHeightCm: 10,
+      },
+    });
+
+    await service.checkout(USER_ID, baseInput).catch(() => undefined);
+
+    const item = createOrderWithReservation.mock.calls[0]?.[0]?.items?.[0];
+    // 50 x 30 x 10 / 5000 = 3 kg, which beats 0.6 kg of mass
+    expect(item?.billableWeightKg.toNumber()).toBeCloseTo(3, 3);
   });
 });

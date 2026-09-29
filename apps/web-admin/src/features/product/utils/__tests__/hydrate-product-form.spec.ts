@@ -171,7 +171,9 @@ describe('hydrateProductForm', () => {
     };
 
     const hydrated = hydrateProductForm(legacyProduct);
-    expect(hydrated.packageWeightKg).toBe(0.3);
+    // 0.5 kg, the floor every domestic courier accepts. The old 0.3 default sat
+    // below it, so a legacy product with no recorded weight was un-quotable.
+    expect(hydrated.packageWeightKg).toBe(0.5);
     expect(hydrated.packagingType).toBe('FLYER_SMALL');
     expect(hydrated.isFragile).toBe(false);
     expect(hydrated.warrantyType).toBe('NO_WARRANTY');

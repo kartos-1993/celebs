@@ -12,6 +12,14 @@ export interface CheckoutItemDetail {
   unitPrice: Prisma.Decimal;
   subtotal: Prisma.Decimal;
   vendorId: string;
+  /**
+   * Billable weight of the line, snapshotted at purchase. A product's weight can
+   * change after the order is placed, and a courier quote has to stay
+   * reproducible for the shipment, so the weight that was paid for is the
+   * weight that ships.
+   */
+  unitWeightKg: Prisma.Decimal;
+  billableWeightKg: Prisma.Decimal;
 }
 
 export class InsufficientStockError extends Error {
@@ -54,7 +62,20 @@ export class CheckoutRepository {
   async findCheckoutProducts(productIds: string[]) {
     return prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, price: true, discountedPrice: true, name: true, vendorId: true },
+      // Weight and dimensions are selected because the delivery quote is
+      // derived from them, and the figure is snapshotted onto the order item so
+      // it survives a later change to the product.
+      select: {
+        id: true,
+        price: true,
+        discountedPrice: true,
+        name: true,
+        vendorId: true,
+        packageWeightKg: true,
+        packageLengthCm: true,
+        packageWidthCm: true,
+        packageHeightCm: true,
+      },
     });
   }
 
@@ -136,6 +157,8 @@ export class CheckoutRepository {
                 unitPrice: det.unitPrice,
                 quantity: det.quantity,
                 subtotal: det.subtotal,
+                unitWeightKg: det.unitWeightKg,
+                billableWeightKg: det.billableWeightKg,
                 itemStatus: 'PENDING',
               })),
             },

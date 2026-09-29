@@ -81,7 +81,11 @@ export const shippingPackagingTypeSchema = z.enum([
 export const warrantyTypeSchema = z.enum(['NO_WARRANTY', 'BRAND_WARRANTY', 'SELLER_WARRANTY']);
 
 export const SHIPPING_DEFAULTS = {
-  packageWeightKg: 0.3,
+  // 0.5 kg is the floor every domestic courier enforces, so it is the honest
+  // default for a product whose weight nobody has recorded. The previous 0.3
+  // was below what a courier will accept, which would have made every such
+  // product un-quotable.
+  packageWeightKg: 0.5,
   packagingType: 'FLYER_SMALL' as const,
   warrantyType: 'NO_WARRANTY' as const,
   isFragile: false,

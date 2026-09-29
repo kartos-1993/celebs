@@ -1,8 +1,15 @@
 import { PaymentMethod } from '@prisma/client';
 
-import { CheckoutInput, isCodAllowed, resolveShippingFee } from '@celebs/shared-types';
+import {
+  CheckoutInput,
+  isCodAllowed,
+  MIN_PARCEL_WEIGHT_KG,
+  resolveShippingFee,
+  WEIGHT_DECIMALS,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
@@ -11,6 +18,7 @@ import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 import { generateOrderNumber } from '../utils/order-number.util';
 
 import {
+  CheckoutItemDetail,
   CheckoutRepository,
   checkoutRepository,
   InsufficientStockError,
@@ -100,17 +108,9 @@ export class CheckoutService {
 
     // Resolve Product Info and Calculate Totals
     let subtotalDecimal = new Prisma.Decimal(0);
-    const itemDetails: Array<{
-      inventoryId: string;
-      productId: string;
-      productName: string;
-      colorVariantName: string;
-      size: string;
-      quantity: number;
-      unitPrice: Prisma.Decimal;
-      subtotal: Prisma.Decimal;
-      vendorId: string;
-    }> = [];
+    // Typed from the repository's own interface rather than restated here, so a
+    // new snapshot field cannot be added to one and forgotten on the other.
+    const itemDetails: CheckoutItemDetail[] = [];
 
     // Batch product lookup — single query
     const cartProductIds = Array.from(new Set(cart.items.map((item) => item.inventory.productId)));
@@ -148,6 +148,22 @@ export class CheckoutService {
 
       const vendorId = product.vendorId || PLATFORM_VENDOR_ID;
 
+      // Billable weight for this line, snapshotted so the shipment stays
+      // reproducible if the product's weight is edited later.
+      //
+      // Computed with Decimal rather than the shared float helper: a courier
+      // charge is reconciled against this stored figure, and float arithmetic
+      // drifts (0.7 * 3 is 2.0999999999999996, and `toFixed` rounds 1.005 down
+      // to 1.00). The shared helper produces the same value for display, but
+      // this is the one that has to be exact.
+      const lineBillableWeightKg = computeBillableLineWeightKg({
+        weightKg: product.packageWeightKg,
+        quantity: item.quantity,
+        lengthCm: product.packageLengthCm,
+        widthCm: product.packageWidthCm,
+        heightCm: product.packageHeightCm,
+      });
+
       itemDetails.push({
         inventoryId: inv.id,
         productId: inv.productId,
@@ -158,6 +174,10 @@ export class CheckoutService {
         unitPrice: unitPriceDecimal,
         subtotal: lineSubtotalDecimal,
         vendorId,
+        unitWeightKg: new Prisma.Decimal(
+          product.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
+        ).toDecimalPlaces(WEIGHT_DECIMALS, Prisma.Decimal.ROUND_HALF_UP),
+        billableWeightKg: lineBillableWeightKg,
       });
     }
 

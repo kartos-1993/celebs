@@ -455,6 +455,14 @@ model OrderItem {
   quantity         Int
   subtotal         Decimal @db.Decimal(12, 2)
 
+  // Per-unit weight snapshotted at purchase. A product's weight can change after
+  // an order is placed, and a courier quote has to stay reproducible for the
+  // shipment, so the figure that was paid for is the figure that ships.
+  unitWeightKg Decimal @default(0.5) @map("unit_weight_kg") @db.Decimal(8, 3)
+  // Billable weight of this line: the greater of mass and volume, and the sum
+  // across lines is what the courier charges for.
+  billableWeightKg Decimal @default(0.5) @map("billable_weight_kg") @db.Decimal(8, 3)
+
   itemStatus     OrderItemStatus @default(PENDING) @map("item_status")
   trackingNumber String?         @map("tracking_number")
   courierPartner String?         @map("courier_partner")

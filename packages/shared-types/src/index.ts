@@ -49,6 +49,7 @@ export * from './validators/mfa.validator';
 export * from './validators/notification.validator';
 export * from './validators/option-set.validator';
 export * from './validators/order.validator';
+export * from './validators/parcel-weight.validator';
 export * from './validators/platform-settings.validator';
 export * from './validators/product.validator';
 export * from './validators/user.validator';

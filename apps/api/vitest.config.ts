@@ -1,7 +1,7 @@
-import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import { resolve } from 'path';
 import * as dotenv from 'dotenv';
+import { resolve } from 'path';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config';
 
 // Load environment variables strictly from .env.test for test runs
 dotenv.config({ path: resolve(__dirname, '.env.test') });
@@ -22,7 +22,11 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
-    testTimeout: 30000,
+    // These are integration tests against a real Postgres plus bcrypt hashing.
+    // The 30s default was set for unit tests and the heavier specs were landing
+    // just over it, so a run could fail on timing rather than on behaviour.
+    testTimeout: 120000,
+    hookTimeout: 120000,
     include: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'tests/**/*.spec.ts', 'tests/**/*.test.ts'],
     exclude: [],
     fileParallelism: false,
