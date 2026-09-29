@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createDeliverableZone } from '../../../../tests/support/delivery-zone';
 import { buildEsewaSignature } from '../adapters/esewa.adapter';
 import { checkoutService } from '../checkout/checkout.service';
 import { paymentService } from '../payment/payment.service';
@@ -50,8 +51,12 @@ describe('Admin payment status management', () => {
     });
     vendorProfileId = vendorProfile.id;
 
+    // Checkout and dispatch refuse an address with no delivery zone, so a
+    // fixture address has to carry a real one.
+    const { zoneId: addressZone } = await createDeliverableZone();
     const address = await prisma.address.create({
       data: {
+        logisticsZoneId: addressZone,
         userId,
         fullName: 'Pay Customer',
         phone: '9841111111',

@@ -1,6 +1,8 @@
 import { CodStatus, OrderStatus, PaymentMethod } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { createDeliverableZone } from '../../../../tests/support/delivery-zone';
+
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
 import { logisticsService } from '@/modules/logistics/logistics.service';
@@ -22,6 +24,9 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
     testUserId = user.id;
 
     // Create test address
+    // Dispatch refuses an address whose delivery coverage is unconfirmed, so the
+    // fixture carries a real zone rather than none.
+    const { zoneId } = await createDeliverableZone();
     const address = await prisma.address.create({
       data: {
         userId: testUserId,
@@ -31,6 +36,7 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
         district: 'Kathmandu',
         cityArea: 'Baneshwor',
         streetAddress: 'House 42, Baneshwor Height',
+        logisticsZoneId: zoneId,
       },
     });
     testAddressId = address.id;

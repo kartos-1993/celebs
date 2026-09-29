@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createDeliverableZone } from '../../../../../tests/support/delivery-zone';
 import { checkoutService } from '../../checkout/checkout.service';
 import { paymentService } from '../payment.service';
 
@@ -73,8 +74,12 @@ describe('Payment double callbacks, replay protection, and concurrency races', (
     });
     vendorProfileId = vendorProfile.id;
 
+    // Checkout and dispatch refuse an address with no delivery zone, so a
+    // fixture address has to carry a real one.
+    const { zoneId: addressZone } = await createDeliverableZone();
     const address = await prisma.address.create({
       data: {
+        logisticsZoneId: addressZone,
         userId,
         fullName: 'Concurrency Customer',
         phone: '9841000000',

@@ -9,6 +9,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { deliveryCoverageRepository } from '../../logistics/delivery-coverage.repository';
 import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repository';
 import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
 import { AddressRepository, addressRepository } from '../address/address.repository';
@@ -188,6 +189,27 @@ export class CheckoutService {
     // `resolveShippingFee` the app also displays — the previous inline
     // `gt(3000)` disagreed with the app's `>=` and billed a cart sitting
     // exactly on the threshold that it had been told was free.
+    // Last cheap chance to stop an order the courier will not take. After this the
+    // customer has paid and the parcel comes back, so the check belongs here and
+    // again at dispatch.
+    //
+    // UNVERIFIED is refused too. We may simply not know yet, but letting it
+    // through turns a gap in our own location data into a paid, undeliverable
+    // order - and the message asks the customer to re-select their district
+    // rather than implying they got something wrong.
+    const coverage = await deliveryCoverageRepository.coverageForAddress({
+      logisticsZoneId: address.logisticsZoneId,
+    });
+
+    if (coverage.status !== 'COVERED') {
+      const message =
+        coverage.status === 'UNCOVERED'
+          ? `We do not deliver to ${coverage.cityName ?? 'this area'} yet. Please choose a different delivery address.`
+          : 'We could not confirm delivery to this address. Please re-select your district so we can check.';
+
+      throw new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    }
+
     // The COD ceiling comes from the commerce policy so an admin can change it
     // without a deploy. The delivery fee is quoted against the destination's own
     // zone: the threshold is higher outside the Kathmandu Valley, where the

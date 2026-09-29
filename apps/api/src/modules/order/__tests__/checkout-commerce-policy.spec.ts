@@ -12,9 +12,10 @@ import { CheckoutService } from '@/modules/order/checkout/checkout.service';
  * hardcoded, so a change in the admin panel moves them without a deploy.
  */
 
-const { mockPolicy, mockThresholdForAddress } = vi.hoisted(() => ({
+const { mockPolicy, mockThresholdForAddress, mockCoverageForAddress } = vi.hoisted(() => ({
   mockPolicy: vi.fn(),
   mockThresholdForAddress: vi.fn(),
+  mockCoverageForAddress: vi.fn(),
 }));
 
 vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
@@ -27,6 +28,10 @@ vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
 vi.mock('@/modules/logistics/delivery-pricing.repository', () => ({
   UNRESOLVED_FREE_DELIVERY_THRESHOLD: 5000,
   deliveryPricingRepository: { thresholdForAddress: mockThresholdForAddress },
+}));
+
+vi.mock('@/modules/logistics/delivery-coverage.repository', () => ({
+  deliveryCoverageRepository: { coverageForAddress: mockCoverageForAddress },
 }));
 
 const USER_ID = '33333333-3333-4333-8333-333333333333';
@@ -108,6 +113,14 @@ describe('checkout charges from the commerce policy', () => {
       isValley: true,
       freeDeliveryThreshold: 3000,
       absorbedCost: 0,
+    });
+    mockCoverageForAddress.mockResolvedValue({
+      status: 'COVERED',
+      isValley: true,
+      zoneId: 'zone-1',
+      zoneName: 'Kathmandu',
+      cityName: 'Kathmandu',
+      needsZoneSelection: false,
     });
   });
 
