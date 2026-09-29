@@ -284,11 +284,73 @@ model Address {
   landmark      String?
   isDefault     Boolean @default(false) @map("is_default")
 
+  // The courier's own zone, captured when the address is created. The courier
+  // city is derivable from the zone, so it is not duplicated here. The text
+  // columns above stay as the display snapshot so a historical order still
+  // renders the address as the customer typed it, even after the courier
+  // renames or retires a zone.
+  logisticsZoneId String? @map("logistics_zone_id")
+  logisticsZone   LogisticsZone? @relation(fields: [logisticsZoneId], references: [id], onDelete: SetNull)
+  // Resolved coverage at the time of order, so a later coverage change does not
+  // rewrite the history of what we promised.
+  deliveryZoneId  String? @map("delivery_zone_id")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
 
   @@index([userId])
+  @@index([logisticsZoneId])
+}
+
+// ── Courier coverage (mirrored from the courier's own location lists) ───────
+//
+// Pathao publishes city / zone / area lists. Mirroring them locally means the
+// address form can offer only deliverable districts, which removes the need to
+// match free text against a courier taxonomy after the fact.
+
+model LogisticsCity {
+  id         String  @id @default(uuid())
+  externalId Int     @unique
+  name       String
+  // Kathmandu Valley drives the free-delivery threshold, so it is a property we
+  // hold rather than infer. Seeded by name, then correctable by an admin.
+  isValley   Boolean @default(false) @map("is_valley")
+  isActive   Boolean @default(true) @map("is_active")
+  syncedAt   DateTime @default(now()) @map("synced_at")
+
+  zones LogisticsZone[]
+
+  @@index([isActive, isValley])
+}
+
+model LogisticsZone {
+  id         String  @id @default(uuid())
+  cityId     String  @map("city_id")
+  city       LogisticsCity @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  externalId Int     @unique
+  name       String
+  isActive   Boolean @default(true) @map("is_active")
+  syncedAt   DateTime @default(now()) @map("synced_at")
+
+  areas    LogisticsArea[]
+  addresses Address[]
+
+  @@index([cityId, isActive])
+}
+model LogisticsArea {
+  id         String  @id @default(uuid())
+  zoneId     String  @map("zone_id")
+  zone       LogisticsZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  externalId Int     @unique
+  name       String
+  isActive   Boolean @default(true) @map("is_active")
+  syncedAt   DateTime @default(now()) @map("synced_at")
+
+  // No direct address relation: a quote needs city + zone only, and the address
+  // stores the zone. Areas are mirrored so the courier's full hierarchy is on
+  // record for when quoting or routing needs finer granularity.
+  @@index([zoneId, isActive])
 }
 
 model Order {
