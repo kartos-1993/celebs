@@ -3,6 +3,10 @@ import { Request, Response } from 'express';
 import { codSettlementSchema, dispatchOrderSchema } from '@celebs/shared-types';
 import { asyncHandler } from '@celebs/shared-utils';
 
+import {
+  type DeliveryLocationRepository,
+  deliveryLocationRepository,
+} from './delivery-location.repository';
 import { type LogisticsService, logisticsService } from './logistics.service';
 
 import { sendSuccess } from '@/common/utils/response.util';
@@ -10,9 +14,24 @@ import { sendSuccess } from '@/common/utils/response.util';
 export class LogisticsController {
   private service: LogisticsService;
 
-  constructor(service: LogisticsService = logisticsService) {
+  constructor(
+    service: LogisticsService = logisticsService,
+    private readonly locationRepo: DeliveryLocationRepository = deliveryLocationRepository,
+  ) {
     this.service = service;
   }
+
+  /**
+   * Delivery provinces, districts and areas for the address form.
+   *
+   * Unauthenticated on purpose: a customer chooses where they live before they
+   * have an account, and the payload is place names only.
+   */
+  public listDeliveryLocations = asyncHandler(async (_req: Request, res: Response) => {
+    const locations = await this.locationRepo.listLocations();
+
+    return sendSuccess(res, locations, 'Delivery locations retrieved successfully');
+  });
 
   public dispatchOrder = asyncHandler(async (req: Request, res: Response) => {
     const { orderId } = req.params;

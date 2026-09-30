@@ -1,4 +1,7 @@
 import prisma from '../../config/db.prisma';
+
+/** Synthetic external id for zones that come from our own reference data. */
+const BOOTSTRAP_ZONE_EXTERNAL_ID = 900_000;
 import { logger } from '@celebs/shared-utils';
 
 import {
@@ -35,10 +38,11 @@ export async function seedLogisticsLocations(): Promise<void> {
 
       if (existing) {
         kept += 1;
+        await ensureDefaultZone(existing.id, district);
         continue;
       }
 
-      await prisma.logisticsCity.create({
+      const city = await prisma.logisticsCity.create({
         data: {
           name: district,
           province: provinceName,
@@ -48,11 +52,49 @@ export async function seedLogisticsLocations(): Promise<void> {
             : outsideValleyFreeDeliveryThreshold,
           source: 'BOOTSTRAP',
         },
+        select: { id: true },
       });
+      await ensureDefaultZone(city.id, district);
       created += 1;
     }
   }
 
   logger.info({ created, kept }, 'Seeded bootstrap delivery areas from Nepal reference data');
   console.log(`    ✓ ${created} created, ${kept} already present`);
+}
+
+/**
+ * Gives a bootstrap district a zone so the address form's area step is usable.
+ *
+ * A courier's own list has many zones per city; our reference data has one per
+ * district. That is coarse but honest - a district with a single delivery area is
+ * a district we can serve across. Real zones replace it when a courier syncs.
+ */
+async function ensureDefaultZone(cityId: string, district: string): Promise<void> {
+  const existing = await prisma.logisticsZone.findFirst({
+    where: { cityId },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  await prisma.logisticsZone.create({
+    data: {
+      cityId,
+      // Synthetic: this zone came from our reference data, not a courier, so it
+      // has no courier identifier to hold. The column is unique per row and no
+      // two zones in a city share a courier id anyway, so uniqueness is scoped by
+      // the caller's own city.
+      externalId: BOOTSTRAP_ZONE_EXTERNAL_ID + hashCityId(cityId),
+      name: district,
+    },
+  });
+}
+
+/** Deterministic small offset so every district's synthetic zone id is distinct. */
+function hashCityId(cityId: string): number {
+  let hash = 0;
+  for (let index = 0; index < cityId.length; index += 1) {
+    hash = (hash * 31 + cityId.charCodeAt(index)) % 900_000;
+  }
+  return hash;
 }

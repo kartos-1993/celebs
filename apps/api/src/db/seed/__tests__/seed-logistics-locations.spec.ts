@@ -40,6 +40,29 @@ describe('seedLogisticsLocations', () => {
     expect(count).toBe(NEPAL_DISTRICT_COUNT);
   });
 
+  // The address form picks a district and then an area within it. A district
+  // with no zone offers an empty second step, so the customer is asked to
+  // choose a delivery area from a list that has nothing in it.
+  it('gives every district a zone the address form can select', async () => {
+    const districts = await prisma.logisticsCity.findMany({
+      where: { source: 'BOOTSTRAP' },
+      select: { id: true, name: true, zones: { where: { isActive: true }, select: { id: true } } },
+    });
+
+    const withoutZone = districts.filter((district) => district.zones.length === 0);
+    expect(withoutZone.map((district) => district.name)).toEqual([]);
+  });
+
+  it('does not give a district a second zone when re-run', async () => {
+    await seedLogisticsLocations();
+
+    const district = await prisma.logisticsCity.findFirst({
+      where: { source: 'BOOTSTRAP' },
+      select: { zones: { select: { id: true } } },
+    });
+    expect(district?.zones.length).toBe(1);
+  });
+
   it('gives the valley a lower free-delivery threshold than the rest', async () => {
     const kathmandu = await prisma.logisticsCity.findFirst({
       where: { name: 'Kathmandu' },

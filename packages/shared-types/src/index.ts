@@ -89,6 +89,7 @@ export * from './types/api';
 export * from './types/brand';
 export * from './types/cart';
 export * from './types/category';
+export * from './types/delivery-location';
 export * from './types/layout';
 export * from './types/marketing';
 export * from './types/media';

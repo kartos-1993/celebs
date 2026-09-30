@@ -12,6 +12,10 @@ import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
 
+// Delivery locations for the address form. Public: a customer picks their
+// district before they have an account, and the payload is place names only.
+router.get('/delivery-locations', asyncHandler(logisticsController.listDeliveryLocations));
+
 // Dispatch order via 3PL (Vendor / Admin) — tenant-isolated for sellers, platform bypass for ADMIN/SUPERADMIN
 router.post(
   '/dispatch/:orderId',
