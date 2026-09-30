@@ -4,7 +4,7 @@ import {
   AddToCartInput,
   CartItemHydrated,
   CartResponse,
-  resolveShippingFee,
+  MIN_PARCEL_WEIGHT_KG,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
@@ -15,7 +15,15 @@ import { cartRepository } from './cart.repository';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
-import { UNRESOLVED_FREE_DELIVERY_THRESHOLD } from '@/modules/logistics/delivery-pricing.repository';
+import { resolveDeliveryPricing } from '@/modules/logistics/delivery-pricing';
+import {
+  deliveryPricingRepository,
+  UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+} from '@/modules/logistics/delivery-pricing.repository';
+import {
+  computeBillableLineWeightKg,
+  sumBillableWeightKg,
+} from '@/modules/logistics/parcel-weight';
 import { platformSettingsService } from '@/modules/platform-settings/platform-settings.service';
 
 export class CartService {
@@ -75,6 +83,8 @@ export class CartService {
         // An empty cart is never charged delivery.
         shippingFee: 0,
         freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+        // Nothing to deliver, so nothing is quoted against a destination.
+        deliveryIsEstimate: true,
         total: 0,
         itemCount: 0,
         hasStockIssues: false,
@@ -84,6 +94,7 @@ export class CartService {
     }
 
     let subtotalDecimal = new Prisma.Decimal(0);
+    let billableWeightKg = new Prisma.Decimal(0);
     let itemCount = 0;
     let hasStockIssues = false;
 
@@ -128,6 +139,23 @@ export class CartService {
         const priceDecimal = new Prisma.Decimal(price);
         subtotalDecimal = subtotalDecimal.add(priceDecimal.mul(item.quantity));
         itemCount += item.quantity;
+
+        // Billable weight for the line, accumulated here rather than read back off
+        // the hydrated items: these are product dimensions, and publishing them
+        // on the cart response would leak a pricing input into the API surface.
+        billableWeightKg = sumBillableWeightKg([
+          billableWeightKg,
+          computeBillableLineWeightKg({
+            // Optional like every other product read in this loop: a line whose
+            // product has been deleted cannot be shipped, and checkout refuses it
+            // long before its weight could matter.
+            weightKg: product?.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
+            quantity: item.quantity,
+            lengthCm: product?.packageLengthCm ?? null,
+            widthCm: product?.packageWidthCm ?? null,
+            heightCm: product?.packageHeightCm ?? null,
+          }),
+        ]);
       }
 
       return {
@@ -157,16 +185,35 @@ export class CartService {
       };
     });
 
-    // Delivery and total are stated here, from the same policy and the same
-    // shared rule checkout charges with, so the figure the shopper is shown is
-    // the figure they are billed. Advisory only — checkout recomputes from the
-    // database and remains the authority.
+    // Delivery and total are stated here, from the same resolver checkout uses, so
+    // the figure the shopper is shown is the figure they are billed. Advisory
+    // only — checkout recomputes from the database and remains the authority.
     const policy = await platformSettingsService.getCommercePolicy();
     const subtotal = subtotalDecimal.toNumber();
-    // The cart does not know the destination yet, so it quotes the conservative
-    // threshold: promising free delivery the server would then decline is the
-    // same bug as promising it and charging for it.
-    const shippingFee = resolveShippingFee(subtotal, policy, UNRESOLVED_FREE_DELIVERY_THRESHOLD);
+
+    // Quote against the customer's default address when it has a zone, so the
+    // threshold and rate band are the ones checkout will use for it. Without a
+    // zone the conservative threshold stands, because promising free delivery the
+    // server would then decline is the same bug as promising it and charging for
+    // it.
+    const destination = await this.resolveDefaultDestination(userId);
+    const rates = destination
+      ? await deliveryPricingRepository.activeRates(destination.cityId)
+      : [];
+
+    const pricing = resolveDeliveryPricing({
+      subtotal: subtotalDecimal,
+      weightKg: billableWeightKg,
+      isCod: false,
+      freeDeliveryThreshold: new Prisma.Decimal(
+        destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+      ),
+      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
+      rates,
+      cityId: destination?.cityId ?? null,
+    });
+
+    const shippingFee = pricing.shippingFee.toNumber();
 
     return {
       id: cartRecord.id,
@@ -175,12 +222,58 @@ export class CartService {
       items: hydratedItems,
       subtotal,
       shippingFee,
-      freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+      freeDeliveryThreshold: Number(
+        destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+      ),
+      // Without a destination the quote is the conservative one, so the app needs
+      // to be able to say so rather than presenting it as the price.
+      deliveryIsEstimate: destination === null,
       total: subtotal + shippingFee,
       itemCount,
       hasStockIssues,
       createdAt: cartRecord.createdAt.toISOString(),
       updatedAt: cartRecord.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * The delivery zone for the address this cart will most likely be sent to.
+   *
+   * Null when there is no signed-in customer, no default address, no zone on it,
+   * or the zone's city is switched off - all cases where we do not actually know
+   * where the parcel is going. An inactive city is not a destination, so it is
+   * treated as unknown rather than as a zone whose prices might be stale.
+   */
+  private static async resolveDefaultDestination(userId: string | undefined) {
+    if (!userId) return null;
+
+    const address = await prisma.address.findFirst({
+      where: { userId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        logisticsZoneId: true,
+        logisticsZone: {
+          select: {
+            isActive: true,
+            city: {
+              select: { id: true, isActive: true, freeDeliveryThreshold: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (
+      !address?.logisticsZoneId ||
+      !address.logisticsZone?.isActive ||
+      !address.logisticsZone.city.isActive
+    ) {
+      return null;
+    }
+
+    return {
+      cityId: address.logisticsZone.city.id,
+      freeDeliveryThreshold: address.logisticsZone.city.freeDeliveryThreshold,
     };
   }
 

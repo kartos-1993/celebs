@@ -75,6 +75,7 @@ export default function CheckoutScreen() {
     policy: commercePolicy,
     freeShippingThreshold: cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD,
     serverShippingFee: cart?.shippingFee,
+    serverDeliveryIsEstimate: cart?.deliveryIsEstimate,
     serverTotal: cart?.total,
   });
 

@@ -51,6 +51,11 @@ export class CartRepository {
                     discountedPrice: true,
                     mainImages: true,
                     colorVariants: true,
+                    // Needed to price delivery by weight rather than a flat fee.
+                    packageWeightKg: true,
+                    packageLengthCm: true,
+                    packageWidthCm: true,
+                    packageHeightCm: true,
                   },
                 },
               },

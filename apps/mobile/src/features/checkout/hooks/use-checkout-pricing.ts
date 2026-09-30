@@ -26,6 +26,13 @@ interface CheckoutPricingParams {
    */
   serverShippingFee?: number;
   serverTotal?: number;
+  /**
+   * True when the server had to quote conservatively because it could not resolve
+   * a delivery zone for this cart. The figure is still server-derived, but it is
+   * not the price this order will be charged, and the caption must not present it
+   * as one.
+   */
+  serverDeliveryIsEstimate?: boolean;
 }
 
 export function useCheckoutPricing({
@@ -39,6 +46,7 @@ export function useCheckoutPricing({
   freeShippingThreshold,
   serverShippingFee,
   serverTotal,
+  serverDeliveryIsEstimate = false,
 }: CheckoutPricingParams) {
   // An empty selection means "nothing chosen", not "everything". Falling back
   // to the whole cart silently billed items the shopper never picked.
@@ -69,8 +77,17 @@ export function useCheckoutPricing({
   const stockWarning = blockedItems.find((item) => item.stockWarning)?.stockWarning;
   const canPlaceOrder =
     isLoggedIn && !!effectiveAddressId && checkoutItems.length > 0 && blockedItems.length === 0;
-  const deliveryCaption =
-    shippingFee === 0 ? 'Free delivery applied' : `Incl. Rs. ${formatPrice(shippingFee)} delivery`;
+  // Without a resolved zone the cart quoted the conservative threshold, so 'free'
+  // is a possibility rather than a promise. Saying 'Free delivery applied' there
+  // is the exact surprise this flag exists to prevent: the customer is told the
+  // delivery is free and is then charged for it at checkout.
+  const deliveryCaption = serverDeliveryIsEstimate
+    ? shippingFee === 0
+      ? 'Free delivery may apply'
+      : `Est. Rs. ${formatPrice(shippingFee)} delivery`
+    : shippingFee === 0
+      ? 'Free delivery applied'
+      : `Incl. Rs. ${formatPrice(shippingFee)} delivery`;
 
   return {
     checkoutItems,

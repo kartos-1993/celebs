@@ -88,6 +88,8 @@ export class CartController {
           subtotal: 0,
           shippingFee: 0,
           freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+          // Nothing to deliver, so nothing is quoted against a destination.
+          deliveryIsEstimate: true,
           total: 0,
           itemCount: 0,
           hasStockIssues: false,

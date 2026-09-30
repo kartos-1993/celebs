@@ -239,4 +239,65 @@ describe('useCheckoutPricing', () => {
     });
     expect(free.deliveryCaption).toBe('Free delivery applied');
   });
+
+  describe('when the server could not resolve a delivery zone', () => {
+    // The cart quotes the conservative threshold until it knows where the parcel
+    // is going. "Free delivery applied" in that state is a promise the server may
+    // not keep, so the caption has to stop making it.
+    it('does not promise free delivery it cannot confirm', () => {
+      const r = renderPricing({
+        selectedItems: [item()],
+        cartItems: [],
+        selectedSubtotal: 3000,
+        // Equal to the selection, so the server's own figures are the ones used.
+        subtotal: 3000,
+        isLoggedIn: true,
+        effectiveAddressId: 'a1',
+        policy: COMMERCE_POLICY_DEFAULTS,
+        freeShippingThreshold: 5000,
+        serverShippingFee: 0,
+        serverTotal: 3000,
+        serverDeliveryIsEstimate: true,
+      });
+
+      expect(r.deliveryCaption).toBe('Free delivery may apply');
+    });
+
+    it('marks a charged delivery as an estimate', () => {
+      const r = renderPricing({
+        selectedItems: [item()],
+        cartItems: [],
+        selectedSubtotal: 100,
+        subtotal: 100,
+        isLoggedIn: true,
+        effectiveAddressId: 'a1',
+        policy: COMMERCE_POLICY_DEFAULTS,
+        freeShippingThreshold: 5000,
+        serverShippingFee: 150,
+        serverTotal: 250,
+        serverDeliveryIsEstimate: true,
+      });
+
+      expect(r.deliveryCaption).toMatch(/^Est\./);
+      expect(r.deliveryCaption).toContain('150');
+    });
+
+    it('states it plainly once a zone is known', () => {
+      const r = renderPricing({
+        selectedItems: [item()],
+        cartItems: [],
+        selectedSubtotal: 100,
+        subtotal: 100,
+        isLoggedIn: true,
+        effectiveAddressId: 'a1',
+        policy: COMMERCE_POLICY_DEFAULTS,
+        freeShippingThreshold: 2500,
+        serverShippingFee: 150,
+        serverTotal: 250,
+        serverDeliveryIsEstimate: false,
+      });
+
+      expect(r.deliveryCaption).toBe('Incl. Rs. 150.00 delivery');
+    });
+  });
 });
