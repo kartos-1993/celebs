@@ -4,14 +4,14 @@ import {
   CheckoutInput,
   isCodAllowed,
   MIN_PARCEL_WEIGHT_KG,
-  resolveShippingFee,
   WEIGHT_DECIMALS,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { deliveryCoverageRepository } from '../../logistics/delivery-coverage.repository';
+import { resolveDeliveryPricing } from '../../logistics/delivery-pricing';
 import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repository';
-import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
+import { computeBillableLineWeightKg, sumBillableWeightKg } from '../../logistics/parcel-weight';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
@@ -183,12 +183,11 @@ export class CheckoutService {
       });
     }
 
-    // Money is decided here, not in the app. The delivery fee and the cash-on-
-    // delivery ceiling come from the commerce policy so an admin can change
-    // them without a deploy, and the boundary rule is the shared
-    // `resolveShippingFee` the app also displays — the previous inline
-    // `gt(3000)` disagreed with the app's `>=` and billed a cart sitting
-    // exactly on the threshold that it had been told was free.
+    // Money is decided here, not in the app. The cash-on-delivery ceiling comes from
+    // the commerce policy so an admin can change it without a deploy, and the
+    // delivery fee is resolved against the destination's own zone and the
+    // parcel's actual weight rather than a flat platform number.
+    //
     // Last cheap chance to stop an order the courier will not take. After this the
     // customer has paid and the parcel comes back, so the check belongs here and
     // again at dispatch.
@@ -211,19 +210,38 @@ export class CheckoutService {
     }
 
     // The COD ceiling comes from the commerce policy so an admin can change it
-    // without a deploy. The delivery fee is quoted against the destination's own
-    // zone: the threshold is higher outside the Kathmandu Valley, where the
-    // courier's rate is, and the boundary rule is the shared `resolveShippingFee`
-    // the app also displays — the previous inline `gt(3000)` disagreed with the
-    // app's `>=` and billed a cart sitting exactly on the threshold that it had
-    // been told was free.
+    // without a deploy.
+    //
+    // Delivery is priced from the rate card against the parcel's actual
+    // billable weight, not a flat platform fee. Both the threshold and the rate
+    // depend on the destination's own zone, because delivery inside the valley
+    // costs the courier far less than delivery to Biratnagar.
+    //
+    // The two reads are sequential because the second needs the city the first
+    // resolves. `activeRates` returns that city's bands together with the
+    // general ones in a single query, so this costs two round trips rather than
+    // a rate fetch per candidate city.
     const policy = await this.platformSettingsService.getCommercePolicy();
     const destination = await deliveryPricingRepository.thresholdForAddress({
       logisticsZoneId: address.logisticsZoneId,
     });
-    const shippingFeeDecimal = new Prisma.Decimal(
-      resolveShippingFee(subtotalDecimal.toNumber(), policy, destination.freeDeliveryThreshold),
+    const rates = await deliveryPricingRepository.activeRates(destination.cityId);
+
+    const totalBillableWeightKg = sumBillableWeightKg(
+      itemDetails.map((item) => item.billableWeightKg),
     );
+
+    const pricing = resolveDeliveryPricing({
+      subtotal: subtotalDecimal,
+      weightKg: totalBillableWeightKg,
+      isCod: paymentMethod === 'COD',
+      freeDeliveryThreshold: destination.freeDeliveryThreshold,
+      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
+      rates,
+      cityId: destination.cityId,
+    });
+
+    const shippingFeeDecimal = pricing.shippingFee;
     const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
 
     if (paymentMethod === 'COD' && !isCodAllowed(totalAmountDecimal.toNumber(), policy)) {
@@ -250,6 +268,12 @@ export class CheckoutService {
         subtotal: subtotalDecimal,
         shippingFee: shippingFeeDecimal,
         totalAmount: totalAmountDecimal,
+        courierFee: pricing.courierFee,
+        absorbedShippingCost: pricing.absorbedCost,
+        deliveryPricingSource: pricing.source,
+        matchedShippingRateId: pricing.matchedRateId,
+        logisticsZoneId: destination.zoneId,
+        totalBillableWeightKg,
         orderStatus,
         paymentStatus,
         paymentMethod,

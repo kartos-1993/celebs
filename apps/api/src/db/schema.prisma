@@ -262,6 +262,14 @@ enum PaymentMethod {
   ESEWA
 }
 
+// Which rule priced the delivery. FALLBACK means no rate band matched the parcel,
+// so the platform flat fee was used - worth reporting, because a rate card with
+// gaps silently overcharges and looks like a pricing decision.
+enum DeliveryPricingSource {
+  RATE_CARD
+  FALLBACK
+}
+
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -404,6 +412,24 @@ model Order {
   shippingFee    Decimal @default(0) @map("shipping_fee") @db.Decimal(12, 2)
   discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(12, 2)
   totalAmount    Decimal @map("total_amount") @db.Decimal(12, 2)
+
+  // What the courier charges us for this parcel, kept apart from what the
+  // customer paid. They differ whenever a free-delivery threshold was applied,
+  // and the difference is the running cost of those thresholds.
+  courierFee Decimal @default(0) @map("courier_fee") @db.Decimal(12, 2)
+  // Delivery given away to reach the threshold. Zero when the customer paid.
+  absorbedShippingCost Decimal @default(0) @map("absorbed_shipping_cost") @db.Decimal(12, 2)
+  // Which rule priced the delivery, so a disputed charge can be explained and a
+  // missing rate band is visible in reporting rather than silent.
+  deliveryPricingSource DeliveryPricingSource @default(FALLBACK) @map("delivery_pricing_source")
+  matchedShippingRateId  String?               @map("matched_shipping_rate_id")
+  // The zone priced and shipped to. A snapshot rather than a relation: the order
+  // must keep the answer it was given even if the zone is later deactivated or
+  // removed from the mirror.
+  logisticsZoneId String? @map("logistics_zone_id")
+  // Total billable weight of the parcel, snapshotted for the same reason the
+  // per-line weights are: a courier is billed on the weight we quoted.
+  totalBillableWeightKg Decimal? @map("total_billable_weight_kg") @db.Decimal(8, 3)
 
   status        OrderStatus   @default(PENDING_PAYMENT)
   paymentMethod PaymentMethod @map("payment_method")

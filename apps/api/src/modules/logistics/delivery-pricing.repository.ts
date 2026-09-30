@@ -1,5 +1,6 @@
-import { prisma } from '@/config/db.prisma';
-import { Prisma } from '@/config/db.prisma';
+import type { RateBand } from './delivery-pricing';
+
+import { Prisma, prisma } from '@/config/db.prisma';
 
 /**
  * The free-delivery threshold for a destination, and the cost of waiving it.
@@ -7,6 +8,10 @@ import { Prisma } from '@/config/db.prisma';
  * The threshold is per delivery city because delivery inside the Kathmandu Valley
  * costs the courier far less than delivery to Biratnagar, so one platform-wide
  * number would either over-promise in the valley or overcharge everywhere else.
+ *
+ * Money and weight stay `Prisma.Decimal` from the database all the way into the
+ * pricing resolver. Converting here for convenience would reintroduce float drift
+ * on the exact figures a courier invoice is reconciled against.
  */
 
 export interface DeliveryZonePricing {
@@ -14,9 +19,16 @@ export interface DeliveryZonePricing {
   zoneId: string | null;
   cityName: string | null;
   isValley: boolean;
-  freeDeliveryThreshold: number;
-  absorbedCost: number;
+  freeDeliveryThreshold: Prisma.Decimal;
 }
+
+const unresolved = (): DeliveryZonePricing => ({
+  cityId: null,
+  zoneId: null,
+  cityName: null,
+  isValley: false,
+  freeDeliveryThreshold: new Prisma.Decimal(UNRESOLVED_FREE_DELIVERY_THRESHOLD),
+});
 
 /**
  * Used when the destination is not known yet, or could not be resolved.
@@ -38,16 +50,7 @@ export class DeliveryPricingRepository {
   async thresholdForAddress(address: {
     logisticsZoneId: string | null;
   }): Promise<DeliveryZonePricing> {
-    const unresolved: DeliveryZonePricing = {
-      cityId: null,
-      zoneId: null,
-      cityName: null,
-      isValley: false,
-      freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
-      absorbedCost: 0,
-    };
-
-    if (!address.logisticsZoneId) return unresolved;
+    if (!address.logisticsZoneId) return unresolved();
 
     const zone = await prisma.logisticsZone.findUnique({
       where: { id: address.logisticsZoneId },
@@ -67,30 +70,23 @@ export class DeliveryPricingRepository {
       },
     });
 
-    if (!zone || !zone.isActive || !zone.city.isActive) return unresolved;
+    if (!zone || !zone.isActive || !zone.city.isActive) return unresolved();
 
     return {
       cityId: zone.city.id,
       zoneId: zone.id,
       cityName: zone.city.name,
       isValley: zone.city.isValley,
-      freeDeliveryThreshold: zone.city.freeDeliveryThreshold,
-      absorbedCost: 0,
+      // Stored as a whole-rupee Int, so this conversion is exact. It becomes a
+      // Decimal here because everything downstream compares it against money,
+      // and the threshold must be judged with the same arithmetic as the fee it
+      // is being compared to.
+      freeDeliveryThreshold: new Prisma.Decimal(zone.city.freeDeliveryThreshold),
     };
   }
 
-  /** Active rate bands, most specific first is resolved by the caller. */
-  async activeRates(cityId: string | null): Promise<
-    Array<{
-      id: string;
-      cityId: string | null;
-      minWeightKg: number;
-      maxWeightKg: number;
-      fee: number;
-      codFee: number;
-      isActive: boolean;
-    }>
-  > {
+  /** Active rate bands; most specific first is resolved by the caller. */
+  async activeRates(cityId: string | null): Promise<RateBand[]> {
     const rows = await prisma.shippingRate.findMany({
       where: { isActive: true, OR: [{ cityId: null }, ...(cityId ? [{ cityId }] : [])] },
       orderBy: { minWeightKg: 'asc' },
@@ -105,15 +101,7 @@ export class DeliveryPricingRepository {
       },
     });
 
-    return rows.map((row) => ({
-      id: row.id,
-      cityId: row.cityId,
-      minWeightKg: Number(row.minWeightKg),
-      maxWeightKg: Number(row.maxWeightKg),
-      fee: Number(new Prisma.Decimal(row.fee)),
-      codFee: Number(new Prisma.Decimal(row.codFee)),
-      isActive: row.isActive,
-    }));
+    return rows;
   }
 }
 

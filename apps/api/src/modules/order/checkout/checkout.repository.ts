@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { DeliveryPricingSource, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
@@ -93,6 +93,14 @@ export class CheckoutRepository {
     subtotal: Prisma.Decimal;
     shippingFee: Prisma.Decimal;
     totalAmount: Prisma.Decimal;
+    /** What the courier charges us, recorded apart from the customer's fee. */
+    courierFee: Prisma.Decimal;
+    /** Delivery given away to reach the free-delivery threshold. */
+    absorbedShippingCost: Prisma.Decimal;
+    deliveryPricingSource: DeliveryPricingSource;
+    matchedShippingRateId: string | null;
+    logisticsZoneId: string | null;
+    totalBillableWeightKg: Prisma.Decimal;
     orderStatus: OrderStatus;
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod;
@@ -144,6 +152,12 @@ export class CheckoutRepository {
             shippingFee: data.shippingFee,
             discountAmount: new Prisma.Decimal(0),
             totalAmount: data.totalAmount,
+            courierFee: data.courierFee,
+            absorbedShippingCost: data.absorbedShippingCost,
+            deliveryPricingSource: data.deliveryPricingSource,
+            matchedShippingRateId: data.matchedShippingRateId,
+            logisticsZoneId: data.logisticsZoneId,
+            totalBillableWeightKg: data.totalBillableWeightKg,
             status: data.orderStatus,
             paymentMethod: data.paymentMethod,
             paymentStatus: data.paymentStatus,

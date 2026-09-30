@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { COMMERCE_POLICY_DEFAULTS, isCodAllowed, resolveShippingFee } from '@celebs/shared-types';
 import { AppError } from '@celebs/shared-utils';
 
+import { Prisma } from '@/config/db.prisma';
 import { CheckoutService } from '@/modules/order/checkout/checkout.service';
 
 /**
@@ -12,11 +13,14 @@ import { CheckoutService } from '@/modules/order/checkout/checkout.service';
  * hardcoded, so a change in the admin panel moves them without a deploy.
  */
 
-const { mockPolicy, mockThresholdForAddress, mockCoverageForAddress } = vi.hoisted(() => ({
-  mockPolicy: vi.fn(),
-  mockThresholdForAddress: vi.fn(),
-  mockCoverageForAddress: vi.fn(),
-}));
+const { mockPolicy, mockThresholdForAddress, mockActiveRates, mockCoverageForAddress } = vi.hoisted(
+  () => ({
+    mockPolicy: vi.fn(),
+    mockThresholdForAddress: vi.fn(),
+    mockActiveRates: vi.fn(),
+    mockCoverageForAddress: vi.fn(),
+  }),
+);
 
 vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
   PlatformSettingsService: class {
@@ -27,7 +31,10 @@ vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
 
 vi.mock('@/modules/logistics/delivery-pricing.repository', () => ({
   UNRESOLVED_FREE_DELIVERY_THRESHOLD: 5000,
-  deliveryPricingRepository: { thresholdForAddress: mockThresholdForAddress },
+  deliveryPricingRepository: {
+    thresholdForAddress: mockThresholdForAddress,
+    activeRates: mockActiveRates,
+  },
 }));
 
 vi.mock('@/modules/logistics/delivery-coverage.repository', () => ({
@@ -104,6 +111,9 @@ describe('checkout charges from the commerce policy', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPolicy.mockResolvedValue({ ...COMMERCE_POLICY_DEFAULTS });
+    // No rate bands, so these assertions stay about the policy fallback fee.
+    // Rate-card pricing has its own spec.
+    mockActiveRates.mockResolvedValue([]);
     // A default zone threshold of 3000 keeps the original assertions meaningful;
     // the per-zone cases override it.
     mockThresholdForAddress.mockResolvedValue({
@@ -111,7 +121,7 @@ describe('checkout charges from the commerce policy', () => {
       zoneId: 'zone-1',
       cityName: 'Kathmandu',
       isValley: true,
-      freeDeliveryThreshold: 3000,
+      freeDeliveryThreshold: new Prisma.Decimal(3000),
       absorbedCost: 0,
     });
     mockCoverageForAddress.mockResolvedValue({
@@ -152,7 +162,7 @@ describe('checkout charges from the commerce policy', () => {
       zoneId: 'zone-2',
       cityName: 'Biratnagar',
       isValley: false,
-      freeDeliveryThreshold: 8000,
+      freeDeliveryThreshold: new Prisma.Decimal(8000),
       absorbedCost: 0,
     });
     const { service, createOrderWithReservation } = buildService({ subtotal: 4000 });
@@ -170,7 +180,7 @@ describe('checkout charges from the commerce policy', () => {
       zoneId: 'zone-1',
       cityName: 'Kathmandu',
       isValley: true,
-      freeDeliveryThreshold: 9000,
+      freeDeliveryThreshold: new Prisma.Decimal(9000),
       absorbedCost: 0,
     });
     const { service, createOrderWithReservation } = buildService({ subtotal: 4000 });
@@ -261,7 +271,7 @@ describe('checkout charges from the commerce policy', () => {
       zoneId: 'zone-2',
       cityName: 'Biratnagar',
       isValley: false,
-      freeDeliveryThreshold: 5000,
+      freeDeliveryThreshold: new Prisma.Decimal(5000),
       absorbedCost: 0,
     });
     const { service, createOrderWithReservation } = buildService({ subtotal: 3000 });

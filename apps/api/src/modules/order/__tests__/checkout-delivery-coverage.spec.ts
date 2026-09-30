@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '@celebs/shared-utils';
 
+import { Prisma } from '@/config/db.prisma';
 import { CheckoutService } from '@/modules/order/checkout/checkout.service';
 
 /**
@@ -10,11 +11,14 @@ import { CheckoutService } from '@/modules/order/checkout/checkout.service';
  * parcel, so the check belongs here as well as at dispatch.
  */
 
-const { mockPolicy, mockThresholdForAddress, mockCoverageForAddress } = vi.hoisted(() => ({
-  mockPolicy: vi.fn(),
-  mockThresholdForAddress: vi.fn(),
-  mockCoverageForAddress: vi.fn(),
-}));
+const { mockPolicy, mockThresholdForAddress, mockActiveRates, mockCoverageForAddress } = vi.hoisted(
+  () => ({
+    mockPolicy: vi.fn(),
+    mockThresholdForAddress: vi.fn(),
+    mockActiveRates: vi.fn(),
+    mockCoverageForAddress: vi.fn(),
+  }),
+);
 
 vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
   PlatformSettingsService: class {
@@ -25,7 +29,10 @@ vi.mock('@/modules/platform-settings/platform-settings.service', () => ({
 
 vi.mock('@/modules/logistics/delivery-pricing.repository', () => ({
   UNRESOLVED_FREE_DELIVERY_THRESHOLD: 5000,
-  deliveryPricingRepository: { thresholdForAddress: mockThresholdForAddress },
+  deliveryPricingRepository: {
+    thresholdForAddress: mockThresholdForAddress,
+    activeRates: mockActiveRates,
+  },
 }));
 
 vi.mock('@/modules/logistics/delivery-coverage.repository', () => ({
@@ -114,9 +121,9 @@ describe('checkout refuses an address it cannot deliver to', () => {
       zoneId: 'zone-1',
       cityName: 'Kathmandu',
       isValley: true,
-      freeDeliveryThreshold: 2500,
-      absorbedCost: 0,
+      freeDeliveryThreshold: new Prisma.Decimal(2500),
     });
+    mockActiveRates.mockResolvedValue([]);
     mockCoverageForAddress.mockResolvedValue(covered);
   });
 
