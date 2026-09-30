@@ -152,6 +152,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
         { href: '/platform-settings/banners', label: 'Mobile Banner Slider' },
         { href: '/platform-settings/layout', label: 'Home Layout Editor' },
         { href: '/platform-settings/commerce', label: 'Commerce Settings' },
+        { href: '/platform-settings/delivery-rates', label: 'Delivery Rates' },
         { href: '/platform-settings/notifications', label: 'Notification Settings' },
       ],
     });

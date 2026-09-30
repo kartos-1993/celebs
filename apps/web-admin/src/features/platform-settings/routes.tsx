@@ -54,4 +54,16 @@ export const platformSettingsRoutes: RouteObject[] = [
     ),
     handle: { title: 'Commerce Settings', crumb: 'Commerce', skeleton: 'form' },
   },
+  {
+    path: 'platform-settings/delivery-rates',
+    ...pageRoute(
+      () => import('../shipping-rates/pages/shipping-rates-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
+    ),
+    handle: { title: 'Delivery Rates', crumb: 'Delivery Rates', skeleton: 'table' },
+  },
 ];
