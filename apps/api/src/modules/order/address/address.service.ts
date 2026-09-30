@@ -24,6 +24,10 @@ export class AddressService {
       cityArea: input.cityArea,
       streetAddress: input.streetAddress,
       landmark: input.landmark,
+      // Persisted so the address can be matched to a courier zone later. An
+      // address saved without one still works, but checkout will ask the
+      // customer to re-pick their district because coverage cannot be confirmed.
+      logisticsZoneId: input.logisticsZoneId || null,
       label: input.label,
       isDefault: input.isDefault ?? false,
     });
@@ -39,7 +43,16 @@ export class AddressService {
       await this.repo.unsetOtherDefaultAddresses(userId, addressId);
     }
 
-    return this.repo.updateAddress(addressId, userId, input);
+    return this.repo.updateAddress(addressId, userId, {
+      ...input,
+      // The form can submit an empty zone, and the shared schema accepts ''.
+      // Prisma has no such thing as an empty-string id, so normalise the same
+      // way create does — otherwise editing a legacy address returns a 500
+      // instead of saving.
+      ...(input.logisticsZoneId !== undefined
+        ? { logisticsZoneId: input.logisticsZoneId || null }
+        : {}),
+    });
   }
 
   async deleteAddress(userId: string, addressId: string) {

@@ -11,6 +11,12 @@ export interface SavedAddress {
   streetAddress: string;
   landmark?: string | null;
   isDefault: boolean;
+  /**
+   * The courier zone this address sits in. Set when the customer picks their
+   * district and area from the delivered list; an address without it cannot be
+   * ordered to, because coverage cannot be confirmed.
+   */
+  logisticsZoneId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +32,7 @@ export interface AddressDraft {
   streetAddress: string;
   landmark?: string;
   isDefault: boolean;
+  logisticsZoneId?: string;
 }
 
 export const ADDRESS_LABELS = ['Home', 'Office'] as const;

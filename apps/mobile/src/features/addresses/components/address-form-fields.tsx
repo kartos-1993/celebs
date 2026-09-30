@@ -1,19 +1,30 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Control,
   Controller,
   type FieldErrors,
   type FieldPath,
   type FieldValues,
+  type UseFormReturn,
 } from 'react-hook-form';
-import { Switch, TextInput, type TextInputProps, TouchableOpacity, View } from 'react-native';
+import {
+  Pressable,
+  Switch,
+  TextInput,
+  type TextInputProps,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import type { AddressInput } from '@celebs/shared-types';
 
+import { useDeliveryLocations } from '../hooks/use-delivery-locations';
+
 import { styles } from './address-form-sheet.styles';
+import { DeliveryLocationPicker } from './delivery-location-picker';
 
 import { ThemedText } from '@/components/themed-text';
-import { Palette } from '@/constants/theme';
+import { FontSize, Palette, Spacing } from '@/constants/theme';
 import { ADDRESS_LABELS } from '@/features/addresses/types';
 
 export type AddressFormValues = AddressInput;
@@ -59,9 +70,26 @@ function ControlledInput<T extends FieldValues>({
 interface AddressFormFieldsProps {
   control: Control<AddressFormValues>;
   errors: FieldErrors<AddressFormValues>;
+  /**
+   * The owning form's `watch`/`setValue`, threaded in alongside `control` rather
+   * than read from `useFormContext`: the sheet does not wrap these fields in a
+   * `FormProvider`, so the context would be null and the picker would throw on
+   * first use.
+   */
+  watch: UseFormReturn<AddressFormValues>['watch'];
+  setValue: UseFormReturn<AddressFormValues>['setValue'];
 }
 
-export function AddressFormFields({ control, errors }: AddressFormFieldsProps) {
+export function AddressFormFields({ control, errors, watch, setValue }: AddressFormFieldsProps) {
+  const { data, isLoading: isLoadingLocations } = useDeliveryLocations();
+  const provinces = useMemo(() => data?.provinces ?? [], [data]);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const chosenDistrict = watch('district');
+  const chosenArea = watch('cityArea');
+  const zoneLabel = chosenDistrict ? `${chosenDistrict}, ${chosenArea ?? ''}`.trim() : '';
+
   return (
     <>
       <ThemedText style={styles.fieldLabel}>Save As</ThemedText>
@@ -119,31 +147,55 @@ export function AddressFormFields({ control, errors }: AddressFormFieldsProps) {
       />
 
       <ThemedText style={styles.sectionHint}>DELIVERY ADDRESS</ThemedText>
-      <View style={styles.rowGroup}>
-        <ControlledInput
-          control={control}
-          name="province"
-          placeholder="Province"
-          style={styles.flexInput}
-        />
-        <ControlledInput
-          control={control}
-          name="district"
-          placeholder="District"
-          style={styles.flexInput}
-        />
-      </View>
-      {(!!errors.province || !!errors.district) && (
-        <ThemedText style={styles.errorText}>
-          {errors.province?.message || errors.district?.message}
+
+      {/* District and area are chosen from the list of places we actually
+          deliver to, rather than typed. Free text is what let an order be placed
+          for a district no courier serves, and it also produced near-misses that
+          cannot resolve to a delivery zone. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Choose delivery district and area"
+        onPress={() => setPickerOpen(true)}
+        style={{
+          borderWidth: 1,
+          borderColor: watch('logisticsZoneId') ? Palette.gray300 : Palette.danger,
+          borderRadius: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          marginBottom: Spacing.xs,
+        }}
+      >
+        <ThemedText
+          style={{
+            color: watch('logisticsZoneId') ? Palette.gray900 : Palette.gray500,
+            fontSize: FontSize.base,
+          }}
+        >
+          {zoneLabel || 'Choose your district and area'}
         </ThemedText>
+      </Pressable>
+      {errors.logisticsZoneId && (
+        <ThemedText style={styles.errorText}>{errors.logisticsZoneId.message}</ThemedText>
       )}
 
-      <ControlledInput
-        control={control}
-        name="cityArea"
-        placeholder="City / Area (e.g. New Baneshwor)"
-        error={errors.cityArea?.message}
+      <DeliveryLocationPicker
+        visible={pickerOpen}
+        province={watch('province') ?? ''}
+        district={watch('district') ?? ''}
+        cityArea={watch('cityArea') ?? ''}
+        provinces={provinces}
+        isLoading={isLoadingLocations}
+        error={errors.logisticsZoneId?.message}
+        onClose={() => setPickerOpen(false)}
+        onSelect={({ province, district, cityArea, logisticsZoneId }) => {
+          setValue('province', province, { shouldValidate: true, shouldDirty: true });
+          setValue('district', district, { shouldValidate: true, shouldDirty: true });
+          setValue('cityArea', cityArea, { shouldValidate: true, shouldDirty: true });
+          setValue('logisticsZoneId', logisticsZoneId, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+        }}
       />
       <ControlledInput
         control={control}

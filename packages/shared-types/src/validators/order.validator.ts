@@ -16,6 +16,13 @@ export const addressSchema = z.object({
   cityArea: z.string().min(1, 'City/Area (e.g. New Baneshwor, Jhamsikhel) is required'),
   streetAddress: z.string().min(3, 'Street address is required'),
   landmark: z.string().optional(),
+  /**
+   * The courier zone this address sits in, chosen from the districts and areas we
+   * actually deliver to. Optional so an address saved before delivery zones
+   * existed still validates; checkout refuses one without it, because coverage
+   * cannot be confirmed for an address we have never matched to a courier area.
+   */
+  logisticsZoneId: z.string().uuid().optional().or(z.literal('')),
   label: z.string().default('Home'),
   isDefault: z.boolean().default(false),
 });

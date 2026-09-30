@@ -36,6 +36,8 @@ export function AddressFormSheet({
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
@@ -50,6 +52,7 @@ export function AddressFormSheet({
       streetAddress: editing?.streetAddress ?? '',
       landmark: editing?.landmark ?? '',
       isDefault: editing?.isDefault ?? false,
+      logisticsZoneId: editing?.logisticsZoneId ?? '',
     },
   });
 
@@ -59,11 +62,16 @@ export function AddressFormSheet({
       fullName: data.fullName.trim(),
       phone: data.phone.trim(),
       ...(data.altPhone?.trim() ? { altPhone: data.altPhone.trim() } : {}),
-      province: data.province.trim() || 'Bagmati',
+      province: data.province.trim(),
       district: data.district.trim(),
       cityArea: data.cityArea.trim(),
       streetAddress: data.streetAddress.trim(),
       ...(data.landmark?.trim() ? { landmark: data.landmark.trim() } : {}),
+      // Sent so the address can be matched to a courier zone. Province, district
+      // and area can now only be set by the picker, which always writes a zone
+      // with them, so this is empty only for an address stored before zones
+      // existed — which checkout will send back for re-selection.
+      ...(data.logisticsZoneId ? { logisticsZoneId: data.logisticsZoneId } : {}),
       isDefault: !!data.isDefault,
     });
   };
@@ -130,7 +138,7 @@ export function AddressFormSheet({
           showsVerticalScrollIndicator={false}
           bottomOffset={20}
         >
-          <AddressFormFields control={control} errors={errors} />
+          <AddressFormFields control={control} errors={errors} watch={watch} setValue={setValue} />
         </KeyboardAwareScrollView>
       ) : (
         <ScrollView
@@ -139,7 +147,7 @@ export function AddressFormSheet({
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          <AddressFormFields control={control} errors={errors} />
+          <AddressFormFields control={control} errors={errors} watch={watch} setValue={setValue} />
         </ScrollView>
       )}
     </BottomSheet>
