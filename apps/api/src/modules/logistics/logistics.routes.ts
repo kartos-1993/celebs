@@ -4,6 +4,7 @@ import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
 
 import { logisticsController } from './logistics.controller';
+import { shippingRateController } from './shipping-rate.controller';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requirePlatformActor, requireStoreState } from '@/common/guards/store.guards';
@@ -38,5 +39,38 @@ router.post(
 
 // Inbound 3PL Courier Tracking Webhook (Automated status events from courier)
 router.post('/webhook', logisticsController.handleCourierWebhook);
+
+// --- Delivery rate card (platform admin only) ---
+//
+// These numbers decide what every customer is charged for delivery. Guarded with
+// PLATFORM_MANAGE, matching the COD ceiling and fallback fee on the sibling
+// commerce settings page: this is platform pricing, not a payout permission, and
+// a finance accountant reconciles payouts rather than setting prices.
+
+const rateCardGuards = [
+  authenticateJWT,
+  asyncHandler(actorContext),
+  requirePlatformActor,
+  requirePermissions(Permission.PLATFORM_MANAGE),
+];
+
+router.get('/delivery-cities', ...rateCardGuards, asyncHandler(shippingRateController.listCities));
+router.get('/shipping-rates', ...rateCardGuards, asyncHandler(shippingRateController.listRates));
+router.post('/shipping-rates', ...rateCardGuards, asyncHandler(shippingRateController.createRate));
+router.patch(
+  '/shipping-rates/:id',
+  ...rateCardGuards,
+  asyncHandler(shippingRateController.updateRate),
+);
+router.delete(
+  '/shipping-rates/:id',
+  ...rateCardGuards,
+  asyncHandler(shippingRateController.deleteRate),
+);
+router.patch(
+  '/delivery-cities/:id',
+  ...rateCardGuards,
+  asyncHandler(shippingRateController.updateCity),
+);
 
 export default router;
