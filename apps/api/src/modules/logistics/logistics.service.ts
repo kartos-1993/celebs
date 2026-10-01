@@ -4,6 +4,7 @@ import { DispatchOrderType } from '@celebs/shared-types';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
+import { isDispatchAllowed } from './delivery-coverage';
 import {
   type DeliveryCoverageRepository,
   deliveryCoverageRepository,
@@ -40,22 +41,37 @@ export class LogisticsService {
       }
     }
 
+    // Fail closed: a courier we cannot actually book must never be recorded as
+    // dispatched. The request validator already refuses these at the edge, so this
+    // guards a caller that skipped validation. Without it an unsupported courier
+    // fell through to the shipment block, built no consignment, and wrote the
+    // order to HANDED_OVER with an empty tracking number.
+    const isCourierWithoutAdapter =
+      payload.provider !== 'MANUAL' && payload.provider !== 'NEPAL_CAN_MOVE';
+
+    if (isCourierWithoutAdapter) {
+      throw new BadRequestException(
+        `No courier adapter is configured for ${payload.provider}, so no consignment could be created.`,
+      );
+    }
+
     // A courier order is only ever created for an address the courier actually
     // serves. Checkout already refuses one, but dispatch is the last gate before
-    // a real consignment exists, and an order dispatched by hand or reconciled
-    // later can still reach this point with no zone on it.
-    if (payload.provider !== 'MANUAL') {
-      const coverage = await this.coverageRepo.coverageForAddress({
-        logisticsZoneId: order.address.logisticsZoneId,
-      });
+    // a real consignment exists, and an order placed before the district picker
+    // existed can still reach this point with no zone on it. MANUAL is checked
+    // too: a seller carrying a parcel by hand still promises the customer delivery
+    // to an address the courier has retired.
+    const coverage = await this.coverageRepo.coverageForAddress({
+      logisticsZoneId: order.address.logisticsZoneId,
+    });
+    const isManualDispatch = payload.provider === 'MANUAL';
 
-      if (coverage.status !== 'COVERED') {
-        throw new BadRequestException(
-          coverage.status === 'UNCOVERED'
-            ? `Cannot dispatch to ${coverage.cityName ?? 'this area'}: the courier does not deliver there.`
-            : 'Cannot dispatch: delivery coverage for this address is unconfirmed. The address needs a delivery district.',
-        );
-      }
+    if (!isDispatchAllowed(coverage.status, isManualDispatch)) {
+      throw new BadRequestException(
+        coverage.status === 'UNCOVERED'
+          ? `Cannot dispatch to ${coverage.cityName ?? 'this area'}: the courier does not deliver there.`
+          : 'Cannot dispatch: delivery coverage for this address is unconfirmed. The address needs a delivery district.',
+      );
     }
 
     let trackingNumber = payload.manualTrackingNumber || '';

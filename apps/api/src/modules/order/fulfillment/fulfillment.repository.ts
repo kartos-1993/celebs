@@ -30,14 +30,18 @@ export class FulfillmentRepository {
   async findVendorOrderItemById(id: string, vendorId: string) {
     return prisma.orderItem.findFirst({
       where: { id, vendorId },
-      include: { order: { include: { items: true } } },
+      include: {
+        order: { include: { items: true, address: { select: { logisticsZoneId: true } } } },
+      },
     });
   }
 
   async findOrderItemById(id: string) {
     return prisma.orderItem.findUnique({
       where: { id },
-      include: { order: { include: { items: true } } },
+      include: {
+        order: { include: { items: true, address: { select: { logisticsZoneId: true } } } },
+      },
     });
   }
 

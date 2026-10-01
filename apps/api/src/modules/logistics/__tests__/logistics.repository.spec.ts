@@ -1,6 +1,7 @@
 import { CodStatus, DispatchMode, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { DeliveryCoverageRepository } from '../delivery-coverage.repository';
 import {
   LogisticsRepository,
   logisticsRepository,
@@ -229,6 +230,95 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       );
 
       expect(result.status).toBe('HANDED_OVER');
+      expect(result.trackingNumber).toBe('FE-998877');
+    });
+
+    // The validator refuses a courier with no adapter, but the service must not
+    // depend on that alone: dispatch used to accept Pathao, build no shipment for
+    // it, and still write the order to HANDED_OVER with an empty tracking number.
+    it('should refuse a courier that has no adapter instead of dispatching without a tracking number', async () => {
+      const updateDispatchedOrder = vi.fn();
+      const mockRepo: Partial<LogisticsRepository> = {
+        findOrderForDispatch: async () =>
+          createMockDispatchedOrder({ id: testOrderId, items: [{ vendorId: vendorStoreId }] }),
+        updateDispatchedOrder: updateDispatchedOrder as never,
+      };
+      // Coverage is deliberately COVERED: the address is deliverable, so the only
+      // thing that can refuse this dispatch is the missing adapter.
+      const coveredRepo: Partial<DeliveryCoverageRepository> = {
+        coverageForAddress: async () => ({ status: 'COVERED', cityName: 'Kathmandu' }) as never,
+      };
+
+      const service = new LogisticsService({ logisticsRepo: mockRepo, coverageRepo: coveredRepo });
+
+      // Cast: the validator no longer admits this value, so this exercises the
+      // service's own guard against a caller that skipped validation.
+      await expect(
+        service.dispatchOrder({
+          orderId: testOrderId,
+          provider: 'PATHAO' as never,
+        }),
+      ).rejects.toThrow(/PATHAO/);
+
+      expect(updateDispatchedOrder).not.toHaveBeenCalled();
+    });
+
+    // A seller handing the parcel over does not make an undeliverable address
+    // deliverable. MANUAL used to skip the coverage gate entirely, so an order
+    // placed before the district picker existed could be declared handed over to
+    // a zone the courier had already retired.
+    it('should refuse a manual handover to an area the courier does not deliver to', async () => {
+      const updateDispatchedOrder = vi.fn();
+      const mockRepo: Partial<LogisticsRepository> = {
+        findOrderForDispatch: async () =>
+          createMockDispatchedOrder({ id: testOrderId, items: [{ vendorId: vendorStoreId }] }),
+        updateDispatchedOrder: updateDispatchedOrder as never,
+      };
+      const uncoveredRepo: Partial<DeliveryCoverageRepository> = {
+        coverageForAddress: async () => ({ status: 'UNCOVERED', cityName: 'Ilam' }) as never,
+      };
+
+      const service = new LogisticsService({
+        logisticsRepo: mockRepo,
+        coverageRepo: uncoveredRepo,
+      });
+
+      await expect(
+        service.dispatchOrder({
+          orderId: testOrderId,
+          provider: 'MANUAL',
+          manualTrackingNumber: 'FE-998877',
+        }),
+      ).rejects.toThrow(/Ilam/);
+
+      expect(updateDispatchedOrder).not.toHaveBeenCalled();
+    });
+
+    // UNVERIFIED only means our own mirror is empty or stale, which must not
+    // strand a seller who is holding the parcel.
+    it('should allow a manual handover when coverage is merely unverified', async () => {
+      const mockRepo: Partial<LogisticsRepository> = {
+        findOrderForDispatch: async () =>
+          createMockDispatchedOrder({ id: testOrderId, items: [{ vendorId: vendorStoreId }] }),
+        updateDispatchedOrder: async (data: UpdateDispatchedOrderData) =>
+          createMockUpdatedOrder(data, { id: data.orderId }),
+      };
+      const unverifiedRepo: Partial<DeliveryCoverageRepository> = {
+        coverageForAddress: async () => ({ status: 'UNVERIFIED' }) as never,
+      };
+
+      const service = new LogisticsService({
+        logisticsRepo: mockRepo,
+        coverageRepo: unverifiedRepo,
+      });
+
+      const result = await service.dispatchOrder({
+        orderId: testOrderId,
+        provider: 'MANUAL',
+        manualTrackingNumber: 'FE-998877',
+      });
+
+      expect(result.status).toBe(OrderStatus.HANDED_OVER);
       expect(result.trackingNumber).toBe('FE-998877');
     });
 

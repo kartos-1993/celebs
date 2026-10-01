@@ -1,5 +1,10 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { isDispatchAllowed } from '../../logistics/delivery-coverage';
+import {
+  type DeliveryCoverageRepository,
+  deliveryCoverageRepository,
+} from '../../logistics/delivery-coverage.repository';
 import { coreOrderRepository } from '../core/order.repository';
 import { enqueueOrderDeliveredEmail, enqueueOrderShippedEmail } from '../utils/order-email.util';
 
@@ -15,6 +20,7 @@ export class FulfillmentService {
   constructor(
     private repo: FulfillmentRepository = fulfillmentRepository,
     private notificationService: NotificationService = defaultNotificationService,
+    private coverageRepo: DeliveryCoverageRepository = deliveryCoverageRepository,
   ) {}
 
   async getVendorOrders(
@@ -82,6 +88,29 @@ export class FulfillmentService {
         HTTPSTATUS.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
       );
+    }
+
+    // Handing over is the point the parcel leaves for the customer, so it is the
+    // point to ask whether we deliver there. Packing, cancelling and delivering
+    // are warehouse actions on an order that already exists and must keep working
+    // even where a district has since been retired.
+    if (itemStatus === 'HANDED_OVER') {
+      const coverage = await this.coverageRepo.coverageForAddress({
+        logisticsZoneId: item.order.address?.logisticsZoneId ?? null,
+      });
+
+      // A seller is carrying the parcel by hand, so an empty or stale mirror on
+      // our side does not stop them. A district the courier has positively retired
+      // does, because the parcel would be promised to someone we cannot deliver to.
+      if (!isDispatchAllowed(coverage.status, true)) {
+        throw new AppError(
+          coverage.status === 'UNCOVERED'
+            ? `Cannot hand over to ${coverage.cityName ?? 'this area'}: the courier does not deliver there.`
+            : 'Cannot hand over: delivery coverage for this address is unconfirmed. The address needs a delivery district.',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
     }
 
     const { updatedItem, newOrderStatus, allDelivered, isPaid } =

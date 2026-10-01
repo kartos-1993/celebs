@@ -110,3 +110,27 @@ export function classifyCoverage(input: CoverageInput): CoverageResult {
     needsZoneSelection: false,
   };
 }
+
+/**
+ * Whether a parcel may be handed over for delivery.
+ *
+ * Checkout only has to decide whether to take the order. Dispatch is the last
+ * moment before a parcel leaves, and it inherits the same address from an order
+ * that may have been placed before the district picker existed, before the
+ * courier retired the zone, or before our mirror of their locations was ever
+ * synced. Checking here is what stops that order from being declared handed over.
+ *
+ * UNCOVERED is refused for every kind of dispatch, manual included: the mirror
+ * says the courier does not serve the area, so the parcel would be promised to a
+ * customer we cannot deliver to, whoever carries it there.
+ *
+ * UNVERIFIED is refused only for an automated dispatch. It means our own data is
+ * missing or stale, not that the courier said no, and a seller physically holding
+ * the parcel is better placed than a stale mirror to know the driver will take it.
+ *
+ * Pure, so the whole policy is testable without a database or a courier API.
+ */
+export function isDispatchAllowed(status: CoverageStatus, isManualDispatch: boolean): boolean {
+  if (status === 'COVERED') return true;
+  return isManualDispatch && status === 'UNVERIFIED';
+}

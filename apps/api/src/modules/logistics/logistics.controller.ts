@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 
-import { codSettlementSchema, dispatchOrderSchema } from '@celebs/shared-types';
+import {
+  codSettlementSchema,
+  courierWebhookSchema,
+  dispatchOrderSchema,
+} from '@celebs/shared-types';
 import { asyncHandler } from '@celebs/shared-utils';
 
 import {
@@ -64,22 +68,17 @@ export class LogisticsController {
   });
 
   public handleCourierWebhook = asyncHandler(async (req: Request, res: Response) => {
-    const trackingNumber = req.body.trackingNumber || req.body.waybillNumber || req.body.waybillId;
-    const status = req.body.status || req.body.event;
-
-    if (!trackingNumber) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tracking or waybill number is required',
-      });
-    }
+    // Validated rather than hand-checked, so a missing waybill number is refused
+    // through the standard path and answered with the shared error envelope.
+    const body = courierWebhookSchema.parse(req.body);
+    const trackingNumber = body.trackingNumber ?? body.waybillNumber ?? body.waybillId;
 
     const result = await this.service.processCourierWebhook({
       trackingNumber: String(trackingNumber),
-      status: status || 'HANDED_OVER',
-      title: req.body.title,
-      description: req.body.description,
-      location: req.body.location,
+      status: body.status ?? body.event ?? 'HANDED_OVER',
+      title: body.title,
+      description: body.description,
+      location: body.location,
     });
 
     return sendSuccess(res, result, 'Courier tracking event processed successfully');

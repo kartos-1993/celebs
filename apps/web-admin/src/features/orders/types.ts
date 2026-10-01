@@ -6,7 +6,11 @@ import type {
   UpdateOrderItemStatusInput,
 } from '@celebs/shared-types';
 
-export type LogisticsProvider = 'NEPAL_CAN_MOVE' | 'PATHAO' | 'MANUAL';
+// Mirrors the API's accepted dispatch providers. Pathao is absent until an
+// adapter can book a real consignment for it. Note this is the provider sent to
+// the dispatch endpoint, not the courier name a seller types when handing a
+// parcel over by hand, which may legitimately read "PATHAO".
+export type LogisticsProvider = 'NEPAL_CAN_MOVE' | 'MANUAL';
 
 export interface OrderAddressDto {
   fullName: string;

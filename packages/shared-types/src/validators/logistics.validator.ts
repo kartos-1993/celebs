@@ -2,7 +2,11 @@ import { z } from 'zod';
 
 export const dispatchOrderSchema = z.object({
   orderId: z.string().uuid('Invalid order ID'),
-  provider: z.enum(['NEPAL_CAN_MOVE', 'PATHAO', 'MANUAL']),
+  // Pathao is deliberately absent. It is listed here only once an adapter can
+  // really book a consignment; offering it while dispatch knows how to build only
+  // a Nepal Can Move shipment is what allowed an order to be marked dispatched
+  // with an empty tracking number.
+  provider: z.enum(['NEPAL_CAN_MOVE', 'MANUAL']),
   manualCourierName: z.string().optional(),
   manualTrackingNumber: z.string().optional(),
   manualTrackingUrl: z.string().optional(),
@@ -16,6 +20,40 @@ export const codSettlementSchema = z.object({
 
 export type DispatchOrderType = z.infer<typeof dispatchOrderSchema>;
 export type CodSettlementType = z.infer<typeof codSettlementSchema>;
+
+/**
+ * Inbound courier tracking webhook.
+ *
+ * Couriers disagree on the field name for the same waybill, so all three are
+ * accepted and at least one is required. Declaring that here rather than in the
+ * controller means a missing number is refused by the standard validation path,
+ * which answers with the same error envelope as every other rejection - the
+ * courier's own integration parses one shape, not two.
+ */
+const anyTrackingNumber = z
+  .string()
+  .trim()
+  .min(1)
+  .optional()
+  .transform((value) => value || undefined);
+
+export const courierWebhookSchema = z
+  .object({
+    trackingNumber: anyTrackingNumber,
+    waybillNumber: anyTrackingNumber,
+    waybillId: anyTrackingNumber,
+    status: z.string().trim().min(1).optional(),
+    event: z.string().trim().min(1).optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    location: z.string().optional(),
+  })
+  .refine((body) => Boolean(body.trackingNumber || body.waybillNumber || body.waybillId), {
+    message: 'Tracking or waybill number is required',
+    path: ['trackingNumber'],
+  });
+
+export type CourierWebhookType = z.infer<typeof courierWebhookSchema>;
 
 /**
  * Admin-editable delivery rate card.
