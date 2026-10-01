@@ -198,7 +198,7 @@ export function DeliveryLocationPicker({
                   <ThemedText style={{ fontSize: FontSize.small }}>{entry.name}</ThemedText>
                   {entry.isValley ? (
                     <ThemedText style={{ fontSize: FontSize.footnote, color: Palette.gray400 }}>
-                      Free delivery over NPR {entry.freeDeliveryThreshold.toLocaleString()}
+                      Free delivery over NPR {entry.freeDeliveryThreshold}
                     </ThemedText>
                   ) : null}
                 </View>

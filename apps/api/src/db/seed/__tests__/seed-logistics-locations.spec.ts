@@ -74,9 +74,9 @@ describe('seedLogisticsLocations', () => {
     });
 
     expect(kathmandu?.isValley).toBe(true);
-    expect(kathmandu?.freeDeliveryThreshold).toBe(2500);
+    expect(Number(kathmandu?.freeDeliveryThreshold)).toBe(2500);
     expect(outsideValley?.isValley).toBe(false);
-    expect(outsideValley?.freeDeliveryThreshold).toBe(5000);
+    expect(Number(outsideValley?.freeDeliveryThreshold)).toBe(5000);
   });
 
   it('classifies exactly the three valley districts', async () => {
@@ -110,7 +110,7 @@ describe('seedLogisticsLocations', () => {
       where: { id: kathmandu.id },
       select: { freeDeliveryThreshold: true },
     });
-    expect(after?.freeDeliveryThreshold).toBe(9999);
+    expect(Number(after?.freeDeliveryThreshold)).toBe(9999);
 
     // Restore so the count assertions above stay meaningful.
     await prisma.logisticsCity.update({

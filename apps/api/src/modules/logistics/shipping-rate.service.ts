@@ -114,7 +114,12 @@ export class ShippingRateService {
   async updateCity(id: string, input: UpdateDeliveryCityType) {
     await this.assertCityExists(id);
 
-    return this.repo.updateCity(id, input);
+    return this.repo.updateCity(id, {
+      ...(input.freeDeliveryThreshold !== undefined
+        ? { freeDeliveryThreshold: new Prisma.Decimal(input.freeDeliveryThreshold) }
+        : {}),
+      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+    });
   }
 
   private async assertCityExists(id: string): Promise<void> {

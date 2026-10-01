@@ -86,11 +86,14 @@ export const updateShippingRateSchema = z
 
 export const updateDeliveryCitySchema = z
   .object({
-    freeDeliveryThreshold: z
-      .number()
-      .finite()
-      .int('Threshold must be a whole rupee amount')
-      .min(MIN_FREE_DELIVERY_THRESHOLD, 'Threshold is too low to be meaningful')
+    // Money to the paisa, like every other price here: a threshold of 2499.50 is
+    // a real amount a merchant may choose. Anything finer is refused rather than
+    // rounded, because rounding moves the boundary the customer is judged
+    // against without telling anyone.
+    freeDeliveryThreshold: money
+      .refine((value) => value >= MIN_FREE_DELIVERY_THRESHOLD, {
+        message: 'Threshold is too low to be meaningful',
+      })
       .optional(),
     isActive: z.boolean().optional(),
   })

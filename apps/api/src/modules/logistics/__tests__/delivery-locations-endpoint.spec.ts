@@ -64,7 +64,9 @@ describe('GET /logistics/delivery-locations', () => {
     );
     expect(kathmandu).toBeDefined();
     expect(kathmandu.isValley).toBe(true);
-    expect(kathmandu.freeDeliveryThreshold).toBe(2500);
+    // A string on the wire: Decimal in the database, and a JSON number would put
+    // the amount back on the float path.
+    expect(kathmandu.freeDeliveryThreshold).toBe('2500.00');
     // A seeded district has a real area, so the form's second step is usable.
     expect(kathmandu.areas.length).toBeGreaterThan(0);
   });

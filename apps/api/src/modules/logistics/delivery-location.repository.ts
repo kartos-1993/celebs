@@ -45,7 +45,9 @@ export class DeliveryLocationRepository {
         id: city.id,
         name: city.name,
         isValley: city.isValley,
-        freeDeliveryThreshold: city.freeDeliveryThreshold,
+        // Decimal rendered as its exact string: the wire type is a string so paisa
+        // survives, where a JSON number would round it.
+        freeDeliveryThreshold: city.freeDeliveryThreshold.toFixed(2),
         areas: city.zones.map((zone) => ({ id: zone.id, name: zone.name })),
       };
 

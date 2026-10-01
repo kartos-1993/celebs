@@ -259,7 +259,11 @@ export default function ShippingRatesPage() {
             <TableBody>
               {activeCities.map((city) => {
                 const draft = thresholdDrafts[city.id];
-                const isDirty = draft !== undefined && Number(draft) !== city.freeDeliveryThreshold;
+                // Compared as numbers: the stored value arrives as an exact string
+                // and the draft as typed text, so "2500" and "2500.00" are the
+                // same amount and must not read as an unsaved change.
+                const isDirty =
+                  draft !== undefined && Number(draft) !== Number(city.freeDeliveryThreshold);
 
                 return (
                   <TableRow key={city.id}>
@@ -272,7 +276,8 @@ export default function ShippingRatesPage() {
                       <Input
                         type="number"
                         min={MIN_FREE_DELIVERY_THRESHOLD}
-                        step={1}
+                        // Paisa steps, matching the stored precision.
+                        step="0.01"
                         className="h-9"
                         value={draft ?? String(city.freeDeliveryThreshold)}
                         onChange={(event) =>

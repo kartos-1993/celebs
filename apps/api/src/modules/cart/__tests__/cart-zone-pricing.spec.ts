@@ -262,6 +262,37 @@ describe('cart quotes against the default address when it can', () => {
     });
   });
 
+  it('judges the subtotal against a threshold that carries paisa', async () => {
+    // 2499.50 is the reason the threshold is Decimal. The boundary must fall
+    // between a 2499.50 cart and a 2499.49 one, not at a rounded whole rupee.
+    //
+    // Two customers, because addToCart increments an existing cart: a second call
+    // for the same user would be the same order with more items in it, not a
+    // smaller one.
+    const onThreshold = await seedProduct(1249.75, 0.5);
+    const justUnder = await seedProduct(1249.49, 0.5);
+
+    const atCustomer = await seedCustomerWithDefaultAddress({
+      freeDeliveryThreshold: 2499.5,
+      isValley: true,
+    });
+    const belowCustomer = await seedCustomerWithDefaultAddress({
+      freeDeliveryThreshold: 2499.5,
+      isValley: true,
+    });
+
+    const exact = await cartForUser(atCustomer.userId, onThreshold, 2);
+    expect(exact.subtotal).toBe(2499.5);
+    expect(exact.freeDeliveryThreshold).toBe(2499.5);
+    // Exactly on the threshold, so delivery is waived.
+    expect(exact.shippingFee).toBe(0);
+
+    const under = await cartForUser(belowCustomer.userId, justUnder, 2);
+    expect(under.subtotal).toBe(2498.98);
+    // One paisa below the threshold, so it is still charged.
+    expect(under.shippingFee).toBeGreaterThan(0);
+  });
+
   it('keeps total equal to subtotal plus fee', async () => {
     const productId = await seedProduct(750, 0.5);
     const { userId } = await seedCustomerWithDefaultAddress({

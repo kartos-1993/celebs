@@ -110,10 +110,26 @@ describe('shipping rate validators', () => {
     });
 
     it('rejects a threshold that is not money', () => {
-      expect(() => updateDeliveryCitySchema.parse({ freeDeliveryThreshold: 2500.5 })).toThrow(
+      expect(() => updateDeliveryCitySchema.parse({ freeDeliveryThreshold: -2500 })).toThrow(
         ZodError,
       );
-      expect(() => updateDeliveryCitySchema.parse({ freeDeliveryThreshold: -2500 })).toThrow(
+      expect(() => updateDeliveryCitySchema.parse({ freeDeliveryThreshold: Number.NaN })).toThrow(
+        ZodError,
+      );
+    });
+
+    it('accepts a threshold with paisa precision', () => {
+      // Delivery is priced to the paisa, so a threshold can be too: 2499.50 is a
+      // real amount a merchant may choose.
+      expect(updateDeliveryCitySchema.parse({ freeDeliveryThreshold: 2499.5 })).toEqual({
+        freeDeliveryThreshold: 2499.5,
+      });
+    });
+
+    it('rejects a threshold finer than a paisa', () => {
+      // Silently rounding 2499.505 hides what the admin typed and moves the
+      // boundary the customer is judged against.
+      expect(() => updateDeliveryCitySchema.parse({ freeDeliveryThreshold: 2499.505 })).toThrow(
         ZodError,
       );
     });

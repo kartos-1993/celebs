@@ -328,7 +328,12 @@ model LogisticsCity {
   // Order subtotal at or above which delivery is free to this city. Higher
   // outside the valley, where the courier's rate is. Belongs to the city rather
   // than to a platform-wide policy because it is not one number.
-  freeDeliveryThreshold Int @default(5000) @map("free_delivery_threshold")
+  //
+  // Decimal, not Int: it is compared against an order subtotal, which is money to
+  // the paisa. As an integer column it could not express a threshold like
+  // 2499.50, and a threshold rounded to whole rupees silently moves the boundary
+  // a customer is judged against.
+  freeDeliveryThreshold Decimal @default(5000) @map("free_delivery_threshold") @db.Decimal(12, 2)
   // BOOTSTRAP rows come from our own reference data and have no courier id yet;
   // a courier sync supersedes them. Recording the origin keeps a later sync from
   // being mistaken for ground truth we already had.

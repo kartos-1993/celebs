@@ -27,7 +27,8 @@ export interface DeliveryCity {
   name: string;
   province: string;
   isValley: boolean;
-  freeDeliveryThreshold: number;
+  /** Decimal on the wire, so paisa survives: see the rate band fields above. */
+  freeDeliveryThreshold: string;
   isActive: boolean;
   source: string;
 }

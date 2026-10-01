@@ -211,7 +211,7 @@ describe('Delivery rate card admin API', () => {
       expect(response.status).toBe(200);
 
       const reloaded = await prisma.logisticsCity.findUniqueOrThrow({ where: { id: cityId } });
-      expect(reloaded.freeDeliveryThreshold).toBe(4000);
+      expect(reloaded.freeDeliveryThreshold.toNumber()).toBe(4000);
     });
 
     it('refuses a threshold low enough to make every order free', async () => {
@@ -223,7 +223,7 @@ describe('Delivery rate card admin API', () => {
       expect(response.status).toBeGreaterThanOrEqual(400);
 
       const reloaded = await prisma.logisticsCity.findUniqueOrThrow({ where: { id: cityId } });
-      expect(reloaded.freeDeliveryThreshold).toBe(2500);
+      expect(reloaded.freeDeliveryThreshold.toNumber()).toBe(2500);
     });
 
     it('refuses a vendor', async () => {

@@ -140,7 +140,25 @@ describe('ShippingRateService', () => {
         freeDeliveryThreshold: 5000,
       } satisfies UpdateDeliveryCityType);
 
-      expect(repo.updateCity).toHaveBeenCalledWith('city-1', { freeDeliveryThreshold: 5000 });
+      expect(repo.updateCity).toHaveBeenCalledWith('city-1', {
+        // Decimal across the repository boundary, like every other price: the
+        // threshold is compared against money, so it cannot pass through a float.
+        freeDeliveryThreshold: new Prisma.Decimal(5000),
+      });
+    });
+
+    it('keeps a threshold that carries paisa exactly', async () => {
+      await service.updateCity('city-1', { freeDeliveryThreshold: 2499.5 });
+
+      expect(repo.updateCity).toHaveBeenCalledWith('city-1', {
+        freeDeliveryThreshold: new Prisma.Decimal(2499.5),
+      });
+    });
+
+    it('passes an activation change through untouched', async () => {
+      await service.updateCity('city-1', { isActive: false });
+
+      expect(repo.updateCity).toHaveBeenCalledWith('city-1', { isActive: false });
     });
 
     it('reports a missing city rather than silently succeeding', async () => {

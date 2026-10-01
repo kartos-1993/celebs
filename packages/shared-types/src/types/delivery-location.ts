@@ -18,8 +18,14 @@ export interface DeliveryDistrict {
   name: string;
   /** Drives the free-delivery threshold: lower in the Kathmandu Valley. */
   isValley: boolean;
-  /** Order subtotal at or above which delivery to this district is free. */
-  freeDeliveryThreshold: number;
+  /**
+   * Order subtotal at or above which delivery to this district is free.
+   *
+   * A string, like every other money figure on the wire. It is Decimal in the
+   * database and can carry paisa, and a JSON number would put it back on the
+   * float path this exists to avoid.
+   */
+  freeDeliveryThreshold: string;
   areas: DeliveryArea[];
 }
 

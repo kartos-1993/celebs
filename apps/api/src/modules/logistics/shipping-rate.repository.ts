@@ -14,7 +14,7 @@ export interface RateCityRow {
   name: string;
   province: string;
   isValley: boolean;
-  freeDeliveryThreshold: number;
+  freeDeliveryThreshold: Prisma.Decimal;
   isActive: boolean;
   source: string;
 }
@@ -57,7 +57,10 @@ export class ShippingRateRepository {
     });
   }
 
-  async updateCity(id: string, data: { freeDeliveryThreshold?: number; isActive?: boolean }) {
+  async updateCity(
+    id: string,
+    data: { freeDeliveryThreshold?: Prisma.Decimal; isActive?: boolean },
+  ) {
     return prisma.logisticsCity.update({
       where: { id },
       data,
