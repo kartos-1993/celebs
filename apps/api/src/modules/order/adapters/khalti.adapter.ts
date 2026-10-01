@@ -4,6 +4,8 @@ import {
   IPaymentGateway,
   PaymentIntentResult,
   PaymentVerificationResult,
+  RefundRequest,
+  RefundResult,
 } from './payment-gateway.interface';
 
 export interface KhaltiConfig {
@@ -176,5 +178,101 @@ export class KhaltiAdapter implements IPaymentGateway {
       default:
         return { success: false, status: 'PENDING', rawResponse };
     }
+  }
+
+  /**
+   * Returns money to a customer through Khalti's refund API.
+   *
+   * Two details drive the shape of this. The refund endpoint lives on a different
+   * tree from initiate and lookup (`/api/merchant-transaction/...`, no `/api/v2`),
+   * and it is addressed by Khalti's `transaction_id` rather than the pidx we
+   * stored, so the payment is looked up first to obtain it.
+   *
+   * Khalti also states the refund API is not guaranteed idempotent, so an already
+   * refunded payment is reported as refunded without sending a second request.
+   * A blind retry is how a customer gets paid back twice.
+   */
+  async refund(request: RefundRequest): Promise<RefundResult> {
+    if (!this.config.secretKey) {
+      return { status: 'FAILED', message: 'KHALTI_SECRET_KEY is required to issue a refund' };
+    }
+
+    const lookupResponse = await this.fetchJson(`${this.config.baseUrl}/api/v2/epayment/lookup/`, {
+      pidx: request.paymentId,
+    });
+
+    if (!lookupResponse.ok) {
+      return {
+        status: 'FAILED',
+        message: extractKhaltiErrorDetail(
+          lookupResponse.body,
+          'Khalti lookup failed before refund',
+        ),
+      };
+    }
+
+    const lookup = lookupResponse.body as KhaltiLookupResponse;
+
+    // Already returned: reporting success without re-sending is the only way to
+    // keep a retry from paying the customer twice.
+    if (lookup.status === 'Refunded' || lookup.refunded === true) {
+      return {
+        status: 'SUCCEEDED',
+        providerRefundId: lookup.transaction_id ?? undefined,
+        message: 'Khalti already reports this payment as refunded',
+      };
+    }
+
+    const transactionId = lookup.transaction_id;
+    if (!transactionId) {
+      return {
+        status: 'FAILED',
+        message: `Khalti payment ${request.paymentId} has no transaction to refund (status ${String(lookup.status)})`,
+      };
+    }
+
+    // No amount means a full refund, which the endpoint expresses as an empty body.
+    const body = request.amount === undefined ? {} : { amount: toPaisa(request.amount) };
+
+    const refundResponse = await this.fetchJson(
+      `${this.config.baseUrl}/api/merchant-transaction/${transactionId}/refund/`,
+      body,
+    );
+
+    if (!refundResponse.ok) {
+      return {
+        status: 'FAILED',
+        message: extractKhaltiErrorDetail(refundResponse.body, 'Khalti refund failed'),
+      };
+    }
+
+    const refunded = refundResponse.body as { refunded?: boolean; transaction_id?: string };
+
+    return {
+      status: refunded.refunded === false ? 'FAILED' : 'SUCCEEDED',
+      providerRefundId: refunded.transaction_id ?? transactionId,
+      message: refunded.refunded === false ? 'Khalti did not confirm the refund' : undefined,
+    };
+  }
+
+  private async fetchJson(
+    url: string,
+    body: Record<string, unknown>,
+  ): Promise<{ ok: boolean; body: unknown }> {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    let parsed: unknown = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      parsed = null;
+    }
+
+    return { ok: response.ok, body: parsed };
   }
 }

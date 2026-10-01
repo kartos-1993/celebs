@@ -1,5 +1,7 @@
 import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
+import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export interface UpdateDispatchedOrderData {
@@ -53,7 +55,35 @@ export class LogisticsRepository {
     });
   }
 
+  /**
+   * Reconciles collected cash against a courier deposit.
+   *
+   * Idempotent for a repeat of the same voucher, because an accountant working a
+   * deposit list will submit one twice and a retry must not look like a second
+   * payment. A *different* voucher against an order that is already settled is
+   * refused instead: the cash was matched against one bank reference, and
+   * overwriting it would destroy the only link between this order and the money
+   * that arrived. A mistyped reference is corrected by support, not by silently
+   * replacing the evidence.
+   */
   public async markCodSettled(orderId: string, settlementReference: string) {
+    const current = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { codStatus: true, codReference: true },
+    });
+
+    if (current?.codStatus === CodStatus.COD_SETTLED) {
+      if (current.codReference === settlementReference) {
+        return prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+      }
+
+      throw new AppError(
+        `Order ${orderId} is already settled against voucher ${current.codReference ?? 'unknown'}; refusing to replace it with ${settlementReference}`,
+        HTTPSTATUS.CONFLICT,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
     return prisma.order.update({
       where: { id: orderId },
       data: {

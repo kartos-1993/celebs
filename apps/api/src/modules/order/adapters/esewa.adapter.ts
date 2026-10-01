@@ -6,6 +6,8 @@ import {
   IPaymentGateway,
   PaymentIntentResult,
   PaymentVerificationResult,
+  RefundRequest,
+  RefundResult,
 } from './payment-gateway.interface';
 
 export interface EsewaConfig {
@@ -222,5 +224,28 @@ export class EsewaAdapter implements IPaymentGateway {
       default:
         return { success: false, status: 'PENDING', rawResponse };
     }
+  }
+
+  /**
+   * eSewa publishes no refund endpoint - its API starts a payment and reads a
+   * status, and nothing more. A refund is issued by a person in the merchant
+   * dashboard, and the status API only reports FULL_REFUND afterwards.
+   *
+   * So this does not call eSewa at all and does not pretend to have refunded
+   * anything: it reports that the refund needs a person, which is the state the
+   * caller has to record and show. Reporting SUCCEEDED here would put "refunded"
+   * in front of a customer whose money has not moved.
+   */
+  async refund(_request: RefundRequest): Promise<RefundResult> {
+    logger.warn(
+      { gateway: 'ESEWA' },
+      'eSewa has no refund API; recorded for manual action in the eSewa merchant portal',
+    );
+
+    return {
+      status: 'REQUIRES_MANUAL_ACTION',
+      message:
+        'eSewa provides no refund API. Refund this payment manually in the eSewa merchant portal, then mark it settled.',
+    };
   }
 }

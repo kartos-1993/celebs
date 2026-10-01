@@ -167,6 +167,63 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       expect(updated.codSettledAt).not.toBeNull();
     });
 
+    // An accountant reconciling a courier deposit can easily submit the same
+    // voucher twice, or discover they mistyped it and submit a second. The first
+    // case must be a harmless retry; the second must not erase the voucher that
+    // the money was actually matched against.
+    describe('settling a COD order that is already settled', () => {
+      const settlementEvents = () =>
+        prisma.orderTrackingEvent.count({
+          where: { orderId: testOrderId, title: 'COD Payment Settled' },
+        });
+
+      it('leaves the settlement untouched when the same voucher is submitted twice', async () => {
+        const first = await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+
+        const second = await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+
+        expect(second.codStatus).toBe('COD_SETTLED');
+        expect(second.codReference).toBe('STMT-REF-12345');
+        expect(second.codSettledAt?.getTime()).toBe(first.codSettledAt?.getTime());
+      });
+
+      it('records only one settlement when the same voucher is submitted twice', async () => {
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+
+        expect(await settlementEvents()).toBe(1);
+      });
+
+      it('refuses a different voucher and keeps the one the cash was matched against', async () => {
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-ORIGINAL');
+
+        await expect(
+          logisticsRepository.markCodSettled(testOrderId, 'STMT-CORRECTED'),
+        ).rejects.toThrow(/already settled/i);
+
+        const order = await prisma.order.findUniqueOrThrow({
+          where: { id: testOrderId },
+          select: { codReference: true },
+        });
+        expect(order.codReference).toBe('STMT-ORIGINAL');
+        expect(await settlementEvents()).toBe(1);
+      });
+
+      it('refuses a second settlement before writing any partial state', async () => {
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-ORIGINAL');
+        const settledAtBefore = (
+          await prisma.order.findUniqueOrThrow({ where: { id: testOrderId } })
+        ).codSettledAt;
+
+        await expect(
+          logisticsRepository.markCodSettled(testOrderId, 'STMT-CORRECTED'),
+        ).rejects.toThrow();
+
+        const after = await prisma.order.findUniqueOrThrow({ where: { id: testOrderId } });
+        expect(after.codSettledAt?.getTime()).toBe(settledAtBefore?.getTime());
+      });
+    });
+
     it('should add tracking event', async () => {
       const event = await logisticsRepository.addTrackingEvent(
         testOrderId,
