@@ -57,25 +57,155 @@ export interface SyncSummary {
   zones: number;
   areas: number;
   syncedAt: Date;
+  /** Districts taken out of service by this sync. */
+  deactivatedCities: number;
+  /**
+   * Districts that are superseded or retired but were left in service because a
+   * stored address still points into them. Surfaced rather than silently ignored:
+   * these orders need their district re-picked before the district can be closed.
+   */
+  retainedForLiveAddresses: string[];
 }
+
+/** Courier naming varies in casing and padding; the district identity does not. */
+const normaliseDistrictName = (value: string): string => value.trim().toLowerCase();
 
 export class LogisticsLocationSyncService {
   constructor(private readonly client: CourierLocationClient) {}
+
+  /**
+   * Brings the mirror back in line with what the courier currently serves.
+   *
+   * A sync that only adds is not enough. Two kinds of row go stale: districts we
+   * seeded ourselves that the courier has since described properly, and rows the
+   * courier has dropped from its list entirely. Left active, the first makes the
+   * address form offer one district twice, and the second keeps a place on the
+   * delivery list that nobody will collect from.
+   *
+   * A district is never closed while a stored address still points into one of its
+   * zones. That would turn a reconciliation detail into an undeliverable order, so
+   * those are left in service and named in the summary for an operator to migrate.
+   */
+  private async reconcile(
+    seenCityExternalIds: number[],
+    seenZoneExternalIds: number[],
+    servedCityNames: Set<string>,
+    syncedAt: Date,
+  ): Promise<{ deactivatedCities: number; retainedForLiveAddresses: string[] }> {
+    const seenZones = new Set(seenZoneExternalIds);
+
+    const supersededSeeded = await prisma.logisticsCity.findMany({
+      where: { source: 'BOOTSTRAP' },
+      select: { id: true, name: true, zones: { select: { id: true } } },
+    });
+
+    const retiredCourier = await prisma.logisticsCity.findMany({
+      where: { source: 'COURIER', isActive: true, externalId: { notIn: [...seenCityExternalIds] } },
+      select: { id: true, name: true, zones: { select: { id: true } } },
+    });
+
+    const servedCourier = await prisma.logisticsCity.findMany({
+      where: { source: 'COURIER', externalId: { in: [...new Set(seenCityExternalIds)] } },
+      select: { id: true },
+    });
+    const servedCourierIds = new Set(servedCourier.map((city) => city.id));
+
+    const retainedForLiveAddresses: string[] = [];
+    const closable: Array<{ id: string; name: string; zoneIds: string[] }> = [];
+
+    // A seeded district is superseded when the courier serves a district of the
+    // same name. It keeps its rows, so the addresses pointing at them still
+    // resolve and can be migrated rather than orphaned.
+    for (const city of supersededSeeded) {
+      if (servedCityNames.has(normaliseDistrictName(city.name))) {
+        closable.push({ ...city, zoneIds: city.zones.map((zone) => zone.id) });
+      }
+    }
+
+    for (const city of retiredCourier) {
+      closable.push({ ...city, zoneIds: city.zones.map((zone) => zone.id) });
+    }
+
+    for (const candidate of closable) {
+      const liveAddresses = await prisma.address.count({
+        where: { logisticsZoneId: { in: candidate.zoneIds } },
+      });
+
+      if (liveAddresses > 0) {
+        retainedForLiveAddresses.push(candidate.name);
+        continue;
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.logisticsZone.updateMany({
+          where: { cityId: candidate.id, isActive: true },
+          data: { isActive: false },
+        });
+        await tx.logisticsCity.update({
+          where: { id: candidate.id },
+          data: { isActive: false },
+        });
+      });
+    }
+
+    // A zone the courier no longer lists under a city it still serves.
+    const staleZones = await prisma.logisticsZone.findMany({
+      where: {
+        isActive: true,
+        externalId: { notIn: [...seenZones] },
+        cityId: { in: [...servedCourierIds] },
+      },
+      select: { id: true },
+    });
+
+    if (staleZones.length > 0) {
+      const zoneIds = staleZones.map((zone) => zone.id);
+      const liveAddresses = await prisma.address.count({
+        where: { logisticsZoneId: { in: zoneIds } },
+      });
+
+      if (liveAddresses === 0) {
+        await prisma.logisticsZone.updateMany({
+          where: { id: { in: zoneIds } },
+          data: { isActive: false },
+        });
+      }
+    }
+
+    if (retainedForLiveAddresses.length > 0) {
+      logger.warn(
+        { districts: retainedForLiveAddresses, syncedAt },
+        'Kept superseded districts in service because a stored address still uses them',
+      );
+    }
+
+    return {
+      deactivatedCities: closable.length - retainedForLiveAddresses.length,
+      retainedForLiveAddresses,
+    };
+  }
+
+  private async courierServesName(cityName: string): Promise<boolean> {
+    const cities = await this.client.listCities();
+    const wanted = normaliseDistrictName(cityName);
+    return cities.some((city) => normaliseDistrictName(city.name) === wanted);
+  }
 
   async sync(): Promise<SyncSummary> {
     const cities = await this.client.listCities();
     const syncedAt = new Date();
 
+    const seenZoneExternalIds: number[] = [];
     let zoneCount = 0;
     let areaCount = 0;
 
     for (const city of cities) {
       // A city is created once. On later syncs only the name is refreshed, so an
       // admin's `isValley` correction and the free-delivery threshold they may
-      // have tuned survive a sync.
+      // have tuned survive a sync. A city the courier serves again comes back.
       const record = await prisma.logisticsCity.upsert({
         where: { externalId: city.id },
-        update: { name: city.name, syncedAt },
+        update: { name: city.name, syncedAt, isActive: true },
         create: {
           externalId: city.id,
           name: city.name,
@@ -92,10 +222,11 @@ export class LogisticsLocationSyncService {
       for (const zone of zones) {
         const zoneRecord = await prisma.logisticsZone.upsert({
           where: { externalId: zone.id },
-          update: { name: zone.name, cityId: record.id, syncedAt },
+          update: { name: zone.name, cityId: record.id, syncedAt, isActive: true },
           create: { externalId: zone.id, name: zone.name, cityId: record.id, syncedAt },
           select: { id: true },
         });
+        seenZoneExternalIds.push(zone.id);
         zoneCount += 1;
 
         const areas = await this.client.listAreas(zone.id);
@@ -110,11 +241,30 @@ export class LogisticsLocationSyncService {
       }
     }
 
+    const reconciliation = await this.reconcile(
+      cities.map((city) => city.id),
+      seenZoneExternalIds,
+      new Set(cities.map((city) => normaliseDistrictName(city.name))),
+      syncedAt,
+    );
+
     logger.info(
-      { cities: cities.length, zones: zoneCount, areas: areaCount },
+      {
+        cities: cities.length,
+        zones: zoneCount,
+        areas: areaCount,
+        deactivatedCities: reconciliation.deactivatedCities,
+        retainedForLiveAddresses: reconciliation.retainedForLiveAddresses,
+      },
       'Synced courier locations',
     );
 
-    return { cities: cities.length, zones: zoneCount, areas: areaCount, syncedAt };
+    return {
+      cities: cities.length,
+      zones: zoneCount,
+      areas: areaCount,
+      syncedAt,
+      ...reconciliation,
+    };
   }
 }
