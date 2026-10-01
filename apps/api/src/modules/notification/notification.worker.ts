@@ -188,33 +188,86 @@ export const notificationWorker = new Worker(
   },
 );
 
-notificationWorker.on('failed', async (job, error) => {
+export interface FailedJobDeps {
+  notificationRepository?: Pick<NotificationRepository, 'markPushFailed'>;
+  userRepository?: Pick<UserRepository, 'findUserById'>;
+  mailQueue?: Pick<Queue, 'add'>;
+}
+
+/**
+ * Records the final failure of a job.
+ *
+ * Registered on BullMQ's 'failed' event, which is an EventEmitter and therefore
+ * never awaits an async listener. Anything thrown here becomes an unhandled
+ * promise rejection that Node escalates to an uncaught exception, taking the
+ * worker - or, under a test run, the whole suite - down with it.
+ *
+ * So this function resolves under every failure it can meet. The status write
+ * tolerates a notification row that has since been deleted, and the fallback
+ * email is best effort: a Redis outage that stops the fallback email must not
+ * become a second, louder outage.
+ */
+export async function recordPushJobFailure(
+  job: Job | undefined,
+  error: Error,
+  deps: FailedJobDeps = {},
+): Promise<void> {
+  const notifications = deps.notificationRepository ?? notificationRepository;
+  const users = deps.userRepository ?? userRepository;
+  const fallbackMailQueue = deps.mailQueue ?? mailQueue;
+
   logger.error(
     { jobId: job?.id, error: error.message, attempts: job?.attemptsMade },
     'Notification job ultimately failed',
   );
 
-  if (job?.name === 'push') {
-    const data = job.data as NotificationJobPayload;
-    if (data.notificationId) {
-      await notificationRepository.updatePushStatus(data.notificationId, 'FAILED');
-    }
+  if (job?.name !== 'push') return;
 
-    // Ultimate fallback for critical notifications
-    if (data.severity === 'CRITICAL' || data.type === 'ORDER_STATUS') {
-      const user = await userRepository.findUserById(data.userId);
-      if (user?.email) {
-        await mailQueue.add(
-          'send',
-          {
-            to: user.email,
-            subject: data.title,
-            text: data.body,
-            html: `<p>${data.body}</p>`,
-          },
-          { attempts: 3 },
-        );
-      }
+  const data = job.data as NotificationJobPayload;
+
+  try {
+    if (data.notificationId) {
+      await notifications.markPushFailed(data.notificationId);
     }
+  } catch (writeError) {
+    logger.error(
+      { notificationId: data.notificationId, error: (writeError as Error).message },
+      'Could not record the failed push status',
+    );
   }
+
+  const isWorthAnEmail = data.severity === 'CRITICAL' || data.type === 'ORDER_STATUS';
+  if (!isWorthAnEmail) return;
+
+  try {
+    const user = await users.findUserById(data.userId);
+    if (!user?.email) return;
+
+    await fallbackMailQueue.add(
+      'send',
+      {
+        to: user.email,
+        subject: data.title,
+        text: data.body,
+        html: `<p>${data.body}</p>`,
+      },
+      { attempts: 3 },
+    );
+  } catch (mailError) {
+    logger.error(
+      { userId: data.userId, error: (mailError as Error).message },
+      'Could not enqueue the fallback email for a failed push',
+    );
+  }
+}
+
+notificationWorker.on('failed', (job, error) => {
+  // Belt and braces: the handler above is written not to throw, and this catches
+  // anything added to it later that does.
+  void recordPushJobFailure(job, error).catch((handlerError: Error) => {
+    logger.error(
+      { jobId: job?.id, error: handlerError.message },
+      'Notification failure handler itself failed',
+    );
+  });
 });

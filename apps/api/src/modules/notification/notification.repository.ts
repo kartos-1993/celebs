@@ -231,6 +231,21 @@ export class NotificationRepository {
       data: { pushStatus },
     });
   }
+
+  /**
+   * Record a push as failed without requiring the row to still exist.
+   *
+   * Called from the worker's failure handler, which runs after a job has given up.
+   * The notification may have been deleted in the meantime, and `update` would
+   * raise P2025 for a row that is simply already gone - an error that carries no
+   * information and, on an unawaited event listener, takes the process down.
+   */
+  async markPushFailed(id: string): Promise<void> {
+    await this.prisma.notification.updateMany({
+      where: { id },
+      data: { pushStatus: 'FAILED' },
+    });
+  }
 }
 
 export const notificationRepository = new NotificationRepository();
