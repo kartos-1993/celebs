@@ -443,6 +443,7 @@ model Order {
 
   items          OrderItem[]
   payments       Payment[]
+  refunds        Refund[]
   trackingEvents OrderTrackingEvent[]
   reviews        Review[]
 
@@ -634,8 +635,65 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  refunds Refund[]
+
   @@index([orderId])
   @@index([userId])
+}
+
+enum RefundStatus {
+  /// We asked the gateway and it has not answered yet.
+  PENDING
+  /// The gateway confirmed the money is on its way back.
+  SUCCEEDED
+  /// The gateway has no refund API, so a person has to finish this by hand.
+  REQUIRES_MANUAL_ACTION
+  /// The gateway refused, or the request never reached it.
+  FAILED
+  /// Abandoned before it was ever attempted.
+  CANCELLED
+}
+
+// Returning money to a customer, recorded as its own fact.
+//
+// PaymentStatus.REFUNDED is not enough on its own: it is a single label written
+// by three different paths, one of which merely observed a gateway that had
+// already refunded. It carries no amount, no gateway reference and no initiator,
+// so it cannot answer "how much did we give back, to whom, and who approved it".
+// This records that, per refund attempt, including the ones a human has to finish
+// because the wallet provides no refund API.
+model Refund {
+  id      String @id @default(uuid())
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // The payment being returned. On Khalti this is the pidx, not the transaction id.
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  amount  Decimal       @db.Decimal(12, 2)
+  gateway PaymentMethod
+  status  RefundStatus  @default(PENDING)
+
+  // The reference the gateway gave us, when it gave us one.
+  providerRefundId String? @map("provider_refund_id")
+  reason           String?
+  // Why it needs a person, or why it failed. Kept so nobody has to guess from a
+  // status code months later.
+  message String?
+
+  initiatedBy String  @map("initiated_by")
+  // Set when a human finished a manual refund, so the gap between asking and
+  // doing is visible rather than infinite.
+  settledAt DateTime? @map("settled_at")
+  settledBy String?    @map("settled_by")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([paymentId])
+  // The finance queue: everything still owed a person, oldest first.
+  @@index([status, createdAt])
 }
 
 enum OutboxStatus {
