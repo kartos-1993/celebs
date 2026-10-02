@@ -37,13 +37,31 @@ const anyTrackingNumber = z
   .optional()
   .transform((value) => value || undefined);
 
+/**
+ * Order states a courier may report.
+ *
+ * Declared rather than cast so an unrecognised status is refused instead of
+ * reaching the service as a string: a courier sending a state we do not model
+ * must not be silently recorded as something it is not.
+ */
+const ORDER_STATUS_VALUES = [
+  'PENDING_PAYMENT',
+  'CONFIRMED',
+  'PACKED',
+  'HANDED_OVER',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+  'CANCELLED',
+  'RETURNED',
+] as const;
+
 export const courierWebhookSchema = z
   .object({
     trackingNumber: anyTrackingNumber,
     waybillNumber: anyTrackingNumber,
     waybillId: anyTrackingNumber,
-    status: z.string().trim().min(1).optional(),
-    event: z.string().trim().min(1).optional(),
+    status: z.enum(ORDER_STATUS_VALUES).optional(),
+    event: z.enum(ORDER_STATUS_VALUES).optional(),
     title: z.string().optional(),
     description: z.string().optional(),
     location: z.string().optional(),
