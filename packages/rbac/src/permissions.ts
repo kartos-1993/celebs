@@ -26,8 +26,19 @@ export enum Permission {
   ORDER_MANAGE = 'order:manage',
 
   // ── Finance ───────────────────────────
+  // A shop's own money. A vendor sees their own earnings, not the platform's.
   FINANCE_VIEW = 'finance:view',
   FINANCE_MANAGE = 'finance:manage',
+
+  // The platform's own money: the courier ledger, what delivery costs across all
+  // vendors, and settlements agreed with a courier.
+  //
+  // Deliberately separate from the pair above. Reusing FINANCE_VIEW here would
+  // hand every seller a read on every other seller's delivery costs, because the
+  // two are about different money: one is a shop's earnings, the other is the
+  // whole marketplace's dealings with a courier.
+  FINANCE_PLATFORM_VIEW = 'finance:platform:view',
+  FINANCE_PLATFORM_MANAGE = 'finance:platform:manage',
 
   // ── Vendors ───────────────────────────
   VENDOR_VIEW = 'vendor:view',

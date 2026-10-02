@@ -36,6 +36,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.ORDER_MANAGE,
     Permission.FINANCE_VIEW,
     Permission.FINANCE_MANAGE,
+    Permission.FINANCE_PLATFORM_VIEW,
+    Permission.FINANCE_PLATFORM_MANAGE,
     Permission.VENDOR_VIEW,
     Permission.VENDOR_MANAGE,
     Permission.STAFF_VIEW,

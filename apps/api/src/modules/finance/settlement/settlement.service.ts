@@ -125,6 +125,7 @@ export class SettlementService {
         variance,
         reference: input.reference ?? batch.reference,
         notes: input.notes ?? batch.notes,
+        declaredAt: batch.declaredAt ?? new Date(),
       },
     });
   }
@@ -140,7 +141,10 @@ export class SettlementService {
       );
     }
 
-    if (!batch.declaredCollected && !batch.declaredFees) {
+    // Judged on declaredAt, not on the money columns. Both default to zero, so a
+    // declared zero and an unheard-from courier look identical if you read the
+    // figures - and paying the first is legitimate, while paying the second is not.
+    if (batch.declaredAt === null) {
       throw new AppError(
         'Record the courier statement before reconciling it',
         HTTPSTATUS.BAD_REQUEST,

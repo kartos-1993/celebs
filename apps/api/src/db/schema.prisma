@@ -828,6 +828,11 @@ model SettlementBatch {
   reference String?
   notes     String?
 
+  // When their statement arrived. Not a money figure, because both declared
+  // columns default to zero: a courier that genuinely collected nothing has to
+  // look different from a courier we have not heard from yet.
+  declaredAt DateTime? @map("declared_at")
+
   reconciledAt DateTime? @map("reconciled_at")
   reconciledBy String?   @map("reconciled_by")
   paidAt       DateTime? @map("paid_at")

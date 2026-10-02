@@ -174,6 +174,21 @@ export const PERMISSION_REGISTRY: Record<Permission, PermissionDefinition> = {
     description: 'Review shop revenue, payout ledgers, and earnings breakdown',
     module: 'FINANCE',
   },
+  [Permission.FINANCE_PLATFORM_VIEW]: {
+    perm: Permission.FINANCE_PLATFORM_VIEW,
+    label: 'View Platform Finance',
+    description:
+      'Review the platform courier ledger: what delivery costs across all shops and what each courier settled',
+    module: 'FINANCE',
+  },
+
+  [Permission.FINANCE_PLATFORM_MANAGE]: {
+    perm: Permission.FINANCE_PLATFORM_MANAGE,
+    label: 'Manage Courier Settlements',
+    description: 'Record a courier statement, reconcile a period, and mark a settlement paid',
+    module: 'FINANCE',
+  },
+
   [Permission.FINANCE_MANAGE]: {
     perm: Permission.FINANCE_MANAGE,
     label: 'Manage Payouts',
