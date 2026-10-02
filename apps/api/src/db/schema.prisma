@@ -726,7 +726,13 @@ enum LedgerEntryType {
   ORDER_REVENUE
   DELIVERY_CHARGED
   FREE_DELIVERY_ABSORBED
-  // Cash the courier collects on our behalf
+  // Cash the courier collects on our behalf.
+  //
+  // Not posted yet: a parcel handed over does not make the cash ours, and posting
+  // it as money in would count the same rupees twice once the courier remits.
+  // Reserved for a future posting that records the receivable without treating it
+  // as revenue - a reconciliation compares a courier's statement against what was
+  // owed to us, not against what we sold.
   COD_EXPECTED
   // Cash the courier remits to us
   COD_RECEIVED
@@ -832,7 +838,10 @@ model SettlementBatch {
 
   entries LedgerEntry[]
 
-  @@index([courier, periodStart])
+  // One statement per courier per period. Without this, opening a batch twice
+  // produces two competing expectations for the same money and the variance
+  // becomes a comparison of a statement with itself.
+  @@unique([courier, periodStart])
   @@index([status, periodStart])
 }
 
