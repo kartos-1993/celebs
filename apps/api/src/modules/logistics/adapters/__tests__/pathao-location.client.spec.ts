@@ -109,7 +109,7 @@ describe('PathaoLocationClient', () => {
 
       await client.listCities();
 
-      expect(calls[0].url).toBe(`${BASE}/aladdin/api/v1/city-list`);
+      expect(calls[0]?.url).toBe(`${BASE}/aladdin/api/v1/city-list`);
     });
 
     it('authenticates the request with the access token', async () => {
@@ -117,7 +117,7 @@ describe('PathaoLocationClient', () => {
 
       await client.listCities();
 
-      expect(calls[0].headers.authorization).toBe('Bearer ACCESS-TOKEN-1');
+      expect(calls[0]?.headers.authorization).toBe('Bearer ACCESS-TOKEN-1');
     });
 
     it('reports an empty country rather than failing when Pathao lists no cities', async () => {
@@ -149,7 +149,7 @@ describe('PathaoLocationClient', () => {
 
       await client.listZones(181);
 
-      expect(calls[0].url).toBe(`${BASE}/aladdin/api/v1/cities/181/zone-list`);
+      expect(calls[0]?.url).toBe(`${BASE}/aladdin/api/v1/cities/181/zone-list`);
     });
   });
 
@@ -171,7 +171,7 @@ describe('PathaoLocationClient', () => {
 
       await client.listAreas(1647);
 
-      expect(calls[0].url).toBe(`${BASE}/aladdin/api/v1/zones/1647/area-list`);
+      expect(calls[0]?.url).toBe(`${BASE}/aladdin/api/v1/zones/1647/area-list`);
     });
   });
 

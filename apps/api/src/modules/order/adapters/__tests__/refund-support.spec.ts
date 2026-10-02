@@ -18,7 +18,8 @@ type RefundStatus = 'SUCCEEDED' | 'REQUIRES_MANUAL_ACTION' | 'FAILED';
 
 const refundResult = (gateway: {
   refund: (input: { paymentId: string; amount?: number }) => Promise<unknown>;
-}) => gateway.refund({ paymentId: 'PIDS-1' }) as Promise<{ status: RefundStatus }>;
+}) =>
+  gateway.refund({ paymentId: 'PIDS-1' }) as Promise<{ status: RefundStatus; message?: string }>;
 
 /** Khalti answers the refund endpoint on a different tree from initiate/lookup. */
 const khaltiFetch = (routes: Record<string, unknown>, options: { status?: number } = {}) => {

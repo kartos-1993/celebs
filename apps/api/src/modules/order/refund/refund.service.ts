@@ -3,7 +3,6 @@ import { PaymentMethod, RefundStatus } from '@prisma/client';
 import { EsewaAdapter } from '../adapters/esewa.adapter';
 import { KhaltiAdapter } from '../adapters/khalti.adapter';
 import type { IPaymentGateway } from '../adapters/payment-gateway.interface';
-import type { IPaymentGateway } from '../adapters/payment-gateway.interface';
 
 import { RefundRepository, refundRepository } from './refund.repository';
 

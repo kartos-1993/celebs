@@ -46,7 +46,11 @@ const buildService = (status: CoverageStatus, cityName: string | null = null) =>
   } as unknown as FulfillmentRepository;
 
   return {
-    service: new FulfillmentService(repo, undefined, coverageReturning(status, cityName)),
+    service: new FulfillmentService(
+      repo,
+      undefined,
+      coverageReturning(status, cityName) as DeliveryCoverageRepository,
+    ),
     applyOrderItemStatus,
   };
 };

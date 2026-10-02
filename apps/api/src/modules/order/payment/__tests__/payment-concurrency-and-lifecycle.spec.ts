@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { coreOrderRepository, CoreOrderService } from '../../core/order.service';
+import { coreOrderRepository } from '../../core/order.repository';
+import { CoreOrderService } from '../../core/order.service';
 import { paymentService } from '../payment.service';
 
 import { hashValue } from '@/common/utils/bcrypt';

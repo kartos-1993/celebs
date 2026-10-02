@@ -45,8 +45,10 @@ const env = (values: Record<string, string | undefined>) => {
   }
 };
 
-const okFetch = (body: unknown = okTokenResponse, status = 200) =>
-  vi.fn(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+const okFetch = (body: unknown = okTokenResponse, status = 200) => {
+  const mock = vi.fn(async () => new Response(JSON.stringify(body), { status }));
+  return Object.assign(mock, { asFetch: mock as unknown as typeof fetch });
+};
 
 describe('resolvePathaoConfig', () => {
   beforeEach(() => {
@@ -92,7 +94,7 @@ describe('PathaoTokenProvider', () => {
     vi.clearAllMocks();
     env({});
     mockedRedis.get.mockResolvedValue(null);
-    mockedRedis.set.mockResolvedValue(null);
+    mockedRedis.set.mockResolvedValue(undefined);
   });
 
   it('asks Pathao for a token with the documented password-grant payload', async () => {

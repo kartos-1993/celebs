@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { NotificationJobPayload } from '../notification.worker';
+import type { FailedJobDeps, NotificationJobPayload } from '../notification.worker';
 import { recordPushJobFailure } from '../notification.worker';
 
 /**
@@ -10,18 +10,19 @@ import { recordPushJobFailure } from '../notification.worker';
  * row that may legitimately be gone by the time a job gives up on it, and a
  * throwing write there is what made the suite exit non-zero with every test green.
  */
-const pushJob = (notificationId: string): Job => ({
-  id: 'job-1',
-  name: 'push',
-  data: {
-    notificationId,
-    userId: 'user-1',
-    title: 'Order shipped',
-    body: 'Your parcel is on its way',
-    severity: 'INFO',
-    type: 'ORDER_STATUS',
-  } satisfies NotificationJobPayload,
-});
+const pushJob = (notificationId: string): Job =>
+  ({
+    id: 'job-1',
+    name: 'push',
+    data: {
+      notificationId,
+      userId: 'user-1',
+      title: 'Order shipped',
+      body: 'Your parcel is on its way',
+      severity: 'INFO',
+      type: 'ORDER_STATUS',
+    } satisfies NotificationJobPayload,
+  }) as unknown as Job;
 
 describe('recordPushJobFailure', () => {
   it('treats a notification row that no longer exists as already recorded', async () => {
@@ -56,12 +57,12 @@ describe('recordPushJobFailure', () => {
     const notificationRepository = { markPushFailed: vi.fn(async () => undefined) };
     const userRepository = {
       findUserById: vi.fn(async () => ({ email: 'buyer@example.com' })),
-    };
+    } as unknown as FailedJobDeps['userRepository'];
     const mailQueue = {
       add: vi.fn(async () => {
         throw new Error('redis is down');
       }),
-    };
+    } as unknown as FailedJobDeps['mailQueue'];
 
     await expect(
       recordPushJobFailure(pushJob('notification-1'), new Error('push rejected'), {
@@ -96,8 +97,10 @@ describe('recordPushJobFailure', () => {
     const notificationRepository = { markPushFailed: vi.fn(async () => undefined) };
     const userRepository = {
       findUserById: vi.fn(async () => ({ email: 'buyer@example.com' })),
-    };
-    const mailQueue = { add: vi.fn(async () => undefined) };
+    } as unknown as FailedJobDeps['userRepository'];
+    const mailQueue = {
+      add: vi.fn(async () => undefined),
+    } as unknown as FailedJobDeps['mailQueue'];
 
     await recordPushJobFailure(pushJob('notification-1'), new Error('push rejected'), {
       notificationRepository,
@@ -105,6 +108,6 @@ describe('recordPushJobFailure', () => {
       mailQueue,
     });
 
-    expect(mailQueue.add).toHaveBeenCalledOnce();
+    expect(mailQueue?.add).toHaveBeenCalledOnce();
   });
 });
