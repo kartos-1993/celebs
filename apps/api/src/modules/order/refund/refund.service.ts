@@ -6,6 +6,8 @@ import type { IPaymentGateway } from '../adapters/payment-gateway.interface';
 
 import { RefundRepository, refundRepository } from './refund.repository';
 
+import { postRefundEntries } from '@/modules/finance/ledger/ledger-posting.service';
+
 /**
  * Returns money to a customer after an order is cancelled.
  *
@@ -90,12 +92,28 @@ export class RefundService {
       reason: input.reason,
     });
 
-    return this.repo.completeRefund({
-      refundId: refund.id,
-      status: STATUS_MAP[result.status] ?? RefundStatus.FAILED,
-      providerRefundId: result.providerRefundId,
-      message: result.message,
-    });
+    return this.repo
+      .completeRefund({
+        refundId: refund.id,
+        status: STATUS_MAP[result.status] ?? RefundStatus.FAILED,
+        providerRefundId: result.providerRefundId,
+        message: result.message,
+      })
+      .then(async (completed) => {
+        // Only money that actually left the platform is recorded. A refund waiting
+        // on a person in a merchant dashboard has not moved, and booking it now
+        // would understate what we still hold.
+        if (completed.status === RefundStatus.SUCCEEDED) {
+          await postRefundEntries({
+            refundId: completed.id,
+            orderId: completed.orderId,
+            amount: completed.amount,
+            gateway: completed.gateway,
+          });
+        }
+
+        return completed;
+      });
   }
 }
 

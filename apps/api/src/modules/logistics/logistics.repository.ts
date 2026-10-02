@@ -3,6 +3,7 @@ import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import prisma, { Prisma } from '@/config/db.prisma';
+import { postCodReceiptEntries } from '@/modules/finance/ledger/ledger-posting.service';
 
 export interface UpdateDispatchedOrderData {
   orderId: string;
@@ -84,23 +85,38 @@ export class LogisticsRepository {
       );
     }
 
-    return prisma.order.update({
-      where: { id: orderId },
-      data: {
-        codStatus: CodStatus.COD_SETTLED,
-        codSettledAt: new Date(),
-        codReference: settlementReference,
-        paymentStatus: 'COMPLETED',
-        trackingEvents: {
-          create: {
-            status: OrderStatus.DELIVERED,
-            title: 'COD Payment Settled',
-            description: `Cash reconciled against courier deposit. Ref: ${settlementReference}`,
-            source: 'PLATFORM',
+    return prisma.order
+      .update({
+        where: { id: orderId },
+        data: {
+          codStatus: CodStatus.COD_SETTLED,
+          codSettledAt: new Date(),
+          codReference: settlementReference,
+          paymentStatus: 'COMPLETED',
+          trackingEvents: {
+            create: {
+              status: OrderStatus.DELIVERED,
+              title: 'COD Payment Settled',
+              description: `Cash reconciled against courier deposit. Ref: ${settlementReference}`,
+              source: 'PLATFORM',
+            },
           },
         },
-      },
-    });
+        include: { trackingEvents: true },
+      })
+      .then(async (settled) => {
+        // Cash actually arriving is what a courier statement is reconciled against,
+        // so it is recorded rather than left to be reconstructed later. Keyed on the
+        // voucher, so a deposit submitted twice cannot be counted twice.
+        await postCodReceiptEntries({
+          orderId: settled.id,
+          courier: settled.courierProvider ?? undefined,
+          amount: settled.codAmount ?? new Prisma.Decimal(0),
+          settlementReference,
+        });
+
+        return settled;
+      });
   }
 
   public async findOrderByTrackingNumber(trackingNumber: string) {

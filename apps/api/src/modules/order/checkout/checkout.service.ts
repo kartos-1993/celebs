@@ -30,6 +30,7 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
+import { postOrderPlacementEntries } from '@/modules/finance/ledger/ledger-posting.service';
 import {
   NotificationService,
   notificationService as defaultNotificationService,
@@ -305,6 +306,18 @@ export class CheckoutService {
       purgeProductDetail(productId);
     }
     purgeProductHome();
+
+    // Record what the sale was worth. Runs after the reservation committed, and is
+    // keyed on the order so a retried checkout records it once. Best effort: a
+    // ledger failure must not fail an order the customer has already placed, and
+    // the entry is derived from the order row rather than from live pricing, so it
+    // can be posted again later from the same numbers.
+    await postOrderPlacementEntries({ orderId: order.id }).catch((error: unknown) => {
+      logger.error(
+        { orderId: order.id, error: (error as Error).message },
+        'Could not record the order in the ledger; it must be posted manually',
+      );
+    });
 
     // Create online payment intent when not COD
     let paymentResult = null;

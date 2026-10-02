@@ -1,4 +1,10 @@
-import { PaymentMethod, PaymentStatus, RefundStatus } from '@prisma/client';
+import {
+  LedgerDirection,
+  LedgerEntryType,
+  PaymentMethod,
+  PaymentStatus,
+  RefundStatus,
+} from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RefundService } from '../refund.service';
@@ -68,6 +74,7 @@ describe('RefundService', () => {
     await prisma.orderItem.deleteMany({});
     await prisma.refund.deleteMany({});
     await prisma.payment.deleteMany({});
+    await prisma.ledgerEntry.deleteMany({});
     await prisma.order.deleteMany({});
     await prisma.address.deleteMany({});
     await prisma.vendorProfile.deleteMany({});
@@ -262,5 +269,60 @@ describe('RefundService', () => {
 
     expect(await service.initiateRefund({ orderId: order.id, initiatedBy: 'admin-1' })).toBeNull();
     expect(refundMock).not.toHaveBeenCalled();
+  });
+
+  // Money leaving the platform has to reach the ledger, or "what did we take" is
+  // a number that quietly forgets the returns.
+  it('records a completed refund in the ledger as money going out', async () => {
+    const { order } = await paidOrder(PaymentMethod.KHALTI, 2500);
+    const service = new RefundService(
+      gateways({
+        KHALTI: { refund: async () => ({ status: 'SUCCEEDED' }) },
+        ESEWA: { refund: async () => ({ status: 'FAILED' }) },
+        COD: { refund: async () => ({ status: 'FAILED' }) },
+      }),
+    );
+
+    const refund = await service.initiateRefund({ orderId: order.id, initiatedBy: 'admin-1' });
+
+    const entry = await prisma.ledgerEntry.findFirstOrThrow({
+      where: { sourceType: 'REFUND', sourceId: refund!.id },
+    });
+    expect(entry.type).toBe(LedgerEntryType.REFUND);
+    expect(entry.direction).toBe(LedgerDirection.OUT);
+    expect(entry.amount.toNumber()).toBe(2500);
+    expect(entry.orderId).toBe(order.id);
+  });
+
+  // A refund still waiting on a person has not left the platform. Recording it
+  // now would understate the money we actually hold.
+  it('does not record a refund that still needs doing by hand', async () => {
+    const { order } = await paidOrder(PaymentMethod.ESEWA, 2500);
+    const service = new RefundService(
+      gateways({
+        KHALTI: { refund: async () => ({ status: 'SUCCEEDED' }) },
+        ESEWA: { refund: async () => ({ status: 'REQUIRES_MANUAL_ACTION' }) },
+        COD: { refund: async () => ({ status: 'FAILED' }) },
+      }),
+    );
+
+    await service.initiateRefund({ orderId: order.id, initiatedBy: 'admin-1' });
+
+    expect(await prisma.ledgerEntry.count({ where: { type: LedgerEntryType.REFUND } })).toBe(0);
+  });
+
+  it('records a failed refund nowhere, because no money moved', async () => {
+    const { order } = await paidOrder(PaymentMethod.KHALTI, 2500);
+    const service = new RefundService(
+      gateways({
+        KHALTI: { refund: async () => ({ status: 'FAILED', message: 'nope' }) },
+        ESEWA: { refund: async () => ({ status: 'FAILED' }) },
+        COD: { refund: async () => ({ status: 'FAILED' }) },
+      }),
+    );
+
+    await service.initiateRefund({ orderId: order.id, initiatedBy: 'admin-1' });
+
+    expect(await prisma.ledgerEntry.count({ where: { type: LedgerEntryType.REFUND } })).toBe(0);
   });
 });

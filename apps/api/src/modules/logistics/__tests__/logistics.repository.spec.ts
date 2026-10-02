@@ -1,4 +1,12 @@
-import { CodStatus, DispatchMode, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import {
+  CodStatus,
+  DispatchMode,
+  LedgerDirection,
+  LedgerEntryType,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DeliveryCoverageRepository } from '../delivery-coverage.repository';
@@ -167,6 +175,54 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       expect(updated.codSettledAt).not.toBeNull();
     });
 
+    // Cash arriving is the one event a settlement is reconciled against, so it has
+    // to be in the ledger. Keyed on the voucher, so the same deposit cannot be
+    // counted twice.
+    it('records the cash that arrived when an order is settled', async () => {
+      const order = await prisma.order.findUniqueOrThrow({ where: { id: testOrderId } });
+      await prisma.order.update({
+        where: { id: testOrderId },
+        data: { codAmount: 1200 },
+      });
+
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-1');
+
+      const entry = await prisma.ledgerEntry.findFirstOrThrow({
+        where: { sourceType: 'COD_SETTLEMENT', sourceId: 'STMT-CASH-1' },
+      });
+      expect(entry.type).toBe(LedgerEntryType.COD_RECEIVED);
+      expect(entry.direction).toBe(LedgerDirection.IN);
+      expect(entry.amount.toNumber()).toBe(1200);
+      expect(entry.orderId).toBe(testOrderId);
+      void order;
+    });
+
+    it('counts a settled deposit once however many times it is submitted', async () => {
+      await prisma.order.update({
+        where: { id: testOrderId },
+        data: { codAmount: 1200 },
+      });
+
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-2');
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-2');
+
+      expect(
+        await prisma.ledgerEntry.count({
+          where: { sourceType: 'COD_SETTLEMENT', sourceId: 'STMT-CASH-2' },
+        }),
+      ).toBe(1);
+    });
+
+    it('records nothing when the order had no cash to collect', async () => {
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-EMPTY');
+
+      expect(
+        await prisma.ledgerEntry.count({
+          where: { sourceType: 'COD_SETTLEMENT', sourceId: 'STMT-CASH-EMPTY' },
+        }),
+      ).toBe(0);
+    });
+
     // An accountant reconciling a courier deposit can easily submit the same
     // voucher twice, or discover they mistyped it and submit a second. The first
     // case must be a harmless retry; the second must not erase the voucher that
@@ -176,7 +232,6 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
         prisma.orderTrackingEvent.count({
           where: { orderId: testOrderId, title: 'COD Payment Settled' },
         });
-
       it('leaves the settlement untouched when the same voucher is submitted twice', async () => {
         const first = await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
 

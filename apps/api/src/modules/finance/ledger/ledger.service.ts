@@ -2,6 +2,7 @@ import { LedgerDirection, LedgerEntryType } from '@prisma/client';
 
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
+import { isBelowZero, isExactlyZero } from './decimal';
 import { LedgerRepository, ledgerRepository } from './ledger.repository';
 
 import { Prisma } from '@/config/db.prisma';
@@ -46,7 +47,7 @@ export class LedgerService {
   async post(input: PostLedgerEntryInput) {
     const amount = new Prisma.Decimal(input.amount);
 
-    if (amount.isNegative()) {
+    if (isBelowZero(amount)) {
       throw new AppError(
         `Ledger amount cannot be negative (got ${amount.toFixed(2)}); use a direction of OUT instead`,
         HTTPSTATUS.BAD_REQUEST,
@@ -54,7 +55,7 @@ export class LedgerService {
       );
     }
 
-    if (amount.isZero()) {
+    if (isExactlyZero(amount)) {
       throw new AppError(
         'A zero ledger entry records nothing and would look like a real movement',
         HTTPSTATUS.BAD_REQUEST,
