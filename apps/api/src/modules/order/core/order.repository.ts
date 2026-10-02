@@ -1,4 +1,4 @@
-import { OrderItemStatus, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { OrderItemStatus, OrderStatus, PaymentMethod } from '@prisma/client';
 
 import { resolveOrderItemImageUrl } from '../utils/order-image.util';
 
@@ -169,39 +169,10 @@ export class CoreOrderRepository {
           data: { itemStatus: 'CANCELLED' },
         });
 
-        const currentOrder = await tx.order.findUniqueOrThrow({
-          where: { id: order.id },
-          select: { userId: true, totalAmount: true, paymentMethod: true, paymentStatus: true },
-        });
-
-        const isPaid = currentOrder.paymentStatus === PaymentStatus.COMPLETED;
-
-        if (isPaid) {
-          await tx.payment.create({
-            data: {
-              orderId: order.id,
-              userId: currentOrder.userId,
-              amount: currentOrder.totalAmount,
-              currency: 'NPR',
-              gateway: currentOrder.paymentMethod,
-              status: PaymentStatus.REFUNDED,
-              rawResponse: {
-                reason: 'ORDER_CANCELLED',
-                refundedAt: new Date().toISOString(),
-              },
-            },
-          });
-
-          await tx.orderTrackingEvent.create({
-            data: {
-              orderId: order.id,
-              status: 'CANCELLED',
-              title: 'Payment Refund Initiated',
-              description: 'Order cancelled; payment marked for refund.',
-              source: 'SYSTEM',
-            },
-          });
-        }
+        // Deliberately no REFUNDED payment row here, and no re-read of the order.
+        // This used to write one, which made the order claim its money had come
+        // back while nothing had been sent anywhere. The refund is recorded after
+        // this transaction commits, by the gateway call, as a Refund of its own.
 
         await tx.orderTrackingEvent.create({
           data: {
@@ -215,10 +186,7 @@ export class CoreOrderRepository {
 
         return tx.order.update({
           where: { id: order.id },
-          data: {
-            status: 'CANCELLED',
-            ...(isPaid ? { paymentStatus: PaymentStatus.REFUNDED } : {}),
-          },
+          data: { status: 'CANCELLED' },
         });
       },
       { maxWait: 5000, timeout: 10000 },

@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { coreOrderService } from '../../core/order.service';
+import { coreOrderRepository, CoreOrderService } from '../../core/order.service';
 import { paymentService } from '../payment.service';
 
 import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
+import { notificationService } from '@/modules/notification/notification.service';
 
 describe('Payment concurrency and lifecycle state transitions', () => {
   let userId: string;
@@ -15,6 +16,7 @@ describe('Payment concurrency and lifecycle state transitions', () => {
   let inventoryId: string;
 
   beforeEach(async () => {
+    stubRefundService.initiateRefund.mockClear();
     const user = await prisma.user.create({
       data: {
         name: 'Payment Lifecycle Customer',
@@ -170,30 +172,61 @@ describe('Payment concurrency and lifecycle state transitions', () => {
     expect(finalOrder.payments[0]?.status).toBe('COMPLETED');
   });
 
-  it('records a refund and transitions payment status to REFUNDED when a paid order is cancelled', async () => {
-    const order = await createTestOrder('COMPLETED');
+  // Cancelling now asks a gateway to return the money. These tests are about the
+  // cancellation, not about how a wallet refunds, which refund.service.spec.ts
+  // covers directly - so the refund is stubbed here rather than being allowed to
+  // reach the network from a unit test.
+  const stubRefundService = {
+    initiateRefund: vi.fn(async () => ({
+      id: 'refund-stub',
+      status: 'SUCCEEDED',
+      amount: { toNumber: () => 2000 },
+      gateway: 'KHALTI',
+      initiatedBy: 'admin',
+      providerRefundId: 'KHALTI-TXN-1',
+      message: null,
+    })),
+  };
 
-    const result = await coreOrderService.cancelOrder(userId, order.id);
+  const orderServiceWithStubbedRefund = () =>
+    new CoreOrderService(coreOrderRepository, notificationService, stubRefundService as never);
+
+  it('records a refund against the cancelled order instead of marking the payment refunded', async () => {
+    const order = await createTestOrder('COMPLETED');
+    const service = orderServiceWithStubbedRefund();
+
+    const result = await service.cancelOrder(userId, order.id);
 
     expect(result.status).toBe('CANCELLED');
+    expect(stubRefundService.initiateRefund).toHaveBeenCalledOnce();
+    expect(stubRefundService.initiateRefund).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: order.id, reason: 'ORDER_CANCELLED' }),
+    );
+  });
+
+  it('does not claim the payment was refunded before the gateway says so', async () => {
+    const order = await createTestOrder('COMPLETED');
+
+    await orderServiceWithStubbedRefund().cancelOrder(userId, order.id);
 
     const updatedOrder = await prisma.order.findUniqueOrThrow({
       where: { id: order.id },
-      include: { payments: { orderBy: { createdAt: 'desc' } }, trackingEvents: true },
+      select: { paymentStatus: true },
     });
 
-    // Payment status must transition to REFUNDED
-    expect(updatedOrder.paymentStatus).toBe('REFUNDED');
+    // The money has not come back yet, so the order must not say it has.
+    expect(updatedOrder.paymentStatus).not.toBe('REFUNDED');
+  });
 
-    // Must have a refund payment entry
-    const refundPayment = updatedOrder.payments.find((p) => p.status === 'REFUNDED');
-    expect(refundPayment).toBeDefined();
+  it('does not write a REFUNDED payment row, because no money has moved', async () => {
+    const order = await createTestOrder('COMPLETED');
 
-    // Must have a refund tracking event
-    const refundEvent = updatedOrder.trackingEvents.find((e) =>
-      e.title.toLowerCase().includes('refund'),
-    );
-    expect(refundEvent).toBeDefined();
+    await orderServiceWithStubbedRefund().cancelOrder(userId, order.id);
+
+    const refundedRows = await prisma.payment.count({
+      where: { orderId: order.id, status: 'REFUNDED' },
+    });
+    expect(refundedRows).toBe(0);
   });
 
   it('handles duplicate callback confirmation idempotently without duplicate side-effects', async () => {

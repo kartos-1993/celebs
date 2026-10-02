@@ -1,4 +1,4 @@
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { enqueueOrderCancelledEmail } from '../utils/order-email.util';
 
@@ -8,11 +8,16 @@ import {
   NotificationService,
   notificationService as defaultNotificationService,
 } from '@/modules/notification/notification.service';
+import {
+  RefundService,
+  refundService as defaultRefundService,
+} from '@/modules/order/refund/refund.service';
 
 export class CoreOrderService {
   constructor(
     private readonly repo: CoreOrderRepository = coreOrderRepository,
     private readonly notificationService: NotificationService = defaultNotificationService,
+    private readonly refundService: RefundService = defaultRefundService,
   ) {}
 
   async getMyOrders(userId: string, page = 1, limit = 10) {
@@ -52,7 +57,20 @@ export class CoreOrderService {
       })),
     });
 
-    enqueueOrderCancelledEmail(order).catch(() => {});
+    // After the transaction commits, never inside it: this makes a network call
+    // to a payment gateway, and holding a pooled connection for the duration of
+    // one is how the port-6543 pool runs dry under load.
+    const refund = await this.refundService
+      .initiateRefund({ orderId: order.id, initiatedBy: userId, reason: 'ORDER_CANCELLED' })
+      .catch((error: unknown) => {
+        logger.error(
+          { orderId: order.id, error: (error as Error).message },
+          'Refund request failed',
+        );
+        return null;
+      });
+
+    enqueueOrderCancelledEmail(order, undefined, 'order-cancelled', refund).catch(() => {});
 
     this.notificationService
       .notifyOrderStatus({

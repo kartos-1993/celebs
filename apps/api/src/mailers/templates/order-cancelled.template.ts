@@ -16,6 +16,57 @@ export interface OrderCancelledEmailParams {
   totalAmount: number | string;
   items: OrderCancelledItem[];
   reason?: string;
+  /**
+   * What actually happened to the money.
+   *
+   * The template used to assert a refund was on its way for any online payment,
+   * which was true of neither wallet: one has no refund API at all, and before
+   * this existed nothing was sent to either. The customer is told what happened.
+   */
+  refundOutcome?: RefundOutcome;
+}
+
+export type RefundOutcome =
+  | 'SUCCEEDED'
+  | 'REQUIRES_MANUAL_ACTION'
+  | 'FAILED'
+  | 'NOT_REQUIRED'
+  | 'NOT_ATTEMPTED';
+
+/**
+ * What we can honestly promise a customer about their money.
+ *
+ * A wallet that confirmed the refund: it is on its way, and the wallet is what
+ * sets the timescale. A wallet with no refund API: the money is safe with us and
+ * our team returns it by hand, which is slower and worth saying plainly. A failed
+ * attempt: the cancellation still stands and someone will be in touch, because
+ * silence here would leave a customer believing they had been paid back.
+ */
+function buildRefundNotice(
+  paymentMethod: string,
+  totalAmount: number | string,
+  refundOutcome: RefundOutcome | undefined,
+): string {
+  const amount = `NPR ${Number(totalAmount).toLocaleString()}`;
+
+  if (paymentMethod === 'COD') {
+    return 'As this order was placed with Cash on Delivery (COD), no payment was charged.';
+  }
+
+  switch (refundOutcome) {
+    case 'SUCCEEDED':
+      return `Your refund of ${amount} has been sent to ${paymentMethod} and should reach your ${paymentMethod} wallet within 1-3 business days.`;
+    case 'REQUIRES_MANUAL_ACTION':
+      return `Your ${paymentMethod} payment of ${amount} is being returned to you manually, because ${paymentMethod} does not process refunds automatically. Our team will complete this for you, usually within 3 business days, and will contact you if there is any delay.`;
+    case 'FAILED':
+      return `We could not start the return of your ${amount} automatically. Your ${paymentMethod} payment is safe with us and our team will complete the refund. Please allow 3 business days, and contact support if you have not been credited.`;
+    case 'NOT_ATTEMPTED':
+    case 'NOT_REQUIRED':
+    case undefined:
+      return `Since you paid via ${paymentMethod}, a refund of ${amount} will be arranged. Please allow 3 business days. Contact our support team if the amount does not return to your account.`;
+    default:
+      return `Since you paid via ${paymentMethod}, a refund of ${amount} will be arranged. Please allow 3 business days.`;
+  }
 }
 
 export function orderCancelledTemplate(params: OrderCancelledEmailParams) {
@@ -24,11 +75,7 @@ export function orderCancelledTemplate(params: OrderCancelledEmailParams) {
   const subject = `Order #${orderNumber} Cancellation Confirmation`;
   const catalogUrl = buildWebUrl('/');
 
-  const isOnlinePayment = paymentMethod === 'ESEWA' || paymentMethod === 'KHALTI';
-
-  const refundNotice = isOnlinePayment
-    ? `Since you paid via ${paymentMethod}, your refund of NPR ${Number(totalAmount).toLocaleString()} has been initiated and will reflect in your wallet within 1-3 business days.`
-    : `As this order was placed with Cash on Delivery (COD), no payment was charged.`;
+  const refundNotice = buildRefundNotice(paymentMethod, totalAmount, params.refundOutcome);
 
   const textItems = items
     .map(
