@@ -62,11 +62,40 @@ export function isShortfall(variance: string): boolean {
 }
 
 /**
- * The line an accountant reads off a settlement: who is short, and by how much.
+ * The net an accountant sees while typing a statement, before anything is saved.
  *
- * Plain zero is a real outcome and gets said out loud, because "Agreed" is the
- * only version of this that anybody disputes nothing about.
+ * Returns null rather than a guess when either figure is half-typed or malformed:
+ * a preview that fills in the missing half would show a variance that is not the
+ * one about to be recorded, which is worse than showing none.
+ *
+ * Arithmetic is done in whole paisa rather than on decimals. It is the same reason
+ * as above - 0.1 + 0.2 in binary floating point is not 0.3 - and integer paisa are
+ * exact. Third decimal places are refused rather than rounded, because the column
+ * this feeds is two decimals wide and silently dropping one would hide a fraction
+ * of a paisa that the database would not have accepted anyway.
  */
+export function netFromDeclared(collected: string, fees: string): string | null {
+  const TYPABLE = /^\d+(\.\d{1,2})?$/;
+
+  const toPaisa = (value: string): number | null => {
+    const trimmed = value.trim();
+    if (!TYPABLE.test(trimmed)) return null;
+
+    const [whole = '0', fraction = ''] = trimmed.split('.');
+
+    return Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
+  };
+
+  const collectedPaisa = toPaisa(collected);
+  const feesPaisa = toPaisa(fees);
+  if (collectedPaisa === null || feesPaisa === null) return null;
+
+  const net = collectedPaisa - feesPaisa;
+  const sign = net < 0 ? '-' : '';
+  const absolute = Math.abs(net);
+
+  return `${sign}${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, '0')}`;
+}
 export function formatSignedVariance(variance: string): string {
   const parts = splitDecimal(variance);
   if (!parts) return UNREADABLE_MONEY;

@@ -10,6 +10,9 @@ import {
 
 import type { SettlementBatch } from '../api';
 import { formatMoney, formatSignedVariance, isShortfall } from '../lib/money';
+import { actionsFor } from '../lib/settlement-actions';
+
+import { RowActionsMenu } from '@/components/row-actions-menu';
 
 /**
  * What a courier owes us, and what they say they owe.
@@ -48,9 +51,17 @@ function VarianceCell({ variance }: { variance: string }) {
 
 interface SettlementsTableProps {
   batches: SettlementBatch[];
+  onRecordStatement: (batch: SettlementBatch) => void;
+  onReconcile: (batch: SettlementBatch) => void;
+  onPay: (batch: SettlementBatch) => void;
 }
 
-export function SettlementsTable({ batches }: SettlementsTableProps) {
+export function SettlementsTable({
+  batches,
+  onRecordStatement,
+  onReconcile,
+  onPay,
+}: SettlementsTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -61,29 +72,56 @@ export function SettlementsTable({ batches }: SettlementsTableProps) {
           <TableHead className="text-right">Courier declared</TableHead>
           <TableHead>Variance</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="w-10">
+            <span className="sr-only">Actions</span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {batches.map((batch) => (
-          <TableRow key={batch.id}>
-            <TableCell className="font-medium">{batch.courier}</TableCell>
-            <TableCell className="text-sm text-muted-foreground">{formatPeriod(batch)}</TableCell>
-            <TableCell className="text-right font-mono text-xs tabular-nums">
-              {formatMoney(batch.expectedCollected)}
-            </TableCell>
-            <TableCell className="text-right font-mono text-xs tabular-nums">
-              {formatMoney(batch.declaredCollected)}
-            </TableCell>
-            <TableCell>
-              <VarianceCell variance={batch.variance} />
-            </TableCell>
-            <TableCell>
-              <Badge variant={batch.status === 'PAID' ? 'default' : 'secondary'}>
-                {STATUS_LABEL[batch.status]}
-              </Badge>
-            </TableCell>
-          </TableRow>
-        ))}
+        {batches.map((batch) => {
+          const actions = actionsFor(batch);
+
+          const menu = [
+            actions.canRecordStatement && {
+              label: 'Record statement',
+              onSelect: () => onRecordStatement(batch),
+            },
+            actions.canReconcile && {
+              label: 'Mark reconciled',
+              onSelect: () => onReconcile(batch),
+            },
+            actions.canPay && {
+              label: 'Mark paid',
+              onSelect: () => onPay(batch),
+            },
+          ].filter((item): item is { label: string; onSelect: () => void } => item !== false);
+
+          return (
+            <TableRow key={batch.id}>
+              <TableCell className="font-medium">{batch.courier}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">{formatPeriod(batch)}</TableCell>
+              <TableCell className="text-right font-mono text-xs tabular-nums">
+                {formatMoney(batch.expectedCollected)}
+              </TableCell>
+              <TableCell className="text-right font-mono text-xs tabular-nums">
+                {formatMoney(batch.declaredCollected)}
+              </TableCell>
+              <TableCell>
+                <VarianceCell variance={batch.variance} />
+              </TableCell>
+              <TableCell>
+                <Badge variant={batch.status === 'PAID' ? 'default' : 'secondary'}>
+                  {STATUS_LABEL[batch.status]}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {menu.length === 0 ? null : (
+                  <RowActionsMenu items={menu} label={`Actions for ${batch.courier}`} />
+                )}
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

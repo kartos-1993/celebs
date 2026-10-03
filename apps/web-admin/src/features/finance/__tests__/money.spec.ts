@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatMoney, formatSignedVariance, isShortfall } from '../lib/money';
+import { formatMoney, formatSignedVariance, isShortfall, netFromDeclared } from '../lib/money';
 
 describe('formatMoney', () => {
   it('groups thousands and always shows two decimal places', () => {
@@ -63,5 +63,34 @@ describe('formatSignedVariance', () => {
 
   it('refuses to sign a figure it cannot read', () => {
     expect(formatSignedVariance('abc')).toBe('—');
+  });
+});
+
+describe('netFromDeclared', () => {
+  // This is the figure shown while somebody types a statement, before anything is
+  // saved. It has to agree exactly with what the server will work out, or the
+  // preview is worse than no preview at all.
+  it('takes the courier fees off what they collected', () => {
+    expect(netFromDeclared('1800.00', '200.00')).toBe('1600.00');
+  });
+
+  it('handles a single decimal place, as a keypad allows', () => {
+    expect(netFromDeclared('1800.5', '200')).toBe('1600.50');
+  });
+
+  it('shows a shortfall rather than hiding it behind a bare minus', () => {
+    expect(netFromDeclared('1500.00', '200.00')).toBe('1300.00');
+    expect(netFromDeclared('150.00', '200.00')).toBe('-50.00');
+  });
+
+  it('refuses to calculate from a half-typed or malformed figure', () => {
+    expect(netFromDeclared('', '200.00')).toBeNull();
+    expect(netFromDeclared('1800.00', '')).toBeNull();
+    expect(netFromDeclared('abc', '200.00')).toBeNull();
+    expect(netFromDeclared('-100', '200.00')).toBeNull();
+  });
+
+  it('rejects the third decimal place rather than rounding it away', () => {
+    expect(netFromDeclared('1800.005', '200')).toBeNull();
   });
 });
