@@ -42,21 +42,9 @@ router.post(
 );
 
 router.patch(
-  '/settlements/:id/statement',
+  '/settlements/:id',
   requirePermissions(Permission.FINANCE_PLATFORM_MANAGE),
-  asyncHandler(financeController.recordStatement),
-);
-
-router.post(
-  '/settlements/:id/reconcile',
-  requirePermissions(Permission.FINANCE_PLATFORM_MANAGE),
-  asyncHandler(financeController.reconcile),
-);
-
-router.post(
-  '/settlements/:id/pay',
-  requirePermissions(Permission.FINANCE_PLATFORM_MANAGE),
-  asyncHandler(financeController.markPaid),
+  asyncHandler(financeController.updateBatch),
 );
 
 export default router;

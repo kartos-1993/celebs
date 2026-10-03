@@ -1,3 +1,5 @@
+import { SettlementBatchStatus } from '@prisma/client';
+
 import { SettlementService, settlementService } from './settlement/settlement.service';
 import { FinanceRepository, financeRepository } from './finance.repository';
 
@@ -52,25 +54,24 @@ export class FinanceService {
     return FinanceRepository.serialiseBatch(await this.settlements.openBatch(input));
   }
 
-  async recordStatement(input: {
+  /**
+   * The single write path onto a batch.
+   *
+   * Statement fields and a status transition arrive together, because that is how
+   * an accountant works: they open the courier's statement and move it forward in
+   * one sitting. What they cannot do is skip the middle, because SettlementService
+   * checks the transition against the status the batch arrived with.
+   */
+  async updateBatch(input: {
     batchId: string;
-    declaredCollected: number;
-    declaredFees: number;
+    declaredCollected?: number;
+    declaredFees?: number;
     reference?: string;
     notes?: string;
+    status?: SettlementBatchStatus;
+    actor: string;
   }) {
-    const batch = await this.settlements.recordStatement(input);
-    return FinanceRepository.serialiseBatch(batch);
-  }
-
-  async reconcile(batchId: string, reconciledBy: string) {
-    return FinanceRepository.serialiseBatch(
-      await this.settlements.reconcile({ batchId, reconciledBy }),
-    );
-  }
-
-  async markPaid(batchId: string, paidBy: string) {
-    return FinanceRepository.serialiseBatch(await this.settlements.markPaid({ batchId, paidBy }));
+    return FinanceRepository.serialiseBatch(await this.settlements.update(input));
   }
 }
 

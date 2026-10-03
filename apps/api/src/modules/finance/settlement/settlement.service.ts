@@ -35,6 +35,32 @@ export interface RecordStatementInput {
   notes?: string;
 }
 
+/**
+ * What a settlement may legally become next.
+ *
+ * Explicit rather than inferred from "is this a known status": a settlement only
+ * ever moves forward one step, and PAID is only reachable from RECONCILED. This is
+ * what stops a single request that records a statement and asks for PAID from
+ * skipping the reconciliation step that exists to catch a discrepancy.
+ */
+const ALLOWED_TRANSITIONS: Record<SettlementBatchStatus, readonly SettlementBatchStatus[]> = {
+  [SettlementBatchStatus.OPEN]: [SettlementBatchStatus.RECONCILED],
+  [SettlementBatchStatus.RECONCILED]: [SettlementBatchStatus.PAID],
+  [SettlementBatchStatus.PAID]: [],
+};
+
+export interface UpdateBatchInput {
+  batchId: string;
+  /** A statement, if the courier has sent one. */
+  declaredCollected?: Prisma.Decimal | number;
+  declaredFees?: Prisma.Decimal | number;
+  reference?: string;
+  notes?: string;
+  /** A requested transition, applied only if it is legal from the current status. */
+  status?: SettlementBatchStatus;
+  actor: string;
+}
+
 export class SettlementService {
   constructor(private readonly ledger: LedgerService = ledgerService) {}
 
@@ -128,6 +154,63 @@ export class SettlementService {
         declaredAt: batch.declaredAt ?? new Date(),
       },
     });
+  }
+
+  /**
+   * The single entry point for changing a batch: a statement, a transition, or both.
+   *
+   * The transition is checked against the status the batch held when the request
+   * arrived, not the one it will hold once the statement has been written. That is
+   * deliberate: it means a request cannot slip a payment past reconciliation by
+   * carrying its own statement along with it, which is the only way a caller could
+   * otherwise reach PAID without ever comparing a courier's figures to ours.
+   */
+  async update(input: UpdateBatchInput) {
+    const before = await this.mustFind(input.batchId);
+
+    if (input.status && !ALLOWED_TRANSITIONS[before.status].includes(input.status)) {
+      throw new AppError(
+        `A settlement cannot move from ${before.status} to ${input.status}`,
+        HTTPSTATUS.CONFLICT,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    const hasStatement =
+      input.declaredCollected !== undefined ||
+      input.declaredFees !== undefined ||
+      input.reference !== undefined ||
+      input.notes !== undefined;
+
+    let batch = before;
+
+    if (hasStatement) {
+      // Both figures are required together: half a statement is not a statement,
+      // and defaulting the missing half to zero would invent a claim.
+      if (input.declaredCollected === undefined || input.declaredFees === undefined) {
+        throw new AppError(
+          'A statement needs both the collected amount and the fees charged',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+
+      batch = await this.recordStatement({
+        batchId: input.batchId,
+        declaredCollected: input.declaredCollected,
+        declaredFees: input.declaredFees,
+        reference: input.reference,
+        notes: input.notes,
+      });
+    }
+
+    if (!input.status) return batch;
+
+    if (input.status === SettlementBatchStatus.RECONCILED) {
+      return this.reconcile({ batchId: input.batchId, reconciledBy: input.actor });
+    }
+
+    return this.markPaid({ batchId: input.batchId, paidBy: input.actor });
   }
 
   async reconcile(input: { batchId: string; reconciledBy: string }) {

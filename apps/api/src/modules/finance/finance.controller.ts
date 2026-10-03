@@ -40,18 +40,34 @@ const openBatchSchema = z
   });
 
 /**
+ * Only the two forward moves are offered. Listing the statuses a client cannot
+ * request is the cheapest way to stop the API accepting a transition the state
+ * machine would refuse anyway.
+ */
+const FORWARD_STATUSES = ['RECONCILED', 'PAID'] as const;
+
+/**
  * Declared figures are refused rather than clamped.
  *
  * A negative collection or a negative fee is not a statement, it is a mistyped
  * one, and quietly taking its absolute value would produce a variance that looks
  * real and is not.
  */
-const statementSchema = z.object({
-  declaredCollected: z.number().finite().nonnegative('Declared collection cannot be negative'),
-  declaredFees: z.number().finite().nonnegative('Declared fees cannot be negative'),
-  reference: z.string().trim().min(1).max(120).optional(),
-  notes: z.string().trim().max(2000).optional(),
-});
+const updateBatchSchema = z
+  .object({
+    declaredCollected: z
+      .number()
+      .finite()
+      .nonnegative('Declared collection cannot be negative')
+      .optional(),
+    declaredFees: z.number().finite().nonnegative('Declared fees cannot be negative').optional(),
+    reference: z.string().trim().min(1).max(120).optional(),
+    notes: z.string().trim().max(2000).optional(),
+    status: z.enum(FORWARD_STATUSES).optional(),
+  })
+  .refine((body) => Object.keys(body).length > 0, {
+    message: 'Send the statement, the new status, or both',
+  });
 
 export class FinanceController {
   constructor(private readonly service: FinanceService = financeService) {}
@@ -105,35 +121,21 @@ export class FinanceController {
     return sendCreated(res, batch, 'Settlement batch opened');
   });
 
-  public recordStatement = asyncHandler(async (req: Request, res: Response) => {
+  public updateBatch = asyncHandler(async (req: Request, res: Response) => {
     const { id } = batchIdParamSchema.parse(req.params);
-    const body = statementSchema.parse(req.body);
+    const body = updateBatchSchema.parse(req.body);
 
-    const batch = await this.service.recordStatement({
+    const batch = await this.service.updateBatch({
       batchId: id,
       declaredCollected: body.declaredCollected,
       declaredFees: body.declaredFees,
       reference: body.reference,
       notes: body.notes,
+      status: body.status,
+      actor: req.user?.id ?? 'unknown',
     });
 
-    return sendSuccess(res, batch, 'Courier statement recorded');
-  });
-
-  public reconcile = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = batchIdParamSchema.parse(req.params);
-
-    const batch = await this.service.reconcile(id, req.user?.id ?? 'unknown');
-
-    return sendSuccess(res, batch, 'Settlement reconciled');
-  });
-
-  public markPaid = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = batchIdParamSchema.parse(req.params);
-
-    const batch = await this.service.markPaid(id, req.user?.id ?? 'unknown');
-
-    return sendSuccess(res, batch, 'Settlement marked paid');
+    return sendSuccess(res, batch, 'Settlement updated');
   });
 }
 

@@ -163,9 +163,7 @@ describe('finance settlements', () => {
 
   it('stops a seller recording a statement, because that moves money', async () => {
     const response = await authedMutation(
-      request(app)
-        .patch(`/api/v1/finance/settlements/${batchId}/statement`)
-        .set('Cookie', vendorCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', vendorCookie),
       vendorCookie,
     ).send({ declaredCollected: 2000, declaredFees: 200 });
 
@@ -174,7 +172,7 @@ describe('finance settlements', () => {
 
   it('stops a seller marking a settlement paid', async () => {
     const response = await authedMutation(
-      request(app).post(`/api/v1/finance/settlements/${batchId}/pay`).set('Cookie', vendorCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', vendorCookie),
       vendorCookie,
     );
 
@@ -183,9 +181,7 @@ describe('finance settlements', () => {
 
   it('lets an admin record a statement and shows the variance', async () => {
     const response = await authedMutation(
-      request(app)
-        .patch(`/api/v1/finance/settlements/${batchId}/statement`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
     ).send({ declaredCollected: 1800, declaredFees: 200, reference: 'PATHAO-STMT-09' });
 
@@ -197,9 +193,7 @@ describe('finance settlements', () => {
 
   it('keeps both the expected and the declared figure visible', async () => {
     await authedMutation(
-      request(app)
-        .patch(`/api/v1/finance/settlements/${batchId}/statement`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
     ).send({ declaredCollected: 1800, declaredFees: 200 });
 
@@ -215,9 +209,7 @@ describe('finance settlements', () => {
 
   it('rejects a statement with a negative figure', async () => {
     const response = await authedMutation(
-      request(app)
-        .patch(`/api/v1/finance/settlements/${batchId}/statement`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
     ).send({ declaredCollected: -100, declaredFees: 0 });
 
@@ -227,7 +219,7 @@ describe('finance settlements', () => {
   it('answers 404 for a batch that does not exist', async () => {
     const response = await authedMutation(
       request(app)
-        .patch('/api/v1/finance/settlements/00000000-0000-0000-0000-000000000000/statement')
+        .patch('/api/v1/finance/settlements/00000000-0000-0000-0000-000000000000')
         .set('Cookie', adminCookie),
       adminCookie,
     ).send({ declaredCollected: 100, declaredFees: 0 });
@@ -241,47 +233,68 @@ describe('finance settlements', () => {
     // batch looks identical to a real statement of zero and would reconcile and
     // then pay against money nobody ever declared.
     const response = await authedMutation(
-      request(app)
-        .post(`/api/v1/finance/settlements/${batchId}/reconcile`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ status: 'RECONCILED' });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toMatch(/statement/i);
   });
 
-  it('refuses to pay a settlement nobody has reconciled', async () => {
+  // The one route to PAID that must stay shut. If a request could carry its own
+  // statement and ask to be paid in the same call, reconciliation would be
+  // something a caller could talk past rather than a step it has to pass.
+  it('refuses to pay in the same request that records the statement', async () => {
     const response = await authedMutation(
-      request(app).post(`/api/v1/finance/settlements/${batchId}/pay`).set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ declaredCollected: 1800, declaredFees: 200, status: 'PAID' });
+
+    expect(response.status).toBe(409);
+
+    const batch = await prisma.settlementBatch.findUniqueOrThrow({ where: { id: batchId } });
+    expect(batch.status).toBe('OPEN');
+    expect(
+      await prisma.ledgerEntry.count({ where: { sourceType: 'SETTLEMENT', sourceId: batchId } }),
+    ).toBe(0);
+  });
+
+  it('refuses a statement that is missing its figures', async () => {
+    const response = await authedMutation(
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
+      adminCookie,
+    ).send({ declaredCollected: 1800 });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toMatch(/reconcil/i);
+  });
+
+  it('refuses to pay a settlement nobody has reconciled', async () => {
+    const response = await authedMutation(
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
+      adminCookie,
+    ).send({ status: 'PAID' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.message).toMatch(/OPEN to PAID/);
   });
 
   it('reconciles, then pays, and records the payment in the ledger', async () => {
     await authedMutation(
-      request(app)
-        .patch(`/api/v1/finance/settlements/${batchId}/statement`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
     ).send({ declaredCollected: 1800, declaredFees: 200 });
 
     const reconciled = await authedMutation(
-      request(app)
-        .post(`/api/v1/finance/settlements/${batchId}/reconcile`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ status: 'RECONCILED' });
     expect(reconciled.status).toBe(200);
     expect(reconciled.body.data.status).toBe('RECONCILED');
 
     const paid = await authedMutation(
-      request(app).post(`/api/v1/finance/settlements/${batchId}/pay`).set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ status: 'PAID' });
     expect(paid.status).toBe(200);
     expect(paid.body.data.status).toBe('PAID');
 
@@ -295,29 +308,25 @@ describe('finance settlements', () => {
 
   it('will not pay the same settlement twice', async () => {
     await authedMutation(
-      request(app)
-        .patch(`/api/v1/finance/settlements/${batchId}/statement`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
     ).send({ declaredCollected: 1800, declaredFees: 200 });
 
     await authedMutation(
-      request(app)
-        .post(`/api/v1/finance/settlements/${batchId}/reconcile`)
-        .set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ status: 'RECONCILED' });
     await authedMutation(
-      request(app).post(`/api/v1/finance/settlements/${batchId}/pay`).set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ status: 'PAID' });
 
     const second = await authedMutation(
-      request(app).post(`/api/v1/finance/settlements/${batchId}/pay`).set('Cookie', adminCookie),
+      request(app).patch(`/api/v1/finance/settlements/${batchId}`).set('Cookie', adminCookie),
       adminCookie,
-    );
+    ).send({ status: 'PAID' });
 
-    expect(second.status).toBe(400);
+    expect(second.status).toBe(409);
     expect(
       await prisma.ledgerEntry.count({ where: { sourceType: 'SETTLEMENT', sourceId: batchId } }),
     ).toBe(1);
