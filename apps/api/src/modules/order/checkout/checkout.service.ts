@@ -348,16 +348,11 @@ export class CheckoutService {
               returnUrl: `${callbackBase}${apiBase}/orders/payments/khalti/return`,
             }
           : {};
-        paymentResult = await adapter.createPaymentIntent(
-          order.id,
-          totalAmountDecimal.toNumber(),
-          'NPR',
-          {
-            orderNumber: order.orderNumber,
-            userId,
-            ...walletMeta,
-          },
-        );
+        paymentResult = await adapter.createPaymentIntent(order.id, totalAmountDecimal, 'NPR', {
+          orderNumber: order.orderNumber,
+          userId,
+          ...walletMeta,
+        });
 
         await this.paymentRepo.createPayment({
           orderId: order.id,

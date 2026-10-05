@@ -8,6 +8,8 @@ import {
 } from '../esewa.adapter';
 import { KhaltiAdapter } from '../khalti.adapter';
 
+import { Prisma } from '@/config/db.prisma';
+
 const ESEWA_TEST_SECRET = '8gBm/:&EnhH.1/q';
 
 function stubFetchJson(payload: unknown, ok = true) {
@@ -64,7 +66,12 @@ describe('EsewaAdapter', () => {
 
   it('creates a UAT form intent with signed fields', async () => {
     const adapter = new EsewaAdapter();
-    const intent = await adapter.createPaymentIntent('order-123', 1650, 'NPR', {});
+    const intent = await adapter.createPaymentIntent(
+      'order-123',
+      new Prisma.Decimal('1650.00'),
+      'NPR',
+      {},
+    );
     expect(intent.paymentId).toBe('order-123');
     expect(intent.redirectUrl).toContain('rc-epay.esewa.com.np');
     const fields = intent.rawResponse as Record<string, string>;
@@ -127,17 +134,22 @@ describe('KhaltiAdapter', () => {
 
   it('throws a clear error when the secret key is missing', async () => {
     const adapter = new KhaltiAdapter({ secretKey: '', baseUrl: 'https://dev.khalti.com' });
-    await expect(adapter.createPaymentIntent('order-1', 100, 'NPR', {})).rejects.toThrow(
-      'KHALTI_SECRET_KEY is required',
-    );
+    await expect(
+      adapter.createPaymentIntent('order-1', new Prisma.Decimal('100'), 'NPR', {}),
+    ).rejects.toThrow('KHALTI_SECRET_KEY is required');
   });
 
   it('initiates in paisa and returns pidx + payment_url', async () => {
     stubFetchJson({ pidx: 'pidx-abc', payment_url: 'https://test-pay.khalti.com/?pidx=pidx-abc' });
     const adapter = new KhaltiAdapter(config);
-    const intent = await adapter.createPaymentIntent('order-1', 1650, 'NPR', {
-      orderNumber: 'CEL-1',
-    });
+    const intent = await adapter.createPaymentIntent(
+      'order-1',
+      new Prisma.Decimal('1650.00'),
+      'NPR',
+      {
+        orderNumber: 'CEL-1',
+      },
+    );
     expect(intent.paymentId).toBe('pidx-abc');
     expect(intent.redirectUrl).toContain('pidx-abc');
 

@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { EsewaAdapter } from '../esewa.adapter';
 import { KhaltiAdapter } from '../khalti.adapter';
 
+import { Prisma } from '@/config/db.prisma';
+
 /**
  * Refunding is not symmetric across the wallets, and pretending otherwise is how
  * a merchant ends up telling a customer their money is on its way when nothing
@@ -17,7 +19,7 @@ import { KhaltiAdapter } from '../khalti.adapter';
 type RefundStatus = 'SUCCEEDED' | 'REQUIRES_MANUAL_ACTION' | 'FAILED';
 
 const refundResult = (gateway: {
-  refund: (input: { paymentId: string; amount?: number }) => Promise<unknown>;
+  refund: (input: { paymentId: string; amount?: Prisma.Decimal }) => Promise<unknown>;
 }) =>
   gateway.refund({ paymentId: 'PIDS-1' }) as Promise<{ status: RefundStatus; message?: string }>;
 
@@ -90,7 +92,7 @@ describe('Khalti refunds', () => {
 
     await new KhaltiAdapter({ baseUrl: 'https://dev.khalti.com', secretKey: 'k' }).refund({
       paymentId: 'PIDS-1',
-      amount: 250.5,
+      amount: new Prisma.Decimal('250.5'),
     });
 
     expect(seen[0]).toEqual({ amount: 25050 });
@@ -159,7 +161,7 @@ describe('Khalti refunds', () => {
       secretKey: 'k',
     }).refund({
       paymentId: 'PIDS-1',
-      amount: 999999,
+      amount: new Prisma.Decimal('999999'),
     });
 
     expect(result.status).toBe('FAILED');

@@ -139,3 +139,37 @@ describe('cart selectors', () => {
     expect(body).toContain('price: 0');
   });
 });
+
+describe('computeTotals exactness', () => {
+  // The customer reads this total off the cart, then reads a different one off
+  // checkout, which is computed server-side in Decimal. If the two disagree by a
+  // paisa because this sum drifted, the app looks broken and the shopper stops
+  // trusting the price they are shown.
+  it('sums without binary floating point drift', () => {
+    // 0.1 + 0.1 + 0.1 is 0.30000000000000004 in binary floating point.
+    const totals = computeTotals([
+      item({ price: 0.1, quantity: 1 }),
+      item({ price: 0.1, quantity: 1 }),
+      item({ price: 0.1, quantity: 1 }),
+    ]);
+
+    expect(totals.total).toBe(0.3);
+  });
+
+  it('keeps a long cart of cheap items exact', () => {
+    const items = Array.from({ length: 10 }, () => item({ price: 0.07, quantity: 1 }));
+    expect(computeTotals(items).total).toBe(0.7);
+  });
+
+  it('stays exact when quantity multiplies a fractional price', () => {
+    expect(computeTotals([item({ price: 0.1, quantity: 3 })]).total).toBe(0.3);
+    expect(computeTotals([item({ price: 1.15, quantity: 7 })]).total).toBe(8.05);
+  });
+
+  it('does not lose savings to drift either', () => {
+    const totals = computeTotals([item({ price: 0.3, discountedPrice: 0.1, quantity: 1 })]);
+    expect(totals.originalTotal).toBe(0.3);
+    expect(totals.total).toBe(0.1);
+    expect(totals.savings).toBe(0.2);
+  });
+});

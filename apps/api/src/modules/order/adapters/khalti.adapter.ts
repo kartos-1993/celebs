@@ -8,6 +8,8 @@ import {
   RefundResult,
 } from './payment-gateway.interface';
 
+import { Prisma } from '@/config/db.prisma';
+
 export interface KhaltiConfig {
   secretKey: string;
   /** Sandbox: https://dev.khalti.com · Live: https://khalti.com */
@@ -27,7 +29,13 @@ export function resolveKhaltiConfig(): KhaltiConfig {
   };
 }
 
-export const toPaisa = (npr: number): number => Math.round(npr * 100);
+/**
+ * Khalti counts paisa. Multiplying a JS number by 100 and rounding is how
+ * 8.05 * 100 arrives as 804.9999999999999, so the multiplication happens in
+ * Decimal and only the integer result leaves.
+ */
+export const toPaisa = (npr: Prisma.Decimal): number =>
+  npr.mul(100).toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP).toNumber();
 
 interface KhaltiInitiateResponse {
   pidx: string;
@@ -87,7 +95,7 @@ export class KhaltiAdapter implements IPaymentGateway {
 
   async createPaymentIntent(
     orderId: string,
-    amount: number,
+    amount: Prisma.Decimal,
     _currency = 'NPR',
     metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {

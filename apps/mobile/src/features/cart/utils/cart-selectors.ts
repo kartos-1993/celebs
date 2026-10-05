@@ -1,5 +1,5 @@
 import type { CartItemHydrated } from '@celebs/shared-types';
-import { validDiscount } from '@celebs/shared-utils';
+import { formatMoneyAmount, validDiscount } from '@celebs/shared-utils';
 
 /**
  * Unit price via the shared discount choke point: an above-list, zero, NaN or
@@ -14,8 +14,12 @@ export const getDiscountPercent = (item: CartItemHydrated): number => {
   return Math.round(((item.price - deal) / item.price) * 100);
 };
 
-export const formatPrice = (value: number): string =>
-  value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/**
+ * Shared with web-admin so the two apps cannot render the same figure
+ * differently. Works on the characters rather than calling toLocaleString's
+ * fractional rounding, which is wrong at the edges.
+ */
+export const formatPrice = (value: number): string => formatMoneyAmount(value);
 
 export interface CartItemGroup {
   brand: string;
@@ -44,18 +48,42 @@ export interface CartTotals {
   savingsPercent: number;
 }
 
+/**
+ * Converts a rupee amount to whole paisa.
+ *
+ * Math.round rather than a truncation, because a 2-decimal price multiplied by
+ * 100 lands very slightly off an integer (0.07 * 100 is 7.000000000000001) and
+ * truncating that would drop a paisa off a price the shopper is shown.
+ */
+const toPaisa = (value: number): number => Math.round(value * 100);
+
 export const computeTotals = (items: CartItemHydrated[]): CartTotals => {
+  // Summed in whole paisa, then converted once.
+  //
+  // The shopper reads this figure off the cart and then reads a different figure
+  // off checkout, which the server computes in Decimal. Adding rupee floats here
+  // makes the two disagree by a paisa often enough to look like a bug, and it
+  // undermines the price the shopper is being shown.
   let count = 0;
-  let total = 0;
-  let originalTotal = 0;
+  let totalPaisa = 0;
+  let originalPaisa = 0;
+
   for (const item of items) {
     count += item.quantity;
-    total += getUnitPrice(item) * item.quantity;
-    originalTotal += item.price * item.quantity;
+    totalPaisa += toPaisa(getUnitPrice(item)) * item.quantity;
+    originalPaisa += toPaisa(item.price) * item.quantity;
   }
-  const savings = Math.max(0, originalTotal - total);
-  const savingsPercent = originalTotal > 0 ? Math.round((savings / originalTotal) * 100) : 0;
-  return { count, total, originalTotal, savings, savingsPercent };
+
+  const savingsPaisa = Math.max(0, originalPaisa - totalPaisa);
+  const originalTotal = originalPaisa / 100;
+
+  return {
+    count,
+    total: totalPaisa / 100,
+    originalTotal,
+    savings: savingsPaisa / 100,
+    savingsPercent: originalPaisa > 0 ? Math.round((savingsPaisa / originalPaisa) * 100) : 0,
+  };
 };
 
 /**

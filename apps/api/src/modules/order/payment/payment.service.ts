@@ -279,7 +279,7 @@ export class PaymentService {
     const verification = await adapter.verifyPayment(pidx);
 
     if (verification.success) {
-      const expectedPaisa = toPaisa(Number(order.totalAmount));
+      const expectedPaisa = toPaisa(order.totalAmount);
       const gotPaisa = Number(
         (verification.rawResponse as Record<string, unknown> | undefined)?.total_amount,
       );

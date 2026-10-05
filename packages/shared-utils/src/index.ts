@@ -3,6 +3,7 @@ export * from './enums/error-code.enum';
 export * from './middlewares/async-handler';
 export * from './utils/app-error';
 export * from './utils/catch-errors';
+export * from './utils/format-money';
 export * from './utils/get-env';
 export * from './utils/image-url';
 export * from './utils/logger';

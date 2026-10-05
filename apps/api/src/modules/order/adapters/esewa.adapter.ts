@@ -10,6 +10,8 @@ import {
   RefundResult,
 } from './payment-gateway.interface';
 
+import { Prisma } from '@/config/db.prisma';
+
 export interface EsewaConfig {
   productCode: string;
   secretKey: string;
@@ -41,7 +43,11 @@ export function resolveEsewaConfig(): EsewaConfig {
   };
 }
 
-const toNpr2 = (amount: number): string => amount.toFixed(2);
+/**
+ * Exact, not a float round: the value is signed into the request the gateway
+ * verifies, so a drifted amount produces a signature the gateway rejects.
+ */
+const toNpr2 = (amount: Prisma.Decimal): string => amount.toFixed(2);
 
 export function buildEsewaSignature(
   fields: { total_amount: string; transaction_uuid: string; product_code: string },
@@ -105,7 +111,7 @@ export class EsewaAdapter implements IPaymentGateway {
 
   async createPaymentIntent(
     orderId: string,
-    amount: number,
+    amount: Prisma.Decimal,
     _currency = 'NPR',
     metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {
@@ -171,14 +177,16 @@ export class EsewaAdapter implements IPaymentGateway {
     paymentId: string,
     payload: unknown = {},
   ): Promise<PaymentVerificationResult> {
-    const { totalAmount } = (payload as { totalAmount?: number }) || {};
+    // Arrives from the return URL, so it is really a string and converting it to a
+    // Decimal is exact rather than a float rounding.
+    const { totalAmount } = (payload as { totalAmount?: string | number }) || {};
     if (totalAmount === undefined) {
       throw new Error('Esewa verifyPayment requires payload.totalAmount (NPR)');
     }
 
     const params = new URLSearchParams({
       product_code: this.config.productCode,
-      total_amount: toNpr2(totalAmount),
+      total_amount: toNpr2(new Prisma.Decimal(totalAmount)),
       transaction_uuid: paymentId,
     });
     const url = `${this.config.baseUrl}/api/epay/transaction/status/?${params.toString()}`;

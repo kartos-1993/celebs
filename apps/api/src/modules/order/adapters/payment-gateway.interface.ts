@@ -1,3 +1,13 @@
+import { Prisma } from '@/config/db.prisma';
+
+/**
+ * Amounts are Prisma.Decimal, never number.
+ *
+ * This is the boundary where a customer is charged. The gateways want an integer
+ * count of paisa or a two-decimal string, and both are derived from the Decimal
+ * here rather than from a JS number - a double cannot represent 0.1 + 0.2, and a
+ * payment signature computed from a drifted amount is one the gateway rejects.
+ */
 export interface PaymentIntentResult {
   paymentId: string;
   clientSecret?: string;
@@ -32,14 +42,14 @@ export interface RefundRequest {
   /** The payment id we stored at initiate time. For Khalti this is the pidx. */
   paymentId: string;
   /** Omit for a full refund; a value refunds part of the original charge. */
-  amount?: number;
+  amount?: Prisma.Decimal;
   reason?: string;
 }
 
 export interface IPaymentGateway {
   createPaymentIntent(
     orderId: string,
-    amount: number,
+    amount: Prisma.Decimal,
     currency: string,
     metadata?: Record<string, unknown>,
   ): Promise<PaymentIntentResult>;

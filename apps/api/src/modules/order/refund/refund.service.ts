@@ -88,7 +88,7 @@ export class RefundService {
 
     const result = await gateway.refund({
       paymentId: payment.transactionId ?? payment.id,
-      amount: payment.amount.toNumber(),
+      amount: payment.amount,
       reason: input.reason,
     });
 
