@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import type { CartItemHydrated, CommercePolicy } from '@celebs/shared-types';
 import { isCodAllowed, resolveShippingFee } from '@celebs/shared-types';
+import { compareMoney, moneyAdd } from '@celebs/shared-utils';
 
 import { formatPrice } from '@/features/cart/utils/cart-selectors';
 
@@ -63,14 +64,17 @@ export function useCheckoutPricing({
   // is preferred; it is the number that will actually be charged. Otherwise the
   // shared rule produces an immediate, policy-consistent figure while the
   // shopper is still choosing, and checkout reconciles on submit.
-  const coversWholeCart = hasSelection && itemsSubtotal === subtotal;
+  const coversWholeCart = hasSelection && compareMoney(itemsSubtotal, '=', subtotal);
   const shippingFee =
     coversWholeCart && typeof serverShippingFee === 'number'
       ? serverShippingFee
       : resolveShippingFee(itemsSubtotal, policy, freeShippingThreshold);
 
+  // Exact, so the figure the shopper reads here is the figure the server charges.
   const grandTotal =
-    coversWholeCart && typeof serverTotal === 'number' ? serverTotal : itemsSubtotal + shippingFee;
+    coversWholeCart && typeof serverTotal === 'number'
+      ? serverTotal
+      : moneyAdd(itemsSubtotal, shippingFee);
 
   const isCodDisabled = !isCodAllowed(grandTotal, policy);
   const blockedItems = checkoutItems.filter((item) => item.isAvailable === false);

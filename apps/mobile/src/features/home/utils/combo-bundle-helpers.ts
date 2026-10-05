@@ -1,3 +1,5 @@
+import { moneyMax, moneyPercentOf, moneySubtract } from '@celebs/shared-utils';
+
 import { RenderableBundleItem } from '../components/combo-bundle-item-card';
 import { ComboBundleData } from '../components/combo-bundle-showcase';
 
@@ -51,17 +53,20 @@ export function getComboDisplayItems(combo: ComboBundleData | null): RenderableB
 }
 
 export function calculateComboPricing(combo: ComboBundleData | null, totalOriginal: number) {
-  const original = Number.isFinite(totalOriginal) ? Math.max(0, totalOriginal) : 0;
+  const original = Number.isFinite(totalOriginal) ? moneyMax(0, totalOriginal) : 0;
   let finalPrice = original;
   let savings = 0;
 
   if (combo) {
+    // Exact: this is a percentage of a price the shopper is shown, and the
+    // difference between the float answer and the decimal one is a rupee on a
+    // large bundle.
     if (combo.discountType === 'PERCENTAGE') {
-      savings = Math.round((original * finiteOrZero(combo.discountValue)) / 100);
-      finalPrice = original - savings;
+      savings = moneyPercentOf(original, finiteOrZero(combo.discountValue));
+      finalPrice = moneySubtract(original, savings);
     } else {
-      savings = finiteOrZero(combo.discountValue);
-      finalPrice = Math.max(0, original - savings);
+      savings = moneyMax(0, finiteOrZero(combo.discountValue));
+      finalPrice = moneyMax(0, moneySubtract(original, savings));
     }
   }
 

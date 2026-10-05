@@ -1,3 +1,5 @@
+import { discountPercentFrom } from '@celebs/shared-utils';
+
 import type { HydratedProduct } from '../types';
 
 import { firstRenderableImage, hasRenderableImage } from '@/utils/image';
@@ -11,7 +13,7 @@ export function dealTag(product: HydratedProduct): string | null {
   const sale = product as HydratedProduct & { discountedPrice?: number | null };
   const discounted = sale.discountedPrice != null ? Number(sale.discountedPrice) : NaN;
   if (Number.isFinite(discounted) && discounted > 0 && discounted < price && price > 0) {
-    return `${Math.round((1 - discounted / price) * 100)}% OFF`;
+    return `${discountPercentFrom(price, discounted)}% OFF`;
   }
   return null;
 }

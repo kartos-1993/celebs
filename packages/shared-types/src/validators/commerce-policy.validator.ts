@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { compareMoney } from '@celebs/shared-utils';
+
 /**
  * Commerce policy — the business numbers that decide what a customer pays.
  *
@@ -176,11 +178,14 @@ export function resolveShippingFee(
   policy: Pick<CommercePolicy, 'flatShippingFee'>,
   freeShippingThreshold: number,
 ): number {
-  if (!Number.isFinite(subtotal) || subtotal <= 0) return 0;
-  return subtotal >= freeShippingThreshold ? 0 : policy.flatShippingFee;
+  if (!Number.isFinite(subtotal) || compareMoney(subtotal, '<=', 0)) return 0;
+  // Compared in paisa: `0.1 + 0.2 >= 0.3` is true in decimal and false in binary
+  // floating point, and that difference is a shopper charged delivery they had
+  // already earned free.
+  return compareMoney(subtotal, '>=', freeShippingThreshold) ? 0 : policy.flatShippingFee;
 }
 
 /** Cash on delivery is refused above the limit; the limit itself is allowed. */
 export function isCodAllowed(total: number, policy: CommercePolicy): boolean {
-  return total <= policy.codMaxLimit;
+  return compareMoney(total, '<=', policy.codMaxLimit);
 }

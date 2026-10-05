@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { LayoutAnimation, TouchableOpacity, View } from 'react-native';
 import { ChevronRight, Star } from 'lucide-react-native';
 
-import { validDiscount } from '@celebs/shared-utils';
+import { discountPercentFrom, validDiscount } from '@celebs/shared-utils';
 
 import { styles } from '../styles/product.styles';
 
@@ -45,7 +45,7 @@ export function ProductPriceCard({
   const deal = validDiscount(price, discountedPrice);
   const currentPrice = deal ?? (Number.isFinite(price) ? price : 0);
   const hasDiscount = deal !== undefined;
-  const discountPercent = hasDiscount && price > 0 ? Math.round(((price - deal) / price) * 100) : 0;
+  const discountPercent = hasDiscount ? discountPercentFrom(price, deal) : 0;
 
   const totalReviews = summary?.totalReviews != null ? Number(summary.totalReviews) : 0;
   const rawAvg = Number(summary?.averageRating ?? 0);

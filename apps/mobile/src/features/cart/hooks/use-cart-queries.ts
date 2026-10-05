@@ -7,6 +7,7 @@ import type {
   CartResponse,
   SyncCartInput,
 } from '@celebs/shared-types';
+import { moneyMultiply, moneySum } from '@celebs/shared-utils';
 
 import {
   addToCartApi,
@@ -25,13 +26,14 @@ import { getUnitPrice } from '../utils/cart-selectors';
  * recomputes when the cached response carries none (see applyCartPatch).
  */
 function recalculateCartTotals(items: CartItemHydrated[]) {
-  let subtotal = 0;
+  // Exact, so this fallback cannot show a total the server would contradict.
   let itemCount = 0;
-  for (const item of items) {
-    subtotal += getUnitPrice(item) * item.quantity;
-    itemCount += item.quantity;
-  }
-  return { subtotal, itemCount };
+  for (const item of items) itemCount += item.quantity;
+
+  return {
+    subtotal: moneySum(items.map((item) => moneyMultiply(getUnitPrice(item), item.quantity))),
+    itemCount,
+  };
 }
 
 /** Applies a patched item list, keeping the server subtotal when it has one. */
