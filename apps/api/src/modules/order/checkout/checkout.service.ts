@@ -141,11 +141,24 @@ export class CheckoutService {
         );
       }
 
-      const rawPrice =
-        product.discountedPrice && Number(product.discountedPrice) > 0
-          ? Number(product.discountedPrice)
-          : Number(product.price);
-      const unitPriceDecimal = new Prisma.Decimal(rawPrice);
+      // Decimal from the column to the line total, with no JS number in the
+      // middle. Converting the price to a number first would put a binary float
+      // into the one calculation a seller is later paid from; the round trip
+      // usually survives for 2dp values today, which is exactly why it is worth
+      // removing.
+      //
+      // Null-safe on undefined as well as null, because a discount is optional
+      // and its absence has to read as "no discount" rather than throw. The
+      // Decimal constructor also accepts a value that is already a Decimal, so
+      // the wrap is a no-op on the real Prisma path.
+      const selectedPrice =
+        product.discountedPrice !== null &&
+        product.discountedPrice !== undefined &&
+        product.discountedPrice.gt(0)
+          ? product.discountedPrice
+          : product.price;
+
+      const unitPriceDecimal = new Prisma.Decimal(selectedPrice);
       const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
       subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);
 

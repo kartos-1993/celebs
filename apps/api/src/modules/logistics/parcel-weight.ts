@@ -23,12 +23,35 @@ import { Prisma } from '@/config/db.prisma';
  * expensive direction, never the cheap one.
  */
 
+/**
+ * A weight or dimension as it may arrive from either side of the boundary.
+ *
+ * Prisma hands these back as `Decimal` since the column stopped being a float;
+ * the API layer and a few callers still pass plain numbers.
+ */
+export type WeightInput = Prisma.Decimal | number | null | undefined;
+
 export interface BillableLineInput {
-  weightKg: number | null | undefined;
+  weightKg: WeightInput;
   quantity: number;
-  lengthCm?: number | null;
-  widthCm?: number | null;
-  heightCm?: number | null;
+  lengthCm?: WeightInput;
+  widthCm?: WeightInput;
+  heightCm?: WeightInput;
+}
+
+/**
+ * Normalises a weight or dimension to a Decimal, or null when it is unusable.
+ *
+ * The Decimal branch must be checked before any number test: `Number.isFinite`
+ * answers `false` for a Decimal object, so testing it first would classify every
+ * exact weight as unusable and quietly substitute the parcel minimum - pricing
+ * light goods as though they were heavy ones.
+ */
+function toDecimalOrNull(value: WeightInput): Prisma.Decimal | null {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Prisma.Decimal) return value;
+
+  return typeof value === 'number' && Number.isFinite(value) ? new Prisma.Decimal(value) : null;
 }
 
 function roundWeight(value: Prisma.Decimal): Prisma.Decimal {
@@ -37,17 +60,18 @@ function roundWeight(value: Prisma.Decimal): Prisma.Decimal {
 
 /** Volume-derived weight, or undefined when the dimensions are unusable. */
 export function volumetricWeightDecimal(
-  lengthCm: number | null | undefined,
-  widthCm: number | null | undefined,
-  heightCm: number | null | undefined,
+  lengthCm: WeightInput,
+  widthCm: WeightInput,
+  heightCm: WeightInput,
 ): Prisma.Decimal | undefined {
-  if (lengthCm == null || widthCm == null || heightCm == null) return undefined;
-  if (lengthCm <= 0 || widthCm <= 0 || heightCm <= 0) return undefined;
+  const length = toDecimalOrNull(lengthCm);
+  const width = toDecimalOrNull(widthCm);
+  const height = toDecimalOrNull(heightCm);
 
-  return new Prisma.Decimal(lengthCm)
-    .mul(new Prisma.Decimal(widthCm))
-    .mul(new Prisma.Decimal(heightCm))
-    .div(new Prisma.Decimal(VOLUMETRIC_DIVISOR));
+  if (length === null || width === null || height === null) return undefined;
+  if (length.lte(0) || width.lte(0) || height.lte(0)) return undefined;
+
+  return length.mul(width).mul(height).div(new Prisma.Decimal(VOLUMETRIC_DIVISOR));
 }
 
 /** Forces a total weight into the range a courier will accept. */
@@ -66,10 +90,9 @@ export function computeBillableLineWeightKg(input: BillableLineInput): Prisma.De
   const quantity = Number.isFinite(input.quantity) && input.quantity > 0 ? input.quantity : 0;
   if (quantity === 0) return new Prisma.Decimal(MIN_PARCEL_WEIGHT_KG);
 
-  const unit =
-    input.weightKg === null || input.weightKg === undefined || !Number.isFinite(input.weightKg)
-      ? new Prisma.Decimal(MIN_PARCEL_WEIGHT_KG)
-      : new Prisma.Decimal(input.weightKg);
+  // A product with no recorded weight contributes the minimum, because an unknown
+  // weight is not a zero weight.
+  const unit = toDecimalOrNull(input.weightKg) ?? new Prisma.Decimal(MIN_PARCEL_WEIGHT_KG);
 
   const volumetric = volumetricWeightDecimal(input.lengthCm, input.widthCm, input.heightCm);
   const billable = volumetric && volumetric.gt(unit) ? volumetric : unit;

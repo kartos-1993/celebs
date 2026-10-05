@@ -4,6 +4,7 @@ import { DispatchOrderType } from '@celebs/shared-types';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
+import { courierWholeRupees } from './courier-amount';
 import { isDispatchAllowed } from './delivery-coverage';
 import {
   type DeliveryCoverageRepository,
@@ -87,7 +88,10 @@ export class LogisticsService {
         deliveryAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
         city: order.address.cityArea,
         district: order.address.district,
-        codAmount: order.paymentMethod === 'COD' ? Number(order.totalAmount) : 0,
+        // The courier wire format is whole rupees, so this is the one boundary
+        // where money becomes a plain number. Flooring means we never ask for more
+        // than the order says; the sub-rupee residual is absorbed by the platform.
+        codAmount: order.paymentMethod === 'COD' ? courierWholeRupees(order.totalAmount) : 0,
       });
 
       trackingNumber = shipment.trackingNumber;

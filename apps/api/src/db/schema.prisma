@@ -1070,10 +1070,16 @@ model Product {
   dynamicData    Json? // Category dynamic attribute values
 
   // Shipping & Logistics Physical Specifications
-  packageWeightKg    Float?  @default(0.3) @map("package_weight_kg")
-  packageLengthCm    Float?  @map("package_length_cm")
-  packageWidthCm     Float?  @map("package_width_cm")
-  packageHeightCm    Float?  @map("package_height_cm")
+  //
+  // Decimal, not Float. This weight selects the courier's price band, so it sits
+  // on the money path: a value stored as a double can land either side of a band
+  // edge that the same figure, stored exactly, would not. 0.3 and 0.1 + 0.2 are
+  // not the same number to a binary float, and we hand this to a courier and
+  // reconcile against their statement.
+  packageWeightKg    Decimal? @default(0.300) @map("package_weight_kg") @db.Decimal(8, 3)
+  packageLengthCm    Decimal? @map("package_length_cm") @db.Decimal(8, 3)
+  packageWidthCm     Decimal? @map("package_width_cm") @db.Decimal(8, 3)
+  packageHeightCm    Decimal? @map("package_height_cm") @db.Decimal(8, 3)
   packagingType      String? @default("FLYER_SMALL") @map("packaging_type")
   isFragile          Boolean @default(false) @map("is_fragile")
   hasBatteryOrLiquid Boolean @default(false) @map("has_battery_or_liquid")

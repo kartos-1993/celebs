@@ -14,6 +14,7 @@ import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 
 import { PaymentRepository, paymentRepository } from './payment.repository';
 
+import { Prisma } from '@/config/db.prisma';
 import {
   NotificationService,
   notificationService as defaultNotificationService,
@@ -143,7 +144,13 @@ export class PaymentService {
       };
     }
 
-    if (Math.abs(Number(payload.total_amount) - Number(order.totalAmount)) > 0.005) {
+    // Compared as Decimal, not as JS numbers. The tolerance is unchanged - a
+    // gateway is allowed to send floating noise - but the subtraction happens in
+    // decimal so a large order total is not judged by a value that has already
+    // lost precision.
+    const paidAmount = new Prisma.Decimal(payload.total_amount);
+
+    if (!paidAmount.minus(order.totalAmount).abs().lte('0.005')) {
       logger.error(
         { orderId: order.id, expected: String(order.totalAmount), got: payload.total_amount },
         'eSewa amount mismatch — held for review, order NOT fulfilled',

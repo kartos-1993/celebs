@@ -92,10 +92,14 @@ describe('Product Shipping Logistics and Warranty Specification Integration', ()
     );
 
     expect(created).toBeDefined();
-    expect(created?.packageWeightKg).toBe(0.85);
-    expect(created?.packageLengthCm).toBe(32);
-    expect(created?.packageWidthCm).toBe(24);
-    expect(created?.packageHeightCm).toBe(6);
+    // These columns are Decimal(8,3), not Float: parcel weight selects the
+    // courier's price band, so it must not be stored as a binary double. Read
+    // back they arrive as Decimal objects, which is why the comparison is on the
+    // value rather than the type.
+    expect(created?.packageWeightKg?.toNumber()).toBe(0.85);
+    expect(created?.packageLengthCm?.toNumber()).toBe(32);
+    expect(created?.packageWidthCm?.toNumber()).toBe(24);
+    expect(created?.packageHeightCm?.toNumber()).toBe(6);
     expect(created?.packagingType).toBe('FLYER_MEDIUM');
     expect(created?.isFragile).toBe(false);
     expect(created?.warrantyType).toBe('SELLER_WARRANTY');
@@ -142,10 +146,10 @@ describe('Product Shipping Logistics and Warranty Specification Integration', ()
     );
 
     expect(updated).toBeDefined();
-    expect(updated?.packageWeightKg).toBe(0.55);
-    expect(updated?.packageLengthCm).toBe(15);
-    expect(updated?.packageWidthCm).toBe(15);
-    expect(updated?.packageHeightCm).toBe(18);
+    expect(updated?.packageWeightKg?.toNumber()).toBe(0.55);
+    expect(updated?.packageLengthCm?.toNumber()).toBe(15);
+    expect(updated?.packageWidthCm?.toNumber()).toBe(15);
+    expect(updated?.packageHeightCm?.toNumber()).toBe(18);
     expect(updated?.warrantyType).toBe('BRAND_WARRANTY');
     expect(updated?.warrantyPeriod).toBe('30 Days Leakproof Guarantee');
     expect(updated?.isFragile).toBe(true);

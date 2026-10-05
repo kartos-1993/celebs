@@ -113,3 +113,34 @@ describe('sumBillableWeightKg', () => {
     expect(total.toNumber()).toBe(MAX_PARCEL_WEIGHT_KG);
   });
 });
+
+describe('Decimal weight inputs', () => {
+  // The columns stopped being floats, so Prisma hands these back as Decimal.
+  // The trap: `Number.isFinite(decimal)` is false, so a guard written for numbers
+  // classifies every exact weight as unusable and quietly substitutes the parcel
+  // minimum - pricing light goods as though they were at the courier floor.
+  it('uses an exact Decimal weight rather than treating it as unusable', () => {
+    expect(computeBillableLineWeightKg({ weightKg: dec(0.3), quantity: 1 }).toString()).toBe('0.3');
+    expect(computeBillableLineWeightKg({ weightKg: dec(2), quantity: 1 }).toString()).toBe('2');
+  });
+
+  it('multiplies a Decimal weight by quantity without float drift', () => {
+    // 0.7 * 3 is 2.0999999999999996 in binary floating point.
+    expect(computeBillableLineWeightKg({ weightKg: dec(0.7), quantity: 3 }).toString()).toBe('2.1');
+  });
+
+  it('still accepts plain numbers from the API layer', () => {
+    expect(computeBillableLineWeightKg({ weightKg: 0.3, quantity: 1 }).toString()).toBe('0.3');
+  });
+
+  it('accepts Decimal dimensions for a volumetric weight', () => {
+    const volumetric = volumetricWeightDecimal(dec(30), dec(20), dec(10));
+    expect(volumetric?.toString()).toBe('1.2');
+  });
+
+  it('still falls back to the minimum for a missing weight', () => {
+    expect(computeBillableLineWeightKg({ weightKg: null, quantity: 1 }).toNumber()).toBe(
+      MIN_PARCEL_WEIGHT_KG,
+    );
+  });
+});
