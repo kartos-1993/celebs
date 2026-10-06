@@ -5,6 +5,8 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 import { isAboveZero } from '../ledger/decimal';
 import { LedgerService, ledgerService } from '../ledger/ledger.service';
 
+import { type SettlementRepository, settlementRepository } from './settlement.repository';
+
 import prisma, { Prisma } from '@/config/db.prisma';
 
 /**
@@ -62,7 +64,10 @@ export interface UpdateBatchInput {
 }
 
 export class SettlementService {
-  constructor(private readonly ledger: LedgerService = ledgerService) {}
+  constructor(
+    private readonly ledger: LedgerService = ledgerService,
+    private readonly settlementRepo: SettlementRepository = settlementRepository,
+  ) {}
 
   /**
    * Opens the batch for a courier and period, working out what we expect.
@@ -72,9 +77,10 @@ export class SettlementService {
    * same money and turn the variance into a comparison of a statement with itself.
    */
   async openBatch(input: OpenBatchInput) {
-    const existing = await prisma.settlementBatch.findUnique({
-      where: { courier_periodStart: { courier: input.courier, periodStart: input.periodStart } },
-    });
+    const existing = await this.settlementRepo.findByCourierAndPeriod(
+      input.courier,
+      input.periodStart,
+    );
 
     if (existing) return existing;
 
@@ -83,15 +89,13 @@ export class SettlementService {
       this.ledger.courierFeesBetween(input.courier, input.periodStart, input.periodEnd),
     ]);
 
-    return prisma.settlementBatch.create({
-      data: {
-        courier: input.courier,
-        periodStart: input.periodStart,
-        periodEnd: input.periodEnd,
-        expectedCollected,
-        expectedFees,
-        reference: input.reference,
-      },
+    return this.settlementRepo.createBatch({
+      courier: input.courier,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      expectedCollected,
+      expectedFees,
+      reference: input.reference,
     });
   }
 
@@ -104,13 +108,7 @@ export class SettlementService {
    * always zero.
    */
   private async expectedCollection(periodStart: Date, periodEnd: Date): Promise<Prisma.Decimal> {
-    const orders = await prisma.order.findMany({
-      where: {
-        paymentMethod: 'COD',
-        codSettledAt: { gte: periodStart, lt: periodEnd },
-      },
-      select: { codAmount: true },
-    });
+    const orders = await this.settlementRepo.findExpectedCodOrders(periodStart, periodEnd);
 
     return orders.reduce(
       (total, order) => total.plus(order.codAmount ?? new Prisma.Decimal(0)),
@@ -143,16 +141,13 @@ export class SettlementService {
     const expectedNet = batch.expectedCollected.minus(batch.expectedFees);
     const variance = declaredNet.minus(expectedNet);
 
-    return prisma.settlementBatch.update({
-      where: { id: batch.id },
-      data: {
-        declaredCollected,
-        declaredFees,
-        variance,
-        reference: input.reference ?? batch.reference,
-        notes: input.notes ?? batch.notes,
-        declaredAt: batch.declaredAt ?? new Date(),
-      },
+    return this.settlementRepo.updateStatement(batch.id, {
+      declaredCollected,
+      declaredFees,
+      variance,
+      reference: input.reference ?? batch.reference,
+      notes: input.notes ?? batch.notes,
+      declaredAt: batch.declaredAt ?? new Date(),
     });
   }
 
@@ -213,6 +208,9 @@ export class SettlementService {
     return this.markPaid({ batchId: input.batchId, paidBy: input.actor });
   }
 
+  /**
+   * Reconciles a statement using atomic Compare-And-Swap (CAS).
+   */
   async reconcile(input: { batchId: string; reconciledBy: string }) {
     const batch = await this.mustFind(input.batchId);
 
@@ -235,22 +233,33 @@ export class SettlementService {
       );
     }
 
-    return prisma.settlementBatch.update({
-      where: { id: batch.id },
-      data: {
-        status: SettlementBatchStatus.RECONCILED,
-        reconciledAt: new Date(),
-        reconciledBy: input.reconciledBy,
-      },
-    });
+    const reconciledAt = new Date();
+    const success = await this.settlementRepo.atomicReconcile(
+      batch.id,
+      input.reconciledBy,
+      reconciledAt,
+    );
+
+    if (!success) {
+      const current = await this.mustFind(batch.id);
+      throw new AppError(
+        `Settlement batch is already ${current.status}`,
+        HTTPSTATUS.CONFLICT,
+        ErrorCode.INVALID_REQUEST,
+      );
+    }
+
+    return this.mustFind(batch.id);
   }
 
   /**
    * Pays what the statement said is owed, and records that payment.
    *
-   * The figure posted is the courier's own net, not our expectation. When the two
-   * disagree, what actually leaves the bank is what they declared, and recording
-   * our hoped-for figure would leave the books disagreeing with the bank.
+   * Compare-and-Swap (CAS) Guarantee:
+   * Status transition to PAID is executed atomically inside a bounded interactive
+   * transaction ({ maxWait: 5000, timeout: 10000 }). Only if the atomic update succeeds
+   * does the ledger payment post. This guarantees that concurrent markPaid calls cannot
+   * double-post payments or bypass reconciliation.
    */
   async markPaid(input: { batchId: string; paidBy: string }) {
     const batch = await this.mustFind(input.batchId);
@@ -265,27 +274,46 @@ export class SettlementService {
 
     const owedToCourier = batch.declaredCollected.minus(batch.declaredFees);
 
-    if (isAboveZero(owedToCourier)) {
-      await this.ledger.post({
-        type: LedgerEntryType.COURIER_PAYMENT,
-        direction: LedgerDirection.OUT,
-        amount: owedToCourier,
-        courier: batch.courier,
-        sourceType: 'SETTLEMENT',
-        sourceId: batch.id,
-        settlementBatchId: batch.id,
-        memo: `Settled courier statement for ${batch.periodStart.toISOString().slice(0, 10)}`,
-      });
-    }
+    return prisma.$transaction(
+      async (tx) => {
+        const paidAt = new Date();
+        const success = await this.settlementRepo.atomicMarkPaid(
+          batch.id,
+          input.paidBy,
+          paidAt,
+          tx,
+        );
 
-    return prisma.settlementBatch.update({
-      where: { id: batch.id },
-      data: { status: SettlementBatchStatus.PAID, paidAt: new Date(), paidBy: input.paidBy },
-    });
+        if (!success) {
+          const current = await this.settlementRepo.findBatchById(batch.id, tx);
+          throw new AppError(
+            `A settlement batch must be reconciled before it is paid (currently ${current?.status ?? 'unknown'})`,
+            HTTPSTATUS.CONFLICT,
+            ErrorCode.INVALID_REQUEST,
+          );
+        }
+
+        if (isAboveZero(owedToCourier)) {
+          await this.ledger.post({
+            type: LedgerEntryType.COURIER_PAYMENT,
+            direction: LedgerDirection.OUT,
+            amount: owedToCourier,
+            courier: batch.courier,
+            sourceType: 'SETTLEMENT',
+            sourceId: batch.id,
+            settlementBatchId: batch.id,
+            memo: `Settled courier statement for ${batch.periodStart.toISOString().slice(0, 10)}`,
+          });
+        }
+
+        return this.mustFind(batch.id, tx);
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
-  private async mustFind(batchId: string) {
-    const batch = await prisma.settlementBatch.findUnique({ where: { id: batchId } });
+  private async mustFind(batchId: string, tx?: Prisma.TransactionClient) {
+    const batch = await this.settlementRepo.findBatchById(batchId, tx);
 
     if (!batch) {
       throw new AppError(

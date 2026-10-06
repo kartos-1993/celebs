@@ -360,6 +360,28 @@ describe('SettlementService', () => {
       ).toBe(1);
     });
 
+    it('prevents double payment when identical markPaid calls run concurrently', async () => {
+      const batch = await reconciledBatch();
+
+      // Launch both calls concurrently to simulate a double tap or race condition
+      const results = await Promise.allSettled([
+        service.markPaid({ batchId: batch.id, paidBy: 'finance-user-1' }),
+        service.markPaid({ batchId: batch.id, paidBy: 'finance-user-2' }),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+
+      // Atomic CAS guarantees exactly one caller succeeds and the other fails
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      // Exactly one ledger entry was created
+      expect(
+        await prisma.ledgerEntry.count({ where: { sourceType: 'SETTLEMENT', sourceId: batch.id } }),
+      ).toBe(1);
+    });
+
     it('refuses to pay a batch nobody has reconciled', async () => {
       const order = await seedOrderInPeriod({ codAmount: 2000 });
       const batch = await service.openBatch({
