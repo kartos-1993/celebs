@@ -1,30 +1,41 @@
-import { CodStatus, DispatchMode, OrderStatus } from '@prisma/client';
+import { CodStatus, ConsignmentStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
-import { courierWholeRupees } from './courier-amount';
+import {
+  type ConsignmentRepository,
+  consignmentRepository,
+  type CreateConsignmentRecord,
+} from './consignment.repository';
 import { isDispatchAllowed } from './delivery-coverage';
 import {
   type DeliveryCoverageRepository,
   deliveryCoverageRepository,
 } from './delivery-coverage.repository';
 import { type LogisticsRepository, logisticsRepository } from './logistics.repository';
+import { sellerParcelsFromLines } from './seller-parcels';
+import { splitOrderIntoConsignments } from './split-dispatch';
+
+import { Prisma } from '@/config/db.prisma';
 
 export interface LogisticsServiceDeps {
   logisticsRepo?: Partial<LogisticsRepository>;
   coverageRepo?: Partial<DeliveryCoverageRepository>;
+  consignmentRepo?: Partial<ConsignmentRepository>;
 }
 
 export class LogisticsService {
   private logisticsRepo: LogisticsRepository;
   private coverageRepo: DeliveryCoverageRepository;
+  private consignmentRepo: ConsignmentRepository;
 
   constructor(deps: LogisticsServiceDeps = {}) {
     this.logisticsRepo = (deps.logisticsRepo ?? logisticsRepository) as LogisticsRepository;
     this.coverageRepo = (deps.coverageRepo ??
       deliveryCoverageRepository) as DeliveryCoverageRepository;
+    this.consignmentRepo = (deps.consignmentRepo ?? consignmentRepository) as ConsignmentRepository;
   }
 
   async dispatchOrder(payload: DispatchOrderType, actorStoreId: string | null = null) {
@@ -32,6 +43,20 @@ export class LogisticsService {
 
     if (!order) {
       throw new NotFoundException('Order not found');
+    }
+
+    // Compare-and-Swap (CAS) guard: Prevent duplicate dispatch on retry or race condition.
+    // An order that has already been handed over or delivered cannot be re-dispatched.
+    if (
+      order.status === OrderStatus.HANDED_OVER ||
+      order.status === OrderStatus.OUT_FOR_DELIVERY ||
+      order.status === OrderStatus.DELIVERED
+    ) {
+      throw new BadRequestException('Order has already been dispatched');
+    }
+
+    if ((order as { consignments?: unknown[] }).consignments?.length) {
+      throw new BadRequestException('Order has already been dispatched');
     }
 
     // Tenant isolation: sellers can only dispatch orders that contain their own items
@@ -44,9 +69,7 @@ export class LogisticsService {
 
     // Fail closed: a courier we cannot actually book must never be recorded as
     // dispatched. The request validator already refuses these at the edge, so this
-    // guards a caller that skipped validation. Without it an unsupported courier
-    // fell through to the shipment block, built no consignment, and wrote the
-    // order to HANDED_OVER with an empty tracking number.
+    // guards a caller that skipped validation.
     const isCourierWithoutAdapter =
       payload.provider !== 'MANUAL' && payload.provider !== 'NEPAL_CAN_MOVE';
 
@@ -56,12 +79,7 @@ export class LogisticsService {
       );
     }
 
-    // A courier order is only ever created for an address the courier actually
-    // serves. Checkout already refuses one, but dispatch is the last gate before
-    // a real consignment exists, and an order placed before the district picker
-    // existed can still reach this point with no zone on it. MANUAL is checked
-    // too: a seller carrying a parcel by hand still promises the customer delivery
-    // to an address the courier has retired.
+    // Courier coverage check
     const coverage = await this.coverageRepo.coverageForAddress({
       logisticsZoneId: order.address.logisticsZoneId,
     });
@@ -75,30 +93,121 @@ export class LogisticsService {
       );
     }
 
-    let trackingNumber = payload.manualTrackingNumber || '';
-    let trackingUrl = payload.manualTrackingUrl || '';
-    let courierName = payload.manualCourierName || 'Standard Delivery';
-    let estimatedDelivery: Date | undefined;
+    // ── Split Dispatch Planning ───────────────────────────────────────────────
+    // Multi-seller basket support: group order lines into per-seller parcels
+    const parcelInputs = (order.items || []).map((it) => {
+      const lineItem = it as {
+        id?: string;
+        vendorId: string;
+        quantity?: number;
+        unitPrice?: Prisma.Decimal;
+        unitWeightKg?: Prisma.Decimal;
+      };
+      const qty = lineItem.quantity ?? 1;
+      const unitWeight = lineItem.unitWeightKg ?? new Prisma.Decimal('0.5');
 
-    if (payload.provider === 'NEPAL_CAN_MOVE') {
-      const shipment = await nepalCanMoveAdapter.createShipment({
+      return {
+        lineId: lineItem.id ?? `item-${lineItem.vendorId}`,
+        vendorId: lineItem.vendorId,
+        quantity: qty,
+        declaredWeightKg: unitWeight.mul(qty),
+        unitPrice: lineItem.unitPrice ?? new Prisma.Decimal(0),
+      };
+    });
+
+    const sellerParcels = sellerParcelsFromLines(parcelInputs);
+
+    // Determine each parcel's quoted courier fee share
+    const parcelQuotes = sellerParcels.map((parcel) => {
+      const courierFeeShare =
+        order.courierFee && order.courierFee.gt(0) && sellerParcels.length > 0
+          ? order.courierFee.div(sellerParcels.length)
+          : new Prisma.Decimal(0);
+
+      return {
+        vendorId: parcel.vendorId,
+        goodsAmount: parcel.goodsAmount,
+        courierFee: courierFeeShare,
+        declaredWeightKg: parcel.declaredWeightKg,
+        lineIds: parcel.lineIds,
+      };
+    });
+
+    // Plan consignments with exact paisa collectible allocation
+    const plannedConsignments = splitOrderIntoConsignments({
+      order: {
         orderId: order.id,
-        recipientName: order.address.fullName,
-        recipientPhone: order.address.phone,
-        deliveryAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
-        city: order.address.cityArea,
-        district: order.address.district,
-        // The courier wire format is whole rupees, so this is the one boundary
-        // where money becomes a plain number. Flooring means we never ask for more
-        // than the order says; the sub-rupee residual is absorbed by the platform.
-        codAmount: order.paymentMethod === 'COD' ? courierWholeRupees(order.totalAmount) : 0,
-      });
+        subtotal: order.subtotal,
+        shippingFee: order.shippingFee,
+        courierFee: order.courierFee,
+        codHandlingFee: order.codHandlingFee,
+        totalAmount: order.totalAmount,
+        isCOD: order.paymentMethod === 'COD',
+      },
+      parcels: parcelQuotes,
+    });
 
-      trackingNumber = shipment.trackingNumber;
-      trackingUrl = shipment.trackingUrl;
-      courierName = shipment.courierName;
-      estimatedDelivery = shipment.estimatedDelivery;
+    // ── Courier Consignment Booking ───────────────────────────────────────────
+    const courierName =
+      payload.manualCourierName ||
+      (payload.provider === 'NEPAL_CAN_MOVE' ? 'Nepal Can Move' : 'Standard Delivery');
+    let estimatedDelivery: Date | undefined;
+    const consignmentRecords: CreateConsignmentRecord[] = [];
+    const isMultiParcel = plannedConsignments.length > 1;
+
+    for (let index = 0; index < plannedConsignments.length; index += 1) {
+      const planned = plannedConsignments[index]!;
+      let trackingNumber = '';
+      let trackingUrl = '';
+
+      if (payload.provider === 'NEPAL_CAN_MOVE') {
+        const shipment = await nepalCanMoveAdapter.createShipment({
+          orderId: `${order.id}-${index + 1}`,
+          recipientName: order.address.fullName,
+          recipientPhone: order.address.phone,
+          deliveryAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
+          city: order.address.cityArea,
+          district: order.address.district,
+          codAmount: planned.codAmount,
+          weightKg: planned.declaredWeightKg.toNumber(),
+        });
+
+        trackingNumber = shipment.trackingNumber;
+        trackingUrl = shipment.trackingUrl;
+        estimatedDelivery = shipment.estimatedDelivery;
+      } else {
+        trackingNumber =
+          isMultiParcel && payload.manualTrackingNumber
+            ? `${payload.manualTrackingNumber}-${index + 1}`
+            : payload.manualTrackingNumber || '';
+        trackingUrl = payload.manualTrackingUrl || '';
+      }
+
+      consignmentRecords.push({
+        orderId: order.id,
+        vendorId: planned.vendorId,
+        courierProvider: payload.provider,
+        courierName,
+        trackingNumber,
+        trackingUrl: trackingUrl || null,
+        courierFee: planned.courierFee,
+        amountToCollect: planned.amountToCollect,
+        codAmount: order.paymentMethod === 'COD' ? new Prisma.Decimal(planned.codAmount) : null,
+        status: ConsignmentStatus.HANDED_OVER,
+        lineIds: planned.lineIds,
+        dispatchedAt: new Date(),
+      });
     }
+
+    // Persist consignments atomically
+    await this.consignmentRepo.createConsignments(consignmentRecords);
+
+    // Summary tracking details for existing screens & email notifications
+    const allTrackingNumbers = consignmentRecords
+      .map((c) => c.trackingNumber)
+      .filter(Boolean)
+      .join(', ');
+    const primaryTrackingUrl = consignmentRecords[0]?.trackingUrl ?? '';
 
     const codStatus =
       order.paymentMethod === 'COD' ? CodStatus.PENDING_COLLECTION : CodStatus.NOT_APPLICABLE;
@@ -110,8 +219,8 @@ export class LogisticsService {
       dispatchMode,
       courierProvider: payload.provider,
       courierName,
-      trackingNumber,
-      trackingUrl,
+      trackingNumber: allTrackingNumbers || payload.manualTrackingNumber || '',
+      trackingUrl: primaryTrackingUrl || payload.manualTrackingUrl || '',
       codAmount: order.paymentMethod === 'COD' ? order.totalAmount : null,
       codStatus,
       estimatedDelivery,
@@ -121,8 +230,8 @@ export class LogisticsService {
     this.triggerDispatchEmail(
       payload.orderId,
       courierName,
-      trackingNumber,
-      trackingUrl,
+      allTrackingNumbers || payload.manualTrackingNumber || '',
+      primaryTrackingUrl || payload.manualTrackingUrl || '',
       estimatedDelivery,
     ).catch(() => {});
 

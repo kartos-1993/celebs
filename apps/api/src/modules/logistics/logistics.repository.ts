@@ -22,7 +22,19 @@ export class LogisticsRepository {
   public async findOrderForDispatch(orderId: string) {
     return prisma.order.findUnique({
       where: { id: orderId },
-      include: { address: true, items: { select: { vendorId: true } } },
+      include: {
+        address: true,
+        items: {
+          select: {
+            id: true,
+            vendorId: true,
+            quantity: true,
+            unitPrice: true,
+            unitWeightKg: true,
+          },
+        },
+        consignments: true,
+      },
     });
   }
 

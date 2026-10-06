@@ -26,6 +26,14 @@ type UpdatedDispatchedOrderPayload = Prisma.PromiseReturnType<
   LogisticsRepository['updateDispatchedOrder']
 >;
 
+const createMockItem = (vendorId: string, id = 'item-123') => ({
+  id,
+  vendorId,
+  quantity: 1,
+  unitPrice: new Prisma.Decimal('1000.00'),
+  unitWeightKg: new Prisma.Decimal('0.500'),
+});
+
 const createMockDispatchedOrder = (
   overrides: Partial<DispatchedOrderPayload> = {},
 ): DispatchedOrderPayload => ({
@@ -61,7 +69,8 @@ const createMockDispatchedOrder = (
   estimatedDelivery: null,
   createdAt: new Date(),
   updatedAt: new Date(),
-  items: [{ vendorId: 'vendor-123' }],
+  items: [createMockItem('vendor-123')],
+  consignments: [],
   address: {
     id: 'addr-123',
     userId: 'user-123',
@@ -303,7 +312,7 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
             id: testOrderId,
             totalAmount: new Prisma.Decimal(1000),
             paymentMethod: PaymentMethod.COD,
-            items: [{ vendorId: vendorStoreId }],
+            items: [createMockItem(vendorStoreId)],
             address: {
               id: 'addr-test',
               userId: 'user-test',
@@ -354,7 +363,7 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       const updateDispatchedOrder = vi.fn();
       const mockRepo: Partial<LogisticsRepository> = {
         findOrderForDispatch: async () =>
-          createMockDispatchedOrder({ id: testOrderId, items: [{ vendorId: vendorStoreId }] }),
+          createMockDispatchedOrder({ id: testOrderId, items: [createMockItem(vendorStoreId)] }),
         updateDispatchedOrder: updateDispatchedOrder as never,
       };
       // Coverage is deliberately COVERED: the address is deliverable, so the only
@@ -385,7 +394,7 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       const updateDispatchedOrder = vi.fn();
       const mockRepo: Partial<LogisticsRepository> = {
         findOrderForDispatch: async () =>
-          createMockDispatchedOrder({ id: testOrderId, items: [{ vendorId: vendorStoreId }] }),
+          createMockDispatchedOrder({ id: testOrderId, items: [createMockItem(vendorStoreId)] }),
         updateDispatchedOrder: updateDispatchedOrder as never,
       };
       const uncoveredRepo: Partial<DeliveryCoverageRepository> = {
@@ -413,7 +422,7 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
     it('should allow a manual handover when coverage is merely unverified', async () => {
       const mockRepo: Partial<LogisticsRepository> = {
         findOrderForDispatch: async () =>
-          createMockDispatchedOrder({ id: testOrderId, items: [{ vendorId: vendorStoreId }] }),
+          createMockDispatchedOrder({ id: testOrderId, items: [createMockItem(vendorStoreId)] }),
         updateDispatchedOrder: async (data: UpdateDispatchedOrderData) =>
           createMockUpdatedOrder(data, { id: data.orderId }),
       };
@@ -441,7 +450,7 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
         findOrderForDispatch: async () =>
           createMockDispatchedOrder({
             id: testOrderId,
-            items: [{ vendorId: 'different-store-id' }],
+            items: [createMockItem('different-store-id')],
           }),
       };
 
