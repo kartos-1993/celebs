@@ -4,6 +4,8 @@ import { useSubmissionState } from '../../hooks/use-submission-state';
 import type { FieldSpec, VariantMetaItem } from '../../types';
 import { SubmissionProgressChecklist } from '../submission-progress-checklist';
 
+import { CommissionCalculatorPanel } from '@/features/finance/commission/components/commission-calculator-panel';
+
 interface ProductSubmissionSidebarProps {
   schemaFields: FieldSpec[];
   schemaHasName: boolean;
@@ -31,6 +33,11 @@ export const ProductSubmissionSidebar = memo(function ProductSubmissionSidebar({
         onSectionClick={onSectionClick}
         showErrors={showErrors}
       />
+
+      {/* What the seller keeps, beside the form where the price is typed. A seller
+          who works out their own cut from a percentage gets it subtly wrong, and a
+          figure they cannot reconcile is a figure they will not trust. */}
+      <CommissionCalculatorPanel />
     </aside>
   );
 });
