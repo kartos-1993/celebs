@@ -103,6 +103,7 @@ model VendorProfile {
   mediaFolders        MediaFolder[]
   mediaAssets         MediaAsset[]
   notifications       Notification[]
+  consignments        Consignment[]
 
   @@index([status])
 }
@@ -464,6 +465,7 @@ model Order {
   ledgerEntries  LedgerEntry[]
   trackingEvents OrderTrackingEvent[]
   reviews        Review[]
+  consignments   Consignment[]
 
   courierProvider   String?
   courierName       String?
@@ -516,6 +518,47 @@ model OrderTrackingEvent {
   timestamp   DateTime    @default(now())
 
   @@index([orderId])
+}
+
+/// Status of an individual seller parcel consignment.
+enum ConsignmentStatus {
+  CREATED
+  HANDED_OVER
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+/// A seller's parcel within an order, booked as an individual shipment with the courier.
+///
+/// In multi-seller baskets, checkout quotes and bills each seller's delivery separately
+/// while Pathao requires one order booking per seller parcel from our central pickup
+/// point. Each consignment tracks its own courier fee, waybill tracking number,
+/// collectible COD amount, and lifecycle state.
+model Consignment {
+  id              String            @id @default(uuid())
+  orderId         String            @map("order_id")
+  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vendorId        String            @map("vendor_id")
+  vendor          VendorProfile     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  courierProvider String            @default("PATHAO") @map("courier_provider")
+  courierName     String            @default("Pathao") @map("courier_name")
+  trackingNumber  String            @map("tracking_number")
+  trackingUrl     String?           @map("tracking_url")
+  courierFee      Decimal           @map("courier_fee") @db.Decimal(12, 2)
+  amountToCollect Decimal           @default(0) @map("amount_to_collect") @db.Decimal(12, 2)
+  codAmount       Decimal?          @map("cod_amount") @db.Decimal(12, 2)
+  status          ConsignmentStatus @default(CREATED)
+  lineIds         String[]          @default([]) @map("line_ids")
+  dispatchedAt    DateTime?         @map("dispatched_at")
+  deliveredAt     DateTime?         @map("delivered_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([vendorId])
+  @@index([trackingNumber])
+  @@index([status])
 }
 
 model ComboBundle {
