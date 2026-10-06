@@ -25,6 +25,8 @@ export interface PostLedgerEntryInput {
   direction: LedgerDirection;
   amount: Prisma.Decimal | number | string;
   courier?: string;
+  /** The seller this money belongs to. Null on platform-level entries. */
+  vendorId?: string;
   sourceType: string;
   sourceId: string;
   orderId?: string;
@@ -76,6 +78,7 @@ export class LedgerService {
       direction: input.direction,
       amount,
       courier: input.courier,
+      vendorId: input.vendorId,
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       orderId: input.orderId,

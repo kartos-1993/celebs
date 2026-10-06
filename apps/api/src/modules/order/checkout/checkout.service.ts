@@ -31,7 +31,10 @@ import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
 import { commissionService } from '@/modules/finance/commission/commission.service';
-import { postOrderPlacementEntries } from '@/modules/finance/ledger/ledger-posting.service';
+import {
+  postOrderCommissionEntries,
+  postOrderPlacementEntries,
+} from '@/modules/finance/ledger/ledger-posting.service';
 import {
   NotificationService,
   notificationService as defaultNotificationService,
@@ -347,6 +350,17 @@ export class CheckoutService {
       logger.error(
         { orderId: order.id, error: (error as Error).message },
         'Could not record the order in the ledger; it must be posted manually',
+      );
+    });
+
+    // Commission, one entry per seller, from the rate frozen on each line. Separate
+    // from the placement entries above because it is attributed per line rather
+    // than per order: a basket can hold several sellers' goods, and revenue is
+    // posted once for the whole subtotal.
+    await postOrderCommissionEntries({ orderId: order.id }).catch((error: unknown) => {
+      logger.error(
+        { orderId: order.id, error: (error as Error).message },
+        'Could not record commission in the ledger; it must be posted manually',
       );
     });
 

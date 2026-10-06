@@ -1,7 +1,7 @@
 import { LedgerDirection, LedgerEntryType } from '@prisma/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { postOrderPlacementEntries } from '../ledger-posting.service';
+import { postOrderCommissionEntries, postOrderPlacementEntries } from '../ledger-posting.service';
 
 import prisma from '@/config/db.prisma';
 
@@ -173,5 +173,177 @@ describe('posting an order placement to the ledger', () => {
 
     // 5200 taken, 180 of delivery given away.
     expect(net.toNumber()).toBe(5020);
+  });
+});
+
+/**
+ * Commission is posted per seller, against the order line it came from.
+ *
+ * Two properties this has to hold. The entry must carry the seller, because
+ * ORDER_REVENUE is posted once for a whole basket and a multi-vendor order would
+ * otherwise credit one seller with another's goods. And the commission must be a
+ * distinct entry rather than a reduction of revenue, so a seller reading their
+ * ledger can see what was taken.
+ */
+describe('posting commission to the ledger', () => {
+  beforeEach(async () => {
+    await prisma.ledgerEntry.deleteMany({});
+  });
+
+  async function seedOrderWithLine(subtotal: number, commissionAmount: number) {
+    const order = await seedOrder({ subtotal, shippingFee: 0, totalAmount: subtotal });
+    const vendor = await prisma.vendorProfile.create({
+      data: {
+        userId: (
+          await prisma.user.create({
+            data: {
+              name: 'Line Seller',
+              email: `lineseller-${Date.now()}-${Math.random()}@example.com`,
+              password: 'Password123!',
+            },
+          })
+        ).id,
+        phoneNumber: `98${Date.now()}`.slice(0, 10),
+        shopName: `Line Shop ${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+        panNumber: `P${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+          .toUpperCase()
+          .slice(0, 10),
+        citizenshipNumber: `C${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+          .toUpperCase()
+          .slice(0, 14),
+      },
+    });
+
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        inventoryId: (
+          await prisma.productInventory.create({
+            data: {
+              productId: (
+                await prisma.product.create({
+                  data: {
+                    name: 'Commission Test Product',
+                    slug: `commission-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                    categoryId: (
+                      await prisma.category.create({
+                        data: {
+                          name: `CC-${Date.now()}`,
+                          slug: `cc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                        },
+                      })
+                    ).id,
+                    vendorId: vendor.id,
+                    price: subtotal,
+                  },
+                })
+              ).id,
+              colorVariantName: 'Default',
+              size: 'M',
+              sku: `COMM-SKU-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              quantity: 10,
+              reservedQuantity: 0,
+            },
+          })
+        ).id,
+        vendorId: vendor.id,
+        productName: 'Commission Test Product',
+        colorVariantName: 'Default',
+        size: 'M',
+        unitPrice: subtotal,
+        quantity: 1,
+        subtotal,
+        commissionAmount,
+        sellerNetAmount: subtotal - commissionAmount,
+      },
+    });
+
+    return { order, vendor };
+  }
+
+  it('records the platform cut as its own entry, attributed to the seller', async () => {
+    const { order, vendor } = await seedOrderWithLine(1000, 75);
+
+    await postOrderCommissionEntries({ orderId: order.id });
+
+    const entries = await prisma.ledgerEntry.findMany({
+      where: { type: LedgerEntryType.COMMISSION },
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.amount.toNumber()).toBe(75);
+    expect(entries[0]?.direction).toBe(LedgerDirection.OUT);
+    expect(entries[0]?.vendorId).toBe(vendor.id);
+  });
+
+  it('records nothing for a line that paid no commission', async () => {
+    // A zero-commission rule must not produce a zero-valued movement that reads
+    // like a transaction.
+    const { order } = await seedOrderWithLine(1000, 0);
+
+    await postOrderCommissionEntries({ orderId: order.id });
+
+    expect(await prisma.ledgerEntry.count({ where: { type: LedgerEntryType.COMMISSION } })).toBe(0);
+  });
+
+  it('does not double-post when a checkout is retried', async () => {
+    const { order } = await seedOrderWithLine(1000, 75);
+
+    await postOrderCommissionEntries({ orderId: order.id });
+    await postOrderCommissionEntries({ orderId: order.id });
+
+    expect(await prisma.ledgerEntry.count({ where: { type: LedgerEntryType.COMMISSION } })).toBe(1);
+  });
+
+  it('records one entry per seller, so a shared basket is not credited to one of them', async () => {
+    const { order, vendor: firstVendor } = await seedOrderWithLine(1000, 75);
+
+    const secondVendor = await prisma.vendorProfile.create({
+      data: {
+        userId: (
+          await prisma.user.create({
+            data: {
+              name: 'Second Seller',
+              email: `secondseller-${Date.now()}-${Math.random()}@example.com`,
+              password: 'Password123!',
+            },
+          })
+        ).id,
+        phoneNumber: `97${Date.now()}`.slice(0, 10),
+        shopName: `Second Shop ${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+        panNumber: `Q${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+          .toUpperCase()
+          .slice(0, 10),
+        citizenshipNumber: `D${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+          .toUpperCase()
+          .slice(0, 14),
+      },
+    });
+
+    const secondItem = await prisma.orderItem.findFirstOrThrow({ where: { orderId: order.id } });
+
+    await prisma.orderItem.create({
+      data: {
+        ...secondItem,
+        id: undefined,
+        inventoryId: secondItem.inventoryId,
+        vendorId: secondVendor.id,
+        subtotal: 600,
+        commissionAmount: 45,
+        sellerNetAmount: 555,
+      },
+    });
+
+    await postOrderCommissionEntries({ orderId: order.id });
+
+    const entries = await prisma.ledgerEntry.findMany({
+      where: { type: LedgerEntryType.COMMISSION },
+      orderBy: { amount: 'asc' },
+    });
+
+    expect(entries).toHaveLength(2);
+    expect(entries.map((e) => e.vendorId).sort()).toEqual([firstVendor.id, secondVendor.id].sort());
+    // Each seller is charged only their own line's commission.
+    expect(entries.map((e) => e.amount.toNumber()).sort()).toEqual([45, 75]);
   });
 });

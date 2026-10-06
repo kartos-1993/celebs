@@ -20,6 +20,7 @@ export class LedgerRepository {
     direction: LedgerDirection;
     amount: Prisma.Decimal;
     courier?: string;
+    vendorId?: string;
     sourceType: string;
     sourceId: string;
     orderId?: string;
@@ -32,6 +33,7 @@ export class LedgerRepository {
       direction: data.direction,
       amount: data.amount,
       courier: data.courier ?? null,
+      vendorId: data.vendorId ?? null,
       sourceType: data.sourceType,
       sourceId: data.sourceId,
       orderId: data.orderId ?? null,

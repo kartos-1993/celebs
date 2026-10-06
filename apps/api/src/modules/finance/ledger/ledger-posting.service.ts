@@ -100,6 +100,51 @@ export async function postOrderPlacementEntries(
  * dispatched, returned and dispatched again, and each of those is a separate fee
  * against the same order.
  */
+/**
+ * Records the platform's cut, one entry per seller.
+ *
+ * Per order line rather than per order, because a basket can hold items from
+ * several sellers. ORDER_REVENUE is posted once for the whole subtotal, so if
+ * commission were posted that way too, a seller who earned 600 on a 1,800/600
+ * basket would be charged commission on all 2,400 - and a seller reading their
+ * ledger would be shown another seller's goods.
+ *
+ * Its own entry type, not a reduction of revenue. A seller needs to see what was
+ * taken as a separate line; folding it into revenue leaves a net they cannot
+ * account for, which is exactly the distrust this is meant to remove.
+ *
+ * Read from the order lines rather than recomputed from the rate. The rate is
+ * frozen on the line, so an order placed before a rate change keeps the rate it
+ * was charged even if this runs weeks later during a retry.
+ *
+ * A line with no commission produces nothing: a zero-valued entry would read like
+ * a movement that happened.
+ */
+export async function postOrderCommissionEntries(
+  input: { orderId: string },
+  ledger: LedgerService = ledgerService,
+): Promise<void> {
+  const lines = await prisma.orderItem.findMany({
+    where: { orderId: input.orderId },
+    select: { id: true, vendorId: true, commissionAmount: true },
+  });
+
+  for (const line of lines) {
+    if (!isAboveZero(line.commissionAmount)) continue;
+
+    await ledger.post({
+      type: LedgerEntryType.COMMISSION,
+      direction: LedgerDirection.OUT,
+      amount: line.commissionAmount,
+      vendorId: line.vendorId,
+      sourceType: 'ORDER_ITEM',
+      sourceId: line.id,
+      orderId: input.orderId,
+      memo: 'Platform commission',
+    });
+  }
+}
+
 export async function postCourierFeeEntries(
   input: { orderId: string; courier: string; consignmentId: string; amount: Prisma.Decimal },
   ledger: LedgerService = ledgerService,

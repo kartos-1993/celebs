@@ -96,6 +96,7 @@ model VendorProfile {
   staff               User[]                     @relation("VendorStaff")
   orderItems          OrderItem[]
   commissionRules     CommissionRule[] @relation("VendorCommissionRules")
+  ledgerEntries       LedgerEntry[]
   products            Product[]
   ownedBrands         Brand[]                    @relation("OwnedBrands")
   brandAuthorizations VendorBrandAuthorization[]
@@ -821,6 +822,13 @@ enum LedgerEntryType {
   COURIER_PAYMENT
   /// Money returned to a customer
   REFUND
+  /// The platform's cut of a sale, taken from the seller's listed price.
+  ///
+  /// Its own type rather than a deduction folded into ORDER_REVENUE, because a
+  /// seller reading their ledger needs to see what was taken as a separate line.
+  /// Folding it in would leave them with a net they cannot account for, which is
+  /// the distrust this is trying to avoid.
+  COMMISSION
 }
 
 model LedgerEntry {
@@ -850,6 +858,18 @@ model LedgerEntry {
   orderId String? @map("order_id")
   order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
+  // The seller this entry is attributed to, when it belongs to one.
+  //
+  // `Order` has no vendor: an order is a basket and can hold items from several
+  // sellers. So an order-scoped entry cannot say whose money it is, and a
+  // seller's ledger derived by joining through their order items would show them
+  // another seller's revenue. Recorded per entry instead.
+  //
+  // Null on platform-level entries - courier settlement, a refund that spans
+  // sellers - because those are not anybody's revenue.
+  vendorId String?        @map("vendor_id")
+  vendor   VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
   settlementBatchId String?          @map("settlement_batch_id")
   settlementBatch   SettlementBatch? @relation(fields: [settlementBatchId], references: [id], onDelete: SetNull)
 
@@ -867,6 +887,11 @@ model LedgerEntry {
   // Per-courier money over a period, which is what a settlement is reconciled against.
   @@index([courier, type, occurredAt])
   @@index([orderId])
+  // A seller's ledger, newest first. The most-hit query in the seller dashboard,
+  // and without this it degrades to a sequential scan.
+  @@index([vendorId, occurredAt])
+  // Per-entry-type totals for one seller, over a period.
+  @@index([vendorId, type, occurredAt])
 }
 
 enum SettlementBatchStatus {
