@@ -81,6 +81,9 @@ vi.mock('@/common/services/bull-board.service', async () => {
 vi.mock('@/modules/logistics/adapters/pathao-price.client', async () => {
   const { Prisma } =
     await vi.importActual<typeof import('@/config/db.prisma')>('@/config/db.prisma');
+  // Prisma is re-exported as a namespace, so the Decimal class hangs off it.
+  const Decimal = Prisma.Decimal;
+  type DecimalValue = InstanceType<typeof Decimal>;
   // Spread the real module so its constants - the measured weight limits checkout
   // validates against - keep their real values. Only the network call is replaced.
   const actual = await vi.importActual<
@@ -91,14 +94,17 @@ vi.mock('@/modules/logistics/adapters/pathao-price.client', async () => {
     ...actual,
     PathaoPriceClient: class {},
     pathaoPriceClient: {
-      quote: vi.fn(async (input: { itemWeight: number }) => ({
+      quote: vi.fn(async (input: { itemWeightKg: DecimalValue }) => ({
         // A flat 150 for anything light, doubling past 1 kg, so tests can tell a
         // light parcel from a heavy one and see the weight actually reach us.
-        finalPrice: new Prisma.Decimal(input.itemWeight > 1 ? '300' : '150'),
-        codPercentage: new Prisma.Decimal('0.01'),
+        finalPrice: new Decimal(
+          new Decimal(input.itemWeightKg.toString()).greaterThan(1) ? '300' : '150',
+        ),
+        codPercentage: new Decimal('0.01'),
         planId: 1,
-        serviceId: 48,
-        deliveryType: '48',
+        codEnabled: true,
+        // The courier's own response, kept for disputing a charge later.
+        raw: {},
       })),
     },
   };

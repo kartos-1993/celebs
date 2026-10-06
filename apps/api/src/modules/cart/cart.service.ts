@@ -13,13 +13,17 @@ import { resolveCover } from '../product/utils/product-image.util';
 
 import { cartRepository } from './cart.repository';
 
+import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
-import { resolveDeliveryPricing } from '@/modules/logistics/delivery-pricing';
+import { courierDestinationRepository } from '@/modules/logistics/courier-destination.repository';
+import { DeliveryPreviewService } from '@/modules/logistics/delivery-preview.service';
 import {
   deliveryPricingRepository,
   UNRESOLVED_FREE_DELIVERY_THRESHOLD,
 } from '@/modules/logistics/delivery-pricing.repository';
+import type { QuoteSellerParcelInput } from '@/modules/logistics/delivery-quote.service';
+import { deliveryQuoteService } from '@/modules/logistics/delivery-quote.service';
 import {
   computeBillableLineWeightKg,
   sumBillableWeightKg,
@@ -97,6 +101,9 @@ export class CartService {
     let billableWeightKg = new Prisma.Decimal(0);
     let itemCount = 0;
     let hasStockIssues = false;
+    // Grouped by seller as the items are walked, so the cart can be quoted the same
+    // way checkout will quote it: one parcel per seller.
+    const previewParcels: QuoteSellerParcelInput[] = [];
 
     const hydratedItems: CartItemHydrated[] = cartWithItems.items.map((item) => {
       const product = item.inventory.product;
@@ -143,6 +150,29 @@ export class CartService {
         // Billable weight for the line, accumulated here rather than read back off
         // the hydrated items: these are product dimensions, and publishing them
         // on the cart response would leak a pricing input into the API surface.
+        // Declared weight, not the volumetric maximum: the courier prices what the
+        // seller states and has no volumetric input of its own.
+        const declaredLineWeightKg = new Prisma.Decimal(
+          product?.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
+        ).mul(item.quantity);
+        const sellerId = product?.vendorId ?? PLATFORM_VENDOR_ID;
+        const existingParcel = previewParcels.find((p) => p.vendorId === sellerId);
+
+        if (existingParcel) {
+          existingParcel.declaredWeightKg =
+            existingParcel.declaredWeightKg.plus(declaredLineWeightKg);
+          existingParcel.goodsAmount = existingParcel.goodsAmount.add(
+            priceDecimal.mul(item.quantity),
+          );
+        } else {
+          previewParcels.push({
+            vendorId: sellerId,
+            declaredWeightKg: declaredLineWeightKg,
+            goodsAmount: priceDecimal.mul(item.quantity),
+            lineIds: [item.id],
+          });
+        }
+
         billableWeightKg = sumBillableWeightKg([
           billableWeightKg,
           computeBillableLineWeightKg({
@@ -196,24 +226,23 @@ export class CartService {
     // zone the conservative threshold stands, because promising free delivery the
     // server would then decline is the same bug as promising it and charging for
     // it.
+    // Only the district is needed now: the courier prices delivery, so the cart no
+    // longer fetches rate bands to pick a fee from.
     const destination = await this.resolveDefaultDestination(userId);
-    const rates = destination
-      ? await deliveryPricingRepository.activeRates(destination.cityId)
-      : [];
 
-    const pricing = resolveDeliveryPricing({
+    const preview = await new DeliveryPreviewService(
+      deliveryQuoteService,
+      courierDestinationRepository,
+      deliveryPricingRepository,
+      new Prisma.Decimal(policy.flatShippingFee),
+    ).preview({
       subtotal: subtotalDecimal,
-      weightKg: billableWeightKg,
+      parcels: previewParcels,
+      logisticsZoneId: destination?.zoneId ?? null,
       isCod: false,
-      freeDeliveryThreshold: new Prisma.Decimal(
-        destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,
-      ),
-      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
-      rates,
-      cityId: destination?.cityId ?? null,
     });
 
-    const shippingFee = pricing.shippingFee.toNumber();
+    const shippingFee = preview.charge.toNumber();
 
     return {
       id: cartRecord.id,
@@ -273,6 +302,7 @@ export class CartService {
 
     return {
       cityId: address.logisticsZone.city.id,
+      zoneId: address.logisticsZoneId,
       freeDeliveryThreshold: address.logisticsZone.city.freeDeliveryThreshold,
     };
   }

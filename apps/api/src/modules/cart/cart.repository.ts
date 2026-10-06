@@ -47,6 +47,9 @@ export class CartRepository {
                     name: true,
                     slug: true,
                     brand: true,
+                    // Delivery is quoted per seller: a basket holding two sellers'
+                    // goods is two pickups and two courier fees.
+                    vendorId: true,
                     price: true,
                     discountedPrice: true,
                     mainImages: true,

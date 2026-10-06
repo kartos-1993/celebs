@@ -7,6 +7,7 @@ import {
 } from './adapters/pathao-price.client';
 import { pathaoTokenProvider } from './adapters/pathao-token.provider';
 import { money } from './money';
+import type { SellerParcel } from './seller-parcels';
 import { mergeSellerParcels } from './seller-parcels';
 
 import { Prisma } from '@/config/db.prisma';
@@ -85,7 +86,26 @@ export interface DeliveryQuoteCache {
 /** Supplies a valid Pathao bearer token. The token provider owns caching and refresh. */
 export type AccessTokenResolver = () => Promise<string>;
 
+/**
+ * Calls currently in flight, keyed the same way as the cache.
+ *
+ * This exists because a cache alone does not survive a burst. Fifty shoppers
+ * refreshing the same cart in the same second all read a cold cache and all call
+ * the courier - precisely the load the cache was added to avoid. Sharing the
+ * promise collapses them into one call.
+ *
+ * Deliberately in-process rather than distributed. A lock across instances would
+ * need Redis coordination and could leave a stuck entry if an instance died
+ * mid-call; the failure mode of doing nothing is a few extra courier requests,
+ * which the cache absorbs on the next read.
+ *
+ * Entries are removed in a finally, so a rejected call is never remembered as an
+ * answer. Without that, one courier blip would poison every basket for the life of
+ * the process.
+ */
 export class DeliveryQuoteService {
+  private readonly inFlight = new Map<string, Promise<CourierQuote>>();
+
   constructor(
     private readonly client: PathaoPriceClient = pathaoPriceClient,
     private readonly cache?: DeliveryQuoteCache,
@@ -129,13 +149,7 @@ export class DeliveryQuoteService {
         continue;
       }
 
-      const courierQuote = await this.client.quote({
-        storeId: input.storeId,
-        itemWeightKg: parcel.declaredWeightKg,
-        recipientCityId: input.recipientCityExternalId,
-        recipientZoneId: input.recipientZoneExternalId,
-        accessToken: await this.tokenResolver(),
-      } as PathaoPricePlanRequest & { accessToken: string });
+      const courierQuote = await this.quoteOnce(key, input, parcel);
 
       await this.cache?.set(key, courierQuote);
 
@@ -172,6 +186,52 @@ export class DeliveryQuoteService {
       input.recipientZoneExternalId,
       weightBandFor(parcel.declaredWeightKg),
     ].join(':');
+  }
+
+  /**
+   * One courier answer for one key, however many callers are waiting on it.
+   */
+  private async quoteOnce(
+    key: string,
+    input: QuoteDeliveryInput,
+    parcel: SellerParcel,
+  ): Promise<CourierQuote> {
+    const running = this.inFlight.get(key);
+    if (running) return running;
+
+    // Registered synchronously, with no await between the check above and this
+    // line. An await in between - fetching a token, say - yields to the microtask
+    // queue, and every concurrent caller then passes the check while the map is
+    // still empty. That is not hypothetical: it is exactly what the first version
+    // of this method did, and twenty identical requests still made twenty calls.
+    const call = this.fetchAndCache(key, input, parcel);
+    this.inFlight.set(key, call);
+
+    return call;
+  }
+
+  private async fetchAndCache(
+    key: string,
+    input: QuoteDeliveryInput,
+    parcel: SellerParcel,
+  ): Promise<CourierQuote> {
+    try {
+      const quote = await this.client.quote({
+        storeId: input.storeId,
+        itemWeightKg: parcel.declaredWeightKg,
+        recipientCityId: input.recipientCityExternalId,
+        recipientZoneId: input.recipientZoneExternalId,
+        accessToken: await this.tokenResolver(),
+      } as PathaoPricePlanRequest & { accessToken: string });
+
+      await this.cache?.set(key, quote);
+
+      return quote;
+    } finally {
+      // Removed on success and on failure alike, so the next caller retries rather
+      // than inheriting a stale or poisoned answer.
+      this.inFlight.delete(key);
+    }
   }
 
   private buildQuote(parcels: QuotedParcel[]): DeliveryQuote {

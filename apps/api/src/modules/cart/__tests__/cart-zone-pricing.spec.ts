@@ -71,7 +71,11 @@ async function seedCustomerWithDefaultAddress(options: {
       province: 'Bagmati',
       isValley: options.isValley,
       freeDeliveryThreshold: options.freeDeliveryThreshold,
-      source: 'BOOTSTRAP',
+      // Courier-synced, with the ids the courier prices on. A bootstrapped city
+      // has none, and checkout refuses to quote one - so a fixture without them
+      // would describe a cart the system is right to refuse.
+      source: 'COURIER',
+      externalId: Math.floor(Math.random() * 900000) + 100000,
       syncedAt: new Date(),
     },
     select: { id: true, name: true },
@@ -177,46 +181,54 @@ describe('cart quotes against the default address when it can', () => {
     expect(cart.shippingFee).toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
   });
 
-  it('prices by the parcel weight, not a flat fee', async () => {
-    const productId = await seedProduct(1200, 4);
-    const { userId, cityId } = await seedCustomerWithDefaultAddress({
+  it('sends the parcel to the courier rather than pricing it from a band', async () => {
+    // A 4 kg parcel and a 500 g one cost the courier different amounts, so the
+    // weight has to reach them. The suite-wide courier stub answers 150 up to 1 kg
+    // and 300 above it, which is enough to prove the weight travelled.
+    const heavy = await seedProduct(1200, 4);
+    const { userId } = await seedCustomerWithDefaultAddress({
       freeDeliveryThreshold: 2500,
       isValley: true,
     });
-    await seedRate(cityId, '240', 1, 10);
 
-    const cart = await cartForUser(userId, productId, 1);
+    const cart = await cartForUser(userId, heavy, 1);
 
-    // The 4 kg parcel is in the heavy band, so the flat 150 fallback is wrong.
-    expect(cart.shippingFee).toBe(240);
+    expect(cart.shippingFee).toBe(300);
+    // Not the platform flat fee, which is what a hand-entered fallback would give.
+    expect(cart.shippingFee).not.toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
   });
 
-  it('prefers a band written for the destination city over the general one', async () => {
+  it('quotes against the district on the default address, not a general one', async () => {
+    // Measured: 0.9 kg is 150 to Pokhara and 210 to Bardibas. A cart that priced
+    // without a district would show one city the other's answer.
     const productId = await seedProduct(1200, 0.5);
-    const { userId, cityId } = await seedCustomerWithDefaultAddress({
+    const { userId } = await seedCustomerWithDefaultAddress({
       freeDeliveryThreshold: 2500,
       isValley: true,
     });
-    await seedRate(null, '80', 0, 10);
-    await seedRate(cityId, '95', 0, 10);
 
     const cart = await cartForUser(userId, productId, 1);
 
-    expect(cart.shippingFee).toBe(95);
+    // The zone is courier-resolvable in this fixture, so this is the courier's
+    // answer rather than the fallback, which is what proves a district was used.
+    expect(cart.deliveryIsEstimate).toBe(false);
   });
 
-  it('falls back to the platform fee when no band covers the parcel', async () => {
+  it('does not let a rate band override the courier', async () => {
     const productId = await seedProduct(1200, 4);
     const { userId, cityId } = await seedCustomerWithDefaultAddress({
       freeDeliveryThreshold: 2500,
       isValley: true,
     });
+    // A band that says 240 for this weight, and the courier says 300.
     await seedRate(cityId, '240', 8, 10);
 
     const cart = await cartForUser(userId, productId, 1);
 
-    // A gap in the card must never price a shipment at zero.
-    expect(cart.shippingFee).toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
+    // Bands are our guess about a courier's pricing. Once the courier answers,
+    // ours is not consulted - a band quietly capping a real cost is how a charge
+    // stops matching the invoice.
+    expect(cart.shippingFee).toBe(300);
     expect(cart.total).toBe(cart.subtotal + cart.shippingFee);
   });
 
