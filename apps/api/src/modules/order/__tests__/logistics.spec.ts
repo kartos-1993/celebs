@@ -54,6 +54,77 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
       },
     });
     testOrderId = order.id;
+
+    // The order needs a line to ship.
+    //
+    // Dispatch now plans one consignment per seller parcel and refuses to book
+    // anything when there are none. Without a line the order would otherwise be
+    // marked HANDED_OVER with an empty tracking number - recorded as shipped, with
+    // no courier ever picking it up and no invoice that could ever match it.
+    const sellerUserId = (
+      await prisma.user.create({
+        data: {
+          name: 'Logistics Seller',
+          email: `logisticsseller_${Date.now()}_${Math.random()}@test.com`,
+          password: await hashValue('password123'),
+        },
+      })
+    ).id;
+
+    const vendorId = (
+      await prisma.vendorProfile.create({
+        data: {
+          userId: sellerUserId,
+          phoneNumber: `98${Date.now()}`.slice(0, 10),
+          shopName: `Logistics Shop ${Date.now()}`,
+          panNumber: `P${Date.now()}`.slice(-10).toUpperCase(),
+          citizenshipNumber: `C${Date.now()}`.slice(-14).toUpperCase(),
+        },
+      })
+    ).id;
+
+    const productId = (
+      await prisma.product.create({
+        data: {
+          name: 'Logistics Test Tee',
+          slug: `logistics-tee-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          categoryId: (
+            await prisma.category.create({
+              data: { name: `LC-${Date.now()}`, slug: `lc-${Date.now()}` },
+            })
+          ).id,
+          price: 5000,
+          status: 'published',
+          packageWeightKg: 0.5,
+        },
+      })
+    ).id;
+
+    const inventoryId = (
+      await prisma.productInventory.create({
+        data: {
+          productId,
+          size: 'M',
+          colorVariantName: 'Black',
+          sku: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          quantity: 25,
+        },
+      })
+    ).id;
+
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        inventoryId,
+        vendorId,
+        productName: 'Logistics Test Tee',
+        colorVariantName: 'Black',
+        size: 'M',
+        unitPrice: 5000,
+        quantity: 1,
+        subtotal: 5000,
+      },
+    });
   });
 
   afterEach(async () => {

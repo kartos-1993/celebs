@@ -147,6 +147,19 @@ export class LogisticsService {
       parcels: parcelQuotes,
     });
 
+    // Fail closed rather than book nothing.
+    //
+    // Split dispatch works by planning one consignment per seller parcel, and an
+    // order with no lines plans none. Without this guard the loop below simply
+    // doesn't run, no courier is ever contacted, and the order is then recorded as
+    // HANDED_OVER with an empty tracking number - an order marked as shipped that
+    // nobody will pick up, and a shipment that no courier invoice will ever match.
+    if (plannedConsignments.length === 0) {
+      throw new BadRequestException(
+        `Cannot dispatch order ${order.orderNumber}: it has no items to ship.`,
+      );
+    }
+
     // ── Courier Consignment Booking ───────────────────────────────────────────
     const courierName =
       payload.manualCourierName ||
