@@ -89,6 +89,70 @@ export function effectiveRatePercent(
     .toDecimalPlaces(4, Prisma.Decimal.ROUND_HALF_UP);
 }
 
+export interface RefundableLine {
+  lineId: string;
+  vendorId: string;
+  subtotal: Prisma.Decimal;
+  commissionAmount: Prisma.Decimal;
+}
+
+export interface CommissionReversal {
+  lineId: string;
+  vendorId: string;
+  amount: Prisma.Decimal;
+}
+
+/**
+ * How much commission a refund hands back, per seller.
+ *
+ * A refunded order returns the seller nothing - no money, no product - so the
+ * commission has to go back too. Keeping it would mean banking a cut of a sale
+ * that never completed, which is precisely the money a return policy exists to
+ * protect, and the seller would see commission taken against a sale they did not
+ * get paid for.
+ *
+ * Proportional on a partial refund, and **capped at the commission actually
+ * taken** on that line. A goodwill credit or a post-refund price correction can
+ * refund more than the goods were worth; without the cap that would pay out
+ * commission which was never charged, turning a refund into revenue.
+ *
+ * Lines that paid no commission are skipped rather than returned as zero, so the
+ * caller cannot post a zero-valued reversal.
+ */
+export function commissionReversals(
+  lines: readonly RefundableLine[],
+  refundAmount: Prisma.Decimal,
+): CommissionReversal[] {
+  if (!refundAmount.greaterThan(ZERO)) return [];
+
+  const chargeable = lines.filter((line) => line.commissionAmount.greaterThan(ZERO));
+  if (chargeable.length === 0) return [];
+
+  const totalSubtotal = chargeable.reduce(
+    (total, line) => total.plus(line.subtotal),
+    new Prisma.Decimal(0),
+  );
+
+  if (!totalSubtotal.greaterThan(ZERO)) return [];
+
+  // A refund covering the whole order returns every rupee of commission, rather
+  // than the rounded-down remainder of a proportional split.
+  const isFullRefund = refundAmount.greaterThanOrEqualTo(totalSubtotal);
+
+  return chargeable.map((line) => {
+    const share = isFullRefund
+      ? line.commissionAmount
+      : line.commissionAmount.mul(refundAmount).div(totalSubtotal);
+
+    const rounded = share.toDecimalPlaces(COMMISSION_RATE_DECIMALS, Prisma.Decimal.ROUND_HALF_UP);
+    // The cap stops a goodwill refund paying out commission that was never
+    // charged, which would turn a refund into revenue.
+    const amount = rounded.lessThan(line.commissionAmount) ? rounded : line.commissionAmount;
+
+    return { lineId: line.lineId, vendorId: line.vendorId, amount };
+  });
+}
+
 /**
  * The price a seller should list at to keep a target amount after commission.
  *

@@ -1,5 +1,7 @@
 import { LedgerDirection, LedgerEntryType } from '@prisma/client';
 
+import { commissionReversals } from '../commission/commission-calculator';
+
 import { isAboveZero } from './decimal';
 import { LedgerService, ledgerService } from './ledger.service';
 
@@ -210,4 +212,62 @@ export async function postRefundEntries(
     orderId: input.orderId,
     memo: `Refunded to customer via ${input.gateway}`,
   });
+
+  await postCommissionReversalEntries({
+    refundId: input.refundId,
+    orderId: input.orderId,
+    amount: input.amount,
+  });
+}
+
+/**
+ * Hands back the commission on a refunded order.
+ *
+ * A refunded order gives the seller neither money nor product, so keeping the
+ * commission would mean banking a cut of a sale that never completed. A seller
+ * reading their earnings would see commission taken against an order they were
+ * never paid for, which is the distrust this whole feature exists to remove.
+ *
+ * Posted as an IN entry so the seller's net returns to zero by arithmetic rather
+ * than by editing history. Keyed on the refund and the line, so a retried refund
+ * cannot hand the same commission back twice.
+ *
+ * Proportional for a partial refund and capped at what was taken - see
+ * commissionReversals.
+ */
+export async function postCommissionReversalEntries(
+  input: { refundId: string; orderId: string; amount: Prisma.Decimal },
+  ledger: LedgerService = ledgerService,
+): Promise<void> {
+  if (!isAboveZero(input.amount)) return;
+
+  const lines = await prisma.orderItem.findMany({
+    where: { orderId: input.orderId },
+    select: { id: true, vendorId: true, subtotal: true, commissionAmount: true },
+  });
+
+  const reversals = commissionReversals(
+    lines.map((l) => ({
+      lineId: l.id,
+      vendorId: l.vendorId,
+      subtotal: l.subtotal,
+      commissionAmount: l.commissionAmount,
+    })),
+    input.amount,
+  );
+
+  for (const reversal of reversals) {
+    if (!isAboveZero(reversal.amount)) continue;
+
+    await ledger.post({
+      type: LedgerEntryType.COMMISSION,
+      direction: LedgerDirection.IN,
+      amount: reversal.amount,
+      vendorId: reversal.vendorId,
+      sourceType: 'REFUND',
+      sourceId: `${input.refundId}:${reversal.lineId}`,
+      orderId: input.orderId,
+      memo: 'Commission returned on refund',
+    });
+  }
 }
