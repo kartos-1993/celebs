@@ -95,6 +95,7 @@ model VendorProfile {
   warehouses          Warehouse[]
   staff               User[]                     @relation("VendorStaff")
   orderItems          OrderItem[]
+  commissionRules     CommissionRule[] @relation("VendorCommissionRules")
   products            Product[]
   ownedBrands         Brand[]                    @relation("OwnedBrands")
   brandAuthorizations VendorBrandAuthorization[]
@@ -598,6 +599,21 @@ model OrderItem {
   quantity         Int
   subtotal         Decimal @db.Decimal(12, 2)
 
+  // Commission, frozen at purchase and never recomputed.
+  //
+  // The seller lists the final price the customer sees; commission is deducted
+  // from it and the seller is paid the net. Snapshotting matters because a
+  // superadmin changing the rate must not retroactively alter what a seller
+  // already sold - the same reasoning as the weight snapshot below.
+  //
+  // sellerNetAmount is ALWAYS subtotal minus commissionAmount, never
+  // subtotal * (1 - rate). Those disagree by a paisa on many prices because the
+  // multiply rounds a third time, and a ledger that drifts away from payouts by a
+  // paisa at a time is unreadable. Derived by subtraction so the two cannot.
+  commissionRatePercent Decimal @default(0) @map("commission_rate_percent") @db.Decimal(5, 2)
+  commissionAmount      Decimal @default(0) @map("commission_amount") @db.Decimal(12, 2)
+  sellerNetAmount       Decimal @default(0) @map("seller_net_amount") @db.Decimal(12, 2)
+
   // Per-unit weight snapshotted at purchase. A product's weight can change after
   // an order is placed, and a courier quote has to stay reproducible for the
   // shipment, so the figure that was paid for is the figure that ships.
@@ -618,7 +634,68 @@ model OrderItem {
   @@index([vendorId])
   @@index([inventoryId])
   @@index([vendorId, itemStatus])
-  @@index([vendorId, createdAt])
+  // A seller's earnings page: their lines, newest first, with the commission
+  // already deducted on each. Same column pair as the itemStatus index above, so
+  // it needs an explicit name to stay unique.
+  @@index([vendorId, createdAt], map: "OrderItem_vendor_id_createdAt_earnings_idx")
+}
+
+/// How a commission rule is targeted. Narrower scope wins.
+enum CommissionScope {
+  /// One rate for the whole marketplace. What ships first.
+  GLOBAL
+  /// A rate for a category tree, for categories whose margins or return rates
+  /// genuinely differ - electronics against apparel, say.
+  CATEGORY
+  /// A rate agreed with one seller.
+  VENDOR
+}
+
+/// The platform's cut, as a percentage of the seller's listed price.
+///
+/// A rate is a percentage to two decimals: 7.50 means seven and a half percent.
+///
+/// Effective dating rather than an in-place edit. A superadmin changing the rate
+/// must never alter what a seller already sold, so changing the rate closes the
+/// current rule with an `effectiveTo` and opens a new one. Orders keep the rate
+/// frozen on their line regardless.
+model CommissionRule {
+  id String @id @default(uuid())
+
+  scope CommissionScope @default(GLOBAL)
+
+  // Nullable because their meaning depends on scope: a category id for CATEGORY,
+  // a vendor id for VENDOR, and null for GLOBAL - the marketplace-wide default.
+  categoryId String? @map("category_id")
+  category   Category? @relation("CategoryCommissionRules", fields: [categoryId], references: [id], onDelete: Cascade)
+
+  vendorId String? @map("vendor_id")
+  vendor   VendorProfile? @relation("VendorCommissionRules", fields: [vendorId], references: [id], onDelete: Cascade)
+
+  /// Percentage, to two decimals. Zero for a rule that charges nothing.
+  ratePercent Decimal @default(0) @map("rate_percent") @db.Decimal(5, 2)
+
+  /// When this rate starts applying. Null until the rule is published, so a
+  /// draft cannot change anybody's price.
+  effectiveFrom DateTime? @map("effective_from")
+  /// When a later rule replaced it. Null while this is the current rate.
+  effectiveTo   DateTime? @map("effective_to")
+
+  /// A draft is not consulted at all.
+  isActive Boolean @default(true) @map("is_active")
+
+  label       String?
+  description String?
+
+  createdBy String?   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt
+
+  @@index([scope, effectiveFrom])
+  @@index([categoryId, isActive])
+  @@index([vendorId, isActive])
+  // Which rules are currently live. Partial, because closed rules are history.
+  @@index([isActive, effectiveTo])
 }
 
 model Payment {
@@ -1147,6 +1224,8 @@ model Category {
   updatedAt DateTime @updatedAt
 
   products    Product[] @relation("CategoryProducts")
+
+  commissionRules CommissionRule[] @relation("CategoryCommissionRules")
   subProducts Product[] @relation("SubcategoryProducts")
 
   @@index([parentCategory])

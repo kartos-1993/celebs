@@ -30,6 +30,7 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
+import { commissionService } from '@/modules/finance/commission/commission.service';
 import { postOrderPlacementEntries } from '@/modules/finance/ledger/ledger-posting.service';
 import {
   NotificationService,
@@ -180,6 +181,20 @@ export class CheckoutService {
         heightCm: product.packageHeightCm,
       });
 
+      // Commission is resolved and frozen onto this line before it is written.
+      //
+      // The seller listed the price the customer sees; the platform's cut is
+      // deducted from it. Both the rate and the resulting amounts are snapshotted
+      // so a later rate change cannot retroactively alter what this seller earned
+      // on a sale they already made.
+      const commission = await commissionService.applyToLine({
+        lineId: inv.id,
+        subtotal: lineSubtotalDecimal,
+        categoryId: product.categoryId,
+        subcategoryId: product.subcategoryId,
+        vendorId,
+      });
+
       itemDetails.push({
         inventoryId: inv.id,
         productId: inv.productId,
@@ -190,6 +205,9 @@ export class CheckoutService {
         unitPrice: unitPriceDecimal,
         subtotal: lineSubtotalDecimal,
         vendorId,
+        commissionRatePercent: commission.ratePercent,
+        commissionAmount: commission.commissionAmount,
+        sellerNetAmount: commission.sellerNetAmount,
         unitWeightKg: new Prisma.Decimal(
           product.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
         ).toDecimalPlaces(WEIGHT_DECIMALS, Prisma.Decimal.ROUND_HALF_UP),

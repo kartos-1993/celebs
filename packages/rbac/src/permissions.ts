@@ -40,6 +40,15 @@ export enum Permission {
   FINANCE_PLATFORM_VIEW = 'finance:platform:view',
   FINANCE_PLATFORM_MANAGE = 'finance:platform:manage',
 
+  // The platform's commission rate.
+  //
+  // SUPERADMIN only, and deliberately not granted to ADMIN. Everyone below
+  // SUPERADMIN can already read platform finance and manage settlement batches;
+  // this one changes what sellers are paid, so it is not part of that tier. An
+  // ADMIN able to set the rate could set it to zero, which is the one edit that
+  // cannot be walked back once a seller has listed against it.
+  COMMISSION_MANAGE = 'commission:manage',
+
   // ── Vendors ───────────────────────────
   VENDOR_VIEW = 'vendor:view',
   VENDOR_MANAGE = 'vendor:manage',

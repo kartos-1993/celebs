@@ -189,6 +189,13 @@ export const PERMISSION_REGISTRY: Record<Permission, PermissionDefinition> = {
     module: 'FINANCE',
   },
 
+  [Permission.COMMISSION_MANAGE]: {
+    perm: Permission.COMMISSION_MANAGE,
+    label: 'Manage Commission',
+    description: 'Set the platform commission rate, by marketplace, category, or seller',
+    module: 'FINANCE',
+  },
+
   [Permission.FINANCE_MANAGE]: {
     perm: Permission.FINANCE_MANAGE,
     label: 'Manage Payouts',

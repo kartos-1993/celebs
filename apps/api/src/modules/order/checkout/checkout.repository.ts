@@ -20,6 +20,17 @@ export interface CheckoutItemDetail {
    */
   unitWeightKg: Prisma.Decimal;
   billableWeightKg: Prisma.Decimal;
+  /**
+   * Commission, resolved and frozen at checkout.
+   *
+   * `sellerNetAmount` is always `subtotal` minus `commissionAmount`; it is never
+   * recomputed from the rate. Keeping all three on the line means a seller's
+   * earnings can be re-derived from the order years later and land on exactly the
+   * same number.
+   */
+  commissionRatePercent: Prisma.Decimal;
+  commissionAmount: Prisma.Decimal;
+  sellerNetAmount: Prisma.Decimal;
 }
 
 export class InsufficientStockError extends Error {
@@ -75,6 +86,11 @@ export class CheckoutRepository {
         packageLengthCm: true,
         packageWidthCm: true,
         packageHeightCm: true,
+        // Category and subcategory are selected because the commission rule is
+        // resolved from them - a category-scoped rate narrows the percentage, and
+        // a subcategory beats its parent. Snapshotted onto the order item.
+        categoryId: true,
+        subcategoryId: true,
       },
     });
   }
@@ -171,6 +187,9 @@ export class CheckoutRepository {
                 unitPrice: det.unitPrice,
                 quantity: det.quantity,
                 subtotal: det.subtotal,
+                commissionRatePercent: det.commissionRatePercent,
+                commissionAmount: det.commissionAmount,
+                sellerNetAmount: det.sellerNetAmount,
                 unitWeightKg: det.unitWeightKg,
                 billableWeightKg: det.billableWeightKg,
                 itemStatus: 'PENDING',
