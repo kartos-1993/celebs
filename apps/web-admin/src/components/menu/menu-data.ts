@@ -130,11 +130,26 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   }
 
   if (hasPerm(Permission.FINANCE_VIEW)) {
+    // The parent label is for every seller, so the first submenu is their own
+    // earnings rather than the platform ledger: they hold FINANCE_VIEW, not the
+    // platform permission, so sending them to /finance lands them on a 403.
+    const financeSubmenus: Array<{ href: string; label: string }> = [
+      { href: '/finance/earnings', label: 'My Earnings' },
+    ];
+
+    if (hasPerm(Permission.FINANCE_PLATFORM_VIEW)) {
+      financeSubmenus.push({ href: '/finance', label: 'Courier Ledger' });
+    }
+
+    if (hasPerm(Permission.COMMISSION_MANAGE)) {
+      financeSubmenus.push({ href: '/finance/commissions', label: 'Commission' });
+    }
+
     management.push({
       href: '',
       label: 'Finance',
       icon: IndianRupee,
-      submenus: [{ href: '/finance', label: 'Finance' }],
+      submenus: financeSubmenus,
     });
   }
 

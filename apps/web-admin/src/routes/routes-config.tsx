@@ -10,6 +10,8 @@ import { accountRoutes } from '@/features/account/routes';
 // Feature Routes
 import { authRoutes } from '@/features/auth/routes';
 import { categoryRoutes } from '@/features/category/routes';
+import { commissionRoutes } from '@/features/finance/commission/routes';
+import { earningsRoutes } from '@/features/finance/earnings/routes';
 import { financeRoutes } from '@/features/finance/routes';
 import { marketingRoutes } from '@/features/marketing/routes';
 import { optionSetRoutes } from '@/features/option-sets/routes';
@@ -54,6 +56,8 @@ export const routesConfig: RouteObject[] = [
       orderRoutes,
       accountRoutes,
       financeRoutes,
+      commissionRoutes,
+      earningsRoutes,
       ...platformSettingsRoutes,
       marketingRoutes,
       {

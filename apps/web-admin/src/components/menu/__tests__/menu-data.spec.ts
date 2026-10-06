@@ -270,3 +270,47 @@ function collectRoutePaths(routes: RouteObject[], parent = ''): string[] {
     return [full, ...collectRoutePaths(route.children ?? [], full)];
   });
 }
+
+/**
+ * A seller holds FINANCE_VIEW but not the platform permission, so the Finance
+ * group has to open on something they can actually read. Sending them to the
+ * courier ledger is a 403 - the dead end this set of tests guards against.
+ */
+describe('finance submenu by permission', () => {
+  it('gives a seller their own earnings and not the platform ledger', () => {
+    const labels = getSubmenuLabels('Finance', 'VENDOR', [Permission.FINANCE_VIEW]);
+
+    expect(labels).toContain('My Earnings');
+    expect(labels).not.toContain('Courier Ledger');
+    expect(labels).not.toContain('Commission');
+  });
+
+  it('adds the courier ledger for whoever can read platform finance', () => {
+    const labels = getSubmenuLabels('Finance', 'ADMIN', [
+      Permission.FINANCE_VIEW,
+      Permission.FINANCE_PLATFORM_VIEW,
+    ]);
+
+    expect(labels).toContain('My Earnings');
+    expect(labels).toContain('Courier Ledger');
+    // An admin can read the ledger but must not be offered the rate.
+    expect(labels).not.toContain('Commission');
+  });
+
+  it('shows commission only to superadmin, matching the route guard', () => {
+    const labels = getSubmenuLabels('Finance', 'SUPERADMIN', [
+      Permission.FINANCE_VIEW,
+      Permission.FINANCE_PLATFORM_VIEW,
+      Permission.COMMISSION_MANAGE,
+    ]);
+
+    expect(labels).toContain('Commission');
+    expect(labels).toContain('Courier Ledger');
+  });
+
+  it('shows no finance group at all without a finance permission', () => {
+    const labels = getMenuLabels('CUSTOMER', []);
+
+    expect(labels).not.toContain('Finance');
+  });
+});
