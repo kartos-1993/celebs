@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// The suite-wide setup stubs this module so nothing in the test run reaches for a
+// real courier token. This file is the one place that behaviour is actually under
+// test, so it takes the real implementation back.
+vi.unmock('@/modules/logistics/adapters/pathao-token.provider');
+
 import {
   PATHAO_TOKEN_REFRESH_MARGIN_SECONDS,
   PathaoTokenProvider,
@@ -64,6 +69,9 @@ describe('resolvePathaoConfig', () => {
       clientSecret: 'client-secret',
       username: 'test.parcel@pathao.com',
       password: 'lovePathao',
+      // The store every parcel is collected from. One approved pickup point, so a
+      // single id rather than one per seller.
+      storeId: 130903,
     });
   });
 

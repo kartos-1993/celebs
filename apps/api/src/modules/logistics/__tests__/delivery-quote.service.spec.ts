@@ -15,7 +15,7 @@ const dec = (value: string | number) => new Prisma.Decimal(value);
  * returned: 150 for 0.9 kg to Pokhara, 185 for 2.5 kg, 210 to Bardibas.
  */
 
-function fakeClient(priceFor: (weightKg: Prisma.Decimal) => Prisma.Decimal) {
+function fakeClient(priceFor: (declaredWeightKg: Prisma.Decimal) => Prisma.Decimal) {
   const calls: number[] = [];
 
   const client = {
@@ -48,60 +48,71 @@ describe('quoting a cart for delivery', () => {
 
     const quote = await new DeliveryQuoteService(client, undefined, async () => 'token').quote({
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('0.9'), goodsAmount: dec('1800'), lineIds: ['l1'] },
-        { vendorId: 'sellerB', weightKg: dec('2.5'), goodsAmount: dec('600'), lineIds: ['l2'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('0.9'),
+          goodsAmount: dec('1800'),
+          lineIds: ['l1'],
+        },
+        {
+          vendorId: 'sellerB',
+          declaredWeightKg: dec('2.5'),
+          goodsAmount: dec('600'),
+          lineIds: ['l2'],
+        },
       ],
     });
 
     // The case the whole exercise exists for: one fee for a shared basket would be
     // 150 here, while the courier bills for two pickups.
     expect(quote.parcels).toHaveLength(2);
-    expect(quote.totalDeliveryFee.toFixed(2)).toBe('300.00');
+    expect(quote.totalCourierFee.toFixed(2)).toBe('300.00');
     expect(calls).toHaveLength(2);
   });
 
-  it('shows the customer the same figure it will charge them', async () => {
+  it('reports the courier cost, leaving the customer total to the policy', async () => {
     const { client } = fakeClient(() => dec('185'));
 
     const quote = await new DeliveryQuoteService(client, undefined, async () => 'token').quote({
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('2.5'), goodsAmount: dec('600'), lineIds: ['l1'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('2.5'),
+          goodsAmount: dec('600'),
+          lineIds: ['l1'],
+        },
       ],
     });
 
-    expect(quote.totalDeliveryFee.toFixed(2)).toBe('185.00');
-    expect(quote.collectibleAmount.toFixed(2)).toBe('785.00');
+    expect(quote.totalCourierFee.toFixed(2)).toBe('185.00');
+    // The courier's handling rate travels with the quote but is not applied here:
+    // what the customer owes also depends on the free-delivery threshold, which
+    // this service has no opinion about.
+    expect(quote.codPercentage.toFixed(2)).toBe('0.01');
   });
 
-  it('adds the courier cash-handling charge only on cash on delivery', async () => {
+  it('carries the courier cash-handling rate through as a fraction', async () => {
+    // Regression guard. Pathao returns 0.01 for one percent; treating that as a
+    // percentage value charged 0.12 where the courier charges 11.50. The rate is
+    // read from their response rather than hardcoded here, so a change on their
+    // side is picked up instead of being overwritten by our guess.
     const { client } = fakeClient(() => dec('150'));
 
-    const service = new DeliveryQuoteService(client, undefined, async () => 'token');
-
-    const prepaid = await service.quote({
+    const quote = await new DeliveryQuoteService(client, undefined, async () => 'token').quote({
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('0.9'), goodsAmount: dec('1000'), lineIds: ['l1'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('0.9'),
+          goodsAmount: dec('1000'),
+          lineIds: ['l1'],
+        },
       ],
     });
 
-    const cod = await service.quote({
-      ...baseInput,
-      isCod: true,
-      parcels: [
-        { vendorId: 'sellerA', weightKg: dec('0.9'), goodsAmount: dec('1000'), lineIds: ['l1'] },
-      ],
-    });
-
-    expect(prepaid.codHandlingFee.toFixed(2)).toBe('0.00');
-    expect(cod.codHandlingFee.toFixed(2)).toBe('11.50');
-    // 1000 goods + 150 delivery = 1150, and 1% of that is the handling charge.
-    expect(cod.collectibleAmount.toFixed(2)).toBe('1161.50');
+    expect(quote.codPercentage.toFixed(2)).toBe('0.01');
   });
 
   it('refuses a parcel the courier will not carry rather than quoting a fee', async () => {
@@ -110,9 +121,13 @@ describe('quoting a cart for delivery', () => {
     await expect(
       new DeliveryQuoteService(client, undefined, async () => 'token').quote({
         ...baseInput,
-        isCod: false,
         parcels: [
-          { vendorId: 'sellerA', weightKg: dec('250'), goodsAmount: dec('100'), lineIds: ['l1'] },
+          {
+            vendorId: 'sellerA',
+            declaredWeightKg: dec('250'),
+            goodsAmount: dec('100'),
+            lineIds: ['l1'],
+          },
         ],
       }),
     ).rejects.toThrow(/200/);
@@ -124,7 +139,6 @@ describe('quoting a cart for delivery', () => {
     await expect(
       new DeliveryQuoteService(client, undefined, async () => 'token').quote({
         ...baseInput,
-        isCod: false,
         parcels: [],
       }),
     ).rejects.toThrow();
@@ -137,10 +151,19 @@ describe('quoting a cart for delivery', () => {
 
     await new DeliveryQuoteService(client, undefined, async () => 'token').quote({
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('0.9'), goodsAmount: dec('100'), lineIds: ['l1'] },
-        { vendorId: 'sellerB', weightKg: dec('0.9'), goodsAmount: dec('200'), lineIds: ['l2'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('0.9'),
+          goodsAmount: dec('100'),
+          lineIds: ['l1'],
+        },
+        {
+          vendorId: 'sellerB',
+          declaredWeightKg: dec('0.9'),
+          goodsAmount: dec('200'),
+          lineIds: ['l2'],
+        },
       ],
     });
 
@@ -163,9 +186,13 @@ describe('delivery quote cache', () => {
     const service = new DeliveryQuoteService(client, cache, async () => 'token');
     const input = {
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('0.9'), goodsAmount: dec('100'), lineIds: ['l1'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('0.9'),
+          goodsAmount: dec('100'),
+          lineIds: ['l1'],
+        },
       ],
     };
 
@@ -175,7 +202,7 @@ describe('delivery quote cache', () => {
     expect(calls).toHaveLength(1);
     expect(first.parcels[0]?.cached).toBe(false);
     expect(second.parcels[0]?.cached).toBe(true);
-    expect(second.totalDeliveryFee.toFixed(2)).toBe(first.totalDeliveryFee.toFixed(2));
+    expect(second.totalCourierFee.toFixed(2)).toBe(first.totalCourierFee.toFixed(2));
   });
 
   it("does not serve one weight band from another's price", async () => {
@@ -194,16 +221,24 @@ describe('delivery quote cache', () => {
 
     await service.quote({
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('0.5'), goodsAmount: dec('1'), lineIds: ['l1'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('0.5'),
+          goodsAmount: dec('1'),
+          lineIds: ['l1'],
+        },
       ],
     });
     await service.quote({
       ...baseInput,
-      isCod: false,
       parcels: [
-        { vendorId: 'sellerA', weightKg: dec('50'), goodsAmount: dec('1'), lineIds: ['l2'] },
+        {
+          vendorId: 'sellerA',
+          declaredWeightKg: dec('50'),
+          goodsAmount: dec('1'),
+          lineIds: ['l2'],
+        },
       ],
     });
 
@@ -225,16 +260,15 @@ describe('delivery quote cache', () => {
     const service = new DeliveryQuoteService(client, cache, async () => 'token');
     const parcel = {
       vendorId: 'sellerA',
-      weightKg: dec('0.9'),
+      declaredWeightKg: dec('0.9'),
       goodsAmount: dec('100'),
       lineIds: ['l1'],
     };
 
-    await service.quote({ ...baseInput, isCod: false, parcels: [parcel] });
+    await service.quote({ ...baseInput, parcels: [parcel] });
     const elsewhere = await service.quote({
       ...baseInput,
       recipientZoneExternalId: 1338,
-      isCod: false,
       parcels: [parcel],
     });
 

@@ -25,14 +25,20 @@ export interface OrderLineForParcel {
   lineId: string;
   vendorId: string;
   quantity: number;
-  /** The line's total billable weight, not per unit. */
-  billableWeightKg: Prisma.Decimal;
+  /**
+   * The line's total *declared* weight, not per unit.
+   *
+   * Declared, not billable: the courier prices on the weight the seller states
+   * and has no volumetric input at all, so feeding it a volumetric maximum would
+   * charge the seller more for packing than the courier ever asked.
+   */
+  declaredWeightKg: Prisma.Decimal;
   unitPrice: Prisma.Decimal;
 }
 
 export interface SellerParcel {
   vendorId: string;
-  weightKg: Prisma.Decimal;
+  declaredWeightKg: Prisma.Decimal;
   /** Everything this seller is being paid for, before commission. */
   goodsAmount: Prisma.Decimal;
   lineIds: string[];
@@ -51,7 +57,7 @@ export function sellerParcelsFromLines(lines: readonly OrderLineForParcel[]): Se
     if (!existing) {
       byVendor.set(line.vendorId, {
         vendorId: line.vendorId,
-        weightKg: line.billableWeightKg,
+        declaredWeightKg: line.declaredWeightKg,
         goodsAmount: line.unitPrice.mul(line.quantity),
         lineIds: [line.lineId],
         lineCount: 1,
@@ -60,7 +66,7 @@ export function sellerParcelsFromLines(lines: readonly OrderLineForParcel[]): Se
       continue;
     }
 
-    existing.weightKg = existing.weightKg.plus(line.billableWeightKg);
+    existing.declaredWeightKg = existing.declaredWeightKg.plus(line.declaredWeightKg);
     existing.goodsAmount = existing.goodsAmount.plus(line.unitPrice.mul(line.quantity));
     existing.lineIds.push(line.lineId);
     existing.lineCount += 1;
@@ -81,20 +87,20 @@ export function sellerParcelsFromLines(lines: readonly OrderLineForParcel[]): Se
 export function mergeSellerParcels(
   parcels: ReadonlyArray<{
     vendorId: string;
-    weightKg: Prisma.Decimal;
+    declaredWeightKg: Prisma.Decimal;
     goodsAmount: Prisma.Decimal;
   }>,
 ): SellerParcel[] {
   return parcels.map((parcel) => {
-    if (parcel.weightKg.lte(ZERO)) {
+    if (parcel.declaredWeightKg.lte(ZERO)) {
       throw new RangeError(
-        `Parcel for seller ${parcel.vendorId} weighs ${parcel.weightKg.toString()} kg, which cannot be shipped`,
+        `Parcel for seller ${parcel.vendorId} weighs ${parcel.declaredWeightKg.toString()} kg, which cannot be shipped`,
       );
     }
 
-    if (parcel.weightKg.gt(COURIER_MAX_PARCEL_KG)) {
+    if (parcel.declaredWeightKg.gt(COURIER_MAX_PARCEL_KG)) {
       throw new RangeError(
-        `Parcel for seller ${parcel.vendorId} weighs ${parcel.weightKg.toFixed(2)} kg; the courier accepts up to ${COURIER_MAX_PARCEL_KG.toString()} kg. Split it into more than one parcel.`,
+        `Parcel for seller ${parcel.vendorId} weighs ${parcel.declaredWeightKg.toFixed(2)} kg; the courier accepts up to ${COURIER_MAX_PARCEL_KG.toString()} kg. Split it into more than one parcel.`,
       );
     }
 

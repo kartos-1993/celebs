@@ -5,6 +5,8 @@ import {
   type PathaoPricePlanRequest,
   weightBandFor,
 } from './adapters/pathao-price.client';
+import { pathaoTokenProvider } from './adapters/pathao-token.provider';
+import { money } from './money';
 import { mergeSellerParcels } from './seller-parcels';
 
 import { Prisma } from '@/config/db.prisma';
@@ -29,14 +31,14 @@ import { Prisma } from '@/config/db.prisma';
 
 export interface QuoteSellerParcelInput {
   vendorId: string;
-  weightKg: Prisma.Decimal;
+  declaredWeightKg: Prisma.Decimal;
   goodsAmount: Prisma.Decimal;
   lineIds: string[];
 }
 
 export interface QuotedParcel {
   vendorId: string;
-  weightKg: Prisma.Decimal;
+  declaredWeightKg: Prisma.Decimal;
   goodsAmount: Prisma.Decimal;
   /** What the courier charges for this seller's parcel. */
   deliveryFee: Prisma.Decimal;
@@ -49,15 +51,19 @@ export interface QuotedParcel {
 }
 
 export interface DeliveryQuote {
-  /** What the customer is charged for delivery in total. */
-  totalDeliveryFee: Prisma.Decimal;
+  /** Sum of the courier's per-seller charges. What they will invoice us. */
+  totalCourierFee: Prisma.Decimal;
   parcels: QuotedParcel[];
-  /** 0.01 means one percent of the amount collected. */
+  /**
+   * The courier cash-handling rate, as a fraction: 0.01 is one percent of the
+   * amount collected.
+   *
+   * Reported here but deliberately not applied here. What the customer owes also
+   * depends on whether a free-delivery threshold waived the charge, which this
+   * service does not know about - so applying it in both places would let the two
+   * answers drift apart on exactly the orders where it costs money.
+   */
   codPercentage: Prisma.Decimal;
-  /** The charge added on top when the customer pays cash on delivery. */
-  codHandlingFee: Prisma.Decimal;
-  /** The amount the courier will collect: goods plus delivery plus the handling fee. */
-  collectibleAmount: Prisma.Decimal;
   currency: string;
 }
 
@@ -66,14 +72,10 @@ export interface QuoteDeliveryInput {
   /** Pathao's external ids, already resolved from our own synced tables. */
   recipientCityExternalId: number;
   recipientZoneExternalId: number;
-  isCod: boolean;
   storeId: number;
 }
 
 const ZERO = new Prisma.Decimal(0);
-const MONEY_PLACES = 2;
-
-const money = (value: Prisma.Decimal) => value.toDecimalPlaces(MONEY_PLACES);
 
 export interface DeliveryQuoteCache {
   get(key: string): Promise<CourierQuote | null>;
@@ -116,7 +118,7 @@ export class DeliveryQuoteService {
       if (cached) {
         quoted.push({
           vendorId: parcel.vendorId,
-          weightKg: parcel.weightKg,
+          declaredWeightKg: parcel.declaredWeightKg,
           goodsAmount: parcel.goodsAmount,
           deliveryFee: cached.finalPrice,
           planId: cached.planId,
@@ -129,7 +131,7 @@ export class DeliveryQuoteService {
 
       const courierQuote = await this.client.quote({
         storeId: input.storeId,
-        itemWeightKg: parcel.weightKg,
+        itemWeightKg: parcel.declaredWeightKg,
         recipientCityId: input.recipientCityExternalId,
         recipientZoneId: input.recipientZoneExternalId,
         accessToken: await this.tokenResolver(),
@@ -139,7 +141,7 @@ export class DeliveryQuoteService {
 
       quoted.push({
         vendorId: parcel.vendorId,
-        weightKg: parcel.weightKg,
+        declaredWeightKg: parcel.declaredWeightKg,
         goodsAmount: parcel.goodsAmount,
         deliveryFee: courierQuote.finalPrice,
         planId: courierQuote.planId,
@@ -149,7 +151,7 @@ export class DeliveryQuoteService {
       });
     }
 
-    return this.buildQuote(quoted, input.isCod);
+    return this.buildQuote(quoted);
   }
 
   /**
@@ -159,44 +161,45 @@ export class DeliveryQuoteService {
    * charges identically must share a key while heavy ones - priced per kilogram -
    * must not.
    */
-  private cacheKey(input: QuoteDeliveryInput, parcel: { weightKg: Prisma.Decimal }): string {
+  private cacheKey(
+    input: QuoteDeliveryInput,
+    parcel: { declaredWeightKg: Prisma.Decimal },
+  ): string {
     return [
       'delivery-quote',
       input.storeId,
       input.recipientCityExternalId,
       input.recipientZoneExternalId,
-      weightBandFor(parcel.weightKg),
+      weightBandFor(parcel.declaredWeightKg),
     ].join(':');
   }
 
-  private buildQuote(parcels: QuotedParcel[], isCod: boolean): DeliveryQuote {
+  private buildQuote(parcels: QuotedParcel[]): DeliveryQuote {
+    // Every parcel comes from the same courier, so any of them carries the same
+    // cash-handling rate. Taken from their response rather than hardcoded, so a
+    // change on their side is picked up instead of being overwritten by our guess.
     const codPercentage = parcels[0]?.codPercentage ?? ZERO;
-    const totalDeliveryFee = parcels.reduce(
-      (total, parcel) => total.plus(parcel.deliveryFee),
-      ZERO,
-    );
 
-    // The courier's cash-handling charge is a percentage of what they collect, so
-    // it cannot be known until the total is. Charged to the customer and disclosed
-    // at checkout: it is their money collected, and passing it through at cost is
-    // what makes it defensible to show at all.
-    const beforeHandling = parcels
-      .reduce((total, parcel) => total.plus(parcel.goodsAmount), ZERO)
-      .plus(totalDeliveryFee);
-
-    // codPercentage is a fraction (0.01 = 1%), so it is multiplied, not divided by
-    // 100 again - doing that charged 0.12 where the courier charges 11.50.
-    const codHandlingFee = isCod ? money(beforeHandling.mul(codPercentage)) : ZERO;
+    const totalCourierFee = parcels.reduce((total, parcel) => total.plus(parcel.deliveryFee), ZERO);
 
     return {
-      totalDeliveryFee: money(totalDeliveryFee),
+      totalCourierFee: money(totalCourierFee),
       parcels,
       codPercentage,
-      codHandlingFee,
-      collectibleAmount: money(beforeHandling.plus(codHandlingFee)),
       currency: 'NPR',
     };
   }
 }
 
-export const deliveryQuoteService = new DeliveryQuoteService();
+/**
+ * The quoting service the application actually uses.
+ *
+ * Wired to the courier's token provider so a live quote fetches a real token
+ * rather than failing with a message about configuration. Constructed with no
+ * arguments on purpose - every dependency has a working default, so a caller that
+ * forgets to inject gets real behaviour rather than a stub that silently quotes
+ * zero.
+ */
+export const deliveryQuoteService = new DeliveryQuoteService(pathaoPriceClient, undefined, () =>
+  pathaoTokenProvider.getToken(),
+);

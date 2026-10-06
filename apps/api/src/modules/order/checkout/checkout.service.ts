@@ -1,4 +1,4 @@
-import { PaymentMethod } from '@prisma/client';
+import { DeliveryPricingSource, PaymentMethod } from '@prisma/client';
 
 import {
   CheckoutInput,
@@ -8,10 +8,19 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { resolvePathaoConfig } from '../../logistics/adapters/pathao-token.provider';
+import {
+  CourierDestinationRepository,
+  courierDestinationRepository,
+  UnresolvableDestinationError,
+} from '../../logistics/courier-destination.repository';
 import { deliveryCoverageRepository } from '../../logistics/delivery-coverage.repository';
-import { resolveDeliveryPricing } from '../../logistics/delivery-pricing';
+import { applyDeliveryPolicy } from '../../logistics/delivery-policy';
 import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repository';
-import { computeBillableLineWeightKg, sumBillableWeightKg } from '../../logistics/parcel-weight';
+import { DeliveryQuoteService, deliveryQuoteService } from '../../logistics/delivery-quote.service';
+import { sumBillableWeightKg } from '../../logistics/parcel-weight';
+import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
+import { sellerParcelsFromLines } from '../../logistics/seller-parcels';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
@@ -54,6 +63,9 @@ export class CheckoutService {
     private coreOrderRepo: CoreOrderRepository = coreOrderRepository,
     private notificationService: NotificationService = defaultNotificationService,
     private platformSettingsService: PlatformSettingsService = defaultPlatformSettingsService,
+    private deliveryQuoteSvc: DeliveryQuoteService = deliveryQuoteService,
+    private courierDestinationRepo: CourierDestinationRepository = courierDestinationRepository,
+    private pathaoStoreId: number = resolvePathaoConfig().storeId,
   ) {}
 
   async checkout(userId: string, input: CheckoutInput, requestHost?: string) {
@@ -247,37 +259,72 @@ export class CheckoutService {
     // The COD ceiling comes from the commerce policy so an admin can change it
     // without a deploy.
     //
-    // Delivery is priced from the rate card against the parcel's actual
-    // billable weight, not a flat platform fee. Both the threshold and the rate
-    // depend on the destination's own zone, because delivery inside the valley
-    // costs the courier far less than delivery to Biratnagar.
+    // Delivery is priced by the courier, not by the rate card. The bands in
+    // ShippingRate were our estimate of what a courier charges, and they were
+    // wrong in both directions at once: measured, 0.9 kg is 150 to Pokhara and 210
+    // to Bardibas, and a basket holding two sellers' goods is two pickups. One
+    // hand-entered fee for that basket is a guaranteed loss on every multi-seller
+    // order, and a settlement that never matches the invoice.
     //
-    // The two reads are sequential because the second needs the city the first
-    // resolves. `activeRates` returns that city's bands together with the
-    // general ones in a single query, so this costs two round trips rather than
-    // a rate fetch per candidate city.
+    // What is still ours: the free-delivery threshold, which is a commercial
+    // promise, and the COD ceiling. Both apply to the courier's number rather than
+    // replacing it, so the courier still costs what it costs when we give
+    // delivery away.
     const policy = await this.platformSettingsService.getCommercePolicy();
     const destination = await deliveryPricingRepository.thresholdForAddress({
       logisticsZoneId: address.logisticsZoneId,
     });
-    const rates = await deliveryPricingRepository.activeRates(destination.cityId);
 
-    const totalBillableWeightKg = sumBillableWeightKg(
-      itemDetails.map((item) => item.billableWeightKg),
+    // Fails closed. The courier answers an unknown zone with a successful, wrong
+    // price, so an address we cannot resolve to courier ids is refused here rather
+    // than quoted for.
+    //
+    // Surfaced as a 400 with something the customer can act on. Letting the domain
+    // error escape would answer a mistyped district with a 500, which reads as our
+    // fault and tells them nothing about what to change.
+    let courierDestination;
+    try {
+      courierDestination = await this.courierDestinationRepo.forZoneId(address.logisticsZoneId);
+    } catch (err: unknown) {
+      if (err instanceof UnresolvableDestinationError) {
+        throw new AppError(err.message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+      }
+      throw err;
+    }
+
+    const parcels = sellerParcelsFromLines(
+      itemDetails.map((item) => ({
+        lineId: item.inventoryId,
+        vendorId: item.vendorId,
+        quantity: item.quantity,
+        // Declared, not billable: the courier prices on the weight the seller
+        // states and has no volumetric input, so a volumetric maximum would charge
+        // the seller more for packing than the courier ever asked.
+        declaredWeightKg: item.unitWeightKg.mul(item.quantity),
+        unitPrice: item.unitPrice,
+      })),
     );
 
-    const pricing = resolveDeliveryPricing({
-      subtotal: subtotalDecimal,
-      weightKg: totalBillableWeightKg,
-      isCod: paymentMethod === 'COD',
-      freeDeliveryThreshold: destination.freeDeliveryThreshold,
-      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
-      rates,
-      cityId: destination.cityId,
+    const quote = await this.deliveryQuoteSvc.quote({
+      parcels,
+      recipientCityExternalId: courierDestination.cityExternalId,
+      recipientZoneExternalId: courierDestination.zoneExternalId,
+      storeId: this.pathaoStoreId,
     });
 
-    const shippingFeeDecimal = pricing.shippingFee;
-    const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
+    const isCod = paymentMethod === 'COD';
+
+    const delivery = applyDeliveryPolicy({
+      subtotal: subtotalDecimal,
+      quotedCourierFee: quote.totalCourierFee,
+      freeDeliveryThreshold: destination.freeDeliveryThreshold,
+      isCod,
+      codPercentage: quote.codPercentage,
+    });
+
+    const shippingFeeDecimal = delivery.customerCharge;
+    const totalAmountDecimal = delivery.totalPayable;
+    const deliveryPricingSource = DeliveryPricingSource.COURIER_QUOTE;
 
     if (paymentMethod === 'COD' && !isCodAllowed(totalAmountDecimal.toNumber(), policy)) {
       throw new AppError(
@@ -303,12 +350,16 @@ export class CheckoutService {
         subtotal: subtotalDecimal,
         shippingFee: shippingFeeDecimal,
         totalAmount: totalAmountDecimal,
-        courierFee: pricing.courierFee,
-        absorbedShippingCost: pricing.absorbedCost,
-        deliveryPricingSource: pricing.source,
-        matchedShippingRateId: pricing.matchedRateId,
+        courierFee: delivery.courierCost,
+        absorbedShippingCost: delivery.absorbedCost,
+        deliveryPricingSource,
+        matchedShippingRateId: null,
+        codHandlingFee: delivery.codHandlingFee,
+        amountToCollect: isCOD ? delivery.amountToCollect : null,
         logisticsZoneId: destination.zoneId,
-        totalBillableWeightKg,
+        totalBillableWeightKg: sumBillableWeightKg(
+          itemDetails.map((item) => item.billableWeightKg),
+        ),
         orderStatus,
         paymentStatus,
         paymentMethod,

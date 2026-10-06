@@ -39,6 +39,21 @@ vi.mock('@/modules/logistics/delivery-coverage.repository', () => ({
   deliveryCoverageRepository: { coverageForAddress: mockCoverageForAddress },
 }));
 
+// The zone on this spec's address is a bare string, so resolving it to courier ids
+// would hit the database for a row that was never created. This suite is about
+// coverage, not destinations; stubbed so it can stay that way.
+vi.mock('@/modules/logistics/courier-destination.repository', () => ({
+  courierDestinationRepository: {
+    forZoneId: async () => ({
+      cityExternalId: 79,
+      zoneExternalId: 1326,
+      cityName: 'Kathmandu',
+      zoneName: 'Kathmandu',
+    }),
+  },
+  UnresolvableDestinationError: class UnresolvableDestinationError extends Error {},
+}));
+
 const USER_ID = '33333333-3333-4333-8333-333333333333';
 const ADDRESS_ID = '44444444-4444-4444-8444-444444444444';
 

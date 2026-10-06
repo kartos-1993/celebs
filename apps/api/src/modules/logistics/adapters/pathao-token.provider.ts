@@ -23,6 +23,15 @@ export interface PathaoConfig {
   clientSecret: string;
   username: string;
   password: string;
+  /**
+   * The Pathao store every parcel is collected from.
+   *
+   * Celebs is one merchant with one approved pickup point, so there is a single
+   * value here rather than one per seller. Sellers are not Pathao stores: their
+   * goods are collected as one pickup from ours and priced as one parcel, and the
+   * per-seller split is about who the money goes to, not who drives the van.
+   */
+  storeId: number;
 }
 
 const TOKEN_PATH = '/aladdin/api/v1/issue-token';
@@ -53,6 +62,12 @@ export function resolvePathaoConfig(): PathaoConfig {
   const clientSecret = read('PATHAO_CLIENT_SECRET');
   const username = read('PATHAO_USERNAME');
   const password = read('PATHAO_PASSWORD');
+  // 130903 is the sandbox store. A blank id is refused rather than defaulted in
+  // staging and production: quoting against store 0 returns a plausible-looking
+  // price that no courier will honour.
+  const storeId = Number(
+    read('PATHAO_STORE_ID') || (nodeEnv === 'production' || nodeEnv === 'staging' ? '' : '130903'),
+  );
 
   if (nodeEnv === 'staging' || nodeEnv === 'production') {
     const required = {
@@ -61,6 +76,7 @@ export function resolvePathaoConfig(): PathaoConfig {
       PATHAO_CLIENT_SECRET: clientSecret,
       PATHAO_USERNAME: username,
       PATHAO_PASSWORD: password,
+      PATHAO_STORE_ID: Number.isInteger(storeId) && storeId > 0 ? String(storeId) : '',
     };
     const missing = Object.entries(required)
       .filter(([, value]) => value === '')
@@ -73,12 +89,19 @@ export function resolvePathaoConfig(): PathaoConfig {
     }
   }
 
+  if (!Number.isInteger(storeId) || storeId <= 0) {
+    throw new Error(
+      'Pathao store id is not a positive integer. Set PATHAO_STORE_ID to the approved pickup store.',
+    );
+  }
+
   return {
     baseUrl,
     clientId,
     clientSecret,
     username,
     password,
+    storeId,
   };
 }
 

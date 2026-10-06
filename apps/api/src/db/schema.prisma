@@ -270,6 +270,9 @@ enum PaymentMethod {
 enum DeliveryPricingSource {
   RATE_CARD
   FALLBACK
+  // The courier's own price, for one parcel per seller. The bands above are our
+  // guess at what a courier charges; this is the courier saying it.
+  COURIER_QUOTE
 }
 
 enum PaymentStatus {
@@ -438,6 +441,17 @@ model Order {
   // Total billable weight of the parcel, snapshotted for the same reason the
   // per-line weights are: a courier is billed on the weight we quoted.
   totalBillableWeightKg Decimal?              @map("total_billable_weight_kg") @db.Decimal(8, 3)
+  // The courier's percentage charge for collecting cash, passed through to the
+  // customer at cost rather than marked up. Zero unless the order is COD.
+  //
+  // Held as money rather than recomputed from a rate later, because it is a
+  // percentage of the amount collected: once a free-delivery threshold waived the
+  // delivery charge, the fee is a percentage of the goods alone, and there is no
+  // way to tell from a single rate column which of the two an old order was.
+  codHandlingFee        Decimal               @default(0) @map("cod_handling_fee") @db.Decimal(12, 2)
+  // What the courier collects on a COD order: goods plus delivery plus handling.
+  // The courier reconciles against this, so it must be the figure we gave them.
+  amountToCollect       Decimal?              @map("amount_to_collect") @db.Decimal(12, 2)
 
   status        OrderStatus   @default(PENDING_PAYMENT)
   paymentMethod PaymentMethod @map("payment_method")

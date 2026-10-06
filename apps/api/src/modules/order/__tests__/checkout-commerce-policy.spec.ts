@@ -41,6 +41,21 @@ vi.mock('@/modules/logistics/delivery-coverage.repository', () => ({
   deliveryCoverageRepository: { coverageForAddress: mockCoverageForAddress },
 }));
 
+// This suite is about the commerce policy, not about where a parcel goes. The
+// address here carries no zone id at all, so resolving one to courier ids would
+// hit the database for a row that was never created.
+vi.mock('@/modules/logistics/courier-destination.repository', () => ({
+  courierDestinationRepository: {
+    forZoneId: async () => ({
+      cityExternalId: 79,
+      zoneExternalId: 1326,
+      cityName: 'Kathmandu',
+      zoneName: 'Kathmandu',
+    }),
+  },
+  UnresolvableDestinationError: class UnresolvableDestinationError extends Error {},
+}));
+
 const USER_ID = '33333333-3333-4333-8333-333333333333';
 const ADDRESS_ID = '44444444-4444-4444-8444-444444444444';
 
@@ -111,8 +126,9 @@ describe('checkout charges from the commerce policy', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPolicy.mockResolvedValue({ ...COMMERCE_POLICY_DEFAULTS });
-    // No rate bands, so these assertions stay about the policy fallback fee.
-    // Rate-card pricing has its own spec.
+    // Delivery is priced by the courier, which the suite-wide stub answers at 150
+    // for a light parcel. Rate-card pricing is gone; courier pricing has its own
+    // spec.
     mockActiveRates.mockResolvedValue([]);
     // A default zone threshold of 3000 keeps the original assertions meaningful;
     // the per-zone cases override it.
@@ -173,7 +189,11 @@ describe('checkout charges from the commerce policy', () => {
     expect(call?.shippingFee.toNumber()).toBe(150);
   });
 
-  it('follows a changed fallback fee when no rate band matches', async () => {
+  it('ignores a flat fee left in the policy, because the courier prices delivery', () => {
+    // The commerce policy still carries flatShippingFee for the cart preview and
+    // for anything not yet migrated. It must not reach the order: a policy number
+    // quietly reappearing on a charged order would be the hand-entered estimate
+    // settling orders again, which is the whole failure this replaced.
     mockPolicy.mockResolvedValue({ codMaxLimit: 9000, flatShippingFee: 250 });
     mockThresholdForAddress.mockResolvedValue({
       cityId: 'city-1',
@@ -185,13 +205,18 @@ describe('checkout charges from the commerce policy', () => {
     });
     const { service, createOrderWithReservation } = buildService({ subtotal: 4000 });
 
-    await service.checkout(USER_ID, baseInput).catch(() => undefined);
-
-    const call = createOrderWithReservation.mock.calls[0]?.[0];
-    expect(call?.shippingFee.toNumber()).toBe(250);
+    return service
+      .checkout(USER_ID, baseInput)
+      .catch(() => undefined)
+      .then(() => {
+        const call = createOrderWithReservation.mock.calls[0]?.[0];
+        expect(call?.shippingFee.toNumber()).toBe(150);
+      });
   });
 
-  it('honours a zero flat fee set by an admin', async () => {
+  it('does not charge zero delivery when an admin set the flat fee to zero', () => {
+    // A zero flat fee used to mean free delivery. Free delivery is now a threshold
+    // decision made against a real courier cost, so a stale zero cannot grant it.
     mockPolicy.mockResolvedValue({
       codMaxLimit: 5000,
       freeShippingThreshold: 3000,
@@ -199,10 +224,13 @@ describe('checkout charges from the commerce policy', () => {
     });
     const { service, createOrderWithReservation } = buildService({ subtotal: 500 });
 
-    await service.checkout(USER_ID, baseInput).catch(() => undefined);
-
-    const call = createOrderWithReservation.mock.calls[0]?.[0];
-    expect(call?.shippingFee.toNumber()).toBe(0);
+    return service
+      .checkout(USER_ID, baseInput)
+      .catch(() => undefined)
+      .then(() => {
+        const call = createOrderWithReservation.mock.calls[0]?.[0];
+        expect(call?.shippingFee.toNumber()).toBe(150);
+      });
   });
 
   it('refuses cash on delivery above the configured ceiling', async () => {
@@ -218,10 +246,11 @@ describe('checkout charges from the commerce policy', () => {
   });
 
   it('allows cash on delivery exactly on the ceiling', async () => {
-    // The ceiling applies to the order TOTAL, so a 2000 subtotal below the
-    // free-delivery threshold becomes 2150 with delivery.
+    // The ceiling applies to the order TOTAL: 2000 of goods, 150 of courier
+    // delivery, and the courier's 1% handling on the 2150 they collect. That is
+    // 2171.50, and a ceiling set to exactly that must let the order through.
     mockPolicy.mockResolvedValue({
-      codMaxLimit: 2150,
+      codMaxLimit: 2171.5,
       freeShippingThreshold: 3000,
       flatShippingFee: 150,
     });
@@ -233,10 +262,10 @@ describe('checkout charges from the commerce policy', () => {
   });
 
   it('measures the ceiling against the total, not the subtotal', async () => {
-    // Same subtotal as the test above, ceiling one rupee lower. Delivery pushes
-    // the total over it, so cash on delivery must be refused.
+    // Same order as the test above with the ceiling one paisa lower, so the total
+    // sits just over it and cash on delivery must be refused.
     mockPolicy.mockResolvedValue({
-      codMaxLimit: 2149,
+      codMaxLimit: 2171.49,
       freeShippingThreshold: 3000,
       flatShippingFee: 150,
     });

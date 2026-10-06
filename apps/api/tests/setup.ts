@@ -66,6 +66,62 @@ vi.mock('@/common/services/bull-board.service', async () => {
   return { getBullBoardRouter: () => Router() };
 });
 
+/**
+ * The courier is a network boundary, so it is stubbed for the whole suite.
+ *
+ * Checkout now prices delivery by asking the courier, which means an unmocked
+ * suite would attempt a live HTTP call on every order - slow, flaky, and dependent
+ * on a third party's uptime to say something about our code.
+ *
+ * Stubbed at the client's public method rather than by injecting a fake service
+ * into every spec, so the real quoting service, its cache, the free-delivery
+ * policy and checkout itself all still run. What is replaced is exactly the thing
+ * we do not own: the number the courier answers with.
+ */
+vi.mock('@/modules/logistics/adapters/pathao-price.client', async () => {
+  const { Prisma } =
+    await vi.importActual<typeof import('@/config/db.prisma')>('@/config/db.prisma');
+  // Spread the real module so its constants - the measured weight limits checkout
+  // validates against - keep their real values. Only the network call is replaced.
+  const actual = await vi.importActual<
+    typeof import('@/modules/logistics/adapters/pathao-price.client')
+  >('@/modules/logistics/adapters/pathao-price.client');
+
+  return {
+    ...actual,
+    PathaoPriceClient: class {},
+    pathaoPriceClient: {
+      quote: vi.fn(async (input: { itemWeight: number }) => ({
+        // A flat 150 for anything light, doubling past 1 kg, so tests can tell a
+        // light parcel from a heavy one and see the weight actually reach us.
+        finalPrice: new Prisma.Decimal(input.itemWeight > 1 ? '300' : '150'),
+        codPercentage: new Prisma.Decimal('0.01'),
+        planId: 1,
+        serviceId: 48,
+        deliveryType: '48',
+      })),
+    },
+  };
+});
+
+/**
+ * Tokens are cached and refreshed against the courier's auth endpoint. Nothing in
+ * the suite should reach for one, so the provider hands back a fixed string.
+ */
+vi.mock('@/modules/logistics/adapters/pathao-token.provider', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/modules/logistics/adapters/pathao-token.provider')
+  >('@/modules/logistics/adapters/pathao-token.provider');
+
+  return {
+    ...actual,
+    pathaoTokenProvider: { ...actual.pathaoTokenProvider, getToken: async () => 'test-token' },
+    PathaoTokenProvider: class {
+      getToken = async () => 'test-token';
+    },
+  };
+});
+
 // TRUNCATE ... CASCADE across every public table contends for the single local test database and
 // can exceed vitest's default 10s hookTimeout under parallel load, failing suites for reasons that
 // have nothing to do with the code under test. Raise the timeout for this hook only.

@@ -1,3 +1,5 @@
+import { money } from './money';
+
 import { Prisma } from '@/config/db.prisma';
 
 /**
@@ -53,12 +55,7 @@ export interface DeliveryPricingResult {
   matchedRateId: string | null;
 }
 
-/** Pauses and couriers bill in whole paisa, so the stored figure is rounded once. */
-const MONEY_DECIMALS = 2;
 const ZERO = new Prisma.Decimal(0);
-
-const money = (value: Prisma.Decimal) =>
-  value.toDecimalPlaces(MONEY_DECIMALS, Prisma.Decimal.ROUND_HALF_UP);
 
 /**
  * Finds the band for a weight, preferring a city-specific rate.

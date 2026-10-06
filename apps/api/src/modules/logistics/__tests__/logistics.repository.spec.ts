@@ -37,6 +37,8 @@ const createMockDispatchedOrder = (
   totalAmount: new Prisma.Decimal(1000),
   discountAmount: new Prisma.Decimal(0),
   shippingFee: new Prisma.Decimal(0),
+  codHandlingFee: new Prisma.Decimal(0),
+  amountToCollect: null,
   courierFee: new Prisma.Decimal(0),
   absorbedShippingCost: new Prisma.Decimal(0),
   deliveryPricingSource: 'FALLBACK' as const,

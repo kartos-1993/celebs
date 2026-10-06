@@ -20,14 +20,14 @@ describe('sellerParcelsFromLines', () => {
     lineId: string,
     vendorId: string,
     quantity: number,
-    billableWeightKg: string,
+    declaredWeightKg: string,
     unitPrice = '1000.00',
   ) => ({
     lineId,
     vendorId,
     quantity,
     // Already computed by the caller as the line's total, not per unit.
-    billableWeightKg: dec(billableWeightKg),
+    declaredWeightKg: dec(declaredWeightKg),
     unitPrice: dec(unitPrice),
   });
 
@@ -50,7 +50,7 @@ describe('sellerParcelsFromLines', () => {
     ]);
 
     expect(parcels).toHaveLength(1);
-    expect(parcels[0]?.weightKg.toFixed(3)).toBe('2.300');
+    expect(parcels[0]?.declaredWeightKg.toFixed(3)).toBe('2.300');
     expect(parcels[0]?.lineIds).toEqual(['l1', 'l2', 'l3']);
   });
 
@@ -60,7 +60,7 @@ describe('sellerParcelsFromLines', () => {
       line('l2', 'sellerA', 1, '0.6'),
     ]);
 
-    expect(parcels[0]?.weightKg.toFixed(2)).toBe('1.00');
+    expect(parcels[0]?.declaredWeightKg.toFixed(2)).toBe('1.00');
   });
 
   it("adds up a seller's goods for the COD split", () => {
@@ -92,15 +92,17 @@ describe('mergeSellerParcels', () => {
     // The courier priced 250 kg rather than refusing; only create-order rejected it.
     // Quoting a fee for a parcel that will never ship is worse than refusing.
     expect(() =>
-      mergeSellerParcels([{ vendorId: 'sellerA', weightKg: dec('250'), goodsAmount: dec('100') }]),
+      mergeSellerParcels([
+        { vendorId: 'sellerA', declaredWeightKg: dec('250'), goodsAmount: dec('100') },
+      ]),
     ).toThrow(/200/);
   });
 
   it('accepts a parcel at the limit', () => {
     const parcels = mergeSellerParcels([
-      { vendorId: 'sellerA', weightKg: dec('200'), goodsAmount: dec('100') },
+      { vendorId: 'sellerA', declaredWeightKg: dec('200'), goodsAmount: dec('100') },
     ]);
 
-    expect(parcels[0]?.weightKg.toNumber()).toBe(200);
+    expect(parcels[0]?.declaredWeightKg.toNumber()).toBe(200);
   });
 });

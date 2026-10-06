@@ -22,7 +22,11 @@ export async function createDeliverableZone(
       province: 'Bagmati',
       isValley: overrides.isValley ?? true,
       freeDeliveryThreshold: 2500,
-      source: 'BOOTSTRAP',
+      // A courier id, not a bootstrapped row. Checkout refuses to quote a city the
+      // courier has never described, because there is nothing to price against -
+      // so a fixture without one describes an order the system is right to reject.
+      externalId: Math.floor(Math.random() * 900000) + 100000,
+      source: 'COURIER',
     },
     select: { id: true },
   });

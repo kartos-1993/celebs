@@ -331,6 +331,13 @@ describe('Payment double callbacks, replay protection, and concurrency races', (
   });
 
   it('guarantees single order creation when double checkout tap occurs with identical idempotency key', async () => {
+    // Priced down for this test alone. Two units at the shared 2500 come to 5000 of
+    // goods, and the courier's 1% handling on what they collect would put the COD
+    // total at 5050 - over the 5000 ceiling, so checkout would correctly refuse and
+    // there would be no race left to observe. The ceiling has its own tests; this
+    // one is about the idempotency key.
+    await prisma.product.update({ where: { id: productId }, data: { price: 2000 } });
+
     // Setup cart for user
     await prisma.cart.create({
       data: {

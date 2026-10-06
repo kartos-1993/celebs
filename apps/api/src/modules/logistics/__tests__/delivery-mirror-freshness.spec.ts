@@ -43,14 +43,32 @@ describe('delivery mirror freshness', () => {
   // Bootstrap reference data is ours, not the courier's. It ages like anything
   // else, so it cannot keep vouching for a district indefinitely.
   it('stops claiming coverage for a district that was only ever seeded', async () => {
-    const { zoneId } = await createDeliverableZone();
-
-    await prisma.logisticsCity.updateMany({
-      where: { source: 'BOOTSTRAP', zones: { some: { id: zoneId } } },
-      data: { syncedAt: eightDaysAgo() },
+    // Built here rather than taken from the shared fixture, which is courier-synced
+    // and therefore never stale. A bootstrapped city is the only kind of row this
+    // staleness rule exists for, so the test has to make one.
+    const city = await prisma.logisticsCity.create({
+      data: {
+        name: 'Stale Bootstrap City',
+        province: 'Bagmati',
+        isValley: true,
+        source: 'BOOTSTRAP',
+        syncedAt: eightDaysAgo(),
+        freeDeliveryThreshold: 2500,
+      },
+      select: { id: true },
+    });
+    const zone = await prisma.logisticsZone.create({
+      data: {
+        cityId: city.id,
+        externalId: 880001,
+        name: 'Stale Bootstrap Zone',
+      },
+      select: { id: true },
     });
 
-    const result = await deliveryCoverageRepository.coverageForAddress({ logisticsZoneId: zoneId });
+    const result = await deliveryCoverageRepository.coverageForAddress({
+      logisticsZoneId: zone.id,
+    });
 
     expect(result.status).toBe('UNVERIFIED');
   });

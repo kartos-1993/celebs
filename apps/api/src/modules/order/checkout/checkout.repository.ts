@@ -114,7 +114,16 @@ export class CheckoutRepository {
     /** Delivery given away to reach the free-delivery threshold. */
     absorbedShippingCost: Prisma.Decimal;
     deliveryPricingSource: DeliveryPricingSource;
+    /**
+     * The band that priced the delivery, when we priced it from a hand-entered
+     * band. Null for a courier quote: the courier answered, and there is no band on
+     * our side to point at. Kept so a disputed old charge can still be explained.
+     */
     matchedShippingRateId: string | null;
+    /** The courier percentage charge for collecting cash. Zero unless COD. */
+    codHandlingFee: Prisma.Decimal;
+    /** What the courier is told to collect. Null on prepaid orders. */
+    amountToCollect: Prisma.Decimal | null;
     logisticsZoneId: string | null;
     totalBillableWeightKg: Prisma.Decimal;
     orderStatus: OrderStatus;
@@ -172,6 +181,8 @@ export class CheckoutRepository {
             absorbedShippingCost: data.absorbedShippingCost,
             deliveryPricingSource: data.deliveryPricingSource,
             matchedShippingRateId: data.matchedShippingRateId,
+            codHandlingFee: data.codHandlingFee,
+            amountToCollect: data.amountToCollect,
             logisticsZoneId: data.logisticsZoneId,
             totalBillableWeightKg: data.totalBillableWeightKg,
             status: data.orderStatus,
