@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ZodError } from 'zod';
 
 import { dispatchOrderSchema } from '../logistics.validator';
 
@@ -23,14 +22,8 @@ describe('dispatchOrderSchema', () => {
     );
   });
 
-  // Pathao is refused until an adapter exists to create a real consignment.
-  // Accepting it while dispatch only knows how to build a Nepal Can Move shipment
-  // is what let a dispatch succeed with an empty tracking number.
-  it('refuses Pathao while no adapter implements it', () => {
-    const result = dispatchOrderSchema.safeParse({ orderId, provider: 'PATHAO' });
-
-    expect(result.success).toBe(false);
-    expect(() => dispatchOrderSchema.parse({ orderId, provider: 'PATHAO' })).toThrow(ZodError);
+  it('accepts Pathao with synchronous order creation adapter', () => {
+    expect(dispatchOrderSchema.parse({ orderId, provider: 'PATHAO' }).provider).toBe('PATHAO');
   });
 
   it('refuses an unknown courier rather than defaulting to a manual dispatch', () => {

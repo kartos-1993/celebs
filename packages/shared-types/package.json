@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "^3.24.3",
-    "@celebs/shared-utils": "workspace:*"
+    "zod": "^3.24.3"
   }
 }

@@ -128,6 +128,34 @@ vi.mock('@/modules/logistics/adapters/pathao-token.provider', async () => {
   };
 });
 
+/**
+ * Pathao order creation books real courier consignments.
+ * The network client is stubbed for test runs to prevent network egress and
+ * ensure deterministic consignment IDs.
+ */
+vi.mock('@/modules/logistics/adapters/pathao-order.client', async () => {
+  const { Prisma } =
+    await vi.importActual<typeof import('@/config/db.prisma')>('@/config/db.prisma');
+  const actual = await vi.importActual<
+    typeof import('@/modules/logistics/adapters/pathao-order.client')
+  >('@/modules/logistics/adapters/pathao-order.client');
+
+  return {
+    ...actual,
+    PathaoOrderClient: class {},
+    pathaoOrderClient: {
+      createOrder: vi.fn(async (input: { merchantOrderId: string }) => ({
+        consignmentId: `PT-${Math.floor(100000 + Math.random() * 900000)}`,
+        merchantOrderId: input.merchantOrderId,
+        deliveryFee: new Prisma.Decimal('140.00'),
+        trackingUrl: 'https://pathao.com/track/?consignment_id=PT-123456',
+        orderStatus: 'Pending',
+        raw: {},
+      })),
+    },
+  };
+});
+
 // TRUNCATE ... CASCADE across every public table contends for the single local test database and
 // can exceed vitest's default 10s hookTimeout under parallel load, failing suites for reasons that
 // have nothing to do with the code under test. Raise the timeout for this hook only.

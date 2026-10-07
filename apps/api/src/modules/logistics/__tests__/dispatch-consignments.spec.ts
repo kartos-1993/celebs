@@ -223,4 +223,55 @@ describe('LogisticsService - Split Consignment Dispatch', () => {
 
     expect(mockConsignmentRepo.createConsignments).not.toHaveBeenCalled();
   });
+
+  it('dispatches multi-seller order via automated Pathao courier adapter', async () => {
+    mockLogisticsRepo.findOrderForDispatch = vi.fn().mockResolvedValue(createMultiSellerOrder());
+
+    const mockPathaoClient = {
+      createOrder: vi.fn().mockImplementation(async (input: { merchantOrderId: string }) => ({
+        consignmentId: `PT-${input.merchantOrderId}`,
+        merchantOrderId: input.merchantOrderId,
+        deliveryFee: new Prisma.Decimal('160.00'),
+        trackingUrl: `https://pathao.com/track/?consignment_id=PT-${input.merchantOrderId}`,
+        orderStatus: 'Pending',
+        raw: {},
+      })),
+    };
+
+    const mockDestRepo = {
+      forZoneId: vi.fn().mockResolvedValue({
+        cityExternalId: 79,
+        zoneExternalId: 1326,
+        cityName: 'Kathmandu',
+        zoneName: 'Lazimpat',
+      }),
+    };
+
+    const mockTokens = {
+      getToken: vi.fn().mockResolvedValue('test-mock-token'),
+    };
+
+    const service = new LogisticsService({
+      logisticsRepo: mockLogisticsRepo,
+      coverageRepo: mockCoverageRepo,
+      consignmentRepo: mockConsignmentRepo,
+      destinationRepo: mockDestRepo as never,
+      pathaoClient: mockPathaoClient as never,
+      tokenProvider: mockTokens as never,
+    });
+
+    const result = await service.dispatchOrder({
+      orderId: testOrderId,
+      provider: 'PATHAO',
+    });
+
+    expect(result).toBeDefined();
+    expect(mockPathaoClient.createOrder).toHaveBeenCalledTimes(2);
+
+    expect(createdConsignments).toHaveLength(2);
+    expect(createdConsignments[0]?.trackingNumber).toBe('PT-CEL-261009-000001-1');
+    expect(createdConsignments[1]?.trackingNumber).toBe('PT-CEL-261009-000001-2');
+    expect(createdConsignments[0]?.courierProvider).toBe('PATHAO');
+    expect(createdConsignments[0]?.courierName).toBe('Pathao Courier');
+  });
 });

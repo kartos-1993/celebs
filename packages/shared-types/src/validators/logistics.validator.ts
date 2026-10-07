@@ -2,11 +2,8 @@ import { z } from 'zod';
 
 export const dispatchOrderSchema = z.object({
   orderId: z.string().uuid('Invalid order ID'),
-  // Pathao is deliberately absent. It is listed here only once an adapter can
-  // really book a consignment; offering it while dispatch knows how to build only
-  // a Nepal Can Move shipment is what allowed an order to be marked dispatched
-  // with an empty tracking number.
-  provider: z.enum(['NEPAL_CAN_MOVE', 'MANUAL']),
+  // Automated 3PL courier integrations (PATHAO, NEPAL_CAN_MOVE) or manual offline dispatch
+  provider: z.enum(['PATHAO', 'NEPAL_CAN_MOVE', 'MANUAL']),
   manualCourierName: z.string().optional(),
   manualTrackingNumber: z.string().optional(),
   manualTrackingUrl: z.string().optional(),

@@ -357,8 +357,8 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
     });
 
     // The validator refuses a courier with no adapter, but the service must not
-    // depend on that alone: dispatch used to accept Pathao, build no shipment for
-    // it, and still write the order to HANDED_OVER with an empty tracking number.
+    // depend on that alone: dispatch guards a caller that skipped validation
+    // and attempted to dispatch with an unadapted 3PL provider.
     it('should refuse a courier that has no adapter instead of dispatching without a tracking number', async () => {
       const updateDispatchedOrder = vi.fn();
       const mockRepo: Partial<LogisticsRepository> = {
@@ -374,14 +374,13 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
 
       const service = new LogisticsService({ logisticsRepo: mockRepo, coverageRepo: coveredRepo });
 
-      // Cast: the validator no longer admits this value, so this exercises the
-      // service's own guard against a caller that skipped validation.
+      // Cast: exercises the service's own fail-closed guard against a caller that skipped validation.
       await expect(
         service.dispatchOrder({
           orderId: testOrderId,
-          provider: 'PATHAO' as never,
+          provider: 'UNKNOWN_COURIER' as never,
         }),
-      ).rejects.toThrow(/PATHAO/);
+      ).rejects.toThrow(/UNKNOWN_COURIER/);
 
       expect(updateDispatchedOrder).not.toHaveBeenCalled();
     });

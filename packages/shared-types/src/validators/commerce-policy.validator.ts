@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { compareMoney } from '@celebs/shared-utils';
-
 /**
  * Commerce policy — the business numbers that decide what a customer pays.
  *
@@ -173,19 +171,25 @@ export function parseCommercePolicy(
  * cart sitting exactly on the threshold was told delivery was free and then
  * charged for it.
  */
+const PAISA_PER_RUPEE = 100;
+
+/** Convert rupee amounts to whole integer paisas to avoid binary floating point drift. */
+const toPaisa = (value: number): number =>
+  Number.isFinite(value) ? Math.round(value * PAISA_PER_RUPEE) : 0;
+
 export function resolveShippingFee(
   subtotal: number,
   policy: Pick<CommercePolicy, 'flatShippingFee'>,
   freeShippingThreshold: number,
 ): number {
-  if (!Number.isFinite(subtotal) || compareMoney(subtotal, '<=', 0)) return 0;
+  if (!Number.isFinite(subtotal) || toPaisa(subtotal) <= 0) return 0;
   // Compared in paisa: `0.1 + 0.2 >= 0.3` is true in decimal and false in binary
   // floating point, and that difference is a shopper charged delivery they had
   // already earned free.
-  return compareMoney(subtotal, '>=', freeShippingThreshold) ? 0 : policy.flatShippingFee;
+  return toPaisa(subtotal) >= toPaisa(freeShippingThreshold) ? 0 : policy.flatShippingFee;
 }
 
 /** Cash on delivery is refused above the limit; the limit itself is allowed. */
 export function isCodAllowed(total: number, policy: CommercePolicy): boolean {
-  return compareMoney(total, '<=', policy.codMaxLimit);
+  return toPaisa(total) <= toPaisa(policy.codMaxLimit);
 }

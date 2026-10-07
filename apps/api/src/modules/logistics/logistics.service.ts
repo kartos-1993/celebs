@@ -4,11 +4,22 @@ import { DispatchOrderType } from '@celebs/shared-types';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
+import { PathaoOrderClient, pathaoOrderClient } from './adapters/pathao-order.client';
+import {
+  PathaoTokenProvider,
+  pathaoTokenProvider,
+  resolvePathaoConfig,
+} from './adapters/pathao-token.provider';
 import {
   type ConsignmentRepository,
   consignmentRepository,
   type CreateConsignmentRecord,
 } from './consignment.repository';
+import { courierWholeRupees } from './courier-amount';
+import {
+  CourierDestinationRepository,
+  courierDestinationRepository,
+} from './courier-destination.repository';
 import { isDispatchAllowed } from './delivery-coverage';
 import {
   type DeliveryCoverageRepository,
@@ -24,18 +35,27 @@ export interface LogisticsServiceDeps {
   logisticsRepo?: Partial<LogisticsRepository>;
   coverageRepo?: Partial<DeliveryCoverageRepository>;
   consignmentRepo?: Partial<ConsignmentRepository>;
+  destinationRepo?: CourierDestinationRepository;
+  pathaoClient?: PathaoOrderClient;
+  tokenProvider?: PathaoTokenProvider;
 }
 
 export class LogisticsService {
   private logisticsRepo: LogisticsRepository;
   private coverageRepo: DeliveryCoverageRepository;
   private consignmentRepo: ConsignmentRepository;
+  private destinationRepo: CourierDestinationRepository;
+  private pathaoClient: PathaoOrderClient;
+  private tokenProvider: PathaoTokenProvider;
 
   constructor(deps: LogisticsServiceDeps = {}) {
     this.logisticsRepo = (deps.logisticsRepo ?? logisticsRepository) as LogisticsRepository;
     this.coverageRepo = (deps.coverageRepo ??
       deliveryCoverageRepository) as DeliveryCoverageRepository;
     this.consignmentRepo = (deps.consignmentRepo ?? consignmentRepository) as ConsignmentRepository;
+    this.destinationRepo = deps.destinationRepo ?? courierDestinationRepository;
+    this.pathaoClient = deps.pathaoClient ?? pathaoOrderClient;
+    this.tokenProvider = deps.tokenProvider ?? pathaoTokenProvider;
   }
 
   async dispatchOrder(payload: DispatchOrderType, actorStoreId: string | null = null) {
@@ -71,7 +91,9 @@ export class LogisticsService {
     // dispatched. The request validator already refuses these at the edge, so this
     // guards a caller that skipped validation.
     const isCourierWithoutAdapter =
-      payload.provider !== 'MANUAL' && payload.provider !== 'NEPAL_CAN_MOVE';
+      payload.provider !== 'MANUAL' &&
+      payload.provider !== 'NEPAL_CAN_MOVE' &&
+      payload.provider !== 'PATHAO';
 
     if (isCourierWithoutAdapter) {
       throw new BadRequestException(
@@ -163,10 +185,32 @@ export class LogisticsService {
     // ── Courier Consignment Booking ───────────────────────────────────────────
     const courierName =
       payload.manualCourierName ||
-      (payload.provider === 'NEPAL_CAN_MOVE' ? 'Nepal Can Move' : 'Standard Delivery');
+      (payload.provider === 'PATHAO'
+        ? 'Pathao Courier'
+        : payload.provider === 'NEPAL_CAN_MOVE'
+          ? 'Nepal Can Move'
+          : 'Standard Delivery');
     let estimatedDelivery: Date | undefined;
     const consignmentRecords: CreateConsignmentRecord[] = [];
     const isMultiParcel = plannedConsignments.length > 1;
+
+    let pathaoDestination: { cityExternalId: number; zoneExternalId: number } | null = null;
+    let pathaoToken = '';
+    let pathaoStoreId = 0;
+
+    if (payload.provider === 'PATHAO') {
+      const dest = await this.destinationRepo.forZoneId(order.address.logisticsZoneId);
+      pathaoDestination = {
+        cityExternalId: dest.cityExternalId,
+        zoneExternalId: dest.zoneExternalId,
+      };
+      pathaoToken = await this.tokenProvider.getToken();
+      pathaoStoreId = resolvePathaoConfig().storeId;
+
+      const estDate = new Date();
+      estDate.setDate(estDate.getDate() + 3);
+      estimatedDelivery = estDate;
+    }
 
     for (let index = 0; index < plannedConsignments.length; index += 1) {
       const planned = plannedConsignments[index]!;
@@ -188,6 +232,30 @@ export class LogisticsService {
         trackingNumber = shipment.trackingNumber;
         trackingUrl = shipment.trackingUrl;
         estimatedDelivery = shipment.estimatedDelivery;
+      } else if (payload.provider === 'PATHAO') {
+        const amountToCollect =
+          order.paymentMethod === 'COD' ? courierWholeRupees(planned.amountToCollect) : 0;
+        const merchantOrderId = isMultiParcel
+          ? `${order.orderNumber}-${index + 1}`
+          : order.orderNumber;
+
+        const shipment = await this.pathaoClient.createOrder({
+          storeId: pathaoStoreId,
+          merchantOrderId,
+          recipientName: order.address.fullName,
+          recipientPhone: order.address.phone,
+          recipientAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
+          recipientCityId: pathaoDestination!.cityExternalId,
+          recipientZoneId: pathaoDestination!.zoneExternalId,
+          itemQuantity: Math.max(1, planned.lineIds.length),
+          itemWeightKg: planned.declaredWeightKg,
+          amountToCollect,
+          itemDescription: `Order ${order.orderNumber} parcel ${index + 1}`,
+          accessToken: pathaoToken,
+        });
+
+        trackingNumber = shipment.consignmentId;
+        trackingUrl = shipment.trackingUrl;
       } else {
         trackingNumber =
           isMultiParcel && payload.manualTrackingNumber
