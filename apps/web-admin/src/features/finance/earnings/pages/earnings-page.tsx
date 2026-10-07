@@ -71,8 +71,20 @@ const EarningsPage = () => {
             <EarningsTable entries={entries.data ?? []} />
           )}
 
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setPage((current) => current + 1)}>
+          <div className="flex items-center justify-between pt-2">
+            <Button
+              variant="outline"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+            >
+              Previous page
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">Page {page}</span>
+            <Button
+              variant="outline"
+              disabled={(entries.data ?? []).length < PAGE_SIZE}
+              onClick={() => setPage((current) => current + 1)}
+            >
               Next page
             </Button>
           </div>

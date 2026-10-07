@@ -26,8 +26,12 @@ export function useOpenSettlement() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { courier: string; periodStart: string; periodEnd: string }) =>
-      FinanceApi.openBatch(payload),
+    mutationFn: (payload: {
+      courier: string;
+      periodStart: string;
+      periodEnd: string;
+      reference?: string;
+    }) => FinanceApi.openBatch(payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: FINANCE_QUERY_KEYS.lists() }),
   });
 }

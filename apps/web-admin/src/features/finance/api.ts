@@ -133,6 +133,7 @@ export const FinanceApi = {
     courier: string;
     periodStart: string;
     periodEnd: string;
+    reference?: string;
   }): Promise<OpenBatchResponse> {
     const response = await axiosClient.post<OpenBatchResponse>('/finance/settlements', payload);
 
