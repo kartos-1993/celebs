@@ -66,6 +66,15 @@ export class CommissionRuleRepository {
    *
    * Both writes share a transaction so a rule is never momentarily duplicated or
    * briefly absent.
+   *
+   * Concurrency & Deadlock Prevention:
+   * Uses a transaction-level PostgreSQL advisory lock (`pg_advisory_xact_lock`)
+   * keyed on the scope and target entity. This serializes concurrent publishes for the
+   * same scope/category/vendor, ensuring that concurrent requests cannot both read an
+   * unclosed rule and both insert with `effectiveTo: null`.
+   *
+   * Connection Pool Protection:
+   * Interactive transaction bounded with `{ maxWait: 5000, timeout: 10000 }`.
    */
   async publishRule(input: {
     scope: CommissionScope;
@@ -77,42 +86,57 @@ export class CommissionRuleRepository {
     createdBy?: string;
     at: Date;
   }) {
-    return prisma.$transaction(async (tx) => {
-      const superseded = await tx.commissionRule.findMany({
-        where: {
-          isActive: true,
-          effectiveTo: null,
-          effectiveFrom: { lte: input.at },
-          scope: input.scope,
-          categoryId: input.scope === CommissionScope.GLOBAL ? null : (input.categoryId ?? null),
-          vendorId: input.scope === CommissionScope.VENDOR ? input.vendorId : null,
-        },
-        select: { id: true },
-      });
+    const lockTarget =
+      input.scope === CommissionScope.GLOBAL
+        ? 'GLOBAL'
+        : input.scope === CommissionScope.CATEGORY
+          ? (input.categoryId ?? 'none')
+          : (input.vendorId ?? 'none');
+    const lockKey = `commission_rule_${input.scope}_${lockTarget}`;
 
-      if (superseded.length > 0) {
-        await tx.commissionRule.updateMany({
-          where: { id: { in: superseded.map((rule) => rule.id) } },
-          data: { effectiveTo: input.at },
+    return prisma.$transaction(
+      async (tx) => {
+        // Advisory xact lock serializes concurrent publishes targeting the same entity
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+
+        const superseded = await tx.commissionRule.findMany({
+          where: {
+            isActive: true,
+            effectiveTo: null,
+            effectiveFrom: { lte: input.at },
+            scope: input.scope,
+            categoryId: input.scope === CommissionScope.GLOBAL ? null : (input.categoryId ?? null),
+            vendorId: input.scope === CommissionScope.VENDOR ? input.vendorId : null,
+          },
+          select: { id: true },
         });
-      }
 
-      return tx.commissionRule.create({
-        data: {
-          scope: input.scope,
-          ratePercent: input.ratePercent,
-          categoryId: input.scope === CommissionScope.CATEGORY ? (input.categoryId ?? null) : null,
-          vendorId: input.scope === CommissionScope.VENDOR ? (input.vendorId ?? null) : null,
-          label: input.label,
-          description: input.description,
-          createdBy: input.createdBy,
-          // Published immediately: an unpriced sale is worse than a briefly
-          // mispriced one, so `effective_from` is now unless a backdate was asked
-          // for explicitly.
-          effectiveFrom: input.at,
-        },
-      });
-    });
+        if (superseded.length > 0) {
+          await tx.commissionRule.updateMany({
+            where: { id: { in: superseded.map((rule) => rule.id) } },
+            data: { effectiveTo: input.at },
+          });
+        }
+
+        return tx.commissionRule.create({
+          data: {
+            scope: input.scope,
+            ratePercent: input.ratePercent,
+            categoryId:
+              input.scope === CommissionScope.CATEGORY ? (input.categoryId ?? null) : null,
+            vendorId: input.scope === CommissionScope.VENDOR ? (input.vendorId ?? null) : null,
+            label: input.label,
+            description: input.description,
+            createdBy: input.createdBy,
+            // Published immediately: an unpriced sale is worse than a briefly
+            // mispriced one, so `effective_from` is now unless a backdate was asked
+            // for explicitly.
+            effectiveFrom: input.at,
+          },
+        });
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
   /** Current rules, for the superadmin list. Closed rules are history. */
