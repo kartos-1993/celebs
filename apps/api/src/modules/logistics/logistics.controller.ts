@@ -8,6 +8,8 @@ import {
 import { asyncHandler, BadRequestException, UnauthorizedException } from '@celebs/shared-utils';
 
 import {
+  PATHAO_ECHO_HEADER,
+  PATHAO_HANDSHAKE_EVENT,
   PATHAO_SIGNATURE_HEADER,
   readPathaoWebhookSecret,
   verifyPathaoWebhookSignature,
@@ -92,15 +94,13 @@ export class LogisticsController {
 
   public handleCourierWebhook = asyncHandler(async (req: Request, res: Response) => {
     // The courier proves itself before anything is parsed. Without the secret
-    // configured (local development, tests) the route stays open but says so
-    // loudly; with it set, an unsigned or mistyped delivery is refused with a
-    // 401 and the body is never trusted.
+    // configured (local development, tests) the route stays open; with it set,
+    // a request that does not echo it is refused with a 401 and the body is
+    // never trusted.
     const secret = readPathaoWebhookSecret();
     if (secret) {
       const signature = req.headers[PATHAO_SIGNATURE_HEADER];
-      const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
       const ok = verifyPathaoWebhookSignature({
-        rawBody,
         signature: Array.isArray(signature) ? signature[0] : signature,
         secret,
       });
@@ -110,17 +110,22 @@ export class LogisticsController {
       }
     }
 
-    // Validated rather than hand-checked, so a missing waybill number is refused
+    // Pathao's integration handshake carries no consignment, so it is answered
+    // before validation: it must return 202 with the secret echoed back, or
+    // Pathao never activates the endpoint.
+    if ((req.body as { event?: unknown } | null)?.event === PATHAO_HANDSHAKE_EVENT) {
+      res.setHeader(PATHAO_ECHO_HEADER, secret);
+      return sendSuccess(res, { integrated: true }, 'Webhook integration verified', 202);
+    }
+
+    // Validated rather than hand-checked, so a malformed delivery is refused
     // through the standard path and answered with the shared error envelope.
     const body = courierWebhookSchema.parse(req.body);
-    const trackingNumber = body.trackingNumber ?? body.waybillNumber ?? body.waybillId;
 
     const result = await this.service.processCourierWebhook({
-      trackingNumber: String(trackingNumber),
-      status: body.status ?? body.event ?? 'HANDED_OVER',
-      title: body.title,
-      description: body.description,
-      location: body.location,
+      consignmentId: body.consignment_id,
+      merchantOrderId: body.merchant_order_id,
+      event: body.event,
     });
 
     return sendSuccess(res, result, 'Courier tracking event processed successfully');

@@ -19,54 +19,24 @@ export type DispatchOrderType = z.infer<typeof dispatchOrderSchema>;
 export type CodSettlementType = z.infer<typeof codSettlementSchema>;
 
 /**
- * Inbound courier tracking webhook.
+ * Inbound courier tracking webhook, as Pathao actually sends it.
  *
- * Couriers disagree on the field name for the same waybill, so all three are
- * accepted and at least one is required. Declaring that here rather than in the
- * controller means a missing number is refused by the standard validation path,
- * which answers with the same error envelope as every other rejection - the
- * courier's own integration parses one shape, not two.
+ * The payload carries `consignment_id` (the courier's tracking number for one
+ * parcel), `merchant_order_id` (what we passed at booking), and `event` (a
+ * Pathao status string such as "order.updated", "In Transit" or "Delivered").
+ * The integration handshake (`{ event: "webhook_integration" }`) never
+ * reaches this schema: it carries no consignment and is answered before
+ * validation.
  */
-const anyTrackingNumber = z
-  .string()
-  .trim()
-  .min(1)
-  .optional()
-  .transform((value) => value || undefined);
-
-/**
- * Order states a courier may report.
- *
- * Declared rather than cast so an unrecognised status is refused instead of
- * reaching the service as a string: a courier sending a state we do not model
- * must not be silently recorded as something it is not.
- */
-const ORDER_STATUS_VALUES = [
-  'PENDING_PAYMENT',
-  'CONFIRMED',
-  'PACKED',
-  'HANDED_OVER',
-  'OUT_FOR_DELIVERY',
-  'DELIVERED',
-  'CANCELLED',
-  'RETURNED',
-] as const;
-
-export const courierWebhookSchema = z
-  .object({
-    trackingNumber: anyTrackingNumber,
-    waybillNumber: anyTrackingNumber,
-    waybillId: anyTrackingNumber,
-    status: z.enum(ORDER_STATUS_VALUES).optional(),
-    event: z.enum(ORDER_STATUS_VALUES).optional(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-    location: z.string().optional(),
-  })
-  .refine((body) => Boolean(body.trackingNumber || body.waybillNumber || body.waybillId), {
-    message: 'Tracking or waybill number is required',
-    path: ['trackingNumber'],
-  });
+export const courierWebhookSchema = z.object({
+  consignment_id: z.string().trim().min(1, 'Consignment id is required'),
+  merchant_order_id: z.string().trim().min(1).optional(),
+  event: z.string().trim().min(1, 'Event is required'),
+  store_id: z.number().int().optional(),
+  delivery_fee: z.number().finite().nonnegative().optional(),
+  updated_at: z.string().optional(),
+  timestamp: z.string().optional(),
+});
 
 export type CourierWebhookType = z.infer<typeof courierWebhookSchema>;
 

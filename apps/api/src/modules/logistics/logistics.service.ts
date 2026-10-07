@@ -3,6 +3,8 @@ import { CodStatus, ConsignmentStatus, DispatchMode, OrderStatus } from '@prisma
 import { DispatchOrderType } from '@celebs/shared-types';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
 
+import { isForwardOrderMove } from '../order/order.state-machine';
+
 import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 import { PathaoOrderClient, pathaoOrderClient } from './adapters/pathao-order.client';
 import {
@@ -26,6 +28,11 @@ import {
   deliveryCoverageRepository,
 } from './delivery-coverage.repository';
 import { type LogisticsRepository, logisticsRepository } from './logistics.repository';
+import {
+  isForwardConsignmentMove,
+  mapPathaoEventToConsignmentStatus,
+  mapPathaoEventToStatus,
+} from './pathao-webhook-events';
 import { sellerParcelsFromLines } from './seller-parcels';
 import { splitOrderIntoConsignments } from './split-dispatch';
 
@@ -358,19 +365,46 @@ export class LogisticsService {
   }
 
   async processCourierWebhook(payload: {
-    trackingNumber: string;
-    status: OrderStatus;
-    title?: string;
-    description?: string;
-    location?: string;
+    consignmentId?: string;
+    merchantOrderId?: string;
+    event: string;
   }) {
-    const order = await this.logisticsRepo.findOrderByTrackingNumber(payload.trackingNumber);
+    // Consignment-first routing: the courier's id identifies one parcel.
+    // Split dispatch stores several ids comma-joined on the order, so an exact
+    // order lookup can never match them; the legacy single-parcel lookup stays
+    // as the fallback for orders booked before consignments existed.
+    const consignment = payload.consignmentId
+      ? await this.consignmentRepo.findByTrackingNumber(payload.consignmentId)
+      : null;
+
+    const order = consignment
+      ? await this.logisticsRepo.findOrderById(consignment.orderId)
+      : payload.consignmentId
+        ? await this.logisticsRepo.findOrderByTrackingNumber(payload.consignmentId)
+        : null;
 
     if (!order) {
       throw new NotFoundException(
-        `Shipment not found for tracking number: ${payload.trackingNumber}`,
+        `Shipment not found for consignment: ${payload.consignmentId ?? payload.merchantOrderId ?? 'unknown'}`,
       );
     }
+
+    const mappedStatus = mapPathaoEventToStatus(payload.event);
+    const consignmentStatus = mapPathaoEventToConsignmentStatus(payload.event);
+
+    if (
+      consignment &&
+      consignmentStatus &&
+      isForwardConsignmentMove(consignment.status, consignmentStatus)
+    ) {
+      await this.consignmentRepo.updateConsignmentStatus(consignment.id, consignmentStatus);
+    }
+
+    // Forward-only: a missed intermediate must not stall a real delivery, but a
+    // stale or forged event must never regress the order. A clamp still records
+    // the event on the timeline; it just does not move the status.
+    const status =
+      mappedStatus && isForwardOrderMove(order.status, mappedStatus) ? mappedStatus : order.status;
 
     const defaultTitles: Record<string, string> = {
       HANDED_OVER: 'Package In Transit',
@@ -379,23 +413,20 @@ export class LogisticsService {
       RETURNED: 'Delivery Failed - Returned',
     };
 
-    const title =
-      payload.title || defaultTitles[payload.status] || `Status updated to ${payload.status}`;
-    const description =
-      payload.description ||
-      `Carrier updated shipment status to ${payload.status} at ${payload.location || 'Local Hub'}.`;
+    const title = defaultTitles[status] ?? `Status updated to ${status} (${payload.event})`;
+    const description = `Carrier reported ${payload.event} for consignment ${payload.consignmentId ?? 'unknown'}.`;
 
     const { event, statusChanged } = await this.logisticsRepo.applyAutomatedTrackingEvent({
       orderId: order.id,
-      status: payload.status,
+      status,
       title,
       description,
-      location: payload.location,
+      location: undefined,
       source: 'COURIER_WEBHOOK',
     });
 
     if (statusChanged) {
-      if (payload.status === OrderStatus.DELIVERED) {
+      if (status === OrderStatus.DELIVERED) {
         try {
           const { enqueueOrderDeliveredEmail } = await import('../order/utils/order-email.util');
           await enqueueOrderDeliveredEmail(order);
@@ -410,8 +441,8 @@ export class LogisticsService {
           userId: order.userId,
           orderId: order.id,
           orderNumber: order.orderNumber,
-          status: payload.status,
-          trackingNumber: payload.trackingNumber,
+          status,
+          trackingNumber: payload.consignmentId ?? '',
         });
       } catch {
         // Non-blocking push notification dispatch
@@ -420,8 +451,8 @@ export class LogisticsService {
 
     return {
       orderId: order.id,
-      trackingNumber: payload.trackingNumber,
-      status: payload.status,
+      consignmentId: payload.consignmentId ?? null,
+      status,
       event,
     };
   }

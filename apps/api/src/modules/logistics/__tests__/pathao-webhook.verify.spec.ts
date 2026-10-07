@@ -1,74 +1,38 @@
-import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { verifyPathaoWebhookSignature } from '../adapters/pathao-webhook.verify';
 
 /**
- * The one endpoint a third party calls. A forged delivery event marks parcels
- * delivered that never moved, so the signature is the only thing standing
- * between an attacker and our fulfilment state.
+ * Pathao's model is a shared secret, not a signature scheme: the dashboard
+ * holds a secret you invent, and Pathao echoes it back in the
+ * X-Pathao-Signature request header. Verification is a timing-safe string
+ * comparison of that echo against the configured value.
  */
 
 const SECRET = 'webhook-secret-for-tests';
-const BODY = Buffer.from(JSON.stringify({ consignment_id: 'PT-1', order_status: 'Delivered' }));
-
-const sign = (body: Buffer, secret: string) =>
-  createHmac('sha256', secret).update(body).digest('hex');
 
 describe('verifyPathaoWebhookSignature', () => {
-  it('accepts a correctly signed delivery', () => {
-    expect(
-      verifyPathaoWebhookSignature({
-        rawBody: BODY,
-        signature: sign(BODY, SECRET),
-        secret: SECRET,
-      }),
-    ).toBe(true);
+  it('accepts the secret Pathao echoes back', () => {
+    expect(verifyPathaoWebhookSignature({ signature: SECRET, secret: SECRET })).toBe(true);
   });
 
-  it('refuses a tampered body carrying a valid signature', () => {
-    const tampered = Buffer.from(
-      JSON.stringify({ consignment_id: 'PT-1', order_status: 'Returned' }),
+  it('refuses a forged echo', () => {
+    expect(verifyPathaoWebhookSignature({ signature: 'attacker-secret', secret: SECRET })).toBe(
+      false,
     );
-
-    expect(
-      verifyPathaoWebhookSignature({
-        rawBody: tampered,
-        signature: sign(BODY, SECRET),
-        secret: SECRET,
-      }),
-    ).toBe(false);
   });
 
-  it('refuses a signature made with a different secret', () => {
-    expect(
-      verifyPathaoWebhookSignature({
-        rawBody: BODY,
-        signature: sign(BODY, 'attacker-secret'),
-        secret: SECRET,
-      }),
-    ).toBe(false);
+  it('refuses a missing signature, body-side secret, or configured secret', () => {
+    expect(verifyPathaoWebhookSignature({ signature: undefined, secret: SECRET })).toBe(false);
+    expect(verifyPathaoWebhookSignature({ signature: SECRET, secret: '' })).toBe(false);
+    expect(verifyPathaoWebhookSignature({ signature: '', secret: SECRET })).toBe(false);
   });
 
-  it('refuses a missing signature, body, or secret rather than throwing', () => {
-    expect(
-      verifyPathaoWebhookSignature({ rawBody: BODY, signature: undefined, secret: SECRET }),
-    ).toBe(false);
-    expect(
-      verifyPathaoWebhookSignature({
-        rawBody: undefined,
-        signature: sign(BODY, SECRET),
-        secret: SECRET,
-      }),
-    ).toBe(false);
-    expect(
-      verifyPathaoWebhookSignature({ rawBody: BODY, signature: sign(BODY, SECRET), secret: '' }),
-    ).toBe(false);
+  it('refuses a different-length value without timing leaks', () => {
+    expect(verifyPathaoWebhookSignature({ signature: 'short', secret: SECRET })).toBe(false);
   });
 
-  it('refuses a signature of the wrong length without timing leaks', () => {
-    expect(
-      verifyPathaoWebhookSignature({ rawBody: BODY, signature: 'short', secret: SECRET }),
-    ).toBe(false);
+  it('ignores surrounding whitespace rather than failing a valid echo', () => {
+    expect(verifyPathaoWebhookSignature({ signature: `  ${SECRET}  `, secret: SECRET })).toBe(true);
   });
 });

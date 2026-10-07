@@ -57,3 +57,25 @@ export const validatePaymentTransition = (
     );
   }
 };
+
+/**
+ * Delivery progress order, for courier-driven moves.
+ *
+ * A webhook may skip forward (a missed "In Transit" must not stall a real
+ * delivery) but never regresses and never leaves terminal states: a forged or
+ * stale event can record itself, but it cannot move DELIVERED back to transit
+ * or resurrect a CANCELLED order.
+ */
+const ORDER_PROGRESS_RANK: Record<OrderStatus, number> = {
+  PENDING_PAYMENT: 0,
+  CONFIRMED: 1,
+  PACKED: 2,
+  HANDED_OVER: 3,
+  OUT_FOR_DELIVERY: 4,
+  DELIVERED: 5,
+  RETURNED: 6,
+  CANCELLED: 7,
+};
+
+export const isForwardOrderMove = (from: OrderStatus, to: OrderStatus): boolean =>
+  (ORDER_PROGRESS_RANK[from] ?? -1) < (ORDER_PROGRESS_RANK[to] ?? -1);

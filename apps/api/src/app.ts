@@ -52,15 +52,7 @@ import wishlistRoutes from './modules/wishlist/wishlist.routes';
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(
-  json({
-    // Kept so HMAC-signed webhooks (Pathao) can verify the exact bytes Pathao
-    // signed. The parsed body is what handlers use; this is only the receipt.
-    verify: (req: unknown, _res, buf) => {
-      (req as { rawBody?: Buffer }).rawBody = buf;
-    },
-  }),
-);
+app.use(json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

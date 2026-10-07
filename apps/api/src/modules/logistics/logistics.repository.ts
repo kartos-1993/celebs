@@ -288,6 +288,21 @@ export class LogisticsRepository {
     });
   }
 
+  /**
+   * The same shape, keyed by id: consignment-routed webhooks resolve the
+   * parcel first and arrive here with an order id, not a tracking string.
+   */
+  public async findOrderById(orderId: string) {
+    return prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        address: true,
+        items: true,
+      },
+    });
+  }
+
   public async applyAutomatedTrackingEvent(data: {
     orderId: string;
     status: OrderStatus;

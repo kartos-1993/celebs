@@ -1,20 +1,24 @@
-import { createHmac } from 'node:crypto';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 
 /**
- * The courier webhook is the one endpoint a third party calls, so its rejections
- * are read by software rather than by a person. A hand-built error body without
- * `data`, `requestId` and `timestamp` breaks the one envelope every client
- * interceptor is written against.
+ * The courier webhook is the one endpoint a third party calls, so its
+ * rejections are read by software rather than by a person. A hand-built error
+ * body without `data`, `requestId` and `timestamp` breaks the one envelope
+ * every client interceptor is written against.
+ *
+ * Pathao's payload carries `consignment_id` (one parcel) and `event` (a
+ * Pathao status string such as "order.updated" or "Delivered"). The
+ * integration handshake (`{ event: "webhook_integration" }`) must answer 202
+ * with the secret echoed back, or Pathao never activates the endpoint.
  */
 describe('courier webhook rejections', () => {
-  it('answers a webhook with no tracking number using the standard error envelope', async () => {
+  it('answers a webhook with no consignment using the standard error envelope', async () => {
     const response = await request(app)
       .post('/api/v1/logistics/webhook')
-      .send({ status: 'OUT_FOR_DELIVERY' });
+      .send({ event: 'order.updated' });
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({
@@ -47,76 +51,69 @@ describe('courier webhook rejections', () => {
     expect(response.body.errorCode).toBeDefined();
   });
 
-  // A courier sends the same event under different field names; all three are real.
-  it.each(['trackingNumber', 'waybillNumber', 'waybillId'])(
-    'accepts the %s field as the tracking number',
-    async (field) => {
-      const response = await request(app)
-        .post('/api/v1/logistics/webhook')
-        .send({ [field]: 'NO-SUCH-WAYBILL-12345' });
+  it('routes an unknown consignment to the not-found path, not a 400', async () => {
+    const response = await request(app)
+      .post('/api/v1/logistics/webhook')
+      .send({ consignment_id: 'NO-SUCH-CONSIGNMENT-12345', event: 'order.updated' });
 
-      // Reaches the service and reports the parcel is unknown, which proves the
-      // tracking number was read rather than rejected as missing.
-      expect(response.status).not.toBe(400);
-    },
-  );
+    // Reaches the service and reports the parcel is unknown, which proves the
+    // consignment id was read rather than rejected as missing.
+    expect(response.status).not.toBe(400);
+  });
 });
 
 describe('courier webhook signature', () => {
   const SECRET = 'webhook-secret-for-tests';
-
-  const signed = (payload: unknown, secret: string = SECRET) => {
-    const raw = JSON.stringify(payload);
-    const signature = createHmac('sha256', secret).update(raw).digest('hex');
-    return request(app)
-      .post('/api/v1/logistics/webhook')
-      .set('Content-Type', 'application/json')
-      .set('x-pathao-signature', signature)
-      .send(raw);
-  };
-
-  it('lets a correctly signed delivery through to the service', async () => {
-    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
-
-    // Unknown waybill: 404 proves the signature passed and the parcel lookup
-    // ran, rather than the request dying at verification.
-    const response = await signed({ trackingNumber: 'NO-SUCH-WAYBILL-12345' });
-
-    expect(response.status).not.toBe(401);
-    expect(response.status).not.toBe(400);
-  });
-
-  it('rejects a delivery signed with the wrong secret', async () => {
-    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
-
-    const response = await signed({ trackingNumber: 'NO-SUCH-WAYBILL-12345' }, 'wrong-secret');
-
-    expect(response.status).toBe(401);
-  });
 
   it('rejects an unsigned delivery once a secret is configured', async () => {
     vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
 
     const response = await request(app)
       .post('/api/v1/logistics/webhook')
-      .send({ trackingNumber: 'NO-SUCH-WAYBILL-12345' });
+      .send({ consignment_id: 'NO-SUCH-CONSIGNMENT-12345', event: 'order.updated' });
 
     expect(response.status).toBe(401);
   });
 
-  it('rejects a signed-looking delivery whose body was tampered with', async () => {
+  it('rejects a delivery signed with the wrong secret', async () => {
     vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
-
-    const raw = JSON.stringify({ trackingNumber: 'NO-SUCH-WAYBILL-12345' });
-    const signature = createHmac('sha256', SECRET).update(raw).digest('hex');
 
     const response = await request(app)
       .post('/api/v1/logistics/webhook')
-      .set('Content-Type', 'application/json')
-      .set('x-pathao-signature', signature)
-      // Still valid JSON, but no longer the bytes that were signed.
-      .send(raw.replace('12345', '12346'));
+      .set('x-pathao-signature', 'wrong-secret')
+      .send({ consignment_id: 'NO-SUCH-CONSIGNMENT-12345', event: 'order.updated' });
 
     expect(response.status).toBe(401);
+  });
+
+  it('lets a correctly echoed delivery through to the service', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
+
+    // Unknown consignment: 404 proves the secret passed and the parcel lookup
+    // ran, rather than the request dying at verification.
+    const response = await request(app)
+      .post('/api/v1/logistics/webhook')
+      .set('x-pathao-signature', SECRET)
+      .send({ consignment_id: 'NO-SUCH-CONSIGNMENT-12345', event: 'order.updated' });
+
+    expect(response.status).not.toBe(401);
+    expect(response.status).not.toBe(400);
+  });
+});
+
+describe('courier webhook integration handshake', () => {
+  const SECRET = 'webhook-secret-for-tests';
+
+  it('answers the handshake with 202 and echoes the secret back', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
+
+    const response = await request(app)
+      .post('/api/v1/logistics/webhook')
+      .set('x-pathao-signature', SECRET)
+      .send({ event: 'webhook_integration' });
+
+    expect(response.status).toBe(202);
+    expect(response.headers['x-pathao-merchant-webhook-integration-secret']).toBe(SECRET);
+    expect(response.body.success).toBe(true);
   });
 });
