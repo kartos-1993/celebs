@@ -347,6 +347,16 @@ export class LogisticsService {
     return this.logisticsRepo.markCodSettled(orderId, settlementReference);
   }
 
+  /**
+   * Reconciles COD cash for an individual seller parcel consignment.
+   */
+  async markConsignmentCodSettled(trackingNumber: string, settlementReference: string) {
+    return this.logisticsRepo.markConsignmentCodSettled({
+      trackingNumber,
+      settlementReference,
+    });
+  }
+
   async processCourierWebhook(payload: {
     trackingNumber: string;
     status: OrderStatus;

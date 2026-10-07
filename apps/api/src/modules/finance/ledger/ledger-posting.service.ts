@@ -173,7 +173,14 @@ export async function postCourierFeeEntries(
  * deposit cannot be counted twice under two batch entries.
  */
 export async function postCodReceiptEntries(
-  input: { orderId: string; courier?: string; amount: Prisma.Decimal; settlementReference: string },
+  input: {
+    orderId: string;
+    courier?: string;
+    amount: Prisma.Decimal;
+    settlementReference: string;
+    /** The seller this money belongs to in split dispatch. Null on legacy order-level entries. */
+    vendorId?: string;
+  },
   ledger: LedgerService = ledgerService,
 ): Promise<void> {
   if (!isAboveZero(input.amount)) return;
@@ -183,6 +190,7 @@ export async function postCodReceiptEntries(
     direction: LedgerDirection.IN,
     amount: input.amount,
     courier: input.courier,
+    vendorId: input.vendorId,
     sourceType: 'COD_SETTLEMENT',
     sourceId: input.settlementReference,
     orderId: input.orderId,

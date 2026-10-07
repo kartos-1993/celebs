@@ -123,6 +123,35 @@ export class ConsignmentRepository {
       },
     });
   }
+
+  /**
+   * Checks whether all consignments for an order have reached a terminal delivery state
+   * (DELIVERED, CANCELLED, or RETURNED).
+   *
+   * Used during split dispatch reconciliation: an order's payment and delivery status
+   * transitions to COMPLETED / COD_SETTLED only once all parcel shipments are resolved.
+   */
+  public async areAllConsignmentsDelivered(
+    orderId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<boolean> {
+    const client = tx ?? prisma;
+    const consignments = await client.consignment.findMany({
+      where: { orderId },
+      select: { status: true },
+    });
+
+    if (consignments.length === 0) {
+      return true;
+    }
+
+    return consignments.every(
+      (c) =>
+        c.status === ConsignmentStatus.DELIVERED ||
+        c.status === ConsignmentStatus.CANCELLED ||
+        c.status === ConsignmentStatus.RETURNED,
+    );
+  }
 }
 
 export const consignmentRepository = new ConsignmentRepository();

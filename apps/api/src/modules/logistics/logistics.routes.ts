@@ -37,6 +37,16 @@ router.post(
   logisticsController.settleCod,
 );
 
+// Settle individual seller consignment COD payment by tracking number (Admin / SuperAdmin) — platform only
+router.post(
+  '/consignments/:trackingNumber/settle-cod',
+  authenticateJWT,
+  asyncHandler(actorContext),
+  requirePlatformActor,
+  requirePermissions(Permission.FINANCE_MANAGE),
+  logisticsController.settleConsignmentCod,
+);
+
 // Inbound 3PL Courier Tracking Webhook (Automated status events from courier)
 router.post('/webhook', logisticsController.handleCourierWebhook);
 

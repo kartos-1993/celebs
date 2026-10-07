@@ -5,7 +5,7 @@ import {
   courierWebhookSchema,
   dispatchOrderSchema,
 } from '@celebs/shared-types';
-import { asyncHandler } from '@celebs/shared-utils';
+import { asyncHandler, BadRequestException } from '@celebs/shared-utils';
 
 import {
   type DeliveryLocationRepository,
@@ -65,6 +65,24 @@ export class LogisticsController {
     );
 
     return sendSuccess(res, result, 'COD payment settled successfully');
+  });
+
+  public settleConsignmentCod = asyncHandler(async (req: Request, res: Response) => {
+    const { trackingNumber } = req.params;
+    const settlementReference = String(
+      req.body.reference || req.body.settlementReference || '',
+    ).trim();
+
+    if (!settlementReference || settlementReference.length < 2) {
+      throw new BadRequestException('Settlement reference statement ID is required');
+    }
+
+    const result = await this.service.markConsignmentCodSettled(
+      String(trackingNumber),
+      settlementReference,
+    );
+
+    return sendSuccess(res, result, 'Consignment COD payment settled successfully');
   });
 
   public handleCourierWebhook = asyncHandler(async (req: Request, res: Response) => {
