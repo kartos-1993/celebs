@@ -32,14 +32,30 @@ export function resolveEsewaConfig(): EsewaConfig {
     );
   }
 
+  const successUrl =
+    process.env.ESEWA_SUCCESS_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/success';
+  const failureUrl =
+    process.env.ESEWA_FAILURE_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/failure';
+
+  if (nodeEnv === 'staging' || nodeEnv === 'production') {
+    for (const [name, url] of [
+      ['ESEWA_SUCCESS_URL', successUrl],
+      ['ESEWA_FAILURE_URL', failureUrl],
+    ] as const) {
+      if (!url || /localhost|127\.0\.0\.1/.test(url)) {
+        throw new Error(
+          `${name} must be a real https URL in staging/production — a localhost callback strands customers after they have paid`,
+        );
+      }
+    }
+  }
+
   return {
     productCode: productCode || 'EPAYTEST',
     secretKey: secretKey || '8gBm/:&EnhH.1/q',
     baseUrl: process.env.ESEWA_BASE_URL || 'https://rc-epay.esewa.com.np',
-    successUrl:
-      process.env.ESEWA_SUCCESS_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/success',
-    failureUrl:
-      process.env.ESEWA_FAILURE_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/failure',
+    successUrl,
+    failureUrl,
   };
 }
 

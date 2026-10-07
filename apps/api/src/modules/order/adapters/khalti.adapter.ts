@@ -19,13 +19,38 @@ export interface KhaltiConfig {
 }
 
 export function resolveKhaltiConfig(): KhaltiConfig {
+  const secretKey = process.env.KHALTI_SECRET_KEY || '';
+  const nodeEnv = process.env.NODE_ENV || 'development';
+
+  if ((nodeEnv === 'staging' || nodeEnv === 'production') && !secretKey) {
+    throw new Error(
+      'KHALTI_SECRET_KEY must be configured in staging/production — an empty key fails every checkout silently',
+    );
+  }
+
+  const returnUrl =
+    process.env.KHALTI_RETURN_URL || 'http://localhost:3333/api/v1/orders/payments/khalti/return';
+  const websiteUrl = process.env.KHALTI_WEBSITE_URL || 'http://localhost:5173';
+
+  if (nodeEnv === 'staging' || nodeEnv === 'production') {
+    for (const [name, url] of [
+      ['KHALTI_RETURN_URL', returnUrl],
+      ['KHALTI_WEBSITE_URL', websiteUrl],
+    ] as const) {
+      if (!url || /localhost|127\.0\.0\.1/.test(url)) {
+        throw new Error(
+          `${name} must be a real https URL in staging/production — a localhost callback strands paying customers`,
+        );
+      }
+    }
+  }
+
   return {
-    secretKey: process.env.KHALTI_SECRET_KEY || '',
+    secretKey,
     // Sandbox uses https://dev.khalti.com (test-pay.khalti.com for webview)
     baseUrl: process.env.KHALTI_BASE_URL || 'https://dev.khalti.com',
-    returnUrl:
-      process.env.KHALTI_RETURN_URL || 'http://localhost:3333/api/v1/orders/payments/khalti/return',
-    websiteUrl: process.env.KHALTI_WEBSITE_URL || 'http://localhost:5173',
+    returnUrl,
+    websiteUrl,
   };
 }
 

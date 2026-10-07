@@ -31,4 +31,27 @@ describe('resolveEsewaConfig merchant credentials', () => {
     const config = resolveEsewaConfig();
     expect(config.productCode).toBe('EPAYTEST');
   });
+
+  it('refuses localhost callbacks in staging, which would strand customers after payment', () => {
+    setEnv({
+      NODE_ENV: 'staging',
+      ESEWA_PRODUCT_CODE: 'EPAYTEST',
+      ESEWA_SECRET_KEY: 'secret',
+      ESEWA_SUCCESS_URL: 'http://localhost:3333/api/v1/orders/payments/esewa/success',
+      ESEWA_FAILURE_URL: 'https://staging.celebs.com/api/v1/orders/payments/esewa/failure',
+    });
+    expect(() => resolveEsewaConfig()).toThrow(/ESEWA_SUCCESS_URL/);
+  });
+
+  it('accepts real callback URLs in production', () => {
+    setEnv({
+      NODE_ENV: 'production',
+      ESEWA_PRODUCT_CODE: 'PROD-CODE',
+      ESEWA_SECRET_KEY: 'prod-secret',
+      ESEWA_SUCCESS_URL: 'https://celebs.com/api/v1/orders/payments/esewa/success',
+      ESEWA_FAILURE_URL: 'https://celebs.com/api/v1/orders/payments/esewa/failure',
+    });
+    const config = resolveEsewaConfig();
+    expect(config.successUrl).toContain('https://celebs.com');
+  });
 });
