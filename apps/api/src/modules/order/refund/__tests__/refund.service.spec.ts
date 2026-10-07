@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RefundService } from '../refund.service';
 
+import { hashValue } from '@/common/utils/bcrypt';
 import prisma from '@/config/db.prisma';
 
 /**
@@ -19,12 +20,12 @@ import prisma from '@/config/db.prisma';
  * for money nobody is tracking.
  */
 
-const user = () =>
+const user = async () =>
   prisma.user.create({
     data: {
       name: 'Buyer',
       email: `buyer-${Date.now()}-${Math.random()}@example.com`,
-      password: 'Password123!',
+      password: await hashValue('Password123!'),
     },
   });
 
@@ -192,6 +193,43 @@ describe('RefundService', () => {
 
     expect(refundMock).toHaveBeenCalledOnce();
     expect(await prisma.refund.count({ where: { orderId: order.id } })).toBe(1);
+  });
+
+  it('calls a non-idempotent gateway once when two cancellations race', async () => {
+    // The gateway charges per call, not per intent: two concurrent cancellations
+    // interleaving between a check and a create would pay the customer twice.
+    // The advisory-locked claim serializes them; the loser is answered with the
+    // winner's record and never reaches the gateway.
+    const { order } = await paidOrder(PaymentMethod.KHALTI);
+    const refundMock = vi.fn(async () => ({
+      status: 'SUCCEEDED',
+      providerRefundId: 'KHALTI-RACE',
+    }));
+    const service = new RefundService(
+      gateways({
+        KHALTI: { refund: refundMock },
+        ESEWA: { refund: async () => ({ status: 'FAILED' }) },
+        COD: { refund: async () => ({ status: 'FAILED' }) },
+      }),
+    );
+
+    const [first, second] = await Promise.all([
+      service.initiateRefund({ orderId: order.id, initiatedBy: 'admin-1' }),
+      service.initiateRefund({ orderId: order.id, initiatedBy: 'admin-2' }),
+    ]);
+
+    expect(refundMock).toHaveBeenCalledOnce();
+    expect(second?.id).toBe(first?.id);
+    expect(
+      await prisma.refund.count({
+        where: { orderId: order.id, status: { in: ['PENDING', 'SUCCEEDED'] } },
+      }),
+    ).toBe(1);
+    expect(
+      await prisma.ledgerEntry.count({
+        where: { sourceType: 'REFUND', sourceId: first!.id },
+      }),
+    ).toBe(1);
   });
 
   it('returns the existing refund when a second attempt is made', async () => {

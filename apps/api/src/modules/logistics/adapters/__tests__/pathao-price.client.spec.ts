@@ -1,10 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The suite-wide setup stubs this module to prevent live courier quotes during
+// general tests. This file is the dedicated unit test suite for the client, so
+// it takes the real implementation back.
+vi.unmock('@/modules/logistics/adapters/pathao-price.client');
 
 import {
   COURIER_MAX_PARCEL_KG,
   NORMAL_DELIVERY_TYPE,
   PARCEL_ITEM_TYPE,
   parsePathaoPricePlan,
+  PathaoPriceClient,
   pricePlanRequest,
   weightBandFor,
 } from '../pathao-price.client';
@@ -168,5 +174,26 @@ describe('COURIER_MAX_PARCEL_KG', () => {
     // The documentation says 10. The API validated 0.001-200 and priced 150 kg
     // without complaint, so the real ceiling is the larger one.
     expect(COURIER_MAX_PARCEL_KG.toNumber()).toBe(200);
+  });
+});
+
+describe('PathaoPriceClient.quote', () => {
+  it('names the missing base url instead of posting to a relative URL', async () => {
+    vi.stubEnv('PATHAO_BASE_URL', '');
+    const mockFetch = vi.fn();
+
+    // Construction must not throw: the module singleton is built at import.
+    const client = new PathaoPriceClient(mockFetch as unknown as typeof fetch);
+
+    await expect(
+      client.quote({
+        storeId: 130903,
+        itemWeightKg: new Prisma.Decimal('0.9'),
+        recipientCityId: 79,
+        recipientZoneId: 1326,
+        accessToken: 'token',
+      }),
+    ).rejects.toThrow(/PATHAO_BASE_URL/);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

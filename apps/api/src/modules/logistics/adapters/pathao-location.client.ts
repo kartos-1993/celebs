@@ -19,8 +19,11 @@ import { PathaoTokenProvider, resolvePathaoConfig } from './pathao-token.provide
  * list. "This city has no zones" is a fact worth acting on; "we could not parse
  * the response" must not be allowed to retire real coverage.
  *
- * Pathao returns its lists under `data.data`, and does not echo the parent id
- * back on a zone or an area, so the requested parent is stamped onto each entry.
+ * Pathao's list endpoints answer in one of two envelopes: the documented flat
+ * `data: [...]`, or a nested `data.data` the sandbox has also produced. Both
+ * are accepted and mapped identically; anything else is refused. Zones and
+ * areas do not echo the parent id, so the requested parent is stamped onto
+ * each entry.
  */
 
 const CITY_LIST_PATH = '/aladdin/api/v1/city-list';
@@ -31,7 +34,8 @@ interface PathaoListEnvelope {
   message?: string;
   type?: string;
   code?: number;
-  data?: { data?: unknown };
+  /** Documented flat `data: [...]`, or the nested `data.data` the sandbox also returns. */
+  data?: { data?: unknown } | unknown;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -54,12 +58,30 @@ const readName = (entry: Record<string, unknown>, key: string): string => {
   return value.trim();
 };
 
+/** Whether the courier will carry to or collect from this area. */
+const readFlag = (entry: Record<string, unknown>, key: string): boolean => {
+  const value = entry[key];
+  if (typeof value !== 'boolean') {
+    throw new Error(`Pathao ${key} is missing or not a boolean`);
+  }
+  return value;
+};
+
 export class PathaoLocationClient implements CourierLocationClient {
+  /**
+   * The base URL resolves per call, not at construction: callers build this
+   * client at import time, and importing a module must not throw for a
+   * missing variable.
+   */
   constructor(
     private readonly tokens: PathaoTokenProvider,
     private readonly fetchImpl: typeof fetch = (...args) => globalThis.fetch(...args),
-    private readonly baseUrl: string = resolvePathaoConfig().baseUrl,
+    private readonly baseUrlOverride?: string,
   ) {}
+
+  private baseUrl(): string {
+    return this.baseUrlOverride ?? resolvePathaoConfig().baseUrl;
+  }
 
   async listCities(): Promise<ExternalCity[]> {
     return this.readEntries(CITY_LIST_PATH, 'city-list', (entry) => ({
@@ -84,6 +106,8 @@ export class PathaoLocationClient implements CourierLocationClient {
       id: readId(entry, 'area_id'),
       zoneId,
       name: readName(entry, 'area_name'),
+      homeDeliveryAvailable: readFlag(entry, 'home_delivery_available'),
+      pickupAvailable: readFlag(entry, 'pickup_available'),
     }));
   }
 
@@ -113,11 +137,11 @@ export class PathaoLocationClient implements CourierLocationClient {
     });
   }
 
-  /** Reads `data.data` and refuses anything that is not a list of entries. */
+  /** Reads `data.data` or a flat `data` array, and refuses anything else. */
   private async readList(path: string, label: string): Promise<unknown[]> {
     const token = await this.tokens.getToken();
 
-    const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+    const response = await this.fetchImpl(`${this.baseUrl()}${path}`, {
       method: 'GET',
       headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
       signal: AbortSignal.timeout(15_000),
@@ -136,7 +160,12 @@ export class PathaoLocationClient implements CourierLocationClient {
       );
     }
 
-    const entries = body?.data?.data;
+    const container = body?.data;
+    const entries = Array.isArray(container)
+      ? container
+      : isRecord(container)
+        ? container.data
+        : undefined;
 
     if (!Array.isArray(entries)) {
       // Refused rather than treated as empty: an empty list is something the

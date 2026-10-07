@@ -1,5 +1,6 @@
+import { createHmac } from 'node:crypto';
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import app from '@/app';
 
@@ -59,4 +60,63 @@ describe('courier webhook rejections', () => {
       expect(response.status).not.toBe(400);
     },
   );
+});
+
+describe('courier webhook signature', () => {
+  const SECRET = 'webhook-secret-for-tests';
+
+  const signed = (payload: unknown, secret: string = SECRET) => {
+    const raw = JSON.stringify(payload);
+    const signature = createHmac('sha256', secret).update(raw).digest('hex');
+    return request(app)
+      .post('/api/v1/logistics/webhook')
+      .set('Content-Type', 'application/json')
+      .set('x-pathao-signature', signature)
+      .send(raw);
+  };
+
+  it('lets a correctly signed delivery through to the service', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
+
+    // Unknown waybill: 404 proves the signature passed and the parcel lookup
+    // ran, rather than the request dying at verification.
+    const response = await signed({ trackingNumber: 'NO-SUCH-WAYBILL-12345' });
+
+    expect(response.status).not.toBe(401);
+    expect(response.status).not.toBe(400);
+  });
+
+  it('rejects a delivery signed with the wrong secret', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
+
+    const response = await signed({ trackingNumber: 'NO-SUCH-WAYBILL-12345' }, 'wrong-secret');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('rejects an unsigned delivery once a secret is configured', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
+
+    const response = await request(app)
+      .post('/api/v1/logistics/webhook')
+      .send({ trackingNumber: 'NO-SUCH-WAYBILL-12345' });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('rejects a signed-looking delivery whose body was tampered with', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', SECRET);
+
+    const raw = JSON.stringify({ trackingNumber: 'NO-SUCH-WAYBILL-12345' });
+    const signature = createHmac('sha256', SECRET).update(raw).digest('hex');
+
+    const response = await request(app)
+      .post('/api/v1/logistics/webhook')
+      .set('Content-Type', 'application/json')
+      .set('x-pathao-signature', signature)
+      // Still valid JSON, but no longer the bytes that were signed.
+      .send(raw.replace('12345', '12346'));
+
+    expect(response.status).toBe(401);
+  });
 });

@@ -33,7 +33,12 @@ const zoneListPayload = (zones: Array<{ zone_id: number; zone_name: string }>) =
 });
 
 const areaListPayload = (
-  areas: Array<{ area_id: number; area_name: string; home_delivery_available: boolean }>,
+  areas: Array<{
+    area_id: number;
+    area_name: string;
+    home_delivery_available: boolean;
+    pickup_available: boolean;
+  }>,
 ) => ({
   message: 'Area list fetched.',
   type: 'success',
@@ -125,6 +130,21 @@ describe('PathaoLocationClient', () => {
 
       await expect(client.listCities()).resolves.toEqual([]);
     });
+
+    it('reads the documented flat data array as well as the nested one', async () => {
+      const client = clientFor({
+        'city-list': {
+          message: 'City successfully fetched.',
+          type: 'success',
+          code: 200,
+          data: [{ city_id: 353, city_name: 'Aanbukhaireni' }],
+        },
+      });
+
+      await expect(client.listCities()).resolves.toEqual([
+        { id: 353, name: 'Aanbukhaireni', province: '' },
+      ]);
+    });
   });
 
   describe('listZones', () => {
@@ -151,19 +171,90 @@ describe('PathaoLocationClient', () => {
 
       expect(calls[0]?.url).toBe(`${BASE}/aladdin/api/v1/cities/181/zone-list`);
     });
+
+    it('reads the documented flat data array as well as the nested one', async () => {
+      const client = clientFor({
+        'zone-list': {
+          message: 'Zone list fetched.',
+          type: 'success',
+          code: 200,
+          data: [{ zone_id: 1647, zone_name: 'Aarubari' }],
+        },
+      });
+
+      await expect(client.listZones(138)).resolves.toEqual([
+        { id: 1647, cityId: 138, name: 'Aarubari' },
+      ]);
+    });
   });
 
   describe('listAreas', () => {
-    it('reads the areas inside a zone', async () => {
+    it('reads the areas inside a zone, keeping the courier serviceability flags', async () => {
       const client = clientFor({
         'area-list': areaListPayload([
-          { area_id: 23983, area_name: 'Bhrikutimandap', home_delivery_available: false },
+          {
+            area_id: 23983,
+            area_name: 'Bhrikutimandap',
+            home_delivery_available: false,
+            pickup_available: false,
+          },
         ]),
       });
 
       const areas = await client.listAreas(1647);
 
-      expect(areas).toEqual([{ id: 23983, zoneId: 1647, name: 'Bhrikutimandap' }]);
+      expect(areas).toEqual([
+        {
+          id: 23983,
+          zoneId: 1647,
+          name: 'Bhrikutimandap',
+          homeDeliveryAvailable: false,
+          pickupAvailable: false,
+        },
+      ]);
+    });
+
+    it('reads the documented flat data array as well as the nested one', async () => {
+      const client = clientFor({
+        'area-list': {
+          message: 'Area list fetched.',
+          type: 'success',
+          code: 200,
+          data: [
+            {
+              area_id: 23983,
+              area_name: 'Bhrikutimandap',
+              home_delivery_available: true,
+              pickup_available: true,
+            },
+          ],
+        },
+      });
+
+      await expect(client.listAreas(1647)).resolves.toEqual([
+        {
+          id: 23983,
+          zoneId: 1647,
+          name: 'Bhrikutimandap',
+          homeDeliveryAvailable: true,
+          pickupAvailable: true,
+        },
+      ]);
+    });
+
+    it('refuses an area whose delivery flags are not booleans', async () => {
+      const client = clientFor({
+        'area-list': areaListPayload([
+          {
+            area_id: 23983,
+            area_name: 'Bhrikutimandap',
+            home_delivery_available: 'yes' as unknown as boolean,
+            pickup_available: true,
+          },
+        ]),
+      });
+
+      await expect(client.listAreas(1647)).rejects.toThrow(/home_delivery_available/);
     });
 
     it('asks for the areas of the zone it was given', async () => {

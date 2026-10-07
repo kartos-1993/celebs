@@ -89,6 +89,25 @@ describe('resolvePathaoConfig', () => {
     expect(() => resolvePathaoConfig()).toThrow(/PATHAO_BASE_URL/);
   });
 
+  it('refuses a blank base url even outside staging, so the failure names the variable', () => {
+    env({ NODE_ENV: 'development', PATHAO_BASE_URL: '' });
+
+    expect(() => resolvePathaoConfig()).toThrow(/PATHAO_BASE_URL/);
+  });
+
+  it('lets the module load without credentials and fails on first use instead', async () => {
+    // The singleton is built at import time. If construction threw, every
+    // importer — including test files that never touch Pathao — would fail
+    // to load with no usable message.
+    env({ NODE_ENV: 'development', PATHAO_BASE_URL: '' });
+    const fetchMock = okFetch();
+
+    const provider = new PathaoTokenProvider(fetchMock);
+
+    await expect(provider.getToken()).rejects.toThrow(/PATHAO_BASE_URL/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('trims a trailing slash so paths do not double up', () => {
     env({ PATHAO_BASE_URL: 'https://api-hermes.pathao.com/' });
 

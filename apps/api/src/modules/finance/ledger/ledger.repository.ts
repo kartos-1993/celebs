@@ -15,19 +15,22 @@ export class LedgerRepository {
    * somehow arrives with a different figure that is a bug upstream, and silently
    * keeping the first would hide it.
    */
-  async postOrGet(data: {
-    type: LedgerEntryType;
-    direction: LedgerDirection;
-    amount: Prisma.Decimal;
-    courier?: string;
-    vendorId?: string;
-    sourceType: string;
-    sourceId: string;
-    orderId?: string;
-    settlementBatchId?: string;
-    memo?: string;
-    occurredAt?: Date;
-  }) {
+  async postOrGet(
+    data: {
+      type: LedgerEntryType;
+      direction: LedgerDirection;
+      amount: Prisma.Decimal;
+      courier?: string;
+      vendorId?: string;
+      sourceType: string;
+      sourceId: string;
+      orderId?: string;
+      settlementBatchId?: string;
+      memo?: string;
+      occurredAt?: Date;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
     const values = {
       type: data.type,
       direction: data.direction,
@@ -42,9 +45,11 @@ export class LedgerRepository {
       occurredAt: data.occurredAt ?? new Date(),
     };
 
-    const created = await prisma.ledgerEntry.createMany({ data: [values], skipDuplicates: true });
+    const client = tx ?? prisma;
 
-    const entry = await prisma.ledgerEntry.findUniqueOrThrow({
+    const created = await client.ledgerEntry.createMany({ data: [values], skipDuplicates: true });
+
+    const entry = await client.ledgerEntry.findUniqueOrThrow({
       where: {
         sourceType_sourceId_type: {
           sourceType: data.sourceType,

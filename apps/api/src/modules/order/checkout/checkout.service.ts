@@ -8,7 +8,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
-import { resolvePathaoConfig } from '../../logistics/adapters/pathao-token.provider';
+import { resolvePathaoStoreId } from '../../logistics/adapters/pathao-token.provider';
 import {
   CourierDestinationRepository,
   courierDestinationRepository,
@@ -65,8 +65,17 @@ export class CheckoutService {
     private platformSettingsService: PlatformSettingsService = defaultPlatformSettingsService,
     private deliveryQuoteSvc: DeliveryQuoteService = deliveryQuoteService,
     private courierDestinationRepo: CourierDestinationRepository = courierDestinationRepository,
-    private pathaoStoreId: number = resolvePathaoConfig().storeId,
+    private pathaoStoreIdOverride?: number,
   ) {}
+
+  /**
+   * The courier pickup store. Resolved per use, not at construction: the module
+   * singleton is built at import time, and importing a module must not throw
+   * for a missing variable.
+   */
+  private pathaoStoreId(): number {
+    return this.pathaoStoreIdOverride ?? resolvePathaoStoreId();
+  }
 
   async checkout(userId: string, input: CheckoutInput, requestHost?: string) {
     const { paymentMethod, idempotencyKey } = input;
@@ -309,7 +318,7 @@ export class CheckoutService {
       parcels,
       recipientCityExternalId: courierDestination.cityExternalId,
       recipientZoneExternalId: courierDestination.zoneExternalId,
-      storeId: this.pathaoStoreId,
+      storeId: this.pathaoStoreId(),
     });
 
     const isCod = paymentMethod === 'COD';

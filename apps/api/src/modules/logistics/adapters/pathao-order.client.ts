@@ -164,10 +164,19 @@ export function parsePathaoOrderResponse(payload: unknown): PathaoOrderResult {
  * Client for creating shipments on Pathao Courier via synchronous REST API.
  */
 export class PathaoOrderClient {
+  /**
+   * The base URL resolves per call, not at construction: the module singleton
+   * is built at import time, and importing a module must not throw for a
+   * missing variable.
+   */
   constructor(
     private readonly fetchImpl: typeof fetch = (...args) => globalThis.fetch(...args),
-    private readonly baseUrl: string = resolvePathaoConfig().baseUrl,
+    private readonly baseUrlOverride?: string,
   ) {}
+
+  private baseUrl(): string {
+    return this.baseUrlOverride ?? resolvePathaoConfig().baseUrl;
+  }
 
   /**
    * Books a single parcel consignment with Pathao.
@@ -179,7 +188,7 @@ export class PathaoOrderClient {
   ): Promise<PathaoOrderResult> {
     const payload = buildPathaoOrderPayload(input);
 
-    const response = await this.fetchImpl(`${this.baseUrl}${ORDER_CREATION_PATH}`, {
+    const response = await this.fetchImpl(`${this.baseUrl()}${ORDER_CREATION_PATH}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',

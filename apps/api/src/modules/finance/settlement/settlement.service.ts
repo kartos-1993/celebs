@@ -294,16 +294,19 @@ export class SettlementService {
         }
 
         if (isAboveZero(owedToCourier)) {
-          await this.ledger.post({
-            type: LedgerEntryType.COURIER_PAYMENT,
-            direction: LedgerDirection.OUT,
-            amount: owedToCourier,
-            courier: batch.courier,
-            sourceType: 'SETTLEMENT',
-            sourceId: batch.id,
-            settlementBatchId: batch.id,
-            memo: `Settled courier statement for ${batch.periodStart.toISOString().slice(0, 10)}`,
-          });
+          await this.ledger.post(
+            {
+              type: LedgerEntryType.COURIER_PAYMENT,
+              direction: LedgerDirection.OUT,
+              amount: owedToCourier,
+              courier: batch.courier,
+              sourceType: 'SETTLEMENT',
+              sourceId: batch.id,
+              settlementBatchId: batch.id,
+              memo: `Settled courier statement for ${batch.periodStart.toISOString().slice(0, 10)}`,
+            },
+            tx,
+          );
         }
 
         return this.mustFind(batch.id, tx);

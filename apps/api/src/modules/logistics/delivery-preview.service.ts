@@ -1,6 +1,6 @@
 import { logger } from '@celebs/shared-utils';
 
-import { resolvePathaoConfig } from './adapters/pathao-token.provider';
+import { resolvePathaoStoreId } from './adapters/pathao-token.provider';
 import {
   CourierDestinationRepository,
   courierDestinationRepository,
@@ -54,8 +54,17 @@ export class DeliveryPreviewService {
     private readonly destinationRepo: CourierDestinationRepository = courierDestinationRepository,
     private readonly pricingRepo = deliveryPricingRepository,
     private readonly flatShippingFee: Prisma.Decimal = ZERO,
-    private readonly storeId: number = resolvePathaoConfig().storeId,
+    private readonly storeIdOverride?: number,
   ) {}
+
+  /**
+   * The courier pickup store. Resolved per use, not at construction: the module
+   * singleton is built at import time, and importing a module must not throw
+   * for a missing variable.
+   */
+  private storeId(): number {
+    return this.storeIdOverride ?? resolvePathaoStoreId();
+  }
 
   /**
    * The district's own free-delivery promise.
@@ -86,7 +95,7 @@ export class DeliveryPreviewService {
         parcels: input.parcels,
         recipientCityExternalId: destination.cityExternalId,
         recipientZoneExternalId: destination.zoneExternalId,
-        storeId: this.storeId,
+        storeId: this.storeId(),
       });
 
       const threshold = await this.thresholdFor(input.logisticsZoneId);

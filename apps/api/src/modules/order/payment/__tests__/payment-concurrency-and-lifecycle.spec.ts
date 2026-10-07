@@ -205,6 +205,40 @@ describe('Payment concurrency and lifecycle state transitions', () => {
     );
   });
 
+  it('still allows cancelling a handed-over order, because the state machine does', async () => {
+    // The machine lists HANDED_OVER -> CANCELLED as legal: a parcel can be
+    // recalled before it is out for delivery. The old hardcoded denylist
+    // refused it; the machine is the authority now.
+    const order = await createTestOrder('COMPLETED');
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'HANDED_OVER' } });
+
+    const result = await orderServiceWithStubbedRefund().cancelOrder(userId, order.id);
+
+    expect(result.status).toBe('CANCELLED');
+  });
+
+  it('refuses to cancel a delivered order instead of writing an illegal transition', async () => {
+    const order = await createTestOrder('COMPLETED');
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'DELIVERED' } });
+
+    await expect(orderServiceWithStubbedRefund().cancelOrder(userId, order.id)).rejects.toThrow(
+      /Invalid order status transition from 'DELIVERED' to 'CANCELLED'/,
+    );
+
+    expect(stubRefundService.initiateRefund).not.toHaveBeenCalled();
+  });
+
+  it('refuses to cancel a returned order instead of resurrecting it', async () => {
+    const order = await createTestOrder('COMPLETED');
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'RETURNED' } });
+
+    await expect(orderServiceWithStubbedRefund().cancelOrder(userId, order.id)).rejects.toThrow(
+      /Invalid order status transition from 'RETURNED' to 'CANCELLED'/,
+    );
+
+    expect(stubRefundService.initiateRefund).not.toHaveBeenCalled();
+  });
+
   it('does not claim the payment was refunded before the gateway says so', async () => {
     const order = await createTestOrder('COMPLETED');
 

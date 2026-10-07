@@ -46,7 +46,7 @@ const COURIER_COST_TYPES: ReadonlySet<LedgerEntryType> = new Set([
 export class LedgerService {
   constructor(private readonly repo: LedgerRepository = ledgerRepository) {}
 
-  async post(input: PostLedgerEntryInput) {
+  async post(input: PostLedgerEntryInput, tx?: Prisma.TransactionClient) {
     const amount = new Prisma.Decimal(input.amount);
 
     if (isBelowZero(amount)) {
@@ -73,19 +73,22 @@ export class LedgerService {
       );
     }
 
-    return this.repo.postOrGet({
-      type: input.type,
-      direction: input.direction,
-      amount,
-      courier: input.courier,
-      vendorId: input.vendorId,
-      sourceType: input.sourceType,
-      sourceId: input.sourceId,
-      orderId: input.orderId,
-      settlementBatchId: input.settlementBatchId,
-      memo: input.memo,
-      occurredAt: input.occurredAt,
-    });
+    return this.repo.postOrGet(
+      {
+        type: input.type,
+        direction: input.direction,
+        amount,
+        courier: input.courier,
+        vendorId: input.vendorId,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        orderId: input.orderId,
+        settlementBatchId: input.settlementBatchId,
+        memo: input.memo,
+        occurredAt: input.occurredAt,
+      },
+      tx,
+    );
   }
 
   /** What an order took in, minus what it cost. Negative means it lost money. */

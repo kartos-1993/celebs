@@ -33,6 +33,9 @@ export interface ExternalArea {
   id: number;
   zoneId: number;
   name: string;
+  /** The courier's own serviceability flags: neither true means it carries nothing here. */
+  homeDeliveryAvailable: boolean;
+  pickupAvailable: boolean;
 }
 
 export interface CourierLocationClient {
@@ -231,10 +234,20 @@ export class LogisticsLocationSyncService {
 
         const areas = await this.client.listAreas(zone.id);
         for (const area of areas) {
+          // An area the courier neither delivers to nor collects from is kept on
+          // record but out of service. The flag is written on both branches so a
+          // reinstated area also comes back.
+          const isActive = area.homeDeliveryAvailable || area.pickupAvailable;
           await prisma.logisticsArea.upsert({
             where: { externalId: area.id },
-            update: { name: area.name, zoneId: zoneRecord.id, syncedAt },
-            create: { externalId: area.id, name: area.name, zoneId: zoneRecord.id, syncedAt },
+            update: { name: area.name, zoneId: zoneRecord.id, syncedAt, isActive },
+            create: {
+              externalId: area.id,
+              name: area.name,
+              zoneId: zoneRecord.id,
+              syncedAt,
+              isActive,
+            },
           });
           areaCount += 1;
         }

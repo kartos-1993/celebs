@@ -1,5 +1,8 @@
+import { OrderStatus } from '@prisma/client';
+
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { validateTransition } from '../order.state-machine';
 import { enqueueOrderCancelledEmail } from '../utils/order-email.util';
 
 import { CoreOrderRepository, coreOrderRepository } from './order.repository';
@@ -41,13 +44,10 @@ export class CoreOrderService {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    if (['HANDED_OVER', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].includes(order.status)) {
-      throw new AppError(
-        `Cannot cancel order in status ${order.status}`,
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
+    // The state machine is the single authority on what can still be cancelled.
+    // It keeps HANDED_OVER cancellable (a parcel can be recalled before it is
+    // out for delivery) and refuses DELIVERED, CANCELLED and RETURNED.
+    validateTransition(order.status, OrderStatus.CANCELLED);
 
     const result = await this.repo.applyOrderCancellation({
       id: order.id,

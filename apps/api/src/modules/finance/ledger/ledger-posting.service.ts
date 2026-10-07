@@ -182,20 +182,24 @@ export async function postCodReceiptEntries(
     vendorId?: string;
   },
   ledger: LedgerService = ledgerService,
+  tx?: Prisma.TransactionClient,
 ): Promise<void> {
   if (!isAboveZero(input.amount)) return;
 
-  await ledger.post({
-    type: LedgerEntryType.COD_RECEIVED,
-    direction: LedgerDirection.IN,
-    amount: input.amount,
-    courier: input.courier,
-    vendorId: input.vendorId,
-    sourceType: 'COD_SETTLEMENT',
-    sourceId: input.settlementReference,
-    orderId: input.orderId,
-    memo: `Cash collected and remitted by courier (ref ${input.settlementReference})`,
-  });
+  await ledger.post(
+    {
+      type: LedgerEntryType.COD_RECEIVED,
+      direction: LedgerDirection.IN,
+      amount: input.amount,
+      courier: input.courier,
+      vendorId: input.vendorId,
+      sourceType: 'COD_SETTLEMENT',
+      sourceId: input.settlementReference,
+      orderId: input.orderId,
+      memo: `Cash collected and remitted by courier (ref ${input.settlementReference})`,
+    },
+    tx,
+  );
 }
 
 /**

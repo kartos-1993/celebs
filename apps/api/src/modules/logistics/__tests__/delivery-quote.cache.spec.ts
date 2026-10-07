@@ -93,4 +93,31 @@ describe('delivery quote cache', () => {
 
     await expect(cachedDeliveryQuoteCache.get(KEY)).resolves.toBeNull();
   });
+
+  it('revives Decimals after a real JSON round trip, so cached quotes match fresh ones', async () => {
+    // Redis stores JSON. A quote written as Decimals comes back as plain data,
+    // and callers (plus the API response) assume Decimal instances. This is the
+    // shape a real Redis returns, not the live objects the other tests feed.
+    mockRedisGet.mockResolvedValue(JSON.parse(JSON.stringify(quote('150'))) as unknown);
+
+    const found = await cachedDeliveryQuoteCache.get(KEY);
+
+    expect(found?.finalPrice).toBeInstanceOf(Prisma.Decimal);
+    expect(found?.codPercentage).toBeInstanceOf(Prisma.Decimal);
+    expect(found?.finalPrice.toFixed(2)).toBe('150.00');
+    expect(found?.codPercentage.toFixed(4)).toBe('0.0100');
+    expect(found?.planId).toBe(7);
+  });
+
+  it('refuses a cached quote whose amounts do not survive the round trip', async () => {
+    mockRedisGet.mockResolvedValue({
+      finalPrice: 'not-a-number',
+      codPercentage: '0.01',
+      planId: 7,
+      codEnabled: true,
+      raw: {},
+    });
+
+    await expect(cachedDeliveryQuoteCache.get(KEY)).resolves.toBeNull();
+  });
 });

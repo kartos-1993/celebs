@@ -190,5 +190,18 @@ describe('PathaoOrderClient', () => {
         }),
       ).rejects.toThrow(/status 422/);
     });
+
+    it('names the missing base url instead of posting to a relative URL', async () => {
+      vi.stubEnv('PATHAO_BASE_URL', '');
+      const mockFetch = vi.fn();
+
+      // Construction must not throw: the module singleton is built at import.
+      const client = new PathaoOrderClient(mockFetch as never);
+
+      await expect(
+        client.createOrder({ ...validInput, accessToken: 'valid-test-bearer-token' }),
+      ).rejects.toThrow(/PATHAO_BASE_URL/);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 });

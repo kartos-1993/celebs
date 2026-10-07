@@ -151,10 +151,19 @@ export function weightBandFor(weightKg: Prisma.Decimal): string {
 }
 
 export class PathaoPriceClient {
+  /**
+   * The base URL resolves per call, not at construction: the module singleton
+   * is built at import time, and importing a module must not throw for a
+   * missing variable.
+   */
   constructor(
     private readonly fetchImpl: typeof fetch = (...args) => globalThis.fetch(...args),
-    private readonly baseUrl: string = resolvePathaoConfig().baseUrl,
+    private readonly baseUrlOverride?: string,
   ) {}
+
+  private baseUrl(): string {
+    return this.baseUrlOverride ?? resolvePathaoConfig().baseUrl;
+  }
 
   /**
    * One courier quote.
@@ -164,7 +173,7 @@ export class PathaoPriceClient {
    * rather than an error, so an unvalidated zone is a wrong quote nobody notices.
    */
   async quote(input: PathaoPricePlanRequest & { accessToken: string }): Promise<CourierQuote> {
-    const response = await this.fetchImpl(`${this.baseUrl}${PRICE_PLAN_PATH}`, {
+    const response = await this.fetchImpl(`${this.baseUrl()}${PRICE_PLAN_PATH}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',

@@ -45,6 +45,31 @@ const TOKEN_CACHE_KEY = 'celebs:pathao:access-token';
 export const PATHAO_TOKEN_REFRESH_MARGIN_SECONDS = 300;
 
 /**
+ * The pickup store id on its own, without touching the base URL.
+ *
+ * Checkout and delivery preview need only this: they never call Pathao
+ * directly, the quote service does. Resolving the full config here would
+ * demand credentials of code paths that hold none.
+ */
+export function resolvePathaoStoreId(): number {
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
+  // 130903 is the sandbox store (see resolvePathaoConfig). A blank id is
+  // refused rather than defaulted in staging and production.
+  const raw = (process.env.PATHAO_STORE_ID ?? '').trim();
+  const storeId = Number(
+    raw || (nodeEnv === 'production' || nodeEnv === 'staging' ? '' : '130903'),
+  );
+
+  if (!Number.isInteger(storeId) || storeId <= 0) {
+    throw new Error(
+      'Pathao store id is not a positive integer. Set PATHAO_STORE_ID to the approved pickup store.',
+    );
+  }
+
+  return storeId;
+}
+
+/**
  * Credentials for the courier we ship parcels through.
  *
  * Refused outright in staging and production when missing. Pathao holds real
@@ -68,6 +93,15 @@ export function resolvePathaoConfig(): PathaoConfig {
   const storeId = Number(
     read('PATHAO_STORE_ID') || (nodeEnv === 'production' || nodeEnv === 'staging' ? '' : '130903'),
   );
+
+  // The base URL is required in every environment. Without it the clients build
+  // relative URLs and fail inside `fetch` with a message that names no
+  // variable; naming it here points at the fix.
+  if (!baseUrl) {
+    throw new Error(
+      'Pathao courier credentials are not configured: PATHAO_BASE_URL. Set it before dispatching to Pathao.',
+    );
+  }
 
   if (nodeEnv === 'staging' || nodeEnv === 'production') {
     const required = {
@@ -120,11 +154,19 @@ interface PathaoTokenResponse {
 }
 
 export class PathaoTokenProvider {
-  /** Resolved lazily so a test can stub the global before the first call. */
+  /**
+   * Config resolves on first use, never at construction: the module singleton
+   * is built at import time, and importing a module must not throw for a
+   * missing variable. Overrides (tests, scripts) win over the environment.
+   */
   constructor(
     private readonly fetchImpl: typeof fetch = (...args) => globalThis.fetch(...args),
-    private readonly config: PathaoConfig = resolvePathaoConfig(),
+    private readonly configOverride?: Partial<PathaoConfig>,
   ) {}
+
+  private config(): PathaoConfig {
+    return { ...resolvePathaoConfig(), ...this.configOverride };
+  }
 
   async getToken(): Promise<string> {
     const cached = await this.readCache();
@@ -159,15 +201,16 @@ export class PathaoTokenProvider {
   }
 
   private async requestToken(): Promise<string> {
-    const response = await this.fetchImpl(`${this.config.baseUrl}${TOKEN_PATH}`, {
+    const config = this.config();
+    const response = await this.fetchImpl(`${config.baseUrl}${TOKEN_PATH}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
-        client_id: this.config.clientId,
-        client_secret: this.config.clientSecret,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
         grant_type: 'password',
-        username: this.config.username,
-        password: this.config.password,
+        username: config.username,
+        password: config.password,
       }),
       signal: AbortSignal.timeout(10_000),
     });

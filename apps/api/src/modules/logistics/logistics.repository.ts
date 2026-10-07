@@ -100,30 +100,33 @@ export class LogisticsRepository {
       );
     }
 
-    return prisma.order
-      .update({
-        where: { id: orderId },
-        data: {
-          codStatus: CodStatus.COD_SETTLED,
-          codSettledAt: new Date(),
-          codReference: settlementReference,
-          paymentStatus: 'COMPLETED',
-          trackingEvents: {
-            create: {
-              status: OrderStatus.DELIVERED,
-              title: 'COD Payment Settled',
-              description: `Cash reconciled against courier deposit. Ref: ${settlementReference}`,
-              source: 'PLATFORM',
+    return prisma.$transaction(
+      async (tx) => {
+        const settled = await tx.order.update({
+          where: { id: orderId },
+          data: {
+            codStatus: CodStatus.COD_SETTLED,
+            codSettledAt: new Date(),
+            codReference: settlementReference,
+            paymentStatus: 'COMPLETED',
+            trackingEvents: {
+              create: {
+                status: OrderStatus.DELIVERED,
+                title: 'COD Payment Settled',
+                description: `Cash reconciled against courier deposit. Ref: ${settlementReference}`,
+                source: 'PLATFORM',
+              },
             },
           },
-        },
-        include: { trackingEvents: true },
-      })
-      .then(async (settled) => {
+          include: { trackingEvents: true },
+        });
+
         // Cash actually arriving is what a courier statement is reconciled against,
         // so it is recorded rather than left to be reconstructed later. Keyed on the
-        // voucher, so a deposit submitted twice cannot be counted twice.
-        const consignments = await consignmentRepository.findByOrderId(settled.id);
+        // voucher, so a deposit submitted twice cannot be counted twice. Everything
+        // below joins the same transaction as the status flip above: an order that
+        // reads COD_SETTLED must have its money lines already written.
+        const consignments = await consignmentRepository.findByOrderId(settled.id, tx);
 
         if (consignments.length > 0) {
           // In split dispatch, record COD receipt per seller parcel so each ledger entry
@@ -131,32 +134,43 @@ export class LogisticsRepository {
           for (const consignment of consignments) {
             const consignmentCod = consignment.codAmount ?? new Prisma.Decimal(0);
             if (isAboveZero(consignmentCod)) {
-              await postCodReceiptEntries({
-                orderId: settled.id,
-                courier: consignment.courierProvider,
-                amount: consignmentCod,
-                settlementReference: `${settlementReference}:${consignment.trackingNumber}`,
-                vendorId: consignment.vendorId,
-              });
+              await postCodReceiptEntries(
+                {
+                  orderId: settled.id,
+                  courier: consignment.courierProvider,
+                  amount: consignmentCod,
+                  settlementReference: `${settlementReference}:${consignment.trackingNumber}`,
+                  vendorId: consignment.vendorId,
+                },
+                undefined,
+                tx,
+              );
             }
             if (consignment.status !== ConsignmentStatus.DELIVERED) {
               await consignmentRepository.updateConsignmentStatus(
                 consignment.id,
                 ConsignmentStatus.DELIVERED,
+                tx,
               );
             }
           }
         } else {
-          await postCodReceiptEntries({
-            orderId: settled.id,
-            courier: settled.courierProvider ?? undefined,
-            amount: settled.codAmount ?? new Prisma.Decimal(0),
-            settlementReference,
-          });
+          await postCodReceiptEntries(
+            {
+              orderId: settled.id,
+              courier: settled.courierProvider ?? undefined,
+              amount: settled.codAmount ?? new Prisma.Decimal(0),
+              settlementReference,
+            },
+            undefined,
+            tx,
+          );
         }
 
         return settled;
-      });
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
   /**
@@ -183,69 +197,84 @@ export class LogisticsRepository {
       );
     }
 
-    // 1. Post ledger entry for this parcel's collectible cash if above zero
-    const consignmentCod = consignment.codAmount ?? new Prisma.Decimal(0);
-    if (isAboveZero(consignmentCod)) {
-      await postCodReceiptEntries({
-        orderId: consignment.orderId,
-        courier: consignment.courierProvider,
-        amount: consignmentCod,
-        settlementReference: `${input.settlementReference}:${consignment.trackingNumber}`,
-        vendorId: consignment.vendorId,
-      });
-    }
-
-    // 2. Transition consignment to DELIVERED if not already
-    const updatedConsignment =
-      consignment.status === ConsignmentStatus.DELIVERED
-        ? consignment
-        : await consignmentRepository.updateConsignmentStatus(
-            consignment.id,
-            ConsignmentStatus.DELIVERED,
+    // The money line, the parcel flip and the parent resolution join one
+    // transaction: a parcel that reads DELIVERED must have its cash recorded,
+    // and two parcels settling the last mile concurrently cannot both observe
+    // an unfinished sibling and strand the parent short of COD_SETTLED.
+    return prisma.$transaction(
+      async (tx) => {
+        // 1. Post ledger entry for this parcel's collectible cash if above zero
+        const consignmentCod = consignment.codAmount ?? new Prisma.Decimal(0);
+        if (isAboveZero(consignmentCod)) {
+          await postCodReceiptEntries(
+            {
+              orderId: consignment.orderId,
+              courier: consignment.courierProvider,
+              amount: consignmentCod,
+              settlementReference: `${input.settlementReference}:${consignment.trackingNumber}`,
+              vendorId: consignment.vendorId,
+            },
+            undefined,
+            tx,
           );
+        }
 
-    // 3. Check if all consignments for the parent order are delivered
-    const allDelivered = await consignmentRepository.areAllConsignmentsDelivered(
-      consignment.orderId,
-    );
+        // 2. Transition consignment to DELIVERED if not already
+        const updatedConsignment =
+          consignment.status === ConsignmentStatus.DELIVERED
+            ? consignment
+            : await consignmentRepository.updateConsignmentStatus(
+                consignment.id,
+                ConsignmentStatus.DELIVERED,
+                tx,
+              );
 
-    let parentOrderSettled = false;
+        // 3. Check if all consignments for the parent order are delivered
+        const allDelivered = await consignmentRepository.areAllConsignmentsDelivered(
+          consignment.orderId,
+          tx,
+        );
 
-    if (allDelivered) {
-      await prisma.order.update({
-        where: { id: consignment.orderId },
-        data: {
-          codStatus: CodStatus.COD_SETTLED,
-          codSettledAt: new Date(),
-          codReference: input.settlementReference,
-          paymentStatus: 'COMPLETED',
-          trackingEvents: {
-            create: {
-              status: OrderStatus.DELIVERED,
-              title: 'COD Payment Settled',
-              description: `Cash reconciled against courier deposit for parcel ${consignment.trackingNumber}. Ref: ${input.settlementReference}`,
+        let parentOrderSettled = false;
+
+        if (allDelivered) {
+          await tx.order.update({
+            where: { id: consignment.orderId },
+            data: {
+              codStatus: CodStatus.COD_SETTLED,
+              codSettledAt: new Date(),
+              codReference: input.settlementReference,
+              paymentStatus: 'COMPLETED',
+              trackingEvents: {
+                create: {
+                  status: OrderStatus.DELIVERED,
+                  title: 'COD Payment Settled',
+                  description: `Cash reconciled against courier deposit for parcel ${consignment.trackingNumber}. Ref: ${input.settlementReference}`,
+                  source: 'PLATFORM',
+                },
+              },
+            },
+          });
+          parentOrderSettled = true;
+        } else {
+          await tx.orderTrackingEvent.create({
+            data: {
+              orderId: consignment.orderId,
+              status: OrderStatus.OUT_FOR_DELIVERY,
+              title: 'Parcel Delivered & Settled',
+              description: `Parcel ${consignment.trackingNumber} reconciled against courier deposit (Ref: ${input.settlementReference})`,
               source: 'PLATFORM',
             },
-          },
-        },
-      });
-      parentOrderSettled = true;
-    } else {
-      await prisma.orderTrackingEvent.create({
-        data: {
-          orderId: consignment.orderId,
-          status: OrderStatus.OUT_FOR_DELIVERY,
-          title: 'Parcel Delivered & Settled',
-          description: `Parcel ${consignment.trackingNumber} reconciled against courier deposit (Ref: ${input.settlementReference})`,
-          source: 'PLATFORM',
-        },
-      });
-    }
+          });
+        }
 
-    return {
-      consignment: updatedConsignment,
-      parentOrderSettled,
-    };
+        return {
+          consignment: updatedConsignment,
+          parentOrderSettled,
+        };
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 
   public async findOrderByTrackingNumber(trackingNumber: string) {

@@ -3,6 +3,7 @@ import { logger } from '@celebs/shared-utils';
 import type { CourierQuote } from './adapters/pathao-price.client';
 import type { DeliveryQuoteCache } from './delivery-quote.service';
 
+import { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
 
 /**
@@ -33,17 +34,41 @@ export const cachedDeliveryQuoteCache: DeliveryQuoteCache = {
       if (raw === null || typeof raw !== 'object') return null;
 
       const candidate = raw as Partial<CourierQuote>;
-      const isUsable =
-        candidate.finalPrice !== undefined &&
-        candidate.codPercentage !== undefined &&
-        typeof candidate.planId === 'number';
-
-      if (!isUsable) {
+      if (typeof candidate.planId !== 'number') {
         logger.warn({ key }, 'Discarding an unreadable delivery quote cache entry');
         return null;
       }
 
-      return candidate as CourierQuote;
+      // Redis stores JSON, so a quote written as Decimals comes back as plain
+      // data (`{s,e,d}` objects or strings). Revive both amounts before anything
+      // touches them: the same field would otherwise serialise as a string on a
+      // fresh quote and an object on a cached one.
+      let finalPrice: Prisma.Decimal;
+      let codPercentage: Prisma.Decimal;
+      try {
+        finalPrice = new Prisma.Decimal(
+          candidate.finalPrice as unknown as string | number | Prisma.Decimal,
+        );
+        codPercentage = new Prisma.Decimal(
+          candidate.codPercentage as unknown as string | number | Prisma.Decimal,
+        );
+      } catch {
+        logger.warn({ key }, 'Discarding a delivery quote cache entry with unreadable amounts');
+        return null;
+      }
+
+      if (!finalPrice.isFinite() || !codPercentage.isFinite()) {
+        logger.warn({ key }, 'Discarding a delivery quote cache entry with non-finite amounts');
+        return null;
+      }
+
+      return {
+        finalPrice,
+        planId: candidate.planId,
+        codPercentage,
+        codEnabled: candidate.codEnabled === true,
+        raw: (candidate.raw ?? {}) as Record<string, unknown>,
+      };
     } catch (err: unknown) {
       logger.warn({ err, key }, 'Delivery quote cache read failed; quoting the courier');
       return null;

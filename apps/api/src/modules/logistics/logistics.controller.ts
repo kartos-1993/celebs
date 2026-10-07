@@ -5,8 +5,13 @@ import {
   courierWebhookSchema,
   dispatchOrderSchema,
 } from '@celebs/shared-types';
-import { asyncHandler, BadRequestException } from '@celebs/shared-utils';
+import { asyncHandler, BadRequestException, UnauthorizedException } from '@celebs/shared-utils';
 
+import {
+  PATHAO_SIGNATURE_HEADER,
+  readPathaoWebhookSecret,
+  verifyPathaoWebhookSignature,
+} from './adapters/pathao-webhook.verify';
 import {
   type DeliveryLocationRepository,
   deliveryLocationRepository,
@@ -86,6 +91,25 @@ export class LogisticsController {
   });
 
   public handleCourierWebhook = asyncHandler(async (req: Request, res: Response) => {
+    // The courier proves itself before anything is parsed. Without the secret
+    // configured (local development, tests) the route stays open but says so
+    // loudly; with it set, an unsigned or mistyped delivery is refused with a
+    // 401 and the body is never trusted.
+    const secret = readPathaoWebhookSecret();
+    if (secret) {
+      const signature = req.headers[PATHAO_SIGNATURE_HEADER];
+      const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
+      const ok = verifyPathaoWebhookSignature({
+        rawBody,
+        signature: Array.isArray(signature) ? signature[0] : signature,
+        secret,
+      });
+
+      if (!ok) {
+        throw new UnauthorizedException('Courier webhook signature verification failed');
+      }
+    }
+
     // Validated rather than hand-checked, so a missing waybill number is refused
     // through the standard path and answered with the shared error envelope.
     const body = courierWebhookSchema.parse(req.body);

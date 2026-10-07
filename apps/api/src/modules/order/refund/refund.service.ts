@@ -52,32 +52,10 @@ export class RefundService {
     const payment = await this.repo.findRefundablePayment(input.orderId);
     if (!payment) return null;
 
-    const already = await this.repo.findOpenRefund(payment.id);
-    if (already) return already;
-
-    const gateway = this.gateways[payment.gateway as PaymentMethod];
-    if (!gateway) {
-      // Refusing is not a refund. If no adapter is wired for the wallet, say so
-      // rather than recording a failure that will be retried forever.
-      return this.repo
-        .startRefund({
-          orderId: input.orderId,
-          paymentId: payment.id,
-          amount: payment.amount,
-          gateway: payment.gateway,
-          initiatedBy: input.initiatedBy,
-          reason: input.reason,
-        })
-        .then((refund) =>
-          this.repo.completeRefund({
-            refundId: refund.id,
-            status: RefundStatus.FAILED,
-            message: `No refund adapter is configured for ${payment.gateway}`,
-          }),
-        );
-    }
-
-    const refund = await this.repo.startRefund({
+    // Claimed, not checked-then-created: the gateway call below is not
+    // idempotent, so a concurrent second cancellation must be stopped here,
+    // before it can reach the gateway, rather than after.
+    const { record: existing, created } = await this.repo.claimOpenRefund({
       orderId: input.orderId,
       paymentId: payment.id,
       amount: payment.amount,
@@ -85,6 +63,19 @@ export class RefundService {
       initiatedBy: input.initiatedBy,
       reason: input.reason,
     });
+
+    if (!created) return existing;
+
+    const gateway = this.gateways[payment.gateway as PaymentMethod];
+    if (!gateway) {
+      // Refusing is not a refund. If no adapter is wired for the wallet, say so
+      // rather than recording a failure that will be retried forever.
+      return this.repo.completeRefund({
+        refundId: existing.id,
+        status: RefundStatus.FAILED,
+        message: `No refund adapter is configured for ${payment.gateway}`,
+      });
+    }
 
     const result = await gateway.refund({
       paymentId: payment.transactionId ?? payment.id,
@@ -94,7 +85,7 @@ export class RefundService {
 
     return this.repo
       .completeRefund({
-        refundId: refund.id,
+        refundId: existing.id,
         status: STATUS_MAP[result.status] ?? RefundStatus.FAILED,
         providerRefundId: result.providerRefundId,
         message: result.message,

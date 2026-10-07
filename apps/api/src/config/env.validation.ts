@@ -53,6 +53,13 @@ export const envSchema = z.object({
   EXPO_PUSH_URL: z.string().url().default('https://exp.host/--/api/v2/push/send'),
   EXPO_RECEIPTS_URL: z.string().url().default('https://exp.host/--/api/v2/push/getReceipts'),
   EXPO_ACCESS_TOKEN: z.string().optional().default(''),
+  PATHAO_BASE_URL: z.string().optional().default(''),
+  PATHAO_CLIENT_ID: z.string().optional().default(''),
+  PATHAO_CLIENT_SECRET: z.string().optional().default(''),
+  PATHAO_USERNAME: z.string().optional().default(''),
+  PATHAO_PASSWORD: z.string().optional().default(''),
+  PATHAO_STORE_ID: z.string().optional().default(''),
+  PATHAO_WEBHOOK_SECRET: z.string().optional().default(''),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
