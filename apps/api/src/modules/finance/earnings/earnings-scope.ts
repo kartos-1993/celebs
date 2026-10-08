@@ -39,6 +39,13 @@ export function resolveVendorForRead(req: Request): string {
     return requireOwnStore(req);
   }
 
+  // A caller who is a seller reads their own figures, whoever they also are. A
+  // superadmin who owns a store is such a seller: asking them to name a seller
+  // when they already are one is a dead end, not a safeguard. Platform actors
+  // without a store still have to say whose they mean.
+  const ownStoreId = req.store?.id;
+  if (ownStoreId) return ownStoreId;
+
   if (canReadOthers) {
     throw new AppError(
       'Name the seller whose earnings you want to read',

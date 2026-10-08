@@ -747,7 +747,7 @@ model CommissionRule {
 
   createdBy String?   @map("created_by")
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([scope, effectiveFrom])
   @@index([categoryId, isActive])

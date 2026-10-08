@@ -49,6 +49,14 @@ export enum Permission {
   // cannot be walked back once a seller has listed against it.
   COMMISSION_MANAGE = 'commission:manage',
 
+  // Read-only counterpart to COMMISSION_MANAGE.
+  //
+  // Separated deliberately: an ADMIN needs to see what rate a seller pays to
+  // support them and to explain a payout, but granting them COMMISSION_MANAGE
+  // to get that would hand them the ability to set it. Reading a rate and
+  // changing a rate are not the same permission, and only the second is revenue.
+  COMMISSION_VIEW = 'commission:view',
+
   // ── Vendors ───────────────────────────
   VENDOR_VIEW = 'vendor:view',
   VENDOR_MANAGE = 'vendor:manage',

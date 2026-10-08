@@ -196,6 +196,13 @@ export const PERMISSION_REGISTRY: Record<Permission, PermissionDefinition> = {
     module: 'FINANCE',
   },
 
+  [Permission.COMMISSION_VIEW]: {
+    perm: Permission.COMMISSION_VIEW,
+    label: 'View Commission',
+    description: 'See the commission rates in force, without being able to change them',
+    module: 'FINANCE',
+  },
+
   [Permission.FINANCE_MANAGE]: {
     perm: Permission.FINANCE_MANAGE,
     label: 'Manage Payouts',

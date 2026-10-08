@@ -7,9 +7,9 @@ node_modules
 .turbo/
 tmp/
 
-# Ignore environment files
+# Ignore environment files (including .env.test: test-only values live in
+# .env.test.example; copy it locally, never commit real credentials)
 .env.*
-!.env.test
 !.env.*.example
 
 # Ignore build output folders

@@ -10,7 +10,7 @@ import { PathaoOrderClient, pathaoOrderClient } from './adapters/pathao-order.cl
 import {
   PathaoTokenProvider,
   pathaoTokenProvider,
-  resolvePathaoConfig,
+  resolvePathaoStoreId,
 } from './adapters/pathao-token.provider';
 import {
   type ConsignmentRepository,
@@ -212,7 +212,7 @@ export class LogisticsService {
         zoneExternalId: dest.zoneExternalId,
       };
       pathaoToken = await this.tokenProvider.getToken();
-      pathaoStoreId = resolvePathaoConfig().storeId;
+      pathaoStoreId = resolvePathaoStoreId();
 
       const estDate = new Date();
       estDate.setDate(estDate.getDate() + 3);

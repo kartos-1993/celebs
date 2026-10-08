@@ -27,13 +27,16 @@ router.post(
   logisticsController.dispatchOrder,
 );
 
-// Settle COD payments (Admin / SuperAdmin) — platform only
+// Settle COD payments (Admin / SuperAdmin) — platform only.
+// FINANCE_PLATFORM_MANAGE, not FINANCE_MANAGE: this is courier settlement money,
+// the same domain as the settlement batches under /finance. "Manage Payouts" is
+// seller money and a restricted finance role holding it should not inherit this.
 router.post(
   '/settle-cod/:orderId',
   authenticateJWT,
   asyncHandler(actorContext),
   requirePlatformActor,
-  requirePermissions(Permission.FINANCE_MANAGE),
+  requirePermissions(Permission.FINANCE_PLATFORM_MANAGE),
   logisticsController.settleCod,
 );
 
@@ -43,7 +46,7 @@ router.post(
   authenticateJWT,
   asyncHandler(actorContext),
   requirePlatformActor,
-  requirePermissions(Permission.FINANCE_MANAGE),
+  requirePermissions(Permission.FINANCE_PLATFORM_MANAGE),
   logisticsController.settleConsignmentCod,
 );
 
