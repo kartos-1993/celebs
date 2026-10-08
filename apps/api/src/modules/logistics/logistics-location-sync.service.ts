@@ -1,6 +1,8 @@
 import { logger } from '@celebs/shared-utils';
 
 import { prisma } from '@/config/db.prisma';
+import { NEPAL_DISTRICT_COUNT } from '@/db/seed/nepal-locations';
+import { seedLogisticsLocations } from '@/db/seed/seed-logistics-locations';
 
 /**
  * Mirrors the courier's city / zone / area lists locally.
@@ -62,6 +64,14 @@ export interface SyncSummary {
   syncedAt: Date;
   /** Districts taken out of service by this sync. */
   deactivatedCities: number;
+  /**
+   * True when the courier could not be reached and the districts we already hold
+   * were re-asserted instead. The mirror is then *unconfirmed* rather than
+   * freshly confirmed, so anything gating on courier truth must check this.
+   */
+  degraded?: boolean;
+  /** Why the sync fell back, in the courier's own words plus our diagnosis. */
+  degradedReason?: string;
   /**
    * Districts that are superseded or retired but were left in service because a
    * stored address still points into them. Surfaced rather than silently ignored:
@@ -195,7 +205,14 @@ export class LogisticsLocationSyncService {
   }
 
   async sync(): Promise<SyncSummary> {
-    const cities = await this.client.listCities();
+    let cities: ExternalCity[];
+
+    try {
+      cities = await this.client.listCities();
+    } catch (error: unknown) {
+      return this.holdWhatWeHave(error);
+    }
+
     const syncedAt = new Date();
 
     const seenZoneExternalIds: number[] = [];
@@ -278,6 +295,48 @@ export class LogisticsLocationSyncService {
       areas: areaCount,
       syncedAt,
       ...reconciliation,
+    };
+  }
+
+  /**
+   * The courier could not be reached, so we keep the districts we already hold.
+   *
+   * Two things are deliberately NOT done here, and both would be worse than
+   * doing nothing:
+   *
+   * - No reconciliation. Reconciliation retires districts the courier has dropped
+   *   from its list. With no list, every district looks dropped, so running it
+   *   would take the whole country out of service on a transient outage. Nothing
+   *   is retired; nothing is confirmed either.
+   * - No invented courier ids. A bootstrapped city has a negative synthetic zone
+   *   id precisely so it can never be mistaken for a courier id, and quoting
+   *   against one would price a parcel at the wrong rate silently. That is why
+   *   `forZoneId` still refuses a bootstrapped district: delivery coverage
+   *   stays usable, and pricing waits for the courier rather than guessing.
+   *
+   * So a degraded sync restores the address form and coverage, and leaves
+   * quoting alone. Callers that gate on courier truth must read `degraded`.
+   */
+  private async holdWhatWeHave(error: unknown): Promise<SyncSummary> {
+    const reason = (error as Error).message;
+
+    logger.warn(
+      { err: reason },
+      'Courier location list unreachable; re-asserting the districts we already hold instead of retiring any',
+    );
+
+    await seedLogisticsLocations();
+
+    return {
+      cities: NEPAL_DISTRICT_COUNT,
+      zones: NEPAL_DISTRICT_COUNT,
+      // Areas belong to a courier's own zone tree; we hold none of those.
+      areas: 0,
+      syncedAt: new Date(),
+      deactivatedCities: 0,
+      retainedForLiveAddresses: [],
+      degraded: true,
+      degradedReason: reason,
     };
   }
 }

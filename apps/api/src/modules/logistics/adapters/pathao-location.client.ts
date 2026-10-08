@@ -30,6 +30,19 @@ const CITY_LIST_PATH = '/aladdin/api/v1/city-list';
 const zoneListPath = (cityId: number) => `/aladdin/api/v1/cities/${cityId}/zone-list`;
 const areaListPath = (zoneId: number) => `/aladdin/api/v1/zones/${zoneId}/area-list`;
 
+/**
+ * How long a single location read may take.
+ *
+ * A sync walks hundreds of these, and the observed failure mode is Pathao's
+ * sandbox holding the connection open rather than refusing it: Cloudflare sits
+ * in front and returns 522 only after ~20s, so a longer budget here would just
+ * mean every call paid the full wait and each one holding a pooled connection
+ * while it did. Eight seconds fails fast enough that the sync can fall back to
+ * the districts we already hold, which is a working answer, instead of failing
+ * the whole run.
+ */
+const LOCATION_READ_TIMEOUT_MS = 8_000;
+
 interface PathaoListEnvelope {
   message?: string;
   type?: string;
@@ -141,11 +154,22 @@ export class PathaoLocationClient implements CourierLocationClient {
   private async readList(path: string, label: string): Promise<unknown[]> {
     const token = await this.tokens.getToken();
 
-    const response = await this.fetchImpl(`${this.baseUrl()}${path}`, {
-      method: 'GET',
-      headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
-      signal: AbortSignal.timeout(15_000),
-    });
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${this.baseUrl()}${path}`, {
+        method: 'GET',
+        headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+        signal: AbortSignal.timeout(LOCATION_READ_TIMEOUT_MS),
+      });
+    } catch (error: unknown) {
+      // Name the courier, the endpoint and the budget. "The operation was
+      // aborted" on its own tells an operator nothing about who hung or why.
+      // The original message is carried inline rather than as an Error cause,
+      // because the build targets ES2021 where `cause` is not in the lib.
+      throw new Error(
+        `Pathao ${label} did not answer within ${LOCATION_READ_TIMEOUT_MS / 1000}s: ${(error as Error).message}`,
+      );
+    }
 
     let body: PathaoListEnvelope | null = null;
     try {

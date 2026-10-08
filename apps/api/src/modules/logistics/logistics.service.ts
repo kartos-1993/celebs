@@ -1,7 +1,12 @@
 import { CodStatus, ConsignmentStatus, DispatchMode, OrderStatus } from '@prisma/client';
 
 import { DispatchOrderType } from '@celebs/shared-types';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@celebs/shared-utils';
+import {
+  BadRequestException,
+  ForbiddenException,
+  logger,
+  NotFoundException,
+} from '@celebs/shared-utils';
 
 import { isForwardOrderMove } from '../order/order.state-machine';
 
@@ -33,6 +38,10 @@ import {
   mapPathaoEventToConsignmentStatus,
   mapPathaoEventToStatus,
 } from './pathao-webhook-events';
+import {
+  buildSandboxTrackingNumber,
+  isSandboxCourierFallbackAllowed,
+} from './sandbox-courier-fallback';
 import { sellerParcelsFromLines } from './seller-parcels';
 import { splitOrderIntoConsignments } from './split-dispatch';
 
@@ -202,7 +211,6 @@ export class LogisticsService {
     const isMultiParcel = plannedConsignments.length > 1;
 
     let pathaoDestination: { cityExternalId: number; zoneExternalId: number } | null = null;
-    let pathaoToken = '';
     let pathaoStoreId = 0;
 
     if (payload.provider === 'PATHAO') {
@@ -211,7 +219,9 @@ export class LogisticsService {
         cityExternalId: dest.cityExternalId,
         zoneExternalId: dest.zoneExternalId,
       };
-      pathaoToken = await this.tokenProvider.getToken();
+      // Fetched inside the booking loop's try/catch rather than out here: a token
+      // failure is as much a courier outage as a createOrder failure, and out here
+      // it would abort the dispatch before any consignment could be planned.
       pathaoStoreId = resolvePathaoStoreId();
 
       const estDate = new Date();
@@ -246,23 +256,46 @@ export class LogisticsService {
           ? `${order.orderNumber}-${index + 1}`
           : order.orderNumber;
 
-        const shipment = await this.pathaoClient.createOrder({
-          storeId: pathaoStoreId,
-          merchantOrderId,
-          recipientName: order.address.fullName,
-          recipientPhone: order.address.phone,
-          recipientAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
-          recipientCityId: pathaoDestination!.cityExternalId,
-          recipientZoneId: pathaoDestination!.zoneExternalId,
-          itemQuantity: Math.max(1, planned.lineIds.length),
-          itemWeightKg: planned.declaredWeightKg,
-          amountToCollect,
-          itemDescription: `Order ${order.orderNumber} parcel ${index + 1}`,
-          accessToken: pathaoToken,
-        });
+        const createOrder = async () =>
+          this.pathaoClient.createOrder({
+            storeId: pathaoStoreId,
+            merchantOrderId,
+            recipientName: order.address.fullName,
+            recipientPhone: order.address.phone,
+            recipientAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
+            recipientCityId: pathaoDestination!.cityExternalId,
+            recipientZoneId: pathaoDestination!.zoneExternalId,
+            itemQuantity: Math.max(1, planned.lineIds.length),
+            itemWeightKg: planned.declaredWeightKg,
+            amountToCollect,
+            itemDescription: `Order ${order.orderNumber} parcel ${index + 1}`,
+            accessToken: await this.tokenProvider.getToken(),
+          });
 
-        trackingNumber = shipment.consignmentId;
-        trackingUrl = shipment.trackingUrl;
+        try {
+          const shipment = await createOrder();
+
+          trackingNumber = shipment.consignmentId;
+          trackingUrl = shipment.trackingUrl;
+        } catch (error: unknown) {
+          // Outside production only: a sandbox outage should not stop a developer
+          // testing fulfilment end to end. The consignment is real (it is what the
+          // rest of the flow reads) but its tracking number is ours, marked so
+          // nobody can mistake it for a courier's.
+          if (!isSandboxCourierFallbackAllowed()) throw error;
+
+          trackingNumber = buildSandboxTrackingNumber(order.orderNumber, index);
+          trackingUrl = '';
+
+          logger.warn(
+            {
+              orderId: order.id,
+              courierError: (error as Error).message,
+              trackingNumber,
+            },
+            'Pathao was unreachable; booked a SANDBOX consignment so local fulfilment can be tested',
+          );
+        }
       } else {
         trackingNumber =
           isMultiParcel && payload.manualTrackingNumber
