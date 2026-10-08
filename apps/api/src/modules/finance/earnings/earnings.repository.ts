@@ -1,4 +1,5 @@
-import { LedgerDirection, LedgerEntryType } from '@prisma/client';
+
+import { computeSellerTotals, type GroupedLedgerRow } from '../ledger/seller-totals';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
@@ -9,15 +10,12 @@ import prisma, { Prisma } from '@/config/db.prisma';
  * `Order` has no vendor column - an order is a basket that can hold several
  * sellers' goods - so ORDER_REVENUE is posted once for the whole subtotal and a
  * join would credit one seller with another seller's revenue.
+ *
+ * The arithmetic is NOT here: it lives in ledger/seller-totals so that this live
+ * view and a frozen SellerStatement cannot disagree about the same period. For a
+ * CLOSED period, prefer the statement - see SellerStatementService.lockedFor -
+ * because the ledger keeps moving and this number will keep changing with it.
  */
-
-const REVENUE_TYPES: LedgerEntryType[] = [LedgerEntryType.ORDER_REVENUE];
-const COMMISSION_TYPES: LedgerEntryType[] = [LedgerEntryType.COMMISSION];
-const DELIVERY_COST_TYPES: LedgerEntryType[] = [
-  LedgerEntryType.COURIER_DELIVERY_FEE,
-  LedgerEntryType.FREE_DELIVERY_ABSORBED,
-  LedgerEntryType.COURIER_RETURN_FEE,
-];
 
 export interface EarningsScope {
   vendorId: string;
@@ -35,8 +33,6 @@ export interface EarningsSummary {
   currency: string;
 }
 
-const ZERO = new Prisma.Decimal(0);
-
 export class EarningsRepository {
   /**
    * Totals for one seller over a period.
@@ -53,23 +49,15 @@ export class EarningsRepository {
       _sum: { amount: true },
     });
 
-    const sumOf = (types: LedgerEntryType[], direction: LedgerDirection): Prisma.Decimal =>
-      grouped
-        .filter((row) => types.includes(row.type) && row.direction === direction)
-        .reduce((total, row) => total.plus(row._sum.amount ?? ZERO), ZERO);
-
-    const grossSales = sumOf(REVENUE_TYPES, LedgerDirection.IN);
-    const commission = sumOf(COMMISSION_TYPES, LedgerDirection.OUT);
-    const deliveryCosts = sumOf(DELIVERY_COST_TYPES, LedgerDirection.OUT);
-    const refunds = sumOf([LedgerEntryType.REFUND], LedgerDirection.OUT);
+    const totals = computeSellerTotals(grouped as unknown as GroupedLedgerRow[]);
 
     return {
-      grossSales: grossSales.toDecimalPlaces(2),
-      commission: commission.toDecimalPlaces(2),
-      deliveryCosts: deliveryCosts.toDecimalPlaces(2),
-      refunds: refunds.toDecimalPlaces(2),
-      netEarnings: grossSales.minus(commission).minus(refunds).toDecimalPlaces(2),
-      currency: 'NPR',
+      grossSales: totals.grossSales,
+      commission: totals.commission,
+      deliveryCosts: totals.deliveryCosts,
+      refunds: totals.refunds,
+      netEarnings: totals.netPayable,
+      currency: totals.currency,
     };
   }
 

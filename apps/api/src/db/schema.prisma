@@ -97,6 +97,7 @@ model VendorProfile {
   orderItems          OrderItem[]
   commissionRules     CommissionRule[] @relation("VendorCommissionRules")
   ledgerEntries       LedgerEntry[]
+  sellerStatements    SellerStatement[]
   products            Product[]
   ownedBrands         Brand[]                    @relation("OwnedBrands")
   brandAuthorizations VendorBrandAuthorization[]
@@ -1007,6 +1008,86 @@ model SettlementBatch {
   // becomes a comparison of a statement with itself.
   @@unique([courier, periodStart])
   @@index([status, periodStart])
+}
+
+// ── Seller statements ────────────────────────────────────────────────────────
+//
+// Courier settlement answers "did the courier pay what they owed". This answers
+// the other question marketplaces are actually judged on: "what did we owe this
+// seller, and can they prove it".
+//
+// The ledger is the source of truth for every figure, but it is NOT the answer a
+// seller should be shown for a closed period. The ledger keeps moving: a refund
+// posted in March against a February order changes February's arithmetic, so a
+// seller who checks February next week sees a different number than they saw last
+// week. That is not a rounding quibble - it is a seller being told two
+// different truths about money already earned.
+//
+// So a closed period is snapshotted once, into the row below, and never edited
+// again. Corrections are not edits: they land in a LATER statement, because that
+// is what a ledger is for. A statement is an assertion about history, not a view
+// of the present.
+//
+// `lockedBy` and `approvedBy` are separate because one person must not both
+// declare what a seller earned and authorise the payout. That is the whole of
+// separation of duties: not a policy, an enforced inequality.
+enum SellerStatementStatus {
+  /// Computed from the ledger, not yet issued. Figures may still move.
+  DRAFT
+  /// Issued to the seller. Every figure below is now history.
+  LOCKED
+  /// Approved for payment by someone other than who locked it.
+  APPROVED
+  /// The money has gone out.
+  PAID
+  /// Withdrawn before payment. The period is settled by a later statement.
+  VOID
+}
+
+model SellerStatement {
+  id       String        @id @default(uuid())
+  vendorId String        @map("vendor_id")
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+
+  status SellerStatementStatus @default(DRAFT) @map("status")
+
+  // Frozen at lock time. Deliberately duplicated from the ledger rather than
+  // queried through it: that duplication IS the feature.
+  grossSales    Decimal @default(0) @map("gross_sales") @db.Decimal(12, 2)
+  commission    Decimal @default(0) @map("commission") @db.Decimal(12, 2)
+  refunds       Decimal @default(0) @map("refunds") @db.Decimal(12, 2)
+  deliveryCosts Decimal @default(0) @map("delivery_costs") @db.Decimal(12, 2)
+  // Derived by subtraction, never by multiplying by a rate: gross * (1 - r)
+  // rounds independently of the commission shown above and lands a paisa away
+  // from it, which is the difference between a figure a seller can check and
+  // one they cannot.
+  netPayable Decimal @default(0) @map("net_payable") @db.Decimal(12, 2)
+
+  lockedBy   String?   @map("locked_by")
+  lockedAt   DateTime? @map("locked_at")
+  approvedBy String?   @map("approved_by")
+  approvedAt DateTime? @map("approved_at")
+
+  payoutReference String?    @map("payout_reference")
+  paidAt          DateTime?  @map("paid_at")
+  paidBy          String?    @map("paid_by")
+  voidedAt        DateTime?  @map("voided_at")
+  voidedBy        String?    @map("voided_by")
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt
+
+  // One statement per seller per period. Two statements for the same period would
+  // each look authoritative and a seller could be shown either.
+  @@unique([vendorId, periodStart])
+  @@index([status, periodStart])
+  // A seller's own history, newest first: the seller dashboard's main read.
+  @@index([vendorId, periodEnd])
 }
 
 enum OutboxStatus {
