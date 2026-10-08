@@ -24,19 +24,13 @@ import { syncDynamicTitleAndBrand } from './sync-dynamic-values';
 import { PageLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
 
-/** `storeId` is served by some vendor payloads but is absent from `UserData`. */
 type DraftUserScope = { vendorId?: string; storeId?: string };
 
-// WONTFIX: renaming this `index.tsx` (FSD allows no barrel files) and folding the
-// duplicated `effectiveCatId` derivation below into one helper are deliberate
-// no-touches — the second owner is add-product-form-body.tsx, another stream's
-// file. effective-cat-id.spec.ts pins both expressions byte-identical.
 export const AddProduct = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const { role, user } = useAuthContext();
   const userId = user?.id || user?.email;
-  // Widen (no cast) so the optional `storeId` is readable on the signed-in user.
   const userScope: DraftUserScope | undefined = user;
   const storeId = userScope?.vendorId ?? userScope?.storeId;
 
