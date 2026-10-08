@@ -25,7 +25,7 @@ interface ProductFormActionsProps {
    * keep declaring `() => void` — but the `false` case is the whole point of
    * this prop, so it is treated as a failure and never as a silent no-op.
    */
-  onSaveAsDraft: () => boolean | void;
+  onSaveAsDraft: () => boolean | void | Promise<boolean | void>;
 }
 
 const ProductFormActions = ({
@@ -47,9 +47,11 @@ const ProductFormActions = ({
   // Same failure surface as the submit path (`use-add-product-submit.ts`): a
   // destructive toast, because a draft that was not written is indistinguishable
   // from a draft that was lost if the click reports nothing at all.
-  const handleSaveDraft = useCallback(() => {
-    if (onSaveAsDraft() !== false) return;
-    toast({ ...getDraftSaveFailureCopy(), variant: 'destructive' });
+  const handleSaveDraft = useCallback(async () => {
+    const result = await onSaveAsDraft();
+    if (result === false) {
+      toast({ ...getDraftSaveFailureCopy(), variant: 'destructive' });
+    }
   }, [onSaveAsDraft, toast]);
 
   return (

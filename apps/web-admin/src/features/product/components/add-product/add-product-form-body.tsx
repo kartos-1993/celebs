@@ -56,15 +56,16 @@ export const AddProductFormBody = ({
     document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  const { isSubmitting, handleSubmitProduct, handleFormInvalid } = useAddProductSubmit({
-    form,
-    schemaFields,
-    schemaHasName,
-    variantMeta,
-    draft,
-    productId,
-    isEditMode,
-  });
+  const { isSubmitting, handleSubmitProduct, handleFormInvalid, handleSaveDraft } =
+    useAddProductSubmit({
+      form,
+      schemaFields,
+      schemaHasName,
+      variantMeta,
+      draft,
+      productId,
+      isEditMode,
+    });
 
   const canPublish = can(role || 'STAFF', Permission.PRODUCT_PUBLISH, userPermissions);
   const isCategoryLocked = isEditMode && form.getValues('status') === 'published';
@@ -119,7 +120,7 @@ export const AddProductFormBody = ({
               isSubmitting={isSubmitting}
               isEditMode={isEditMode}
               canPublish={canPublish}
-              onSaveAsDraft={draft.saveDraftNow}
+              onSaveAsDraft={handleSaveDraft}
               onCancel={() => navigate(MANAGE_PRODUCTS_PATH)}
             />
           ) : (

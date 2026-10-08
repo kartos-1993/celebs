@@ -351,7 +351,7 @@ describe('submit-gate wiring', () => {
     // Intentional for drafts: type="button" never runs the sidebar/RHF gates so
     // partial work is never blocked. Pinned so the fix does not leak into drafts.
     const body = repoFile(join('components', 'add-product', 'add-product-form-body.tsx'));
-    expect(body).toContain('onSaveAsDraft={draft.saveDraftNow}');
+    expect(body).toContain('onSaveAsDraft={handleSaveDraft}');
     const actions = repoFile(join('components', 'product-form-action.tsx'));
     expect(actions).toContain('Save Draft');
     expect(actions).toContain('type="button"');

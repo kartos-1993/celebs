@@ -679,6 +679,23 @@ export function buildCanonicalColorMeta(
   return result;
 }
 
+export function assertPreUploadValidity(
+  values: Record<string, unknown>,
+  _status: CreateProductRequest['status'],
+): { price: number; discountedPrice?: number } {
+  const price = getFirstPrice(values, '.price');
+  if (price === undefined) {
+    throw new Error('Add a valid price before publishing the product.');
+  }
+
+  const discountedPrice = getFirstPrice(values, '.specialPrice');
+  if (discountedPrice !== undefined && discountedPrice >= price) {
+    throw new Error('Discounted price must be less than the regular price.');
+  }
+
+  return { price, discountedPrice };
+}
+
 export async function buildProductPayload({
   fields,
   status,
@@ -686,6 +703,8 @@ export async function buildProductPayload({
   upload = uploadFiles,
   isUpdate = false,
 }: BuildProductPayloadOptions): Promise<CreateProductRequest> {
+  const { price, discountedPrice } = assertPreUploadValidity(values, status);
+
   const flatValues = flattenObject(values);
   const { variants: variantMeta } = extractVariantsMeta(fields);
   // The shared gallery is read through the SCHEMA's own field name, so the
@@ -749,16 +768,6 @@ export async function buildProductPayload({
     firstColorImages: firstColorGalleryImages,
     isUpdate,
   });
-
-  const price = getFirstPrice(values, '.price');
-  if (price === undefined) {
-    throw new Error('Add a valid price before publishing the product.');
-  }
-
-  const discountedPrice = getFirstPrice(values, '.specialPrice');
-  if (discountedPrice !== undefined && discountedPrice >= price) {
-    throw new Error('Discounted price must be less than the regular price.');
-  }
 
   const defaultStock = toNonNegativeInteger(flatValues[defaultSkuPath('stock')]) ?? 0;
   const effectiveColors = selectedColors.length > 0 ? selectedColors : ['default'];

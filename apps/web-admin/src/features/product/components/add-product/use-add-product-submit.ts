@@ -154,36 +154,40 @@ export function useAddProductSubmit({
       return;
     }
 
+    const isDraft = status === 'draft';
+
     // Validate first so untouched invalid fields cannot slip through the
     // sidebar gate on stale formState.errors. Scoped to publish/update
-    // submits only: the Save-Draft path (type="button" → draft.saveDraftNow)
-    // intentionally bypasses this gate and stays unvalidated so partial work
-    // is never blocked.
-    await form.trigger();
-    const currentValues = form.getValues() as Record<string, unknown>;
-    const currentErrors = flattenFormErrors(form.formState.errors);
-    const activeSections = buildSidebarSections({
-      fieldErrors: currentErrors,
-      schemaFields,
-      schemaHasName,
-      values: currentValues,
-      variantMeta,
-    });
-    const firstInvalidSection = activeSections.find((section) => !section.status);
+    // submits only: the Save-Draft path intentionally bypasses this gate and
+    // stays unvalidated so partial work is never blocked.
+    if (!isDraft) {
+      await form.trigger();
+      const currentValues = form.getValues() as Record<string, unknown>;
+      const currentErrors = flattenFormErrors(form.formState.errors);
+      const activeSections = buildSidebarSections({
+        fieldErrors: currentErrors,
+        schemaFields,
+        schemaHasName,
+        values: currentValues,
+        variantMeta,
+      });
+      const firstInvalidSection = activeSections.find((section) => section.status !== 'complete');
 
-    if (firstInvalidSection) {
-      logger.warn({ section: firstInvalidSection }, 'Submit blocked by section validation');
-      if (firstInvalidSection.key === 'pricing' && variantMeta.length > 2) {
-        flagOverflowingVariantAxes(variantMeta, form);
+      if (firstInvalidSection) {
+        logger.warn({ section: firstInvalidSection }, 'Submit blocked by section validation');
+        if (firstInvalidSection.key === 'pricing' && variantMeta.length > 2) {
+          flagOverflowingVariantAxes(variantMeta, form);
+          return;
+        }
+        focusSectionBlocker(firstInvalidSection, form, schemaFields, currentValues);
         return;
       }
-      focusSectionBlocker(firstInvalidSection, form, schemaFields, currentValues);
-      return;
     }
 
     setIsSubmitting(true);
     try {
       logger.info('Building payload for product submission...');
+      const currentValues = form.getValues() as Record<string, unknown>;
       const payload = await buildProductPayload({
         fields: schemaFields,
         status,
@@ -194,14 +198,18 @@ export function useAddProductSubmit({
       if (isEditMode && productId) {
         await update.mutateAsync({ id: productId, payload });
         toast({
-          title: 'Product updated',
-          description: 'The product has been updated successfully.',
+          title: isDraft ? 'Draft updated' : 'Product updated',
+          description: isDraft
+            ? 'The product draft has been saved successfully.'
+            : 'The product has been updated successfully.',
         });
       } else {
         await create.mutateAsync(payload);
         toast({
-          title: 'Product created',
-          description: 'The product has been created successfully.',
+          title: isDraft ? 'Draft saved' : 'Product created',
+          description: isDraft
+            ? 'The product draft has been saved to the database.'
+            : 'The product has been created successfully.',
         });
       }
 
@@ -236,5 +244,10 @@ export function useAddProductSubmit({
     focusFirstError(errors);
   };
 
-  return { isSubmitting, handleSubmitProduct, handleFormInvalid };
+  const handleSaveDraft = useCallback(async () => {
+    draft.saveDraftNow();
+    await handleSubmitProduct('draft');
+  }, [draft, handleSubmitProduct]);
+
+  return { isSubmitting, handleSubmitProduct, handleFormInvalid, handleSaveDraft };
 }
