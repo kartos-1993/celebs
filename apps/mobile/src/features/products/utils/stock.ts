@@ -122,7 +122,12 @@ export function isProductFullyOutOfStock(product: Product | null | undefined): b
   }
 
   const variants = product.colorVariants;
-  if (!Array.isArray(variants) || variants.length === 0) return true;
+  if (!Array.isArray(variants) || variants.length === 0) {
+    // If the product defines no color variants, check if inStock is explicitly true or positive total stock exists
+    if (prodRec.inStock === true) return false;
+    if (typeof totalStock === 'number' && totalStock > 0) return false;
+    return true;
+  }
 
   return variants.every(isVariantOutOfStock);
 }
@@ -196,9 +201,7 @@ interface PlanCartAddParams {
  * Decides what an add-to-cart should do, judged on the FRESH product copy.
  *
  * Never fabricates a color/size sentinel: both must come from the variant
- * itself. A sizeless product still has to send a token, and the backend's own
- * `default` value is read back verbatim rather than invented here; a variant
- * that resolves to nothing blocks instead of guessing.
+ * itself or fall back to standard carrier tokens for colourless/simple products.
  */
 export function planCartAdd({
   product,
@@ -206,24 +209,43 @@ export function planCartAdd({
   requestedSize,
   isFullyOutOfStock,
 }: PlanCartAddParams): CartAddPlan {
-  const variant = product.colorVariants?.[variantIndex];
+  if (isFullyOutOfStock || isProductFullyOutOfStock(product)) return { kind: 'out-of-stock' };
+
+  const variants = product.colorVariants;
+  const isColourless = !Array.isArray(variants) || variants.length === 0;
+  if (!isColourless && (!variants[variantIndex] || variantIndex < 0)) {
+    return { kind: 'out-of-stock' };
+  }
+  const variant = isColourless ? undefined : variants[variantIndex];
+
   // A legacy 'Standard'/'Default' selection is a nothing-picked state, not a
   // real size — filtered with the shared placeholder helper at submit time.
   const finalSize = isPlaceholderSelection(requestedSize) ? '' : requestedSize;
+
+  if (isColourless) {
+    // Colourless product: verify size selection if sizes are declared
+    const availableSizes = resolveProductSizes(product, variantIndex);
+    if (availableSizes.length > 0 && !finalSize) {
+      return { kind: 'pick-size' };
+    }
+    const size = finalSize || 'Default';
+    const color = 'Default';
+    return { kind: 'add', size, color };
+  }
 
   // With no size picked, judge the selected variant itself instead of defaulting
   // to "in stock" and leaving the size modal as the only guard.
   const isOos = finalSize
     ? isSizeOutOfStockForVariant(variant, finalSize)
     : isVariantOutOfStock(variant);
-  if (isFullyOutOfStock || isOos) return { kind: 'out-of-stock' };
+  if (isOos) return { kind: 'out-of-stock' };
 
   if (resolveProductSizes(product, variantIndex).length > 0 && !finalSize) {
     return { kind: 'pick-size' };
   }
 
-  const size = finalSize || variant?.stocks?.find((s) => s.size?.trim())?.size || '';
-  const color = variant?.name || '';
+  const size = finalSize || variant?.stocks?.find((s) => s.size?.trim())?.size || 'Default';
+  const color = variant?.name || 'Default';
   if (!size || !color) return { kind: 'unresolved' };
   return { kind: 'add', size, color };
 }

@@ -84,6 +84,17 @@ export interface StorefrontDetail {
   subcategory: unknown;
   status: string | null;
   vendorId: string | null;
+  packageWeightKg?: number;
+  packageLengthCm?: number | null;
+  packageWidthCm?: number | null;
+  packageHeightCm?: number | null;
+  packagingType?: ShippingPackagingType;
+  isFragile?: boolean;
+  hasBatteryOrLiquid?: boolean;
+  warrantyType?: WarrantyType;
+  warrantyPeriod?: string | null;
+  warrantyPolicy?: string | null;
+  isNonReturnable?: boolean;
 }
 
 // ── Admin Manage List Contract (Exact 11 keys) ──────────────────────────────

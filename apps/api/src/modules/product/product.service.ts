@@ -10,7 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
-import { PRODUCT_STATUS, type ProductStatus, VENDOR_EDITABLE_STATUSES } from '@celebs/shared-types';
+import { PRODUCT_STATUS } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { brandRepository } from '../brand/brand.repository';
@@ -401,15 +401,30 @@ export class ProductService {
           ErrorCode.FORBIDDEN_RESOURCE,
         );
       }
-      if (!isPublisher && !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatus)) {
+      if (product.status === PRODUCT_STATUS.ARCHIVED) {
         throw new AppError(
-          'Cannot update product unless it is draft or rejected',
+          'Cannot update archived product',
           HTTPSTATUS.BAD_REQUEST,
           ErrorCode.INVALID_REQUEST,
         );
       }
-      if (!isPublisher && updateData.status === PRODUCT_STATUS.PUBLISHED) {
-        updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
+      if (!isPublisher) {
+        // Non-publisher vendors editing an active published product may update pricing and inventory freely.
+        // Any modification to editorial content (title, description, images, variants) routes to moderation.
+        if (product.status === PRODUCT_STATUS.PUBLISHED) {
+          const hasEditorialChange = Boolean(
+            (updateData.name && updateData.name !== product.name) ||
+              (updateData.description !== undefined &&
+                updateData.description !== product.description) ||
+              updateData.mainImages ||
+              updateData.colorVariants,
+          );
+          if (hasEditorialChange) {
+            updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
+          }
+        } else if (updateData.status === PRODUCT_STATUS.PUBLISHED) {
+          updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
+        }
       }
     }
 

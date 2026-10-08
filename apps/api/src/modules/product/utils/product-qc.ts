@@ -214,14 +214,14 @@ export function calculateProductQCScore(
   } else if (imageCount >= 1) {
     imageScore = 10;
   }
-  if (hasVariantImages) {
+  if (hasVariantImages || imageCount >= 4) {
     imageScore += 5;
   }
   const imagesCheck: IQCCheckItem = {
     passed: imageCount >= 3,
     score: imageScore,
     maxScore: 25,
-    details: `${imageCount} main image(s) provided${hasVariantImages ? ' + variant photos included' : ''}. Minimum 3 recommended.`,
+    details: `${imageCount} main image(s) provided${hasVariantImages || imageCount >= 4 ? ' + comprehensive photo coverage' : ''}. Minimum 3 recommended.`,
   };
 
   // 2. Title Check (15 pts max)
@@ -263,6 +263,8 @@ export function calculateProductQCScore(
   };
 
   // 4. Sizing & Size Chart Check (15 pts max)
+  const category = (product.category as Record<string, unknown> | null) || null;
+  const isSizingRequired = category?.requiresSizing !== false;
   const sizes = (product.sizes as Record<string, unknown>[]) || [];
   const hasSizeData =
     sizes.length > 0 &&
@@ -271,16 +273,18 @@ export function calculateProductQCScore(
         ((s.productMeasurements as unknown[]) && (s.productMeasurements as unknown[]).length > 0) ||
         ((s.bodyMeasurements as unknown[]) && (s.bodyMeasurements as unknown[]).length > 0),
     );
-  const sizingScore = hasSizeData ? 15 : sizes.length > 0 ? 8 : 0;
+  const sizingScore = !isSizingRequired ? 15 : hasSizeData ? 15 : sizes.length > 0 ? 8 : 0;
   const sizingCheck: IQCCheckItem = {
-    passed: hasSizeData,
+    passed: !isSizingRequired || hasSizeData,
     score: sizingScore,
     maxScore: 15,
-    details: hasSizeData
-      ? `Size chart configured with measurements for ${sizes.length} size(s).`
-      : sizes.length > 0
-        ? `Sizes defined (${sizes.length}), but detailed measurement values are missing.`
-        : 'No size chart or size options specified.',
+    details: !isSizingRequired
+      ? 'Size chart is not required for this category.'
+      : hasSizeData
+        ? `Size chart configured with measurements for ${sizes.length} size(s).`
+        : sizes.length > 0
+          ? `Sizes defined (${sizes.length}), but detailed measurement values are missing.`
+          : 'No size chart or size options specified.',
   };
 
   // 5. Attributes / Specs Check (15 pts max)
@@ -319,6 +323,7 @@ export function calculateProductQCScore(
   // 7. Variants & Stock Check (5 pts max)
   const variants = (product.colorVariants as Record<string, unknown>[]) || [];
   const skus = (product.skus as Record<string, unknown>[]) || [];
+  const inventories = (product.inventories as Array<Record<string, unknown>>) || [];
   const storedVariantStock = variants.reduce((acc: number, v: Record<string, unknown>) => {
     const vStock =
       (v.stocks as Record<string, unknown>[])?.reduce(
@@ -331,7 +336,14 @@ export function calculateProductQCScore(
     (acc: number, s: Record<string, unknown>) => acc + ((s.stock as number) || 0),
     0,
   );
-  const totalStock = storedVariantStock + matrixStock;
+  const inventoryStock = inventories.reduce((acc: number, inv: Record<string, unknown>) => {
+    const qty = Number(inv.quantity) || 0;
+    const reserved = Number(inv.reservedQuantity) || 0;
+    return acc + Math.max(0, qty - reserved);
+  }, 0);
+  const derivedStock =
+    typeof product._derivedStockTotal === 'number' ? product._derivedStockTotal : 0;
+  const totalStock = Math.max(storedVariantStock + matrixStock, inventoryStock, derivedStock);
 
   const variantScore = totalStock > 0 ? 5 : 0;
   const variantsCheck: IQCCheckItem = {

@@ -35,17 +35,35 @@ function nullStr(value: unknown): string | null {
 }
 
 function num(value: unknown, fallback = 0): number {
+  if (
+    value &&
+    typeof value === 'object' &&
+    'toNumber' in value &&
+    typeof (value as { toNumber: unknown }).toNumber === 'function'
+  ) {
+    return (value as { toNumber: () => number }).toNumber();
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function optNum(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  if (value === null || value === undefined || value === '') return undefined;
+  if (
+    value &&
+    typeof value === 'object' &&
+    'toNumber' in value &&
+    typeof (value as { toNumber: unknown }).toNumber === 'function'
+  ) {
+    return (value as { toNumber: () => number }).toNumber();
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function toPositiveNumber(value: unknown): number | undefined {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+  const numeric = num(value);
+  return numeric > 0 ? numeric : undefined;
 }
 
 function cleanStringArray(items: unknown): string[] {
@@ -99,19 +117,28 @@ function resolvePriceRange(
   return { range: { min, max }, minDiscounted: cheapest?.discountedPrice };
 }
 
-function resolveStockTotal(skus: unknown, colorVariants?: unknown): number {
+function resolveStockTotal(skus: unknown, colorVariants?: unknown, inventories?: unknown): number {
   const skuList = asSkuList(skus);
   if (skuList.length > 0) {
     return skuList.reduce((sum, sku) => sum + (sku.stock ?? 0), 0);
   }
-  if (!Array.isArray(colorVariants)) return 0;
   let total = 0;
-  for (const variant of colorVariants) {
-    const stocks = (variant as Record<string, unknown> | null)?.stocks;
-    if (!Array.isArray(stocks)) continue;
-    for (const entry of stocks) {
-      const quantity = Number((entry as Record<string, unknown> | null)?.quantity ?? 0);
-      if (Number.isFinite(quantity) && quantity > 0) total += quantity;
+  if (Array.isArray(colorVariants)) {
+    for (const variant of colorVariants) {
+      const stocks = (variant as Record<string, unknown> | null)?.stocks;
+      if (!Array.isArray(stocks)) continue;
+      for (const entry of stocks) {
+        const quantity = Number((entry as Record<string, unknown> | null)?.quantity ?? 0);
+        if (Number.isFinite(quantity) && quantity > 0) total += quantity;
+      }
+    }
+  }
+  if (total > 0) return total;
+
+  if (Array.isArray(inventories)) {
+    for (const inv of inventories as Array<{ quantity?: number; reservedQuantity?: number }>) {
+      const available = Math.max(0, (inv?.quantity ?? 0) - (inv?.reservedQuantity ?? 0));
+      total += available;
     }
   }
   return total;
@@ -241,6 +268,8 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
     formatted.discountedPrice,
   );
 
+  const shippingAndWarranty = resolveShippingAndWarranty(formatted);
+
   return {
     id: str(formatted.id),
     name: str(formatted.name),
@@ -261,6 +290,7 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
     subcategory: objectOrNull(formatted.subcategory),
     status: nullStr(formatted.status),
     vendorId: nullStr(formatted.vendorId),
+    ...shippingAndWarranty,
   };
 }
 
@@ -271,6 +301,11 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
 export function formatAdminProductListItem(
   formatted: Record<string, unknown>,
 ): AdminProductListItem {
+  const stockTotal =
+    typeof formatted._derivedStockTotal === 'number'
+      ? formatted._derivedStockTotal
+      : resolveStockTotal(formatted.skus, formatted.colorVariants, formatted.inventories);
+
   return {
     id: str(formatted.id),
     name: str(formatted.name),
@@ -279,7 +314,7 @@ export function formatAdminProductListItem(
     discountedPrice: validDiscount(num(formatted.price), formatted.discountedPrice),
     cover: resolveCover(formatted.mainImages, formatted.colorVariants),
     status: nullStr(formatted.status),
-    stockTotal: resolveStockTotal(formatted.skus, formatted.colorVariants),
+    stockTotal,
     vendorName: nullStr(formatted.vendorName),
     category: toListCategory(formatted.category),
     updatedAt: formatted.updatedAt ?? null,

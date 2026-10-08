@@ -89,6 +89,15 @@ export interface Product {
    */
   status?: string;
   featured?: boolean;
+  inStock?: boolean;
+  packageWeightKg?: number;
+  packagingType?: string;
+  isFragile?: boolean;
+  hasBatteryOrLiquid?: boolean;
+  warrantyType?: string;
+  warrantyPeriod?: string | null;
+  warrantyPolicy?: string | null;
+  isNonReturnable?: boolean;
 }
 
 export interface ProductFilterParams {

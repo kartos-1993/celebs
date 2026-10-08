@@ -40,13 +40,7 @@ export function ProductDetailScrollContent({
 }: ProductDetailScrollContentProps) {
   const [isReviewsSheetOpen, setIsReviewsSheetOpen] = useState(false);
 
-  /**
-   * Reviews "add to cart" must not run in the same tick as the selection it
-   * just changed: `onAddToCart` closes over the PREVIOUS render's color/size,
-   * so calling it inline would ship the stale variant. Bumping a request
-   * counter and replaying it from an effect runs it after the re-render, with
-   * the fresh selection.
-   */
+  // Reviews add-to-cart runs via effect to ensure fresh variant selection
   const [reviewAddRequest, setReviewAddRequest] = useState(0);
   const handledReviewAddRef = useRef(0);
   useEffect(() => {
@@ -66,9 +60,7 @@ export function ProductDetailScrollContent({
         );
         if (colorIdx >= 0) onSelectColor(colorIdx);
       }
-      if (variant.size) {
-        onSelectSize(variant.size);
-      }
+      if (variant.size) onSelectSize(variant.size);
     },
     [onSelectColor, onSelectSize, product.colorVariants],
   );
@@ -81,17 +73,12 @@ export function ProductDetailScrollContent({
     [handleReviewVariant],
   );
 
-  // Exact per-combination figure: follows every swatch/size tap, falls
-  // back to the product base price when no SKU matches the selection.
   const selectedColorName = product.colorVariants?.[selectedColorIndex]?.name;
   const resolvedPrice = useMemo(
     () => resolveVariantPrice(product, selectedColorName, selectedSize || undefined),
     [product, selectedColorName, selectedSize],
   );
 
-  // The parent already folds "fully OOS OR selected size OOS" into
-  // isOutOfStock. Split it so a single depleted size no longer greys out every
-  // photo (which blanked the whole gallery).
   const isFullyOutOfStock = isOutOfStock && isProductFullyOutOfStock(product);
   const isSelectedSizeOutOfStock =
     isOutOfStock &&
@@ -137,7 +124,12 @@ export function ProductDetailScrollContent({
       </View>
 
       <View style={styles.sectionBand} />
-      <ProductServicesCard />
+      <ProductServicesCard
+        isNonReturnable={product.isNonReturnable}
+        warrantyType={product.warrantyType}
+        warrantyPeriod={product.warrantyPeriod}
+        warrantyPolicy={product.warrantyPolicy}
+      />
       <ProductReviewsCard
         productId={product.id}
         isSheetOpen={isReviewsSheetOpen}

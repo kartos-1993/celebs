@@ -169,14 +169,34 @@ export const formatProductResponse = (
     prod.inventories,
   );
 
+  const rawInventories = Array.isArray(prod.inventories)
+    ? (prod.inventories as Array<{ quantity?: number; reservedQuantity?: number }>)
+    : [];
+
+  const inventoryStockTotal = rawInventories.reduce(
+    (sum, inv) => sum + Math.max(0, (inv?.quantity ?? 0) - (inv?.reservedQuantity ?? 0)),
+    0,
+  );
+
+  const rawVariantStock = resolvedVariants.reduce((sum, v) => {
+    if (!Array.isArray(v.stocks)) return sum;
+    return sum + v.stocks.reduce((sSum, s) => sSum + Math.max(0, s.quantity ?? 0), 0);
+  }, 0);
+
+  const rawSkuStock = Array.isArray(prod.skus)
+    ? (prod.skus as Array<{ stock?: number }>).reduce(
+        (sum, s) => sum + Math.max(0, Number(s?.stock ?? 0) || 0),
+        0,
+      )
+    : 0;
+
+  // Derived stock total evaluates live variants (including carrier row), SKUs, and Postgres inventories
+  const derivedStockTotal = Math.max(rawVariantStock, rawSkuStock, inventoryStockTotal);
+
   // Stock is read BEFORE the carrier is dropped: a colourless product holds its
   // quantity on the carrier row, and that is exactly the stock the storefront
-  // must see.
-  const hasPositiveStock = resolvedVariants.some(
-    (cv) => Array.isArray(cv.stocks) && cv.stocks.some((stk) => (stk.quantity ?? 0) > 0),
-  );
-  // Safer default: untracked / no-stock products report false (mobile guards on this).
-  const inStock = hasPositiveStock;
+  // must see. Also considers raw SKU stock and relational PostgreSQL ProductInventory.
+  const inStock = derivedStockTotal > 0;
 
   // CONTRACT: the size-only carrier is NOT a colour. It stays in storage (the
   // inventory matrix and the publish floor need it) but never reaches a client:
@@ -195,6 +215,7 @@ export const formatProductResponse = (
     colorVariants,
     hasColorAxis,
     inStock,
+    _derivedStockTotal: derivedStockTotal,
     // Presenters hide invalid deals: only 0 < discounted < price is emitted.
     discountedPrice: validDiscount(price, prod.discountedPrice),
     // CONTRACT: non-object categories surface as NULL (never a raw UUID string).

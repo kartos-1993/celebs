@@ -17,6 +17,7 @@ export const PRODUCT_LIST_SELECT = {
   colorVariants: true,
   dynamicData: true,
   sizes: true,
+  skus: true,
   variantOptions: true,
   vendorId: true,
   vendorName: true,
@@ -81,6 +82,7 @@ export const PRODUCT_FEED_SELECT = {
   colorVariants: true,
   dynamicData: true,
   sizes: true,
+  skus: true,
   variantOptions: true,
   inventories: {
     select: {
@@ -135,6 +137,17 @@ export const PRODUCT_PUBLIC_DETAIL_SELECT = {
   variantOptions: true,
   dynamicData: true,
   tags: true,
+  packageWeightKg: true,
+  packageLengthCm: true,
+  packageWidthCm: true,
+  packageHeightCm: true,
+  packagingType: true,
+  isFragile: true,
+  hasBatteryOrLiquid: true,
+  warrantyType: true,
+  warrantyPeriod: true,
+  warrantyPolicy: true,
+  isNonReturnable: true,
   createdAt: true,
   updatedAt: true,
 } as const;
