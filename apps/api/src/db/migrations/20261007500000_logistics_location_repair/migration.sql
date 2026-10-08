@@ -131,6 +131,24 @@ CREATE TABLE IF NOT EXISTS "ShippingRate" (
 );
 
 -- ---------------------------------------------------------------------------
+-- Address zone columns
+-- ---------------------------------------------------------------------------
+
+-- Both columns are declared in schema.prisma but were never added by any
+-- migration: the baseline only carries the foreign key, and the migration that
+-- indexes logistics_zone_id below assumed the column already existed. A database
+-- built by `migrate deploy` therefore reached the index below and failed with
+-- `column "logistics_zone_id" does not exist`. A database built by `db push`
+-- (the test database) had the column all along, which is why only the deployed
+-- path ever hit it.
+--
+-- Added here, before the index and foreign key that depend on it, and guarded so
+-- re-running this migration is harmless.
+ALTER TABLE "Address"
+    ADD COLUMN IF NOT EXISTS "logistics_zone_id" TEXT,
+    ADD COLUMN IF NOT EXISTS "delivery_zone_id" TEXT;
+
+-- ---------------------------------------------------------------------------
 -- Indexes
 -- ---------------------------------------------------------------------------
 

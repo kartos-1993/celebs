@@ -57,6 +57,21 @@ export enum Permission {
   // changing a rate are not the same permission, and only the second is revenue.
   COMMISSION_VIEW = 'commission:view',
 
+  // ── Seller statements ──────────────────────────────────────
+  //
+  // Four permissions for one workflow, because the steps are not
+  // interchangeable: read a statement, freeze the figures, authorise the
+  // payout, record that the money moved.
+  //
+  // Separated so a deployment can hand them to different people. Whoever freezes
+  // a statement may not also approve it - that inequality is enforced in the
+  // service, and these permissions are what let an operator be given only part
+  // of the flow.
+  SELLER_STATEMENT_VIEW = 'seller-statement:view',
+  SELLER_STATEMENT_PREPARE = 'seller-statement:prepare',
+  SELLER_STATEMENT_APPROVE = 'seller-statement:approve',
+  SELLER_STATEMENT_PAY = 'seller-statement:pay',
+
   // ── Vendors ───────────────────────────
   VENDOR_VIEW = 'vendor:view',
   VENDOR_MANAGE = 'vendor:manage',

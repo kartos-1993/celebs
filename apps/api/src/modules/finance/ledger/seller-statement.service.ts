@@ -152,6 +152,28 @@ export class SellerStatementService {
     return this.repo.listForVendor(vendorId, take);
   }
 
+  /**
+   * A statement the caller is allowed to see.
+   *
+   * `scope` is null for platform finance, who may read any statement, and the
+   * caller's own store id otherwise. The check lives here rather than in the
+   * controller so no future caller can forget it: a statement says what a seller
+   * is owed, and guessing an id is not authorisation.
+   */
+  async findForActor(statementId: string, scope: string | null): Promise<SellerStatementRecord> {
+    const statement = await this.mustFind(statementId);
+
+    if (scope !== null && statement.vendorId !== scope) {
+      throw new AppError(
+        'That statement belongs to another seller',
+        HTTPSTATUS.FORBIDDEN,
+        ErrorCode.FORBIDDEN_ACCESS,
+      );
+    }
+
+    return statement;
+  }
+
   private async mustFind(statementId: string): Promise<SellerStatementRecord> {
     const statement = await this.repo.findById(statementId);
     if (!statement) {
@@ -177,3 +199,40 @@ function assertPeriod(periodStart: Date, periodEnd: Date): void {
 }
 
 export const sellerStatementService = new SellerStatementService();
+
+/**
+ * The wire shape of a statement.
+ *
+ * Amounts become exact strings. A JSON number rounds a paisa away, and these are
+ * figures a seller copies into a spreadsheet and checks against a bank line, so
+ * the two representations must agree to the paisa - which a float cannot promise.
+ */
+export function serialiseSellerStatement(statement: SellerStatementRecord) {
+  return {
+    id: statement.id,
+    vendorId: statement.vendorId,
+    periodStart: statement.periodStart.toISOString(),
+    periodEnd: statement.periodEnd.toISOString(),
+    status: statement.status,
+    grossSales: statement.grossSales.toFixed(2),
+    commission: statement.commission.toFixed(2),
+    refunds: statement.refunds.toFixed(2),
+    deliveryCosts: statement.deliveryCosts.toFixed(2),
+    netPayable: statement.netPayable.toFixed(2),
+    currency: 'NPR',
+    lockedBy: statement.lockedBy,
+    lockedAt: statement.lockedAt?.toISOString() ?? null,
+    approvedBy: statement.approvedBy,
+    approvedAt: statement.approvedAt?.toISOString() ?? null,
+    payoutReference: statement.payoutReference,
+    paidAt: statement.paidAt?.toISOString() ?? null,
+    paidBy: statement.paidBy,
+    voidedAt: statement.voidedAt?.toISOString() ?? null,
+    voidedBy: statement.voidedBy,
+    notes: statement.notes,
+    createdAt: statement.createdAt.toISOString(),
+    updatedAt: statement.updatedAt.toISOString(),
+  };
+}
+
+export type SerialisedSellerStatement = ReturnType<typeof serialiseSellerStatement>;

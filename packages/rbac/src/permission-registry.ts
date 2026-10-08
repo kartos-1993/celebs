@@ -203,6 +203,34 @@ export const PERMISSION_REGISTRY: Record<Permission, PermissionDefinition> = {
     module: 'FINANCE',
   },
 
+  [Permission.SELLER_STATEMENT_VIEW]: {
+    perm: Permission.SELLER_STATEMENT_VIEW,
+    label: 'View Seller Statements',
+    description: "Read a seller's frozen period statements and what they are owed",
+    module: 'FINANCE',
+  },
+
+  [Permission.SELLER_STATEMENT_PREPARE]: {
+    perm: Permission.SELLER_STATEMENT_PREPARE,
+    label: 'Prepare Seller Statements',
+    description: 'Draft a period statement and freeze its figures by locking it',
+    module: 'FINANCE',
+  },
+
+  [Permission.SELLER_STATEMENT_APPROVE]: {
+    perm: Permission.SELLER_STATEMENT_APPROVE,
+    label: 'Approve Seller Statements',
+    description: 'Authorise a locked statement for payment, as someone other than who locked it',
+    module: 'FINANCE',
+  },
+
+  [Permission.SELLER_STATEMENT_PAY]: {
+    perm: Permission.SELLER_STATEMENT_PAY,
+    label: 'Pay Seller Statements',
+    description: 'Record that an approved seller payout has been made',
+    module: 'FINANCE',
+  },
+
   [Permission.FINANCE_MANAGE]: {
     perm: Permission.FINANCE_MANAGE,
     label: 'Manage Payouts',
