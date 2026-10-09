@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ProductFormActions from '../product-form-action';
@@ -27,29 +27,33 @@ beforeEach(() => {
 });
 
 describe('Save Draft must report a save that did not happen', () => {
-  it('raises the failure toast when the draft hook returns false', () => {
+  it('raises the failure toast when the draft hook returns false', async () => {
     // `false` is the hook's whole failure signal: no category yet, or browser
     // storage refusing the write. It used to be dropped on the floor, so the
     // click looked identical to a successful save.
-    baseProps.onSaveAsDraft.mockReturnValue(false);
+    baseProps.onSaveAsDraft.mockResolvedValue(false);
     renderActions();
 
     fireEvent.click(screen.getByTestId('save-draft-btn'));
 
-    expect(baseProps.onSaveAsDraft).toHaveBeenCalledTimes(1);
-    expect(toastMock).toHaveBeenCalledWith({
-      ...getDraftSaveFailureCopy(),
-      variant: 'destructive',
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith({
+        ...getDraftSaveFailureCopy(),
+        variant: 'destructive',
+      });
     });
+    expect(baseProps.onSaveAsDraft).toHaveBeenCalledTimes(1);
   });
 
-  it('stays silent on a successful save', () => {
-    baseProps.onSaveAsDraft.mockReturnValue(true);
+  it('stays silent on a successful save', async () => {
+    baseProps.onSaveAsDraft.mockResolvedValue(true);
     renderActions();
 
     fireEvent.click(screen.getByTestId('save-draft-btn'));
 
-    expect(baseProps.onSaveAsDraft).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(baseProps.onSaveAsDraft).toHaveBeenCalledTimes(1);
+    });
     expect(toastMock).not.toHaveBeenCalled();
   });
 

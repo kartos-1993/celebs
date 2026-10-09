@@ -20,12 +20,10 @@ interface ProductFormActionsProps {
   canPublish?: boolean;
   onCancel: () => void;
   /**
-   * `useProductDraft.saveDraftNow` reports success by returning `false`. The
-   * return value is optional in the type so the memoised container above can
-   * keep declaring `() => void` — but the `false` case is the whole point of
-   * this prop, so it is treated as a failure and never as a silent no-op.
+   * Asynchronous action triggered when clicking "Save Draft".
+   * Resolves to false if saving fails (triggers error toast), or true on success.
    */
-  onSaveAsDraft: () => boolean | void | Promise<boolean | void>;
+  onSaveAsDraft: () => Promise<boolean>;
 }
 
 const ProductFormActions = ({
@@ -44,12 +42,9 @@ const ProductFormActions = ({
     ? 'You have unsaved changes in this product.'
     : 'Current changes are already saved.';
 
-  // Same failure surface as the submit path (`use-add-product-submit.ts`): a
-  // destructive toast, because a draft that was not written is indistinguishable
-  // from a draft that was lost if the click reports nothing at all.
   const handleSaveDraft = useCallback(async () => {
-    const result = await onSaveAsDraft();
-    if (result === false) {
+    const isSaved = await onSaveAsDraft();
+    if (isSaved === false) {
       toast({ ...getDraftSaveFailureCopy(), variant: 'destructive' });
     }
   }, [onSaveAsDraft, toast]);

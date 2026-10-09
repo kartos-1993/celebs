@@ -13,7 +13,7 @@ interface ProductFormActionsContainerProps {
   isSubmitting: boolean;
   isEditMode?: boolean;
   canPublish?: boolean;
-  onSaveAsDraft: () => boolean | void | Promise<boolean | void>;
+  onSaveAsDraft: () => Promise<boolean>;
   onCancel: () => void;
 }
 

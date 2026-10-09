@@ -244,9 +244,13 @@ export function useAddProductSubmit({
     focusFirstError(errors);
   };
 
-  const handleSaveDraft = useCallback(async () => {
-    draft.saveDraftNow();
+  const handleSaveDraft = useCallback(async (): Promise<boolean> => {
+    const isSavedLocally = draft.saveDraftNow();
+    if (!isSavedLocally) {
+      return false;
+    }
     await handleSubmitProduct('draft');
+    return true;
   }, [draft, handleSubmitProduct]);
 
   return { isSubmitting, handleSubmitProduct, handleFormInvalid, handleSaveDraft };
