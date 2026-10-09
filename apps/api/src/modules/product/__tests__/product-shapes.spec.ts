@@ -82,10 +82,9 @@ describe('Response shapes per consumer', () => {
     expect(result).toMatchObject({
       id: 'p1',
       cover: 'cover.jpg',
-      // Unified rule: inStock is derived from the variant stock matrix, so a row
-      // with no tracked variant stock (colorVariants: []) is untracked => false,
-      // even though the SKU price matrix carries its own stock numbers.
-      inStock: false,
+      // Live stock derivation: product with empty colorVariants derives inStock
+      // from its SKU inventory (skus have stock 4 and 6), evaluating to true.
+      inStock: true,
       status: 'published',
       vendorId: 'v1',
     });
@@ -106,10 +105,18 @@ describe('Response shapes per consumer', () => {
         'cover',
         'description',
         'discountedPrice',
+        'hasBatteryOrLiquid',
         'id',
         'inStock',
+        'isFragile',
+        'isNonReturnable',
         'minDiscounted',
         'name',
+        'packageHeightCm',
+        'packageLengthCm',
+        'packageWeightKg',
+        'packageWidthCm',
+        'packagingType',
         'price',
         'priceRange',
         'ratingAverage',
@@ -118,6 +125,9 @@ describe('Response shapes per consumer', () => {
         'status',
         'subcategory',
         'vendorId',
+        'warrantyPeriod',
+        'warrantyPolicy',
+        'warrantyType',
       ].sort(),
     );
   });

@@ -70,7 +70,7 @@ describe('Vendor Published Product Edit Authorization Integration', () => {
       subcategoryId: mockSubcategory.id,
       status: 'published',
       mainImages: ['https://cdn.example.com/tee.jpg'],
-      skus: [{ price: 1200, stock: 10 }],
+      skus: [{ skuCode: 'SKU-TEE-1', selectedOptions: {}, price: 1200, stock: 10 }],
     };
 
     const created = await productService.createProduct(
@@ -86,7 +86,7 @@ describe('Vendor Published Product Edit Authorization Integration', () => {
       productId,
       {
         price: 1400,
-        skus: [{ price: 1400, stock: 15 }],
+        skus: [{ skuCode: 'SKU-TEE-1', selectedOptions: {}, price: 1400, stock: 15 }],
       },
       mockVendorUserId,
       'VENDOR',
@@ -106,7 +106,7 @@ describe('Vendor Published Product Edit Authorization Integration', () => {
       subcategoryId: mockSubcategory.id,
       status: 'published',
       mainImages: ['https://cdn.example.com/tee.jpg'],
-      skus: [{ price: 1200, stock: 10 }],
+      skus: [{ skuCode: 'SKU-TEE-2', selectedOptions: {}, price: 1200, stock: 10 }],
     };
 
     const created = await productService.createProduct(
@@ -142,7 +142,7 @@ describe('Vendor Published Product Edit Authorization Integration', () => {
       subcategoryId: mockSubcategory.id,
       status: 'draft',
       mainImages: ['https://cdn.example.com/item.jpg'],
-      skus: [{ price: 999, stock: 5 }],
+      skus: [{ skuCode: 'SKU-TEE-3', selectedOptions: {}, price: 999, stock: 5 }],
     };
 
     const created = await productService.createProduct(

@@ -102,7 +102,7 @@ describe('Product Live Stock Derivation Integration', () => {
     const variants = formatted?.colorVariants as Array<{
       stocks: Array<{ size: string; quantity: number }>;
     }>;
-    expect(variants[0].stocks[0].quantity).toBe(20); // 25 - 5
+    expect(variants[0]?.stocks[0]?.quantity).toBe(20); // 25 - 5
     expect(formatted?.inStock).toBe(true);
   });
 

@@ -78,7 +78,7 @@ describe('Product Shipping Logistics and Warranty Projections Integration', () =
       packageLengthCm: 40,
       packageWidthCm: 30,
       packageHeightCm: 10,
-      packagingType: 'BOX_MEDIUM',
+      packagingType: 'BOX_STANDARD',
       isFragile: false,
       hasBatteryOrLiquid: false,
       warrantyType: 'BRAND_WARRANTY',
@@ -88,6 +88,8 @@ describe('Product Shipping Logistics and Warranty Projections Integration', () =
       mainImages: ['https://cdn.example.com/jacket.jpg'],
       skus: [
         {
+          skuCode: 'SKU-PARKA-1',
+          selectedOptions: {},
           price: 5500,
           stock: 10,
         },
@@ -138,6 +140,8 @@ describe('Product Shipping Logistics and Warranty Projections Integration', () =
       mainImages: ['https://cdn.example.com/teaset.jpg'],
       skus: [
         {
+          skuCode: 'SKU-TEA-1',
+          selectedOptions: {},
           price: 1800,
           stock: 5,
         },
@@ -188,6 +192,8 @@ describe('Product Shipping Logistics and Warranty Projections Integration', () =
       mainImages: ['https://cdn.example.com/socks.jpg'],
       skus: [
         {
+          skuCode: 'SKU-SOCKS-1',
+          selectedOptions: {},
           price: 450,
           stock: 20,
         },
