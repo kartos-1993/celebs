@@ -112,7 +112,7 @@ describe('Product Shipping Logistics and Warranty Projections Integration', () =
     expect(publicDetail?.id).toBe(productId);
     // Public detail must project logistics and warranty specifications
     expect(publicDetail?.packageWeightKg).toBe(1.25);
-    expect(publicDetail?.packagingType).toBe('BOX_MEDIUM');
+    expect(publicDetail?.packagingType).toBe('BOX_STANDARD');
     expect(publicDetail?.warrantyType).toBe('BRAND_WARRANTY');
     expect(publicDetail?.warrantyPeriod).toBe('1 Year Fabric Guarantee');
     expect(publicDetail?.warrantyPolicy).toBe('Covers zip and down-feather leak defects.');

@@ -381,6 +381,16 @@ export class CheckoutService {
         throw new AppError(err.message, HTTPSTATUS.CONFLICT, ErrorCode.INVALID_REQUEST);
       }
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const recheck = await this.checkoutRepo.findIdempotencyKey(idempotencyKey, userId);
+          if (recheck) {
+            const parsed = JSON.parse(recheck.responseBody);
+            if (parsed.order?.id) {
+              return parsed;
+            }
+          }
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
         const recheck = await this.checkoutRepo.findIdempotencyKey(idempotencyKey, userId);
         if (recheck) {
           return JSON.parse(recheck.responseBody);

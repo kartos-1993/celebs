@@ -232,13 +232,26 @@ export class CheckoutRepository {
           where: { cartId: data.cartId },
         });
 
-        // 4. Create placeholder idempotency key inside the transaction to guard against concurrent replay
+        // 4. Record idempotency key inside the transaction with created order reference
         await tx.idempotencyKey.create({
           data: {
             key: data.idempotencyKey,
             userId: data.userId,
             statusCode: 201,
-            responseBody: JSON.stringify({ status: 'PROCESSING', retry_with_new_key: true }),
+            responseBody: JSON.stringify({
+              order: {
+                id: createdOrder.id,
+                orderNumber: createdOrder.orderNumber,
+                status: createdOrder.status,
+                totalAmount: createdOrder.totalAmount,
+                paymentMethod: createdOrder.paymentMethod,
+                paymentStatus: createdOrder.paymentStatus,
+              },
+              payment: {
+                paymentMethod: data.paymentMethod,
+                paymentStatus: data.paymentStatus,
+              },
+            }),
           },
         });
 
