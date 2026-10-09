@@ -1,5 +1,5 @@
-import { memo, useEffect } from 'react';
-import { type Control, type FieldValues, useWatch } from 'react-hook-form';
+import { memo, useEffect, useRef } from 'react';
+import { type Control, type FieldValues, useFormContext } from 'react-hook-form';
 
 import { logger } from '@celebs/shared-utils';
 
@@ -25,7 +25,6 @@ interface DraftAutoSaverProps {
 
 export const DraftAutoSaver = memo(
   ({
-    control,
     draftRestored,
     isEditMode,
     suppressAutosave,
@@ -36,7 +35,8 @@ export const DraftAutoSaver = memo(
     userId,
     storeId,
   }: DraftAutoSaverProps) => {
-    const watchedFormValues = useWatch({ control });
+    const { watch } = useFormContext();
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
       if (
@@ -48,33 +48,46 @@ export const DraftAutoSaver = memo(
       ) {
         return;
       }
-      const timer = setTimeout(() => {
-        const values = getValues();
-        if (values.categoryId && values.subcategoryId) {
-          try {
-            window.localStorage.setItem(
-              getDraftStorageKey(userId, storeId),
-              JSON.stringify({
-                categoryPath,
-                savedAt: new Date().toISOString(),
-                storeId,
-                values: serializeDraftValue(values),
-              }),
-            );
-          } catch (error) {
-            // Private mode / quota — autosave stays best-effort, but the
-            // failure is logged so a silently-never-saving draft is
-            // diagnosable instead of invisible. Explicit "Save Draft"
-            // surfaces the same failure to the seller.
-            logger.warn({ error }, 'Draft autosave skipped: storage unavailable or quota exceeded');
+
+      const scheduleSave = () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          const values = getValues();
+          if (values.categoryId && values.subcategoryId) {
+            try {
+              window.localStorage.setItem(
+                getDraftStorageKey(userId, storeId),
+                JSON.stringify({
+                  categoryPath,
+                  savedAt: new Date().toISOString(),
+                  storeId,
+                  values: serializeDraftValue(values),
+                }),
+              );
+            } catch (error) {
+              // Private mode / quota — autosave stays best-effort, but the
+              // failure is logged so a silently-never-saving draft is
+              // diagnosable instead of invisible. Explicit "Save Draft"
+              // surfaces the same failure to the seller.
+              logger.warn(
+                { error },
+                'Draft autosave skipped: storage unavailable or quota exceeded',
+              );
+            }
           }
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
+        }, 1000);
+      };
+
+      scheduleSave();
+      const subscription = watch(scheduleSave);
+
+      return () => {
+        subscription.unsubscribe();
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
     }, [
       draftRestored,
       suppressAutosave,
-      watchedFormValues,
       categoryPath,
       isEditMode,
       watchedCategoryId,
@@ -82,6 +95,7 @@ export const DraftAutoSaver = memo(
       getValues,
       userId,
       storeId,
+      watch,
     ]);
 
     return null;

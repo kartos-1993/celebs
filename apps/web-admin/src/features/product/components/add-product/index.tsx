@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 
 import { Form } from '@celebs/shared-ui/components/form';
@@ -43,8 +44,10 @@ export const AddProduct = () => {
     handleSubcategoryChange,
   } = useProductForm(id);
 
-  const watchedCategoryId = String(form.watch('categoryId') || '');
-  const watchedSubcategoryId = String(form.watch('subcategoryId') || '');
+  const watchedCategoryId = String(useWatch({ control: form.control, name: 'categoryId' }) || '');
+  const watchedSubcategoryId = String(
+    useWatch({ control: form.control, name: 'subcategoryId' }) || '',
+  );
   const effectiveCatId = watchedSubcategoryId || watchedCategoryId;
 
   const {
