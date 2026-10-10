@@ -16,9 +16,9 @@ describe('dispatchOrderSchema', () => {
     expect(parsed.provider).toBe('MANUAL');
   });
 
-  it('accepts the Nepal Can Move courier', () => {
-    expect(dispatchOrderSchema.parse({ orderId, provider: 'NEPAL_CAN_MOVE' }).provider).toBe(
-      'NEPAL_CAN_MOVE',
+  it('refuses legacy unconfigured couriers such as Nepal Can Move', () => {
+    expect(dispatchOrderSchema.safeParse({ orderId, provider: 'NEPAL_CAN_MOVE' }).success).toBe(
+      false,
     );
   });
 

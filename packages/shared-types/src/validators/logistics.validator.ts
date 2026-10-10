@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const dispatchOrderSchema = z.object({
   orderId: z.string().uuid('Invalid order ID'),
-  // Automated 3PL courier integrations (PATHAO, NEPAL_CAN_MOVE) or manual offline dispatch
-  provider: z.enum(['PATHAO', 'NEPAL_CAN_MOVE', 'MANUAL']),
+  // Automated 3PL courier integration (PATHAO) or manual offline dispatch
+  provider: z.enum(['PATHAO', 'MANUAL']),
   manualCourierName: z.string().optional(),
   manualTrackingNumber: z.string().optional(),
   manualTrackingUrl: z.string().optional(),
