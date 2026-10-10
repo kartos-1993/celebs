@@ -77,7 +77,7 @@ export function OpenBatchDialog({ open, onClose }: OpenBatchDialogProps) {
               id="courier-select"
               value={courier}
               onChange={(e) => setCourier(e.target.value)}
-              placeholder="e.g. PATHAO, NEPAL_CAN_MOVE"
+              placeholder="e.g. PATHAO, MANUAL"
               required
             />
           </div>

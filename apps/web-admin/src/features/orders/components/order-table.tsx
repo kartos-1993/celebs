@@ -1,6 +1,5 @@
 import { MapPin, ShoppingCart, Truck } from 'lucide-react';
 
-import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
@@ -15,6 +14,7 @@ import {
 import type { Mode, OrderItemUI } from '../types';
 
 import { OrderStatusBadge } from './order-status-badge';
+import { PaymentCell } from './payment-cell';
 
 import { TableSkeleton } from '@/components/table-skeleton';
 import { cn } from '@/lib/utils';
@@ -25,25 +25,6 @@ interface OrderTableProps {
   isFetching: boolean;
   mode: Mode;
   onUpdate: (item: OrderItemUI) => void;
-}
-
-function PaymentCell({ row }: { row: OrderItemUI }) {
-  return (
-    <div className="space-y-0.5">
-      <div className="font-mono text-xs tabular-nums">Rs. {row.totalAmount.toLocaleString()}</div>
-      <div className="flex items-center gap-1 whitespace-nowrap">
-        <Badge variant="secondary">{row.paymentMethod}</Badge>
-        <span
-          className={cn(
-            'whitespace-nowrap text-xs font-medium',
-            row.paymentStatus === 'COMPLETED' ? 'text-success' : 'text-warning',
-          )}
-        >
-          {row.paymentStatus === 'COMPLETED' ? 'Paid' : 'Payment Pending'}
-        </span>
-      </div>
-    </div>
-  );
 }
 
 export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: OrderTableProps) {

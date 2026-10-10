@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Permission } from '@celebs/rbac';
 
-import type { Mode, OrderItemStatus } from '../types';
+import type { LogisticsProvider, Mode, OrderItemStatus } from '../types';
 
 import { useFulfillmentDialog } from './use-fulfillment-dialog';
 import {
@@ -172,8 +172,9 @@ export function useOrdersPage() {
 
   const handleDispatch = useCallback(() => {
     if (!dialog.selectedItem) return;
-    dispatchMutation.mutate(dialog.selectedItem.orderId);
-  }, [dialog.selectedItem, dispatchMutation]);
+    const provider: LogisticsProvider = dialog.courier === 'MANUAL' ? 'MANUAL' : 'PATHAO';
+    dispatchMutation.mutate({ orderId: dialog.selectedItem.orderId, provider });
+  }, [dialog.selectedItem, dialog.courier, dispatchMutation]);
 
   const resolveReference = useCallback(
     (fallbackPrefix: string) => {

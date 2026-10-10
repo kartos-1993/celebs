@@ -50,7 +50,6 @@ export function SettlementsCard({
           >
             <option value="">All couriers</option>
             <option value="PATHAO">Pathao</option>
-            <option value="NEPAL_CAN_MOVE">Nepal Can Move</option>
           </select>
           <Button size="sm" onClick={onOpenBatch}>
             Open batch
