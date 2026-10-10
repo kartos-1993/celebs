@@ -1,5 +1,7 @@
 import { logger } from '@celebs/shared-utils';
 
+import { isSandboxCourierFallbackAllowed } from '../sandbox-courier-fallback';
+
 import { cacheRedis } from '@/config/upstash.redis';
 
 /**
@@ -212,7 +214,7 @@ export class PathaoTokenProvider {
         username: config.username,
         password: config.password,
       }),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(isSandboxCourierFallbackAllowed() ? 3_000 : 10_000),
     });
 
     const body = (await response.json().catch(() => null)) as PathaoTokenResponse | null;

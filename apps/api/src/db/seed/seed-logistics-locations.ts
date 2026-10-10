@@ -50,6 +50,12 @@ export function syntheticZoneExternalId(province: string, district: string): num
  * threshold and `isActive` once it has run, and re-seeding must not undo an
  * admin's corrections or un-retire a district a courier has dropped.
  */
+const WELL_KNOWN_PATHAO_CITY_IDS: Record<string, { cityId: number; defaultZoneId: number }> = {
+  Kathmandu: { cityId: 79, defaultZoneId: 1326 },
+  Lalitpur: { cityId: 80, defaultZoneId: 1327 },
+  Bhaktapur: { cityId: 81, defaultZoneId: 1328 },
+};
+
 export async function seedLogisticsLocations(): Promise<void> {
   console.log('\n--- 📍 Seeding Delivery Areas (Nepal districts) ---');
 
@@ -61,13 +67,20 @@ export async function seedLogisticsLocations(): Promise<void> {
 
     for (const district of province.districts) {
       const isValley = isValleyDistrict(district);
+      const wellKnown = WELL_KNOWN_PATHAO_CITY_IDS[district];
       const existing = await prisma.logisticsCity.findFirst({
         where: { name: district, province: provinceName },
-        select: { id: true },
+        select: { id: true, externalId: true },
       });
 
       if (existing) {
         kept += 1;
+        if (existing.externalId === null && wellKnown) {
+          await prisma.logisticsCity.update({
+            where: { id: existing.id },
+            data: { externalId: wellKnown.cityId },
+          });
+        }
         await ensureDefaultZone(existing.id, provinceName, district);
         continue;
       }
@@ -76,6 +89,7 @@ export async function seedLogisticsLocations(): Promise<void> {
         data: {
           name: district,
           province: provinceName,
+          externalId: wellKnown?.cityId ?? null,
           isValley,
           freeDeliveryThreshold: isValley
             ? valleyFreeDeliveryThreshold
@@ -105,21 +119,38 @@ async function ensureDefaultZone(
   province: string,
   district: string,
 ): Promise<void> {
+  const wellKnown = WELL_KNOWN_PATHAO_CITY_IDS[district];
   const existing = await prisma.logisticsZone.findFirst({
     where: { cityId },
-    select: { id: true },
+    select: { id: true, externalId: true },
   });
-  if (existing) return;
+
+  if (existing) {
+    if (existing.externalId < 0 && wellKnown) {
+      await prisma.logisticsZone.update({
+        where: { id: existing.id },
+        data: { externalId: wellKnown.defaultZoneId },
+      });
+    }
+    return;
+  }
 
   await prisma.logisticsZone.create({
     data: {
       cityId,
-      // Synthetic: this zone came from our reference data, not a courier, so it
-      // has no courier identifier to hold. The value is derived from the district
-      // it serves rather than from a generated row id, so it is stable across
-      // environments, and negative so it can never collide with a courier's own.
-      externalId: syntheticZoneExternalId(province, district),
+      externalId: wellKnown?.defaultZoneId ?? syntheticZoneExternalId(province, district),
       name: district,
     },
   });
+}
+
+if (require.main === module) {
+  seedLogisticsLocations()
+    .catch((error) => {
+      console.error('Failed to seed logistics locations:', error);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
 }

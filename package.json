@@ -165,6 +165,7 @@
     "prisma:studio": "pnpm --filter api prisma:studio",
     "//_SEEDING": "=== Database Seeding ===",
     "seed": "pnpm --filter api seed",
+    "seed:logistics": "pnpm --filter api seed:logistics",
     "seed:reset": "pnpm --filter api seed:reset",
     "r2:orphans": "pnpm --filter api r2:orphans",
     "//_QUALITY": "=== Code Quality & Testing ===",

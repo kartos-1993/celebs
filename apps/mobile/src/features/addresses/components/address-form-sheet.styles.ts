@@ -143,4 +143,33 @@ export const styles = StyleSheet.create({
   btnDisabled: {
     opacity: 0.6,
   },
+  locationPickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Palette.gray200,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md - 2,
+    backgroundColor: Palette.gray50,
+  },
+  locationPickerBtnError: {
+    borderColor: Palette.danger,
+  },
+  locationPickerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flex: 1,
+    marginRight: Spacing.xs,
+  },
+  locationPickerText: {
+    color: Palette.gray900,
+    fontSize: FontSize.base,
+    flex: 1,
+  },
+  locationPickerTextPlaceholder: {
+    color: Palette.gray400,
+  },
 });

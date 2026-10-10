@@ -36,7 +36,6 @@ export function AddressFormSheet({
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<AddressFormValues>({
@@ -67,14 +66,14 @@ export function AddressFormSheet({
       cityArea: data.cityArea.trim(),
       streetAddress: data.streetAddress.trim(),
       ...(data.landmark?.trim() ? { landmark: data.landmark.trim() } : {}),
-      // Sent so the address can be matched to a courier zone. Province, district
-      // and area can now only be set by the picker, which always writes a zone
-      // with them, so this is empty only for an address stored before zones
-      // existed — which checkout will send back for re-selection.
       ...(data.logisticsZoneId ? { logisticsZoneId: data.logisticsZoneId } : {}),
       isDefault: !!data.isDefault,
     });
   };
+
+  const renderContent = () => (
+    <AddressFormFields control={control} errors={errors} setValue={setValue} />
+  );
 
   return (
     <BottomSheet
@@ -138,7 +137,7 @@ export function AddressFormSheet({
           showsVerticalScrollIndicator={false}
           bottomOffset={20}
         >
-          <AddressFormFields control={control} errors={errors} watch={watch} setValue={setValue} />
+          {renderContent()}
         </KeyboardAwareScrollView>
       ) : (
         <ScrollView
@@ -147,7 +146,7 @@ export function AddressFormSheet({
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          <AddressFormFields control={control} errors={errors} watch={watch} setValue={setValue} />
+          {renderContent()}
         </ScrollView>
       )}
     </BottomSheet>

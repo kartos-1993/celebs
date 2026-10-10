@@ -1,3 +1,5 @@
+import { logger } from '@celebs/shared-utils';
+
 import {
   type CourierQuote,
   PathaoPriceClient,
@@ -6,7 +8,12 @@ import {
   weightBandFor,
 } from './adapters/pathao-price.client';
 import { pathaoTokenProvider } from './adapters/pathao-token.provider';
+import { cachedDeliveryQuoteCache } from './delivery-quote.cache';
 import { money } from './money';
+import {
+  buildSandboxCourierQuote,
+  isSandboxCourierFallbackAllowed,
+} from './sandbox-courier-fallback';
 import type { SellerParcel } from './seller-parcels';
 import { mergeSellerParcels } from './seller-parcels';
 
@@ -112,6 +119,7 @@ export class DeliveryQuoteService {
     private readonly tokenResolver: AccessTokenResolver = async () => {
       throw new Error('No Pathao token resolver configured for delivery quoting');
     },
+    private readonly allowSandboxFallback = false,
   ) {}
 
   /**
@@ -227,6 +235,20 @@ export class DeliveryQuoteService {
       await this.cache?.set(key, quote);
 
       return quote;
+    } catch (error: unknown) {
+      if (!this.allowSandboxFallback) throw error;
+
+      logger.warn(
+        {
+          key,
+          courierError: (error as Error).message,
+        },
+        'Pathao quote API was unreachable or timed out; using SANDBOX courier quote fallback',
+      );
+
+      const fallbackQuote = buildSandboxCourierQuote();
+      await this.cache?.set(key, fallbackQuote);
+      return fallbackQuote;
     } finally {
       // Removed on success and on failure alike, so the next caller retries rather
       // than inheriting a stale or poisoned answer.
@@ -260,6 +282,9 @@ export class DeliveryQuoteService {
  * forgets to inject gets real behaviour rather than a stub that silently quotes
  * zero.
  */
-export const deliveryQuoteService = new DeliveryQuoteService(pathaoPriceClient, undefined, () =>
-  pathaoTokenProvider.getToken(),
+export const deliveryQuoteService = new DeliveryQuoteService(
+  pathaoPriceClient,
+  cachedDeliveryQuoteCache,
+  () => pathaoTokenProvider.getToken(),
+  isSandboxCourierFallbackAllowed(),
 );

@@ -1,5 +1,7 @@
 import { logger } from '@celebs/shared-utils';
 
+import { isSandboxCourierFallbackAllowed } from '../sandbox-courier-fallback';
+
 import { resolvePathaoConfig } from './pathao-token.provider';
 
 import { Prisma } from '@/config/db.prisma';
@@ -181,6 +183,7 @@ export class PathaoPriceClient {
         authorization: `Bearer ${input.accessToken}`,
       },
       body: JSON.stringify(pricePlanRequest(input)),
+      signal: AbortSignal.timeout(isSandboxCourierFallbackAllowed() ? 3_000 : 8_000),
     });
 
     if (!response.ok) {

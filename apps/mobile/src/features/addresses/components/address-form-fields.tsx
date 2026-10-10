@@ -1,95 +1,27 @@
-import React, { useMemo, useState } from 'react';
-import {
-  Control,
-  Controller,
-  type FieldErrors,
-  type FieldPath,
-  type FieldValues,
-  type UseFormReturn,
-} from 'react-hook-form';
-import {
-  Pressable,
-  Switch,
-  TextInput,
-  type TextInputProps,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React from 'react';
+import { type Control, Controller, type FieldErrors, type UseFormReturn } from 'react-hook-form';
+import { Switch, TouchableOpacity, View } from 'react-native';
 
 import type { AddressInput } from '@celebs/shared-types';
 
-import { useDeliveryLocations } from '../hooks/use-delivery-locations';
-
 import { styles } from './address-form-sheet.styles';
-import { DeliveryLocationPicker } from './delivery-location-picker';
+import { AddressLocationPickerField } from './address-location-picker-field';
+import { ControlledInput } from './controlled-input';
 
 import { ThemedText } from '@/components/themed-text';
-import { FontSize, Palette, Spacing } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 import { ADDRESS_LABELS } from '@/features/addresses/types';
 
 export type AddressFormValues = AddressInput;
 
-interface ControlledInputProps<T extends FieldValues>
-  extends Omit<TextInputProps, 'value' | 'onChangeText'> {
-  control: Control<T>;
-  name: FieldPath<T>;
-  error?: string;
-  multiline?: boolean;
-}
-
-function ControlledInput<T extends FieldValues>({
-  control,
-  name,
-  error,
-  style,
-  multiline,
-  ...rest
-}: ControlledInputProps<T>) {
-  return (
-    <>
-      <Controller
-        control={control}
-        name={name}
-        render={({ field: { value, onChange, onBlur } }) => (
-          <TextInput
-            style={[styles.input, multiline && styles.multilineInput, style]}
-            value={typeof value === 'string' ? value : ''}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            placeholderTextColor={Palette.gray400}
-            multiline={multiline}
-            {...rest}
-          />
-        )}
-      />
-      {!!error && <ThemedText style={styles.errorText}>{error}</ThemedText>}
-    </>
-  );
-}
-
 interface AddressFormFieldsProps {
   control: Control<AddressFormValues>;
   errors: FieldErrors<AddressFormValues>;
-  /**
-   * The owning form's `watch`/`setValue`, threaded in alongside `control` rather
-   * than read from `useFormContext`: the sheet does not wrap these fields in a
-   * `FormProvider`, so the context would be null and the picker would throw on
-   * first use.
-   */
-  watch: UseFormReturn<AddressFormValues>['watch'];
+  watch?: UseFormReturn<AddressFormValues>['watch'];
   setValue: UseFormReturn<AddressFormValues>['setValue'];
 }
 
-export function AddressFormFields({ control, errors, watch, setValue }: AddressFormFieldsProps) {
-  const { data, isLoading: isLoadingLocations } = useDeliveryLocations();
-  const provinces = useMemo(() => data?.provinces ?? [], [data]);
-
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-  const chosenDistrict = watch('district');
-  const chosenArea = watch('cityArea');
-  const zoneLabel = chosenDistrict ? `${chosenDistrict}, ${chosenArea ?? ''}`.trim() : '';
-
+export function AddressFormFields({ control, errors, setValue }: AddressFormFieldsProps) {
   return (
     <>
       <ThemedText style={styles.fieldLabel}>Save As</ThemedText>
@@ -147,55 +79,10 @@ export function AddressFormFields({ control, errors, watch, setValue }: AddressF
       />
 
       <ThemedText style={styles.sectionHint}>DELIVERY ADDRESS</ThemedText>
-
-      {/* District and area are chosen from the list of places we actually
-          deliver to, rather than typed. Free text is what let an order be placed
-          for a district no courier serves, and it also produced near-misses that
-          cannot resolve to a delivery zone. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Choose delivery district and area"
-        onPress={() => setPickerOpen(true)}
-        style={{
-          borderWidth: 1,
-          borderColor: watch('logisticsZoneId') ? Palette.gray300 : Palette.danger,
-          borderRadius: 8,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          marginBottom: Spacing.xs,
-        }}
-      >
-        <ThemedText
-          style={{
-            color: watch('logisticsZoneId') ? Palette.gray900 : Palette.gray500,
-            fontSize: FontSize.base,
-          }}
-        >
-          {zoneLabel || 'Choose your district and area'}
-        </ThemedText>
-      </Pressable>
-      {errors.logisticsZoneId && (
-        <ThemedText style={styles.errorText}>{errors.logisticsZoneId.message}</ThemedText>
-      )}
-
-      <DeliveryLocationPicker
-        visible={pickerOpen}
-        province={watch('province') ?? ''}
-        district={watch('district') ?? ''}
-        cityArea={watch('cityArea') ?? ''}
-        provinces={provinces}
-        isLoading={isLoadingLocations}
+      <AddressLocationPickerField
+        control={control}
+        setValue={setValue}
         error={errors.logisticsZoneId?.message}
-        onClose={() => setPickerOpen(false)}
-        onSelect={({ province, district, cityArea, logisticsZoneId }) => {
-          setValue('province', province, { shouldValidate: true, shouldDirty: true });
-          setValue('district', district, { shouldValidate: true, shouldDirty: true });
-          setValue('cityArea', cityArea, { shouldValidate: true, shouldDirty: true });
-          setValue('logisticsZoneId', logisticsZoneId, {
-            shouldValidate: true,
-            shouldDirty: true,
-          });
-        }}
       />
       <ControlledInput
         control={control}

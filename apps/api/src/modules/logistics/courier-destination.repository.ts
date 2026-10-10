@@ -1,5 +1,4 @@
-import { Prisma } from '@/config/db.prisma';
-import prisma from '@/config/db.prisma';
+import { Prisma, prisma } from '@/config/db.prisma';
 
 /**
  * Resolves a delivery address to the courier's own city and zone ids.

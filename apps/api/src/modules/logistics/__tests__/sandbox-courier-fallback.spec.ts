@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildSandboxCourierQuote,
   buildSandboxTrackingNumber,
   isSandboxCourierFallbackAllowed,
 } from '../sandbox-courier-fallback';
@@ -50,5 +51,14 @@ describe('sandbox courier fallback', () => {
     expect(buildSandboxTrackingNumber('ORD-2026-003', 0)).toBe(
       buildSandboxTrackingNumber('ORD-2026-003', 0),
     );
+  });
+
+  it('provides a valid fallback courier quote with standard delivery fees and COD handling', () => {
+    const quote = buildSandboxCourierQuote();
+    expect(quote.finalPrice.toFixed(2)).toBe('100.00');
+    expect(quote.codPercentage.toFixed(2)).toBe('0.01');
+    expect(quote.codEnabled).toBe(true);
+    expect(quote.planId).toBe(1);
+    expect(quote.raw).toMatchObject({ mock: true });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { CourierQuote, PathaoPriceClient } from '../adapters/pathao-price.client';
 import { DeliveryQuoteService } from '../delivery-quote.service';
@@ -274,5 +274,91 @@ describe('delivery quote cache', () => {
 
     // A cache that ignored the destination would hand Bardikas the Pokhara price.
     expect(elsewhere.parcels[0]?.cached).toBe(false);
+  });
+
+  describe('courier failure resilience', () => {
+    it('falls back to a sandbox quote outside production when the courier is unreachable', async () => {
+      const rejectingClient = {
+        quote: vi.fn().mockRejectedValue(new Error('The operation was aborted due to timeout')),
+      } as unknown as PathaoPriceClient;
+
+      const service = new DeliveryQuoteService(
+        rejectingClient,
+        undefined,
+        async () => 'token',
+        true,
+      );
+      const quote = await service.quote({
+        ...baseInput,
+        parcels: [
+          {
+            vendorId: 'sellerA',
+            declaredWeightKg: dec('0.9'),
+            goodsAmount: dec('100'),
+            lineIds: ['l1'],
+          },
+        ],
+      });
+
+      expect(quote.totalCourierFee.toFixed(2)).toBe('100.00');
+      expect(quote.parcels[0]?.deliveryFee.toFixed(2)).toBe('100.00');
+      expect(quote.codPercentage.toFixed(2)).toBe('0.01');
+    });
+
+    it('falls back to a sandbox quote outside production when the token resolver fails', async () => {
+      const { client } = fakeClient(() => dec('150'));
+
+      const service = new DeliveryQuoteService(
+        client,
+        undefined,
+        async () => {
+          throw new Error('TimeoutError: The operation was aborted due to timeout');
+        },
+        true,
+      );
+
+      const quote = await service.quote({
+        ...baseInput,
+        parcels: [
+          {
+            vendorId: 'sellerA',
+            declaredWeightKg: dec('0.9'),
+            goodsAmount: dec('100'),
+            lineIds: ['l1'],
+          },
+        ],
+      });
+
+      expect(quote.totalCourierFee.toFixed(2)).toBe('100.00');
+    });
+
+    it('rethrows courier errors when unreachable in production', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      try {
+        process.env.NODE_ENV = 'production';
+
+        const rejectingClient = {
+          quote: vi.fn().mockRejectedValue(new Error('Pathao gateway timeout')),
+        } as unknown as PathaoPriceClient;
+
+        const service = new DeliveryQuoteService(rejectingClient, undefined, async () => 'token');
+
+        await expect(
+          service.quote({
+            ...baseInput,
+            parcels: [
+              {
+                vendorId: 'sellerA',
+                declaredWeightKg: dec('0.9'),
+                goodsAmount: dec('100'),
+                lineIds: ['l1'],
+              },
+            ],
+          }),
+        ).rejects.toThrow('Pathao gateway timeout');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
   });
 });

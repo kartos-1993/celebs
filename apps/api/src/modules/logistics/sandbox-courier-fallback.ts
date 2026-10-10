@@ -14,6 +14,10 @@
  * real settlement or talked about as though a parcel were moving.
  */
 
+import type { CourierQuote } from './adapters/pathao-price.client';
+
+import { Prisma } from '@/config/db.prisma';
+
 /** Never present in production, whatever the environment says. */
 export function isSandboxCourierFallbackAllowed(): boolean {
   return process.env.NODE_ENV !== 'production';
@@ -23,4 +27,18 @@ export function isSandboxCourierFallbackAllowed(): boolean {
 export function buildSandboxTrackingNumber(orderNumber: string, parcelIndex: number): string {
   const suffix = parcelIndex + 1;
   return `PATHAO-MOCK-${orderNumber}-${suffix}`;
+}
+
+/**
+ * A fallback delivery quote used strictly in non-production environments
+ * when Pathao's sandbox API or token service is down or unreachable.
+ */
+export function buildSandboxCourierQuote(): CourierQuote {
+  return {
+    finalPrice: new Prisma.Decimal('100.00'),
+    planId: 1,
+    codPercentage: new Prisma.Decimal('0.0100'),
+    codEnabled: true,
+    raw: { mock: true, source: 'sandbox-courier-fallback' },
+  };
 }
