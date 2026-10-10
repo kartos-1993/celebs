@@ -16,18 +16,17 @@ import { cartRepository } from './cart.repository';
 import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
-import { courierDestinationRepository } from '@/modules/logistics/courier-destination.repository';
-import { DeliveryPreviewService } from '@/modules/logistics/delivery-preview.service';
+import { resolveDeliveryPricing } from '@/modules/logistics/delivery-pricing';
 import {
   deliveryPricingRepository,
   UNRESOLVED_FREE_DELIVERY_THRESHOLD,
 } from '@/modules/logistics/delivery-pricing.repository';
 import type { QuoteSellerParcelInput } from '@/modules/logistics/delivery-quote.service';
-import { deliveryQuoteService } from '@/modules/logistics/delivery-quote.service';
 import {
   computeBillableLineWeightKg,
   sumBillableWeightKg,
 } from '@/modules/logistics/parcel-weight';
+import { addressRepository } from '@/modules/order/address/address.repository';
 import { platformSettingsService } from '@/modules/platform-settings/platform-settings.service';
 
 export class CartService {
@@ -229,20 +228,22 @@ export class CartService {
     // Only the district is needed now: the courier prices delivery, so the cart no
     // longer fetches rate bands to pick a fee from.
     const destination = await this.resolveDefaultDestination(userId);
+    const activeRates = await deliveryPricingRepository.activeRates(destination?.cityId ?? null);
+    const totalWeightKg = sumBillableWeightKg(previewParcels.map((p) => p.declaredWeightKg));
 
-    const preview = await new DeliveryPreviewService(
-      deliveryQuoteService,
-      courierDestinationRepository,
-      deliveryPricingRepository,
-      new Prisma.Decimal(policy.flatShippingFee),
-    ).preview({
+    const preview = resolveDeliveryPricing({
       subtotal: subtotalDecimal,
-      parcels: previewParcels,
-      logisticsZoneId: destination?.zoneId ?? null,
+      weightKg: totalWeightKg,
       isCod: false,
+      freeDeliveryThreshold: new Prisma.Decimal(
+        destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+      ),
+      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
+      rates: activeRates,
+      cityId: destination?.cityId ?? null,
     });
 
-    const shippingFee = preview.charge.toNumber();
+    const shippingFee = preview.shippingFee.toNumber();
 
     return {
       id: cartRecord.id,
@@ -276,21 +277,7 @@ export class CartService {
   private static async resolveDefaultDestination(userId: string | undefined) {
     if (!userId) return null;
 
-    const address = await prisma.address.findFirst({
-      where: { userId },
-      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-      select: {
-        logisticsZoneId: true,
-        logisticsZone: {
-          select: {
-            isActive: true,
-            city: {
-              select: { id: true, isActive: true, freeDeliveryThreshold: true },
-            },
-          },
-        },
-      },
-    });
+    const address = await addressRepository.findDefaultAddressWithZone(userId);
 
     if (
       !address?.logisticsZoneId ||

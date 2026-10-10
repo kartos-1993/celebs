@@ -12,15 +12,12 @@ import { resolvePathaoStoreId } from '../../logistics/adapters/pathao-token.prov
 import {
   CourierDestinationRepository,
   courierDestinationRepository,
-  UnresolvableDestinationError,
 } from '../../logistics/courier-destination.repository';
-import { deliveryCoverageRepository } from '../../logistics/delivery-coverage.repository';
-import { applyDeliveryPolicy } from '../../logistics/delivery-policy';
+import { resolveDeliveryPricing } from '../../logistics/delivery-pricing';
 import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repository';
 import { DeliveryQuoteService, deliveryQuoteService } from '../../logistics/delivery-quote.service';
 import { sumBillableWeightKg } from '../../logistics/parcel-weight';
 import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
-import { sellerParcelsFromLines } from '../../logistics/seller-parcels';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
@@ -239,101 +236,37 @@ export class CheckoutService {
       });
     }
 
-    // Money is decided here, not in the app. The cash-on-delivery ceiling comes from
-    // the commerce policy so an admin can change it without a deploy, and the
-    // delivery fee is resolved against the destination's own zone and the
-    // parcel's actual weight rather than a flat platform number.
-    //
-    // Last cheap chance to stop an order the courier will not take. After this the
-    // customer has paid and the parcel comes back, so the check belongs here and
-    // again at dispatch.
-    //
-    // UNVERIFIED is refused too. We may simply not know yet, but letting it
-    // through turns a gap in our own location data into a paid, undeliverable
-    // order - and the message asks the customer to re-select their district
-    // rather than implying they got something wrong.
-    const coverage = await deliveryCoverageRepository.coverageForAddress({
-      logisticsZoneId: address.logisticsZoneId,
-    });
-
-    if (coverage.status !== 'COVERED') {
-      const message =
-        coverage.status === 'UNCOVERED'
-          ? `We do not deliver to ${coverage.cityName ?? 'this area'} yet. Please choose a different delivery address.`
-          : 'We could not confirm delivery to this address. Please re-select your district so we can check.';
-
-      throw new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-
-    // The COD ceiling comes from the commerce policy so an admin can change it
-    // without a deploy.
-    //
-    // Delivery is priced by the courier, not by the rate card. The bands in
-    // ShippingRate were our estimate of what a courier charges, and they were
-    // wrong in both directions at once: measured, 0.9 kg is 150 to Pokhara and 210
-    // to Bardibas, and a basket holding two sellers' goods is two pickups. One
-    // hand-entered fee for that basket is a guaranteed loss on every multi-seller
-    // order, and a settlement that never matches the invoice.
-    //
-    // What is still ours: the free-delivery threshold, which is a commercial
-    // promise, and the COD ceiling. Both apply to the courier's number rather than
-    // replacing it, so the courier still costs what it costs when we give
-    // delivery away.
+    // Delivery pricing: calculated deterministically from the Platform Rate Card and
+    // Commerce Policy (isValley ? valleyFee : outerFee, plus free delivery threshold waiver).
+    // Checkout is 100% offline-resilient, never blocked by third-party 3PL courier downtime.
     const policy = await this.platformSettingsService.getCommercePolicy();
     const destination = await deliveryPricingRepository.thresholdForAddress({
       logisticsZoneId: address.logisticsZoneId,
     });
+    const activeRates = await deliveryPricingRepository.activeRates(destination.cityId);
 
-    // Fails closed. The courier answers an unknown zone with a successful, wrong
-    // price, so an address we cannot resolve to courier ids is refused here rather
-    // than quoted for.
-    //
-    // Surfaced as a 400 with something the customer can act on. Letting the domain
-    // error escape would answer a mistyped district with a 500, which reads as our
-    // fault and tells them nothing about what to change.
-    let courierDestination;
-    try {
-      courierDestination = await this.courierDestinationRepo.forZoneId(address.logisticsZoneId);
-    } catch (err: unknown) {
-      if (err instanceof UnresolvableDestinationError) {
-        throw new AppError(err.message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-      }
-      throw err;
-    }
-
-    const parcels = sellerParcelsFromLines(
-      itemDetails.map((item) => ({
-        lineId: item.inventoryId,
-        vendorId: item.vendorId,
-        quantity: item.quantity,
-        // Declared, not billable: the courier prices on the weight the seller
-        // states and has no volumetric input, so a volumetric maximum would charge
-        // the seller more for packing than the courier ever asked.
-        declaredWeightKg: item.unitWeightKg.mul(item.quantity),
-        unitPrice: item.unitPrice,
-      })),
+    const totalBillableWeight = sumBillableWeightKg(
+      itemDetails.map((item) => item.billableWeightKg),
     );
-
-    const quote = await this.deliveryQuoteSvc.quote({
-      parcels,
-      recipientCityExternalId: courierDestination.cityExternalId,
-      recipientZoneExternalId: courierDestination.zoneExternalId,
-      storeId: this.pathaoStoreId(),
-    });
 
     const isCod = paymentMethod === 'COD';
 
-    const delivery = applyDeliveryPolicy({
+    const delivery = resolveDeliveryPricing({
       subtotal: subtotalDecimal,
-      quotedCourierFee: quote.totalCourierFee,
-      freeDeliveryThreshold: destination.freeDeliveryThreshold,
+      weightKg: totalBillableWeight,
       isCod,
-      codPercentage: quote.codPercentage,
+      freeDeliveryThreshold: destination.freeDeliveryThreshold,
+      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
+      rates: activeRates,
+      cityId: destination.cityId,
     });
 
-    const shippingFeeDecimal = delivery.customerCharge;
-    const totalAmountDecimal = delivery.totalPayable;
-    const deliveryPricingSource = DeliveryPricingSource.COURIER_QUOTE;
+    const shippingFeeDecimal = delivery.shippingFee;
+    const totalAmountDecimal = subtotalDecimal.plus(shippingFeeDecimal);
+    const deliveryPricingSource =
+      delivery.source === 'RATE_CARD'
+        ? DeliveryPricingSource.RATE_CARD
+        : DeliveryPricingSource.FALLBACK;
 
     if (paymentMethod === 'COD' && !isCodAllowed(totalAmountDecimal.toNumber(), policy)) {
       throw new AppError(
@@ -359,16 +292,14 @@ export class CheckoutService {
         subtotal: subtotalDecimal,
         shippingFee: shippingFeeDecimal,
         totalAmount: totalAmountDecimal,
-        courierFee: delivery.courierCost,
+        courierFee: delivery.courierFee,
         absorbedShippingCost: delivery.absorbedCost,
         deliveryPricingSource,
-        matchedShippingRateId: null,
-        codHandlingFee: delivery.codHandlingFee,
-        amountToCollect: isCOD ? delivery.amountToCollect : null,
+        matchedShippingRateId: delivery.matchedRateId,
+        codHandlingFee: new Prisma.Decimal(0),
+        amountToCollect: isCOD ? totalAmountDecimal : null,
         logisticsZoneId: destination.zoneId,
-        totalBillableWeightKg: sumBillableWeightKg(
-          itemDetails.map((item) => item.billableWeightKg),
-        ),
+        totalBillableWeightKg: totalBillableWeight,
         orderStatus,
         paymentStatus,
         paymentMethod,

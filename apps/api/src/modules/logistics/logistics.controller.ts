@@ -48,7 +48,7 @@ export class LogisticsController {
     const { orderId } = req.params;
     const validated = dispatchOrderSchema.parse({
       orderId,
-      provider: req.body.provider || 'NEPAL_CAN_MOVE',
+      provider: req.body.provider || 'PATHAO',
       ...req.body,
     });
 
@@ -96,8 +96,15 @@ export class LogisticsController {
     // The courier proves itself before anything is parsed. Without the secret
     // configured (local development, tests) the route stays open; with it set,
     // a request that does not echo it is refused with a 401 and the body is
-    // never trusted.
+    // never trusted. In production or staging, an unconfigured secret fails closed.
     const secret = readPathaoWebhookSecret();
+    const isStagingOrProduction =
+      process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+
+    if (isStagingOrProduction && !secret) {
+      throw new UnauthorizedException('Courier webhook secret is not configured on the platform');
+    }
+
     if (secret) {
       const signature = req.headers[PATHAO_SIGNATURE_HEADER];
       const ok = verifyPathaoWebhookSignature({

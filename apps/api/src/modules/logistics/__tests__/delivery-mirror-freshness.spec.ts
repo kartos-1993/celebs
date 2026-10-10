@@ -1,67 +1,45 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeliverableZone } from '../../../../tests/support/delivery-zone';
-import {
-  deliveryCoverageRepository,
-  LOCATION_MIRROR_STALE_MS,
-} from '../delivery-coverage.repository';
+import { deliveryCoverageRepository } from '../delivery-coverage.repository';
 
 import prisma from '@/config/db.prisma';
 
 /**
- * The mirror is only allowed to assert that a zone is *still* served if it was
- * refreshed recently. Bootstrap rows are stamped with the seed time and never
- * refreshed, so a database running on reference data alone must eventually stop
- * claiming coverage rather than assert it forever.
+ * Geographic administrative districts in Nepal are static reference entities.
+ * Active bootstrap/seeded districts retain permanent delivery coverage and
+ * are never artificially invalidated by background sync timestamps.
  */
-describe('delivery mirror freshness', () => {
-  const eightDaysAgo = () =>
-    new Date(Date.now() - (LOCATION_MIRROR_STALE_MS + 24 * 60 * 60 * 1000));
-
-  it('still reports coverage while the mirror was refreshed inside the window', async () => {
+describe('Delivery Location Coverage Persistence', () => {
+  it('reports coverage for an active deliverable zone', async () => {
     const { zoneId } = await createDeliverableZone();
 
     const result = await deliveryCoverageRepository.coverageForAddress({ logisticsZoneId: zoneId });
 
     expect(result.status).toBe('COVERED');
+    expect(result.needsZoneSelection).toBe(false);
   });
 
-  it('stops claiming coverage once the mirror has not been refreshed for seven days', async () => {
-    const { zoneId } = await createDeliverableZone();
+  it('maintains coverage for seeded bootstrap districts regardless of sync timestamp age', async () => {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    await prisma.logisticsCity.updateMany({
-      where: { zones: { some: { id: zoneId } } },
-      data: { syncedAt: eightDaysAgo() },
-    });
-
-    const result = await deliveryCoverageRepository.coverageForAddress({ logisticsZoneId: zoneId });
-
-    expect(result.status).toBe('UNVERIFIED');
-    expect(result.needsZoneSelection).toBe(true);
-  });
-
-  // Bootstrap reference data is ours, not the courier's. It ages like anything
-  // else, so it cannot keep vouching for a district indefinitely.
-  it('stops claiming coverage for a district that was only ever seeded', async () => {
-    // Built here rather than taken from the shared fixture, which is courier-synced
-    // and therefore never stale. A bootstrapped city is the only kind of row this
-    // staleness rule exists for, so the test has to make one.
     const city = await prisma.logisticsCity.create({
       data: {
-        name: 'Stale Bootstrap City',
+        name: 'Persistent Bootstrap City',
         province: 'Bagmati',
         isValley: true,
         source: 'BOOTSTRAP',
-        syncedAt: eightDaysAgo(),
+        syncedAt: thirtyDaysAgo,
         freeDeliveryThreshold: 2500,
       },
       select: { id: true },
     });
+
     const zone = await prisma.logisticsZone.create({
       data: {
         cityId: city.id,
-        externalId: 880001,
-        name: 'Stale Bootstrap Zone',
+        externalId: 880099,
+        name: 'Persistent Bootstrap Zone',
       },
       select: { id: true },
     });
@@ -70,12 +48,45 @@ describe('delivery mirror freshness', () => {
       logisticsZoneId: zone.id,
     });
 
-    expect(result.status).toBe('UNVERIFIED');
+    expect(result.status).toBe('COVERED');
+    expect(result.needsZoneSelection).toBe(false);
   });
 
-  it('does not claim coverage for a database with no location data at all', async () => {
+  it('refuses coverage when no zone id is provided on the address', async () => {
     const result = await deliveryCoverageRepository.coverageForAddress({ logisticsZoneId: null });
 
     expect(result.status).toBe('UNVERIFIED');
+    expect(result.needsZoneSelection).toBe(true);
+  });
+
+  it('marks inactive zones as uncovered', async () => {
+    const city = await prisma.logisticsCity.create({
+      data: {
+        name: 'Inactive Test City',
+        province: 'Gandaki',
+        isValley: false,
+        isActive: false,
+        source: 'BOOTSTRAP',
+        syncedAt: new Date(),
+        freeDeliveryThreshold: 4000,
+      },
+      select: { id: true },
+    });
+
+    const zone = await prisma.logisticsZone.create({
+      data: {
+        cityId: city.id,
+        externalId: 880098,
+        name: 'Inactive Test Zone',
+        isActive: false,
+      },
+      select: { id: true },
+    });
+
+    const result = await deliveryCoverageRepository.coverageForAddress({
+      logisticsZoneId: zone.id,
+    });
+
+    expect(result.status).toBe('UNCOVERED');
   });
 });

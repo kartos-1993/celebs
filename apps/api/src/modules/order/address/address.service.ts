@@ -61,7 +61,7 @@ export class AddressService {
       throw new AppError('Address not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    return this.repo.deleteAddress(addressId);
+    return this.repo.deleteAddress(addressId, userId);
   }
 }
 

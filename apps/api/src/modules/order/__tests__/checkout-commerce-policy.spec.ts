@@ -107,9 +107,10 @@ function buildService(overrides: {
       findAddressById: vi.fn().mockResolvedValue({ id: ADDRESS_ID, isDefault: true }),
     } as never,
     { createPayment: vi.fn().mockResolvedValue({}) } as never,
-    { initiatePayment: vi.fn().mockResolvedValue({}) } as never,
-    { findOrderById: vi.fn().mockResolvedValue(null) } as never,
-    { sendOrderPlaced: vi.fn().mockResolvedValue(undefined) } as never,
+    {
+      notifyOrderStatus: vi.fn().mockResolvedValue(undefined),
+      notifyNewOrderForAdminsAndVendors: vi.fn().mockResolvedValue(undefined),
+    } as never,
     { getCommercePolicy: mockPolicy } as never,
   );
 
@@ -189,11 +190,7 @@ describe('checkout charges from the commerce policy', () => {
     expect(call?.shippingFee.toNumber()).toBe(150);
   });
 
-  it('ignores a flat fee left in the policy, because the courier prices delivery', () => {
-    // The commerce policy still carries flatShippingFee for the cart preview and
-    // for anything not yet migrated. It must not reach the order: a policy number
-    // quietly reappearing on a charged order would be the hand-entered estimate
-    // settling orders again, which is the whole failure this replaced.
+  it('applies an updated flat shipping fee from the commerce policy as fallback', () => {
     mockPolicy.mockResolvedValue({ codMaxLimit: 9000, flatShippingFee: 250 });
     mockThresholdForAddress.mockResolvedValue({
       cityId: 'city-1',
@@ -210,26 +207,32 @@ describe('checkout charges from the commerce policy', () => {
       .catch(() => undefined)
       .then(() => {
         const call = createOrderWithReservation.mock.calls[0]?.[0];
-        expect(call?.shippingFee.toNumber()).toBe(150);
+        expect(call?.shippingFee.toNumber()).toBe(250);
       });
   });
 
-  it('does not charge zero delivery when an admin set the flat fee to zero', () => {
-    // A zero flat fee used to mean free delivery. Free delivery is now a threshold
-    // decision made against a real courier cost, so a stale zero cannot grant it.
+  it('waives shipping fee when subtotal meets the free delivery threshold', () => {
     mockPolicy.mockResolvedValue({
       codMaxLimit: 5000,
       freeShippingThreshold: 3000,
-      flatShippingFee: 0,
+      flatShippingFee: 150,
     });
-    const { service, createOrderWithReservation } = buildService({ subtotal: 500 });
+    mockThresholdForAddress.mockResolvedValue({
+      cityId: 'city-1',
+      zoneId: 'zone-1',
+      cityName: 'Kathmandu',
+      isValley: true,
+      freeDeliveryThreshold: new Prisma.Decimal(3000),
+      absorbedCost: 0,
+    });
+    const { service, createOrderWithReservation } = buildService({ subtotal: 3500 });
 
     return service
       .checkout(USER_ID, baseInput)
       .catch(() => undefined)
       .then(() => {
         const call = createOrderWithReservation.mock.calls[0]?.[0];
-        expect(call?.shippingFee.toNumber()).toBe(150);
+        expect(call?.shippingFee.toNumber()).toBe(0);
       });
   });
 
@@ -265,7 +268,7 @@ describe('checkout charges from the commerce policy', () => {
     // Same order as the test above with the ceiling one paisa lower, so the total
     // sits just over it and cash on delivery must be refused.
     mockPolicy.mockResolvedValue({
-      codMaxLimit: 2171.49,
+      codMaxLimit: 2149.99,
       freeShippingThreshold: 3000,
       flatShippingFee: 150,
     });

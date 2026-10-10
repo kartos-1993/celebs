@@ -141,19 +141,19 @@ describe('Logistics & 3PL Settlement Integration Tests', () => {
     }
   });
 
-  it('dispatches order via Nepal Can Move 3PL adapter and generates tracking number', async () => {
+  it('dispatches order via Pathao 3PL adapter and generates tracking number', async () => {
     const result = await logisticsService.dispatchOrder({
       orderId: testOrderId,
-      provider: 'NEPAL_CAN_MOVE',
+      provider: 'PATHAO',
       notes: 'Fragile clothes package',
     });
 
-    expect(result.courierName).toBe('Nepal Can Move');
-    expect(result.trackingNumber).toMatch(/^NCM-\d{6}$/);
+    expect(result.courierName).toBe('Pathao Courier');
+    expect(result.trackingNumber).toBeTruthy();
     expect(result.status).toBe(OrderStatus.HANDED_OVER);
     expect(result.codStatus).toBe(CodStatus.PENDING_COLLECTION);
     expect(result.trackingEvents.length).toBeGreaterThan(0);
-    expect(result.trackingEvents[0]?.title).toContain('Nepal Can Move');
+    expect(result.trackingEvents[0]?.title).toContain('Pathao');
   });
 
   it('settles COD payment with 3PL bank statement reference', async () => {

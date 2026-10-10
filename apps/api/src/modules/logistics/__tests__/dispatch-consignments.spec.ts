@@ -274,4 +274,62 @@ describe('LogisticsService - Split Consignment Dispatch', () => {
     expect(createdConsignments[0]?.courierProvider).toBe('PATHAO');
     expect(createdConsignments[0]?.courierName).toBe('Pathao Courier');
   });
+
+  it('records actual courier fee from Pathao and posts courier fee ledger entries', async () => {
+    mockLogisticsRepo.findOrderForDispatch = vi.fn().mockResolvedValue(createMultiSellerOrder());
+
+    const mockPathaoClient = {
+      createOrder: vi.fn().mockImplementation(async (input: { merchantOrderId: string }) => ({
+        consignmentId: `PT-${input.merchantOrderId}`,
+        merchantOrderId: input.merchantOrderId,
+        deliveryFee: new Prisma.Decimal('160.00'),
+        trackingUrl: `https://pathao.com/track/?consignment_id=PT-${input.merchantOrderId}`,
+        orderStatus: 'Pending',
+        raw: {},
+      })),
+    };
+
+    const mockDestRepo = {
+      forZoneId: vi.fn().mockResolvedValue({
+        cityExternalId: 79,
+        zoneExternalId: 1326,
+        cityName: 'Kathmandu',
+        zoneName: 'Lazimpat',
+      }),
+    };
+
+    const mockTokens = {
+      getToken: vi.fn().mockResolvedValue('test-mock-token'),
+    };
+
+    const mockPostCourierFee = vi.fn().mockResolvedValue(undefined);
+
+    const service = new LogisticsService({
+      logisticsRepo: mockLogisticsRepo,
+      coverageRepo: mockCoverageRepo,
+      consignmentRepo: mockConsignmentRepo,
+      destinationRepo: mockDestRepo as never,
+      pathaoClient: mockPathaoClient as never,
+      tokenProvider: mockTokens as never,
+      postCourierFeeEntriesFn: mockPostCourierFee,
+    });
+
+    await service.dispatchOrder({
+      orderId: testOrderId,
+      provider: 'PATHAO',
+    });
+
+    // Courier fee on consignment should reflect actual courier quote (160), not estimated (180)
+    expect(createdConsignments[0]?.courierFee.toFixed(2)).toBe('160.00');
+    expect(createdConsignments[1]?.courierFee.toFixed(2)).toBe('160.00');
+
+    // Ledger posting should be called for both consignments with their tracking numbers
+    expect(mockPostCourierFee).toHaveBeenCalledTimes(2);
+    expect(mockPostCourierFee).toHaveBeenCalledWith({
+      orderId: testOrderId,
+      courier: 'Pathao Courier',
+      consignmentId: 'PT-CEL-261009-000001-1',
+      amount: expect.objectContaining({ toFixed: expect.any(Function) }),
+    });
+  });
 });

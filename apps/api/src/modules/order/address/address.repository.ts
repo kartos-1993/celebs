@@ -25,9 +25,27 @@ export class AddressRepository {
     });
   }
 
-  async deleteAddress(id: string) {
+  async deleteAddress(id: string, userId: string) {
     return prisma.address.delete({
-      where: { id },
+      where: { id, userId },
+    });
+  }
+
+  async findDefaultAddressWithZone(userId: string) {
+    return prisma.address.findFirst({
+      where: { userId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        logisticsZoneId: true,
+        logisticsZone: {
+          select: {
+            isActive: true,
+            city: {
+              select: { id: true, isActive: true, freeDeliveryThreshold: true },
+            },
+          },
+        },
+      },
     });
   }
 

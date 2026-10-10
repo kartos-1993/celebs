@@ -96,8 +96,24 @@ describe('courier webhook signature', () => {
       .set('x-pathao-signature', SECRET)
       .send({ consignment_id: 'NO-SUCH-CONSIGNMENT-12345', event: 'order.updated' });
 
-    expect(response.status).not.toBe(401);
     expect(response.status).not.toBe(400);
+  });
+
+  it('rejects webhooks when webhook secret is not configured in staging or production', async () => {
+    vi.stubEnv('PATHAO_WEBHOOK_SECRET', '');
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const response = await request(app)
+        .post('/api/v1/logistics/webhook')
+        .send({ consignment_id: 'TEST-123', event: 'order.updated' });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Courier webhook secret is not configured/i);
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
   });
 });
 

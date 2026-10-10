@@ -8,9 +8,9 @@ import {
   NotFoundException,
 } from '@celebs/shared-utils';
 
+import { postCourierFeeEntries } from '../finance/ledger/ledger-posting.service';
 import { isForwardOrderMove } from '../order/order.state-machine';
 
-import { nepalCanMoveAdapter } from './adapters/nepal-can-move.adapter';
 import { PathaoOrderClient, pathaoOrderClient } from './adapters/pathao-order.client';
 import {
   PathaoTokenProvider,
@@ -54,6 +54,7 @@ export interface LogisticsServiceDeps {
   destinationRepo?: CourierDestinationRepository;
   pathaoClient?: PathaoOrderClient;
   tokenProvider?: PathaoTokenProvider;
+  postCourierFeeEntriesFn?: typeof postCourierFeeEntries;
 }
 
 export class LogisticsService {
@@ -63,6 +64,7 @@ export class LogisticsService {
   private destinationRepo: CourierDestinationRepository;
   private pathaoClient: PathaoOrderClient;
   private tokenProvider: PathaoTokenProvider;
+  private postCourierFeeEntriesFn: typeof postCourierFeeEntries;
 
   constructor(deps: LogisticsServiceDeps = {}) {
     this.logisticsRepo = (deps.logisticsRepo ?? logisticsRepository) as LogisticsRepository;
@@ -72,6 +74,7 @@ export class LogisticsService {
     this.destinationRepo = deps.destinationRepo ?? courierDestinationRepository;
     this.pathaoClient = deps.pathaoClient ?? pathaoOrderClient;
     this.tokenProvider = deps.tokenProvider ?? pathaoTokenProvider;
+    this.postCourierFeeEntriesFn = deps.postCourierFeeEntriesFn ?? postCourierFeeEntries;
   }
 
   async dispatchOrder(payload: DispatchOrderType, actorStoreId: string | null = null) {
@@ -106,10 +109,7 @@ export class LogisticsService {
     // Fail closed: a courier we cannot actually book must never be recorded as
     // dispatched. The request validator already refuses these at the edge, so this
     // guards a caller that skipped validation.
-    const isCourierWithoutAdapter =
-      payload.provider !== 'MANUAL' &&
-      payload.provider !== 'NEPAL_CAN_MOVE' &&
-      payload.provider !== 'PATHAO';
+    const isCourierWithoutAdapter = payload.provider !== 'MANUAL' && payload.provider !== 'PATHAO';
 
     if (isCourierWithoutAdapter) {
       throw new BadRequestException(
@@ -201,11 +201,7 @@ export class LogisticsService {
     // ── Courier Consignment Booking ───────────────────────────────────────────
     const courierName =
       payload.manualCourierName ||
-      (payload.provider === 'PATHAO'
-        ? 'Pathao Courier'
-        : payload.provider === 'NEPAL_CAN_MOVE'
-          ? 'Nepal Can Move'
-          : 'Standard Delivery');
+      (payload.provider === 'PATHAO' ? 'Pathao Courier' : 'Standard Delivery');
     let estimatedDelivery: Date | undefined;
     const consignmentRecords: CreateConsignmentRecord[] = [];
     const isMultiParcel = plannedConsignments.length > 1;
@@ -233,23 +229,9 @@ export class LogisticsService {
       const planned = plannedConsignments[index]!;
       let trackingNumber = '';
       let trackingUrl = '';
+      let actualCourierFee = planned.courierFee;
 
-      if (payload.provider === 'NEPAL_CAN_MOVE') {
-        const shipment = await nepalCanMoveAdapter.createShipment({
-          orderId: `${order.id}-${index + 1}`,
-          recipientName: order.address.fullName,
-          recipientPhone: order.address.phone,
-          deliveryAddress: `${order.address.streetAddress}, ${order.address.cityArea}`,
-          city: order.address.cityArea,
-          district: order.address.district,
-          codAmount: planned.codAmount,
-          weightKg: planned.declaredWeightKg.toNumber(),
-        });
-
-        trackingNumber = shipment.trackingNumber;
-        trackingUrl = shipment.trackingUrl;
-        estimatedDelivery = shipment.estimatedDelivery;
-      } else if (payload.provider === 'PATHAO') {
+      if (payload.provider === 'PATHAO') {
         const amountToCollect =
           order.paymentMethod === 'COD' ? courierWholeRupees(planned.amountToCollect) : 0;
         const merchantOrderId = isMultiParcel
@@ -272,11 +254,15 @@ export class LogisticsService {
             accessToken: await this.tokenProvider.getToken(),
           });
 
+        let bookedFee: Prisma.Decimal | null = null;
         try {
           const shipment = await createOrder();
 
           trackingNumber = shipment.consignmentId;
           trackingUrl = shipment.trackingUrl;
+          if (shipment.deliveryFee && shipment.deliveryFee.gt(0)) {
+            bookedFee = shipment.deliveryFee;
+          }
         } catch (error: unknown) {
           // Outside production only: a sandbox outage should not stop a developer
           // testing fulfilment end to end. The consignment is real (it is what the
@@ -296,6 +282,8 @@ export class LogisticsService {
             'Pathao was unreachable; booked a SANDBOX consignment so local fulfilment can be tested',
           );
         }
+
+        actualCourierFee = bookedFee ?? planned.courierFee;
       } else {
         trackingNumber =
           isMultiParcel && payload.manualTrackingNumber
@@ -311,7 +299,7 @@ export class LogisticsService {
         courierName,
         trackingNumber,
         trackingUrl: trackingUrl || null,
-        courierFee: planned.courierFee,
+        courierFee: actualCourierFee,
         amountToCollect: planned.amountToCollect,
         codAmount: order.paymentMethod === 'COD' ? new Prisma.Decimal(planned.codAmount) : null,
         status: ConsignmentStatus.HANDED_OVER,
@@ -322,6 +310,25 @@ export class LogisticsService {
 
     // Persist consignments atomically
     await this.consignmentRepo.createConsignments(consignmentRecords);
+
+    // Post courier fee entries to finance ledger for accounting & variance reconciliation
+    for (const record of consignmentRecords) {
+      if (record.courierFee && record.courierFee.gt(0) && record.trackingNumber) {
+        try {
+          await this.postCourierFeeEntriesFn({
+            orderId: record.orderId,
+            courier: record.courierName,
+            consignmentId: record.trackingNumber,
+            amount: record.courierFee,
+          });
+        } catch (err) {
+          logger.error(
+            { orderId: record.orderId, trackingNumber: record.trackingNumber, err },
+            'Failed to post courier fee entry to ledger',
+          );
+        }
+      }
+    }
 
     // Summary tracking details for existing screens & email notifications
     const allTrackingNumbers = consignmentRecords
