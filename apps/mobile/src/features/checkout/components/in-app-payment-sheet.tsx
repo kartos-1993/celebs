@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React from 'react';
 import { ActivityIndicator, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, type WebViewNavigation } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
 import { X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -19,10 +19,7 @@ interface InAppPaymentSheetProps {
   onSuccess: (status: string) => void;
 }
 
-const parseStatus = (url: string): string => {
-  const match = url.match(/[?&]status=([^&]+)/);
-  return match?.[1] ? decodeURIComponent(match[1]) : 'COMPLETED';
-};
+import { usePaymentInterceptor } from '../hooks/use-payment-interceptor';
 
 export function InAppPaymentSheet({
   visible,
@@ -32,39 +29,7 @@ export function InAppPaymentSheet({
   onSuccess,
 }: InAppPaymentSheetProps) {
   const insets = useSafeAreaInsets();
-  const hasHandledResult = useRef(false);
-
-  useEffect(() => {
-    if (visible) {
-      hasHandledResult.current = false;
-    }
-  }, [visible]);
-
-  const interceptPaymentResult = useCallback(
-    (url: string): boolean => {
-      if (url.startsWith('celebs://') || url.includes('payment-result')) {
-        if (!hasHandledResult.current) {
-          hasHandledResult.current = true;
-          onSuccess(parseStatus(url));
-        }
-        return true;
-      }
-      return false;
-    },
-    [onSuccess],
-  );
-
-  const handleNavChange = useCallback(
-    (navState: WebViewNavigation) => {
-      interceptPaymentResult(navState.url);
-    },
-    [interceptPaymentResult],
-  );
-
-  const handleShouldStartLoad = useCallback(
-    (request: WebViewNavigation) => !interceptPaymentResult(request.url),
-    [interceptPaymentResult],
-  );
+  const { handleNavChange, handleShouldStartLoad } = usePaymentInterceptor(visible, onSuccess);
 
   if (!visible || !paymentUrl) return null;
 
