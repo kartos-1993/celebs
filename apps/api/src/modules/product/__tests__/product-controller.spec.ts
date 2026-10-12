@@ -125,6 +125,85 @@ describe('product.controller — thin controller (DTO parsing + delegation only)
     expect(getProductReviewQueue).not.toHaveBeenCalled();
   });
 
+  it('getProductById serves elevated detail to owning seller on admin surface', async () => {
+    const productId = '11111111-1111-4111-8111-111111111111';
+    const elevatedProduct = {
+      id: productId,
+      name: 'Seller Jacket',
+      status: 'published',
+      vendorId: 'store-9',
+      categoryId: 'cat-1',
+    };
+    const getProductById = vi.fn().mockResolvedValue(elevatedProduct);
+    const controller = new ProductController({ getProductById } as never);
+    const { res, json } = makeRes();
+
+    const req = makeReq({
+      params: { id: productId },
+      headers: { 'x-surface': 'admin' },
+      actor: {
+        userId: 'seller-user-1',
+        role: 'VENDOR',
+        permissions: ['PRODUCT_EDIT'],
+      },
+      store: { id: 'store-9' },
+    });
+
+    await controller.getProductById(req, res, vi.fn());
+
+    expect(getProductById).toHaveBeenCalledWith(productId, true);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: elevatedProduct,
+      }),
+    );
+  });
+
+  it('getProductById downgrades to storefront detail when seller requests another store product', async () => {
+    const productId = '22222222-2222-4222-8222-222222222222';
+    const foreignElevated = {
+      id: productId,
+      name: 'Other Product',
+      status: 'published',
+      vendorId: 'store-other',
+    };
+    const storefrontShape = {
+      id: productId,
+      name: 'Other Product',
+      status: 'published',
+      vendorId: 'store-other',
+    };
+    const getProductById = vi
+      .fn()
+      .mockResolvedValueOnce(foreignElevated)
+      .mockResolvedValueOnce(storefrontShape);
+    const controller = new ProductController({ getProductById } as never);
+    const { res, json } = makeRes();
+
+    const req = makeReq({
+      params: { id: productId },
+      headers: { 'x-surface': 'admin' },
+      actor: {
+        userId: 'seller-user-1',
+        role: 'VENDOR',
+        permissions: ['PRODUCT_EDIT'],
+      },
+      store: { id: 'store-my-store' },
+    });
+
+    await controller.getProductById(req, res, vi.fn());
+
+    expect(getProductById).toHaveBeenNthCalledWith(1, productId, true);
+    expect(getProductById).toHaveBeenNthCalledWith(2, productId, false);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: storefrontShape,
+      }),
+    );
+  });
+
   it('every controller action stays inside the thin-controller budget', () => {
     // AGENTS.md §12: controllers only validate DTOs, call the service and
     // return canonical envelopes (<40 lines, no business logic).

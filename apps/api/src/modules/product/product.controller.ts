@@ -73,7 +73,7 @@ export class ProductController {
     try {
       const { id } = idParamSchema.parse(req.params);
       const actor = req.actor;
-      const isElevated =
+      const isPlatformOrReviewer =
         isPlatformActor(actor) ||
         (!!actor &&
           can(
@@ -81,23 +81,34 @@ export class ProductController {
             Permission.PRODUCT_REVIEW,
             actor.permissions,
           ));
+      const isSellerAdmin =
+        !!actor &&
+        !!req.store?.id &&
+        (req.headers['x-surface'] === 'admin' ||
+          can(actor.role as Parameters<typeof can>[0], Permission.PRODUCT_EDIT, actor.permissions));
 
-      const product = await this.productService.getProductById(id, isElevated);
+      const fetchElevated = isPlatformOrReviewer || isSellerAdmin;
+      let product = await this.productService.getProductById(id, fetchElevated);
       if (!product) {
         throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
       }
 
-      const isPublished = product.status === PRODUCT_STATUS.PUBLISHED;
-      if (!isPublished) {
-        // Default-deny: only platform reviewers and the owning store may read unpublished products
-        const ownsIt = !!req.store?.id && String(product.vendorId) === String(req.store.id);
-        if (!isElevated && !ownsIt) {
+      const ownsIt = !!req.store?.id && String(product.vendorId) === String(req.store.id);
+
+      if (fetchElevated && !isPlatformOrReviewer && !ownsIt) {
+        product = await this.productService.getProductById(id, false);
+        if (!product) {
           throw new AppError(
             'Product not found',
             HTTPSTATUS.NOT_FOUND,
             ErrorCode.PRODUCT_NOT_FOUND,
           );
         }
+      }
+
+      const isPublished = product.status === PRODUCT_STATUS.PUBLISHED;
+      if (!isPublished && !isPlatformOrReviewer && !ownsIt) {
+        throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
       }
 
       sendSuccess(res, product, 'Product retrieved successfully');

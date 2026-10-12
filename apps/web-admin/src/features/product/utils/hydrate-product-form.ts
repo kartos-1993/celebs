@@ -330,10 +330,9 @@ function hydrateCoverGallery(product: AdminProductDetail, values: ProductFormVal
     values.mainImage = [...gallery];
     return;
   }
-  const legacy = product as unknown as Record<string, unknown>;
-  if (typeof legacy.mainImage === 'string' && legacy.mainImage) {
-    values.mainImages = [legacy.mainImage];
-    values.mainImage = [legacy.mainImage];
+  if (product.cover) {
+    values.mainImages = [product.cover];
+    values.mainImage = [product.cover];
   }
 }
 
@@ -345,21 +344,14 @@ export function hydrateProductForm(
   product: AdminProductDetail,
   existingFormValues: ProductFormValues = {},
 ): ProductFormValues {
-  const toId = (value: unknown): string => {
-    if (typeof value === 'string') return value;
-    if (value && typeof value === 'object') {
-      return String((value as { id?: string | number }).id ?? '');
-    }
-    return '';
-  };
-
   const values: ProductFormValues = {
     ...existingFormValues,
     name: product.name ?? '',
     brand: product.brand ?? '',
+    brandId: product.brandId ?? '',
     description: product.description ?? '',
-    categoryId: toId(product.categoryId),
-    subcategoryId: toId(product.subcategoryId || product.categoryId),
+    categoryId: product.categoryId ?? '',
+    subcategoryId: product.subcategoryId || product.categoryId || '',
     price: product.price != null ? Number(product.price) : undefined,
     discountedPrice: product.discountedPrice != null ? Number(product.discountedPrice) : undefined,
     status: (product.status?.toLowerCase() as ProductFormValues['status']) ?? 'draft',

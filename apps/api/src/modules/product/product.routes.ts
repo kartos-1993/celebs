@@ -82,18 +82,4 @@ productRoutes.patch(
   asyncHandler(productController.toggleProductActivation),
 );
 
-// Transitional aliases (preserved until apps/web-admin client is updated in Step 3)
-productRoutes.post(
-  '/:id/archive',
-  approvedStore,
-  requirePermissions(Permission.PRODUCT_DELETE),
-  asyncHandler(productController.archiveProduct),
-);
-productRoutes.post(
-  '/:id/toggle-activation',
-  approvedStore,
-  requirePermissions(Permission.PRODUCT_EDIT),
-  asyncHandler(productController.toggleProductActivation),
-);
-
 export default productRoutes;
