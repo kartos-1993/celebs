@@ -61,12 +61,14 @@ export async function seedProductsDenimJackets(): Promise<void> {
           { name: 'Shoulder', value: String(sc.shoulder || 45), unit: 'cm' },
           { name: 'Chest', value: String(sc.chest || 100), unit: 'cm' },
         ],
+        bodyMeasurements: [],
       }),
     );
 
     const colorVariants = (item.variants || []).map((v: Record<string, unknown>) => ({
       name: v.color || 'Default',
       colorCode: v.color === 'Black' ? '#000000' : v.color === 'Blue' ? '#0000FF' : '#888888',
+      swatch: Array.isArray(v.images) && v.images.length > 0 ? v.images[0] : '',
       images: v.images || [],
       stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
         size: sc.size,

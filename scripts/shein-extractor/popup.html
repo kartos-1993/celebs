@@ -3,34 +3,69 @@
   <head>
     <meta charset="utf-8" />
     <style>
+      :root {
+        --primary: #111827;
+        --accent: #4f46e5;
+        --accent-hover: #4338ca;
+        --success: #10b981;
+        --danger: #ef4444;
+        --bg-main: #f9fafb;
+        --card-bg: #ffffff;
+        --border-color: #e5e7eb;
+        --text-primary: #1f2937;
+        --text-muted: #6b7280;
+      }
       body {
-        width: 400px;
+        width: 380px;
         padding: 16px;
-        font-family:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         line-height: 1.4;
-        background: #fafafa;
-        color: #222;
+        background: var(--bg-main);
+        color: var(--text-primary);
         margin: 0;
+        box-sizing: border-box;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
       }
       h3 {
-        margin: 0 0 12px 0;
+        margin: 0;
         font-size: 15px;
         font-weight: 700;
         display: flex;
         align-items: center;
         gap: 6px;
+        color: var(--primary);
       }
-      .config-card {
-        background: #ffffff;
+      .badge-version {
+        font-size: 10px;
+        font-weight: 700;
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .card {
+        background: var(--card-bg);
         padding: 12px;
-        border: 1px solid #e5e5e5;
+        border: 1px solid var(--border-color);
         border-radius: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        font-size: 13px;
+        font-size: 12px;
+      }
+      .card-title {
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 2px;
       }
       .row {
         display: flex;
@@ -39,134 +74,204 @@
       }
       label {
         font-weight: 500;
-        color: #555;
+        color: var(--text-muted);
       }
-      input,
-      select {
+      input, select {
         padding: 5px 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
         font-size: 12px;
         background: #fff;
+        color: var(--text-primary);
+        outline: none;
+      }
+      input:focus, select:focus {
+        border-color: var(--accent);
       }
       input[type='number'] {
-        width: 65px;
+        width: 60px;
         text-align: center;
       }
-      .badge {
-        background: #e3f2fd;
-        color: #0d47a1;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
+      select {
+        width: 145px;
       }
       .status {
-        padding: 12px;
-        background: #eef9f1;
-        border-left: 4px solid #28a745;
+        padding: 10px 12px;
+        background: #ecfdf5;
+        border-left: 3px solid var(--success);
         border-radius: 6px;
-        font-size: 12px;
-        margin-bottom: 12px;
-        color: #155724;
-        line-height: 1.5;
+        font-size: 11px;
+        margin-bottom: 10px;
+        color: #065f46;
+        line-height: 1.4;
       }
       .status.alert {
-        background: #fff3cd;
-        border-left-color: #ffc107;
-        color: #856404;
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+        color: #92400e;
+      }
+      .status.error {
+        background: #fef2f2;
+        border-left-color: var(--danger);
+        color: #991b1b;
       }
       button {
         width: 100%;
-        padding: 10px;
-        margin-top: 8px;
+        padding: 8px 12px;
         cursor: pointer;
         border-radius: 6px;
         font-weight: 600;
         border: none;
-        font-size: 13px;
+        font-size: 12px;
         transition: all 0.15s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
       }
-      #collectBtn {
-        background: #111;
-        color: #fff;
-      }
-      #startBtn {
-        background: #28a745;
-        color: #fff;
-      }
-      #stopBtn {
-        background: #dc3545;
-        color: #fff;
-      }
-      #downloadSeedBtn {
-        background: #6f42c1;
-        color: #fff;
-      }
-      #downloadRawBtn {
-        background: #007bff;
-        color: #fff;
-      }
-      #resetBtn {
-        background: #eaeaea;
-        color: #666;
-        font-size: 11px;
-        margin-top: 14px;
-      }
       button:hover {
-        filter: brightness(1.1);
+        filter: brightness(1.08);
       }
       button:active {
         transform: scale(0.99);
       }
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-accent {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-success {
+        background: var(--success);
+        color: #fff;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-purple {
+        background: #8b5cf6;
+        color: #fff;
+      }
+      .btn-outline {
+        background: #ffffff;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+      }
+      .btn-subtle {
+        background: #f3f4f6;
+        color: var(--text-muted);
+        font-size: 11px;
+        margin-top: 8px;
+      }
+      .btn-group {
+        display: flex;
+        gap: 6px;
+      }
+      .preview-box {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 10px;
+        font-size: 11px;
+        margin-top: 6px;
+        display: none;
+      }
+      .preview-title {
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .preview-meta {
+        color: #475569;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
     </style>
   </head>
   <body>
-    <h3>🕵️ Shein Product Extractor (Celebs Edition)</h3>
+    <header>
+      <h3>🕵️ Shein Extractor</h3>
+      <span class="badge-version">Celebs v5.0</span>
+    </header>
 
-    <div class="config-card">
+    <!-- Global Extraction Config -->
+    <div class="card">
+      <div class="card-title">1. Configuration</div>
       <div class="row">
-        <label>Category Matching:</label>
-        <span class="badge">Auto-Maps to Celebs DB</span>
+        <label for="catalogTarget">Catalog Target:</label>
+        <select id="catalogTarget">
+          <option value="1p" selected>1P (Celebs Official)</option>
+          <option value="3p">3P (Brothers Collection)</option>
+          <option value="generic">Generic / Unbranded</option>
+        </select>
       </div>
       <div class="row">
         <label for="usdRate">USD → NPR Rate:</label>
         <input type="number" id="usdRate" value="135" min="50" max="250" />
       </div>
       <div class="row">
-        <label for="markup">Landed / Margin Multiplier:</label>
+        <label for="markup">Landed Multiplier:</label>
         <input type="number" id="markup" value="1.15" step="0.05" min="1.0" max="2.0" />
       </div>
       <div class="row">
         <label for="defaultStock">Initial Stock / SKU:</label>
         <input type="number" id="defaultStock" value="30" min="0" max="999" />
       </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="status" class="status">
+      Ready. Open any product page or category page on Shein.
+    </div>
+
+    <!-- Single Item Extraction Card -->
+    <div class="card">
+      <div class="card-title">2. Single Product Mode</div>
+      <button id="extractSingleBtn" class="btn-accent">⚡ Extract Active Product Tab</button>
+      
+      <div id="singlePreview" class="preview-box">
+        <div id="previewTitle" class="preview-title">Product Title</div>
+        <div class="preview-meta">
+          <div>📂 <b>Category:</b> <span id="previewCategory">-</span></div>
+          <div>💰 <b>Price:</b> NPR <span id="previewPrice">-</span> (USD <span id="previewUsd">-</span>)</div>
+          <div>🎨 <b>Variants:</b> <span id="previewVariants">-</span></div>
+        </div>
+        <div class="btn-group" style="margin-top: 8px;">
+          <button id="copySingleJsonBtn" class="btn-outline">📋 Copy JSON</button>
+          <button id="downloadSingleJsonBtn" class="btn-purple">📥 Download JSON</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Operations Card -->
+    <div class="card">
+      <div class="card-title">3. Multi-Item Auto-Batch</div>
       <div class="row">
         <label for="startOffset">Start Product #:</label>
         <input type="number" id="startOffset" value="1" min="1" />
       </div>
       <div class="row">
         <label for="batchSize">Batch Size:</label>
-        <input type="number" id="batchSize" value="5" min="1" max="25" />
+        <input type="number" id="batchSize" value="5" min="1" max="50" />
+      </div>
+      <button id="collectBtn" class="btn-primary" style="margin-top: 4px;">Collect Category Links</button>
+      <button id="startBtn" class="btn-success" style="display: none">Start Auto-Batch</button>
+      <button id="stopBtn" class="btn-danger" style="display: none">Pause Auto-Batch</button>
+
+      <div class="btn-group" id="downloadBatchGroup" style="display: none; margin-top: 4px;">
+        <button id="downloadSeedBtn" class="btn-purple">📥 Seed JSON</button>
+        <button id="downloadRawBtn" class="btn-outline">📄 Raw JSON</button>
       </div>
     </div>
 
-    <div id="status" class="status">
-      Navigate to a Shein category page and click Collect Product Links.
-    </div>
-
-    <button id="collectBtn">1. Collect Product Links</button>
-    <button id="startBtn" style="display: none">2. Start Auto-Batch</button>
-    <button id="stopBtn" style="display: none">Pause Execution</button>
-
-    <button id="downloadSeedBtn" style="display: none">📥 Download Celebs Seed JSON</button>
-    <button id="downloadRawBtn" style="display: none">📄 Download Raw Scraped JSON</button>
-
-    <button id="resetBtn">Clear & Reset Queue</button>
+    <button id="resetBtn" class="btn-subtle">Reset Queue & Settings</button>
 
     <script src="popup.js"></script>
   </body>

@@ -107,18 +107,24 @@ export async function seedProductsDenimJeans(): Promise<void> {
           { name: 'Length', value: String(sc.inseam || 76), unit: 'cm' },
           { name: 'Thigh', value: String(sc.thigh || 70), unit: 'cm' },
         ],
+        bodyMeasurements: [],
       }),
     );
 
-    const colorVariants = (item.variants || []).map((v: { color?: string; images?: string[] }) => ({
-      name: v.color || 'Default',
-      colorCode: resolveColorHex(v.color || 'Default'),
-      images: Array.isArray(v.images) ? v.images : [],
-      stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
-        size: String(sc.size || 'M'),
-        quantity: 25,
-      })),
-    }));
+    const colorVariants = (item.variants || []).map((v: { color?: string; images?: string[] }) => {
+      const cName = v.color || 'Default';
+      const imgs = Array.isArray(v.images) ? v.images : [];
+      return {
+        name: cName,
+        colorCode: resolveColorHex(cName),
+        swatch: imgs.length > 0 ? imgs[0] : '',
+        images: imgs,
+        stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
+          size: String(sc.size || 'M'),
+          quantity: 25,
+        })),
+      };
+    });
 
     const allVariantImages = (item.variants || []).flatMap((v: { images?: string[] }) =>
       Array.isArray(v.images) ? v.images : [],
@@ -133,6 +139,11 @@ export async function seedProductsDenimJeans(): Promise<void> {
     const productSlug = item.slug
       ? `${item.slug}-${i}`
       : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-jeans-${i}`;
+
+    const colorMeta: Record<string, unknown> = {};
+    for (const c of colorVariants) {
+      colorMeta[c.name] = { swatch: c.swatch, images: c.images, hot: false };
+    }
 
     const productData = {
       name: item.title,
@@ -149,6 +160,11 @@ export async function seedProductsDenimJeans(): Promise<void> {
       dynamicData: {
         values: item.attributes || {},
         measurements: item.measurements || {},
+        variants: { colorMeta },
+        uploadedAssets: {
+          mainImages,
+          colorMeta,
+        },
       },
       status: 'published',
     };
