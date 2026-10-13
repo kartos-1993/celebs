@@ -86,15 +86,15 @@ export const broadcastLogout = () => {
 };
 
 // ─── URL bypass list ──────────────────────────────────────────────────────────
-const AUTH_BYPASS_URLS = [
+export const AUTH_BYPASS_URLS = [
   '/auth/login',
   '/auth/register',
-  '/auth/password-forgot',
-  '/auth/password-reset',
+  '/auth/vendor/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/auth/verify-email',
   '/auth/refresh',
   '/auth/setup-superadmin',
-  '/auth/setup-admin',
   '/auth/setup-status',
 ];
 

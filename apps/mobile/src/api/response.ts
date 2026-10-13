@@ -9,7 +9,7 @@ import { ApiError } from './types';
  * default is 3 attempts) only delays the real error state and hammers a
  * resource that answered definitively.
  */
-const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 405, 409, 410, 422]);
+const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 405, 408, 409, 410, 422, 429]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

@@ -122,6 +122,7 @@ describe('isNonRetryableApiError', () => {
     expect(isNonRetryableApiError({ message: 'x', statusCode: 400 })).toBe(true);
     expect(isNonRetryableApiError({ message: 'x', statusCode: 403 })).toBe(true);
     expect(isNonRetryableApiError({ message: 'x', statusCode: 410 })).toBe(true);
+    expect(isNonRetryableApiError({ message: 'x', statusCode: 429 })).toBe(true);
   });
 
   it('keeps transient 5xx / network errors retryable', () => {

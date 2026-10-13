@@ -20,6 +20,19 @@ import { BootFallback } from '@/routes/boot-fallback';
 import { router } from '@/routes/router';
 
 const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (failureCount >= 2) return false;
+        const status = (error as { status?: number })?.status;
+        if (status && [400, 401, 403, 404, 409, 422, 429].includes(status)) {
+          return false;
+        }
+        return true;
+      },
+      staleTime: 30000,
+    },
+  },
   queryCache: new QueryCache({
     onError: (error, query) => {
       if (query?.meta?.suppressErrorToast) return;

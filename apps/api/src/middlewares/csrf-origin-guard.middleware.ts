@@ -24,9 +24,11 @@ const isAllowedOrigin = (origin: string): boolean => {
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 // Paths exempted from CSRF Origin check (e.g. gateway callbacks/webhooks with HMAC signatures)
-const EXEMPT_PATHS = [
-  '/api/v1/orders/payment/esewa/callback',
-  '/api/v1/orders/payment/khalti/callback',
+export const EXEMPT_PATHS = [
+  '/api/v1/orders/payments/esewa/success',
+  '/api/v1/orders/payments/esewa/failure',
+  '/api/v1/orders/payments/khalti/return',
+  '/api/v1/logistics/webhook',
 ];
 
 export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction): void => {

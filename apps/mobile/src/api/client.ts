@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
+import type { IApiResponse } from '@celebs/shared-types';
+
 import { API_CONFIG, getDevBaseUrl } from '../constants/config';
 
 import { ApiError } from './types';
@@ -234,13 +236,11 @@ apiClient.interceptors.response.use(
       unauthorizedHandler?.();
     }
 
-    const responseData = error.response?.data as
-      | { message?: string; code?: string; errors?: unknown }
-      | undefined;
+    const responseData = error.response?.data as IApiResponse | undefined;
     const formattedError: ApiError = {
       message: responseData?.message || error.message || 'An unexpected network error occurred.',
       statusCode: status,
-      code: responseData?.code || error.code,
+      code: (responseData?.errorCode as string) || error.code,
       errors: responseData?.errors,
     };
 
