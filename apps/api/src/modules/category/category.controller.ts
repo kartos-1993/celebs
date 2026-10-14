@@ -14,6 +14,8 @@ import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { CategoryService } from './category.service';
 
+import { sendCreated, sendSuccess } from '@/common/utils/response.util';
+
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
@@ -23,11 +25,7 @@ export class CategoryController {
 
       const result = await this.categoryService.getAllCategories(page, limit);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Categories retrieved successfully',
-        data: result,
-      });
+      return sendSuccess(res, result, 'Categories retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -40,11 +38,7 @@ export class CategoryController {
 
       const category = await this.categoryService.createCategory(validatedData);
 
-      res.status(HTTPSTATUS.CREATED).json({
-        success: true,
-        message: 'Category created successfully',
-        data: category,
-      });
+      return sendCreated(res, category, 'Category created successfully');
     } catch (error) {
       next(error);
     }
@@ -63,11 +57,7 @@ export class CategoryController {
         );
       }
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category retrieved successfully',
-        data: category,
-      });
+      return sendSuccess(res, category, 'Category retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -86,11 +76,7 @@ export class CategoryController {
         );
       }
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category retrieved successfully',
-        data: category,
-      });
+      return sendSuccess(res, category, 'Category retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -99,11 +85,7 @@ export class CategoryController {
   getCategoryTree = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const tree = await this.categoryService.getCategoryTree();
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category tree retrieved successfully',
-        data: tree,
-      });
+      return sendSuccess(res, tree, 'Category tree retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -112,11 +94,7 @@ export class CategoryController {
   getCategoryTreeWithAttributes = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const tree = await this.categoryService.getCategoryTreeWithAttributes();
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category tree with attributes retrieved successfully',
-        data: tree,
-      });
+      return sendSuccess(res, tree, 'Category tree with attributes retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -126,10 +104,7 @@ export class CategoryController {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       await this.categoryService.deleteCategoryWithCascade(id);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category deleted successfully',
-      });
+      return sendSuccess(res, null, 'Category deleted successfully');
     } catch (error) {
       next(error);
     }
@@ -142,11 +117,7 @@ export class CategoryController {
 
       const updatedCategory = await this.categoryService.updateCategory(id, validatedData);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category updated successfully',
-        data: updatedCategory,
-      });
+      return sendSuccess(res, updatedCategory, 'Category updated successfully');
     } catch (error) {
       next(error);
     }
@@ -156,10 +127,7 @@ export class CategoryController {
     try {
       const { slug } = categorySlugParamSchema.parse(req.params);
       const schema = await this.categoryService.getStorefrontSchema(slug);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        data: schema,
-      });
+      return sendSuccess(res, schema, 'Storefront schema retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -170,11 +138,7 @@ export class CategoryController {
       const { id } = categoryIdParamSchema.parse(req.params);
       const { attributes } = updateCategoryAttributesSchema.parse(req.body);
       const updated = await this.categoryService.updateCategoryAttributes(id, attributes);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Category attributes updated successfully',
-        data: updated,
-      });
+      return sendSuccess(res, updated, 'Category attributes updated successfully');
     } catch (error) {
       next(error);
     }
@@ -184,10 +148,7 @@ export class CategoryController {
     try {
       const { q, limit } = categorySearchQuerySchema.parse(req.query);
       const results = await this.categoryService.searchCategories(q, limit);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        data: results,
-      });
+      return sendSuccess(res, results, 'Category search results retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -197,10 +158,7 @@ export class CategoryController {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       const filters = await this.categoryService.getCategoryFilters(id);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        data: filters,
-      });
+      return sendSuccess(res, filters, 'Category filters retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -212,10 +170,7 @@ export class CategoryController {
       const vendorId =
         req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
       const recent = await this.categoryService.getRecentCategories(userId, vendorId);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        data: recent,
-      });
+      return sendSuccess(res, recent, 'Recent categories retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -228,11 +183,7 @@ export class CategoryController {
         req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
       const { categoryId } = recordRecentCategorySchema.parse(req.body);
       const recent = await this.categoryService.recordRecentCategory(userId, categoryId, vendorId);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Recent category updated',
-        data: recent,
-      });
+      return sendSuccess(res, recent, 'Recent category updated');
     } catch (error) {
       next(error);
     }

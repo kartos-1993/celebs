@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { CHECKOUT_QUERY_KEYS, type CheckoutRequest, placeOrder as placeOrderRequest } from '../api';
 import type { CheckoutPaymentMethod } from '../components/payment-method-selector';
+import { getIdempotencyKeyForIntent, resetIdempotencyKey } from '../utils/idempotency';
 
 import { getApiBaseUrl } from '@/api/client';
 import { showToast } from '@/components/toast/toast';
@@ -38,6 +39,7 @@ export function useCheckoutMutation() {
       return placeOrderRequest(payload);
     },
     onSuccess: async (data, variables) => {
+      resetIdempotencyKey();
       const placedOrderNumber = data.order?.orderNumber;
       const orderId = data.order?.id;
       await clearCart();
@@ -82,6 +84,7 @@ export function useCheckoutMutation() {
   });
 
   const handlePaymentResult = (status?: string) => {
+    resetIdempotencyKey();
     const orderNumber = activePayment?.orderNumber;
     setActivePayment(null);
     queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
@@ -105,7 +108,11 @@ export function useCheckoutMutation() {
       return;
     }
 
-    const idempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    if (mutation.isPending) {
+      return;
+    }
+
+    const idempotencyKey = getIdempotencyKeyForIntent(addressId, paymentMethod);
     mutation.mutate({
       addressId,
       paymentMethod,
