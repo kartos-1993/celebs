@@ -47,8 +47,13 @@ router.get(
       policy: DEFAULT_POLICY,
     });
 
-    res.setHeader('ETag', renderTag);
-    if (req.headers['if-none-match'] === renderTag) {
+    const quotedTag = `"${renderTag}"`;
+    res.setHeader('ETag', quotedTag);
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+    res.setHeader('Vary', 'Accept-Encoding');
+
+    const clientMatch = req.headers['if-none-match'];
+    if (clientMatch === quotedTag || clientMatch === renderTag) {
       res.status(304).end();
       return;
     }

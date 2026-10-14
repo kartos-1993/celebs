@@ -3,7 +3,6 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { randomUUID } from 'crypto';
 import express from 'express';
-import { json } from 'express';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
@@ -53,7 +52,7 @@ import wishlistRoutes from './modules/wishlist/wishlist.routes';
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(json());
+app.set('etag', false);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

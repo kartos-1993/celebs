@@ -1,4 +1,5 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 
 import { IApiResponse } from '@celebs/shared-types';
 
@@ -52,6 +53,57 @@ export function sendPrivateUncached<T>(
   res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   return sendSuccess(res, data, message, statusCode);
+}
+
+export interface PublicCacheETagOptions {
+  maxAge?: number;
+  sMaxAge?: number;
+  swr?: number;
+}
+
+/**
+ * Standardized response helper for public cached reads with stable data-derived RFC 9110 quoted ETags.
+ * Supports conditional GET revalidation (HTTP 304 Not Modified).
+ */
+export function sendPublicCachedWithETag<T>(
+  req: Request,
+  res: Response,
+  data: T,
+  options: PublicCacheETagOptions = {},
+  message = 'Success',
+): Response | void {
+  const { maxAge = 60, sMaxAge, swr } = options;
+
+  const canonicalData = JSON.stringify(data);
+  const hash = createHash('sha1').update(canonicalData).digest('hex').slice(0, 27);
+  const etag = `"${hash}"`;
+
+  const parts: string[] = ['public', `max-age=${maxAge}`];
+  if (typeof sMaxAge === 'number') parts.push(`s-maxage=${sMaxAge}`);
+  if (typeof swr === 'number') parts.push(`stale-while-revalidate=${swr}`);
+
+  res.setHeader('Cache-Control', parts.join(', '));
+  res.setHeader('ETag', etag);
+
+  const existingVary = res.getHeader('Vary');
+  if (!existingVary) {
+    res.setHeader('Vary', 'Accept-Encoding');
+  } else if (typeof existingVary === 'string' && !existingVary.includes('Accept-Encoding')) {
+    res.setHeader('Vary', `${existingVary}, Accept-Encoding`);
+  }
+
+  const clientETag = req.headers['if-none-match'];
+  if (
+    clientETag &&
+    (clientETag === etag ||
+      clientETag === `W/${etag}` ||
+      clientETag === hash ||
+      clientETag === `"${hash}"`)
+  ) {
+    return res.status(304).end();
+  }
+
+  return sendSuccess(res, data, message);
 }
 
 /**
