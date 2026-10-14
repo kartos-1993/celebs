@@ -39,7 +39,7 @@ export class AuthController {
 
   public login = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const userAgent = req.headers['user-agent'];
-    const surface = (req.headers['x-surface'] || req.body?.surface) as string | undefined;
+    const surface = req.headers['x-surface'] as string | undefined;
     const body = loginSchema.parse({
       ...req.body,
       userAgent,

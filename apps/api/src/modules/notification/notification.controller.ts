@@ -11,7 +11,12 @@ import {
 
 import { NotificationService, notificationService } from './notification.service';
 
-import { sendCreated, sendPaginated, sendSuccess } from '@/common/utils/response.util';
+import {
+  sendCreated,
+  sendPaginated,
+  sendPrivateUncached,
+  sendSuccess,
+} from '@/common/utils/response.util';
 
 export class NotificationController {
   constructor(private service: NotificationService = notificationService) {}
@@ -47,7 +52,7 @@ export class NotificationController {
     const userId = req.actor?.userId || req.user?.id || '';
     const storeId = req.store?.id || null;
     const result = await this.service.getUnreadCount(userId, storeId);
-    return sendSuccess(res, result, 'Unread notification count retrieved');
+    return sendPrivateUncached(res, result, 'Unread notification count retrieved');
   };
 
   markAsRead = async (req: Request, res: Response) => {

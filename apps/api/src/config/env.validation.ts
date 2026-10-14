@@ -1,89 +1,104 @@
 import { z } from 'zod';
 
-export const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(3333),
-  BASE_PATH: z.string().default('/api/v1'),
-  DATABASE_URL: z.string().min(1, { message: 'DATABASE_URL is required' }),
-  JWT_SECRET: z.string().min(32, { message: 'JWT_SECRET must be at least 32 characters long' }),
-  JWT_REFRESH_SECRET: z
-    .string({ required_error: 'JWT_REFRESH_SECRET is required' })
-    .min(32, { message: 'JWT_REFRESH_SECRET must be at least 32 characters long' }),
-  APP_ORIGIN: z
-    .string()
-    .default('http://localhost:5173,http://localhost:3333')
-    .transform((val) =>
-      val
-        .split(',')
-        .map((s) => s.trim().replace(/\/$/, ''))
-        .filter(Boolean),
-    ),
-  DIRECT_URL: z.string().optional().default(''),
-  SETUP_SECRET: z.string().min(32, { message: 'SETUP_SECRET must be at least 32 characters long' }),
-  JWT_EXPIRES_IN: z.string().optional().default('15m'),
-  JWT_REFRESH_EXPIRES_IN: z.string().optional().default('30d'),
-  SESSION_EXPIRES_IN_DAYS: z.coerce.number().min(1).default(30),
-  SMTP_HOST: z.string().optional().default('localhost'),
-  SMTP_PORT: z.coerce.number().optional().default(1025),
-  SMTP_USER: z.string().optional().default(''),
-  SMTP_PASS: z.string().optional().default(''),
-  SMTP_FROM: z.string().optional().default('info@celebs.com.np'),
-  SMTP_API_KEY: z.string().optional().default(''),
-  COOKIE_DOMAIN: z.string().optional().default(''),
-  REDIS_HOST: z
-    .string()
-    .default('localhost')
-    .transform((val) =>
-      val
-        .trim()
-        .replace(/^https?:\/\//, '')
-        .replace(/\/+$/, ''),
-    ),
-  REDIS_PORT: z.coerce.number().default(6379),
-  REDIS_PASSWORD: z.string().optional().default(''),
-  S3_REGION: z.string().optional().default('ap-south-1'),
-  S3_BUCKET_NAME: z.string().optional().default('celebs'),
-  S3_ENDPOINT: z.string().optional().default(''),
-  AWS_ACCESS_KEY_ID: z.string().optional().default(''),
-  AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
-  MEDIA_PUBLIC_BASE_URL: z.string().optional().default(''),
-  GOOGLE_WEB_CLIENT_ID: z.string().optional().default(''),
-  GOOGLE_ANDROID_CLIENT_ID: z.string().optional().default(''),
-  GOOGLE_IOS_CLIENT_ID: z.string().optional().default(''),
-  EXPO_PUSH_URL: z.string().url().default('https://exp.host/--/api/v2/push/send'),
-  EXPO_RECEIPTS_URL: z.string().url().default('https://exp.host/--/api/v2/push/getReceipts'),
-  EXPO_ACCESS_TOKEN: z.string().optional().default(''),
-  PATHAO_BASE_URL: z.string().optional().default(''),
-  PATHAO_CLIENT_ID: z.string().optional().default(''),
-  PATHAO_CLIENT_SECRET: z.string().optional().default(''),
-  PATHAO_USERNAME: z.string().optional().default(''),
-  PATHAO_PASSWORD: z.string().optional().default(''),
-  PATHAO_STORE_ID: z.string().optional().default(''),
-  PATHAO_WEBHOOK_SECRET: z.string().optional().default(''),
-  NCM_API_TOKEN: z.string().optional().default(''),
-  NCM_BASE_URL: z.string().optional().default('https://api.nepalcanmove.com/v1'),
-  APP_PAYMENT_RESULT_URL: z.string().optional().default('celebs://payment-result'),
-  ORDER_RESERVATION_TTL_HOURS: z.coerce.number().min(1).optional().default(2),
-  SLOW_QUERY_THRESHOLD_MS: z.coerce.number().positive().optional(),
-  WORKER_CONCURRENCY: z.coerce.number().min(1).optional().default(2),
-  PLATFORM_COMPANY_NAME: z.string().optional().default('Celebs Platform Private Limited'),
-  PLATFORM_SUPPORT_PHONE: z.string().optional().default('+977-1-4000000'),
-  PLATFORM_TAX_PAN: z.string().optional().default('PAN-CELEBS-DEV'),
-  PLATFORM_REG_NUMBER: z.string().optional().default('REG-CELEBS-DEV'),
-  ESEWA_PRODUCT_CODE: z.string().optional().default(''),
-  ESEWA_SECRET_KEY: z.string().optional().default(''),
-  ESEWA_BASE_URL: z.string().optional().default('https://rc-epay.esewa.com.np'),
-  ESEWA_SUCCESS_URL: z.string().optional().default(''),
-  ESEWA_FAILURE_URL: z.string().optional().default(''),
-  KHALTI_SECRET_KEY: z.string().optional().default(''),
-  KHALTI_BASE_URL: z.string().optional().default('https://dev.khalti.com'),
-  KHALTI_RETURN_URL: z.string().optional().default(''),
-  KHALTI_WEBSITE_URL: z.string().optional().default(''),
-  SENTRY_DSN: z.string().optional().default(''),
-  SENTRY_TRACES_SAMPLE_RATE: z.string().optional().default('0'),
-  RENDER_EXTERNAL_URL: z.string().optional().default(''),
-  RENDER_GIT_COMMIT: z.string().optional().default('local'),
-});
+export const envSchema = z
+  .object({
+    NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
+    PORT: z.coerce.number().default(3333),
+    BASE_PATH: z.string().default('/api/v1'),
+    DATABASE_URL: z.string().min(1, { message: 'DATABASE_URL is required' }),
+    JWT_SECRET: z.string().min(32, { message: 'JWT_SECRET must be at least 32 characters long' }),
+    JWT_REFRESH_SECRET: z
+      .string({ required_error: 'JWT_REFRESH_SECRET is required' })
+      .min(32, { message: 'JWT_REFRESH_SECRET must be at least 32 characters long' }),
+    APP_ORIGIN: z
+      .string()
+      .default('http://localhost:5173,http://localhost:3333')
+      .transform((val) =>
+        val
+          .split(',')
+          .map((s) => s.trim().replace(/\/$/, ''))
+          .filter(Boolean),
+      ),
+    DIRECT_URL: z.string().optional().default(''),
+    SETUP_SECRET: z
+      .string()
+      .min(32, { message: 'SETUP_SECRET must be at least 32 characters long' }),
+    JWT_EXPIRES_IN: z.string().optional().default('15m'),
+    JWT_REFRESH_EXPIRES_IN: z.string().optional().default('30d'),
+    SESSION_EXPIRES_IN_DAYS: z.coerce.number().min(1).default(30),
+    SMTP_HOST: z.string().optional().default('localhost'),
+    SMTP_PORT: z.coerce.number().optional().default(1025),
+    SMTP_USER: z.string().optional().default(''),
+    SMTP_PASS: z.string().optional().default(''),
+    SMTP_FROM: z.string().optional().default('info@celebs.com.np'),
+    SMTP_API_KEY: z.string().optional().default(''),
+    COOKIE_DOMAIN: z.string().optional().default(''),
+    REDIS_HOST: z
+      .string()
+      .default('localhost')
+      .transform((val) =>
+        val
+          .trim()
+          .replace(/^https?:\/\//, '')
+          .replace(/\/+$/, ''),
+      ),
+    REDIS_PORT: z.coerce.number().default(6379),
+    REDIS_PASSWORD: z.string().optional().default(''),
+    S3_REGION: z.string().optional().default('ap-south-1'),
+    S3_BUCKET_NAME: z.string().optional().default('celebs'),
+    S3_ENDPOINT: z.string().optional().default(''),
+    AWS_ACCESS_KEY_ID: z.string().optional().default(''),
+    AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
+    MEDIA_PUBLIC_BASE_URL: z.string().optional().default(''),
+    GOOGLE_WEB_CLIENT_ID: z.string().optional().default(''),
+    GOOGLE_ANDROID_CLIENT_ID: z.string().optional().default(''),
+    GOOGLE_IOS_CLIENT_ID: z.string().optional().default(''),
+    EXPO_PUSH_URL: z.string().url().default('https://exp.host/--/api/v2/push/send'),
+    EXPO_RECEIPTS_URL: z.string().url().default('https://exp.host/--/api/v2/push/getReceipts'),
+    EXPO_ACCESS_TOKEN: z.string().optional().default(''),
+    PATHAO_BASE_URL: z.string().optional().default(''),
+    PATHAO_CLIENT_ID: z.string().optional().default(''),
+    PATHAO_CLIENT_SECRET: z.string().optional().default(''),
+    PATHAO_USERNAME: z.string().optional().default(''),
+    PATHAO_PASSWORD: z.string().optional().default(''),
+    PATHAO_STORE_ID: z.string().optional().default(''),
+    PATHAO_WEBHOOK_SECRET: z.string().optional().default(''),
+    NCM_API_TOKEN: z.string().optional().default(''),
+    NCM_BASE_URL: z.string().optional().default('https://api.nepalcanmove.com/v1'),
+    APP_PAYMENT_RESULT_URL: z.string().optional().default('celebs://payment-result'),
+    ORDER_RESERVATION_TTL_HOURS: z.coerce.number().min(1).optional().default(2),
+    SLOW_QUERY_THRESHOLD_MS: z.coerce.number().positive().optional(),
+    WORKER_CONCURRENCY: z.coerce.number().min(1).optional().default(2),
+    PLATFORM_COMPANY_NAME: z.string().optional().default('Celebs Platform Private Limited'),
+    PLATFORM_SUPPORT_PHONE: z.string().optional().default('+977-1-4000000'),
+    PLATFORM_TAX_PAN: z.string().optional().default('PAN-CELEBS-DEV'),
+    PLATFORM_REG_NUMBER: z.string().optional().default('REG-CELEBS-DEV'),
+    ESEWA_PRODUCT_CODE: z.string().optional().default(''),
+    ESEWA_SECRET_KEY: z.string().optional().default(''),
+    ESEWA_BASE_URL: z.string().optional().default('https://rc-epay.esewa.com.np'),
+    ESEWA_SUCCESS_URL: z.string().optional().default(''),
+    ESEWA_FAILURE_URL: z.string().optional().default(''),
+    KHALTI_SECRET_KEY: z.string().optional().default(''),
+    KHALTI_BASE_URL: z.string().optional().default('https://dev.khalti.com'),
+    KHALTI_RETURN_URL: z.string().optional().default(''),
+    KHALTI_WEBSITE_URL: z.string().optional().default(''),
+    SENTRY_DSN: z.string().optional().default(''),
+    SENTRY_TRACES_SAMPLE_RATE: z.string().optional().default('0'),
+    RENDER_EXTERNAL_URL: z.string().optional().default(''),
+    RENDER_GIT_COMMIT: z.string().optional().default('local'),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.NODE_ENV === 'production' &&
+      (!data.COOKIE_DOMAIN || data.COOKIE_DOMAIN.trim() === '')
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'COOKIE_DOMAIN must be explicitly configured in production environment',
+        path: ['COOKIE_DOMAIN'],
+      });
+    }
+  });
 
 export type EnvConfig = z.infer<typeof envSchema>;
 

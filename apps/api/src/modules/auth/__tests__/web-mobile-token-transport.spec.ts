@@ -159,4 +159,42 @@ describe('Dual-transport authentication token delivery across client surfaces', 
     expect(res.body.data.refreshToken).toBeDefined();
     expect(typeof res.body.data.refreshToken).toBe('string');
   });
+
+  it('rejects token delivery in JSON body during refresh when cookie transport is present even if body surface is manipulated', async () => {
+    const rawPassword = 'Password123!';
+    const email = faker.internet.exampleEmail().toLowerCase();
+    const user = await prisma.user.create({
+      data: {
+        name: faker.person.fullName(),
+        email,
+        password: await hashValue(rawPassword),
+        isEmailVerified: true,
+      },
+    });
+    createdUserId = user.id;
+
+    const jti = randomUUID();
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        userAgent: 'Web Browser Exploiter',
+        rotatedRefreshId: jti,
+      },
+    });
+
+    const refreshToken = signJwtToken({ sessionId: session.id, jti }, refreshTokenSignOptions);
+
+    const res = await request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', `refreshToken=${refreshToken}`)
+      .send({ surface: 'mobile' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user).toBeDefined();
+    // Must NOT leak tokens to JSON body when cookie transport is active
+    expect(res.body.data.accessToken).toBeUndefined();
+    expect(res.body.data.refreshToken).toBeUndefined();
+  });
 });

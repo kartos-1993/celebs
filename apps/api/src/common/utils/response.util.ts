@@ -40,6 +40,21 @@ export function sendCreated<T>(res: Response, data: T, message = 'Created succes
 }
 
 /**
+ * Standardized response helper for sensitive, user-private reads (cart, orders, notifications, finance).
+ * Stamps strict Cache-Control: private, no-store, no-cache, must-revalidate and Pragma: no-cache.
+ */
+export function sendPrivateUncached<T>(
+  res: Response,
+  data: T,
+  message = 'Success',
+  statusCode = 200,
+): Response {
+  res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  return sendSuccess(res, data, message, statusCode);
+}
+
+/**
  * Standardized paginated response envelope.
  */
 export function sendPaginated<T>(

@@ -92,4 +92,37 @@ describe('Upload Rate Limiter User-Scoped Throttling', () => {
       .send({});
     expect(userBAllowed.status).toBe(200);
   });
+
+  it('isolates rate limit quotas between distinct bearer tokens that share identical JWT prefix headers', async () => {
+    const app = createTestApp();
+    const prefix = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.';
+    const tokenA = `${prefix}payload-and-signature-A`;
+    const tokenB = `${prefix}payload-and-signature-B`;
+
+    // Exhaust quota with tokenA (30 requests)
+    for (let i = 0; i < 30; i++) {
+      const res = await request(app)
+        .post('/media/upload')
+        .set('x-test-rate-limit', 'true')
+        .set('Authorization', tokenA)
+        .send({});
+      expect(res.status).toBe(200);
+    }
+
+    // 31st request with tokenA must be throttled
+    const tokenABlocked = await request(app)
+      .post('/media/upload')
+      .set('x-test-rate-limit', 'true')
+      .set('Authorization', tokenA)
+      .send({});
+    expect(tokenABlocked.status).toBe(429);
+
+    // Request with tokenB (which shares the first 32 chars) must NOT be throttled
+    const tokenBAllowed = await request(app)
+      .post('/media/upload')
+      .set('x-test-rate-limit', 'true')
+      .set('Authorization', tokenB)
+      .send({});
+    expect(tokenBAllowed.status).toBe(200);
+  });
 });

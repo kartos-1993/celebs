@@ -6,28 +6,28 @@ import { authService } from './auth.service';
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const authController = new AuthController(authService);
-import { authRateLimiter } from '@/middlewares/rate-limiter.middleware';
+import { credentialRateLimiter, sessionRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
 const authRoutes = Router();
 
-authRoutes.post('/register', authRateLimiter, authController.register);
-authRoutes.post('/vendor/register', authRateLimiter, authController.vendorRegister);
-authRoutes.post('/login', authRateLimiter, authController.login);
-authRoutes.post('/google', authRateLimiter, authController.googleSignIn);
-authRoutes.post('/refresh', authRateLimiter, authController.refreshToken);
-authRoutes.post('/verify-email', authRateLimiter, authController.verifyEmail);
+authRoutes.post('/register', credentialRateLimiter, authController.register);
+authRoutes.post('/vendor/register', credentialRateLimiter, authController.vendorRegister);
+authRoutes.post('/login', credentialRateLimiter, authController.login);
+authRoutes.post('/google', credentialRateLimiter, authController.googleSignIn);
+authRoutes.post('/refresh', sessionRateLimiter, authController.refreshToken);
+authRoutes.post('/verify-email', sessionRateLimiter, authController.verifyEmail);
 authRoutes.get('/verify-email', authController.verifyEmail);
-authRoutes.post('/resend-verification', authRateLimiter, authController.resendVerification);
+authRoutes.post('/resend-verification', sessionRateLimiter, authController.resendVerification);
 authRoutes.post('/logout', authenticateJWT, authController.logout);
-authRoutes.post('/setup-superadmin', authRateLimiter, authController.setupSuperadmin);
+authRoutes.post('/setup-superadmin', credentialRateLimiter, authController.setupSuperadmin);
 // Public read-only boolean — must not consume the credential-attempt budget.
 authRoutes.get('/setup-status', authController.getSetupStatus);
-authRoutes.post('/forgot-password', authRateLimiter, authController.forgotPassword);
-authRoutes.post('/reset-password', authRateLimiter, authController.resetPassword);
+authRoutes.post('/forgot-password', credentialRateLimiter, authController.forgotPassword);
+authRoutes.post('/reset-password', credentialRateLimiter, authController.resetPassword);
 authRoutes.post(
   '/change-password',
   authenticateJWT,
-  authRateLimiter,
+  credentialRateLimiter,
   authController.changePassword,
 );
 

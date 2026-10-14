@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { CoreOrderService, coreOrderService } from './order.service';
 
-import { sendSuccess } from '@/common/utils/response.util';
+import { sendPrivateUncached, sendSuccess } from '@/common/utils/response.util';
 
 export class CoreOrderController {
   constructor(private service: CoreOrderService = coreOrderService) {}
@@ -12,14 +12,14 @@ export class CoreOrderController {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const result = await this.service.getMyOrders(userId, page, limit);
-    return sendSuccess(res, result, 'Orders retrieved successfully');
+    return sendPrivateUncached(res, result, 'Orders retrieved successfully');
   };
 
   getOrderById = async (req: Request, res: Response) => {
     const userId = req.user?.id || '';
     const orderId = req.params.orderId || '';
     const order = await this.service.getOrderById(userId, orderId);
-    return sendSuccess(res, order, 'Order retrieved successfully');
+    return sendPrivateUncached(res, order, 'Order retrieved successfully');
   };
 
   cancelOrder = async (req: Request, res: Response) => {
