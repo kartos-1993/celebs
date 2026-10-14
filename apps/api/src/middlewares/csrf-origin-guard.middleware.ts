@@ -2,23 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 
 import { ErrorCode, ForbiddenException, logger } from '@celebs/shared-utils';
 
+import { isAllowedOrigin } from '@/common/http/origin.util';
 import { config } from '@/config/app.config';
 
 const allowedOriginsList = Array.isArray(config.APP_ORIGIN)
   ? config.APP_ORIGIN
   : [config.APP_ORIGIN];
-
-const isAllowedOrigin = (origin: string): boolean => {
-  if (allowedOriginsList.includes(origin)) {
-    return true;
-  }
-  if (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') {
-    return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
-      origin,
-    );
-  }
-  return false;
-};
 
 // Safe HTTP methods that do not modify state
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
