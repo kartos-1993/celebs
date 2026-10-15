@@ -1,131 +1,76 @@
-import fs from 'fs';
-import path from 'path';
-
+import { ProductService } from '../../modules/product/product.service';
 import prisma from '../../config/db.prisma';
-import { purgeProducts } from '../../modules/product/product-cache';
+import {
+  buildDenimJacketPayload,
+  readSeedDataset,
+  type DenimSeedItem,
+} from './product-seed-payloads';
+import {
+  resolveBrandBySlug,
+  resolveCategoryBySlug,
+  resolvePlatformStore,
+} from './seed-catalog-refs';
 
+const DATASET_FILE = 'denim_jackets.json';
+
+/**
+ * Seeds the denim-jacket dataset through ProductService — the single source of
+ * truth — so vendor/brand/audit fields, inventory rows, the publish floor and
+ * brand guards all match the Web Admin form path.
+ *
+ * Re-runs are idempotent by product name. Rows created by the retired
+ * raw-Prisma seed (vendorId/brandId/createdBy null, no inventory) are rebuilt
+ * by `npm run seed:reset`, which purges the catalog and reseeds through the
+ * same service path.
+ */
 export async function seedProductsDenimJackets(): Promise<void> {
-  console.log('\n🧥 Seeding Denim Jackets Products via PostgreSQL Prisma...');
+  console.log('\n🧥 Seeding Denim Jackets via ProductService...');
 
-  // 1. Find "Men Denim Jackets" subcategory (Level 3 under Men Denim)
-  let denimJacketCat = await prisma.category.findFirst({
-    where: {
-      OR: [{ slug: 'men-denim-jackets' }, { name: 'Men Denim Jackets' }],
-    },
-  });
+  const items = readSeedDataset<DenimSeedItem>(DATASET_FILE);
+  const store = await resolvePlatformStore();
+  const brand = await resolveBrandBySlug('celebs-denim');
+  const category = await resolveCategoryBySlug('men-denim-jackets');
+  const refs = {
+    brandId: brand.id,
+    brandName: brand.name,
+    categoryId: category.parentCategory ?? category.id,
+    subcategoryId: category.id,
+  };
 
-  if (!denimJacketCat) {
-    const menDenim = await prisma.category.findFirst({
-      where: { slug: 'men-denim' },
+  const productService = new ProductService();
+  let created = 0;
+  let skipped = 0;
+
+  for (const [index, item] of items.entries()) {
+    const existing = await prisma.product.findFirst({
+      where: { name: item.title },
+      select: { id: true },
     });
-
-    if (menDenim) {
-      denimJacketCat = await prisma.category.create({
-        data: {
-          name: 'Men Denim Jackets',
-          slug: 'men-denim-jackets',
-          level: 3,
-          parentCategory: menDenim.id,
-          path: `${menDenim.path}/men-denim-jackets`,
-          isActive: true,
-          sizeChartColumns: ['Shoulder', 'Chest', 'Length', 'Sleeve Length'],
-          bodyChartColumns: ['Height', 'Bust', 'Waist Size', 'Hip Size'],
-        },
-      });
-    } else {
-      throw new Error('Category "Men Denim Jackets" not found. Run seedCategoriesMen first.');
+    if (existing) {
+      skipped++;
+      continue;
     }
-  }
 
-  const categoryId = denimJacketCat.id;
-
-  // 2. Read json dataset
-  const jsonPath = path.join(__dirname, 'data', 'denim_jackets.json');
-  if (!fs.existsSync(jsonPath)) {
-    console.warn(`  └─ Dataset not found at: ${jsonPath}. Skipping.`);
-    return;
-  }
-
-  const rawData = fs.readFileSync(jsonPath, 'utf-8');
-  const items = JSON.parse(rawData);
-
-  let count = 0;
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-
-    const sizesPayload = (item.measurements?.sizeChart || []).map(
-      (sc: Record<string, unknown>) => ({
-        name: sc.size,
-        productMeasurements: [
-          { name: 'Shoulder', value: String(sc.shoulder || 45), unit: 'cm' },
-          { name: 'Chest', value: String(sc.chest || 100), unit: 'cm' },
-        ],
-        bodyMeasurements: [],
-      }),
+    await productService.createProduct(
+      buildDenimJacketPayload(item, index, refs),
+      store.userId,
+      store.id,
+      store.shopName,
+      'SUPERADMIN',
     );
-
-    const colorVariants = (item.variants || []).map((v: Record<string, unknown>) => ({
-      name: v.color || 'Default',
-      colorCode: v.color === 'Black' ? '#000000' : v.color === 'Blue' ? '#0000FF' : '#888888',
-      swatch: Array.isArray(v.images) && v.images.length > 0 ? v.images[0] : '',
-      images: v.images || [],
-      stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
-        size: sc.size,
-        quantity: 20,
-      })),
-    }));
-
-    const mainImages =
-      item.variants?.[0]?.images?.length > 0
-        ? item.variants[0].images
-        : ['https://images.unsplash.com/photo-1576995853123-5a10305d93c0?q=80&w=800'];
-
-    const price = 2400 + ((i * 150) % 2000);
-    const discountedPrice = Math.round(price * 0.85);
-    const productSlug = item.slug
-      ? `${item.slug}-${i}`
-      : `${item.title.toLowerCase().replace(/[^\w]+/g, '-')}-${i}`;
-
-    await prisma.product.upsert({
-      where: { slug: productSlug },
-      update: {
-        name: item.title,
-        brand: item.title.split(' ')[0] || 'Celebs',
-        description: `Premium denim jacket.`,
-        price,
-        discountedPrice,
-        categoryId,
-        sizes: sizesPayload,
-        colorVariants,
-        mainImages,
-        status: 'published',
-      },
-      create: {
-        name: item.title,
-        slug: productSlug,
-        brand: item.title.split(' ')[0] || 'Celebs',
-        description: `Premium denim jacket.`,
-        price,
-        discountedPrice,
-        categoryId,
-        sizes: sizesPayload,
-        colorVariants,
-        mainImages,
-        status: 'published',
-      },
-    });
-
-    count++;
+    created++;
   }
 
-  // Seeds bypass service-layer guarantees by design: refresh cached truth
-  // once at the end so reseeds never leave ghost grid/detail entries.
-  const seeded = await prisma.product.findMany({
-    where: { categoryId },
-    select: { id: true },
-  });
-  purgeProducts(seeded.map((p) => p.id));
+  console.log(`✅ Denim Jackets: ${created} created, ${skipped} already present.`);
+}
 
-  console.log(`✅ Seeded Denim Jackets in Postgres: ${count} processed.`);
+if (require.main === module) {
+  seedProductsDenimJackets()
+    .catch((err) => {
+      console.error('❌ Failed to seed denim jackets:', err);
+      process.exit(1);
+    })
+    .finally(() => {
+      prisma.$disconnect();
+    });
 }
