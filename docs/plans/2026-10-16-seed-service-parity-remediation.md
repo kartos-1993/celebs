@@ -117,12 +117,37 @@ Sleeve Length` — matches `seed-categories-men.ts:291` and the men's-tops conve
 ## §6 — Verification
 
 ```bash
+pnpm --filter shared-utils build         # @celebs/* are consumed from dist by apps/api
 pnpm --filter api typecheck
 pnpm --filter api lint
-pnpm --filter shared-utils typecheck   # enum addition
+pnpm exec vitest run src/db/seed/__tests__/product-seed-payloads.spec.ts
 
 # Manual (needs local DB):
 npm run seed            # fails fast without superadmin, works after setup
 npm run seed:reset      # twice in a row, with cart/order history present
 npm run seed:products-denim-jackets   # standalone runner now executes
 ```
+
+## §7 — Execution log (2026-10-16)
+
+Commits on `fix/seed-service-parity`:
+
+| Commit     | Scope                                                               |
+| ---------- | ------------------------------------------------------------------- |
+| `72f1b88a` | this brief                                                          |
+| `1444c3c3` | §1 — platform-store guards (`PLATFORM_VENDOR_NOT_PROVISIONED`, 503) |
+| `8e88485e` | §2 — FK-safe purge before the category wipe                         |
+| `8a150b80` | §3 — catalog through `ProductService`, shared builders, mock fix    |
+| `d4ec1eed` | §4 — `createInventoryIfAbsent`, payload-builder spec                |
+
+Verified:
+
+- `pnpm exec vitest run src/db/seed/__tests__/product-seed-payloads.spec.ts` → 7/7 green.
+- Every file touched by this branch typechecks clean in both `tsconfig.app.json` and
+  `tsconfig.spec.json`; the removed jeans-seed `dynamicData` error is gone.
+- `pnpm typecheck` as a whole is still red from **pre-existing** errors this branch does not touch:
+  `brand.controller` ×8, `category.controller` ×14, `platform-settings.controller` ×7,
+  `media.controller` ×1, `media-proxy-security.spec` ×4, `tests/support/http-headers` ×2,
+  `private-endpoints-cache.spec` ×1, `conditional-get-revalidation.spec` ×1.
+- Still to run manually against a live Postgres + Redis: the three commands in the "Manual" block
+  above (fresh-DB fail-fast, double `seed:reset` with cart/order history, standalone runner).
