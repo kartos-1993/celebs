@@ -31,11 +31,11 @@ document as implementation proceeds.
 **Goal:** no path may produce an FK violation because the 1P store does not exist; failure must be a
 typed, actionable domain error.
 
-- `apps/api/src/common/constants/platform-vendor.ts`
-  - Extract `findSuperadminUserId(client)`; reuse it inside `ensurePlatformVendor`.
 - `apps/api/src/db/seed/index.ts`
-  - Fail fast at the top of `runMasterSeed()` with an actionable message when no SUPERADMIN exists
-    (the 1P store cannot be provisioned without one), before any other step runs.
+  - Fail fast when `ensurePlatformVendor` returns null (no superadmin can own the 1P store) before
+    any other step runs.
+- `apps/api/src/main.ts`
+  - Log a boot warning when the 1P store is deferred (no superadmin) instead of staying silent.
 - `packages/shared-utils/src/enums/error-code.enum.ts`
   - Add `PLATFORM_VENDOR_NOT_PROVISIONED`.
 - `apps/api/src/modules/vendor/vendor.repository.ts`

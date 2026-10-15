@@ -107,6 +107,14 @@ export class VendorRepository {
     });
   }
 
+  /** Id-only existence check; full profile reads use findByUserId/findByIdWithUser. */
+  public async findById(id: string): Promise<{ id: string } | null> {
+    return prisma.vendorProfile.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+  }
+
   public async findStatusById(id: string) {
     return prisma.vendorProfile.findUnique({
       where: { id },

@@ -24,7 +24,12 @@ export async function runMasterSeed(): Promise<void> {
   try {
     // Step 0: 1P Canonical Platform Store & Brand Registry
     console.log('\n🏪 Ensuring 1P Platform Vendor Profile...');
-    await ensurePlatformVendor(prisma);
+    const platformVendor = await ensurePlatformVendor(prisma);
+    if (!platformVendor) {
+      throw new Error(
+        'The 1P platform store is not provisioned yet and no SUPERADMIN exists to own it. Complete the initial superadmin setup, then re-run the master seed.',
+      );
+    }
     await seedBrands();
 
     // Step 1: Commerce Policy (COD limit, delivery fee fallback)
