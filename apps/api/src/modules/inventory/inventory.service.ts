@@ -98,7 +98,9 @@ export class InventoryService {
 
     const sku = generateSku({ brandPrefix: 'c' });
 
-    const created = await inventoryRepository.createInventory({
+    // Conflict-safe: a concurrent fallback for the same variant/size returns
+    // the winning row instead of failing the request with P2002.
+    const inventory = await inventoryRepository.createInventoryIfAbsent({
       productId,
       colorVariantName,
       size,
@@ -107,14 +109,14 @@ export class InventoryService {
       reservedQuantity: 0,
     });
 
-    const available = created.quantity - created.reservedQuantity;
+    const available = inventory.quantity - inventory.reservedQuantity;
     return {
-      inventoryId: created.id,
-      productId: created.productId,
-      colorVariantName: created.colorVariantName,
-      size: created.size,
-      quantity: created.quantity,
-      reservedQuantity: created.reservedQuantity,
+      inventoryId: inventory.id,
+      productId: inventory.productId,
+      colorVariantName: inventory.colorVariantName,
+      size: inventory.size,
+      quantity: inventory.quantity,
+      reservedQuantity: inventory.reservedQuantity,
       availableQuantity: available > 0 ? available : 0,
       isAvailable: available > 0,
     };
