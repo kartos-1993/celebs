@@ -1,6 +1,7 @@
 import { ensurePlatformVendor } from '../../common/constants/platform-vendor';
 import prisma from '../../config/db.prisma';
 import { connectDb, disconnectDb } from './config';
+import { purgeAllTestData } from './purge-catalog';
 import { seedBrands } from './seed-brands';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
 import { seedCommerceSettings } from './seed-commerce-settings';
@@ -41,18 +42,21 @@ export async function runMasterSeed(): Promise<void> {
     // Step 2: Option Sets (Colors, Sizes, Shoe Sizes)
     await seedOptionSets();
 
+    // Step 3 prerequisite: the --reset purge must run BEFORE the category
+    // wipe. Product.categoryId is ON DELETE RESTRICT and cascaded
+    // ProductInventory rows are pinned by CartItem/OrderItem RESTRICT FKs, so
+    // the old "wipe products after categories" order failed on any database
+    // that had ever been used. Same FK-safe purge as `npm run clean:reseed`.
+    if (isReset) {
+      await purgeAllTestData();
+    }
+
     // Step 3: Category Hierarchy & Schema Attributes
     await seedCategoriesMen(isReset);
     await seedCategoriesJewelry();
 
     // Step 4: Products Catalog
-    if (isReset) {
-      console.log('\n⚠️ [--reset active] Wiping Product collection...');
-      const prisma = (await import('../../config/db.prisma')).default;
-      await prisma.product.deleteMany({});
-    }
-
-    await seedProductsMockCatalog(false);
+    await seedProductsMockCatalog();
     await seedProductsDenimJackets();
     await seedProductsDenimJeans();
 
