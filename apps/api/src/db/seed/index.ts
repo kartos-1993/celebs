@@ -8,9 +8,7 @@ import { seedCommerceSettings } from './seed-commerce-settings';
 import { seedLogisticsLocations } from './seed-logistics-locations';
 import { seedCategoriesMen } from './seed-categories-men';
 import { seedOptionSets } from './seed-option-sets';
-import { seedProductsDenimJackets } from './seed-products-denim-jackets';
-import { seedProductsDenimJeans } from './seed-products-denim-jeans';
-import { seedProductsMockCatalog } from './seed-products-mock-catalog';
+import { seedProducts } from './seed-products';
 import { seedStorefrontShortcuts } from './seed-storefront-shortcuts';
 
 export async function runMasterSeed(): Promise<void> {
@@ -46,7 +44,7 @@ export async function runMasterSeed(): Promise<void> {
     // wipe. Product.categoryId is ON DELETE RESTRICT and cascaded
     // ProductInventory rows are pinned by CartItem/OrderItem RESTRICT FKs, so
     // the old "wipe products after categories" order failed on any database
-    // that had ever been used. Same FK-safe purge as `npm run clean:reseed`.
+    // that had ever been used. Same FK-safe purge as `npm run seed:reset`.
     if (isReset) {
       await purgeAllTestData();
     }
@@ -55,10 +53,8 @@ export async function runMasterSeed(): Promise<void> {
     await seedCategoriesMen(isReset);
     await seedCategoriesJewelry();
 
-    // Step 4: Products Catalog
-    await seedProductsMockCatalog();
-    await seedProductsDenimJackets();
-    await seedProductsDenimJeans();
+    // Step 4: Products Catalog (single dataset + single importer)
+    await seedProducts();
 
     // Step 5: Storefront Shortcuts
     await seedStorefrontShortcuts(isReset);

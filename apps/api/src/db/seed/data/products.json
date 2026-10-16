@@ -1,78 +1,289 @@
 [
   {
-    "sku": "sm260601160541553032738",
-    "title": "Manfinity EMRG Men's American Street Style Street Wear Paint Splatter Distressed Denim Jeans For Daily Wear Rave Light Blue Autumn",
-    "slug": "manfinity-emrg-mens-american-street-style-street-wear-paint-splatter-distressed-denim-jeans-for-daily-wear-rave-light-blue-autumn",
-    "category": "Denim Jeans",
+    "name": "Manfinity EMRG Men's Flap Pocket Button Front Denim Jacket With Fleece Lining",
+    "categorySlug": "men-denim-jackets",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Engineered heavy-retention denim jacket. Denim. Streetwear.",
+    "price": 2800,
+    "discountedPrice": 2380,
+    "featured": true,
+    "tags": ["denim", "jacket", "outerwear", "men", "winter"],
+    "skuPrefix": "CEL-JKT",
+    "stockPerSize": 25,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Pocket", "Zipper", "Ripped"],
-      "patternType": "Graphic, Retro",
-      "style": "Avant-Garde - Street Casual",
-      "idealFor": "conventional",
-      "color": "Multicolor",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Loose",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "73% Cotton, 18% Polyester, 9% Viscose",
-      "careInstructions": "Hand wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Single Breasted",
+      "Details": ["Pocket", "Button", "Flap Pocket", "Fleece Lined"],
+      "Pattern Type": "Plain",
+      "Style": "Streetwear",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "100% Cotton, Lining: 100% Polyester",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Fleece Lined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 184.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 78,
-          "hip": 104,
-          "inseam": 75.4,
-          "thigh": 68.8
-        },
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 108,
-          "inseam": 76.2,
-          "thigh": 71.4
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 112,
-          "inseam": 77.0,
-          "thigh": 74.0
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 117,
-          "inseam": 77.8,
-          "thigh": 77.3
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 122,
-          "inseam": 78.6,
-          "thigh": 80.6
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 127,
-          "inseam": 79.4,
-          "thigh": 83.9
-        }
-      ]
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Shoulder": 48,
+        "Bust": 110,
+        "Length": 66,
+        "Sleeve Length": 63
+      },
+      {
+        "Size": "M",
+        "Shoulder": 50,
+        "Bust": 115,
+        "Length": 68,
+        "Sleeve Length": 64
+      },
+      {
+        "Size": "L",
+        "Shoulder": 52,
+        "Bust": 120,
+        "Length": 70,
+        "Sleeve Length": 65
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 54,
+        "Bust": 125,
+        "Length": 72,
+        "Sleeve Length": 66
+      },
+      {
+        "Size": "XXL",
+        "Shoulder": 56,
+        "Bust": 130,
+        "Length": 74,
+        "Sleeve Length": 67
+      }
+    ],
+    "variants": [
+      {
+        "color": "Blue",
+        "colorCode": "#1E90FF",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/fd/177828483243e6da771d947a4415a70c77c010fcff.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/2f/17782848342548003cd184a66abadd8d1601e9e312.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/a5/17782848360812aa8801115843b338113c4ae7def7.webp"
+        ]
+      },
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/15/80/1757920347c419f1247b7ee63f266624a95d38e49b.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/15/38/1757920349d7fd5eb81575560c6a591be217c1f95c.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Manfinity Homme Men's Vintage Washed Oversized Trucker Denim Jacket",
+    "categorySlug": "men-denim-jackets",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Engineered heavy-retention denim jacket. Denim. Vintage.",
+    "price": 3000,
+    "discountedPrice": 2550,
+    "featured": false,
+    "tags": ["denim", "jacket", "outerwear", "men", "winter"],
+    "skuPrefix": "CEL-JKT",
+    "stockPerSize": 25,
+    "attributes": {
+      "Closure Type": "Single Breasted",
+      "Details": ["Distressed", "Button", "Pocket", "Raw Hem"],
+      "Pattern Type": "Washed",
+      "Style": "Vintage",
+      "Fit Type": "Oversized",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "100% Cotton",
+      "Care Instructions": "Hand wash recommended",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Shoulder": 52,
+        "Bust": 116,
+        "Length": 68,
+        "Sleeve Length": 62
+      },
+      {
+        "Size": "M",
+        "Shoulder": 54,
+        "Bust": 121,
+        "Length": 70,
+        "Sleeve Length": 63
+      },
+      {
+        "Size": "L",
+        "Shoulder": 56,
+        "Bust": 126,
+        "Length": 72,
+        "Sleeve Length": 64
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 58,
+        "Bust": 131,
+        "Length": 74,
+        "Sleeve Length": 65
+      }
+    ],
+    "variants": [
+      {
+        "color": "Light Wash",
+        "colorCode": "#8A9199",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/04/17/30/177641034588ae8ee511e1aaea8360ccba126b9baa.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/04/17/96/1776410348ea70d5fcbd17eb5941098c363383efc4.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Manfinity Spmode Men's Ripped Graphic Embroidery Denim Jacket",
+    "categorySlug": "men-denim-jackets",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Engineered heavy-retention denim jacket. Denim. Streetwear.",
+    "price": 3200,
+    "discountedPrice": 2720,
+    "featured": false,
+    "tags": ["denim", "jacket", "outerwear", "men", "winter"],
+    "skuPrefix": "CEL-JKT",
+    "stockPerSize": 25,
+    "attributes": {
+      "Closure Type": "Button Front",
+      "Details": ["Ripped", "Embroidery", "Pocket"],
+      "Pattern Type": "Graphic",
+      "Style": "Streetwear",
+      "Fit Type": "Loose",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "85% Cotton, 15% Polyester",
+      "Care Instructions": "Machine wash",
+      "Body / Lining": "Unlined",
+      "Sheer": false
+    },
+    "sizeChart": [
+      {
+        "Size": "M",
+        "Shoulder": 51,
+        "Bust": 118,
+        "Length": 69,
+        "Sleeve Length": 63.5
+      },
+      {
+        "Size": "L",
+        "Shoulder": 53,
+        "Bust": 123,
+        "Length": 71,
+        "Sleeve Length": 64.5
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 55,
+        "Bust": 128,
+        "Length": 73,
+        "Sleeve Length": 65.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "Dark Wash",
+        "colorCode": "#8A9199",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/ad/1781539476470359eb5aabe0a0a16bce0e9a5aa991.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/06/1781539477cb75c1761e2bf3014af7c4f66c33615f.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Manfinity EMRG Men's American Street Style Street Wear Paint Splatter Distressed Denim Jeans For Daily Wear Rave Light Blue Autumn",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Loose fit with reinforced bar-tacks.",
+    "price": 2400,
+    "discountedPrice": 2112,
+    "featured": true,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
+    "attributes": {
+      "Closure Type": "Zipper Fly",
+      "Details": ["Pocket", "Zipper", "Ripped"],
+      "Pattern Type": "Graphic, Retro",
+      "Style": "Avant-Garde - Street Casual",
+      "Ideal For": "conventional",
+      "Color": "Multicolor",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Loose",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 104,
+        "Length": 75.4,
+        "Thigh": 68.8
+      },
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 108,
+        "Length": 76.2,
+        "Thigh": 71.4
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 112,
+        "Length": 77,
+        "Thigh": 74
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 117,
+        "Length": 77.8,
+        "Thigh": 77.3
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 122,
+        "Length": 78.6,
+        "Thigh": 80.6
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 127,
+        "Length": 79.4,
+        "Thigh": 83.9
+      }
+    ],
     "variants": [
       {
         "color": "Beige",
+        "colorCode": "#D4BE8D",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/04/17/30/177641034588ae8ee511e1aaea8360ccba126b9baa.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/04/17/96/1776410348ea70d5fcbd17eb5941098c363383efc4.webp",
@@ -88,6 +299,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/29/1f/1759110469c0cd1eefd8a6f0c7133ac3605124bb53.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/29/c9/175911046787076832b2376a3cfd53d3545a39c07f.webp",
@@ -111,6 +323,7 @@
       },
       {
         "color": "Bronze",
+        "colorCode": "#CD7F32",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/10/10/8f/1760062878811ead37671aebe737dc6a7cc725ebbf.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/10/10/a0/1760062880d93fea31b76857c1dfa612d01910b2c5.webp",
@@ -127,6 +340,7 @@
       },
       {
         "color": "Multicolor",
+        "colorCode": "#4A90E2",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/07/07/2c/17833908106f81c374e117d15889ed6aed102af481.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/07/07/c7/1783390807621c2506591a44b114bab1e7ebdcaac8.webp",
@@ -144,82 +358,86 @@
     ]
   },
   {
-    "sku": "sm251220181630757580357",
-    "title": "Manfinity Homme Men's Casual Everyday Distressed Straight Leg Jeans",
-    "slug": "manfinity-homme-mens-casual-everyday-distressed-straight-leg-jeans",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Men's Casual Everyday Distressed Straight Leg Jeans",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2510,
+    "discountedPrice": 2209,
+    "featured": true,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Avant-Garde - Street Casual, Casual - Amekaji",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "festivals": "Halloween",
-      "color": "Navy Blue",
-      "type": "Straight Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "66% Cotton, 18% Polyester, 16% Viscose",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Avant-Garde - Street Casual, Casual - Amekaji",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Festivals": "Halloween",
+      "Color": "Navy Blue",
+      "Type": "Straight Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "66% Cotton, 18% Polyester, 16% Viscose",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 172.0cm, Bust: 96.0cm, Waist: 76.0cm, Hips: 94.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 79,
-          "hip": 99,
-          "inseam": 75.4,
-          "thigh": 63.1
-        },
-        {
-          "size": "S",
-          "waist": 83,
-          "hip": 103,
-          "inseam": 76.2,
-          "thigh": 65.3
-        },
-        {
-          "size": "M",
-          "waist": 87,
-          "hip": 107,
-          "inseam": 77.0,
-          "thigh": 67.5
-        },
-        {
-          "size": "L",
-          "waist": 92,
-          "hip": 112,
-          "inseam": 77.8,
-          "thigh": 70.2
-        },
-        {
-          "size": "XL",
-          "waist": 97,
-          "hip": 117,
-          "inseam": 78.6,
-          "thigh": 72.9
-        },
-        {
-          "size": "XXL",
-          "waist": 102,
-          "hip": 122,
-          "inseam": 79.4,
-          "thigh": 75.6
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 79,
+        "Hip Size": 99,
+        "Length": 75.4,
+        "Thigh": 63.1
+      },
+      {
+        "Size": "S",
+        "Waist Size": 83,
+        "Hip Size": 103,
+        "Length": 76.2,
+        "Thigh": 65.3
+      },
+      {
+        "Size": "M",
+        "Waist Size": 87,
+        "Hip Size": 107,
+        "Length": 77,
+        "Thigh": 67.5
+      },
+      {
+        "Size": "L",
+        "Waist Size": 92,
+        "Hip Size": 112,
+        "Length": 77.8,
+        "Thigh": 70.2
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 97,
+        "Hip Size": 117,
+        "Length": 78.6,
+        "Thigh": 72.9
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 102,
+        "Hip Size": 122,
+        "Length": 79.4,
+        "Thigh": 75.6
+      }
+    ],
     "variants": [
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/05/98/177798609989be1c2882e4e50c096cc7ccd08ee04c.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/05/d1/17779861005a3d6a9fd4680c875dafeaccff6a3081.webp",
@@ -233,6 +451,7 @@
       },
       {
         "color": "Light Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/11/21/52/1732155997455575060be2326ee73fea1bc6cdc318.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/11/21/e6/1732156001f80ad8e0a55f1c7dcbbccd4c5dac02fb.webp",
@@ -249,6 +468,7 @@
       },
       {
         "color": "Baby Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/13/70/1768295608cfd18de4d3587bdd470fad34e82f2ef2.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/13/2e/1768295609fcd3e94134b43543df6e2e117e77a341.webp",
@@ -264,6 +484,7 @@
       },
       {
         "color": "Dark Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/08/b0/1780923645d3de113ac194a3ded7d76d2b772b6484.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/08/f8/1780923647e9742b30cfeb04d1bf7d1737c2c189bd.webp",
@@ -277,6 +498,7 @@
       },
       {
         "color": "Navy Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/04/14/c4/1776129927ed2e69ea3a6e457fd6731b54d3bc4eed.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/04/14/57/1776129928e7755055d535512af8ff4aa1a69de801.webp",
@@ -291,82 +513,86 @@
     ]
   },
   {
-    "sku": "sm25091749270846242",
-    "title": "QuarKem Men's Casual Loose Fit Jeans With Pockets Jeans For Men Cargo Baggy",
-    "slug": "quarkem-mens-casual-loose-fit-jeans-with-pockets-jeans-for-men-cargo-baggy",
-    "category": "Denim Jeans",
+    "name": "QuarKem Men's Casual Loose Fit Jeans With Pockets Jeans For Men Cargo Baggy",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2620,
+    "discountedPrice": 2306,
+    "featured": true,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Casual - Amekaji",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "festivals": "Halloween",
-      "color": "Light Wash",
-      "type": "Wide Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "68% Cotton, 18% Viscose, 14% Polyester",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Casual - Amekaji",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Festivals": "Halloween",
+      "Color": "Light Wash",
+      "Type": "Wide Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "68% Cotton, 18% Viscose, 14% Polyester",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 185.0cm, Waist: 80.0cm, Hips: 95.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 78,
-          "hip": 102,
-          "inseam": 73.4,
-          "thigh": 65.1
-        },
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 106,
-          "inseam": 74.2,
-          "thigh": 67.3
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 110,
-          "inseam": 75.0,
-          "thigh": 69.5
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 115,
-          "inseam": 75.8,
-          "thigh": 72.2
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 120,
-          "inseam": 76.6,
-          "thigh": 74.9
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 125,
-          "inseam": 77.4,
-          "thigh": 77.6
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 102,
+        "Length": 73.4,
+        "Thigh": 65.1
+      },
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 106,
+        "Length": 74.2,
+        "Thigh": 67.3
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 110,
+        "Length": 75,
+        "Thigh": 69.5
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 115,
+        "Length": 75.8,
+        "Thigh": 72.2
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 120,
+        "Length": 76.6,
+        "Thigh": 74.9
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 125,
+        "Length": 77.4,
+        "Thigh": 77.6
+      }
+    ],
     "variants": [
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/a5/173370937879af53a09e0c8c42c378f92624266e45.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/d2/17337093802c9ed6f7ddf2c7a19216c737c0d14a89.webp",
@@ -386,6 +612,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/03/16/e9/177363157775b1db25ad2f82839a09d6a25934aacc.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/03/16/f6/17736315791b60460ea8e9ef1e7af5171a00687181.webp",
@@ -428,6 +655,7 @@
       },
       {
         "color": "Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2025/01/26/5d/1737870579c6f35e0df450a7a7f655b8f866acc895.webp",
           "https://img.ltwebstatic.com/images3_pi/2025/01/26/45/17378705829a5f535898f565f453802b25505e6e3f.webp",
@@ -458,6 +686,7 @@
       },
       {
         "color": "Light Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/13/75/17629982164930a03d4a1fa74d158608ba4bdc840a.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/13/ee/17629982189c839799cc1be5cee58af615f75f70e4.webp",
@@ -473,6 +702,7 @@
       },
       {
         "color": "Dark Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/10/30/8c/1761791798d864bd711db23f615acb93018a8e368e.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/10/30/67/17617918001c6f8b946b7af2aa10e030d4a0222d15.webp",
@@ -488,6 +718,7 @@
       },
       {
         "color": "Light Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/14/b9/1781427634de1323be94c640dba7fdbb0d648c0982.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/14/2c/17814276351639c27ef860b998bfa51f3005ae337e.webp",
@@ -503,93 +734,90 @@
     ]
   },
   {
-    "sku": "sm2412141033180305",
-    "title": "1pc Men's Loose Fit Casual Straight Leg Black Jeans, Comfortable Street Style Suitable For Urban Walking And Outdoor Activities",
-    "slug": "1pc-mens-loose-fit-casual-straight-leg-black-jeans-comfortable-street-style-suitable-for-urban-walking-and-outdoor-activities",
-    "category": "Denim Jeans",
+    "name": "1pc Men's Loose Fit Casual Straight Leg Black Jeans, Comfortable Street Style Suitable For Urban Walking And Outdoor Activities",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2730,
+    "discountedPrice": 2402,
+    "featured": true,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "style": "Casual - Modern Casual",
-      "idealFor": "conventional",
-      "scenes": "Ballgame",
-      "festivals": "Christmas",
-      "color": "Black",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "85% Cotton, 15% Polyester",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Ballgame",
+      "Festivals": "Christmas",
+      "Color": "Black",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "85% Cotton, 15% Polyester",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "28",
-          "waist": 74,
-          "hip": 94,
-          "length": 103,
-          "inseam": 75.0
-        },
-        {
-          "size": "30",
-          "waist": 79,
-          "hip": 99,
-          "length": 104,
-          "inseam": 75.5
-        },
-        {
-          "size": "32",
-          "waist": 84,
-          "hip": 104,
-          "length": 105,
-          "inseam": 76.0
-        },
-        {
-          "size": "34",
-          "waist": 89,
-          "hip": 109,
-          "length": 106,
-          "inseam": 76.5
-        },
-        {
-          "size": "36",
-          "waist": 94,
-          "hip": 114,
-          "length": 107,
-          "inseam": 77.0
-        },
-        {
-          "size": "38",
-          "waist": 99,
-          "hip": 119,
-          "length": 108,
-          "inseam": 77.5
-        },
-        {
-          "size": "40",
-          "waist": 104,
-          "hip": 124,
-          "length": 109,
-          "inseam": 78.0
-        },
-        {
-          "size": "42",
-          "waist": 109,
-          "hip": 129,
-          "length": 110,
-          "inseam": 78.5
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "28",
+        "Waist Size": 74,
+        "Hip Size": 94,
+        "Length": 75
+      },
+      {
+        "Size": "30",
+        "Waist Size": 79,
+        "Hip Size": 99,
+        "Length": 75.5
+      },
+      {
+        "Size": "32",
+        "Waist Size": 84,
+        "Hip Size": 104,
+        "Length": 76
+      },
+      {
+        "Size": "34",
+        "Waist Size": 89,
+        "Hip Size": 109,
+        "Length": 76.5
+      },
+      {
+        "Size": "36",
+        "Waist Size": 94,
+        "Hip Size": 114,
+        "Length": 77
+      },
+      {
+        "Size": "38",
+        "Waist Size": 99,
+        "Hip Size": 119,
+        "Length": 77.5
+      },
+      {
+        "Size": "40",
+        "Waist Size": 104,
+        "Hip Size": 124,
+        "Length": 78
+      },
+      {
+        "Size": "42",
+        "Waist Size": 109,
+        "Hip Size": 129,
+        "Length": 78.5
+      }
+    ],
     "variants": [
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/images3_spmp/2025/03/09/2a/1741514730f02d4839b5406a321c818ed0068abb8d.webp",
           "https://img.ltwebstatic.com/images3_spmp/2024/12/14/52/1734169427c1173c5114eabc6871f9cf9ab1a7ea67.webp",
@@ -603,6 +831,7 @@
       },
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/v4/j/spmp/2025/06/29/41/17511842099fb7a445ea7ca93e45fd6973cec841b3.webp",
           "https://img.ltwebstatic.com/v4/j/spmp/2025/06/29/ac/1751184233f640e45c8112a7626c6aeff0e5c093cc.webp",
@@ -617,212 +846,237 @@
     ]
   },
   {
-    "sku": "sm2409152337982105",
-    "title": "2pcs Men's Casual Washed Slim Straight Leg Jeans",
-    "slug": "2pcs-mens-casual-washed-slim-straight-leg-jeans",
-    "category": "Denim Jeans",
+    "name": "2pcs Men's Casual Washed Slim Straight Leg Jeans",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Cotton Viscose Denim. Skinny fit with reinforced bar-tacks.",
+    "price": 2840,
+    "discountedPrice": 2499,
+    "featured": true,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "pantsBody": "Lined",
-      "style": "Casual - Modern Casual",
-      "features": "Great quality",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "color": "Multicolor",
-      "waistLine": "Natural(Mid Waist)",
-      "fitType": "Skinny",
-      "fabricElasticity": "Slight Stretch",
-      "pantsLength": "Long",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": false,
-      "pantsMaterial": "Denim",
-      "belt": false,
-      "pantsComposition": "64.5% Cotton,33.5% Polyester,2% Elastane",
-      "sheer": false,
-      "pantsLining": "100% Polyester"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Body / Lining": "Lined",
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Color": "Multicolor",
+      "Waist Line": "Natural(Mid Waist)",
+      "Fit Type": "Skinny",
+      "Fabric Elasticity": "Slight Stretch",
+      "Length": "Long",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Material": "Denim",
+      "Composition": "64.5% Cotton,33.5% Polyester,2% Elastane",
+      "Sheer": false,
+      "Lining": "100% Polyester"
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "28",
-          "waist": 74,
-          "hip": 92,
-          "inseam": 71.8
-        },
-        {
-          "size": "30",
-          "waist": 79,
-          "hip": 97,
-          "inseam": 73.4
-        },
-        {
-          "size": "32",
-          "waist": 84,
-          "hip": 102,
-          "inseam": 75.0
-        },
-        {
-          "size": "34",
-          "waist": 89,
-          "hip": 107,
-          "inseam": 76.6
-        },
-        {
-          "size": "36",
-          "waist": 94,
-          "hip": 112,
-          "inseam": 78.2
-        },
-        {
-          "size": "38",
-          "waist": 99,
-          "hip": 117,
-          "inseam": 79.8
-        }
-      ]
-    },
-    "variants": []
+    "sizeChart": [
+      {
+        "Size": "28",
+        "Waist Size": 74,
+        "Hip Size": 92,
+        "Length": 71.8
+      },
+      {
+        "Size": "30",
+        "Waist Size": 79,
+        "Hip Size": 97,
+        "Length": 73.4
+      },
+      {
+        "Size": "32",
+        "Waist Size": 84,
+        "Hip Size": 102,
+        "Length": 75
+      },
+      {
+        "Size": "34",
+        "Waist Size": 89,
+        "Hip Size": 107,
+        "Length": 76.6
+      },
+      {
+        "Size": "36",
+        "Waist Size": 94,
+        "Hip Size": 112,
+        "Length": 78.2
+      },
+      {
+        "Size": "38",
+        "Waist Size": 99,
+        "Hip Size": 117,
+        "Length": 79.8
+      }
+    ],
+    "variants": [
+      {
+        "color": "Multicolor",
+        "colorCode": "#4A90E2",
+        "images": [
+          "https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop"
+        ]
+      }
+    ]
   },
   {
-    "sku": "sm260606190577028275204",
-    "title": "Men's Vintage Yellow Mud Distressed Cat Whisker Wide Leg Jeans, Nostalgic Washed Heavyweight Loose Straight Leg Pants, Street Style",
-    "slug": "mens-vintage-yellow-mud-distressed-cat-whisker-wide-leg-jeans-nostalgic-washed-heavyweight-loose-straight-leg-pants-street-style",
-    "category": "Denim Jeans",
+    "name": "Men's Vintage Yellow Mud Distressed Cat Whisker Wide Leg Jeans, Nostalgic Washed Heavyweight Loose Straight Leg Pants, Street Style",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Loose fit with reinforced bar-tacks.",
+    "price": 2950,
+    "discountedPrice": 2596,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Pocket"],
-      "patternType": "Geometric, Retro",
-      "style": "Casual - Amekaji",
-      "idealFor": "conventional",
-      "scenes": "School, Daily, Street",
-      "color": "Dark Wash",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Loose",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "73% Cotton, 18% Polyester, 9% Viscose",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": false,
-      "belt": false,
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Pocket"],
+      "Pattern Type": "Geometric, Retro",
+      "Style": "Casual - Amekaji",
+      "Ideal For": "conventional",
+      "Scenes": "School, Daily, Street",
+      "Color": "Dark Wash",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Loose",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 78,
-          "hip": 106,
-          "inseam": 73.4
-        },
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 110,
-          "inseam": 74.2
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 114,
-          "inseam": 75.0
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 119,
-          "inseam": 75.8
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 124,
-          "inseam": 76.6
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 129,
-          "inseam": 77.4
-        }
-      ]
-    },
-    "variants": []
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 106,
+        "Length": 73.4
+      },
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 110,
+        "Length": 74.2
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 114,
+        "Length": 75
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 119,
+        "Length": 75.8
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 124,
+        "Length": 76.6
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 129,
+        "Length": 77.4
+      }
+    ],
+    "variants": [
+      {
+        "color": "Dark Wash",
+        "colorCode": "#8A9199",
+        "images": [
+          "https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop"
+        ]
+      }
+    ]
   },
   {
-    "sku": "sm2408235561986227",
-    "title": "QuarKem Men's Loose Fit Straight Leg Jeans With Pockets",
-    "slug": "quarkem-mens-loose-fit-straight-leg-jeans-with-pockets",
-    "category": "Denim Jeans",
+    "name": "QuarKem Men's Loose Fit Straight Leg Jeans With Pockets",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Loose fit with reinforced bar-tacks.",
+    "price": 3060,
+    "discountedPrice": 2693,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "style": "Casual - Modern Casual",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "color": "Red Violet",
-      "type": "Wide Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Loose",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "78% Cotton, 14% Polyester, 7% Viscose, 1% Lyocell",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Color": "Red Violet",
+      "Type": "Wide Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Loose",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "78% Cotton, 14% Polyester, 7% Viscose, 1% Lyocell",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 185.0cm, Waist: 80.0cm, Hips: 95.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 78,
-          "hip": 102,
-          "inseam": 72.2,
-          "thigh": 65.6
-        },
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 106,
-          "inseam": 73.6,
-          "thigh": 67.8
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 110,
-          "inseam": 75.0,
-          "thigh": 70.0
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 115,
-          "inseam": 76.4,
-          "thigh": 72.7
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 120,
-          "inseam": 77.8,
-          "thigh": 75.4
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 102,
+        "Length": 72.2,
+        "Thigh": 65.6
+      },
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 106,
+        "Length": 73.6,
+        "Thigh": 67.8
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 110,
+        "Length": 75,
+        "Thigh": 70
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 115,
+        "Length": 76.4,
+        "Thigh": 72.7
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 120,
+        "Length": 77.8,
+        "Thigh": 75.4
+      }
+    ],
     "variants": [
       {
         "color": "Beige",
+        "colorCode": "#D4BE8D",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/06/94/17334498552f2641b2f3ba059f407e96dff5ceefec.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/06/ed/17334498572ec5cd1d65fcf2bd9c398275bf9d4ce5.webp",
@@ -838,6 +1092,7 @@
       },
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856953996a0af5b76d553b060165b778e16ece.webp",
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856955fa4562bb76ce3dfe89bad4369d130095.webp",
@@ -861,6 +1116,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/06/13/db/171824216658cb142cebd3132426504e83d4684ab3.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/06/13/be/17182421707a9d5a61acfe368f56a71560640dd6f4.webp",
@@ -893,6 +1149,7 @@
       },
       {
         "color": "Brown",
+        "colorCode": "#8B4513",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/12/20/bc/1766215768a32b1588717d0ca364307d3b3df586c3.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/12/20/16/17662157719d8696ea4b78d9c816429e2db468ba5a.webp",
@@ -906,6 +1163,7 @@
       },
       {
         "color": "Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/04/18/59/17134039214cf0c3b244971cea1513b08a92534df7.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/04/18/2d/1713403923534c017c2375756657114e3050f0f804.webp",
@@ -948,6 +1206,7 @@
       },
       {
         "color": "Khaki",
+        "colorCode": "#F0E68C",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/03/19/50/1773888648342583c49b0978eb555bc3213f58c0c4.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/03/19/69/177388864631030761a032f7e3fc4c3d23d85ce984.webp",
@@ -962,6 +1221,7 @@
       },
       {
         "color": "Dark Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/d0/1781614828fc83152b64e394047715861ee11103c5.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/9b/1781614830a62253ebb18e388dd4345001cdccbd3a.webp",
@@ -977,6 +1237,7 @@
       },
       {
         "color": "Light Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/14/ae/1781427629c54aa14a5d64d1c053ecf81e62bf949f.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/14/48/1781427630a29bc7857670b202260f4b2e27bfe34b.webp",
@@ -1010,6 +1271,7 @@
       },
       {
         "color": "Red Violet",
+        "colorCode": "#2C3E50",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/29/ca/1780047804304ce2bb78298df4ecba73817380e9fb.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/29/c2/178004780757830c8547ba6dfb47addd17f4f55527.webp",
@@ -1026,73 +1288,78 @@
     ]
   },
   {
-    "sku": "sm25093087788186313",
-    "title": "Manfinity Roughcore Men's Patchwork Pocket Loose Casual Wide Leg Jeans For Boyfriend & Husband",
-    "slug": "manfinity-roughcore-mens-patchwork-pocket-loose-casual-wide-leg-jeans-for-boyfriend--husband",
-    "category": "Denim Jeans",
+    "name": "Manfinity Roughcore Men's Patchwork Pocket Loose Casual Wide Leg Jeans For Boyfriend & Husband",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 3170,
+    "discountedPrice": 2790,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Drawstring", "Pocket", "Chain"],
-      "patternType": "Colorblock",
-      "style": "Avant-Garde - Street Casual",
-      "idealFor": "conventional",
-      "festivals": "Halloween",
-      "color": "Multicolor",
-      "type": "Wide Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "100% Cotton",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Drawstring", "Pocket", "Chain"],
+      "Pattern Type": "Colorblock",
+      "Style": "Avant-Garde - Street Casual",
+      "Ideal For": "conventional",
+      "Festivals": "Halloween",
+      "Color": "Multicolor",
+      "Type": "Wide Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "100% Cotton",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 104,
-          "inseam": 75.2,
-          "thigh": 67.4
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 108,
-          "inseam": 76.0,
-          "thigh": 70.0
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 113,
-          "inseam": 76.8,
-          "thigh": 73.3
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 118,
-          "inseam": 77.6,
-          "thigh": 76.6
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 123,
-          "inseam": 78.4,
-          "thigh": 79.9
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 104,
+        "Length": 75.2,
+        "Thigh": 67.4
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 108,
+        "Length": 76,
+        "Thigh": 70
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 113,
+        "Length": 76.8,
+        "Thigh": 73.3
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 118,
+        "Length": 77.6,
+        "Thigh": 76.6
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 123,
+        "Length": 78.4,
+        "Thigh": 79.9
+      }
+    ],
     "variants": [
       {
         "color": "Multicolor",
+        "colorCode": "#4A90E2",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/04/25/03/1714043560c31f4c865eacc0a09a1f629073314ba6.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/04/25/1d/17140435647552494697b6362e3e9f1853b37fab37.webp",
@@ -1119,149 +1386,164 @@
     ]
   },
   {
-    "sku": "sm260128211273616717944",
-    "title": "Men's Pocket Skinny Fashionable Stretch Denim Jeans",
-    "slug": "mens-pocket-skinny-fashionable-stretch-denim-jeans",
-    "category": "Denim Jeans",
+    "name": "Men's Pocket Skinny Fashionable Stretch Denim Jeans",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Skinny fit with reinforced bar-tacks.",
+    "price": 3280,
+    "discountedPrice": 2886,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Casual - Modern Casual",
-      "features": "Comfortable",
-      "idealFor": "conventional",
-      "festivals": "Halloween",
-      "color": "Black",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Skinny",
-      "fabricElasticity": "Medium Stretch",
-      "material": "Denim",
-      "composition": "63% Cotton, 25% Polyester, 10% Viscose, 2% Elastane",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": false,
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Festivals": "Halloween",
+      "Color": "Black",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Skinny",
+      "Fabric Elasticity": "Medium Stretch",
+      "Material": "Denim",
+      "Composition": "63% Cotton, 25% Polyester, 10% Viscose, 2% Elastane",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "28",
-          "waist": 72,
-          "hip": 92,
-          "inseam": 74.0
-        },
-        {
-          "size": "30",
-          "waist": 77,
-          "hip": 97,
-          "inseam": 75.0
-        },
-        {
-          "size": "32",
-          "waist": 82,
-          "hip": 102,
-          "inseam": 76.0
-        },
-        {
-          "size": "34",
-          "waist": 87,
-          "hip": 107,
-          "inseam": 77.0
-        },
-        {
-          "size": "36",
-          "waist": 92,
-          "hip": 112,
-          "inseam": 78.0
-        },
-        {
-          "size": "38",
-          "waist": 97,
-          "hip": 117,
-          "inseam": 79.0
-        },
-        {
-          "size": "40",
-          "waist": 102,
-          "hip": 122,
-          "inseam": 80.0
-        }
-      ]
-    },
-    "variants": []
+    "sizeChart": [
+      {
+        "Size": "28",
+        "Waist Size": 72,
+        "Hip Size": 92,
+        "Length": 74
+      },
+      {
+        "Size": "30",
+        "Waist Size": 77,
+        "Hip Size": 97,
+        "Length": 75
+      },
+      {
+        "Size": "32",
+        "Waist Size": 82,
+        "Hip Size": 102,
+        "Length": 76
+      },
+      {
+        "Size": "34",
+        "Waist Size": 87,
+        "Hip Size": 107,
+        "Length": 77
+      },
+      {
+        "Size": "36",
+        "Waist Size": 92,
+        "Hip Size": 112,
+        "Length": 78
+      },
+      {
+        "Size": "38",
+        "Waist Size": 97,
+        "Hip Size": 117,
+        "Length": 79
+      },
+      {
+        "Size": "40",
+        "Waist Size": 102,
+        "Hip Size": 122,
+        "Length": 80
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop"
+        ]
+      }
+    ]
   },
   {
-    "sku": "sm25071437292291316",
-    "title": "Manfinity Homme Men's Casual Everyday Washed Flip Pocket Denim Jeans Men Pink Jeans Pink Cargo Pants Men Boyfriend & Husband Washed Slim-Fit For Vacation",
-    "slug": "manfinity-homme-mens-casual-everyday-washed-flip-pocket-denim-jeans-men-pink-jeans-pink-cargo-pants-men-boyfriend--husband-washed-slim-fit-for-vacation",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Men's Casual Everyday Washed Flip Pocket Denim Jeans Men Pink Jeans Pink Cargo Pants Men Boyfriend & Husband Washed Slim-Fit For Vacation",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 3390,
+    "discountedPrice": 2983,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Drawstring", "Pocket"],
-      "style": "Avant-Garde - Street Casual",
-      "idealFor": "conventional",
-      "scenes": "Street",
-      "color": "Redwood",
-      "type": "Skinny",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Slight Stretch",
-      "material": "Denim",
-      "composition": "70% Cotton, 24% Polyester, 4% Viscose, 2% Elastane",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Drawstring", "Pocket"],
+      "Style": "Avant-Garde - Street Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Street",
+      "Color": "Redwood",
+      "Type": "Skinny",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Slight Stretch",
+      "Material": "Denim",
+      "Composition": "70% Cotton, 24% Polyester, 4% Viscose, 2% Elastane",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 179.0cm, Bust: 90.0cm, Waist: 77.0cm, Hips: 93.0cm",
-      "sizeChart": [
-        {
-          "size": "S",
-          "waist": 78,
-          "hip": 96,
-          "inseam": 73.2,
-          "thigh": 61.8
-        },
-        {
-          "size": "M",
-          "waist": 82,
-          "hip": 100,
-          "inseam": 74.0,
-          "thigh": 64.0
-        },
-        {
-          "size": "L",
-          "waist": 87,
-          "hip": 105,
-          "inseam": 74.8,
-          "thigh": 66.7
-        },
-        {
-          "size": "XL",
-          "waist": 92,
-          "hip": 110,
-          "inseam": 75.6,
-          "thigh": 69.4
-        },
-        {
-          "size": "XXL",
-          "waist": 97,
-          "hip": 115,
-          "inseam": 76.4,
-          "thigh": 72.1
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Waist Size": 78,
+        "Hip Size": 96,
+        "Length": 73.2,
+        "Thigh": 61.8
+      },
+      {
+        "Size": "M",
+        "Waist Size": 82,
+        "Hip Size": 100,
+        "Length": 74,
+        "Thigh": 64
+      },
+      {
+        "Size": "L",
+        "Waist Size": 87,
+        "Hip Size": 105,
+        "Length": 74.8,
+        "Thigh": 66.7
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 92,
+        "Hip Size": 110,
+        "Length": 75.6,
+        "Thigh": 69.4
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 97,
+        "Hip Size": 115,
+        "Length": 76.4,
+        "Thigh": 72.1
+      }
+    ],
     "variants": [
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/07/16/24/175264502460bdcb1efca2bd38d2956c4758013f92.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/07/16/01/17526450254793e690bb4246dbb7099a2762668393.webp",
@@ -1293,6 +1575,7 @@
       },
       {
         "color": "Purple",
+        "colorCode": "#2C3E50",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/08/83/1757323862a093fe801a75b9ad16fe86aeaa517b90.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/08/11/1757323863b290a31f6edbf6dbc9cb7d88170d03fb.webp",
@@ -1308,6 +1591,7 @@
       },
       {
         "color": "Dark Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/04/28/5d/1745817664eda1936b73b1def8720cecebe076e9d1.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/04/28/8b/1745817666682aead2df8b6fee0f6cd5b1e788eb1d.webp",
@@ -1322,6 +1606,7 @@
       },
       {
         "color": "Redwood",
+        "colorCode": "#2C3E50",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/08/08/ae/1754617906a90b40795d0e04034492b02147673813.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/08/08/08/17546179081935ab2f4e322b212992ccd30087fb2d.webp",
@@ -1336,98 +1621,150 @@
     ]
   },
   {
-    "sku": "sm260126135083525349330",
-    "title": "Men's Stretch Slim Straight Leg Business Casual Jeans, Slant Pocket Design, Versatile For Daily Wear",
-    "slug": "mens-stretch-slim-straight-leg-business-casual-jeans-slant-pocket-design-versatile-for-daily-wear",
-    "category": "Denim Jeans",
+    "name": "Men's Stretch Slim Straight Leg Business Casual Jeans, Slant Pocket Design, Versatile For Daily Wear",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 3500,
+    "discountedPrice": 3080,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Sports & Outdoor - Urban Utility, Casual - Amekaji",
-      "idealFor": "conventional",
-      "scenes": "Daily, Outdoor, Business Commuting",
-      "color": "Blue",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Slight Stretch",
-      "material": "Denim",
-      "composition": "65% Cotton, 33.7% Polyester, 1.3% Elastane",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": false,
-      "belt": false,
-      "body": "Unlined",
-      "sheer": false
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Sports & Outdoor - Urban Utility, Casual - Amekaji",
+      "Ideal For": "conventional",
+      "Scenes": "Daily, Outdoor, Business Commuting",
+      "Color": "Blue",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Slight Stretch",
+      "Material": "Denim",
+      "Composition": "65% Cotton, 33.7% Polyester, 1.3% Elastane",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "30",
-          "waist": 78,
-          "hip": 95,
-          "inseam": 73.4
-        },
-        {
-          "size": "32",
-          "waist": 83,
-          "hip": 100,
-          "inseam": 74.0
-        },
-        {
-          "size": "34",
-          "waist": 88,
-          "hip": 105,
-          "inseam": 74.6
-        },
-        {
-          "size": "36",
-          "waist": 93,
-          "hip": 110,
-          "inseam": 75.2
-        },
-        {
-          "size": "38",
-          "waist": 98,
-          "hip": 115,
-          "inseam": 75.8
-        }
-      ]
-    },
-    "variants": []
+    "sizeChart": [
+      {
+        "Size": "30",
+        "Waist Size": 78,
+        "Hip Size": 95,
+        "Length": 73.4
+      },
+      {
+        "Size": "32",
+        "Waist Size": 83,
+        "Hip Size": 100,
+        "Length": 74
+      },
+      {
+        "Size": "34",
+        "Waist Size": 88,
+        "Hip Size": 105,
+        "Length": 74.6
+      },
+      {
+        "Size": "36",
+        "Waist Size": 93,
+        "Hip Size": 110,
+        "Length": 75.2
+      },
+      {
+        "Size": "38",
+        "Waist Size": 98,
+        "Hip Size": 115,
+        "Length": 75.8
+      }
+    ],
+    "variants": [
+      {
+        "color": "Blue",
+        "colorCode": "#1E90FF",
+        "images": [
+          "https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop"
+        ]
+      }
+    ]
   },
   {
-    "sku": "sm260127104914013914465",
-    "title": "Manfinity Homme Spring & Summer Casual Young Street-Style Washed Gray Straight Fit Flame Crystal Embellished Jeans",
-    "slug": "manfinity-homme-spring--summer-casual-young-street-style-washed-gray-straight-fit-flame-crystal-embellished-jeans",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Spring & Summer Casual Young Street-Style Washed Gray Straight Fit Flame Crystal Embellished Jeans",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 3610,
+    "discountedPrice": 3177,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Avant-Garde - Hip-Hop Streetwear",
-      "idealFor": "conventional",
-      "color": "Grey",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "67% Cotton, 22% Polyester, 11% Viscose",
-      "careInstructions": "Hand wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Avant-Garde - Hip-Hop Streetwear",
+      "Ideal For": "conventional",
+      "Color": "Grey",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "67% Cotton, 22% Polyester, 11% Viscose",
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": []
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 104,
+        "Length": 75.4,
+        "Thigh": 68.8
+      },
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 108,
+        "Length": 76.2,
+        "Thigh": 71.4
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 112,
+        "Length": 77,
+        "Thigh": 74
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 117,
+        "Length": 77.8,
+        "Thigh": 77.3
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 122,
+        "Length": 78.6,
+        "Thigh": 80.6
+      }
+    ],
     "variants": [
       {
         "color": "Beige",
+        "colorCode": "#D4BE8D",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/06/94/17334498552f2641b2f3ba059f407e96dff5ceefec.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/06/ed/17334498572ec5cd1d65fcf2bd9c398275bf9d4ce5.webp",
@@ -1443,6 +1780,7 @@
       },
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856953996a0af5b76d553b060165b778e16ece.webp",
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856955fa4562bb76ce3dfe89bad4369d130095.webp",
@@ -1474,6 +1812,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856953996a0af5b76d553b060165b778e16ece.webp",
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856955fa4562bb76ce3dfe89bad4369d130095.webp",
@@ -1496,6 +1835,7 @@
       },
       {
         "color": "Brown",
+        "colorCode": "#8B4513",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856953996a0af5b76d553b060165b778e16ece.webp",
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856955fa4562bb76ce3dfe89bad4369d130095.webp",
@@ -1509,6 +1849,7 @@
       },
       {
         "color": "Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856953996a0af5b76d553b060165b778e16ece.webp",
           "https://img.ltwebstatic.com/images3_pi/2023/05/12/1683856955fa4562bb76ce3dfe89bad4369d130095.webp",
@@ -1522,6 +1863,7 @@
       },
       {
         "color": "Khaki",
+        "colorCode": "#F0E68C",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/d9/17783180004e8aa12d22309585bf3d839d8166e282.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/53/1778318002a2f55c87be18e15033458ebe0e537d3d.webp",
@@ -1532,6 +1874,7 @@
       },
       {
         "color": "Dark Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/d9/17783180004e8aa12d22309585bf3d839d8166e282.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/53/1778318002a2f55c87be18e15033458ebe0e537d3d.webp",
@@ -1542,6 +1885,7 @@
       },
       {
         "color": "Light Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/d9/17783180004e8aa12d22309585bf3d839d8166e282.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/53/1778318002a2f55c87be18e15033458ebe0e537d3d.webp",
@@ -1552,6 +1896,7 @@
       },
       {
         "color": "Red Violet",
+        "colorCode": "#2C3E50",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/d9/17783180004e8aa12d22309585bf3d839d8166e282.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/09/53/1778318002a2f55c87be18e15033458ebe0e537d3d.webp",
@@ -1563,82 +1908,83 @@
     ]
   },
   {
-    "sku": "sm2407112061235020",
-    "title": "Manfinity Homme Men's Casual Water Washed Thermal Thermal Lined Jeans, Autumn/Winter",
-    "slug": "manfinity-homme-mens-casual-water-washed-thermal-thermal-lined-jeans-autumnwinter",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Men's Casual Water Washed Thermal Thermal Lined Jeans, Autumn/Winter",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Skinny fit with reinforced bar-tacks.",
+    "price": 3720,
+    "discountedPrice": 3274,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "style": "Casual - Modern Casual",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "color": "Blue",
-      "type": "Skinny",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Skinny",
-      "fabricElasticity": "High Stretch",
-      "material": "Denim",
-      "composition": "57% Cotton, 34% Polyester, 7% Viscose, 2% Elastane",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": true,
-      "belt": false,
-      "body": "Unlined",
-      "sheer": false
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Color": "Blue",
+      "Type": "Skinny",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Skinny",
+      "Fabric Elasticity": "High Stretch",
+      "Material": "Denim",
+      "Composition": "57% Cotton, 34% Polyester, 7% Viscose, 2% Elastane",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 183.0cm, Bust: 94.0cm, Waist: 76.0cm, Hips: 92.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 74,
-          "hip": 94,
-          "inseam": 74.4,
-          "thigh": 59.1
-        },
-        {
-          "size": "S",
-          "waist": 78,
-          "hip": 98,
-          "inseam": 75.2,
-          "thigh": 61.3
-        },
-        {
-          "size": "M",
-          "waist": 82,
-          "hip": 102,
-          "inseam": 76.0,
-          "thigh": 63.5
-        },
-        {
-          "size": "L",
-          "waist": 87,
-          "hip": 107,
-          "inseam": 76.8,
-          "thigh": 66.2
-        },
-        {
-          "size": "XL",
-          "waist": 92,
-          "hip": 112,
-          "inseam": 77.6,
-          "thigh": 68.9
-        },
-        {
-          "size": "XXL",
-          "waist": 97,
-          "hip": 117,
-          "inseam": 78.4,
-          "thigh": 71.6
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 74,
+        "Hip Size": 94,
+        "Length": 74.4,
+        "Thigh": 59.1
+      },
+      {
+        "Size": "S",
+        "Waist Size": 78,
+        "Hip Size": 98,
+        "Length": 75.2,
+        "Thigh": 61.3
+      },
+      {
+        "Size": "M",
+        "Waist Size": 82,
+        "Hip Size": 102,
+        "Length": 76,
+        "Thigh": 63.5
+      },
+      {
+        "Size": "L",
+        "Waist Size": 87,
+        "Hip Size": 107,
+        "Length": 76.8,
+        "Thigh": 66.2
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 92,
+        "Hip Size": 112,
+        "Length": 77.6,
+        "Thigh": 68.9
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 97,
+        "Hip Size": 117,
+        "Length": 78.4,
+        "Thigh": 71.6
+      }
+    ],
     "variants": [
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/20/2c/1734688877efd012e54e29e17b0342d61ffc815af7.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/20/99/1734688880bcbd4153d48320362eb1d7dff73dd496.webp",
@@ -1654,6 +2000,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/09/05/fc/1725527024705279ccec03f8c30b283cdc43699fc3.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/09/05/1c/172552702823cc67ee408d8b0607591f7bfce582ba.webp",
@@ -1670,148 +2017,162 @@
     ]
   },
   {
-    "sku": "sm2410131556157696",
-    "title": "2pcs Men's Vintage Washed Slim Straight Leg Jeans, Suitable For Casual And Business Occasions",
-    "slug": "2pcs-mens-vintage-washed-slim-straight-leg-jeans-suitable-for-casual-and-business-occasions",
-    "category": "Denim Jeans",
+    "name": "2pcs Men's Vintage Washed Slim Straight Leg Jeans, Suitable For Casual And Business Occasions",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Cotton Viscose Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 3830,
+    "discountedPrice": 3370,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "pantsBody": "Lined",
-      "style": "Casual - Modern Casual",
-      "features": "Comfortable",
-      "idealFor": "conventional",
-      "scenes": "Business Commuting",
-      "color": "Multicolor",
-      "waistLine": "Natural(Mid Waist)",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Slight Stretch",
-      "pantsLength": "Long",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": false,
-      "pantsMaterial": "Denim",
-      "belt": false,
-      "pantsComposition": "64.5% Cotton,33.5% Polyester,2% Elastane",
-      "sheer": false
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Body / Lining": "Lined",
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Business Commuting",
+      "Color": "Multicolor",
+      "Waist Line": "Natural(Mid Waist)",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Slight Stretch",
+      "Length": "Long",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Material": "Denim",
+      "Composition": "64.5% Cotton,33.5% Polyester,2% Elastane",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "28",
-          "waist": 74,
-          "hip": 92,
-          "inseam": 71.8
-        },
-        {
-          "size": "30",
-          "waist": 79,
-          "hip": 97,
-          "inseam": 73.4
-        },
-        {
-          "size": "32",
-          "waist": 84,
-          "hip": 102,
-          "inseam": 75.0
-        },
-        {
-          "size": "34",
-          "waist": 89,
-          "hip": 107,
-          "inseam": 76.6
-        },
-        {
-          "size": "36",
-          "waist": 94,
-          "hip": 112,
-          "inseam": 78.2
-        },
-        {
-          "size": "38",
-          "waist": 99,
-          "hip": 117,
-          "inseam": 79.8
-        }
-      ]
-    },
-    "variants": []
+    "sizeChart": [
+      {
+        "Size": "28",
+        "Waist Size": 74,
+        "Hip Size": 92,
+        "Length": 71.8
+      },
+      {
+        "Size": "30",
+        "Waist Size": 79,
+        "Hip Size": 97,
+        "Length": 73.4
+      },
+      {
+        "Size": "32",
+        "Waist Size": 84,
+        "Hip Size": 102,
+        "Length": 75
+      },
+      {
+        "Size": "34",
+        "Waist Size": 89,
+        "Hip Size": 107,
+        "Length": 76.6
+      },
+      {
+        "Size": "36",
+        "Waist Size": 94,
+        "Hip Size": 112,
+        "Length": 78.2
+      },
+      {
+        "Size": "38",
+        "Waist Size": 99,
+        "Hip Size": 117,
+        "Length": 79.8
+      }
+    ],
+    "variants": [
+      {
+        "color": "Multicolor",
+        "colorCode": "#4A90E2",
+        "images": [
+          "https://images.unsplash.com/photo-1542272604-780c96856592?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop"
+        ]
+      }
+    ]
   },
   {
-    "sku": "sm260317174438896094011",
-    "title": "RivetRise Men's Casual Everyday Wear Jeans With Pockets And Buttons",
-    "slug": "rivetrise-mens-casual-everyday-wear-jeans-with-pockets-and-buttons",
-    "category": "Denim Jeans",
+    "name": "RivetRise Men's Casual Everyday Wear Jeans With Pockets And Buttons",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2440,
+    "discountedPrice": 2147,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Avant-Garde - Street Casual",
-      "idealFor": "conventional",
-      "color": "Multicolor",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "High Stretch",
-      "material": "Denim",
-      "composition": "65% Cotton, 28% Polyester, 5% Viscose, 2% Elastane",
-      "careInstructions": "Machine wash or professional dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Avant-Garde - Street Casual",
+      "Ideal For": "conventional",
+      "Color": "Multicolor",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "High Stretch",
+      "Material": "Denim",
+      "Composition": "65% Cotton, 28% Polyester, 5% Viscose, 2% Elastane",
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 187.0cm, Bust: 99.0cm, Waist: 79.0cm, Hips: 97.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 73,
-          "hip": 91.8,
-          "inseam": 74.4,
-          "thigh": 58.8
-        },
-        {
-          "size": "S",
-          "waist": 77,
-          "hip": 95.8,
-          "inseam": 75.2,
-          "thigh": 61.4
-        },
-        {
-          "size": "M",
-          "waist": 81,
-          "hip": 99.8,
-          "inseam": 76.0,
-          "thigh": 64.0
-        },
-        {
-          "size": "L",
-          "waist": 86,
-          "hip": 104.8,
-          "inseam": 76.8,
-          "thigh": 67.3
-        },
-        {
-          "size": "XL",
-          "waist": 91,
-          "hip": 109.8,
-          "inseam": 77.6,
-          "thigh": 70.6
-        },
-        {
-          "size": "XXL",
-          "waist": 96,
-          "hip": 114.8,
-          "inseam": 78.4,
-          "thigh": 73.9
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 73,
+        "Hip Size": 91.8,
+        "Length": 74.4,
+        "Thigh": 58.8
+      },
+      {
+        "Size": "S",
+        "Waist Size": 77,
+        "Hip Size": 95.8,
+        "Length": 75.2,
+        "Thigh": 61.4
+      },
+      {
+        "Size": "M",
+        "Waist Size": 81,
+        "Hip Size": 99.8,
+        "Length": 76,
+        "Thigh": 64
+      },
+      {
+        "Size": "L",
+        "Waist Size": 86,
+        "Hip Size": 104.8,
+        "Length": 76.8,
+        "Thigh": 67.3
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 91,
+        "Hip Size": 109.8,
+        "Length": 77.6,
+        "Thigh": 70.6
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 96,
+        "Hip Size": 114.8,
+        "Length": 78.4,
+        "Thigh": 73.9
+      }
+    ],
     "variants": [
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/20/74/17636312693ec96facadd7f7fa99cc361eef90493f.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/20/f2/1763631270d04e448df66a56c9978b734783d111f8.webp",
@@ -1827,6 +2188,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/26/47/1758858355792c467231cd781d0e6dd8580e956e12.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/26/db/17588583579d39edaa7e9ba0e25b4bf134d1cef86e.webp",
@@ -1843,6 +2205,7 @@
       },
       {
         "color": "Multicolor",
+        "colorCode": "#4A90E2",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/04/09/ec/177570130072db118a880f9167996fdf028d3a7d58.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/04/09/e3/17757013024634200b7548199260c69282cee8a48c.webp",
@@ -1860,72 +2223,77 @@
     ]
   },
   {
-    "sku": "sm2211224021124377",
-    "title": "Manfinity Homme Loose Fit Men's Cotton Cargo Jeans With Flap Pockets",
-    "slug": "manfinity-homme-loose-fit-mens-cotton-cargo-jeans-with-flap-pockets",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Loose Fit Men's Cotton Cargo Jeans With Flap Pockets",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2550,
+    "discountedPrice": 2244,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Avant-Garde - Street Casual",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "color": "Light Wash",
-      "type": "Wide Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "73% Cotton, 18% Polyester, 9% Viscose",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Avant-Garde - Street Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Color": "Light Wash",
+      "Type": "Wide Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 106,
-          "inseam": 73.6,
-          "thigh": 67.8
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 110,
-          "inseam": 75.0,
-          "thigh": 70.0
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 115,
-          "inseam": 76.4,
-          "thigh": 72.7
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 120,
-          "inseam": 77.8,
-          "thigh": 75.4
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 125,
-          "inseam": 79.2,
-          "thigh": 78.1
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 106,
+        "Length": 73.6,
+        "Thigh": 67.8
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 110,
+        "Length": 75,
+        "Thigh": 70
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 115,
+        "Length": 76.4,
+        "Thigh": 72.7
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 120,
+        "Length": 77.8,
+        "Thigh": 75.4
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 125,
+        "Length": 79.2,
+        "Thigh": 78.1
+      }
+    ],
     "variants": [
       {
         "color": "Dark Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/07/99/17624817351c34a32d3b474c94539e6309c38405c4.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/07/60/1762481732f12313299886e0aa03dc0b7a974d1615.webp",
@@ -1939,6 +2307,7 @@
       },
       {
         "color": "Light Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2023/01/06/16729893636bae606f030f6a60938100caeae9f94d.webp",
           "https://img.ltwebstatic.com/images3_pi/2023/01/06/167298936687e24b9f4e65ade3a5849753cddc187d.webp",
@@ -1954,74 +2323,78 @@
     ]
   },
   {
-    "sku": "sm25043024594247941",
-    "title": "Manfinity Homme Men's Coffee Brown Denim Long Pants Avant-Garde Street Casual Style With Zipper Detail",
-    "slug": "manfinity-homme-mens-coffee-brown-denim-long-pants-avant-garde-street-casual-style-with-zipper-detail",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Men's Coffee Brown Denim Long Pants Avant-Garde Street Casual Style With Zipper Detail",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2660,
+    "discountedPrice": 2341,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Casual - Modern Casual",
-      "idealFor": "conventional",
-      "color": "Coffee Brown",
-      "type": "Wide Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "87% Cotton, 7% Polyester, 6% Viscose",
-      "careInstructions": "Hand wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false,
-      "numberOfPieces": "1 Piece Set"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Color": "Coffee Brown",
+      "Type": "Wide Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "87% Cotton, 7% Polyester, 6% Viscose",
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false,
+      "Number Of Pieces": "1 Piece Set"
     },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 187.0cm, Bust: 104.0cm, Waist: 80.0cm, Hips: 100.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 78,
-          "hip": 102,
-          "inseam": 74.9
-        },
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 106,
-          "inseam": 75.7
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 110,
-          "inseam": 76.5
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 115,
-          "inseam": 77.3
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 120,
-          "inseam": 78.1
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 125,
-          "inseam": 78.9
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 102,
+        "Length": 74.9
+      },
+      {
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 106,
+        "Length": 75.7
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 110,
+        "Length": 76.5
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 115,
+        "Length": 77.3
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 120,
+        "Length": 78.1
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 125,
+        "Length": 78.9
+      }
+    ],
     "variants": [
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/19/f5/1768791238056360da8c9bd49854e7877ed0e012f2.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/19/44/1768791239ec233dd9099efe5029a739fc8d50c3b0.webp",
@@ -2038,6 +2411,7 @@
       },
       {
         "color": "Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/10/22/fc/1761119242fb3ccd8cb10083aa67746d755546a52d.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/10/22/ec/1761119244b8276ba12cd90932c5f2d4bcb55cb426.webp",
@@ -2051,6 +2425,7 @@
       },
       {
         "color": "Multicolor",
+        "colorCode": "#4A90E2",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/19/0f/1768791218db4b52cf3a440d6ebcdf6f892498d346.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/19/0b/1768791220325983e6fc16e96deec810cb409fcc73.webp",
@@ -2067,6 +2442,7 @@
       },
       {
         "color": "Purple",
+        "colorCode": "#2C3E50",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/28/d2/176431330245427157dde8a8d9c0a013593a8d7fe9.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/28/6d/176431330322b405cf11d0920d6f3f04951b69630f.webp",
@@ -2079,6 +2455,7 @@
       },
       {
         "color": "White",
+        "colorCode": "#FFFFFF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/09/31/1767925742ea8832466e7a5184a10470c58b2279bd.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/01/09/3f/17679257431aca3636d13d0951e5e21c60413d2968.webp",
@@ -2094,6 +2471,7 @@
       },
       {
         "color": "Coffee Brown",
+        "colorCode": "#8B4513",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/18/4c/17634375264b29e0eac35adf4069683695bc4f283a.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/11/18/e9/176343752882e14d6083a31ba676890f2c7b1d409a.webp",
@@ -2108,182 +2486,83 @@
     ]
   },
   {
-    "sku": "sm260121164684847015538",
-    "title": "Men's Stretch Slim Straight Leg Business Casual Jeans, Slant Pocket Design, Versatile For Daily Wear",
-    "slug": "mens-stretch-slim-straight-leg-business-casual-jeans-slant-pocket-design-versatile-for-daily-wear",
-    "category": "Denim Jeans",
+    "name": "QuarKem Men's Minimalist Front Button Pocket Jeans, Casual Everyday Wear",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2880,
+    "discountedPrice": 2534,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Casual - Modern Casual",
-      "features": "Comfortable",
-      "idealFor": "conventional",
-      "scenes": "Business Commuting",
-      "color": "Blue",
-      "type": "Straight Leg",
-      "waistLine": "Low Waist",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Medium Stretch",
-      "material": "Denim",
-      "composition": "45.9% Polyester, 30.3% Cotton, 19.7% Viscose, 4.1% Elastane",
-      "careInstructions": "Machine wash, do not dry clean",
-      "pockets": true,
-      "linedForAddedWarmth": false,
-      "belt": false,
-      "body": "Unlined",
-      "sheer": false,
-      "lining": "100% Polyester"
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Color": "Blue",
+      "Type": "Straight Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "68% Cotton, 18% Viscose, 14% Polyester",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "28",
-          "waist": 73,
-          "hip": 90,
-          "inseam": 72.8
-        },
-        {
-          "size": "30",
-          "waist": 78,
-          "hip": 95,
-          "inseam": 73.4
-        },
-        {
-          "size": "32",
-          "waist": 83,
-          "hip": 100,
-          "inseam": 74.0
-        },
-        {
-          "size": "34",
-          "waist": 88,
-          "hip": 105,
-          "inseam": 74.6
-        },
-        {
-          "size": "36",
-          "waist": 93,
-          "hip": 110,
-          "inseam": 75.2
-        },
-        {
-          "size": "38",
-          "waist": 98,
-          "hip": 115,
-          "inseam": 75.8
-        }
-      ]
-    },
-    "variants": [
+    "sizeChart": [
       {
-        "color": "Black",
-        "images": [
-          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/08/7e/178090238199ca1ca6e9ff2efd564ff120eb914913.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/47/1755007216940e2ec24df12251224b5dc9aafd06b6.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/be/1755007210d80a7ea9b6d2d665abf3ee2f575e801d.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/e6/1755007213611b0563ac662fa04c414e49aec3219a.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/28/175500721086290d2c21ce1961c2e83df7357d61af.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/99/1755007214682df66f3a958c698eddf83aa3aca4a0.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/59/1755007214d24d3f01802600a29b0fa2a00df7c772.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2025/08/12/03/17550072200163c515cea7ba87f80229659b3a1236.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/08/7e/178090238199ca1ca6e9ff2efd564ff120eb914913_thumbnail_900x.webp",
-          "https://img.ltwebstatic.com/v4/p/pics1/2026/03/10/0e/17731307883347906a6749e479383f94dc66cdab9e.png"
-        ]
+        "Size": "XS",
+        "Waist Size": 78,
+        "Hip Size": 102,
+        "Length": 72.4,
+        "Thigh": 65.6
       },
       {
-        "color": "Blue",
-        "images": [
-          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/08/f1/178090237534746dd0ec4e01c8798370d57b13a780.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/06/11/ad/171807336001af5b179b45a3d4d371db4a3e7c666f.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/fb/171566627956e35955a1408ba3cf8768c29d3ea768.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/8d/1715666263cabe4516c7dbe3bb561b91bba272e269.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/e5/171566626617d28c43d37fe9cdd4fe96c164fb8e89.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/d4/171566627189a8ddf7b482ec45ffc429baeca6152b.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/43/171566627487364bb8e34ceb0d39c45158cfcc8827.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/d0/1715666276cf3a31f823e6d3eeb648af039fba2484.webp",
-          "https://img.ltwebstatic.com/images3_pi/2024/05/14/ec/17156662818a92e60ce2b8cbf45bd95e1d0c24dc5f.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/08/f1/178090237534746dd0ec4e01c8798370d57b13a780_thumbnail_900x.webp"
-        ]
+        "Size": "S",
+        "Waist Size": 82,
+        "Hip Size": 106,
+        "Length": 73.2,
+        "Thigh": 67.8
+      },
+      {
+        "Size": "M",
+        "Waist Size": 86,
+        "Hip Size": 110,
+        "Length": 74,
+        "Thigh": 70
+      },
+      {
+        "Size": "L",
+        "Waist Size": 91,
+        "Hip Size": 115,
+        "Length": 74.8,
+        "Thigh": 72.7
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 96,
+        "Hip Size": 120,
+        "Length": 75.6,
+        "Thigh": 75.4
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 101,
+        "Hip Size": 125,
+        "Length": 76.4,
+        "Thigh": 78.1
       }
-    ]
-  },
-  {
-    "sku": "sm2411018084214266",
-    "title": "QuarKem Men's Minimalist Front Button Pocket Jeans, Casual Everyday Wear",
-    "slug": "quarkem-mens-minimalist-front-button-pocket-jeans-casual-everyday-wear",
-    "category": "Denim Jeans",
-    "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "style": "Casual - Modern Casual",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "color": "Blue",
-      "type": "Straight Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "68% Cotton, 18% Viscose, 14% Polyester",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false
-    },
-    "measurements": {
-      "unit": "CM",
-      "modelInfo": "Wearing M, Height: 185.0cm, Waist: 80.0cm, Hips: 95.0cm",
-      "sizeChart": [
-        {
-          "size": "XS",
-          "waist": 78,
-          "hip": 102,
-          "inseam": 72.4,
-          "thigh": 65.6
-        },
-        {
-          "size": "S",
-          "waist": 82,
-          "hip": 106,
-          "inseam": 73.2,
-          "thigh": 67.8
-        },
-        {
-          "size": "M",
-          "waist": 86,
-          "hip": 110,
-          "inseam": 74.0,
-          "thigh": 70.0
-        },
-        {
-          "size": "L",
-          "waist": 91,
-          "hip": 115,
-          "inseam": 74.8,
-          "thigh": 72.7
-        },
-        {
-          "size": "XL",
-          "waist": 96,
-          "hip": 120,
-          "inseam": 75.6,
-          "thigh": 75.4
-        },
-        {
-          "size": "XXL",
-          "waist": 101,
-          "hip": 125,
-          "inseam": 76.4,
-          "thigh": 78.1
-        }
-      ]
-    },
+    ],
     "variants": [
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/ad/1781539476470359eb5aabe0a0a16bce0e9a5aa991.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/16/06/1781539477cb75c1761e2bf3014af7c4f66c33615f.webp",
@@ -2333,6 +2612,7 @@
       },
       {
         "color": "Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/be/1733709071691293ff7c872410ee07510c2366c54e.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/f8/1733709075b73dc91e4e8574132d6b57dc4dd7c5af.webp",
@@ -2347,6 +2627,7 @@
       },
       {
         "color": "Dark Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/be/1733709071691293ff7c872410ee07510c2366c54e.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/f8/1733709075b73dc91e4e8574132d6b57dc4dd7c5af.webp",
@@ -2361,6 +2642,7 @@
       },
       {
         "color": "Light Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/be/1733709071691293ff7c872410ee07510c2366c54e.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/12/09/f8/1733709075b73dc91e4e8574132d6b57dc4dd7c5af.webp",
@@ -2376,72 +2658,77 @@
     ]
   },
   {
-    "sku": "sm2401041388873103",
-    "title": "Manfinity Homme Men's Straight Leg Jeans",
-    "slug": "manfinity-homme-mens-straight-leg-jeans",
-    "category": "Denim Jeans",
+    "name": "Manfinity Homme Men's Straight Leg Jeans",
+    "categorySlug": "men-jeans",
+    "brandSlug": "celebs-denim",
+    "vendorShopName": "Celebs Official",
+    "description": "Tailored premium denim jeans. Denim. Regular Fit fit with reinforced bar-tacks.",
+    "price": 2990,
+    "discountedPrice": 2631,
+    "featured": false,
+    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
+    "skuPrefix": "CEL-JNS",
+    "stockPerSize": 30,
     "attributes": {
-      "closureType": "Zipper Fly",
-      "details": ["Button", "Pocket", "Zipper"],
-      "patternType": "Plain",
-      "style": "Casual - Modern Casual",
-      "idealFor": "conventional",
-      "scenes": "Daily",
-      "color": "Light Wash",
-      "type": "Wide Leg",
-      "waistLine": "Natural(Mid Waist)",
-      "length": "Long",
-      "fitType": "Regular Fit",
-      "fabricElasticity": "Non-Stretch",
-      "material": "Denim",
-      "composition": "73% Cotton, 18% Polyester, 9% Viscose",
-      "careInstructions": "Machine wash, do not dry clean",
-      "body": "Unlined",
-      "sheer": false
+      "Closure Type": "Zipper Fly",
+      "Details": ["Button", "Pocket", "Zipper"],
+      "Pattern Type": "Plain",
+      "Style": "Casual - Modern Casual",
+      "Ideal For": "conventional",
+      "Scenes": "Daily",
+      "Color": "Light Wash",
+      "Type": "Wide Leg",
+      "Waist Line": "Natural(Mid Waist)",
+      "Length": "Long",
+      "Fit Type": "Regular Fit",
+      "Fabric Elasticity": "Non-Stretch",
+      "Material": "Denim",
+      "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Body / Lining": "Unlined",
+      "Sheer": false
     },
-    "measurements": {
-      "unit": "CM",
-      "sizeChart": [
-        {
-          "size": "S",
-          "waist": 81,
-          "hip": 106,
-          "inseam": 73.6,
-          "thigh": 67.8
-        },
-        {
-          "size": "M",
-          "waist": 85,
-          "hip": 110,
-          "inseam": 75.0,
-          "thigh": 70.0
-        },
-        {
-          "size": "L",
-          "waist": 90,
-          "hip": 115,
-          "inseam": 76.4,
-          "thigh": 72.7
-        },
-        {
-          "size": "XL",
-          "waist": 95,
-          "hip": 120,
-          "inseam": 77.8,
-          "thigh": 75.4
-        },
-        {
-          "size": "XXL",
-          "waist": 100,
-          "hip": 125,
-          "inseam": 79.2,
-          "thigh": 78.1
-        }
-      ]
-    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Waist Size": 81,
+        "Hip Size": 106,
+        "Length": 73.6,
+        "Thigh": 67.8
+      },
+      {
+        "Size": "M",
+        "Waist Size": 85,
+        "Hip Size": 110,
+        "Length": 75,
+        "Thigh": 70
+      },
+      {
+        "Size": "L",
+        "Waist Size": 90,
+        "Hip Size": 115,
+        "Length": 76.4,
+        "Thigh": 72.7
+      },
+      {
+        "Size": "XL",
+        "Waist Size": 95,
+        "Hip Size": 120,
+        "Length": 77.8,
+        "Thigh": 75.4
+      },
+      {
+        "Size": "XXL",
+        "Waist Size": 100,
+        "Hip Size": 125,
+        "Length": 79.2,
+        "Thigh": 78.1
+      }
+    ],
     "variants": [
       {
         "color": "Black",
+        "colorCode": "#1A1A1A",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/15/80/1757920347c419f1247b7ee63f266624a95d38e49b.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2025/09/15/38/1757920349d7fd5eb81575560c6a591be217c1f95c.webp",
@@ -2477,6 +2764,7 @@
       },
       {
         "color": "Blue",
+        "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/27/5a/177984628921973b9d906c58b01ec32c7b745f110c.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/05/27/a4/17798462917055719a6aabb039eed9d39f09ffd435.webp",
@@ -2492,6 +2780,7 @@
       },
       {
         "color": "Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2025/03/24/86/17428030546c7444679729b3882807c68e40af0edd.webp",
           "https://img.ltwebstatic.com/images3_pi/2025/03/24/b0/17428030555589f07db4292f2a6fca791833050bc4.webp",
@@ -2506,6 +2795,7 @@
       },
       {
         "color": "Dark Grey",
+        "colorCode": "#808080",
         "images": [
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/02/65/1780390867dc5a218f1b4f4e1ded7ec86f741f8919.webp",
           "https://img.ltwebstatic.com/v4/j/pi/2026/06/02/2b/17803908690898adcdc1d3d3bb8adf3a3444618121.webp",
@@ -2522,6 +2812,7 @@
       },
       {
         "color": "Medium Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/09/09/85/1725859758b0523d271b25e6474a816f35bf191fa9.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/09/09/13/17258597607240dac427bf34d17edbe3caa8428630.webp",
@@ -2547,6 +2838,7 @@
       },
       {
         "color": "Light Wash",
+        "colorCode": "#8A9199",
         "images": [
           "https://img.ltwebstatic.com/images3_pi/2024/02/01/7d/1706768156f857ab7319a4c1a14aaff1f78ecb58a5.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/02/01/7e/17067681590d9e1856b658964ec9ea8c2f6fc54e82.webp",
@@ -2556,6 +2848,966 @@
           "https://img.ltwebstatic.com/images3_pi/2024/02/01/6e/170676817424d84c2576b4839b48fdd26a0f383f3f.webp",
           "https://img.ltwebstatic.com/images3_pi/2024/02/01/7d/1706768156f857ab7319a4c1a14aaff1f78ecb58a5_thumbnail_900x.webp",
           "https://img.ltwebstatic.com/v4/p/pics1/2025/07/30/88/1753843681b4fc693215391ef2da8d1b0895c30a8e.png"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Men's Spring/Autumn Thin Fashion Casual Solid Color Loose Fit Coach Jacket, Minimalist Versatile Fashion Lapel Outerwear",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Men's Spring/Autumn Thin Fashion Casual Solid Color Loose Fit Coach Jacket, Minimalist Versatile Fashion Lapel Outerwear. Style: Casual - Minimalist Style. Fit: Regular Fit. Material: Woven Fabric. Care: Hand wash,do not dry clean.",
+    "price": 4080,
+    "discountedPrice": 3460,
+    "featured": true,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Hand wash,do not dry clean",
+      "Color": "Burgundy",
+      "Composition": "100% Polyester",
+      "Details": ["Pocket", "Zipper", "Button Front"],
+      "Fabric Elasticity": "Non-Stretch",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Casual - Minimalist Style"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Bust": 110,
+        "Length": 68,
+        "Sleeve Length": 76
+      },
+      {
+        "Size": "S",
+        "Bust": 114,
+        "Length": 70,
+        "Sleeve Length": 77.5
+      },
+      {
+        "Size": "M",
+        "Bust": 118,
+        "Length": 72,
+        "Sleeve Length": 79
+      },
+      {
+        "Size": "L",
+        "Bust": 123,
+        "Length": 74,
+        "Sleeve Length": 80.5
+      },
+      {
+        "Size": "XL",
+        "Bust": 128,
+        "Length": 76,
+        "Sleeve Length": 82
+      },
+      {
+        "Size": "XXL",
+        "Bust": 133,
+        "Length": 78,
+        "Sleeve Length": 83.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/dd/17724223496443a59108440464582ba24ec5edd53c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/02/24/ed/17719238618752d291e1b4dd3407bcc1da49498623.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/03/4e/1775198765d1517f23163a8726374cd574d488f17c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/90/1783330834f4355335aa845a771dbdd14b7df50851.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/50/1772422349674e3416a1e70ccc57398e70da34688b.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/73/17724223509af68cb3c6c4165056cd154ecdf5369c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/27/f6/1782537565eea389ede084892b4d99a84b2f8dd59a.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/e9/1772422417ed6b1e77188915d1fa4b8886c7c4f6c3.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2025/12/07/72/17650998509065699dd312d9b086fb0bc19c9600cf.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/06/b2/17727764411f02f5cf4b09d4c421aae25b936ac7f4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2025/12/07/f7/17650998512bdbd4b1348de0a9121ae059d70986e3.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ]
+      },
+      {
+        "color": "Camel",
+        "colorCode": "#4A5568",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/f2/1769598536a541d618ebdd3752462454c98ad3ab2d.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/02/24/37/177192386528e000cea8cfd16a48f66ced825b25e4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/cd/1783331052a91fa48cd277a5faf8953a5924274b43.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/33/1769597400446a4b69a56d4f23c293f6c8a4c5fd65.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/84/17695973816a4650dec1dc0f44346de78b3f7e98c8.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/c9/176959738194a0c73806cb5b3f7be34face2a47c5d.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/03/5e/1775198774ebcaeddb2a7232d7a40cd54091516aa4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/02/27/178298150694a15c7fdc8178dca5e6615880901899.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ]
+      },
+      {
+        "color": "Grey",
+        "colorCode": "#808080",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/67/178333622929d0e7a86f3aa65976fc1b77586abe68.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/5a/1775268656e50d48f016001ec37513d5a51566f110.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/42/17752686504077c617c8791b816a347cfac4a09ff0.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/1d/1775268653e758e05e7bbc658a6efed9334eee3f82.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/a2/177526863891070bcbd19a227fdd5bc3ca9a68f698.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/83/177526864736ce3a37d1bf490972a4e69f76b1170e.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/57/17752686385633ebeb1a7451ce7bfbac18c0b30830.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/ee/177526864252a00ab68695db5403ee3a3f7aa273ff.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ]
+      },
+      {
+        "color": "Navy Blue",
+        "colorCode": "#1B2A4A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/7a/17833360877aecd170913ee11a1f916e54345b094e.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/ea/17758986881e6d542ef3e69ec6822de61054e855f1.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/ba/177589869801cb081c4f15bc32bd5d5a24d50cc720.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/05/07/177795678752ba8479e92896fcd87644c3d090fadc.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/5f/17770160850e25e42d48558cc62afe8f0600687cd3.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/31/177701606702de805f7dddd041d45ee8c29f63d41d.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/81/1777016071781125144ade6470169aeb038a6a7a3c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/fe/177701607425fc553c152a5ebb065ca292a4ba2014.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ]
+      },
+      {
+        "color": "Coffee Brown",
+        "colorCode": "#4B2E1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/b9/17833367770c4b3d741409d30b37638a6c028866da.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/89/1775898708335e3f63452f0c0f0723a87de2a076e5.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/05/177589871568dd7bc62086754b0bbcb2fbf5769a29.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/1f/177701613077df0ff0c3b51e13935d3856e531dca1.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/fb/1777016140712ad83a777034990634a44584dfa166.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/91/1777016133ae14a5e9f0131e1718e8f76eeb5378cb.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/6f/1777016137b5c8459b6c7b9070f6856e412c47f993.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ]
+      },
+      {
+        "color": "Burgundy",
+        "colorCode": "#800020",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/dc/1783335516d56be295c0a97dc70c00b9494c64e797.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/53/1775898738d07e3929bb686f7dd8748e6436bb4869.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/d6/17758987451d11402a72f5930626a8a410790d27ee.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/36/1777016175ee77afd09c91e2f0528d005d714fcd86.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/17/70/1778995802e4f6f0317cf25dac3968b3909a6e1dbf.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/85/1777016178edb1cf93fd2faf1e75e8ce068cde59a4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/8d/177701618170d9fb3adcea4b4867f29de0bfee082c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/0f/1777016185567cd2e83006733da5e81589d56a664e.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Claim Dot Men's Black Vertical Pinstripe Stand Collar Zip-Up Jacket, Elastic Cuffs And Hem Lightweight Casual Windbreaker, Loose Fit Spring/Autumn Daily Streetwear Outerwear",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Claim Dot Men's Black Vertical Pinstripe Stand Collar Zip-Up Jacket, Elastic Cuffs And Hem Lightweight Casual Windbreaker, Loose Fit Spring/Autumn Daily Streetwear Outerwear. Style: Sports & Outdoor - Gym Commuting. Fit: Loose. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 5130,
+    "discountedPrice": 4350,
+    "featured": true,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Black",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Woven Fabric",
+      "Style": "Streetwear"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Shoulder": 43,
+        "Bust": 108,
+        "Length": 65,
+        "Sleeve Length": 63.6
+      },
+      {
+        "Size": "S",
+        "Shoulder": 44.5,
+        "Bust": 112,
+        "Length": 67,
+        "Sleeve Length": 64.8
+      },
+      {
+        "Size": "M",
+        "Shoulder": 46,
+        "Bust": 116,
+        "Length": 69,
+        "Sleeve Length": 66
+      },
+      {
+        "Size": "L",
+        "Shoulder": 47.8,
+        "Bust": 121,
+        "Length": 71,
+        "Sleeve Length": 67.2
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 49.6,
+        "Bust": 126,
+        "Length": 73,
+        "Sleeve Length": 68.4
+      },
+      {
+        "Size": "XXL",
+        "Shoulder": 51.4,
+        "Bust": 131,
+        "Length": 75,
+        "Sleeve Length": 69.6
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/e1164ac40b38ec96f7ff82ff44bc1c237bf9ed7430fe139d428e0b6c7f8450c4.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/241d624cabdf30417f4cd1444efbd5d1de0d11ecd44872c71cee93ccc4a03ccf.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/d46361a1df2e2e16368060802576cf42dc3e5870a50178650e51b9ff31e1d2d8.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/37cc8c28e0665414f293b28e8b06cd36881719be5e5217cabe7a8435b0277e17.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Men's Spring/Autumn Thin Suede Jacket, Vintage Small Stand Collar Casual Outerwear, Loose Minimalist Zipper Baseball Jacket Top",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Men's Spring/Autumn Thin Suede Jacket, Vintage Small Stand Collar Casual Outerwear, Loose Minimalist Zipper Baseball Jacket Top. Style: Western Style. Fit: Regular Fit. Material: Suedette. Care: Hand wash or professional dry clean.",
+    "price": 5060,
+    "discountedPrice": 4290,
+    "featured": true,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Hand wash or professional dry clean",
+      "Color": "Mocha Brown",
+      "Composition": "95% Polyester, 5% Elastane",
+      "Fit Type": "Regular Fit",
+      "Material": "Suedette",
+      "Style": "Western Style"
+    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Shoulder": 46,
+        "Bust": 110,
+        "Length": 70,
+        "Sleeve Length": 62
+      },
+      {
+        "Size": "M",
+        "Shoulder": 47.5,
+        "Bust": 115,
+        "Length": 72,
+        "Sleeve Length": 63.5
+      },
+      {
+        "Size": "L",
+        "Shoulder": 49,
+        "Bust": 120,
+        "Length": 74,
+        "Sleeve Length": 65
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 50.5,
+        "Bust": 125,
+        "Length": 76,
+        "Sleeve Length": 66.5
+      },
+      {
+        "Size": "XXL",
+        "Shoulder": 52,
+        "Bust": 130,
+        "Length": 78,
+        "Sleeve Length": 68
+      }
+    ],
+    "variants": [
+      {
+        "color": "Mocha Brown",
+        "colorCode": "#5A3D28",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/07/db/177813894128c803aadf167f3fb9d148ceecb98542.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/45/177881871743d5ce1e7ac337d754dc7075c04840da.webp"
+        ]
+      },
+      {
+        "color": "Black and White",
+        "colorCode": "#2B2B2B",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/c2/17788182308035451337cf54ef3f03a0ebc9674db1.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/ef/1778818277f7b9d2a4376aea4034dff002c65376d6.webp"
+        ]
+      },
+      {
+        "color": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/15/b3/1789462250c3054d904a97f0fca5b46d835c2cbbed.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/08/40/178087969900a23282f144381d08dea04e61764fcf.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Men's Minimalist Solid Color Hooded Tech Windbreaker Jacket, Vintage Youthful Versatile Long Sleeve Jacket, American Casual Tech Outerwear, Men's Long Sleeve Outer Layer Top",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Men's Minimalist Solid Color Hooded Tech Windbreaker Jacket, Vintage Youthful Versatile Long Sleeve Jacket, American Casual Tech Outerwear. Style: Sports & Outdoor. Fit: Regular Fit. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 6200,
+    "discountedPrice": 5250,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Blue",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Sports & Outdoor"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Bust": 116,
+        "Length": 64,
+        "Sleeve Length": 81
+      },
+      {
+        "Size": "S",
+        "Bust": 120,
+        "Length": 66,
+        "Sleeve Length": 82.5
+      },
+      {
+        "Size": "M",
+        "Bust": 124,
+        "Length": 68,
+        "Sleeve Length": 84
+      },
+      {
+        "Size": "L",
+        "Bust": 129,
+        "Length": 70,
+        "Sleeve Length": 85.8
+      },
+      {
+        "Size": "XL",
+        "Bust": 134,
+        "Length": 72,
+        "Sleeve Length": 87.5
+      },
+      {
+        "Size": "XXL",
+        "Bust": 139,
+        "Length": 74,
+        "Sleeve Length": 89.3
+      }
+    ],
+    "variants": [
+      {
+        "color": "Blue",
+        "colorCode": "#1E90FF",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/88/17905898833e6821b090ff7323d3726e3be8b119d5.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/e6/17905889940d2913e57645d362e290211b9bf60841.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Core Aspect Men's Best-Selling Leather Jacket, INS Style Casual Pocket Leather Jacket, Suitable For Autumn/Winter Matching And Daily Wear",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Core Aspect Men's Best-Selling Leather Jacket, INS Style Casual Pocket Leather Jacket, Suitable For Autumn/Winter Matching And Daily Wear, Great For Photos, Gift For Boyfriend/Husband. Material: Polyurethane(PU). Care: Machine wash, do not dry clean.",
+    "price": 8590,
+    "discountedPrice": 7280,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Color": "Brown",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Polyurethane(PU)",
+      "Style": "Casual"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Shoulder": 45,
+        "Bust": 108,
+        "Length": 65,
+        "Sleeve Length": 62.1
+      },
+      {
+        "Size": "S",
+        "Shoulder": 46.5,
+        "Bust": 112,
+        "Length": 67,
+        "Sleeve Length": 63.3
+      },
+      {
+        "Size": "M",
+        "Shoulder": 48,
+        "Bust": 116,
+        "Length": 69,
+        "Sleeve Length": 64.5
+      },
+      {
+        "Size": "L",
+        "Shoulder": 49.8,
+        "Bust": 121,
+        "Length": 71,
+        "Sleeve Length": 65.7
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 51.6,
+        "Bust": 126,
+        "Length": 73,
+        "Sleeve Length": 66.9
+      }
+    ],
+    "variants": [
+      {
+        "color": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026090827871/d6d006628ddcf07d6268904528ca906b1d04527d2122a873f76f62de4c0f1cf5.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026090827871/be1c2c91e75d7fcdd7dcc68aea7e6d3b3624568668c486ad0c98847d315b882f.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "HUEFORM Men's Old Money Brown Double Chest Pocket & Slanted Pocket Design Business Mature Style, Lined Classic Versatile Jacket",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "HUEFORM Men's Old Money Brown Double Chest Pocket & Slanted Pocket Design Business Mature Style, Lined Classic Versatile Jacket Suitable For Everyday Autumn. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 6290,
+    "discountedPrice": 5330,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Rust Brown",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Casual"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Shoulder": 45.5,
+        "Bust": 106,
+        "Length": 64,
+        "Sleeve Length": 62.1
+      },
+      {
+        "Size": "S",
+        "Shoulder": 47,
+        "Bust": 110,
+        "Length": 66,
+        "Sleeve Length": 63.3
+      },
+      {
+        "Size": "M",
+        "Shoulder": 48.5,
+        "Bust": 114,
+        "Length": 68,
+        "Sleeve Length": 64.5
+      },
+      {
+        "Size": "L",
+        "Shoulder": 50.3,
+        "Bust": 119,
+        "Length": 70,
+        "Sleeve Length": 65.7
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 52.1,
+        "Bust": 124,
+        "Length": 72,
+        "Sleeve Length": 66.9
+      }
+    ],
+    "variants": [
+      {
+        "color": "Apricot",
+        "colorCode": "#F5C99B",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/12/db/1757659777f25157063e5bf3950838a24e831af1c5.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/12/18/175765977916355b30c551b90192f2c9375e121431.webp"
+        ]
+      },
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/08/03/96/178575092444baf8a561b7002a481e87ac7520c109.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/08/06/51/17859927270581110feb4163d61ee91300c79c638a.webp"
+        ]
+      },
+      {
+        "color": "Black and White",
+        "colorCode": "#2B2B2B",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026093018954/7fef5163fc00c56af01ca8f46e80033d7f7864368e131ba14589fb8440429c18.webp"
+        ]
+      },
+      {
+        "color": "Grey",
+        "colorCode": "#808080",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/smartflow/2026/10/07/79/179138680641a84d10d401af5f344d93b38be2fe06.webp"
+        ]
+      },
+      {
+        "color": "Khaki",
+        "colorCode": "#C3B091",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026090920902/69eb5373ee6272058762435e3a3a594f00cc84589537be20f2f8b93059e60bce.webp"
+        ]
+      },
+      {
+        "color": "Multicolor",
+        "colorCode": "#4A90E2",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609169768/400ea6b11d31ae0dbeae3afb78bf8af5415c56a4df5400aec8a1765ce61b1a41.webp"
+        ]
+      },
+      {
+        "color": "White",
+        "colorCode": "#FFFFFF",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026100931999/2c84a83f7419462f6b4d0ed88db6b70bd8794d78a068171b60ba2232426c9d57.webp"
+        ]
+      },
+      {
+        "color": "Rust Brown",
+        "colorCode": "#8B3103",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609290897/2461c08df99bb468f223d3f6437ebef5ace86030c8d5145e91e19391b1d2b0b1.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Men's Fashion Thermal Lined Minimalist Casual Daily Jacket, Suitable For Autumn/Winter",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Men's Fashion Thermal Lined Minimalist Casual Daily Jacket, Suitable For Autumn/Winter. Style: Casual. Fit: Regular Fit. Material: Woven Fabric. Care: Hand wash, do not dry clean.",
+    "price": 8660,
+    "discountedPrice": 7340,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Color": "Light Grey",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Casual"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Shoulder": 44.6,
+        "Bust": 108,
+        "Length": 66,
+        "Sleeve Length": 63
+      },
+      {
+        "Size": "S",
+        "Shoulder": 46.1,
+        "Bust": 112,
+        "Length": 68,
+        "Sleeve Length": 64.5
+      },
+      {
+        "Size": "M",
+        "Shoulder": 47.6,
+        "Bust": 116,
+        "Length": 70,
+        "Sleeve Length": 66
+      },
+      {
+        "Size": "L",
+        "Shoulder": 49.1,
+        "Bust": 120,
+        "Length": 72,
+        "Sleeve Length": 67.5
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 50.6,
+        "Bust": 124,
+        "Length": 74,
+        "Sleeve Length": 69
+      },
+      {
+        "Size": "XXL",
+        "Shoulder": 52.1,
+        "Bust": 128,
+        "Length": 76,
+        "Sleeve Length": 70.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/c7/1783330406fac806b9a640a737542aa1bb121beb00.webp"
+        ]
+      },
+      {
+        "color": "Dark Grey",
+        "colorCode": "#4A4A4A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/11/a3/1789123984d6dc8bcc8c856c20b60c6b15d5395800.webp"
+        ]
+      },
+      {
+        "color": "Khaki",
+        "colorCode": "#C3B091",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/11/54/1783752781adddf2318f476a9d05c115e1b77bff75.webp"
+        ]
+      },
+      {
+        "color": "Light Grey",
+        "colorCode": "#D3D3D3",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/07/89/17887563088b8db0bdee778108bf6bc4417c49a107.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Mainfolk Men's Retro Casual 90s Corduroy Lapel Jacket, Dark Green Autumn, Suede Air Layer Jacket, Utility Cargo Jacket",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Mainfolk Men's Retro Casual 90s Corduroy Lapel Jacket, Dark Green Autumn, Suede Air Layer Jacket, Utility Cargo Jacket. Style: Casual. Fit: Loose. Material: Corduroy. Care: Machine wash or professional dry clean.",
+    "price": 4970,
+    "discountedPrice": 4210,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Army Green",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Corduroy",
+      "Style": "Casual"
+    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Shoulder": 57.3,
+        "Bust": 118,
+        "Length": 64.9,
+        "Sleeve Length": 61.8
+      },
+      {
+        "Size": "M",
+        "Shoulder": 59.3,
+        "Bust": 122,
+        "Length": 67,
+        "Sleeve Length": 62.8
+      },
+      {
+        "Size": "L",
+        "Shoulder": 61.8,
+        "Bust": 127,
+        "Length": 69.1,
+        "Sleeve Length": 63.7
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 64.3,
+        "Bust": 132,
+        "Length": 71.2,
+        "Sleeve Length": 64.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "Army Green",
+        "colorCode": "#4B5320",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026092110843/4c8df4d6002683ebc5550075caedd7de4aec7f08dbeab67304a18cba8544725f.webp"
+        ]
+      },
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202610104719/e5fa197020e64095e2127616ed755ac758334972a03e65c359876429d0014334.webp"
+        ]
+      },
+      {
+        "color": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609220324/593a925b879d9d77739c6f9f366b5843f7682327f781544683161209e15758bf.webp"
+        ]
+      },
+      {
+        "color": "Green",
+        "colorCode": "#2E8B57",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/07/23/df/178477369072b25bacb3fb60257b61e520c1b1783b.webp"
+        ]
+      },
+      {
+        "color": "Khaki",
+        "colorCode": "#C3B091",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026100819633/f2b213ba1a26ebcf70f0ce75d873850f2af1b0cb22e6f66e20a2d13d151f3a89.webp"
+        ]
+      },
+      {
+        "color": "Multicolor",
+        "colorCode": "#4A90E2",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609233636/edd174073925c219b5e7a83a04180de4deb34be836cbc65baaa3f37749581314.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "DAZY Men's Brown Wool Blend Jacket And Coat With Large Front Pocket And Lapel Collar, Spring/Autumn",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "DAZY Men's Brown Wool Blend Jacket And Coat With Large Front Pocket And Lapel Collar, Spring/Autumn. Style: Casual. Fit: Loose. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 6630,
+    "discountedPrice": 5620,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Brown",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Woven Fabric",
+      "Style": "Casual"
+    },
+    "sizeChart": [
+      {
+        "Size": "S",
+        "Shoulder": 43.5,
+        "Bust": 112,
+        "Length": 66,
+        "Sleeve Length": 60
+      },
+      {
+        "Size": "M",
+        "Shoulder": 45,
+        "Bust": 116,
+        "Length": 68,
+        "Sleeve Length": 61.5
+      },
+      {
+        "Size": "L",
+        "Shoulder": 46.5,
+        "Bust": 120,
+        "Length": 70,
+        "Sleeve Length": 63
+      }
+    ],
+    "variants": [
+      {
+        "color": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/smartflow/2026/08/27/02/1787816676b72383161ec2b55ce92a3bce72db03ae.webp",
+          "https://img.ltwebstatic.com/v4/j/smartflow/2026/08/27/45/17878166764b3a9f16083272d41b174baa87c930f8.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Retro Suede Men's Casual Lightweight Zipper Jacket Top, Western Style Outerwear",
+    "categorySlug": "men-jackets-and-coats",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Retro Suede Men's Casual Lightweight Zipper Jacket Top, Western Style Outerwear. Material: Knitted Fabric. Care: Hand wash, do not dry clean.",
+    "price": 5290,
+    "discountedPrice": 4480,
+    "featured": false,
+    "tags": ["jackets", "outerwear", "men"],
+    "skuPrefix": "BRO-JKT",
+    "stockPerSize": 30,
+    "attributes": {
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Color": "Army Green",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Knitted Fabric",
+      "Style": "Western Style"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Shoulder": 44.5,
+        "Bust": 105,
+        "Length": 66,
+        "Sleeve Length": 59.5
+      },
+      {
+        "Size": "S",
+        "Shoulder": 46,
+        "Bust": 110,
+        "Length": 68,
+        "Sleeve Length": 61
+      },
+      {
+        "Size": "M",
+        "Shoulder": 47.5,
+        "Bust": 115,
+        "Length": 70,
+        "Sleeve Length": 62.5
+      },
+      {
+        "Size": "L",
+        "Shoulder": 49,
+        "Bust": 120,
+        "Length": 72,
+        "Sleeve Length": 64
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 50.5,
+        "Bust": 125,
+        "Length": 74,
+        "Sleeve Length": 65.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "Army Green",
+        "colorCode": "#4B5320",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/10/07/9d/17913386344006bc0642fa70dac690945748a822ad.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/10/07/d4/17913386340ad8dfc4da5c83cd29e084870b58fca6.webp"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Essential Oversized Heavyweight Hoodie",
+    "categorySlug": "men-hoodies",
+    "brandSlug": "celebs-official",
+    "vendorShopName": "Celebs Official",
+    "description": "Platform demo product: heavyweight fleece hoodie seeded through ProductService.",
+    "price": 3200,
+    "discountedPrice": 2890,
+    "featured": false,
+    "tags": ["demo"],
+    "skuPrefix": "CEL-DEM",
+    "stockPerSize": 12,
+    "attributes": {},
+    "sizeChart": [
+      {
+        "Size": "S"
+      },
+      {
+        "Size": "M"
+      },
+      {
+        "Size": "L"
+      },
+      {
+        "Size": "XL"
+      }
+    ],
+    "variants": [
+      {
+        "color": "Charcoal",
+        "colorCode": "#36454F",
+        "images": [
+          "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Vintage Wash Relaxed Graphic Tee",
+    "categorySlug": "men-t-shirts",
+    "brandSlug": "celebs-official",
+    "vendorShopName": "Celebs Official",
+    "description": "Platform demo product: relaxed graphic tee seeded through ProductService.",
+    "price": 1800,
+    "discountedPrice": 1550,
+    "featured": false,
+    "tags": ["demo"],
+    "skuPrefix": "CEL-DEM",
+    "stockPerSize": 15,
+    "attributes": {},
+    "sizeChart": [
+      {
+        "Size": "S"
+      },
+      {
+        "Size": "M"
+      },
+      {
+        "Size": "L"
+      }
+    ],
+    "variants": [
+      {
+        "color": "Vintage White",
+        "colorCode": "#F5F5DC",
+        "images": [
+          "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop"
         ]
       }
     ]
