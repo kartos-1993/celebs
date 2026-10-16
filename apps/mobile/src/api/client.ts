@@ -179,7 +179,6 @@ const GUEST_CAPABLE_PREFIXES = [
   '/combos',
   '/settings',
   '/storefront',
-  '/quick-filters',
   '/reviews',
 ];
 

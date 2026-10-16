@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { Palette } from '@/constants/theme';
 
 /**
- * The quick-filter colour dots must come from the design tokens.
+ * The storefront-shortcut colour dots must come from the design tokens.
  *
  * The component used to hold a private `COLOR_HEX_MAP` of raw Tailwind-style
  * hex values. Every one of those values that ALREADY existed in `Palette` is
@@ -27,7 +27,7 @@ const SRC = readFileSync(resolve(__dirname, '../color-swatch-filter.tsx'), 'utf8
 // Prose may name the hexes it replaced; CODE is what actually executes.
 const CODE = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-/** The hex each mapped quick-filter name used to resolve to. */
+/** The hex each mapped storefront-shortcut name used to resolve to. */
 const PREVIOUS_HEX: Record<string, string> = {
   black: '#18181b',
   white: '#ffffff',
@@ -58,7 +58,7 @@ const tokenValue: Record<string, string> = {
   'Palette.gray500': Palette.gray500,
 };
 
-describe('quick-filter swatch dots use design tokens, not invented hex', () => {
+describe('storefront-shortcut swatch dots use design tokens, not invented hex', () => {
   it('contains no raw hex colour literal at all', () => {
     expect(CODE).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });

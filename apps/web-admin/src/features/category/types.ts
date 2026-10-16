@@ -1,14 +1,19 @@
 import type {
   CategoryAttributeType,
   CreateCategoryType,
-  QuickFilter,
-  QuickFilterDisplayAs,
-  QuickFilterItem,
-  QuickFilterType,
+  StorefrontShortcut,
+  StorefrontShortcutDisplayAs,
+  StorefrontShortcutItem,
+  StorefrontShortcutType,
   UpdateCategoryType,
 } from '@celebs/shared-types';
 
-export type { QuickFilter, QuickFilterDisplayAs, QuickFilterItem, QuickFilterType };
+export type {
+  StorefrontShortcut,
+  StorefrontShortcutDisplayAs,
+  StorefrontShortcutItem,
+  StorefrontShortcutType,
+};
 
 export type CategoryAttribute = CategoryAttributeType & {
   categoryId?: string;

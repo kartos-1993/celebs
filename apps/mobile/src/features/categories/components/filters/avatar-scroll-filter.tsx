@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
-import { QuickFilterItem } from '../../types';
+import { StorefrontShortcutItem } from '../../types';
 
 import { styles } from './avatar-scroll-filter.styles';
 
@@ -9,9 +9,9 @@ import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 
 interface AvatarScrollFilterProps {
-  items: QuickFilterItem[];
+  items: StorefrontShortcutItem[];
   selectedItem: string | null;
-  onSelectItem: (item: QuickFilterItem) => void;
+  onSelectItem: (item: StorefrontShortcutItem) => void;
 }
 
 export const AvatarScrollFilter: React.FC<AvatarScrollFilterProps> = ({

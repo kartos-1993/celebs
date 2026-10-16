@@ -1,14 +1,18 @@
-import type { QuickFilterDisplayAs, QuickFilterItem, QuickFilterType } from '@celebs/shared-types';
+import type {
+  StorefrontShortcutDisplayAs,
+  StorefrontShortcutItem,
+  StorefrontShortcutType,
+} from '@celebs/shared-types';
 
-export type { QuickFilterDisplayAs, QuickFilterItem, QuickFilterType };
+export type { StorefrontShortcutDisplayAs, StorefrontShortcutItem, StorefrontShortcutType };
 
-export interface QuickFilterConfig {
+export interface StorefrontShortcutConfig {
   id: string;
-  type: QuickFilterType;
+  type: StorefrontShortcutType;
   attributeId?: string | null;
-  displayAs: QuickFilterDisplayAs;
+  displayAs: StorefrontShortcutDisplayAs;
   displayOrder: number;
-  items: QuickFilterItem[];
+  items: StorefrontShortcutItem[];
 }
 
 export interface DrawerFilterConfig {
@@ -32,7 +36,7 @@ export interface StorefrontCategoryInfo {
 
 export interface StorefrontConfigData {
   category: StorefrontCategoryInfo;
-  quickFilters: QuickFilterConfig[];
+  shortcuts: StorefrontShortcutConfig[];
   drawerFilters: DrawerFilterConfig[];
 }
 

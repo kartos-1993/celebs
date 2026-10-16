@@ -2,37 +2,37 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   CATEGORY_QUERY_KEYS,
-  createQuickFilter,
-  deleteQuickFilter,
-  getQuickFiltersForCategory,
-  updateQuickFilter,
+  createStorefrontShortcut,
+  deleteStorefrontShortcut,
+  getStorefrontShortcutsForCategory,
+  updateStorefrontShortcut,
 } from '../api';
-import { QuickFilter } from '../types';
+import { StorefrontShortcut } from '../types';
 
-export function useQuickFilters(categoryId?: string) {
+export function useStorefrontShortcuts(categoryId?: string) {
   const queryClient = useQueryClient();
 
   const queryKey = categoryId
-    ? CATEGORY_QUERY_KEYS.quickFilters(categoryId)
-    : [...CATEGORY_QUERY_KEYS.all, 'quick-filters'];
+    ? CATEGORY_QUERY_KEYS.storefrontShortcuts(categoryId)
+    : [...CATEGORY_QUERY_KEYS.all, 'storefront-shortcuts'];
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!categoryId) return [];
-      const res = await getQuickFiltersForCategory(categoryId);
+      const res = await getStorefrontShortcutsForCategory(categoryId);
       return res.data || [];
     },
     enabled: !!categoryId,
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (payload: Partial<QuickFilter>) => {
+    mutationFn: async (payload: Partial<StorefrontShortcut>) => {
       if (payload.id) {
-        const res = await updateQuickFilter(payload.id, payload);
+        const res = await updateStorefrontShortcut(payload.id, payload);
         return res.data;
       } else {
-        const res = await createQuickFilter(payload);
+        const res = await createStorefrontShortcut(payload);
         return res.data;
       }
     },
@@ -44,7 +44,7 @@ export function useQuickFilters(categoryId?: string) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await deleteQuickFilter(id);
+      const res = await deleteStorefrontShortcut(id);
       return res.data;
     },
     onSuccess: () => {
@@ -54,14 +54,14 @@ export function useQuickFilters(categoryId?: string) {
   });
 
   return {
-    quickFilters: data || [],
+    shortcuts: data || [],
     isLoading,
     isError,
     error,
     refetch,
-    saveQuickFilter: saveMutation.mutateAsync,
+    saveShortcut: saveMutation.mutateAsync,
     isSaving: saveMutation.isPending,
-    deleteQuickFilter: deleteMutation.mutateAsync,
+    deleteShortcut: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
   };
 }

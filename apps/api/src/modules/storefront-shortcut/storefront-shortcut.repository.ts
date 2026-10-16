@@ -1,6 +1,6 @@
 import prisma, { Prisma } from '@/config/db.prisma';
 
-export class QuickFilterRepository {
+export class StorefrontShortcutRepository {
   public async findCategoryBySlugOrId(slugOrId: string) {
     const slugLower = slugOrId.toLowerCase();
     return prisma.category.findFirst({
@@ -32,14 +32,14 @@ export class QuickFilterRepository {
   }
 
   public async findByCategoryId(categoryId: string) {
-    return prisma.quickFilter.findMany({
+    return prisma.storefrontShortcut.findMany({
       where: { categoryId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
   public async findById(id: string) {
-    return prisma.quickFilter.findUnique({
+    return prisma.storefrontShortcut.findUnique({
       where: { id },
     });
   }
@@ -50,13 +50,13 @@ export class QuickFilterRepository {
     categoryId: string;
     filterConfig: Prisma.InputJsonValue;
   }) {
-    return prisma.quickFilter.create({
+    return prisma.storefrontShortcut.create({
       data,
     });
   }
 
   public async update(id: string, filterConfig: Prisma.InputJsonValue) {
-    return prisma.quickFilter.update({
+    return prisma.storefrontShortcut.update({
       where: { id },
       data: {
         filterConfig,
@@ -65,10 +65,10 @@ export class QuickFilterRepository {
   }
 
   public async delete(id: string) {
-    return prisma.quickFilter.delete({
+    return prisma.storefrontShortcut.delete({
       where: { id },
     });
   }
 }
 
-export const quickFilterRepository = new QuickFilterRepository();
+export const storefrontShortcutRepository = new StorefrontShortcutRepository();

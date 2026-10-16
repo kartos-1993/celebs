@@ -1,8 +1,11 @@
-import { Category, QuickFilter } from '@prisma/client';
+import { Category, StorefrontShortcut } from '@prisma/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { QuickFilterRepository, quickFilterRepository } from '../quick-filter.repository';
-import { QuickFilterService } from '../quick-filter.service';
+import {
+  StorefrontShortcutRepository,
+  storefrontShortcutRepository,
+} from '../storefront-shortcut.repository';
+import { StorefrontShortcutService } from '../storefront-shortcut.service';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
@@ -23,7 +26,9 @@ const createMockCategory = (overrides: Partial<Category> = {}): Category => ({
   ...overrides,
 });
 
-const createMockQuickFilter = (overrides: Partial<QuickFilter> = {}): QuickFilter => ({
+const createMockStorefrontShortcut = (
+  overrides: Partial<StorefrontShortcut> = {},
+): StorefrontShortcut => ({
   id: 'qf-1',
   title: 'Brand Filter',
   slug: 'brand-filter',
@@ -41,9 +46,9 @@ const createMockQuickFilter = (overrides: Partial<QuickFilter> = {}): QuickFilte
   ...overrides,
 });
 
-describe('QuickFilterRepository & QuickFilterService Clean Architecture Suite', () => {
+describe('StorefrontShortcutRepository & StorefrontShortcutService Clean Architecture Suite', () => {
   let categoryId: string;
-  let quickFilterId: string;
+  let storefrontShortcutId: string;
 
   beforeEach(async () => {
     const category = await prisma.category.create({
@@ -57,9 +62,9 @@ describe('QuickFilterRepository & QuickFilterService Clean Architecture Suite', 
     });
     categoryId = category.id;
 
-    const qf = await prisma.quickFilter.create({
+    const qf = await prisma.storefrontShortcut.create({
       data: {
-        title: 'Brand Quick Filter',
+        title: 'Brand Storefront Shortcut',
         slug: `filter-${Date.now()}`,
         categoryId,
         filterConfig: {
@@ -72,35 +77,35 @@ describe('QuickFilterRepository & QuickFilterService Clean Architecture Suite', 
         },
       },
     });
-    quickFilterId = qf.id;
+    storefrontShortcutId = qf.id;
   });
 
-  describe('QuickFilterRepository', () => {
+  describe('StorefrontShortcutRepository', () => {
     it('should find category by slug or id', async () => {
-      const found = await quickFilterRepository.findCategoryById(categoryId);
+      const found = await storefrontShortcutRepository.findCategoryById(categoryId);
       expect(found).not.toBeNull();
       expect(found?.id).toBe(categoryId);
     });
 
-    it('should find quick filters by categoryId', async () => {
-      const list = await quickFilterRepository.findByCategoryId(categoryId);
+    it('should find storefront shortcuts by categoryId', async () => {
+      const list = await storefrontShortcutRepository.findByCategoryId(categoryId);
       expect(list.length).toBeGreaterThanOrEqual(1);
-      expect(list[0]?.id).toBe(quickFilterId);
+      expect(list[0]?.id).toBe(storefrontShortcutId);
     });
 
-    it('should update and delete quick filter', async () => {
-      const updated = await quickFilterRepository.update(quickFilterId, {
+    it('should update and delete a storefront shortcut', async () => {
+      const updated = await storefrontShortcutRepository.update(storefrontShortcutId, {
         type: 'brand',
         displayAs: 'carousel',
       });
-      expect(updated.id).toBe(quickFilterId);
+      expect(updated.id).toBe(storefrontShortcutId);
 
-      const deleted = await quickFilterRepository.delete(quickFilterId);
-      expect(deleted.id).toBe(quickFilterId);
+      const deleted = await storefrontShortcutRepository.delete(storefrontShortcutId);
+      expect(deleted.id).toBe(storefrontShortcutId);
     });
   });
 
-  describe('QuickFilterService DI', () => {
+  describe('StorefrontShortcutService DI', () => {
     it('should resolve storefront config using injected mock repository', async () => {
       const mockCategory = createMockCategory({
         id: 'cat-123',
@@ -108,10 +113,10 @@ describe('QuickFilterRepository & QuickFilterService Clean Architecture Suite', 
         slug: 'apparel',
       });
 
-      const mockRepo: Partial<QuickFilterRepository> = {
+      const mockRepo: Partial<StorefrontShortcutRepository> = {
         findCategoryBySlugOrId: async () => mockCategory,
         findByCategoryId: async () => [
-          createMockQuickFilter({
+          createMockStorefrontShortcut({
             id: 'qf-1',
             categoryId: 'cat-123',
           }),
@@ -119,16 +124,16 @@ describe('QuickFilterRepository & QuickFilterService Clean Architecture Suite', 
         findActiveChildCategories: async () => [],
       };
 
-      const service = new QuickFilterService({ quickFilterRepo: mockRepo });
+      const service = new StorefrontShortcutService({ storefrontShortcutRepo: mockRepo });
       const result = await service.getStorefrontConfigBySlug('apparel');
 
       expect(result.category.name).toBe('Apparel');
-      expect(result.quickFilters.length).toBe(1);
-      expect(result.quickFilters[0]?.type).toBe('brand');
+      expect(result.shortcuts.length).toBe(1);
+      expect(result.shortcuts[0]?.type).toBe('brand');
     });
 
     it('should throw AppError when category is not found', async () => {
-      const service = new QuickFilterService();
+      const service = new StorefrontShortcutService();
       await expect(service.getStorefrontConfigBySlug('non-existent-slug-xyz')).rejects.toThrow(
         'Category not found',
       );

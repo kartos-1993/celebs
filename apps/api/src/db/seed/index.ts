@@ -11,7 +11,7 @@ import { seedOptionSets } from './seed-option-sets';
 import { seedProductsDenimJackets } from './seed-products-denim-jackets';
 import { seedProductsDenimJeans } from './seed-products-denim-jeans';
 import { seedProductsMockCatalog } from './seed-products-mock-catalog';
-import { seedQuickFilters } from './seed-quick-filters';
+import { seedStorefrontShortcuts } from './seed-storefront-shortcuts';
 
 export async function runMasterSeed(): Promise<void> {
   const isReset = process.argv.includes('--reset');
@@ -60,8 +60,8 @@ export async function runMasterSeed(): Promise<void> {
     await seedProductsDenimJackets();
     await seedProductsDenimJeans();
 
-    // Step 5: Category Quick Filters
-    await seedQuickFilters(isReset);
+    // Step 5: Storefront Shortcuts
+    await seedStorefrontShortcuts(isReset);
 
     console.log('\n================================================================');
     console.log('✨ MASTER SEED COMPLETED SUCCESSFULLY!');

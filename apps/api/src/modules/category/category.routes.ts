@@ -29,12 +29,14 @@ if (process.env.NODE_ENV === 'development') {
 
 import { Permission } from '@celebs/rbac';
 
-import { QuickFilterController } from '../quick-filter/quick-filter.controller';
-import { QuickFilterService } from '../quick-filter/quick-filter.service';
+import { StorefrontShortcutController } from '../storefront-shortcut/storefront-shortcut.controller';
+import { StorefrontShortcutService } from '../storefront-shortcut/storefront-shortcut.service';
 
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
-const quickFilterController = new QuickFilterController(new QuickFilterService());
+const storefrontShortcutController = new StorefrontShortcutController(
+  new StorefrontShortcutService(),
+);
 
 // Public Category routes
 categoryRoute.get(
@@ -69,7 +71,7 @@ categoryRoute.get(
   '/:slug/storefront',
   optionalAuthenticateJWT,
   searchRateLimiter,
-  asyncHandler(quickFilterController.getStorefrontConfig),
+  asyncHandler(storefrontShortcutController.getStorefrontConfig),
 );
 categoryRoute.get(
   '/:id/filters',

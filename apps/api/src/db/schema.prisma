@@ -1479,7 +1479,7 @@ model OptionSet {
   updatedAt DateTime @updatedAt
 }
 
-model QuickFilter {
+model StorefrontShortcut {
   id           String  @id @default(uuid())
   title        String
   slug         String  @unique
