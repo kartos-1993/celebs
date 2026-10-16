@@ -122,12 +122,24 @@ export const TEST_VENDORS = [
     district: 'Sunsari',
     cityArea: 'Bhanu Chowk, Dharan',
   },
+  {
+    name: 'Vendor Eleven (Brothers Collection)',
+    email: 'vendor11@celebs.test',
+    shopName: 'Brothers Collection',
+    shopDescription: 'Curated fast-fashion menswear and jewelry from seasonal import batches',
+    phoneNumber: '9841000011',
+    panNumber: 'PAN-100000011',
+    citizenshipNumber: 'CIT-100000011',
+    province: 'Bagmati Province',
+    district: 'Kathmandu',
+    cityArea: 'New Baneshwor, Ward 10',
+  },
 ];
 
 const DEFAULT_PASSWORD = 'Password123!';
 
 export async function seedTestVendors(): Promise<void> {
-  console.log('\n🏪 Seeding 10 Test Vendors (Password: Password123!)...');
+  console.log(`\n🏪 Seeding ${TEST_VENDORS.length} Test Vendors (Password: Password123!)...`);
   const hashedPassword = await hashValue(DEFAULT_PASSWORD);
 
   for (const [i, item] of TEST_VENDORS.entries()) {
@@ -210,10 +222,14 @@ export async function seedTestVendors(): Promise<void> {
       }
     }
 
-    console.log(`  └─ [${i + 1}/10] Ready: ${item.email} → ${item.shopName} (${vendor.id})`);
+    console.log(
+      `  └─ [${i + 1}/${TEST_VENDORS.length}] Ready: ${item.email} → ${item.shopName} (${vendor.id})`,
+    );
   }
 
-  console.log('✅ All 10 Test Vendors successfully seeded and ready to log in!');
+  console.log(
+    `✅ All ${TEST_VENDORS.length} Test Vendors successfully seeded and ready to log in!`,
+  );
 }
 
 if (require.main === module) {

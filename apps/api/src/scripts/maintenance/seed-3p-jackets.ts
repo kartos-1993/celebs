@@ -67,6 +67,15 @@ function extractBodyMeasurements(sc: Record<string, unknown>, item: Record<strin
   return [];
 }
 
+/**
+ * 3P batch importer for the Brothers Collection storefront.
+ *
+ * Prerequisites on a fresh database, in order:
+ *   1. `pnpm seed:vendors`  → creates the "Brothers Collection" test vendor
+ *      (vendor11@celebs.test); this script fails fast without it.
+ *   2. The core seed (`pnpm seed`) for the generic brand and men's categories
+ *      the importer resolves (e.g. `men-jackets-and-coats`).
+ */
 export async function seed3PJackets(): Promise<void> {
   console.log('================================================================');
   console.log('🧥 SEEDING 3P CATALOG: 10 JACKETS UNDER BROTHERS COLLECTION');
