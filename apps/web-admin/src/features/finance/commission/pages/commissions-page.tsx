@@ -6,12 +6,12 @@ import {
   CardTitle,
 } from '@celebs/shared-ui/components/card';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { CommissionHistoryTable } from '../components/commission-history-table';
 import { CommissionRateForm } from '../components/commission-rate-form';
 import { useCommissionOverview, useSetCommissionRate } from '../hooks';
 
+import { PageSkeleton } from '@/components/page-skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 /**
@@ -31,13 +31,7 @@ const CommissionsPage = () => {
   const overview = useCommissionOverview();
   const publish = useSetCommissionRate();
 
-  if (overview.isPending) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
+  if (overview.isPending) return <PageSkeleton />;
 
   const current = overview.data?.current ?? [];
   const history = overview.data?.history ?? [];

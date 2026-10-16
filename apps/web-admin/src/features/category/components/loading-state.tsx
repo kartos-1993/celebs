@@ -4,13 +4,8 @@
 
 import React from 'react';
 
-import { Spinner } from '@celebs/shared-ui/components/spinner';
+import { TableSkeleton } from '@/components/table-skeleton';
 
 export const LoadingState: React.FC = () => {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 space-y-4">
-      <Spinner size="xl" className="text-primary" />
-      <p className="text-sm text-muted-foreground">Loading categories...</p>
-    </div>
-  );
+  return <TableSkeleton rows={8} columns={4} className="rounded-none border-0 shadow-none" />;
 };
