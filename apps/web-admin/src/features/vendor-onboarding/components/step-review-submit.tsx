@@ -8,6 +8,10 @@ import {
   useSubmitVendorMutation,
 } from '../hooks/use-vendor-onboarding-mutations';
 
+import { EmailVerificationNotice } from './email-verification-notice';
+
+import { useAuthContext } from '@/context/auth-provider';
+
 interface StepReviewSubmitProps {
   userProfile?: {
     shopDescription?: string | null;
@@ -19,11 +23,13 @@ interface StepReviewSubmitProps {
 }
 
 export function StepReviewSubmit({ userProfile, isRejectedMode, onBack }: StepReviewSubmitProps) {
+  const { user } = useAuthContext();
   const submitMutation = useSubmitVendorMutation();
   const resubmitMutation = useResubmitVendorMutation();
 
   const isPending = submitMutation.isPending || resubmitMutation.isPending;
   const isError = submitMutation.isError || resubmitMutation.isError;
+  const isEmailBlocked = Boolean(user && !user.isEmailVerified);
 
   const handleSubmit = () => {
     if (isRejectedMode) {
@@ -42,6 +48,8 @@ export function StepReviewSubmit({ userProfile, isRejectedMode, onBack }: StepRe
           for platform verification.
         </p>
       </div>
+
+      <EmailVerificationNotice />
 
       <div className="border rounded-lg p-4 bg-muted/20 space-y-3 text-sm">
         <div className="flex justify-between border-b pb-2">
@@ -81,7 +89,7 @@ export function StepReviewSubmit({ userProfile, isRejectedMode, onBack }: StepRe
           className="w-2/3 gap-2 font-bold"
           size="lg"
           onClick={handleSubmit}
-          disabled={isPending}
+          disabled={isPending || isEmailBlocked}
         >
           {isPending ? (
             <>

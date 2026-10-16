@@ -205,4 +205,60 @@ describe('Vendor Onboarding API Integration Tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.status).toBe('UNDER_REVIEW');
   });
+
+  it('blocks submit-for-review until the email is verified', async () => {
+    const user = await prisma.user.findFirst({
+      where: { email: vendorPayload.email.toLowerCase() },
+    });
+    await prisma.vendorProfile.update({
+      where: { userId: user!.id },
+      data: { onboardingStep: 5 },
+    });
+    await prisma.user.update({
+      where: { id: user!.id },
+      data: { isEmailVerified: false },
+    });
+
+    const res = await authedMutation(
+      request(app).post('/api/v1/vendor/submit-for-review'),
+      authCookie,
+    );
+
+    expect(res.status).toBe(403);
+    expect(res.body.errorCode).toBe('EMAIL_UNVERIFIED');
+  });
+
+  it('blocks resubmission until the email is verified', async () => {
+    const user = await prisma.user.findFirst({
+      where: { email: vendorPayload.email.toLowerCase() },
+    });
+    await prisma.vendorProfile.update({
+      where: { userId: user!.id },
+      data: { status: 'REJECTED' },
+    });
+    await prisma.user.update({
+      where: { id: user!.id },
+      data: { isEmailVerified: false },
+    });
+
+    const res = await authedMutation(request(app).post('/api/v1/vendor/resubmit'), authCookie);
+
+    expect(res.status).toBe(403);
+    expect(res.body.errorCode).toBe('EMAIL_UNVERIFIED');
+  });
+
+  it('allows a rejected vendor with a verified email to resubmit', async () => {
+    const user = await prisma.user.findFirst({
+      where: { email: vendorPayload.email.toLowerCase() },
+    });
+    await prisma.vendorProfile.update({
+      where: { userId: user!.id },
+      data: { status: 'REJECTED' },
+    });
+
+    const res = await authedMutation(request(app).post('/api/v1/vendor/resubmit'), authCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('UNDER_REVIEW');
+  });
 });

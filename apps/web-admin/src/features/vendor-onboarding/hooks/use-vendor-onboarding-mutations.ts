@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
+  resendVerificationEmail,
   resubmitForReview,
   submitVendorForReview,
   updateVendorBusinessInfo,
@@ -123,5 +124,15 @@ export function useResubmitVendorMutation(onSuccess?: () => void) {
       refetch();
       onSuccess?.();
     },
+  });
+}
+
+/**
+ * Resends the account verification email from the final review step so vendors
+ * never have to leave the onboarding wizard to unblock submission.
+ */
+export function useResendVerificationMutation() {
+  return useMutation({
+    mutationFn: resendVerificationEmail,
   });
 }

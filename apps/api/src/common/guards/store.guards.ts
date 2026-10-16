@@ -2,7 +2,12 @@ import type { NextFunction, Request, Response } from 'express';
 
 import { ErrorCode, ForbiddenException, UnauthorizedException } from '@celebs/shared-utils';
 
-import { isPlatformActor, isSellerRole, type StoreStatus } from '@/common/context/actor-context';
+import {
+  type Actor,
+  isPlatformActor,
+  isSellerRole,
+  type StoreStatus,
+} from '@/common/context/actor-context';
 
 /**
  * Layer 2 — declarative guards.
@@ -39,6 +44,20 @@ export const requireSellerContext = (req: Request, _res: Response, next: NextFun
 };
 
 /**
+ * Seller email-verification check shared by `requireStoreState` and the
+ * standalone `requireVerifiedEmail` middleware. Returns null when satisfied.
+ */
+function emailVerificationError(actor: Actor): ForbiddenException | null {
+  if (isSellerRole(actor) && !actor.isEmailVerified) {
+    return new ForbiddenException(
+      'Email address is not verified. Please check your inbox for the verification link.',
+      ErrorCode.EMAIL_UNVERIFIED,
+    );
+  }
+  return null;
+}
+
+/**
  * Route requires the acting store to be in one of the given lifecycle states.
  * Platform actors bypass by default — Celebs 1P publishes without KYC gates.
  * Email verification is enforced for every seller actor (owner AND staff).
@@ -61,13 +80,11 @@ export const requireStoreState =
       return next(noStoreError(actor.role));
     }
 
-    if (requireVerifiedEmail && isSellerRole(actor) && !actor.isEmailVerified) {
-      return next(
-        new ForbiddenException(
-          'Email address is not verified. Please check your inbox for the verification link.',
-          ErrorCode.EMAIL_UNVERIFIED,
-        ),
-      );
+    if (requireVerifiedEmail) {
+      const emailError = emailVerificationError(actor);
+      if (emailError) {
+        return next(emailError);
+      }
     }
 
     if (!allowed.includes(store.status)) {
@@ -76,6 +93,23 @@ export const requireStoreState =
 
     next();
   };
+
+/**
+ * Onboarding routes (submit / resubmit) carry no store-status gate — they are
+ * reachable in every pre-approval state — but a seller application must not
+ * enter platform review while the account email is unverified.
+ */
+export const requireVerifiedEmail = (req: Request, _res: Response, next: NextFunction) => {
+  const { actor } = req;
+  if (!actor) {
+    return next(new UnauthorizedException('Authentication required'));
+  }
+  const emailError = emailVerificationError(actor);
+  if (emailError) {
+    return next(emailError);
+  }
+  next();
+};
 
 /**
  * Jurisdiction gate for /admin surfaces. Permission checks alone are not enough:
