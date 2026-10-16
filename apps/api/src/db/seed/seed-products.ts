@@ -1,7 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-import { CreateProductType, PRODUCT_STATUS, createProductSchema } from '@celebs/shared-types';
+import {
+  CreateProductType,
+  PRODUCT_STATUS,
+  createProductSchema,
+  type ShippingPackagingType,
+  type WarrantyType,
+} from '@celebs/shared-types';
 
 import prisma from '../../config/db.prisma';
 import { ProductService } from '../../modules/product/product.service';
@@ -25,6 +31,9 @@ import {
  *   columns (e.g. "Shoulder" / "Bust" / "Length" / "Sleeve Length"), plus a
  *   mandatory `Size` — the importer never hardcodes per-category columns
  * - `attributes` keys are Title Case and stored verbatim in `dynamicData.values`
+ * - optional `mainImages` overrides the cover gallery; otherwise the variant
+ *   galleries are flattened without truncation
+ * - optional `packaging` / `warranty` override the shipping defaults
  * - `vendorShopName` other than the platform store requires `npm run seed:vendors`
  *
  * `--dry-run` validates the whole dataset (refs, schema, skip counts) without
@@ -35,6 +44,23 @@ export interface SeedProductVariant {
   color: string;
   colorCode?: string;
   images?: string[];
+}
+
+export interface SeedProductPackaging {
+  weightKg?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  type?: ShippingPackagingType;
+  isFragile?: boolean;
+  hasBatteryOrLiquid?: boolean;
+}
+
+export interface SeedProductWarranty {
+  type?: WarrantyType;
+  period?: string;
+  policy?: string;
+  isNonReturnable?: boolean;
 }
 
 export interface SeedProductItem {
@@ -52,6 +78,12 @@ export interface SeedProductItem {
   attributes: Record<string, unknown>;
   sizeChart: Array<Record<string, string | number>>;
   variants: SeedProductVariant[];
+  /** Explicit cover gallery; falls back to the flattened variant images. */
+  mainImages?: string[];
+  /** Shipping overrides; falls back to the importer's carrier defaults. */
+  packaging?: SeedProductPackaging;
+  /** Warranty overrides; falls back to the importer's brand-warranty defaults. */
+  warranty?: SeedProductWarranty;
 }
 
 export interface SeedProductRefs {
@@ -102,10 +134,12 @@ export function buildSeedProductPayload(
 
   const variants = item.variants.length > 0 ? item.variants : [{ color: 'Classic', images: [] }];
   const variantImages = variants.flatMap((variant) => variant.images ?? []);
-  const coverImages = (variantImages.length > 0 ? variantImages : [FALLBACK_PRODUCT_IMAGE]).slice(
-    0,
-    8,
-  );
+  const coverImages =
+    item.mainImages && item.mainImages.length > 0
+      ? item.mainImages
+      : variantImages.length > 0
+        ? variantImages
+        : [FALLBACK_PRODUCT_IMAGE];
 
   const colorVariants = variants.map((variant) => {
     const images =
@@ -164,17 +198,17 @@ export function buildSeedProductPayload(
     tags: item.tags,
     featured: Boolean(item.featured),
     status: PRODUCT_STATUS.PUBLISHED,
-    packageWeightKg: 0.5,
-    packageLengthCm: 32,
-    packageWidthCm: 25,
-    packageHeightCm: 4,
-    packagingType: 'FLYER_SMALL',
-    isFragile: false,
-    hasBatteryOrLiquid: false,
-    warrantyType: 'BRAND_WARRANTY',
-    warrantyPeriod: '6 Months',
-    warrantyPolicy: '6 months coverage against manufacturing defects.',
-    isNonReturnable: false,
+    packageWeightKg: item.packaging?.weightKg ?? 0.5,
+    packageLengthCm: item.packaging?.lengthCm ?? 32,
+    packageWidthCm: item.packaging?.widthCm ?? 25,
+    packageHeightCm: item.packaging?.heightCm ?? 4,
+    packagingType: item.packaging?.type ?? 'FLYER_SMALL',
+    isFragile: item.packaging?.isFragile ?? false,
+    hasBatteryOrLiquid: item.packaging?.hasBatteryOrLiquid ?? false,
+    warrantyType: item.warranty?.type ?? 'BRAND_WARRANTY',
+    warrantyPeriod: item.warranty?.period ?? '6 Months',
+    warrantyPolicy: item.warranty?.policy ?? '6 months coverage against manufacturing defects.',
+    isNonReturnable: item.warranty?.isNonReturnable ?? false,
   };
 }
 

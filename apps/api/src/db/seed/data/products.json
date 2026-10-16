@@ -3179,20 +3179,34 @@
     "categorySlug": "men-jackets-and-coats",
     "brandSlug": "generic-unbranded",
     "vendorShopName": "Brothers Collection",
-    "description": "Men's Minimalist Solid Color Hooded Tech Windbreaker Jacket, Vintage Youthful Versatile Long Sleeve Jacket, American Casual Tech Outerwear. Style: Sports & Outdoor. Fit: Regular Fit. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "description": "Men's Minimalist Solid Color Hooded Tech Windbreaker Jacket, Vintage Youthful Versatile Long Sleeve Jacket, American Casual Tech Outerwear, Men's Long Sleeve Outer Layer Top. Style: Sports & Outdoor - Mountain/Outdoor. Fit: Regular Fit. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
     "price": 6200,
     "discountedPrice": 5250,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
+    "tags": ["men-jackets-and-coats", "men-outerwear", "apparel", "generic-unbranded"],
     "skuPrefix": "BRO-JKT",
-    "stockPerSize": 30,
+    "stockPerSize": 20,
     "attributes": {
       "Care Instructions": "Machine wash or professional dry clean",
       "Color": "Blue",
       "Composition": "100% Polyester",
+      "Details": ["Drawstring", "Pocket", "Zipper"],
+      "Fabric Elasticity": "Non-Stretch",
       "Fit Type": "Regular Fit",
+      "Hem Shaped": "Regular",
+      "Ideal For": "Unisex",
+      "Length": "Regular",
+      "Lining": "100% Polyester",
       "Material": "Woven Fabric",
-      "Style": "Sports & Outdoor"
+      "Neckline": "Hooded",
+      "Number Of Pieces": "1 Piece Set",
+      "Pattern Type": "Letter",
+      "Placket": "Zipper",
+      "Sheer": "No",
+      "Sleeve Length": "Long Sleeve",
+      "Sleeve Type": "Raglan Sleeve",
+      "Style": "Sports & Outdoor - Mountain/Outdoor",
+      "Type": "Windbreaker"
     },
     "sizeChart": [
       {
@@ -3238,10 +3252,41 @@
         "colorCode": "#1E90FF",
         "images": [
           "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/88/17905898833e6821b090ff7323d3726e3be8b119d5.webp",
-          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/e6/17905889940d2913e57645d362e290211b9bf60841.webp"
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/e6/17905889940d2913e57645d362e290211b9bf60841.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/8f/1784942911350e711de765f3b16de2d7f305b8d731.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/f5/178494290974e74d82cb90e0c6f1f15bec2da34188.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/03/1784942913b88de01a4d24d2a0446bbb1600875d89.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/fe/1784942913564cb373bcb684ee84337154b5d61ccd.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/60/1784942913789d5bc238d47a1f1acb41cb83fd1499.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/f0/1784942911693df879edc7d0f1ba9a468aec933d3a.webp"
         ]
       }
-    ]
+    ],
+    "mainImages": [
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/88/17905898833e6821b090ff7323d3726e3be8b119d5.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/e6/17905889940d2913e57645d362e290211b9bf60841.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/8f/1784942911350e711de765f3b16de2d7f305b8d731.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/f5/178494290974e74d82cb90e0c6f1f15bec2da34188.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/03/1784942913b88de01a4d24d2a0446bbb1600875d89.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/fe/1784942913564cb373bcb684ee84337154b5d61ccd.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/60/1784942913789d5bc238d47a1f1acb41cb83fd1499.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/07/25/f0/1784942911693df879edc7d0f1ba9a468aec933d3a.webp"
+    ],
+    "packaging": {
+      "weightKg": 0.85,
+      "lengthCm": 38,
+      "widthCm": 30,
+      "heightCm": 8,
+      "type": "BOX_STANDARD",
+      "isFragile": false,
+      "hasBatteryOrLiquid": false
+    },
+    "warranty": {
+      "type": "BRAND_WARRANTY",
+      "period": "6 Months",
+      "policy": "6 months coverage against stitching and hardware defects.",
+      "isNonReturnable": false
+    }
   },
   {
     "name": "Core Aspect Men's Best-Selling Leather Jacket, INS Style Casual Pocket Leather Jacket, Suitable For Autumn/Winter Matching And Daily Wear",
@@ -3811,5 +3856,383 @@
         ]
       }
     ]
+  },
+  {
+    "name": "Manfinity Homme Men's Letter Print Round Neck Long Sleeve Casual Sweatshirt,Dark Grey,Autumn,Streetwear,City Break,Autumn/Winter Top Men Old Money,Outdoor Travel Gift",
+    "categorySlug": "men-hoodies",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "Manfinity Homme Men's Letter Print Round Neck Long Sleeve Casual Sweatshirt,Dark Grey,Autumn,Streetwear,City Break,Autumn/Winter Top Men Old Money,Outdoor Travel Gift. Style: Casual - Modern Casual. Fit: Regular Fit. Material: Fabric. Care: Machine wash or professional dry clean.",
+    "price": 3040,
+    "discountedPrice": 2580,
+    "featured": false,
+    "tags": ["men-hoodies", "men-hoodies-sweatshirts", "apparel", "manfinity"],
+    "skuPrefix": "BRO-HOO",
+    "stockPerSize": 20,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Light Grey",
+      "Composition": "100% Polyester",
+      "Details": ["Rib-Knit"],
+      "Fabric Elasticity": "Slight Stretch",
+      "Festivals": "Christmas, Halloween",
+      "Fit Type": "Regular Fit",
+      "Hem Shaped": "Regular",
+      "Ideal For": "conventional",
+      "Length": "Regular",
+      "Material": "Fabric",
+      "Neckline": "Round Neck",
+      "Number Of Pieces": "1 Piece Set",
+      "Pattern Type": "Geometric, Letter",
+      "Scenes": "Daily",
+      "Sheer": "No",
+      "Sleeve Length": "Long Sleeve",
+      "Sleeve Type": "Regular Sleeve",
+      "Style": "Casual - Modern Casual",
+      "Temperature": "Spring/Fall (18-25/63-77)"
+    },
+    "sizeChart": [
+      {
+        "Size": "XS",
+        "Shoulder": 46,
+        "Bust": 104,
+        "Length": 66,
+        "Sleeve Length": 62.6,
+        "Bicep Length": 38.2,
+        "Cuff": 18.6
+      },
+      {
+        "Size": "S",
+        "Shoulder": 47.5,
+        "Bust": 108,
+        "Length": 68,
+        "Sleeve Length": 63.8,
+        "Bicep Length": 39.6,
+        "Cuff": 19.8
+      },
+      {
+        "Size": "M",
+        "Shoulder": 49,
+        "Bust": 112,
+        "Length": 70,
+        "Sleeve Length": 65,
+        "Bicep Length": 41,
+        "Cuff": 21
+      },
+      {
+        "Size": "L",
+        "Shoulder": 50.8,
+        "Bust": 117,
+        "Length": 72,
+        "Sleeve Length": 66.2,
+        "Bicep Length": 42.8,
+        "Cuff": 22.2
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 52.6,
+        "Bust": 122,
+        "Length": 74,
+        "Sleeve Length": 67.4,
+        "Bicep Length": 44.6,
+        "Cuff": 23.4
+      },
+      {
+        "Size": "XXL",
+        "Shoulder": 54.4,
+        "Bust": 127,
+        "Length": 76,
+        "Sleeve Length": 68.6,
+        "Bicep Length": 46.4,
+        "Cuff": 24.6
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/86/1765936796d1204d4356cbefb1c9473bb5ed4a8d96.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/4f/176593679746e8f515e9ce499e15c3bb1100a64dd9.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/02/17659368008606b00756cc5451714abc79d55ba8ab.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/26/17659368012b75ecf2e2a8e9863e5ce1ee9674b5e4.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Burgundy",
+        "colorCode": "#800020",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/5f/176585059270504bdf769ddacfca548f095aaf7b58.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/3f/1765850593db7580e89615331686cbfcb7461f5101.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/01/17658505952bb4e8d08fea6cbd24f02a89b441c53a.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Green",
+        "colorCode": "#2E8B57",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/79/17658641564c3b7a0203607884fbf329b62309c940.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/1d/1765864158bf94767606aec8b33ea00224e7b0c3f5.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/e2/176586416011681f9e3cc0af9c988538670371d7b4.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/05/08/3b/1778209093eae3f791fbf49d6349bc8b27e8c42bfa.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Royal Blue",
+        "colorCode": "#4169E1",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/35/17658641069a04d9d651f984070642b8b16ded6b15.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/a6/1765864107ee04d3b99dde5d94f60f9da7e926eef3.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/d3/1765864109fefbdadce507b25e5102eb00352f1759.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/27/9d/17825301554ff7bb816c7317768dd068c3095e6466.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "White",
+        "colorCode": "#FFFFFF",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/09/176585060336c9f29ac1be6e7cba64d2410aa3a97d.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/ae/1765850605b5692092ff02c60b853e5c8b3154d9c6.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/bb/1765850606d4334466900ba3980f6fd46f8b4faa2a.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Light Grey",
+        "colorCode": "#D3D3D3",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/94/1765850632d34667f0333c7a8353c096c1646b4bb1.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/0d/17658506348f031dc423806c8b779b55125dd322e9.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/17/17658506369d66bf8943e27a0fa529cf1e00d542d6.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Dark Grey",
+        "colorCode": "#4A4A4A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/6b/17658505860efa35901ff7d44c55b5e58f3700b8e8.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/f5/17658505881498ff04fa6544a0ac045c40bbb2079c.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/fc/1765850589c571e917116bcf75e737b42bb64c42e5.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Baby Blue",
+        "colorCode": "#89CFF0",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/5f/1765850599b89aa4272248d275b588aa2385788f4e.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/5c/1765850600ebef5a941be000efcd31f87b0f818762.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/12/16/b3/1765850602ba176e296a070e928fd5652bf37bfa7b.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      },
+      {
+        "color": "Dusty Blue",
+        "colorCode": "#5A7D9A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/30/32/17828057586ba62abc4378380026dc65dd4d232cd9.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/30/4d/17828057594e39889ceb8f5c5e2da3f87e7fbee9d1.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/06/30/55/1782805761b3aa13556e892a61bfaa3fbd6a030fa7.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/11/27/53/1764235755487549850db863716b824444a1e82cb6.webp",
+          "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+          "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+          "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+          "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+          "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+          "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp",
+          "https://img.shein.com/v4/j/shein/2026/01/19/c2/1768835161e9b704d7287fa2dcef4c617e2cca7190.webp"
+        ]
+      }
+    ],
+    "mainImages": [
+      "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/86/1765936796d1204d4356cbefb1c9473bb5ed4a8d96.webp",
+      "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/4f/176593679746e8f515e9ce499e15c3bb1100a64dd9.webp",
+      "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/02/17659368008606b00756cc5451714abc79d55ba8ab.webp",
+      "https://img.ltwebstatic.com/v4/j/pi/2025/12/17/26/17659368012b75ecf2e2a8e9863e5ce1ee9674b5e4.webp",
+      "https://img.shein.com/images3/2025/03/18/10/1742278384dd098f59b17db356d5ef2875246cfd59.webp",
+      "https://img.shein.com/images3/2025/03/18/b0/17422783846d9c8219f0de0b40baef3485b9e77387.webp",
+      "https://img.shein.com/images3/2025/03/18/df/1742278384a9e9c94564104096d0c37b286aecab7c.webp",
+      "https://img.shein.com/images3/2024/12/23/51/1734939620a88e6e381d3b5dfaa37e98d3f90fb6ef.webp",
+      "https://img.shein.com/images3/2024/12/23/51/17349396201844a7b60963de5f081f11b58b60deb0.webp",
+      "https://img.shein.com/images3/2024/12/23/51/173493962070c7736568d38a1807dae2f5eaef00e5.webp"
+    ],
+    "packaging": {
+      "weightKg": 0.6,
+      "lengthCm": 35,
+      "widthCm": 28,
+      "heightCm": 6,
+      "type": "FLYER_MEDIUM",
+      "isFragile": false,
+      "hasBatteryOrLiquid": false
+    },
+    "warranty": {
+      "type": "BRAND_WARRANTY",
+      "period": "3 Months",
+      "policy": "3 months coverage against knit unraveling and seam failure.",
+      "isNonReturnable": false
+    }
+  },
+  {
+    "name": "GLESTORE Men's Retro Coin-Print Casual Stand-Collar Half-Zip Fleece Sweatshirt, Perfect For Layering, Wearing As A Base Layer, Or As An Outer Layer",
+    "categorySlug": "men-hoodies",
+    "brandSlug": "generic-unbranded",
+    "vendorShopName": "Brothers Collection",
+    "description": "GLESTORE Men's Retro Coin-Print Casual Stand-Collar Half-Zip Fleece Sweatshirt, Perfect For Layering, Wearing As A Base Layer, Or As An Outer Layer. Style: Casual - Basic. Fit: Regular Fit. Material: Polyester. Care: Machine wash or professional dry clean.",
+    "price": 4650,
+    "discountedPrice": 3940,
+    "featured": false,
+    "tags": ["men-hoodies", "men-hoodies-sweatshirts", "apparel", "generic-unbranded"],
+    "skuPrefix": "BRO-HOO",
+    "stockPerSize": 20,
+    "attributes": {
+      "Body": "Unlined",
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Black",
+      "Composition": "100% Polyester",
+      "Details": ["Zipper"],
+      "Fabric Elasticity": "Slight Stretch",
+      "Fit Type": "Regular Fit",
+      "Hem Shaped": "Regular",
+      "Ideal For": "Unisex, conventional",
+      "Length": "Regular",
+      "Lined For Added Warmth": "Yes",
+      "Material": "Polyester",
+      "Neckline": "Stand Collar",
+      "Scenes": "Daily",
+      "Sheer": "No",
+      "Sleeve Length": "Long Sleeve",
+      "Sleeve Type": "Regular Sleeve",
+      "Style": "Casual - Basic",
+      "Temperature": "Winter (<10/50)"
+    },
+    "sizeChart": [
+      {
+        "Size": "M",
+        "Shoulder": 52,
+        "Bust": 118,
+        "Length": 73,
+        "Sleeve Length": 66
+      },
+      {
+        "Size": "L",
+        "Shoulder": 53.8,
+        "Bust": 123,
+        "Length": 75,
+        "Sleeve Length": 67.2
+      },
+      {
+        "Size": "XL",
+        "Shoulder": 55.6,
+        "Bust": 128,
+        "Length": 77,
+        "Sleeve Length": 68.4
+      },
+      {
+        "Size": "XXL",
+        "Shoulder": 57.4,
+        "Bust": 133,
+        "Length": 79,
+        "Sleeve Length": 69.6
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/images3_spmp/2024/10/29/8d/1730170292fd45c165f9e45e7f0b01c83ac60c7489.webp",
+          "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/172871097369153f9d55d67c8f6a892511978d890f.webp",
+          "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/1728710973f86bc338338b1f6352f6876d037035da.webp",
+          "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/1728710973bda260d2aa2ab65438a27e1de1dec167.webp",
+          "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/1728710973148f9ec2d962f5dca23066339f1e6391.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/04/8f/1767503402f50181cd01b5c45165df6bb248b1a5bc.webp",
+          "https://img.shein.com/images3/2024/12/20/bb/17346274242d3693e7302eab700c11067a258d50a2.webp"
+        ]
+      }
+    ],
+    "mainImages": [
+      "https://img.ltwebstatic.com/images3_spmp/2024/10/29/8d/1730170292fd45c165f9e45e7f0b01c83ac60c7489.webp",
+      "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/172871097369153f9d55d67c8f6a892511978d890f.webp",
+      "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/1728710973f86bc338338b1f6352f6876d037035da.webp",
+      "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/1728710973bda260d2aa2ab65438a27e1de1dec167.webp",
+      "https://img.ltwebstatic.com/images3_spmp/2024/10/12/fe/1728710973148f9ec2d962f5dca23066339f1e6391.webp",
+      "https://img.ltwebstatic.com/v4/j/spmp/2026/01/04/8f/1767503402f50181cd01b5c45165df6bb248b1a5bc.webp",
+      "https://img.shein.com/images3/2024/12/20/bb/17346274242d3693e7302eab700c11067a258d50a2.webp"
+    ],
+    "packaging": {
+      "weightKg": 0.6,
+      "lengthCm": 35,
+      "widthCm": 28,
+      "heightCm": 6,
+      "type": "FLYER_MEDIUM",
+      "isFragile": false,
+      "hasBatteryOrLiquid": false
+    },
+    "warranty": {
+      "type": "BRAND_WARRANTY",
+      "period": "3 Months",
+      "policy": "3 months coverage against knit unraveling and seam failure.",
+      "isNonReturnable": false
+    }
   }
 ]

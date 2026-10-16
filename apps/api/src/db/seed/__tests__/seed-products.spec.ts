@@ -116,6 +116,63 @@ describe('buildSeedProductPayload', () => {
     ]);
     expect(payload.dynamicData?.values).toEqual(ITEM.attributes);
   });
+
+  it('lets an explicit cover gallery override the variant images', () => {
+    const item = {
+      ...ITEM,
+      mainImages: ['https://img.test/cover-1.jpg', 'https://img.test/cover-2.jpg'],
+    };
+
+    const payload = buildSeedProductPayload(item, 0, REFS);
+
+    expect(payload.mainImages).toEqual([
+      'https://img.test/cover-1.jpg',
+      'https://img.test/cover-2.jpg',
+    ]);
+  });
+
+  it('keeps every variant image in the cover gallery without truncation', () => {
+    const images = Array.from(
+      { length: 12 },
+      (_, index) => `https://img.test/blue-${index + 1}.jpg`,
+    );
+    const item = { ...ITEM, variants: [{ color: 'Blue', images }] };
+
+    const payload = buildSeedProductPayload(item, 0, REFS);
+
+    expect(payload.mainImages).toEqual(images);
+    expect(payload.mainImages).toHaveLength(12);
+  });
+
+  it('carries per-item packaging and warranty overrides into the payload', () => {
+    const item = {
+      ...ITEM,
+      packaging: {
+        weightKg: 0.85,
+        lengthCm: 38,
+        widthCm: 30,
+        heightCm: 8,
+        type: 'BOX_STANDARD' as const,
+        isFragile: true,
+      },
+      warranty: {
+        type: 'BRAND_WARRANTY' as const,
+        period: '3 Months',
+        policy: '3 months coverage against knit unraveling and seam failure.',
+      },
+    };
+
+    const payload = buildSeedProductPayload(item, 0, REFS);
+
+    expect(payload.packageWeightKg).toBe(0.85);
+    expect(payload.packagingType).toBe('BOX_STANDARD');
+    expect(payload.isFragile).toBe(true);
+    expect(payload.warrantyType).toBe('BRAND_WARRANTY');
+    expect(payload.warrantyPeriod).toBe('3 Months');
+    expect(payload.warrantyPolicy).toBe(
+      '3 months coverage against knit unraveling and seam failure.',
+    );
+  });
 });
 
 describe('products.json dataset integrity', () => {

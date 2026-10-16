@@ -21,6 +21,7 @@ Branch: `fix/auth-ux-and-shortcut-rename` (from `fix/seed-service-parity` @ `aec
 - [§7] Harvest aggregator + missing-attrs report — **scrapped**: tooling was built, then removed uncommitted in favour of the §8 rebuild
 - [§8] Product seeding rebuilt from scratch — one `data/products.json` dataset + one `seed-products.ts` importer; legacy seeders/batches/harvest tooling deleted
 - [§9] Execution log (bottom of this doc)
+- [§10] Batch import: reusable `merge-seed-batch` converter (scraper batch → dataset, `--update` refresh) + 2 new Brothers Collection products, windbreaker entry enriched; importer gains optional `mainImages`/`packaging`/`warranty` and drops the 8-image cover truncation
 
 ## Notes
 
@@ -34,3 +35,5 @@ Branch: `fix/auth-ux-and-shortcut-rename` (from `fix/seed-service-parity` @ `aec
 - 2026-10-16 — §7 harvest tooling (aggregator, runner, spec, report) built but never committed; superseded before landing.
 - 2026-10-16 — §8 rebuild: 3 legacy batches + 2 demo products merged into `data/products.json` (34 items; Title Case attribute keys; size-chart rows keyed by each category's own columns; current DB prices/flags baked in; duplicate jeans title dropped). New single importer `seed-products.ts` resolves brands/categories/vendors from the seeded foundation and writes through `ProductService.createProduct`, idempotent by name, with `--dry-run`. Legacy seeders, batches, `seed:3p`/`clean:reseed` scripts and the uncommitted harvest tooling deleted; master seed rewired to the single importer; `seed:products` script added.
 - 2026-10-16 — Verification: new spec 8/8; api typecheck at baseline (29 TS7030 + 1 pre-existing TS2339; spec-config errors unchanged); live dry-run = 10 validated / 24 already present (no DB writes).
+- 2026-10-16 — §10 batch import: scraper batch `celebs_seed_batch_1792093605674.json` (3 Brothers Collection items) merged into `data/products.json` via the new committed converter `src/scripts/maintenance/merge-seed-batch.ts` (`merge:seed-batch`, `--file` + `--update`): hoodie + GLESTORE fleece added, windbreaker entry replaced with the richer re-scrape (2→8 images, 6→20 attributes; `FLYER_LARGE`→`BOX_STANDARD`). Importer gained optional `mainImages` (exact covers) / `packaging` / `warranty` overrides; the 8-image cover truncation was removed (variant galleries were never capped). Dataset now 36 items.
+- 2026-10-16 — §10 verification: specs 17/17 (11 importer + 6 converter); typecheck at baseline; dry-run = 12 validated / 24 present; real seed run = 12 created (DB products 24 → 36, all Brothers Collection, nothing existing touched); lint clean.
