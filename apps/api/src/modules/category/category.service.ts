@@ -394,6 +394,8 @@ export class CategoryService {
       isVariant: !!attr.isVariant,
       useStandardOptions: !!attr.useStandardOptions,
       optionSetId: attr.optionSetId,
+      variantType: attr.variantType ?? null,
+      optionSetName: attr.optionSetName ?? null,
     }));
 
     await this.categoryRepository.updateById(categoryId, {

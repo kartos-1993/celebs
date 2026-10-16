@@ -50,6 +50,8 @@ export const attributeSchema = z.object({
   isVariant: z.boolean().optional().default(false),
   useStandardOptions: z.boolean().optional().default(false),
   optionSetId: z.string().optional().nullable(),
+  variantType: z.enum(['color', 'size']).optional().nullable(),
+  optionSetName: z.string().optional().nullable(),
 });
 
 export const baseCategorySchemaFields = {

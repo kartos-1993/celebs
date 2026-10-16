@@ -14,8 +14,6 @@ export interface SeedAttr {
   useStandardOptions?: boolean;
   optionSetName?: string;
   group?: AllowedGroup;
-  filterUiType?: 'checkbox' | 'color_swatch' | 'size_box' | 'range_slider';
-  isStorefrontFilter?: boolean;
 }
 
 export interface SeedCategory {
@@ -27,7 +25,7 @@ export interface SeedCategory {
   imageUrl?: string;
 }
 
-function mkAttr(a: SeedAttr, optionSetMap: Map<string, string>) {
+export function mkAttr(a: SeedAttr, optionSetMap: Map<string, string>) {
   const group: AllowedGroup = a.group ? a.group : a.isVariant ? 'variant' : 'details';
   const coercedType: SeedAttr['type'] =
     a.isVariant && (a.variantType === 'color' || a.variantType === 'size') ? 'multiselect' : a.type;
@@ -192,8 +190,6 @@ const priceRangeAttr: SeedAttr = {
   name: 'Price Range',
   type: 'number',
   isVariant: false,
-  isStorefrontFilter: true,
-  filterUiType: 'range_slider',
 };
 
 const fabricElasticityAttr: SeedAttr = {
