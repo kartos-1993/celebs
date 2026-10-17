@@ -29,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 import {
   Table,
   TableBody,
@@ -57,6 +56,7 @@ import {
   validateThreshold,
 } from '../lib/rate-card';
 
+import { PageSkeleton } from '@/components/page-skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 /**
@@ -94,13 +94,7 @@ export default function ShippingRatesPage() {
   const [pendingDelete, setPendingDelete] = useState<ShippingRate | null>(null);
   const [thresholdDrafts, setThresholdDrafts] = useState<Record<string, string>>({});
 
-  if (ratesLoading || citiesLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
+  if (ratesLoading || citiesLoading) return <PageSkeleton />;
 
   const activeCities: DeliveryCity[] = cities ?? [];
 

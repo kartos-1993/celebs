@@ -34,6 +34,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = (location.state as { successMessage?: string } | null)?.successMessage;
+  const signedOutNotice = (location.state as { notice?: string } | null)?.notice === 'signed-out';
 
   const { mutateAsync: loginMutate, isPending } = useLoginMutation();
 
@@ -83,6 +84,11 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
         <div className="bg-success/10 border border-success/30 text-success p-3 rounded-md text-sm mb-2">
           {successMessage}
         </div>
+      )}
+      {signedOutNotice && (
+        <p role="status" className="text-sm text-muted-foreground">
+          You have been signed out.
+        </p>
       )}
       {serverError && (
         <SignInErrorBanner serverError={serverError} email={form.getValues('email')} />

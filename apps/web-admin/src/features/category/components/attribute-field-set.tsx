@@ -343,6 +343,9 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                           field.onChange(val);
                           if (!val) {
                             form.setValue(`attributes.${index}.optionSetId`, null);
+                            form.setValue(`attributes.${index}.optionSetName`, null, {
+                              shouldDirty: true,
+                            });
                           }
                         }}
                       />
@@ -362,7 +365,13 @@ export const AttributeFieldSet: React.FC<AttributeFieldSetProps> = ({
                     <FormItem>
                       <FormLabel className="text-xs">Linked Option Set</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          const picked = optionSets.find((s) => s.id === value);
+                          form.setValue(`attributes.${index}.optionSetName`, picked?.name ?? null, {
+                            shouldDirty: true,
+                          });
+                        }}
                         value={field.value || effectiveOptionSetId || undefined}
                       >
                         <FormControl>

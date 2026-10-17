@@ -6,7 +6,11 @@ import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
-import { requireSellerContext, requireStoreState } from '@/common/guards/store.guards';
+import {
+  requireSellerContext,
+  requireStoreState,
+  requireVerifiedEmail,
+} from '@/common/guards/store.guards';
 import { authenticateJWT } from '@/common/strategies/jwt.strategy';
 
 const vendorService = new VendorService();
@@ -38,8 +42,17 @@ vendorRoutes.put('/profile', asyncHandler(vendorController.updateProfile));
 vendorRoutes.put('/warehouse', asyncHandler(vendorController.updateWarehouse));
 vendorRoutes.put('/documents', asyncHandler(vendorController.updateDocuments));
 vendorRoutes.put('/business-info', asyncHandler(vendorController.updateBusinessInfo));
-vendorRoutes.post('/submit-for-review', asyncHandler(vendorController.submitForReview));
-vendorRoutes.post('/resubmit', asyncHandler(vendorController.resubmitForReview));
+// Applications must not enter review with an unverified email address.
+vendorRoutes.post(
+  '/submit-for-review',
+  requireVerifiedEmail,
+  asyncHandler(vendorController.submitForReview),
+);
+vendorRoutes.post(
+  '/resubmit',
+  requireVerifiedEmail,
+  asyncHandler(vendorController.resubmitForReview),
+);
 
 // Holiday mode is not onboarding: it changes whether a live storefront accepts
 // orders. The service had no status gate at all, so a rejected or suspended store

@@ -1,18 +1,18 @@
 import React from 'react';
 
-import { QuickFilterConfig, QuickFilterItem } from '../types';
+import { StorefrontShortcutConfig, StorefrontShortcutItem } from '../types';
 
 import { AvatarScrollFilter } from './filters/avatar-scroll-filter';
 import { ChipListFilter } from './filters/chip-list-filter';
 import { ColorSwatchFilter } from './filters/color-swatch-filter';
 
-interface QuickFilterRendererProps {
-  config: QuickFilterConfig;
+interface StorefrontShortcutRendererProps {
+  config: StorefrontShortcutConfig;
   selectedItem: string | null;
-  onSelectItem: (item: QuickFilterItem) => void;
+  onSelectItem: (item: StorefrontShortcutItem) => void;
 }
 
-export const QuickFilterRenderer: React.FC<QuickFilterRendererProps> = ({
+export const StorefrontShortcutRenderer: React.FC<StorefrontShortcutRendererProps> = ({
   config,
   selectedItem,
   onSelectItem,

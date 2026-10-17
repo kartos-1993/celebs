@@ -1,8 +1,8 @@
 import prisma from '../../config/db.prisma';
 
 /**
- * Foreign-key safe clean-slate purge shared by the master seed's `--reset`
- * path (`src/db/seed/index.ts`) and the maintenance `clean:reseed` script.
+ * Foreign-key safe clean-slate purge for the master seed's `--reset` path
+ * (`src/db/seed/index.ts`, `npm run seed:reset`).
  *
  * Order matters: `Product.categoryId` is ON DELETE RESTRICT, `CartItem` and
  * `OrderItem` pin `ProductInventory` with RESTRICT, and finance/notification

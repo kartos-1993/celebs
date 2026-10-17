@@ -22,6 +22,8 @@ import type {
   NotificationThresholds,
 } from '../types';
 
+import { FormSkeleton } from '@/components/page-skeleton';
+
 export default function NotificationSettingsPage() {
   const { data, isLoading } = useNotificationSettingsQuery();
   const bulkUpdateMutation = useBulkUpdateNotificationSettingsMutation();
@@ -57,13 +59,7 @@ export default function NotificationSettingsPage() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Spinner className="h-8 w-8 text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <FormSkeleton />;
 
   return (
     <div className="space-y-6">

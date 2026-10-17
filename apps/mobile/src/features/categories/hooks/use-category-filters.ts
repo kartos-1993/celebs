@@ -1,12 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import type { QuickFilterItem } from '../types';
+import type { StorefrontShortcutItem } from '../types';
 
 import type { ProductFilterParams } from '@/features/products/types';
 
 export function useCategoryFilters(categorySlug: string) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedQuickFilterValue, setSelectedQuickFilterValue] = useState<string | null>(null);
+  const [selectedStorefrontShortcutValue, setSelectedStorefrontShortcutValue] = useState<
+    string | null
+  >(null);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedFits, setSelectedFits] = useState<string[]>([]);
@@ -15,9 +17,9 @@ export function useCategoryFilters(categorySlug: string) {
   );
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
-  const handleSelectQuickFilterItem = useCallback((item: QuickFilterItem) => {
+  const handleSelectStorefrontShortcutItem = useCallback((item: StorefrontShortcutItem) => {
     const val = item.filterValue || item.slug || item.name;
-    setSelectedQuickFilterValue((prev) => (prev === val ? null : val));
+    setSelectedStorefrontShortcutValue((prev) => (prev === val ? null : val));
   }, []);
 
   const handleToggleColor = useCallback((colorName: string) => {
@@ -43,7 +45,7 @@ export function useCategoryFilters(categorySlug: string) {
     setSelectedSizes([]);
     setSelectedFits([]);
     setSelectedPriceRange(null);
-    setSelectedQuickFilterValue(null);
+    setSelectedStorefrontShortcutValue(null);
   }, []);
 
   const filterParams: ProductFilterParams = useMemo(
@@ -53,9 +55,9 @@ export function useCategoryFilters(categorySlug: string) {
       search: searchQuery.trim() || undefined,
       minPrice: selectedPriceRange?.min,
       maxPrice: selectedPriceRange?.max,
-      tag: selectedQuickFilterValue || undefined,
+      tag: selectedStorefrontShortcutValue || undefined,
     }),
-    [categorySlug, searchQuery, selectedPriceRange, selectedQuickFilterValue],
+    [categorySlug, searchQuery, selectedPriceRange, selectedStorefrontShortcutValue],
   );
 
   const activeFilterCount =
@@ -63,13 +65,13 @@ export function useCategoryFilters(categorySlug: string) {
     selectedSizes.length +
     selectedFits.length +
     (selectedPriceRange ? 1 : 0) +
-    (selectedQuickFilterValue ? 1 : 0);
+    (selectedStorefrontShortcutValue ? 1 : 0);
 
   return {
     searchQuery,
     setSearchQuery,
-    selectedQuickFilterValue,
-    handleSelectQuickFilterItem,
+    selectedStorefrontShortcutValue,
+    handleSelectStorefrontShortcutItem,
     selectedColors,
     handleToggleColor,
     selectedSizes,

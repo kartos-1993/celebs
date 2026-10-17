@@ -11,7 +11,7 @@ import {
   CategoryTreeNode,
   CreateCategoryRequest,
   PaginatedCategoriesResponse,
-  QuickFilter,
+  StorefrontShortcut,
   UpdateCategoryRequest,
 } from './types';
 
@@ -29,8 +29,8 @@ export const CATEGORY_QUERY_KEYS = {
   detail: (id: string) => [...CATEGORY_QUERY_KEYS.all, 'detail', id] as const,
   search: (query: string) => [...CATEGORY_QUERY_KEYS.all, 'search', query] as const,
   recent: () => [...CATEGORY_QUERY_KEYS.all, 'recent'] as const,
-  quickFilters: (categoryId: string) =>
-    [...CATEGORY_QUERY_KEYS.all, 'quick-filters', categoryId] as const,
+  storefrontShortcuts: (categoryId: string) =>
+    [...CATEGORY_QUERY_KEYS.all, 'storefront-shortcuts', categoryId] as const,
 };
 
 /**
@@ -103,33 +103,41 @@ export async function deleteCategory(id: string): Promise<ApiResponse<{ success:
   return response.data;
 }
 
-export async function getQuickFiltersForCategory(
+export async function getStorefrontShortcutsForCategory(
   categoryId: string,
-): Promise<ApiResponse<QuickFilter[]>> {
-  const response = await axiosClient.get<ApiResponse<QuickFilter[]>>(
-    `/quick-filter/category/${categoryId}`,
+): Promise<ApiResponse<StorefrontShortcut[]>> {
+  const response = await axiosClient.get<ApiResponse<StorefrontShortcut[]>>(
+    `/storefront-shortcuts?categoryId=${categoryId}`,
   );
   return response.data;
 }
 
-export async function createQuickFilter(
-  data: Partial<QuickFilter>,
-): Promise<ApiResponse<QuickFilter>> {
-  const response = await axiosClient.post<ApiResponse<QuickFilter>>('/quick-filter', data);
+export async function createStorefrontShortcut(
+  data: Partial<StorefrontShortcut>,
+): Promise<ApiResponse<StorefrontShortcut>> {
+  const response = await axiosClient.post<ApiResponse<StorefrontShortcut>>(
+    '/storefront-shortcuts',
+    data,
+  );
   return response.data;
 }
 
-export async function updateQuickFilter(
+export async function updateStorefrontShortcut(
   id: string,
-  data: Partial<QuickFilter>,
-): Promise<ApiResponse<QuickFilter>> {
-  const response = await axiosClient.put<ApiResponse<QuickFilter>>(`/quick-filter/${id}`, data);
+  data: Partial<StorefrontShortcut>,
+): Promise<ApiResponse<StorefrontShortcut>> {
+  const response = await axiosClient.put<ApiResponse<StorefrontShortcut>>(
+    `/storefront-shortcuts/${id}`,
+    data,
+  );
   return response.data;
 }
 
-export async function deleteQuickFilter(id: string): Promise<ApiResponse<{ success: boolean }>> {
+export async function deleteStorefrontShortcut(
+  id: string,
+): Promise<ApiResponse<{ success: boolean }>> {
   const response = await axiosClient.delete<ApiResponse<{ success: boolean }>>(
-    `/quick-filter/${id}`,
+    `/storefront-shortcuts/${id}`,
   );
   return response.data;
 }
@@ -158,10 +166,10 @@ export const CategoryApiService = {
   getCategoryById,
   updateCategory,
   deleteCategory,
-  getQuickFiltersForCategory,
-  createQuickFilter,
-  updateQuickFilter,
-  deleteQuickFilter,
+  getStorefrontShortcutsForCategory,
+  createStorefrontShortcut,
+  updateStorefrontShortcut,
+  deleteStorefrontShortcut,
 };
 
 // Re-export types for convenience

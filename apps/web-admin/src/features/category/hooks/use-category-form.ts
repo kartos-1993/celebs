@@ -77,6 +77,8 @@ export const useCategoryForm = ({
         isVariant: !!attr.isVariant,
         useStandardOptions: !!attr.useStandardOptions,
         optionSetId: attr.optionSetId ? String(attr.optionSetId) : null,
+        variantType: attr.variantType ?? null,
+        optionSetName: attr.optionSetName ?? null,
       })),
       sizeChartColumns: initialData?.sizeChartColumns || [],
       bodyChartColumns: initialData?.bodyChartColumns || [],
@@ -186,6 +188,8 @@ export const useCategoryForm = ({
           attr.isVariant && attr.useStandardOptions && attr.optionSetId
             ? attr.optionSetId.trim() || null
             : null,
+        variantType: attr.variantType ?? null,
+        optionSetName: attr.optionSetName ?? null,
         group: attr.isVariant ? 'variant' : attr.group || 'details',
       })),
     };

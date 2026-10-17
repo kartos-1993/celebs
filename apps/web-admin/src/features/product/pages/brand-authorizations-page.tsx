@@ -20,6 +20,8 @@ import { Spinner } from '@celebs/shared-ui/components/spinner';
 import { BrandAuthorizationDialog } from '../components/brand-authorization-dialog';
 import { useMyBrandAuthorizations } from '../hooks/use-brands';
 
+import { TableSkeleton } from '@/components/table-skeleton';
+
 export const BrandAuthorizationsPage = memo(function BrandAuthorizationsPage() {
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const { data: authorizations = [], isLoading } = useMyBrandAuthorizations();
@@ -118,9 +120,7 @@ export const BrandAuthorizationsPage = memo(function BrandAuthorizationsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-12 flex justify-center">
-              <Spinner size="lg" className="text-primary" />
-            </div>
+            <TableSkeleton rows={4} columns={3} className="rounded-none border-0 shadow-none" />
           ) : authorizations.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center gap-3">
               <ShieldAlert className="h-10 w-10 text-muted-foreground/40" />

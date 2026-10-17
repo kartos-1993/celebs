@@ -14,7 +14,6 @@ import {
 import { Input } from '@celebs/shared-ui/components/input';
 import { Label } from '@celebs/shared-ui/components/label';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { PlatformSettingsApiService } from '../api';
 import {
@@ -24,6 +23,7 @@ import {
   validateCommerceField as validate,
 } from '../lib/commerce-settings';
 
+import { FormSkeleton } from '@/components/page-skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 const QUERY_KEY = ['platform-settings', 'commerce'] as const;
@@ -114,9 +114,7 @@ export default function CommerceSettingsPage() {
     saveMutation.mutate('Admin updated commerce policy from the settings centre');
   };
 
-  if (isLoading) {
-    return <Spinner />;
-  }
+  if (isLoading) return <FormSkeleton />;
 
   const unreadable = data?.invalidKeys ?? [];
 

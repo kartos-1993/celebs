@@ -10,11 +10,12 @@ import {
 } from '@celebs/shared-ui/components/card';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { EarningsSummaryCards } from '../components/earnings-summary-cards';
 import { EarningsTable } from '../components/earnings-table';
 import { useEarningsList, useEarningsSummary } from '../hooks';
+
+import { DashboardSkeleton } from '@/components/page-skeleton';
 
 const PAGE_SIZE = 25;
 
@@ -34,13 +35,7 @@ const EarningsPage = () => {
 
   const loading = summary.isPending || entries.isPending;
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   const totals = summary.data?.summary;
 

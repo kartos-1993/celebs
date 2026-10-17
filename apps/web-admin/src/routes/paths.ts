@@ -22,7 +22,6 @@ export const PATHS = {
   },
   VENDORS: {
     LIST: '/vendors',
-    DETAIL: (id: string) => `/vendors/${id}`,
     ONBOARDING: '/onboarding',
   },
   ORDERS: {

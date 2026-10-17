@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 import { PageHeader } from '@celebs/shared-ui/components/page-header';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { LedgerCard } from '../components/ledger-card';
 import { OpenBatchDialog } from '../components/open-batch-dialog';
@@ -10,6 +9,8 @@ import { SettlementDialogs } from '../components/settlement-dialogs';
 import { SettlementsCard } from '../components/settlements-card';
 import { useLedgerEntries, useSettlementBatches } from '../hooks/use-finance-queries';
 import { useSettlementWorkflow } from '../hooks/use-settlement-workflow';
+
+import { PageSkeleton } from '@/components/page-skeleton';
 
 const PAGE_SIZE = 25;
 
@@ -33,13 +34,7 @@ const Finance = () => {
   const entries = ledger.data?.data ?? [];
   const loading = settlements.isPending || ledger.isPending;
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="space-y-6">

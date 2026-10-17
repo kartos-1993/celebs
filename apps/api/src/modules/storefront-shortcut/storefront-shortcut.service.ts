@@ -1,61 +1,65 @@
 import {
-  type QuickFilterDisplayAs,
-  type QuickFilterItem,
-  type QuickFilterType,
+  type StorefrontShortcutDisplayAs,
+  type StorefrontShortcutItem,
+  type StorefrontShortcutType,
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
-import { type QuickFilterRepository, quickFilterRepository } from './quick-filter.repository';
+import {
+  type StorefrontShortcutRepository,
+  storefrontShortcutRepository,
+} from './storefront-shortcut.repository';
 
 import { Prisma } from '@/config/db.prisma';
 
-export interface CreateQuickFilterInput {
+export interface CreateStorefrontShortcutInput {
   categoryId: string;
-  type: QuickFilterType | string;
+  type: StorefrontShortcutType | string;
   attributeId?: string | null;
-  displayAs: QuickFilterDisplayAs | string;
-  items?: QuickFilterItem[];
+  displayAs: StorefrontShortcutDisplayAs | string;
+  items?: StorefrontShortcutItem[];
   autoPopulate?: boolean;
   displayOrder?: number;
   isActive?: boolean;
 }
 
-export interface UpdateQuickFilterInput {
-  type?: QuickFilterType | string;
+export interface UpdateStorefrontShortcutInput {
+  type?: StorefrontShortcutType | string;
   attributeId?: string | null;
-  displayAs?: QuickFilterDisplayAs | string;
-  items?: QuickFilterItem[];
+  displayAs?: StorefrontShortcutDisplayAs | string;
+  items?: StorefrontShortcutItem[];
   autoPopulate?: boolean;
   displayOrder?: number;
   isActive?: boolean;
 }
 
-interface QuickFilterConfig {
-  type?: QuickFilterType | string;
+interface StorefrontShortcutConfig {
+  type?: StorefrontShortcutType | string;
   attributeId?: string | null;
-  displayAs?: QuickFilterDisplayAs | string;
-  items?: QuickFilterItem[];
+  displayAs?: StorefrontShortcutDisplayAs | string;
+  items?: StorefrontShortcutItem[];
   autoPopulate?: boolean;
   displayOrder?: number;
   isActive?: boolean;
 }
 
-export interface QuickFilterServiceDeps {
-  quickFilterRepo?: Partial<QuickFilterRepository>;
+export interface StorefrontShortcutServiceDeps {
+  storefrontShortcutRepo?: Partial<StorefrontShortcutRepository>;
 }
 
-export class QuickFilterService {
-  private quickFilterRepo: QuickFilterRepository;
+export class StorefrontShortcutService {
+  private storefrontShortcutRepo: StorefrontShortcutRepository;
 
-  constructor(deps: QuickFilterServiceDeps = {}) {
-    this.quickFilterRepo = (deps.quickFilterRepo ?? quickFilterRepository) as QuickFilterRepository;
+  constructor(deps: StorefrontShortcutServiceDeps = {}) {
+    this.storefrontShortcutRepo = (deps.storefrontShortcutRepo ??
+      storefrontShortcutRepository) as StorefrontShortcutRepository;
   }
 
   private formatFilter(qf: { id: string; filterConfig?: Prisma.JsonValue } | null) {
     if (!qf) return null;
     const config = (
       qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}
-    ) as QuickFilterConfig;
+    ) as StorefrontShortcutConfig;
     return {
       ...qf,
       id: qf.id,
@@ -70,7 +74,7 @@ export class QuickFilterService {
   }
 
   async getStorefrontConfigBySlug(slugOrId: string) {
-    const category = await this.quickFilterRepo.findCategoryBySlugOrId(slugOrId);
+    const category = await this.storefrontShortcutRepo.findCategoryBySlugOrId(slugOrId);
 
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
@@ -78,13 +82,14 @@ export class QuickFilterService {
 
     const categoryId = category.id;
 
-    let rawQuickFilters = await this.quickFilterRepo.findByCategoryId(categoryId);
+    let rawStorefrontShortcuts = await this.storefrontShortcutRepo.findByCategoryId(categoryId);
 
-    if (rawQuickFilters.length === 0) {
-      const childCategories = await this.quickFilterRepo.findActiveChildCategories(categoryId);
+    if (rawStorefrontShortcuts.length === 0) {
+      const childCategories =
+        await this.storefrontShortcutRepo.findActiveChildCategories(categoryId);
 
       if (childCategories.length > 0) {
-        rawQuickFilters = [
+        rawStorefrontShortcuts = [
           {
             id: `temp-${Date.now()}`,
             title: 'Subcategories',
@@ -114,19 +119,19 @@ export class QuickFilterService {
 
     // Hoisted: every auto-populated subcategory filter reuses this one fetch
     // instead of issuing an identical query per filter.
-    const needsAutoPopulate = rawQuickFilters.some((qf) => {
+    const needsAutoPopulate = rawStorefrontShortcuts.some((qf) => {
       const config = (
         qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}
       ) as { type?: string; autoPopulate?: boolean };
       return config.type === 'subcategory' && config.autoPopulate !== false;
     });
     const autoPopulateChildren = needsAutoPopulate
-      ? await this.quickFilterRepo.findActiveChildCategories(categoryId)
+      ? await this.storefrontShortcutRepo.findActiveChildCategories(categoryId)
       : [];
 
-    const quickFilters = [];
+    const shortcuts = [];
 
-    for (const qf of rawQuickFilters) {
+    for (const qf of rawStorefrontShortcuts) {
       const formatted = this.formatFilter(qf);
       if (!formatted) continue;
       let finalItems = [...(formatted.items || [])];
@@ -149,7 +154,7 @@ export class QuickFilterService {
         }
       }
 
-      quickFilters.push({
+      shortcuts.push({
         id: formatted.id,
         type: formatted.type,
         attributeId: formatted.attributeId,
@@ -167,25 +172,25 @@ export class QuickFilterService {
         level: category.level,
         imageUrl: category.imageUrl || null,
       },
-      quickFilters,
+      shortcuts,
       drawerFilters: [],
     };
   }
 
-  async getQuickFiltersForCategory(categoryId: string) {
-    const list = await this.quickFilterRepo.findByCategoryId(categoryId);
+  async getStorefrontShortcutsForCategory(categoryId: string) {
+    const list = await this.storefrontShortcutRepo.findByCategoryId(categoryId);
     return list.map((item) => this.formatFilter(item));
   }
 
-  async createQuickFilter(input: CreateQuickFilterInput) {
-    const category = await this.quickFilterRepo.findCategoryById(input.categoryId);
+  async createStorefrontShortcut(input: CreateStorefrontShortcutInput) {
+    const category = await this.storefrontShortcutRepo.findCategoryById(input.categoryId);
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
     const slug = `${input.type}-${input.categoryId}-${Date.now()}`;
 
-    const created = await this.quickFilterRepo.create({
+    const created = await this.storefrontShortcutRepo.create({
       title: input.type,
       slug,
       categoryId: input.categoryId,
@@ -203,11 +208,11 @@ export class QuickFilterService {
     return this.formatFilter(created);
   }
 
-  async updateQuickFilter(id: string, input: UpdateQuickFilterInput) {
-    const filter = await this.quickFilterRepo.findById(id);
+  async updateStorefrontShortcut(id: string, input: UpdateStorefrontShortcutInput) {
+    const filter = await this.storefrontShortcutRepo.findById(id);
     if (!filter) {
       throw new AppError(
-        'Quick filter not found',
+        'Storefront shortcut not found',
         HTTPSTATUS.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
       );
@@ -215,9 +220,9 @@ export class QuickFilterService {
 
     const currentConfig = (
       filter.filterConfig && typeof filter.filterConfig === 'object' ? filter.filterConfig : {}
-    ) as QuickFilterConfig;
+    ) as StorefrontShortcutConfig;
 
-    const updated = await this.quickFilterRepo.update(id, {
+    const updated = await this.storefrontShortcutRepo.update(id, {
       ...currentConfig,
       ...(input.type ? { type: input.type } : {}),
       ...(input.attributeId !== undefined ? { attributeId: input.attributeId } : {}),
@@ -231,19 +236,19 @@ export class QuickFilterService {
     return this.formatFilter(updated);
   }
 
-  async deleteQuickFilter(id: string): Promise<{ success: boolean }> {
-    const filter = await this.quickFilterRepo.findById(id);
+  async deleteStorefrontShortcut(id: string): Promise<{ success: boolean }> {
+    const filter = await this.storefrontShortcutRepo.findById(id);
     if (!filter) {
       throw new AppError(
-        'Quick filter not found',
+        'Storefront shortcut not found',
         HTTPSTATUS.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
 
-    await this.quickFilterRepo.delete(id);
+    await this.storefrontShortcutRepo.delete(id);
     return { success: true };
   }
 }
 
-export const quickFilterService = new QuickFilterService();
+export const storefrontShortcutService = new StorefrontShortcutService();

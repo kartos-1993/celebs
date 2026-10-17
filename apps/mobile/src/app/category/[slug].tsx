@@ -9,7 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Palette } from '@/constants/theme';
 import { CategorySearchHeader } from '@/features/categories/components/category-search-header';
 import { DynamicFilterDrawer } from '@/features/categories/components/dynamic-filter-drawer';
-import { QuickFilterRenderer } from '@/features/categories/components/quick-filter-renderer';
+import { StorefrontShortcutRenderer } from '@/features/categories/components/storefront-shortcut-renderer';
 import { useCategoryFilters } from '@/features/categories/hooks/use-category-filters';
 import { useStorefrontConfig } from '@/features/categories/hooks/use-storefront-config';
 import { styles } from '@/features/categories/styles/category.styles';
@@ -48,12 +48,12 @@ export default function CategoryProductsScreen() {
         onBack={() => router.back()}
       />
 
-      {storefrontConfig?.quickFilters?.map((qf, idx) => (
-        <QuickFilterRenderer
-          key={qf.id || idx}
-          config={qf}
-          selectedItem={filters.selectedQuickFilterValue}
-          onSelectItem={filters.handleSelectQuickFilterItem}
+      {storefrontConfig?.shortcuts?.map((shortcut, idx) => (
+        <StorefrontShortcutRenderer
+          key={shortcut.id || idx}
+          config={shortcut}
+          selectedItem={filters.selectedStorefrontShortcutValue}
+          onSelectItem={filters.handleSelectStorefrontShortcutItem}
         />
       ))}
 

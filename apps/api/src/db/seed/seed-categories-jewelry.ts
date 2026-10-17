@@ -22,7 +22,7 @@ export interface SeedCategory {
   children?: SeedCategory[];
 }
 
-function mkAttr(a: SeedAttr) {
+export function mkAttr(a: SeedAttr) {
   const group: AllowedGroup = a.group ? a.group : a.isVariant ? 'variant' : 'details';
   return {
     name: a.name,

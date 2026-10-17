@@ -48,6 +48,11 @@ export async function resubmitForReview() {
   return response.data;
 }
 
+export async function resendVerificationEmail(data: { email: string }) {
+  const response = await axiosClient.post('/auth/resend-verification', data);
+  return response.data;
+}
+
 export async function uploadOnboardingImage(file: File): Promise<string> {
   return directUploadFile(file, 'celebs/kyc', 'KYC');
 }

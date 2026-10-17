@@ -1,16 +1,16 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
 
-import { QuickFilterItem } from '../../types';
+import { StorefrontShortcutItem } from '../../types';
 
 import { styles } from './chip-list-filter.styles';
 
 import { ThemedText } from '@/components/themed-text';
 
 interface ChipListFilterProps {
-  items: QuickFilterItem[];
+  items: StorefrontShortcutItem[];
   selectedItem: string | null;
-  onSelectItem: (item: QuickFilterItem) => void;
+  onSelectItem: (item: StorefrontShortcutItem) => void;
 }
 
 export const ChipListFilter: React.FC<ChipListFilterProps> = ({

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
-import { QuickFilterItem } from '../../types';
+import { StorefrontShortcutItem } from '../../types';
 
 import { styles } from './color-swatch-filter.styles';
 
@@ -11,15 +11,15 @@ import { Palette } from '@/constants/theme';
 import { SWATCH_DOT_FALLBACK_COLOR } from '@/features/products/utils/swatch';
 
 interface ColorSwatchFilterProps {
-  items: QuickFilterItem[];
+  items: StorefrontShortcutItem[];
   selectedItem: string | null;
-  onSelectItem: (item: QuickFilterItem) => void;
+  onSelectItem: (item: StorefrontShortcutItem) => void;
 }
 
 /**
- * Quick filters carry no `colorCode` (the shared contract is `name` + `image`),
- * so a filter value with no artwork falls back to a flat dot. These are the
- * quick-filter names that already have a home in the design tokens: every entry
+ * Storefront shortcuts carry no `colorCode` (the shared contract is `name` + `image`),
+ * so a shortcut value with no artwork falls back to a flat dot. These are the
+ * storefront-shortcut names that already have a home in the design tokens: every entry
  * below resolves to a Palette token whose VALUE IS BYTE-IDENTICAL to the hex it
  * replaced (`#18181b`→gray900 `#18181B`, `#ffffff`→white, `#dc2626`→danger,
  * `#16a34a`→success, `#eab308`→gold, `#6b7280`→gray500), so no colour on screen
@@ -37,7 +37,7 @@ const COLOR_TOKEN_MAP: Record<string, string> = {
 };
 
 interface ColorSwatchChipProps {
-  item: QuickFilterItem;
+  item: StorefrontShortcutItem;
   isSelected: boolean;
   onSelect: () => void;
 }

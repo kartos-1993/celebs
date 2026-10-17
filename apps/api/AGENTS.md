@@ -62,7 +62,7 @@
 
 ## 10. REST API Route Conventions
 
-- Plural Nouns Only: Mount resource routes with plural nouns (`/products`, `/vendors`, `/categories`, `/quick-filters`).
+- Plural Nouns Only: Mount resource routes with plural nouns (`/products`, `/vendors`, `/categories`, `/storefront-shortcuts`).
 - Standard Verbs Only: Use HTTP verbs for state mutations:
   - Archive / Delist: `DELETE /:id` (never `POST /:id/archive`).
   - Status / Toggle: `PATCH /:id` (never `POST /:id/toggle-activation`).

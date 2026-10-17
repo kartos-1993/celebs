@@ -50,6 +50,8 @@ export const attributeSchema = z.object({
   isVariant: z.boolean().optional().default(false),
   useStandardOptions: z.boolean().optional().default(false),
   optionSetId: z.string().optional().nullable(),
+  variantType: z.enum(['color', 'size']).optional().nullable(),
+  optionSetName: z.string().optional().nullable(),
 });
 
 export const baseCategorySchemaFields = {
@@ -91,11 +93,20 @@ export const updateCategoryAttributesSchema = z.object({
   attributes: z.array(attributeSchema),
 });
 
-// Quick Filter Schemas
-export const quickFilterTypeSchema = z.enum(['subcategory', 'attribute', 'tag', 'collection']);
-export const quickFilterDisplayAsSchema = z.enum(['avatar_scroll', 'chip_list', 'color_swatch']);
+// Storefront Shortcut Schemas
+export const storefrontShortcutTypeSchema = z.enum([
+  'subcategory',
+  'attribute',
+  'tag',
+  'collection',
+]);
+export const storefrontShortcutDisplayAsSchema = z.enum([
+  'avatar_scroll',
+  'chip_list',
+  'color_swatch',
+]);
 
-export const quickFilterItemSchema = z.object({
+export const storefrontShortcutItemSchema = z.object({
   name: z.string().trim().min(1, 'Filter item name is required'),
   image: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
@@ -103,13 +114,13 @@ export const quickFilterItemSchema = z.object({
   displayOrder: z.number().int().optional().default(0),
 });
 
-export const quickFilterSchema = z.object({
+export const storefrontShortcutSchema = z.object({
   id: z.string().optional(),
   categoryId: z.string().min(1, 'Category ID is required'),
-  type: quickFilterTypeSchema,
+  type: storefrontShortcutTypeSchema,
   attributeId: z.string().nullable().optional(),
-  displayAs: quickFilterDisplayAsSchema,
-  items: z.array(quickFilterItemSchema).optional().default([]),
+  displayAs: storefrontShortcutDisplayAsSchema,
+  items: z.array(storefrontShortcutItemSchema).optional().default([]),
   autoPopulate: z.boolean().optional().default(false),
   displayOrder: z.number().int().optional().default(0),
   isActive: z.boolean().optional().default(true),
@@ -127,7 +138,7 @@ export type CategorySlugParam = z.infer<typeof categorySlugParamSchema>;
 export type CategoryPaginationQuery = z.infer<typeof categoryPaginationQuerySchema>;
 export type CategorySearchQueryType = z.infer<typeof categorySearchQuerySchema>;
 export type UpdateCategoryAttributesInput = z.infer<typeof updateCategoryAttributesSchema>;
-export type QuickFilterType = z.infer<typeof quickFilterTypeSchema>;
-export type QuickFilterDisplayAs = z.infer<typeof quickFilterDisplayAsSchema>;
-export type QuickFilterItem = z.infer<typeof quickFilterItemSchema>;
-export type QuickFilter = z.infer<typeof quickFilterSchema>;
+export type StorefrontShortcutType = z.infer<typeof storefrontShortcutTypeSchema>;
+export type StorefrontShortcutDisplayAs = z.infer<typeof storefrontShortcutDisplayAsSchema>;
+export type StorefrontShortcutItem = z.infer<typeof storefrontShortcutItemSchema>;
+export type StorefrontShortcut = z.infer<typeof storefrontShortcutSchema>;
