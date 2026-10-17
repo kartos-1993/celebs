@@ -8,6 +8,7 @@ import { ProductService } from './product.service';
 
 import { actorContext, optionalActorContext } from '@/common/context/actor-context.middleware';
 import { requireStoreState } from '@/common/guards/store.guards';
+import { privateNoStore, publicCache } from '@/common/http/cache-policy.middleware';
 import { authenticateJWT, optionalAuthenticateJWT } from '@/middlewares/auth.middleware';
 import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
@@ -21,12 +22,14 @@ productRoutes.get(
   optionalAuthenticateJWT,
   optionalActorContext,
   searchRateLimiter,
+  publicCache({ maxAge: 30, sMaxAge: 60, swr: 120 }),
   asyncHandler(productController.getProducts),
 );
 productRoutes.get(
   '/review-product-queue',
   authenticateJWT,
   requirePermissions(Permission.PRODUCT_REVIEW),
+  privateNoStore(),
   asyncHandler(productController.getProductReviewQueue),
 );
 productRoutes.get(
@@ -34,6 +37,7 @@ productRoutes.get(
   optionalAuthenticateJWT,
   optionalActorContext,
   searchRateLimiter,
+  publicCache({ maxAge: 60, sMaxAge: 300, swr: 300 }),
   asyncHandler(productController.getProductById),
 );
 

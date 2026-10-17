@@ -5,7 +5,9 @@ import { asyncHandler, logger } from '@celebs/shared-utils';
 import { CategoryController } from './category.controller';
 import { CategoryService } from './category.service';
 
-import { authenticateJWT } from '@/middlewares/auth.middleware';
+import { publicCache } from '@/common/http/cache-policy.middleware';
+import { authenticateJWT, optionalAuthenticateJWT } from '@/middlewares/auth.middleware';
+import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 
 const categoryRoute = Router();
 const categoryController = new CategoryController(new CategoryService());
@@ -35,10 +37,23 @@ import { requirePermissions } from '@/middlewares/rbac.middleware';
 const quickFilterController = new QuickFilterController(new QuickFilterService());
 
 // Public Category routes
-categoryRoute.get('/', asyncHandler(categoryController.getAllCategories));
-categoryRoute.get('/search', asyncHandler(categoryController.searchCategories));
+categoryRoute.get(
+  '/',
+  optionalAuthenticateJWT,
+  searchRateLimiter,
+  asyncHandler(categoryController.getAllCategories),
+);
+categoryRoute.get(
+  '/search',
+  optionalAuthenticateJWT,
+  searchRateLimiter,
+  asyncHandler(categoryController.searchCategories),
+);
 categoryRoute.get(
   '/tree-with-attributes',
+  optionalAuthenticateJWT,
+  searchRateLimiter,
+  publicCache({ maxAge: 300, sMaxAge: 3600, swr: 3600 }),
   asyncHandler(categoryController.getCategoryTreeWithAttributes),
 );
 
@@ -50,9 +65,24 @@ categoryRoute.post(
   asyncHandler(categoryController.recordRecentCategory),
 );
 
-categoryRoute.get('/:slug/storefront', asyncHandler(quickFilterController.getStorefrontConfig));
-categoryRoute.get('/:id/filters', asyncHandler(categoryController.getCategoryFilters));
-categoryRoute.get('/:id', asyncHandler(categoryController.getCategoryById));
+categoryRoute.get(
+  '/:slug/storefront',
+  optionalAuthenticateJWT,
+  searchRateLimiter,
+  asyncHandler(quickFilterController.getStorefrontConfig),
+);
+categoryRoute.get(
+  '/:id/filters',
+  optionalAuthenticateJWT,
+  searchRateLimiter,
+  asyncHandler(categoryController.getCategoryFilters),
+);
+categoryRoute.get(
+  '/:id',
+  optionalAuthenticateJWT,
+  searchRateLimiter,
+  asyncHandler(categoryController.getCategoryById),
+);
 
 // Admin / Management Category routes (Require Auth & Permissions)
 categoryRoute.use(authenticateJWT);

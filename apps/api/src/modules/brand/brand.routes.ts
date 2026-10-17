@@ -7,15 +7,15 @@ import { brandController } from './brand.controller';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requirePlatformActor, requireStoreState } from '@/common/guards/store.guards';
-import { authenticateJWT } from '@/middlewares/auth.middleware';
+import { authenticateJWT, optionalAuthenticateJWT } from '@/middlewares/auth.middleware';
 import { searchRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
 
 // ── Public Storefront Brand Routes ──
-router.get('/', searchRateLimiter, brandController.getAllBrands);
-router.get('/:id', searchRateLimiter, brandController.getBrandByIdOrSlug);
+router.get('/', optionalAuthenticateJWT, searchRateLimiter, brandController.getAllBrands);
+router.get('/:id', optionalAuthenticateJWT, searchRateLimiter, brandController.getBrandByIdOrSlug);
 
 // ── Seller Brand Authorization Routes ──
 const approvedSeller = [requireStoreState(['APPROVED'])];
