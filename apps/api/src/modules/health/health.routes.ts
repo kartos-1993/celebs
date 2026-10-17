@@ -8,6 +8,7 @@ import prisma from '@/config/db.prisma';
 const router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   const startTime = Date.now();
   let dbStatus = 'UP';
   let redisStatus = 'UP';
