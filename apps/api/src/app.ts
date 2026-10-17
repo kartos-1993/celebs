@@ -11,6 +11,7 @@ import { asyncHandler, ErrorCode, logger, NotFoundException } from '@celebs/shar
 
 import { actorContext } from './common/context/actor-context.middleware';
 import { requirePlatformActor } from './common/guards/store.guards';
+import { isAllowedOrigin } from './common/http/origin.util';
 import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 import { getBullBoardRouter } from './common/services/bull-board.service';
 import { authenticateJWT } from './common/strategies/jwt.strategy';
@@ -72,25 +73,15 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOriginsList.includes(origin)) {
+      if (isAllowedOrigin(origin, allowedOriginsList)) {
         return callback(null, true);
-      }
-
-      // In development, permit localhost, 127.0.0.1, and private LAN IP ranges
-      if (config.NODE_ENV === 'development') {
-        const isLocalDev =
-          /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
-            origin,
-          );
-        if (isLocalDev) {
-          return callback(null, true);
-        }
       }
 
       logger.warn({ origin, allowedOrigins: allowedOriginsList }, 'Origin blocked by CORS');
       return callback(null, false);
     },
     credentials: true,
+    maxAge: 86400,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -104,10 +95,20 @@ app.use(
       'x-test-rate-limit',
       'Accept',
       'Origin',
+      'If-None-Match',
+      'If-Modified-Since',
     ],
     // Header names are case-insensitive (RFC 9110 §5.5) — single lowercase
     // entries cover all casings; no Title-Case duplicates.
-    exposedHeaders: ['x-session-id', 'x-request-id'],
+    exposedHeaders: [
+      'x-session-id',
+      'x-request-id',
+      'etag',
+      'retry-after',
+      'ratelimit-limit',
+      'ratelimit-remaining',
+      'ratelimit-reset',
+    ],
   }),
 );
 
@@ -118,7 +119,11 @@ app.use(
   pinoHttp({
     genReqId(req, res) {
       const incoming = req.headers['x-request-id'];
-      const id = typeof incoming === 'string' && incoming.trim() !== '' ? incoming : randomUUID();
+      const isValid =
+        typeof incoming === 'string' &&
+        incoming.trim() !== '' &&
+        /^[a-zA-Z0-9_-]{1,64}$/.test(incoming.trim());
+      const id = isValid ? (incoming as string).trim() : randomUUID();
       res.setHeader('X-Request-Id', id);
       return id;
     },
@@ -168,6 +173,7 @@ app.use(
 app.use(
   helmet({
     contentSecurityPolicy: config.NODE_ENV === 'production' ? undefined : false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 );
 app.use(
