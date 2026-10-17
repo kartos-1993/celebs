@@ -7,6 +7,8 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
+
 import {
   PlatformSettingsRepository,
   platformSettingsRepository,
@@ -86,7 +88,7 @@ export class PlatformSettingsService {
 
     this.validateSettingValue(value, setting.type);
     const updated = await this.repository.updateSetting(key, value, userId, reason);
-    await invalidateCacheKey('storefront:home');
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
     return updated;
   }
 
@@ -114,7 +116,7 @@ export class PlatformSettingsService {
       },
       reason,
     );
-    await invalidateCacheKey('storefront:home');
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
     return upserted;
   }
 
@@ -144,7 +146,7 @@ export class PlatformSettingsService {
       results.push(updated);
     }
 
-    await invalidateCacheKey('storefront:home');
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
     return results;
   }
 

@@ -1,6 +1,8 @@
 import type { UpdateCampaignType } from '@celebs/shared-types';
 import { createCampaignSchema } from '@celebs/shared-types';
 
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
+
 import { type CampaignRepository, campaignRepository } from './campaign.repository';
 
 import { invalidateCacheKey } from '@/common/services/redis-cache.service';
@@ -102,7 +104,7 @@ export class CampaignService {
     });
 
     await activeCampaignsCache.invalidate();
-    await invalidateCacheKey('storefront:home');
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
     return created;
   }
 
@@ -116,7 +118,7 @@ export class CampaignService {
     const updated = await this.campaignRepository.update(id, dataToUpdate, productIds);
 
     await activeCampaignsCache.invalidate();
-    await invalidateCacheKey('storefront:home');
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
     return updated;
   }
 }

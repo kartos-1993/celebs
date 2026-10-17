@@ -12,17 +12,15 @@ import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { PlatformSettingsService, platformSettingsService } from './platform-settings.service';
 
+import { sendSuccess } from '@/common/utils/response.util';
+
 export class PlatformSettingsController {
   constructor(private service: PlatformSettingsService = platformSettingsService) {}
 
   getPublicSettings = async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await this.service.getPublicSettings();
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Public settings retrieved successfully',
-        data: result,
-      });
+      return sendSuccess(res, result, 'Public settings retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -32,11 +30,7 @@ export class PlatformSettingsController {
     try {
       const { group } = getPlatformSettingsQuerySchema.parse(req.query);
       const settings = await this.service.getAllSettings(group);
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'All platform settings retrieved successfully',
-        data: settings,
-      });
+      return sendSuccess(res, settings, 'All platform settings retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -53,11 +47,7 @@ export class PlatformSettingsController {
           ErrorCode.RESOURCE_NOT_FOUND,
         );
       }
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Setting retrieved successfully',
-        data: setting,
-      });
+      return sendSuccess(res, setting, 'Setting retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -82,11 +72,7 @@ export class PlatformSettingsController {
         validated.reason,
       );
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: `Setting "${validated.key}" created/updated successfully`,
-        data: setting,
-      });
+      return sendSuccess(res, setting, `Setting "${validated.key}" created/updated successfully`);
     } catch (error) {
       next(error);
     }
@@ -99,11 +85,7 @@ export class PlatformSettingsController {
       const userId = req.actor?.userId || req.user?.id;
       const updated = await this.service.updateSetting(key, value, userId, reason);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: `Setting "${key}" updated successfully`,
-        data: updated,
-      });
+      return sendSuccess(res, updated, `Setting "${key}" updated successfully`);
     } catch (error) {
       next(error);
     }
@@ -115,11 +97,7 @@ export class PlatformSettingsController {
       const userId = req.actor?.userId || req.user?.id;
       const updated = await this.service.bulkUpdateSettings(settings, userId, reason);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: `${updated.length} settings updated successfully`,
-        data: updated,
-      });
+      return sendSuccess(res, updated, `${updated.length} settings updated successfully`);
     } catch (error) {
       next(error);
     }
@@ -130,11 +108,7 @@ export class PlatformSettingsController {
       const { key, limit } = getPlatformSettingAuditLogsQuerySchema.parse(req.query);
       const logs = await this.service.getAuditLogs(key, limit);
 
-      res.status(HTTPSTATUS.OK).json({
-        success: true,
-        message: 'Platform setting audit logs retrieved successfully',
-        data: logs,
-      });
+      return sendSuccess(res, logs, 'Platform setting audit logs retrieved successfully');
     } catch (error) {
       next(error);
     }

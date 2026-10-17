@@ -2,6 +2,8 @@ import { ComboDiscountType } from '@prisma/client';
 
 import { CreateComboType } from '@celebs/shared-types';
 
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
+
 import { type ComboRepository, comboRepository } from './combo.repository';
 
 import { invalidateCacheKey } from '@/common/services/redis-cache.service';
@@ -121,7 +123,7 @@ export class ComboService {
     await Promise.all([
       activeCombosCache.invalidate(),
       allCombosCache.invalidate(),
-      invalidateCacheKey('storefront:home'),
+      invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY),
     ]);
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
@@ -159,7 +161,7 @@ export class ComboService {
     await Promise.all([
       activeCombosCache.invalidate(),
       allCombosCache.invalidate(),
-      invalidateCacheKey('storefront:home'),
+      invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY),
     ]);
     const [hydrated] = await this.attachProductDetails([combo]);
     return hydrated;
@@ -170,7 +172,7 @@ export class ComboService {
     await Promise.all([
       activeCombosCache.invalidate(),
       allCombosCache.invalidate(),
-      invalidateCacheKey('storefront:home'),
+      invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY),
     ]);
     return deleted;
   }

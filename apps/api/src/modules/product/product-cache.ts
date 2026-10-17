@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 
 import { PRODUCT_STATUS } from '@celebs/shared-types';
 
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
+
 import {
   getCachedJson,
   invalidateCacheKey,
@@ -11,7 +13,7 @@ import {
 
 export const PRODUCT_DETAIL_TTL_SECONDS = 300;
 export const PRODUCT_LIST_TTL_SECONDS = 60;
-export const STOREFRONT_HOME_KEY = 'storefront:home';
+export const STOREFRONT_HOME_KEY = STOREFRONT_HOME_CACHE_KEY;
 
 /** True when a status change flips storefront visibility either direction. */
 export function isVisibilityFlip(oldStatus: unknown, nextStatus: unknown): boolean {
@@ -60,7 +62,7 @@ export function purgeProductDetail(id: string): void {
 }
 
 export function purgeProductHome(): void {
-  void invalidateCacheKey(STOREFRONT_HOME_KEY);
+  void invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
 }
 
 export function purgeProduct(id: string): void {
@@ -90,7 +92,7 @@ export function purgeProducts(ids: string[]): void {
       invalidateCacheKey(productDetailKey(id, false)),
       invalidateCacheKey(productDetailKey(id, true)),
     ]),
-    invalidateCacheKey(STOREFRONT_HOME_KEY),
+    invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY),
     scanDelByPattern('product:list:*', 100),
   ]);
 }

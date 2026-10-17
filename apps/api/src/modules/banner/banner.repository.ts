@@ -1,3 +1,5 @@
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
+
 import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { TtlCache } from '@/common/utils/ttl-cache';
 import prisma from '@/config/db.prisma';
@@ -50,7 +52,7 @@ export class BannerRepository {
     );
 
     await activeBannersCache.invalidate();
-    await invalidateCacheKey('storefront:home');
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY);
     return created;
   }
 }

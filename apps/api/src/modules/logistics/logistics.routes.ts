@@ -8,6 +8,7 @@ import { shippingRateController } from './shipping-rate.controller';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
 import { requirePlatformActor, requireStoreState } from '@/common/guards/store.guards';
+import { publicCache } from '@/common/http/cache-policy.middleware';
 import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
@@ -15,7 +16,11 @@ const router = Router();
 
 // Delivery locations for the address form. Public: a customer picks their
 // district before they have an account, and the payload is place names only.
-router.get('/delivery-locations', asyncHandler(logisticsController.listDeliveryLocations));
+router.get(
+  '/delivery-locations',
+  publicCache({ maxAge: 86400, sMaxAge: 86400, swr: 604800 }),
+  asyncHandler(logisticsController.listDeliveryLocations),
+);
 
 // Dispatch order via 3PL (Vendor / Admin) — tenant-isolated for sellers, platform bypass for ADMIN/SUPERADMIN
 router.post(
