@@ -3,7 +3,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 
 import { PATHS } from './paths';
 
-import { PageLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
 import { useSetupStatus } from '@/features/auth/hooks/use-auth-queries';
 
@@ -13,11 +12,14 @@ interface GuestGuardProps {
 
 export const GuestGuard: React.FC<GuestGuardProps> = ({ children }) => {
   const { user, isLoading } = useAuthContext();
-  const { data: setupData, isLoading: isSetupLoading } = useSetupStatus();
+  const { data: setupData } = useSetupStatus();
   const location = useLocation();
 
-  if (isLoading || isSetupLoading) {
-    return <PageLoader />;
+  // Fail-open on the setup check: public routes render while it resolves
+  // and only redirect on a positive setupRequired — a failed/slow check
+  // must never blank the login form.
+  if (isLoading) {
+    return null;
   }
 
   const setupRequired = setupData?.data?.setupRequired;

@@ -58,9 +58,23 @@ import prisma from '@/config/db.prisma';
 import { mediaRepository } from '@/modules/media/media.repository';
 import { confirmUploadedObject } from '@/modules/media/storage.service';
 
-const putTemp = (key: string, content: string) => {
-  fakeObjects.set(key, Buffer.from(content));
+const createWebpBuffer = (payload: string): Buffer => {
+  const payloadBuf = Buffer.from(payload);
+  const totalLength = 12 + payloadBuf.length;
+  const header = Buffer.alloc(12);
+  header.write('RIFF', 0, 4, 'ascii');
+  header.writeUInt32LE(totalLength - 8, 4);
+  header.write('WEBP', 8, 4, 'ascii');
+  return Buffer.concat([header, payloadBuf]);
 };
+
+const putTemp = (key: string, content: string) => {
+  fakeObjects.set(key, createWebpBuffer(content));
+};
+
+// Confirm requires the declared size to match the bytes R2 actually stored,
+// so the specs declare the real buffer length instead of a round number.
+const webpSize = (payload: string) => createWebpBuffer(payload).length;
 
 describe('Immutable content-addressed uploads', () => {
   beforeEach(() => {
@@ -76,7 +90,7 @@ describe('Immutable content-addressed uploads', () => {
       key: tempKey,
       originalname: 'red-tshirt.webp',
       mimeType: 'image/webp',
-      size: 16,
+      size: webpSize('red-tshirt-bytes'),
       scope: 'PRODUCT',
     });
 
@@ -104,14 +118,14 @@ describe('Immutable content-addressed uploads', () => {
       key: first,
       originalname: 'photo.webp',
       mimeType: 'image/webp',
-      size: 10,
+      size: webpSize('same-bytes'),
       scope: 'PRODUCT',
     });
     const r2 = await confirmUploadedObject({
       key: second,
       originalname: 'photo.webp',
       mimeType: 'image/webp',
-      size: 10,
+      size: webpSize('same-bytes'),
       scope: 'PRODUCT',
     });
 
@@ -132,14 +146,14 @@ describe('Immutable content-addressed uploads', () => {
       key: first,
       originalname: 'photo.webp',
       mimeType: 'image/webp',
-      size: 9,
+      size: webpSize('bytes-one'),
       scope: 'PRODUCT',
     });
     const r2 = await confirmUploadedObject({
       key: second,
       originalname: 'photo.webp',
       mimeType: 'image/webp',
-      size: 9,
+      size: webpSize('bytes-two'),
       scope: 'PRODUCT',
     });
 
@@ -273,7 +287,7 @@ describe('Immutable content-addressed uploads', () => {
           key: temp,
           originalname: 'flash.webp',
           mimeType: 'image/webp',
-          size: 16,
+          size: webpSize('flash-sale-bytes'),
           scope: 'PRODUCT',
         }),
       ),

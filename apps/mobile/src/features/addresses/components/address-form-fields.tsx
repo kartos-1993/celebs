@@ -1,16 +1,12 @@
 import React from 'react';
-import {
-  Control,
-  Controller,
-  type FieldErrors,
-  type FieldPath,
-  type FieldValues,
-} from 'react-hook-form';
-import { Switch, TextInput, type TextInputProps, TouchableOpacity, View } from 'react-native';
+import { type Control, Controller, type FieldErrors, type UseFormReturn } from 'react-hook-form';
+import { Switch, TouchableOpacity, View } from 'react-native';
 
 import type { AddressInput } from '@celebs/shared-types';
 
 import { styles } from './address-form-sheet.styles';
+import { AddressLocationPickerField } from './address-location-picker-field';
+import { ControlledInput } from './controlled-input';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
@@ -18,50 +14,14 @@ import { ADDRESS_LABELS } from '@/features/addresses/types';
 
 export type AddressFormValues = AddressInput;
 
-interface ControlledInputProps<T extends FieldValues>
-  extends Omit<TextInputProps, 'value' | 'onChangeText'> {
-  control: Control<T>;
-  name: FieldPath<T>;
-  error?: string;
-  multiline?: boolean;
-}
-
-function ControlledInput<T extends FieldValues>({
-  control,
-  name,
-  error,
-  style,
-  multiline,
-  ...rest
-}: ControlledInputProps<T>) {
-  return (
-    <>
-      <Controller
-        control={control}
-        name={name}
-        render={({ field: { value, onChange, onBlur } }) => (
-          <TextInput
-            style={[styles.input, multiline && styles.multilineInput, style]}
-            value={typeof value === 'string' ? value : ''}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            placeholderTextColor={Palette.gray400}
-            multiline={multiline}
-            {...rest}
-          />
-        )}
-      />
-      {!!error && <ThemedText style={styles.errorText}>{error}</ThemedText>}
-    </>
-  );
-}
-
 interface AddressFormFieldsProps {
   control: Control<AddressFormValues>;
   errors: FieldErrors<AddressFormValues>;
+  watch?: UseFormReturn<AddressFormValues>['watch'];
+  setValue: UseFormReturn<AddressFormValues>['setValue'];
 }
 
-export function AddressFormFields({ control, errors }: AddressFormFieldsProps) {
+export function AddressFormFields({ control, errors, setValue }: AddressFormFieldsProps) {
   return (
     <>
       <ThemedText style={styles.fieldLabel}>Save As</ThemedText>
@@ -119,31 +79,10 @@ export function AddressFormFields({ control, errors }: AddressFormFieldsProps) {
       />
 
       <ThemedText style={styles.sectionHint}>DELIVERY ADDRESS</ThemedText>
-      <View style={styles.rowGroup}>
-        <ControlledInput
-          control={control}
-          name="province"
-          placeholder="Province"
-          style={styles.flexInput}
-        />
-        <ControlledInput
-          control={control}
-          name="district"
-          placeholder="District"
-          style={styles.flexInput}
-        />
-      </View>
-      {(!!errors.province || !!errors.district) && (
-        <ThemedText style={styles.errorText}>
-          {errors.province?.message || errors.district?.message}
-        </ThemedText>
-      )}
-
-      <ControlledInput
+      <AddressLocationPickerField
         control={control}
-        name="cityArea"
-        placeholder="City / Area (e.g. New Baneshwor)"
-        error={errors.cityArea?.message}
+        setValue={setValue}
+        error={errors.logisticsZoneId?.message}
       />
       <ControlledInput
         control={control}

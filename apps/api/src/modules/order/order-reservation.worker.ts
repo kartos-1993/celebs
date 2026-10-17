@@ -4,7 +4,7 @@ import { logger } from '@celebs/shared-utils';
 
 import { checkoutService } from './checkout/checkout.service';
 
-import { redisConnection } from '@/common/services/queue.service';
+import { redisConnection, WORKER_DRAIN_DELAY_SECONDS } from '@/common/services/queue.service';
 
 export const orderReservationWorker = new Worker(
   'order-maintenance',
@@ -29,5 +29,6 @@ export const orderReservationWorker = new Worker(
   {
     connection: redisConnection,
     concurrency: 1,
+    drainDelay: WORKER_DRAIN_DELAY_SECONDS,
   },
 );

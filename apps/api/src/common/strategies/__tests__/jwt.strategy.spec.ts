@@ -1,10 +1,28 @@
 import { Request, Response } from 'express';
-import passport from 'passport';
+import passport, { AuthenticateCallback, AuthenticateOptions } from 'passport';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ErrorCode, UnauthorizedException } from '@celebs/shared-utils';
 
 import { extractTokenFromRequest, optionalAuthenticateJWT } from '../jwt.strategy';
+
+/**
+ * `mockImplementation` is typed against passport's LAST `authenticate`
+ * overload, which has no callback parameter — the 3-arg middleware-producing
+ * form used here is not selectable, so each mock asserts past that signature
+ * once instead of leaving a `@ts-expect-error` that silently rots when the
+ * inferred overload changes.
+ */
+type AuthenticateMock = (
+  strategy: string,
+  options: AuthenticateOptions,
+  callback: AuthenticateCallback,
+) => (req: Request, res: Response, next: () => void) => void;
+
+const mockAuthenticate = (impl: AuthenticateMock) =>
+  vi
+    .spyOn(passport, 'authenticate')
+    .mockImplementation(impl as unknown as typeof passport.authenticate);
 
 describe('jwt.strategy unit tests', () => {
   describe('extractTokenFromRequest', () => {
@@ -71,23 +89,20 @@ describe('jwt.strategy unit tests', () => {
       const res = {} as unknown as Response;
       const next = vi.fn();
 
-      vi.spyOn(passport, 'authenticate').mockImplementation(
-        // @ts-expect-error mock passport implementation
-        (_strategy, _options, callback) => (_req: Request, _res: Response, _next: () => void) => {
-          callback(
-            new UnauthorizedException(
-              'Session expired or invalid',
-              ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
-            ),
-            false,
-          );
-        },
-      );
+      mockAuthenticate((_strategy, _options, callback) => () => {
+        callback(
+          new UnauthorizedException(
+            'Session expired or invalid',
+            ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+          ),
+          false,
+        );
+      });
 
       optionalAuthenticateJWT(req, res, next);
 
       expect(next).toHaveBeenCalledTimes(1);
-      const passedError = next.mock.calls[0][0];
+      const passedError = next.mock.calls[0]?.[0];
       expect(passedError).toBeInstanceOf(UnauthorizedException);
       expect((passedError as UnauthorizedException).message).toBe('Session expired or invalid');
       expect(req.user).toBeUndefined();
@@ -100,14 +115,12 @@ describe('jwt.strategy unit tests', () => {
       } as unknown as Request;
       const res = {} as unknown as Response;
       const next = vi.fn();
-      const mockUser = { id: 'user-123', email: 'test@example.com' };
+      // `sessionId` is required on the augmented Express.User the strategy assigns.
+      const mockUser = { id: 'user-123', sessionId: 'sess-1', email: 'test@example.com' };
 
-      vi.spyOn(passport, 'authenticate').mockImplementation(
-        // @ts-expect-error mock passport implementation
-        (_strategy, _options, callback) => (_req: Request, _res: Response, _next: () => void) => {
-          callback(null, mockUser);
-        },
-      );
+      mockAuthenticate((_strategy, _options, callback) => () => {
+        callback(null, mockUser);
+      });
 
       optionalAuthenticateJWT(req, res, next);
 

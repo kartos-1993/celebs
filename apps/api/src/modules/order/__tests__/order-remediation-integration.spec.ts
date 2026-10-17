@@ -1,6 +1,7 @@
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { createDeliverableZone } from '../../../../tests/support/delivery-zone';
 import { checkoutService } from '../checkout/checkout.service';
 import { fulfillmentService } from '../fulfillment/fulfillment.service';
 
@@ -61,8 +62,12 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
     vendorProfileId = vendorProfile.id;
 
     // 3. Create Addresses for A and B
+    // Checkout and dispatch refuse an address with no delivery zone, so a
+    // fixture address has to carry a real one.
+    const { zoneId: addressAZone } = await createDeliverableZone();
     const addressA = await prisma.address.create({
       data: {
+        logisticsZoneId: addressAZone,
         userId: userAId,
         fullName: 'Customer A FullName',
         phone: '9841111111',
@@ -74,8 +79,12 @@ describe('Order Remediation & Financial Integrity Integration Tests', () => {
     });
     addressAId = addressA.id;
 
+    // Checkout and dispatch refuse an address with no delivery zone, so a
+    // fixture address has to carry a real one.
+    const { zoneId: addressBZone } = await createDeliverableZone();
     const addressB = await prisma.address.create({
       data: {
+        logisticsZoneId: addressBZone,
         userId: userBId,
         fullName: 'Customer B FullName',
         phone: '9842222222',

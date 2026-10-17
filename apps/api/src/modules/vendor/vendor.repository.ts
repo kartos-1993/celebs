@@ -51,20 +51,30 @@ export class VendorRepository {
     });
   }
 
+  /**
+   * The vendor's single warehouse for onboarding (`updateWarehouse` writes with
+   * `isBusinessAddress: true`).
+   *
+   * Looked up by the profile, not by row id: the previous `upsert` keyed
+   * `where: { id: profileId }`, which can never match a warehouse row, so every
+   * save created another one. Concurrent double submits can still race past the
+   * lookup; there is no unique on `vendorProfileId` because vendors may hold
+   * further warehouses outside onboarding.
+   */
   public async upsertWarehouse(
     profileId: string,
     data: Prisma.WarehouseCreateWithoutVendorInput,
   ): Promise<Warehouse> {
-    return prisma.warehouse.upsert({
-      where: {
-        id: profileId,
-      },
-      create: {
-        ...data,
-        vendorProfileId: profileId,
-      },
-      update: data,
+    const existing = await prisma.warehouse.findFirst({
+      where: { vendorProfileId: profileId, isBusinessAddress: data.isBusinessAddress ?? false },
+      orderBy: { createdAt: 'asc' },
     });
+
+    if (existing) {
+      return prisma.warehouse.update({ where: { id: existing.id }, data });
+    }
+
+    return prisma.warehouse.create({ data: { ...data, vendorProfileId: profileId } });
   }
 
   public async createVendorWithProfile(

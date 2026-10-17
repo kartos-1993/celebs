@@ -1,35 +1,50 @@
 import { memo } from 'react';
 
-import type { ProductSidebarSection } from '../../types';
+import { useSubmissionState } from '../../hooks/use-submission-state';
+import type { FieldSpec, VariantMetaItem } from '../../types';
 import ProductFormActions from '../product-form-action';
 
 interface ProductFormActionsContainerProps {
-  sections: ProductSidebarSection[];
+  schemaFields: FieldSpec[];
+  schemaHasName: boolean;
+  variantMeta: Array<Pick<VariantMetaItem, 'key' | 'label'>>;
   schemaReady: boolean;
   isDirty: boolean;
   isSubmitting: boolean;
-  onSaveAsDraft: () => void;
+  isEditMode?: boolean;
+  canPublish?: boolean;
+  onSaveAsDraft: () => Promise<boolean>;
   onCancel: () => void;
 }
 
 export const ProductFormActionsContainer = memo(
   ({
-    sections,
+    schemaFields,
+    schemaHasName,
+    variantMeta,
     schemaReady,
     isDirty,
     isSubmitting,
+    isEditMode = false,
+    canPublish = false,
     onSaveAsDraft,
     onCancel,
   }: ProductFormActionsContainerProps) => {
-    const isReady =
-      schemaReady && sections.length > 0 && sections.every((section) => section.status);
+    const { isReady } = useSubmissionState({
+      schemaFields,
+      schemaHasName,
+      variantMeta,
+    });
+
     return (
       <ProductFormActions
         isDirty={isDirty}
-        isReady={isReady}
+        isReady={schemaReady && isReady}
         onSaveAsDraft={onSaveAsDraft}
         onCancel={onCancel}
         isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        canPublish={canPublish}
       />
     );
   },

@@ -40,13 +40,15 @@ export function UserTable({ users, onDelete, isDeletePending }: UserTableProps) 
             </TableRow>
           ) : (
             users.map((account) => (
-              <TableRow key={account.id} className="hover:bg-muted/30">
-                <TableCell className="text-sm font-medium text-foreground">
+              <TableRow key={account.id}>
+                <TableCell className="max-w-44 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
                   {account.name}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{account.email}</TableCell>
+                <TableCell className="max-w-56 truncate text-sm text-muted-foreground">
+                  {account.email}
+                </TableCell>
                 <TableCell>
-                  <Badge className="bg-primary/10 text-primary">{account.role}</Badge>
+                  <Badge variant="primary">{account.role}</Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant={account.isEmailVerified ? 'success' : 'warning'}>
@@ -57,6 +59,7 @@ export function UserTable({ users, onDelete, isDeletePending }: UserTableProps) 
                   <Button
                     size="sm"
                     variant="destructive"
+                    className="h-7 whitespace-nowrap px-2 text-xs"
                     onClick={() => onDelete({ id: account.id, name: account.name })}
                     disabled={isDeletePending}
                   >

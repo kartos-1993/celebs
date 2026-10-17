@@ -1,0 +1,655 @@
+[
+  {
+    "brand": "Men's",
+    "category": "Men Outerwear",
+    "categoryPath": "Men Outerwear / Men Jackets",
+    "colorVariants": [
+      {
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/dd/17724223496443a59108440464582ba24ec5edd53c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/02/24/ed/17719238618752d291e1b4dd3407bcc1da49498623.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/03/4e/1775198765d1517f23163a8726374cd574d488f17c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/90/1783330834f4355335aa845a771dbdd14b7df50851.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/50/1772422349674e3416a1e70ccc57398e70da34688b.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/73/17724223509af68cb3c6c4165056cd154ecdf5369c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/27/f6/1782537565eea389ede084892b4d99a84b2f8dd59a.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/e9/1772422417ed6b1e77188915d1fa4b8886c7c4f6c3.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2025/12/07/72/17650998509065699dd312d9b086fb0bc19c9600cf.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/03/06/b2/17727764411f02f5cf4b09d4c421aae25b936ac7f4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2025/12/07/f7/17650998512bdbd4b1348de0a9121ae059d70986e3.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ],
+        "name": "Black",
+        "stocks": [
+          { "quantity": 30, "size": "XS" },
+          { "quantity": 30, "size": "S" },
+          { "quantity": 30, "size": "M" },
+          { "quantity": 30, "size": "L" },
+          { "quantity": 30, "size": "XL" },
+          { "quantity": 30, "size": "XXL" }
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/dd/17724223496443a59108440464582ba24ec5edd53c.webp",
+        "swatchImage": "https://img.ltwebstatic.com/v4/j/spmp/2026/03/02/dd/17724223496443a59108440464582ba24ec5edd53c.webp"
+      },
+      {
+        "colorCode": "#4A5568",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/f2/1769598536a541d618ebdd3752462454c98ad3ab2d.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/02/24/37/177192386528e000cea8cfd16a48f66ced825b25e4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/cd/1783331052a91fa48cd277a5faf8953a5924274b43.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/33/1769597400446a4b69a56d4f23c293f6c8a4c5fd65.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/84/17695973816a4650dec1dc0f44346de78b3f7e98c8.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/c9/176959738194a0c73806cb5b3f7be34face2a47c5d.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/03/5e/1775198774ebcaeddb2a7232d7a40cd54091516aa4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/02/27/178298150694a15c7fdc8178dca5e6615880901899.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ],
+        "name": "Camel",
+        "stocks": [
+          { "quantity": 30, "size": "XS" },
+          { "quantity": 30, "size": "S" },
+          { "quantity": 30, "size": "M" },
+          { "quantity": 30, "size": "L" },
+          { "quantity": 30, "size": "XL" },
+          { "quantity": 30, "size": "XXL" }
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/f2/1769598536a541d618ebdd3752462454c98ad3ab2d.webp",
+        "swatchImage": "https://img.ltwebstatic.com/v4/j/spmp/2026/01/28/f2/1769598536a541d618ebdd3752462454c98ad3ab2d.webp"
+      },
+      {
+        "colorCode": "#808080",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/67/178333622929d0e7a86f3aa65976fc1b77586abe68.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/5a/1775268656e50d48f016001ec37513d5a51566f110.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/42/17752686504077c617c8791b816a347cfac4a09ff0.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/1d/1775268653e758e05e7bbc658a6efed9334eee3f82.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/a2/177526863891070bcbd19a227fdd5bc3ca9a68f698.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/83/177526864736ce3a37d1bf490972a4e69f76b1170e.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/57/17752686385633ebeb1a7451ce7bfbac18c0b30830.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/04/ee/177526864252a00ab68695db5403ee3a3f7aa273ff.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ],
+        "name": "Grey",
+        "stocks": [
+          { "quantity": 30, "size": "XS" },
+          { "quantity": 30, "size": "S" },
+          { "quantity": 30, "size": "M" },
+          { "quantity": 30, "size": "L" },
+          { "quantity": 30, "size": "XL" },
+          { "quantity": 30, "size": "XXL" }
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/67/178333622929d0e7a86f3aa65976fc1b77586abe68.webp",
+        "swatchImage": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/67/178333622929d0e7a86f3aa65976fc1b77586abe68.webp"
+      },
+      {
+        "colorCode": "#1B2A4A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/7a/17833360877aecd170913ee11a1f916e54345b094e.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/ea/17758986881e6d542ef3e69ec6822de61054e855f1.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/ba/177589869801cb081c4f15bc32bd5d5a24d50cc720.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/05/07/177795678752ba8479e92896fcd87644c3d090fadc.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/5f/17770160850e25e42d48558cc62afe8f0600687cd3.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/31/177701606702de805f7dddd041d45ee8c29f63d41d.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/81/1777016071781125144ade6470169aeb038a6a7a3c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/fe/177701607425fc553c152a5ebb065ca292a4ba2014.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ],
+        "name": "Navy Blue",
+        "stocks": [
+          { "quantity": 30, "size": "XS" },
+          { "quantity": 30, "size": "S" },
+          { "quantity": 30, "size": "M" },
+          { "quantity": 30, "size": "L" },
+          { "quantity": 30, "size": "XL" },
+          { "quantity": 30, "size": "XXL" }
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/7a/17833360877aecd170913ee11a1f916e54345b094e.webp",
+        "swatchImage": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/7a/17833360877aecd170913ee11a1f916e54345b094e.webp"
+      },
+      {
+        "colorCode": "#4B2E1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/b9/17833367770c4b3d741409d30b37638a6c028866da.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/89/1775898708335e3f63452f0c0f0723a87de2a076e5.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/05/177589871568dd7bc62086754b0bbcb2fbf5769a29.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/1f/177701613077df0ff0c3b51e13935d3856e531dca1.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/fb/1777016140712ad83a777034990634a44584dfa166.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/91/1777016133ae14a5e9f0131e1718e8f76eeb5378cb.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/6f/1777016137b5c8459b6c7b9070f6856e412c47f993.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ],
+        "name": "Coffee Brown",
+        "stocks": [
+          { "quantity": 30, "size": "XS" },
+          { "quantity": 30, "size": "S" },
+          { "quantity": 30, "size": "M" },
+          { "quantity": 30, "size": "L" },
+          { "quantity": 30, "size": "XL" },
+          { "quantity": 30, "size": "XXL" }
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/b9/17833367770c4b3d741409d30b37638a6c028866da.webp",
+        "swatchImage": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/b9/17833367770c4b3d741409d30b37638a6c028866da.webp"
+      },
+      {
+        "colorCode": "#800020",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/dc/1783335516d56be295c0a97dc70c00b9494c64e797.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/53/1775898738d07e3929bb686f7dd8748e6436bb4869.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/11/d6/17758987451d11402a72f5930626a8a410790d27ee.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/36/1777016175ee77afd09c91e2f0528d005d714fcd86.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/17/70/1778995802e4f6f0317cf25dac3968b3909a6e1dbf.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/85/1777016178edb1cf93fd2faf1e75e8ce068cde59a4.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/8d/177701618170d9fb3adcea4b4867f29de0bfee082c.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/04/24/0f/1777016185567cd2e83006733da5e81589d56a664e.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/07/ee/1788777294d0adb4897a7eecb7d6f2bcde54d1a283.webp",
+          "https://img.shein.com/v4/j/shein/2026/09/08/f9/1788867286e511db77c745c5fa87733eb89c211606.webp"
+        ],
+        "name": "Burgundy",
+        "stocks": [
+          { "quantity": 30, "size": "XS" },
+          { "quantity": 30, "size": "S" },
+          { "quantity": 30, "size": "M" },
+          { "quantity": 30, "size": "L" },
+          { "quantity": 30, "size": "XL" },
+          { "quantity": 30, "size": "XXL" }
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/dc/1783335516d56be295c0a97dc70c00b9494c64e797.webp",
+        "swatchImage": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/dc/1783335516d56be295c0a97dc70c00b9494c64e797.webp"
+      }
+    ],
+    "description": "Men's Spring/Autumn Thin Fashion Casual Solid Color Loose Fit Coach Jacket, Minimalist Versatile Fashion Lapel Outerwear. Style: Casual - Minimalist Style. Fit: Regular Fit. Material: Woven Fabric. Care: Hand wash,do not dry clean.",
+    "discountedPrice": 3460,
+    "price": 4080,
+    "title": "Men's Spring/Autumn Thin Fashion Casual Solid Color Loose Fit Coach Jacket, Minimalist Versatile Fashion Lapel Outerwear",
+    "attributes": {
+      "Care Instructions": "Hand wash,do not dry clean",
+      "Color": "Burgundy",
+      "Composition": "100% Polyester",
+      "Details": ["Pocket", "Zipper", "Button Front"],
+      "Fabric Elasticity": "Non-Stretch",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Casual - Minimalist Style"
+    },
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "bust": 110, "length": 68, "sleeveLength": 76 },
+        { "size": "S", "bust": 114, "length": 70, "sleeveLength": 77.5 },
+        { "size": "M", "bust": 118, "length": 72, "sleeveLength": 79 },
+        { "size": "L", "bust": 123, "length": 74, "sleeveLength": 80.5 },
+        { "size": "XL", "bust": 128, "length": 76, "sleeveLength": 82 },
+        { "size": "XXL", "bust": 133, "length": 78, "sleeveLength": 83.5 }
+      ]
+    }
+  },
+  {
+    "brand": "Claim",
+    "title": "Claim Dot Men's Black Vertical Pinstripe Stand Collar Zip-Up Jacket, Elastic Cuffs And Hem Lightweight Casual Windbreaker, Loose Fit Spring/Autumn Daily Streetwear Outerwear",
+    "description": "Claim Dot Men's Black Vertical Pinstripe Stand Collar Zip-Up Jacket, Elastic Cuffs And Hem Lightweight Casual Windbreaker, Loose Fit Spring/Autumn Daily Streetwear Outerwear. Style: Sports & Outdoor - Gym Commuting. Fit: Loose. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 5130,
+    "discountedPrice": 4350,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Black",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Woven Fabric",
+      "Style": "Streetwear"
+    },
+    "colorVariants": [
+      {
+        "name": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/e1164ac40b38ec96f7ff82ff44bc1c237bf9ed7430fe139d428e0b6c7f8450c4.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/241d624cabdf30417f4cd1444efbd5d1de0d11ecd44872c71cee93ccc4a03ccf.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/d46361a1df2e2e16368060802576cf42dc3e5870a50178650e51b9ff31e1d2d8.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/37cc8c28e0665414f293b28e8b06cd36881719be5e5217cabe7a8435b0277e17.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026082814614/e1164ac40b38ec96f7ff82ff44bc1c237bf9ed7430fe139d428e0b6c7f8450c4.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "shoulder": 43, "bust": 108, "length": 65, "sleeveLength": 63.6 },
+        { "size": "S", "shoulder": 44.5, "bust": 112, "length": 67, "sleeveLength": 64.8 },
+        { "size": "M", "shoulder": 46, "bust": 116, "length": 69, "sleeveLength": 66 },
+        { "size": "L", "shoulder": 47.8, "bust": 121, "length": 71, "sleeveLength": 67.2 },
+        { "size": "XL", "shoulder": 49.6, "bust": 126, "length": 73, "sleeveLength": 68.4 },
+        { "size": "XXL", "shoulder": 51.4, "bust": 131, "length": 75, "sleeveLength": 69.6 }
+      ]
+    }
+  },
+  {
+    "brand": "Men's",
+    "title": "Men's Spring/Autumn Thin Suede Jacket, Vintage Small Stand Collar Casual Outerwear, Loose Minimalist Zipper Baseball Jacket Top",
+    "description": "Men's Spring/Autumn Thin Suede Jacket, Vintage Small Stand Collar Casual Outerwear, Loose Minimalist Zipper Baseball Jacket Top. Style: Western Style. Fit: Regular Fit. Material: Suedette. Care: Hand wash or professional dry clean.",
+    "price": 5060,
+    "discountedPrice": 4290,
+    "attributes": {
+      "Care Instructions": "Hand wash or professional dry clean",
+      "Color": "Mocha Brown",
+      "Composition": "95% Polyester, 5% Elastane",
+      "Fit Type": "Regular Fit",
+      "Material": "Suedette",
+      "Style": "Western Style"
+    },
+    "colorVariants": [
+      {
+        "name": "Mocha Brown",
+        "colorCode": "#5A3D28",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/07/db/177813894128c803aadf167f3fb9d148ceecb98542.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/45/177881871743d5ce1e7ac337d754dc7075c04840da.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/05/07/db/177813894128c803aadf167f3fb9d148ceecb98542.webp"
+      },
+      {
+        "name": "Black and White",
+        "colorCode": "#2B2B2B",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/c2/17788182308035451337cf54ef3f03a0ebc9674db1.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/ef/1778818277f7b9d2a4376aea4034dff002c65376d6.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/05/15/c2/17788182308035451337cf54ef3f03a0ebc9674db1.webp"
+      },
+      {
+        "name": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/15/b3/1789462250c3054d904a97f0fca5b46d835c2cbbed.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/06/08/40/178087969900a23282f144381d08dea04e61764fcf.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/09/15/b3/1789462250c3054d904a97f0fca5b46d835c2cbbed.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "S", "shoulder": 46, "bust": 110, "length": 70, "sleeveLength": 62 },
+        { "size": "M", "shoulder": 47.5, "bust": 115, "length": 72, "sleeveLength": 63.5 },
+        { "size": "L", "shoulder": 49, "bust": 120, "length": 74, "sleeveLength": 65 },
+        { "size": "XL", "shoulder": 50.5, "bust": 125, "length": 76, "sleeveLength": 66.5 },
+        { "size": "XXL", "shoulder": 52, "bust": 130, "length": 78, "sleeveLength": 68 }
+      ]
+    }
+  },
+  {
+    "brand": "Men's",
+    "title": "Men's Minimalist Solid Color Hooded Tech Windbreaker Jacket, Vintage Youthful Versatile Long Sleeve Jacket, American Casual Tech Outerwear, Men's Long Sleeve Outer Layer Top",
+    "description": "Men's Minimalist Solid Color Hooded Tech Windbreaker Jacket, Vintage Youthful Versatile Long Sleeve Jacket, American Casual Tech Outerwear. Style: Sports & Outdoor. Fit: Regular Fit. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 6200,
+    "discountedPrice": 5250,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Blue",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Sports & Outdoor"
+    },
+    "colorVariants": [
+      {
+        "name": "Blue",
+        "colorCode": "#1E90FF",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/88/17905898833e6821b090ff7323d3726e3be8b119d5.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/e6/17905889940d2913e57645d362e290211b9bf60841.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/09/28/88/17905898833e6821b090ff7323d3726e3be8b119d5.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "bust": 116, "length": 64, "sleeveLength": 81 },
+        { "size": "S", "bust": 120, "length": 66, "sleeveLength": 82.5 },
+        { "size": "M", "bust": 124, "length": 68, "sleeveLength": 84 },
+        { "size": "L", "bust": 129, "length": 70, "sleeveLength": 85.8 },
+        { "size": "XL", "bust": 134, "length": 72, "sleeveLength": 87.5 },
+        { "size": "XXL", "bust": 139, "length": 74, "sleeveLength": 89.3 }
+      ]
+    }
+  },
+  {
+    "brand": "Core",
+    "title": "Core Aspect Men's Best-Selling Leather Jacket, INS Style Casual Pocket Leather Jacket, Suitable For Autumn/Winter Matching And Daily Wear",
+    "description": "Core Aspect Men's Best-Selling Leather Jacket, INS Style Casual Pocket Leather Jacket, Suitable For Autumn/Winter Matching And Daily Wear, Great For Photos, Gift For Boyfriend/Husband. Material: Polyurethane(PU). Care: Machine wash, do not dry clean.",
+    "price": 8590,
+    "discountedPrice": 7280,
+    "attributes": {
+      "Care Instructions": "Machine wash, do not dry clean",
+      "Color": "Brown",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Polyurethane(PU)",
+      "Style": "Casual"
+    },
+    "colorVariants": [
+      {
+        "name": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026090827871/d6d006628ddcf07d6268904528ca906b1d04527d2122a873f76f62de4c0f1cf5.webp",
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026090827871/be1c2c91e75d7fcdd7dcc68aea7e6d3b3624568668c486ad0c98847d315b882f.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026090827871/d6d006628ddcf07d6268904528ca906b1d04527d2122a873f76f62de4c0f1cf5.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "shoulder": 45, "bust": 108, "length": 65, "sleeveLength": 62.1 },
+        { "size": "S", "shoulder": 46.5, "bust": 112, "length": 67, "sleeveLength": 63.3 },
+        { "size": "M", "shoulder": 48, "bust": 116, "length": 69, "sleeveLength": 64.5 },
+        { "size": "L", "shoulder": 49.8, "bust": 121, "length": 71, "sleeveLength": 65.7 },
+        { "size": "XL", "shoulder": 51.6, "bust": 126, "length": 73, "sleeveLength": 66.9 }
+      ]
+    }
+  },
+  {
+    "brand": "HUEFORM",
+    "title": "HUEFORM Men's Old Money Brown Double Chest Pocket & Slanted Pocket Design Business Mature Style, Lined Classic Versatile Jacket",
+    "description": "HUEFORM Men's Old Money Brown Double Chest Pocket & Slanted Pocket Design Business Mature Style, Lined Classic Versatile Jacket Suitable For Everyday Autumn. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 6290,
+    "discountedPrice": 5330,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Rust Brown",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Casual"
+    },
+    "colorVariants": [
+      {
+        "name": "Apricot",
+        "colorCode": "#F5C99B",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/12/db/1757659777f25157063e5bf3950838a24e831af1c5.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2025/09/12/18/175765977916355b30c551b90192f2c9375e121431.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/pi/2025/09/12/db/1757659777f25157063e5bf3950838a24e831af1c5.webp"
+      },
+      {
+        "name": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/08/03/96/178575092444baf8a561b7002a481e87ac7520c109.webp",
+          "https://img.ltwebstatic.com/v4/j/pi/2026/08/06/51/17859927270581110feb4163d61ee91300c79c638a.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/pi/2026/08/03/96/178575092444baf8a561b7002a481e87ac7520c109.webp"
+      },
+      {
+        "name": "Black and White",
+        "colorCode": "#2B2B2B",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026093018954/7fef5163fc00c56af01ca8f46e80033d7f7864368e131ba14589fb8440429c18.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026093018954/7fef5163fc00c56af01ca8f46e80033d7f7864368e131ba14589fb8440429c18.webp"
+      },
+      {
+        "name": "Grey",
+        "colorCode": "#808080",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/smartflow/2026/10/07/79/179138680641a84d10d401af5f344d93b38be2fe06.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/smartflow/2026/10/07/79/179138680641a84d10d401af5f344d93b38be2fe06.webp"
+      },
+      {
+        "name": "Khaki",
+        "colorCode": "#C3B091",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026090920902/69eb5373ee6272058762435e3a3a594f00cc84589537be20f2f8b93059e60bce.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026090920902/69eb5373ee6272058762435e3a3a594f00cc84589537be20f2f8b93059e60bce.webp"
+      },
+      {
+        "name": "Multicolor",
+        "colorCode": "#4A90E2",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609169768/400ea6b11d31ae0dbeae3afb78bf8af5415c56a4df5400aec8a1765ce61b1a41.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS202609169768/400ea6b11d31ae0dbeae3afb78bf8af5415c56a4df5400aec8a1765ce61b1a41.webp"
+      },
+      {
+        "name": "White",
+        "colorCode": "#FFFFFF",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026100931999/2c84a83f7419462f6b4d0ed88db6b70bd8794d78a068171b60ba2232426c9d57.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026100931999/2c84a83f7419462f6b4d0ed88db6b70bd8794d78a068171b60ba2232426c9d57.webp"
+      },
+      {
+        "name": "Rust Brown",
+        "colorCode": "#8B3103",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609290897/2461c08df99bb468f223d3f6437ebef5ace86030c8d5145e91e19391b1d2b0b1.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS202609290897/2461c08df99bb468f223d3f6437ebef5ace86030c8d5145e91e19391b1d2b0b1.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "shoulder": 45.5, "bust": 106, "length": 64, "sleeveLength": 62.1 },
+        { "size": "S", "shoulder": 47, "bust": 110, "length": 66, "sleeveLength": 63.3 },
+        { "size": "M", "shoulder": 48.5, "bust": 114, "length": 68, "sleeveLength": 64.5 },
+        { "size": "L", "shoulder": 50.3, "bust": 119, "length": 70, "sleeveLength": 65.7 },
+        { "size": "XL", "shoulder": 52.1, "bust": 124, "length": 72, "sleeveLength": 66.9 }
+      ]
+    }
+  },
+  {
+    "brand": "Men's",
+    "title": "Men's Fashion Thermal Lined Minimalist Casual Daily Jacket, Suitable For Autumn/Winter",
+    "description": "Men's Fashion Thermal Lined Minimalist Casual Daily Jacket, Suitable For Autumn/Winter. Style: Casual. Fit: Regular Fit. Material: Woven Fabric. Care: Hand wash, do not dry clean.",
+    "price": 8660,
+    "discountedPrice": 7340,
+    "attributes": {
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Color": "Light Grey",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Woven Fabric",
+      "Style": "Casual"
+    },
+    "colorVariants": [
+      {
+        "name": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/c7/1783330406fac806b9a640a737542aa1bb121beb00.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/06/c7/1783330406fac806b9a640a737542aa1bb121beb00.webp"
+      },
+      {
+        "name": "Dark Grey",
+        "colorCode": "#4A4A4A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/11/a3/1789123984d6dc8bcc8c856c20b60c6b15d5395800.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/09/11/a3/1789123984d6dc8bcc8c856c20b60c6b15d5395800.webp"
+      },
+      {
+        "name": "Khaki",
+        "colorCode": "#C3B091",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/07/11/54/1783752781adddf2318f476a9d05c115e1b77bff75.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/07/11/54/1783752781adddf2318f476a9d05c115e1b77bff75.webp"
+      },
+      {
+        "name": "Light Grey",
+        "colorCode": "#D3D3D3",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/09/07/89/17887563088b8db0bdee778108bf6bc4417c49a107.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/09/07/89/17887563088b8db0bdee778108bf6bc4417c49a107.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "shoulder": 44.6, "bust": 108, "length": 66, "sleeveLength": 63 },
+        { "size": "S", "shoulder": 46.1, "bust": 112, "length": 68, "sleeveLength": 64.5 },
+        { "size": "M", "shoulder": 47.6, "bust": 116, "length": 70, "sleeveLength": 66 },
+        { "size": "L", "shoulder": 49.1, "bust": 120, "length": 72, "sleeveLength": 67.5 },
+        { "size": "XL", "shoulder": 50.6, "bust": 124, "length": 74, "sleeveLength": 69 },
+        { "size": "XXL", "shoulder": 52.1, "bust": 128, "length": 76, "sleeveLength": 70.5 }
+      ]
+    }
+  },
+  {
+    "brand": "Mainfolk",
+    "title": "Mainfolk Men's Retro Casual 90s Corduroy Lapel Jacket, Dark Green Autumn, Suede Air Layer Jacket, Utility Cargo Jacket",
+    "description": "Mainfolk Men's Retro Casual 90s Corduroy Lapel Jacket, Dark Green Autumn, Suede Air Layer Jacket, Utility Cargo Jacket. Style: Casual. Fit: Loose. Material: Corduroy. Care: Machine wash or professional dry clean.",
+    "price": 4970,
+    "discountedPrice": 4210,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Army Green",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Corduroy",
+      "Style": "Casual"
+    },
+    "colorVariants": [
+      {
+        "name": "Army Green",
+        "colorCode": "#4B5320",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026092110843/4c8df4d6002683ebc5550075caedd7de4aec7f08dbeab67304a18cba8544725f.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026092110843/4c8df4d6002683ebc5550075caedd7de4aec7f08dbeab67304a18cba8544725f.webp"
+      },
+      {
+        "name": "Black",
+        "colorCode": "#1A1A1A",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202610104719/e5fa197020e64095e2127616ed755ac758334972a03e65c359876429d0014334.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS202610104719/e5fa197020e64095e2127616ed755ac758334972a03e65c359876429d0014334.webp"
+      },
+      {
+        "name": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609220324/593a925b879d9d77739c6f9f366b5843f7682327f781544683161209e15758bf.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS202609220324/593a925b879d9d77739c6f9f366b5843f7682327f781544683161209e15758bf.webp"
+      },
+      {
+        "name": "Green",
+        "colorCode": "#2E8B57",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/pi/2026/07/23/df/178477369072b25bacb3fb60257b61e520c1b1783b.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/pi/2026/07/23/df/178477369072b25bacb3fb60257b61e520c1b1783b.webp"
+      },
+      {
+        "name": "Khaki",
+        "colorCode": "#C3B091",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS2026100819633/f2b213ba1a26ebcf70f0ce75d873850f2af1b0cb22e6f66e20a2d13d151f3a89.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS2026100819633/f2b213ba1a26ebcf70f0ce75d873850f2af1b0cb22e6f66e20a2d13d151f3a89.webp"
+      },
+      {
+        "name": "Multicolor",
+        "colorCode": "#4A90E2",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/dps/PS202609233636/edd174073925c219b5e7a83a04180de4deb34be836cbc65baaa3f37749581314.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/dps/PS202609233636/edd174073925c219b5e7a83a04180de4deb34be836cbc65baaa3f37749581314.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "S", "shoulder": 57.3, "bust": 118, "length": 64.9, "sleeveLength": 61.8 },
+        { "size": "M", "shoulder": 59.3, "bust": 122, "length": 67, "sleeveLength": 62.8 },
+        { "size": "L", "shoulder": 61.8, "bust": 127, "length": 69.1, "sleeveLength": 63.7 },
+        { "size": "XL", "shoulder": 64.3, "bust": 132, "length": 71.2, "sleeveLength": 64.5 }
+      ]
+    }
+  },
+  {
+    "brand": "DAZY",
+    "title": "DAZY Men's Brown Wool Blend Jacket And Coat With Large Front Pocket And Lapel Collar, Spring/Autumn",
+    "description": "DAZY Men's Brown Wool Blend Jacket And Coat With Large Front Pocket And Lapel Collar, Spring/Autumn. Style: Casual. Fit: Loose. Material: Woven Fabric. Care: Machine wash or professional dry clean.",
+    "price": 6630,
+    "discountedPrice": 5620,
+    "attributes": {
+      "Care Instructions": "Machine wash or professional dry clean",
+      "Color": "Brown",
+      "Composition": "100% Polyester",
+      "Fit Type": "Loose",
+      "Material": "Woven Fabric",
+      "Style": "Casual"
+    },
+    "colorVariants": [
+      {
+        "name": "Brown",
+        "colorCode": "#8B4513",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/smartflow/2026/08/27/02/1787816676b72383161ec2b55ce92a3bce72db03ae.webp",
+          "https://img.ltwebstatic.com/v4/j/smartflow/2026/08/27/45/17878166764b3a9f16083272d41b174baa87c930f8.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/smartflow/2026/08/27/02/1787816676b72383161ec2b55ce92a3bce72db03ae.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "S", "shoulder": 43.5, "bust": 112, "length": 66, "sleeveLength": 60 },
+        { "size": "M", "shoulder": 45, "bust": 116, "length": 68, "sleeveLength": 61.5 },
+        { "size": "L", "shoulder": 46.5, "bust": 120, "length": 70, "sleeveLength": 63 }
+      ]
+    }
+  },
+  {
+    "brand": "Generic / Unbranded",
+    "title": "Retro Suede Men's Casual Lightweight Zipper Jacket Top, Western Style Outerwear",
+    "description": "Retro Suede Men's Casual Lightweight Zipper Jacket Top, Western Style Outerwear. Material: Knitted Fabric. Care: Hand wash, do not dry clean.",
+    "price": 5290,
+    "discountedPrice": 4480,
+    "attributes": {
+      "Care Instructions": "Hand wash, do not dry clean",
+      "Color": "Army Green",
+      "Composition": "100% Polyester",
+      "Fit Type": "Regular Fit",
+      "Material": "Knitted Fabric",
+      "Style": "Western Style"
+    },
+    "colorVariants": [
+      {
+        "name": "Army Green",
+        "colorCode": "#4B5320",
+        "images": [
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/10/07/9d/17913386344006bc0642fa70dac690945748a822ad.webp",
+          "https://img.ltwebstatic.com/v4/j/spmp/2026/10/07/d4/17913386340ad8dfc4da5c83cd29e084870b58fca6.webp"
+        ],
+        "swatch": "https://img.ltwebstatic.com/v4/j/spmp/2026/10/07/9d/17913386344006bc0642fa70dac690945748a822ad.webp"
+      }
+    ],
+    "measurements": {
+      "unit": "CM",
+      "sizeChart": [
+        { "size": "XS", "shoulder": 44.5, "bust": 105, "length": 66, "sleeveLength": 59.5 },
+        { "size": "S", "shoulder": 46, "bust": 110, "length": 68, "sleeveLength": 61 },
+        { "size": "M", "shoulder": 47.5, "bust": 115, "length": 70, "sleeveLength": 62.5 },
+        { "size": "L", "shoulder": 49, "bust": 120, "length": 72, "sleeveLength": 64 },
+        { "size": "XL", "shoulder": 50.5, "bust": 125, "length": 74, "sleeveLength": 65.5 }
+      ]
+    }
+  }
+]

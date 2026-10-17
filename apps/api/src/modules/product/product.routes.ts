@@ -68,15 +68,15 @@ productRoutes.post(
   requirePermissions(Permission.PRODUCT_PUBLISH),
   asyncHandler(productController.reviewProduct),
 );
-// Destructive operations were previously unguarded for suspended stores — fixed.
-productRoutes.post(
-  '/:id/archive',
+// Canonical REST operations
+productRoutes.delete(
+  '/:id',
   approvedStore,
   requirePermissions(Permission.PRODUCT_DELETE),
   asyncHandler(productController.archiveProduct),
 );
-productRoutes.post(
-  '/:id/toggle-activation',
+productRoutes.patch(
+  '/:id',
   approvedStore,
   requirePermissions(Permission.PRODUCT_EDIT),
   asyncHandler(productController.toggleProductActivation),

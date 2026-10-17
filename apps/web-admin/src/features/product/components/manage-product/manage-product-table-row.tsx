@@ -1,37 +1,30 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
-import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { TableCell, TableRow } from '@celebs/shared-ui/components/table';
 
-import type { ProductListItem } from '../../types';
 import {
   formatShortDate,
+  getCategoryImage,
   getCategoryName,
   getInitials,
+  getProductCover,
+  getProductPrice,
   getProductStock,
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
 
+import type { ManageProductActionHandlers } from './manage-product-action-types';
+import { ManageProductRowActions } from './manage-product-row-actions';
 import { statusBadgeVariant, statusLabels } from './product-status';
 
-import { RowActionsMenu } from '@/components/row-actions-menu';
-
-interface ManageProductTableRowProps {
-  product: ProductListItem;
+export interface ManageProductTableRowProps extends ManageProductActionHandlers {
+  product: AdminProductListItem;
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
 }
 
 export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
@@ -46,14 +39,17 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
   onToggleActivation,
   isTogglePending,
   onSetArchiveTarget,
+  onPrintBarcodes,
 }) => {
-  const navigate = useNavigate();
   if (!product.id) return null;
-  const productId = product.id;
-  const price = Number(product.price ?? 0);
+  // A missing total/price is a gap in the record, not a zero the seller set:
+  // `Number(null ?? 0)` used to publish "Rs. 0" for a product that has no price.
+  const price = getProductPrice(product);
+  const stock = getProductStock(product);
   const status = product.status ?? 'draft';
   const vendor = getVendorDisplay(product);
-  const stock = getProductStock(product);
+  const coverImage = getProductCover(product);
+  const categoryImage = getCategoryImage(product);
   const updated = formatShortDate(
     (product as { updatedAt?: unknown }).updatedAt ??
       (product as { createdAt?: unknown }).createdAt,
@@ -65,11 +61,11 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
         <Checkbox checked={isSelected} onCheckedChange={(checked) => onSelect(!!checked)} />
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <img
-            src={product.mainImages?.[0] || '/placeholder.svg'}
+            src={coverImage}
             alt={product.name ?? 'Product'}
-            className="h-10 w-10 shrink-0 rounded-lg border bg-muted object-cover"
+            className="h-8 w-8 shrink-0 rounded-md border bg-muted object-cover"
             onError={(e) => {
               const target = e.currentTarget;
               target.onerror = null;
@@ -77,74 +73,62 @@ export const ManageProductTableRow: React.FC<ManageProductTableRowProps> = ({
             }}
           />
           <div className="min-w-0">
-            <div className="max-w-55 truncate text-sm font-medium leading-tight">
+            <div className="max-w-55 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
               {product.name ?? 'Untitled'}
             </div>
-            {product.brand && (
-              <div className="truncate text-xs text-muted-foreground">{product.brand}</div>
-            )}
           </div>
         </div>
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap items-center gap-1">
+          {categoryImage ? (
+            <img
+              src={categoryImage}
+              alt=""
+              aria-hidden="true"
+              className="h-5 w-5 shrink-0 rounded border bg-muted object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : null}
           <Badge variant="secondary">{getCategoryName(product)}</Badge>
           <Badge variant={statusBadgeVariant(status)}>{statusLabels[status] ?? status}</Badge>
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
             {getInitials(vendor)}
           </span>
-          <span className="max-w-32 truncate text-sm">{vendor}</span>
+          <span className="max-w-32 truncate text-sm text-foreground">{vendor}</span>
         </div>
       </TableCell>
-      <TableCell className="text-right font-mono text-sm tabular-nums">{stock}</TableCell>
-      <TableCell className="text-right font-mono text-sm tabular-nums">
-        Rs. {price.toLocaleString()}
+      <TableCell className="text-right font-mono text-xs tabular-nums">
+        {stock === null ? '—' : stock}
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs tabular-nums">
+        {price === null ? '—' : `Rs. ${price.toLocaleString()}`}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+        <div className="flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="whitespace-nowrap">{updated}</span>
         </div>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-          {isSellerOrStaff && canCreate && (status === 'draft' || status === 'rejected') && (
-            <Button
-              size="sm"
-              className="h-7 px-2 text-xs"
-              disabled={isSubmitPending}
-              onClick={() => onSubmit(productId)}
-            >
-              Submit
-            </Button>
-          )}
-          {isSellerOrStaff && canEdit && (status === 'published' || status === 'deactivated') && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 px-2 text-xs"
-              disabled={isTogglePending}
-              onClick={() => onToggleActivation(productId)}
-            >
-              {status === 'published' ? 'Deactivate' : 'Activate'}
-            </Button>
-          )}
-          <RowActionsMenu
-            label={`Actions for ${product.name ?? 'product'}`}
-            items={[
-              { label: 'Edit', onSelect: () => navigate(`/products/edit/${productId}`) },
-              {
-                label: 'Archive (Delete)',
-                onSelect: () => onSetArchiveTarget(product),
-                destructive: true,
-              },
-            ]}
-          />
-        </div>
+        <ManageProductRowActions
+          product={product}
+          isSellerOrStaff={isSellerOrStaff}
+          canCreate={canCreate}
+          canEdit={canEdit}
+          onSubmit={onSubmit}
+          isSubmitPending={isSubmitPending}
+          onToggleActivation={onToggleActivation}
+          isTogglePending={isTogglePending}
+          onSetArchiveTarget={onSetArchiveTarget}
+          onPrintBarcodes={onPrintBarcodes}
+        />
       </TableCell>
     </TableRow>
   );

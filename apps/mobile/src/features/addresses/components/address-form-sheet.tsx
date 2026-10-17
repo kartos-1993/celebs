@@ -7,6 +7,7 @@ import { X } from 'lucide-react-native';
 
 import { addressSchema } from '@celebs/shared-types';
 
+import { buildAddressDraft, createAddressDefaultValues } from './address-form.helpers';
 import { AddressFormFields, type AddressFormValues } from './address-form-fields';
 import { styles } from './address-form-sheet.styles';
 
@@ -36,37 +37,20 @@ export function AddressFormSheet({
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
-    defaultValues: {
-      label: editing?.label ?? 'Home',
-      fullName: editing?.fullName ?? '',
-      phone: editing?.phone ?? '',
-      altPhone: editing?.altPhone ?? '',
-      province: editing?.province ?? 'Bagmati',
-      district: editing?.district ?? '',
-      cityArea: editing?.cityArea ?? '',
-      streetAddress: editing?.streetAddress ?? '',
-      landmark: editing?.landmark ?? '',
-      isDefault: editing?.isDefault ?? false,
-    },
+    defaultValues: createAddressDefaultValues(editing),
   });
 
   const onValid = (data: AddressFormValues) => {
-    onSubmit({
-      label: data.label || 'Home',
-      fullName: data.fullName.trim(),
-      phone: data.phone.trim(),
-      ...(data.altPhone?.trim() ? { altPhone: data.altPhone.trim() } : {}),
-      province: data.province.trim() || 'Bagmati',
-      district: data.district.trim(),
-      cityArea: data.cityArea.trim(),
-      streetAddress: data.streetAddress.trim(),
-      ...(data.landmark?.trim() ? { landmark: data.landmark.trim() } : {}),
-      isDefault: !!data.isDefault,
-    });
+    onSubmit(buildAddressDraft(data));
   };
+
+  const renderContent = () => (
+    <AddressFormFields control={control} errors={errors} setValue={setValue} />
+  );
 
   return (
     <BottomSheet
@@ -130,7 +114,7 @@ export function AddressFormSheet({
           showsVerticalScrollIndicator={false}
           bottomOffset={20}
         >
-          <AddressFormFields control={control} errors={errors} />
+          {renderContent()}
         </KeyboardAwareScrollView>
       ) : (
         <ScrollView
@@ -139,7 +123,7 @@ export function AddressFormSheet({
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          <AddressFormFields control={control} errors={errors} />
+          {renderContent()}
         </ScrollView>
       )}
     </BottomSheet>

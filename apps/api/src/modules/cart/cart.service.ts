@@ -1,14 +1,33 @@
 import { randomUUID } from 'node:crypto';
 
-import { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
+import {
+  AddToCartInput,
+  CartItemHydrated,
+  CartResponse,
+  MIN_PARCEL_WEIGHT_KG,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { InventoryService } from '../inventory/inventory.service';
+import { resolveCover } from '../product/utils/product-image.util';
 
 import { cartRepository } from './cart.repository';
 
+import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
+import { resolveDeliveryPricing } from '@/modules/logistics/delivery-pricing';
+import {
+  deliveryPricingRepository,
+  UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+} from '@/modules/logistics/delivery-pricing.repository';
+import type { QuoteSellerParcelInput } from '@/modules/logistics/delivery-quote.service';
+import {
+  computeBillableLineWeightKg,
+  sumBillableWeightKg,
+} from '@/modules/logistics/parcel-weight';
+import { addressRepository } from '@/modules/order/address/address.repository';
+import { platformSettingsService } from '@/modules/platform-settings/platform-settings.service';
 
 export class CartService {
   /**
@@ -55,7 +74,7 @@ export class CartService {
    */
   static async getCart(userId?: string, sessionId?: string): Promise<CartResponse> {
     const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
-    const cartWithItems = await cartRepository.findUniqueWithItems(cartRecord.id);
+    const cartWithItems = await cartRepository.findUniqueWithHydratedItems({ id: cartRecord.id });
 
     if (!cartWithItems) {
       return {
@@ -64,6 +83,12 @@ export class CartService {
         sessionId: cartRecord.sessionId,
         items: [],
         subtotal: 0,
+        // An empty cart is never charged delivery.
+        shippingFee: 0,
+        freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+        // Nothing to deliver, so nothing is quoted against a destination.
+        deliveryIsEstimate: true,
+        total: 0,
         itemCount: 0,
         hasStockIssues: false,
         createdAt: cartRecord.createdAt.toISOString(),
@@ -71,22 +96,16 @@ export class CartService {
       };
     }
 
-    const productIds = Array.from(
-      new Set(cartWithItems.items.map((item) => item.inventory.productId)),
-    );
-
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-    });
-
-    const productMap = new Map(products.map((p) => [p.id, p]));
-
     let subtotalDecimal = new Prisma.Decimal(0);
+    let billableWeightKg = new Prisma.Decimal(0);
     let itemCount = 0;
     let hasStockIssues = false;
+    // Grouped by seller as the items are walked, so the cart can be quoted the same
+    // way checkout will quote it: one parcel per seller.
+    const previewParcels: QuoteSellerParcelInput[] = [];
 
     const hydratedItems: CartItemHydrated[] = cartWithItems.items.map((item) => {
-      const product = productMap.get(item.inventory.productId);
+      const product = item.inventory.product;
       const availableStock = item.inventory.quantity - item.inventory.reservedQuantity;
       const isAvailable = availableStock > 0 && availableStock >= item.quantity;
 
@@ -108,21 +127,64 @@ export class CartService {
       const price = rawDiscounted || rawPrice;
       const discountedPrice = rawDiscounted && rawDiscounted < rawPrice ? rawDiscounted : undefined;
 
-      let variantImage = product?.mainImages?.[0] || '';
-      if (product && Array.isArray(product.colorVariants)) {
-        const variants = product.colorVariants as Array<{ name: string; images?: string[] }>;
-        const variant = variants.find(
-          (v) => v.name.toLowerCase() === item.inventory.colorVariantName.toLowerCase(),
-        );
-        if (variant && variant.images && variant.images.length > 0 && variant.images[0]) {
-          variantImage = variant.images[0];
-        }
-      }
+      // Canonical product cover, from the SINGLE process-wide resolver
+      // (`product/utils/product-image.util.resolveCover`):
+      //
+      //   cover = mainImages[0] ?? first colour variant's first image
+      //
+      // This used to start at `mainImages[0]` and then OVERWRITE it with the
+      // line's own colour gallery — the exact inverse of the canonical order —
+      // so a cart row could show a different picture than the storefront card,
+      // the PDP, the admin list and the order email for the same product. The
+      // colour-specific override disagrees with the canonical order in every
+      // case where `mainImages` is non-empty, so it is deleted rather than kept
+      // as a second ordering that can drift again.
+      const cover = resolveCover(product?.mainImages, product?.colorVariants);
 
       if (isAvailable) {
         const priceDecimal = new Prisma.Decimal(price);
         subtotalDecimal = subtotalDecimal.add(priceDecimal.mul(item.quantity));
         itemCount += item.quantity;
+
+        // Billable weight for the line, accumulated here rather than read back off
+        // the hydrated items: these are product dimensions, and publishing them
+        // on the cart response would leak a pricing input into the API surface.
+        // Declared weight, not the volumetric maximum: the courier prices what the
+        // seller states and has no volumetric input of its own.
+        const declaredLineWeightKg = new Prisma.Decimal(
+          product?.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
+        ).mul(item.quantity);
+        const sellerId = product?.vendorId ?? PLATFORM_VENDOR_ID;
+        const existingParcel = previewParcels.find((p) => p.vendorId === sellerId);
+
+        if (existingParcel) {
+          existingParcel.declaredWeightKg =
+            existingParcel.declaredWeightKg.plus(declaredLineWeightKg);
+          existingParcel.goodsAmount = existingParcel.goodsAmount.add(
+            priceDecimal.mul(item.quantity),
+          );
+        } else {
+          previewParcels.push({
+            vendorId: sellerId,
+            declaredWeightKg: declaredLineWeightKg,
+            goodsAmount: priceDecimal.mul(item.quantity),
+            lineIds: [item.id],
+          });
+        }
+
+        billableWeightKg = sumBillableWeightKg([
+          billableWeightKg,
+          computeBillableLineWeightKg({
+            // Optional like every other product read in this loop: a line whose
+            // product has been deleted cannot be shipped, and checkout refuses it
+            // long before its weight could matter.
+            weightKg: product?.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
+            quantity: item.quantity,
+            lengthCm: product?.packageLengthCm ?? null,
+            widthCm: product?.packageWidthCm ?? null,
+            heightCm: product?.packageHeightCm ?? null,
+          }),
+        ]);
       }
 
       return {
@@ -137,7 +199,11 @@ export class CartService {
         discountedPrice,
         colorVariantName: item.inventory.colorVariantName,
         colorCode: '#000000',
-        image: variantImage,
+        // `cover` is the canonical field; `image` carries the same value for
+        // clients that read that name, so one line can never show two
+        // different orderings.
+        image: cover ?? '',
+        cover,
         size: item.inventory.size,
         quantity: item.quantity,
         availableStock: availableStock > 0 ? availableStock : 0,
@@ -148,16 +214,83 @@ export class CartService {
       };
     });
 
+    // Delivery and total are stated here, from the same resolver checkout uses, so
+    // the figure the shopper is shown is the figure they are billed. Advisory
+    // only — checkout recomputes from the database and remains the authority.
+    const policy = await platformSettingsService.getCommercePolicy();
+    const subtotal = subtotalDecimal.toNumber();
+
+    // Quote against the customer's default address when it has a zone, so the
+    // threshold and rate band are the ones checkout will use for it. Without a
+    // zone the conservative threshold stands, because promising free delivery the
+    // server would then decline is the same bug as promising it and charging for
+    // it.
+    // Only the district is needed now: the courier prices delivery, so the cart no
+    // longer fetches rate bands to pick a fee from.
+    const destination = await this.resolveDefaultDestination(userId);
+    const activeRates = await deliveryPricingRepository.activeRates(destination?.cityId ?? null);
+    const totalWeightKg = sumBillableWeightKg(previewParcels.map((p) => p.declaredWeightKg));
+
+    const preview = resolveDeliveryPricing({
+      subtotal: subtotalDecimal,
+      weightKg: totalWeightKg,
+      isCod: false,
+      freeDeliveryThreshold: new Prisma.Decimal(
+        destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+      ),
+      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
+      rates: activeRates,
+      cityId: destination?.cityId ?? null,
+    });
+
+    const shippingFee = preview.shippingFee.toNumber();
+
     return {
       id: cartRecord.id,
       userId: cartRecord.userId,
       sessionId: cartRecord.sessionId,
       items: hydratedItems,
-      subtotal: subtotalDecimal.toNumber(),
+      subtotal,
+      shippingFee,
+      freeDeliveryThreshold: Number(
+        destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+      ),
+      // Without a destination the quote is the conservative one, so the app needs
+      // to be able to say so rather than presenting it as the price.
+      deliveryIsEstimate: destination === null,
+      total: subtotal + shippingFee,
       itemCount,
       hasStockIssues,
       createdAt: cartRecord.createdAt.toISOString(),
       updatedAt: cartRecord.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * The delivery zone for the address this cart will most likely be sent to.
+   *
+   * Null when there is no signed-in customer, no default address, no zone on it,
+   * or the zone's city is switched off - all cases where we do not actually know
+   * where the parcel is going. An inactive city is not a destination, so it is
+   * treated as unknown rather than as a zone whose prices might be stale.
+   */
+  private static async resolveDefaultDestination(userId: string | undefined) {
+    if (!userId) return null;
+
+    const address = await addressRepository.findDefaultAddressWithZone(userId);
+
+    if (
+      !address?.logisticsZoneId ||
+      !address.logisticsZone?.isActive ||
+      !address.logisticsZone.city.isActive
+    ) {
+      return null;
+    }
+
+    return {
+      cityId: address.logisticsZone.city.id,
+      zoneId: address.logisticsZoneId,
+      freeDeliveryThreshold: address.logisticsZone.city.freeDeliveryThreshold,
     };
   }
 

@@ -1,0 +1,205 @@
+import { logger } from '@celebs/shared-utils';
+
+import type {
+  CourierLocationClient,
+  ExternalArea,
+  ExternalCity,
+  ExternalZone,
+} from '../logistics-location-sync.service';
+
+import { PathaoTokenProvider, resolvePathaoConfig } from './pathao-token.provider';
+
+/**
+ * Reads Pathao's city / zone / area lists.
+ *
+ * These three reads are the only courier data a sync consumes, and their results
+ * are fed to a reconciliation that retires districts the courier no longer
+ * serves. That gives one rule which outranks the rest of this file: a payload
+ * that is not shaped the way Pathao documents is refused, never read as an empty
+ * list. "This city has no zones" is a fact worth acting on; "we could not parse
+ * the response" must not be allowed to retire real coverage.
+ *
+ * Pathao's list endpoints answer in one of two envelopes: the documented flat
+ * `data: [...]`, or a nested `data.data` the sandbox has also produced. Both
+ * are accepted and mapped identically; anything else is refused. Zones and
+ * areas do not echo the parent id, so the requested parent is stamped onto
+ * each entry.
+ */
+
+const CITY_LIST_PATH = '/aladdin/api/v1/city-list';
+const zoneListPath = (cityId: number) => `/aladdin/api/v1/cities/${cityId}/zone-list`;
+const areaListPath = (zoneId: number) => `/aladdin/api/v1/zones/${zoneId}/area-list`;
+
+/**
+ * How long a single location read may take.
+ *
+ * A sync walks hundreds of these, and the observed failure mode is Pathao's
+ * sandbox holding the connection open rather than refusing it: Cloudflare sits
+ * in front and returns 522 only after ~20s, so a longer budget here would just
+ * mean every call paid the full wait and each one holding a pooled connection
+ * while it did. Eight seconds fails fast enough that the sync can fall back to
+ * the districts we already hold, which is a working answer, instead of failing
+ * the whole run.
+ */
+const LOCATION_READ_TIMEOUT_MS = 8_000;
+
+interface PathaoListEnvelope {
+  message?: string;
+  type?: string;
+  code?: number;
+  /** Documented flat `data: [...]`, or the nested `data.data` the sandbox also returns. */
+  data?: { data?: unknown } | unknown;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+/** An id the courier assigned, or a payload we do not recognise. */
+const readId = (entry: Record<string, unknown>, key: string): number => {
+  const value = entry[key];
+  if (typeof value !== 'number' || !Number.isInteger(value)) {
+    throw new Error(`Pathao ${key} is missing or not an integer`);
+  }
+  return value;
+};
+
+const readName = (entry: Record<string, unknown>, key: string): string => {
+  const value = entry[key];
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Pathao ${key} is missing or empty`);
+  }
+  return value.trim();
+};
+
+/** Whether the courier will carry to or collect from this area. */
+const readFlag = (entry: Record<string, unknown>, key: string): boolean => {
+  const value = entry[key];
+  if (typeof value !== 'boolean') {
+    throw new Error(`Pathao ${key} is missing or not a boolean`);
+  }
+  return value;
+};
+
+export class PathaoLocationClient implements CourierLocationClient {
+  /**
+   * The base URL resolves per call, not at construction: callers build this
+   * client at import time, and importing a module must not throw for a
+   * missing variable.
+   */
+  constructor(
+    private readonly tokens: PathaoTokenProvider,
+    private readonly fetchImpl: typeof fetch = (...args) => globalThis.fetch(...args),
+    private readonly baseUrlOverride?: string,
+  ) {}
+
+  private baseUrl(): string {
+    return this.baseUrlOverride ?? resolvePathaoConfig().baseUrl;
+  }
+
+  async listCities(): Promise<ExternalCity[]> {
+    return this.readEntries(CITY_LIST_PATH, 'city-list', (entry) => ({
+      id: readId(entry, 'city_id'),
+      name: readName(entry, 'city_name'),
+      province: '',
+    }));
+  }
+
+  async listZones(cityId: number): Promise<ExternalZone[]> {
+    return this.readEntries(zoneListPath(cityId), 'zone-list', (entry) => ({
+      id: readId(entry, 'zone_id'),
+      // The courier does not echo the parent city on a zone, so the one we asked
+      // for is authoritative.
+      cityId,
+      name: readName(entry, 'zone_name'),
+    }));
+  }
+
+  async listAreas(zoneId: number): Promise<ExternalArea[]> {
+    return this.readEntries(areaListPath(zoneId), 'area-list', (entry) => ({
+      id: readId(entry, 'area_id'),
+      zoneId,
+      name: readName(entry, 'area_name'),
+      homeDeliveryAvailable: readFlag(entry, 'home_delivery_available'),
+      pickupAvailable: readFlag(entry, 'pickup_available'),
+    }));
+  }
+
+  /**
+   * Reads a list and maps each entry, naming the offending endpoint in any error.
+   *
+   * The label is carried into the message deliberately: a sync walks hundreds of
+   * calls, and "zone_id is missing" without knowing which call produced it is not
+   * enough to act on.
+   */
+  private async readEntries<T>(
+    path: string,
+    label: string,
+    parse: (entry: Record<string, unknown>) => T,
+  ): Promise<T[]> {
+    const raw = await this.readList(path, label);
+
+    return raw.map((entry) => {
+      if (!isRecord(entry)) {
+        throw new Error(`Pathao ${label} returned an entry that is not an object`);
+      }
+      try {
+        return parse(entry);
+      } catch (error) {
+        throw new Error(`Pathao ${label}: ${(error as Error).message}`);
+      }
+    });
+  }
+
+  /** Reads `data.data` or a flat `data` array, and refuses anything else. */
+  private async readList(path: string, label: string): Promise<unknown[]> {
+    const token = await this.tokens.getToken();
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${this.baseUrl()}${path}`, {
+        method: 'GET',
+        headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+        signal: AbortSignal.timeout(LOCATION_READ_TIMEOUT_MS),
+      });
+    } catch (error: unknown) {
+      // Name the courier, the endpoint and the budget. "The operation was
+      // aborted" on its own tells an operator nothing about who hung or why.
+      // The original message is carried inline rather than as an Error cause,
+      // because the build targets ES2021 where `cause` is not in the lib.
+      throw new Error(
+        `Pathao ${label} did not answer within ${LOCATION_READ_TIMEOUT_MS / 1000}s: ${(error as Error).message}`,
+      );
+    }
+
+    let body: PathaoListEnvelope | null = null;
+    try {
+      body = (await response.json()) as PathaoListEnvelope;
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok || body?.type === 'error') {
+      throw new Error(
+        `Pathao ${label} request failed: ${body?.message ?? `HTTP ${response.status}`}`,
+      );
+    }
+
+    const container = body?.data;
+    const entries = Array.isArray(container)
+      ? container
+      : isRecord(container)
+        ? container.data
+        : undefined;
+
+    if (!Array.isArray(entries)) {
+      // Refused rather than treated as empty: an empty list is something the
+      // reconciliation is allowed to act on, and this is not it.
+      logger.error({ path, label }, 'Pathao list payload was not the documented shape');
+      throw new Error(
+        `Pathao ${label} did not return a list; refusing to treat it as empty coverage`,
+      );
+    }
+
+    return entries;
+  }
+}

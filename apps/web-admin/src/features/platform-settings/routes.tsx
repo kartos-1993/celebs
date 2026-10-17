@@ -1,30 +1,69 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 import { Permission } from '@celebs/rbac';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const BannersPage = lazy(() => import('./pages/banners-page'));
-const LayoutEditorPage = lazy(() => import('./pages/layout-editor-page'));
 
 export const platformSettingsRoutes: RouteObject[] = [
   {
     path: 'platform-settings/banners',
-    element: (
-      <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
-        <BannersPage />
-      </RoleGuard>
+    ...pageRoute(
+      () => import('./pages/banners-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
     ),
-    handle: { crumb: 'Banner Settings' },
+    handle: { crumb: 'Banner Settings', skeleton: 'table' },
   },
   {
     path: 'platform-settings/layout',
-    element: (
-      <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
-        <LayoutEditorPage />
-      </RoleGuard>
+    ...pageRoute(
+      () => import('./pages/layout-editor-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
     ),
-    handle: { title: 'Home Layout Editor', crumb: 'Layout Editor' },
+    handle: { title: 'Home Layout Editor', crumb: 'Layout Editor', skeleton: 'page' },
+  },
+  {
+    path: 'platform-settings/notifications',
+    ...pageRoute(
+      () => import('./pages/notification-settings-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
+    ),
+    handle: { title: 'Notification Settings', crumb: 'Notifications', skeleton: 'form' },
+  },
+  {
+    path: 'platform-settings/commerce',
+    ...pageRoute(
+      () => import('./pages/commerce-settings-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
+    ),
+    handle: { title: 'Commerce Settings', crumb: 'Commerce', skeleton: 'form' },
+  },
+  {
+    path: 'platform-settings/delivery-rates',
+    ...pageRoute(
+      () => import('../shipping-rates/pages/shipping-rates-page'),
+      (Page) => (
+        <RoleGuard requiredPermission={Permission.PLATFORM_MANAGE}>
+          <Page />
+        </RoleGuard>
+      ),
+    ),
+    handle: { title: 'Delivery Rates', crumb: 'Delivery Rates', skeleton: 'table' },
   },
 ];

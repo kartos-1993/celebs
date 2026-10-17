@@ -1,12 +1,23 @@
 import { faker } from '@faker-js/faker';
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
+import type { AccessTPayload, RefreshTPayload } from '@/common/utils/jwt';
 import { signJwtToken } from '@/common/utils/jwt';
 import { config } from '@/config/app.config';
 import prisma from '@/config/db.prisma';
+
+/**
+ * Deliberately under-filled JWT payload. Several cases here sign a token the
+ * type system refuses to describe — wrong secret, or no `jti` at all — and the
+ * payload shape is the variable under test, not the field. Keeps the escape
+ * named instead of scattering bare `as never`.
+ */
+const partialPayload = (sessionId: string) =>
+  ({ sessionId }) as unknown as AccessTPayload | RefreshTPayload;
 
 describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
   let createdUserId: string | null = null;
@@ -19,6 +30,19 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       createdUserId = null;
     }
   });
+
+  function cookieToken(res: request.Response): string {
+    const raw = res.headers['set-cookie'] as unknown as string[] | string | undefined;
+    const joined = Array.isArray(raw) ? raw.join(';') : (raw ?? '');
+    return joined.match(/refreshToken=([^;]+)/)?.[1] ?? '';
+  }
+
+  function authedRefresh(token: string) {
+    return request(app)
+      .post('/api/v1/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('Cookie', `refreshToken=${token}`);
+  }
 
   it('should successfully refresh tokens and slide session lifetime forward', async () => {
     const rawPassword = 'Password123!';
@@ -34,24 +58,24 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
     createdUserId = user.id;
 
     // Login to get tokens and create session
-    const loginRes = await request(app).post('/api/v1/auth/login').send({
-      email,
-      password: rawPassword,
-    });
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Origin', 'http://localhost:5173')
+      .send({
+        email,
+        password: rawPassword,
+      });
     expect(loginRes.status).toBe(200);
 
-    const refreshToken = loginRes.body.data.refreshToken;
-    expect(refreshToken).toBeDefined();
+    const refreshToken = cookieToken(loginRes);
+    expect(refreshToken).not.toBe('');
 
     // Call refresh endpoint with cookie
-    const refreshRes = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${refreshToken}`);
+    const refreshRes = await authedRefresh(refreshToken);
 
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.success).toBe(true);
-    expect(refreshRes.body.data.accessToken).toBeDefined();
-    expect(refreshRes.body.data.refreshToken).toBeDefined();
+    expect(cookieToken(refreshRes)).not.toBe('');
 
     // Verify session in DB has an active future expiredAt
     const session = await prisma.session.findFirst({
@@ -87,12 +111,10 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       },
     });
 
-    // Sign with ACCESS token secret instead of REFRESH token secret
-    const tamperedToken = signJwtToken({ sessionId: session.id }, { secret: config.JWT.SECRET });
+    // Sign with ACCESS token secret instead of REFRESH token secret.
+    const tamperedToken = signJwtToken(partialPayload(session.id), { secret: config.JWT.SECRET });
 
-    const res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${tamperedToken}`);
+    const res = await authedRefresh(tamperedToken);
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -123,27 +145,27 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       },
     });
 
+    const jti = randomUUID();
     const session = await prisma.session.create({
       data: {
         userId: user.id,
         userAgent: 'Suspended Seller Agent',
+        rotatedRefreshId: jti,
       },
     });
 
     const refreshToken = signJwtToken(
-      { sessionId: session.id },
+      { sessionId: session.id, jti },
       { secret: config.JWT.REFRESH_SECRET },
     );
 
-    const res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${refreshToken}`);
+    const res = await authedRefresh(refreshToken);
 
     expect(res.status).toBe(403);
     expect(res.body.success).toBe(false);
   });
 
-  it('should detect refresh token reuse and revoke the session family immediately', async () => {
+  it('absorbs a benign previous-token retry but revokes the family once the grace budget is spent', async () => {
     const rawPassword = 'Password123!';
     const email = faker.internet.exampleEmail().toLowerCase();
     const user = await prisma.user.create({
@@ -157,42 +179,50 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
     createdUserId = user.id;
 
     // 1. Initial Login
-    const loginRes = await request(app).post('/api/v1/auth/login').send({
-      email,
-      password: rawPassword,
-    });
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Origin', 'http://localhost:5173')
+      .send({
+        email,
+        password: rawPassword,
+      });
     expect(loginRes.status).toBe(200);
 
-    const token1 = loginRes.body.data.refreshToken;
+    const token1 = cookieToken(loginRes);
+    expect(token1).not.toBe('');
 
     // 2. Legitimate First Refresh
-    const refresh1Res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${token1}`);
+    const refresh1Res = await authedRefresh(token1);
 
     expect(refresh1Res.status).toBe(200);
-    const token2 = refresh1Res.body.data.refreshToken;
-    expect(token2).toBeDefined();
+    const token2 = cookieToken(refresh1Res);
+    expect(token2).not.toBe('');
     expect(token2).not.toEqual(token1);
 
-    // 3. Attacker replays token1 (already rotated)
-    const reuseRes = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${token1}`);
+    // 3. Benign lost-response retry of token1: accepted, session survives.
+    const retryRes = await authedRefresh(token1);
+    expect(retryRes.status).toBe(200);
+    const stillAlive = await prisma.session.findFirst({
+      where: { userId: user.id },
+    });
+    expect(stillAlive).not.toBeNull();
+
+    // 4. Repeated replays exhaust the grace budget → family revoked.
+    expect((await authedRefresh(token1)).status).toBe(200);
+    expect((await authedRefresh(token1)).status).toBe(200);
+    const reuseRes = await authedRefresh(token1);
 
     expect(reuseRes.status).toBe(401);
     expect(reuseRes.body.message).toContain('Session revoked due to token reuse');
 
-    // 4. Verify session is deleted from DB
+    // 5. Verify session is deleted from DB
     const sessionInDb = await prisma.session.findFirst({
       where: { userId: user.id },
     });
     expect(sessionInDb).toBeNull();
 
-    // 5. Subsequent refresh attempt with token2 now also fails because session is gone
-    const failRes = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${token2}`);
+    // 6. Subsequent refresh attempt with token2 now also fails because session is gone
+    const failRes = await authedRefresh(token2);
 
     expect(failRes.status).toBe(401);
   });
@@ -216,24 +246,14 @@ describe('Refresh Token Lifecycle & Rotation Test Suite', () => {
       },
     });
 
-    // Sign legacy token without jti
-    const legacyToken = signJwtToken(
-      { sessionId: session.id },
-      { secret: config.JWT.REFRESH_SECRET },
-    );
-
-    const res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .set('Cookie', `refreshToken=${legacyToken}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.refreshToken).toBeDefined();
-
-    // Verify session now has rotatedRefreshId populated
-    const updatedSession = await prisma.session.findUnique({
-      where: { id: session.id },
+    // Sign legacy token without jti. The missing `jti` IS the fixture.
+    const legacyToken = signJwtToken(partialPayload(session.id), {
+      secret: config.JWT.REFRESH_SECRET,
     });
-    expect(updatedSession?.rotatedRefreshId).toBeDefined();
-    expect(typeof updatedSession?.rotatedRefreshId).toBe('string');
+
+    const res = await authedRefresh(legacyToken);
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 });

@@ -139,4 +139,69 @@ describe('buildProductPayload', () => {
 
     expect(payload.mainImages).toEqual(['https://example.com/cover.jpg']);
   });
+
+  it('serializes single product without variants by preserving default sellerSku, price, and stock in skus array', async () => {
+    const defaultProductFields: FieldSpec[] = [
+      { name: 'name', uiType: 'input', label: 'Product Name', group: 'base', required: true },
+    ];
+
+    const payload = await buildProductPayload({
+      fields: defaultProductFields,
+      status: 'draft',
+      values: {
+        name: 'Luxury Leather Bag',
+        brand: 'Celebs Studio',
+        categoryId: 'cat-bags',
+        subcategoryId: 'subcat-bags',
+        price: 4500,
+        specialPrice: 3999,
+        'sku.default.price': '4500',
+        'sku.default.specialPrice': '3999',
+        'sku.default.stock': '12',
+        'sku.default.sellerSku': 'CLB-BAG-001',
+        mainImage: ['https://example.com/bag-front.jpg'],
+      },
+      upload: mockUpload,
+    });
+
+    expect(payload.skus).toHaveLength(1);
+    expect(payload.skus?.[0]).toEqual({
+      skuCode: 'CLB-BAG-001',
+      selectedOptions: {},
+      price: 4500,
+      discountedPrice: 3999,
+      stock: 12,
+      image: 'https://example.com/bag-front.jpg',
+      isDefault: true,
+    });
+  });
+
+  it('preserves main images on default colorVariant when updating a product with no color options', async () => {
+    const defaultProductFields: FieldSpec[] = [
+      { name: 'name', uiType: 'input', label: 'Product Name', group: 'base', required: true },
+    ];
+
+    const payload = await buildProductPayload({
+      fields: defaultProductFields,
+      status: 'published',
+      isUpdate: true,
+      values: {
+        name: 'Classic Sunglasses',
+        categoryId: 'cat-acc',
+        subcategoryId: 'subcat-acc',
+        price: 1800,
+        'sku.default.price': '1800',
+        'sku.default.stock': '25',
+        'sku.default.sellerSku': 'CLB-GLASS-001',
+        mainImage: ['https://example.com/glass-front.jpg', 'https://example.com/glass-side.jpg'],
+      },
+      upload: mockUpload,
+    });
+
+    expect(payload.colorVariants).toHaveLength(1);
+    expect(payload.colorVariants?.[0]?.images).toEqual([
+      'https://example.com/glass-front.jpg',
+      'https://example.com/glass-side.jpg',
+    ]);
+  });
 });

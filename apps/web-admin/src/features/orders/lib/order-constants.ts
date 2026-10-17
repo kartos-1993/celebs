@@ -47,6 +47,6 @@ export const ALLOWED_TRANSITIONS: Record<OrderItemStatus, OrderItemStatus[]> = {
   CANCELLED: [],
 };
 
-export const DEFAULT_COURIER = 'Nepal Can Move';
+export const DEFAULT_COURIER = 'PATHAO';
 
-export const COURIER_OPTIONS = ['Upaya Logistics', 'Nepal Can Move', 'PATHAO', 'MANUAL'] as const;
+export const COURIER_OPTIONS = ['PATHAO', 'MANUAL'] as const;

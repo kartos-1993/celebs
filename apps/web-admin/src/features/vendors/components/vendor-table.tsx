@@ -51,14 +51,18 @@ export function VendorTable({
             </TableRow>
           ) : (
             vendors.map((vendor) => (
-              <TableRow key={vendor.id} className="hover:bg-muted/30">
+              <TableRow key={vendor.id}>
                 <TableCell>
-                  <div className="text-sm font-semibold text-foreground">{vendor.shopName}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="max-w-52 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
+                    {vendor.shopName}
+                  </div>
+                  <div className="max-w-52 truncate text-xs text-muted-foreground">
                     {vendor.user?.name} ({vendor.user?.email})
                   </div>
                 </TableCell>
-                <TableCell className="font-mono text-xs">{vendor.phoneNumber}</TableCell>
+                <TableCell className="font-mono text-xs whitespace-nowrap tabular-nums">
+                  {vendor.phoneNumber}
+                </TableCell>
                 <TableCell>
                   <Badge variant={vendor.user?.isEmailVerified ? 'success' : 'warning'}>
                     {vendor.user?.isEmailVerified ? 'Verified' : 'Unverified'}

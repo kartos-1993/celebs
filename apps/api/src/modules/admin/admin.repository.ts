@@ -3,7 +3,13 @@ import prisma, { Prisma } from '@/config/db.prisma';
 export class AdminRepository {
   public async findAllVendors() {
     return prisma.vendorProfile.findMany({
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        shopName: true,
+        phoneNumber: true,
+        status: true,
+        createdAt: true,
         user: {
           select: {
             id: true,
@@ -13,7 +19,6 @@ export class AdminRepository {
             createdAt: true,
           },
         },
-        warehouses: true,
       },
       orderBy: {
         createdAt: 'desc',

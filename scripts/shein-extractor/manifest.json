@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Shein Extractor (Celebs App Edition)",
-  "version": "4.0",
-  "description": "Auto-maps Shein products to Celebs categories, converts prices to NPR, and extracts edit-compatible variant/measurement structures.",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "version": "5.0",
+  "description": "Auto-maps Shein products to Celebs canonical categories, converts prices to NPR, extracts multi-tab measurements, and exports hydration-ready variants.",
+  "permissions": ["activeTab", "scripting", "storage", "clipboardWrite"],
   "action": {
     "default_popup": "popup.html"
   },

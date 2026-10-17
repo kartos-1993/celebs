@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
   cn(
-    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
+    'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
     focusRing,
   ),
   {
@@ -21,6 +21,7 @@ const badgeVariants = cva(
         success: 'border-success/30 bg-success/10 text-success',
         warning: 'border-warning/30 bg-warning/10 text-warning',
         info: 'border-info/30 bg-info/10 text-info',
+        primary: 'border-primary/30 bg-primary/10 text-primary',
         outline: 'text-foreground',
       },
     },

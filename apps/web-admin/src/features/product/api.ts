@@ -1,12 +1,18 @@
-import type { IApiResponse } from '@celebs/shared-types';
-import type { CategoryAttributeType, CategoryTreeNode, RecentCategory } from '@celebs/shared-types';
+import type {
+  AdminProductDetail,
+  AdminProductListItem,
+  CategoryAttributeType,
+  CategoryTreeNode,
+  DropdownCategory,
+  IApiResponse,
+  RecentCategory,
+} from '@celebs/shared-types';
+import { logger } from '@celebs/shared-utils';
 
 import type {
   CreateProductRequest,
-  DropdownCategory,
   FieldSpec,
   ProductFilterRequest,
-  ProductRecord,
   ReviewProductRequestPayload,
   UpdateProductRequest,
 } from './types';
@@ -18,7 +24,7 @@ import { directUploadBatch } from '@/lib/media-upload';
 export type ProductApiResponse<T> = IApiResponse<T>;
 
 export interface PaginatedProductsResponse {
-  products: ProductRecord[];
+  products: AdminProductListItem[];
   total: number;
   page?: number;
   limit?: number;
@@ -30,10 +36,59 @@ const BASE_PATH = '/products';
 /** Uploads ride the shared client but with an extended timeout. */
 const _UPLOAD_TIMEOUT_MS = 120_000;
 
+/**
+ * Product feature — centralized TanStack Query key factory (FSD mandates §2, §9).
+ * Canonical home for ALL product-feature query keys; every hook imports from
+ * here (`../api`) instead of defining local factories.
+ *
+ * Centralization note: `PRODUCT_QUERY_KEYS` previously lived in
+ * `hooks/use-product-queries.ts` and `PRODUCT_SCHEMA_QUERY_KEYS` in
+ * `hooks/use-product-schema.ts` (split factories — cache identity could drift
+ * between owners). Both now live here. The hook modules re-export the same
+ * object under their legacy names so call sites outside this feature's owned
+ * file set keep compiling; both names therefore resolve to ONE identity.
+ */
+/**
+ * Stable query-key fragment for `dataSource.params`. The render schema hands
+ * params over as an inline object, so keying a query on the object identity
+ * would re-key the cache on every render; serialising with sorted keys makes
+ * one logical param set always produce one key.
+ */
+export function serializeQueryParams(params?: Record<string, unknown>): string {
+  if (!params) return '';
+  const entries = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(Object.fromEntries(entries));
+}
+
+export const PRODUCT_QUERY_KEYS = {
+  all: ['products'] as const,
+  lists: () => [...PRODUCT_QUERY_KEYS.all, 'list'] as const,
+  list: (params: ProductFilterRequest) => [...PRODUCT_QUERY_KEYS.all, 'list', params] as const,
+  selector: (search?: string) => [...PRODUCT_QUERY_KEYS.all, 'selector', search] as const,
+  reviewQueues: () => [...PRODUCT_QUERY_KEYS.all, 'review-queue'] as const,
+  reviewQueue: (page: number, limit: number) =>
+    [...PRODUCT_QUERY_KEYS.all, 'review-queue', { page, limit }] as const,
+  details: () => [...PRODUCT_QUERY_KEYS.all, 'detail'] as const,
+  detail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', id] as const,
+  categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
+  categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
+  categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
+  // Serialises `params` itself rather than taking a pre-serialised string: the
+  // render schema hands `params` over as an inline object, so React Query would
+  // see a new identity every render and re-key the cache each time. Serialising
+  // inside the factory keeps the key value-stable while leaving the caller
+  // passing the value the rule can verify is represented.
+  variantAxes: (path: string, params?: Record<string, unknown>) =>
+    [...PRODUCT_QUERY_KEYS.all, 'variant-axes', path, serializeQueryParams(params)] as const,
+  schemaAll: ['product-schema'] as const,
+  schemaRender: (catId: string, productId?: string) =>
+    [...PRODUCT_QUERY_KEYS.schemaAll, 'render', catId, productId ?? 'new'] as const,
+};
+
 export async function createProduct(
   data: CreateProductRequest,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(BASE_PATH, data);
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.post<ProductApiResponse<AdminProductDetail>>(BASE_PATH, data);
   return response.data;
 }
 
@@ -46,16 +101,18 @@ export async function getProducts(
   return response.data;
 }
 
-export async function getProductById(id: string): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.get<ProductApiResponse<ProductRecord>>(`${BASE_PATH}/${id}`);
+export async function getProductById(id: string): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.get<ProductApiResponse<AdminProductDetail>>(
+    `${BASE_PATH}/${id}`,
+  );
   return response.data;
 }
 
 export async function updateProduct(
   id: string,
   data: UpdateProductRequest,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.put<ProductApiResponse<ProductRecord>>(
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.put<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}`,
     data,
   );
@@ -75,8 +132,8 @@ export async function getProductReviewQueue(
 
 export async function submitProductForReview(
   id: string,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.post<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}/submit-for-review`,
   );
   return response.data;
@@ -86,26 +143,26 @@ export async function submitProductForReview(
 export async function reviewProduct(
   id: string,
   payload: ReviewProductRequestPayload,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.post<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}/review`,
     payload,
   );
   return response.data;
 }
 
-export async function archiveProduct(id: string): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/archive`,
+export async function archiveProduct(id: string): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.delete<ProductApiResponse<AdminProductDetail>>(
+    `${BASE_PATH}/${id}`,
   );
   return response.data;
 }
 
 export async function toggleProductActivation(
   id: string,
-): Promise<ProductApiResponse<ProductRecord>> {
-  const response = await axiosClient.post<ProductApiResponse<ProductRecord>>(
-    `${BASE_PATH}/${id}/toggle-activation`,
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.patch<ProductApiResponse<AdminProductDetail>>(
+    `${BASE_PATH}/${id}`,
   );
   return response.data;
 }
@@ -159,6 +216,19 @@ export async function searchDropdownCategories(query: string): Promise<DropdownC
   const response = await axiosClient.get(`${CATEGORY_BASE_PATH}/search`, {
     params: { q: query, limit: 20 },
   });
+  // Safety shim (kept intentionally): the canonical envelope is
+  // `{ data: [...] }`, but a bare-array payload is still tolerated so a
+  // backend drift never hard-crashes the dropdown. Backend drift must still
+  // get noticed — hence the dev-only warn below (no behavior change in prod).
+  // Implemented via `logger` (not raw `console.warn`) to satisfy the
+  // `no-console` lint rule.
+  const envelopeItems: unknown = response.data?.data;
+  if (import.meta.env.DEV && envelopeItems === undefined && response.data !== undefined) {
+    logger.warn(
+      { payload: response.data },
+      'searchDropdownCategories: envelope fallback fired (expected response.data.data)',
+    );
+  }
   const items: CategorySearchResultItem[] = response.data?.data ?? response.data ?? [];
   return items.map((item) => ({
     id: item.id,
@@ -228,6 +298,102 @@ export async function fetchProductRenderSchema(
   return response.data;
 }
 
+/**
+ * Variant-axis read backing the SKU matrix. The render schema supplies the
+ * path at runtime (`dataSource.fetch`, e.g. `/option-sets/:id`), so this stays
+ * a pass-through — but the request still lives here so no hook calls
+ * `axiosClient` directly (AGENTS.md §9). Returns `response.data` like every
+ * other client function (§8); envelope shape is validated by the caller
+ * (`parseVariantAxesResponse`) and never guessed here.
+ */
+export async function getVariantAxes(
+  path: string,
+  params?: Record<string, unknown>,
+): Promise<unknown> {
+  const response = await axiosClient.get(path, { params });
+  return response.data;
+}
+
+/** Structured per-field error detail (server sends `errors[]` additively). */
+export interface SubmitErrorDetail {
+  field?: string;
+  message: string;
+}
+
+/** Normalized submit-failure contract shared by every caller. */
+export interface ParsedSubmitError {
+  /** Field-mapped errors for `form.setError`; empty for global failures. */
+  fieldErrors: Array<{ path: string; message: string }>;
+  /** Best single human-readable message for toasts ('' when unknown). */
+  message: string;
+}
+
+const asErrorRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined;
+
+const normalizeSubmitText = (value: unknown): string =>
+  value === null || value === undefined ? '' : String(value).trim();
+
+/** One raw entry (object OR bare string) normalized into `{ path, message }`. */
+const readSubmitEntry = (entry: unknown): { path: string; message: string } | undefined => {
+  const record = asErrorRecord(entry);
+  const message = normalizeSubmitText(record ? (record.message ?? record.msg) : entry);
+  if (!message) return undefined;
+  return { path: normalizeSubmitText(record?.field ?? record?.path), message };
+};
+
+const pickSubmitEntries = (...candidates: unknown[]): unknown[] => {
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length > 0) return candidate;
+  }
+  return [];
+};
+
+const toFieldErrors = (entries: unknown[]): ParsedSubmitError['fieldErrors'] => {
+  const fieldErrors: ParsedSubmitError['fieldErrors'] = [];
+  for (const entry of entries) {
+    const parsed = readSubmitEntry(entry);
+    if (parsed?.path) fieldErrors.push({ path: parsed.path, message: parsed.message });
+  }
+  return fieldErrors;
+};
+
+const firstUnmappedMessage = (entries: unknown[]): string => {
+  for (const entry of entries) {
+    const parsed = readSubmitEntry(entry);
+    if (parsed && !parsed.path) return parsed.message;
+  }
+  return '';
+};
+
+/**
+ * Submit-error parsing contract (owned by api.ts; the submit hook in
+ * `use-add-product-submit.ts` belongs to another stream and must NOT be
+ * touched — it should adopt this helper when it can).
+ *
+ * Prefers the structured `errors[]` shape the server now returns additively
+ * (`errors?: Array<{ field?: string; message: string }>`). The axios response
+ * interceptor flattens the envelope, so the array surfaces at the ROOT of the
+ * rejection; `response.data.errors` is still read for raw AxiosError rejections
+ * that bypass the interceptor. Legacy shapes (`data` arrays, plain
+ * `message`-only envelopes, bare strings) remain supported as fallbacks.
+ */
+export function parseSubmitError(error: unknown): ParsedSubmitError {
+  const root = asErrorRecord(error);
+  const responsePayload = asErrorRecord(asErrorRecord(root?.response)?.data);
+  const structured = pickSubmitEntries(root?.errors, responsePayload?.errors);
+  const entries =
+    structured.length > 0 ? structured : pickSubmitEntries(root?.data, responsePayload?.data);
+  return {
+    fieldErrors: toFieldErrors(entries),
+    message:
+      firstUnmappedMessage(entries) ||
+      normalizeSubmitText(responsePayload?.message) ||
+      normalizeSubmitText(root?.message) ||
+      (typeof error === 'string' ? error.trim() : ''),
+  };
+}
+
 export const ProductApiService = {
   createProduct,
   getProducts,
@@ -245,4 +411,5 @@ export const ProductApiService = {
   getDropdownRecentCategories,
   recordDropdownRecentCategory,
   fetchProductRenderSchema,
+  getVariantAxes,
 };

@@ -7,8 +7,8 @@ import type { OrderItemView } from '../utils/order-status';
 import { styles } from './order-card-item-view.styles';
 
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
+import { resolveImageUrl } from '@/utils/image';
 
 interface OrderCardItemViewProps {
   items: OrderItemView[];

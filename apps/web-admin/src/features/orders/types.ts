@@ -6,7 +6,8 @@ import type {
   UpdateOrderItemStatusInput,
 } from '@celebs/shared-types';
 
-export type LogisticsProvider = 'NEPAL_CAN_MOVE' | 'PATHAO' | 'MANUAL';
+// Mirrors the API's accepted dispatch providers.
+export type LogisticsProvider = 'PATHAO' | 'MANUAL';
 
 export interface OrderAddressDto {
   fullName: string;

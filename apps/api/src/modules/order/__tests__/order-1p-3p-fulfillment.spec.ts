@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { createDeliverableZone } from '../../../../tests/support/delivery-zone';
+
 import {
   ensurePlatformVendor,
   PLATFORM_VENDOR_ID,
@@ -87,8 +89,12 @@ describe('Order 1P & 3P Multi-Vendor Fulfillment & Isolation Tests', () => {
     });
     customerId = customer.id;
 
+    // Checkout and dispatch refuse an address with no delivery zone, so a
+    // fixture address has to carry a real one.
+    const { zoneId: addressZone } = await createDeliverableZone();
     const address = await prisma.address.create({
       data: {
+        logisticsZoneId: addressZone,
         userId: customerId,
         fullName: 'Shopper FullName',
         phone: '9841000000',

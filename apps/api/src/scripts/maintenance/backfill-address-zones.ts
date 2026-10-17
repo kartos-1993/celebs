@@ -1,0 +1,155 @@
+import prisma from '../../config/db.prisma';
+
+/**
+ * One-off data fix: give addresses that were saved before delivery zones
+ * existed the zone for their district.
+ *
+ * The address form now chooses a district and area from the list of places we
+ * deliver to, which resolves to a courier zone, and checkout refuses an address
+ * without one. Every address stored before that change is therefore blocked.
+ *
+ * The bootstrap seed created exactly one zone per district, so an address whose
+ * saved province and district name a seeded district exactly can be pointed at
+ * that zone. Matching is exact on purpose. The free-text district box was
+ * removed precisely because "kathmandu" and "Kathmandu " cannot be resolved to a
+ * courier area, and guessing here means either losing a real customer or
+ * dispatching to the wrong zone. Anything that does not match cleanly is left
+ * empty on purpose, and checkout asks that customer to re-pick.
+ *
+ * Safe to run more than once: it only looks at addresses with no zone, and each
+ * write is guarded on the zone still being empty.
+ */
+
+export interface BackfillAddressZonesOptions {
+  /** When false, report what would change without writing. Default: report only. */
+  apply?: boolean;
+}
+
+export interface BackfillAddressZonesResult {
+  /** Addresses that matched a district exactly, with the zone to use. */
+  matched: Array<{ addressId: string; zoneId: string }>;
+  /** Addresses that could not be matched and will be asked to re-pick. */
+  unmatched: string[];
+  /** How many zones were actually written. Only meaningful with apply. */
+  applied: number;
+  /** True when there is nothing to match against, so the run was a no-op. */
+  skipped: boolean;
+}
+
+/** Whitespace at the edges is a typing artifact, not a different place. */
+const normalise = (value: string) => value.trim();
+
+export async function backfillAddressZones(
+  options: BackfillAddressZonesOptions = {},
+): Promise<BackfillAddressZonesResult> {
+  const { apply = false } = options;
+
+  const cities = await prisma.logisticsCity.findMany({
+    where: { source: 'BOOTSTRAP' },
+    select: {
+      name: true,
+      province: true,
+      zones: { select: { id: true } },
+    },
+  });
+
+  // Nothing seeded yet means this is the wrong time to run, not a finding that
+  // every customer needs to re-pick an address.
+  if (cities.length === 0) {
+    return { matched: [], unmatched: [], applied: 0, skipped: true };
+  }
+
+  // Keyed on province and district together: district names repeat across
+  // provinces, and a match on district alone would pick the wrong zone.
+  const zoneByDistrict = new Map<string, string>();
+  for (const city of cities) {
+    const zoneId = city.zones[0]?.id;
+    if (!zoneId) continue;
+    zoneByDistrict.set(`${normalise(city.province)}\u0000${normalise(city.name)}`, zoneId);
+  }
+
+  const addresses = await prisma.address.findMany({
+    where: { logisticsZoneId: null },
+    select: { id: true, province: true, district: true },
+  });
+
+  const matched: BackfillAddressZonesResult['matched'] = [];
+  const unmatched: string[] = [];
+
+  for (const address of addresses) {
+    const zoneId = zoneByDistrict.get(
+      `${normalise(address.province)}\u0000${normalise(address.district)}`,
+    );
+
+    if (zoneId) {
+      matched.push({ addressId: address.id, zoneId });
+    } else {
+      unmatched.push(address.id);
+    }
+  }
+
+  let applied = 0;
+
+  if (apply) {
+    // Grouped by zone and written in a handful of statements rather than one per
+    // address: a store with thousands of addresses would otherwise hold a
+    // pooled connection for thousands of sequential round trips.
+    const addressIdsByZone = new Map<string, string[]>();
+    for (const { addressId, zoneId } of matched) {
+      const ids = addressIdsByZone.get(zoneId);
+      if (ids) {
+        ids.push(addressId);
+      } else {
+        addressIdsByZone.set(zoneId, [addressId]);
+      }
+    }
+
+    for (const [zoneId, addressIds] of addressIdsByZone) {
+      // Still filtered on the zone being empty, so an address the customer
+      // re-picked while this ran is never overwritten with the district default.
+      const result = await prisma.address.updateMany({
+        where: { id: { in: addressIds }, logisticsZoneId: null },
+        data: { logisticsZoneId: zoneId },
+      });
+      applied += result.count;
+    }
+  }
+
+  return { matched, unmatched, applied, skipped: false };
+}
+
+async function main(): Promise<void> {
+  const apply = process.argv.includes('--apply');
+
+  console.log('\n==================================================');
+  console.log('📍 BACKFILLING DELIVERY ZONES ON SAVED ADDRESSES');
+  console.log('==================================================\n');
+
+  const result = await backfillAddressZones({ apply });
+
+  if (result.skipped) {
+    console.log(
+      '⚠️  No bootstrap delivery areas found, so nothing was changed.\n' +
+        '    Run the logistics location seed first, then this again.',
+    );
+    return;
+  }
+
+  console.log(`✅ Exact district matches: ${result.matched.length}`);
+  console.log(`⚠️  Left for the customer to re-pick: ${result.unmatched.length}`);
+
+  if (apply) {
+    console.log(`💾 Zones written: ${result.applied}`);
+  } else {
+    console.log('\nℹ️  Nothing was written. Re-run with --apply to save these.');
+  }
+}
+
+if (require.main === module) {
+  main()
+    .catch((err) => {
+      console.error('Backfill failed:', err);
+      process.exit(1);
+    })
+    .finally(() => prisma.$disconnect());
+}

@@ -82,10 +82,6 @@ export class CoreOrderRepository {
               },
             },
           },
-          address: true,
-          payments: {
-            orderBy: { createdAt: 'desc' },
-          },
         },
       }),
       prisma.order.count({ where: { userId } }),
@@ -172,6 +168,11 @@ export class CoreOrderRepository {
           where: { orderId: order.id },
           data: { itemStatus: 'CANCELLED' },
         });
+
+        // Deliberately no REFUNDED payment row here, and no re-read of the order.
+        // This used to write one, which made the order claim its money had come
+        // back while nothing had been sent anywhere. The refund is recorded after
+        // this transaction commits, by the gateway call, as a Refund of its own.
 
         await tx.orderTrackingEvent.create({
           data: {

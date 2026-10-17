@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
@@ -40,6 +41,18 @@ export function useMediaQuota() {
     queryFn: getMediaQuota,
     select: (res) => res.data,
   });
+}
+
+/**
+ * Refreshes the library grid + quota after out-of-band uploads (picker
+ * dialog, field inputs). Without this the fresh photo stays invisible.
+ */
+export function useInvalidateMediaLibrary() {
+  const queryClient = useQueryClient();
+  return useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.assetsRoot });
+    queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEYS.quota() });
+  }, [queryClient]);
 }
 
 export function useMediaFolders() {

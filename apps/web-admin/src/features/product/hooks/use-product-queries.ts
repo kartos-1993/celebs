@@ -8,30 +8,30 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import {
   archiveProduct,
+  createProduct,
   getProductReviewQueue,
   getProducts,
+  PRODUCT_QUERY_KEYS,
   reviewProduct,
   submitProductForReview,
   toggleProductActivation,
+  updateProduct,
 } from '../api';
-import type { ProductFilterRequest, ReviewProductRequestPayload } from '../types';
+import type {
+  CreateProductRequest,
+  ProductFilterRequest,
+  ReviewProductRequestPayload,
+  UpdateProductRequest,
+} from '../types';
 
 import { useToast } from '@/hooks/use-toast';
 
-export const PRODUCT_QUERY_KEYS = {
-  all: ['products'] as const,
-  lists: () => [...PRODUCT_QUERY_KEYS.all, 'list'] as const,
-  list: (params: ProductFilterRequest) => [...PRODUCT_QUERY_KEYS.all, 'list', params] as const,
-  selector: (search?: string) => [...PRODUCT_QUERY_KEYS.all, 'selector', search] as const,
-  reviewQueues: () => [...PRODUCT_QUERY_KEYS.all, 'review-queue'] as const,
-  reviewQueue: (page: number, limit: number) =>
-    [...PRODUCT_QUERY_KEYS.all, 'review-queue', { page, limit }] as const,
-  details: () => [...PRODUCT_QUERY_KEYS.all, 'detail'] as const,
-  detail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', id] as const,
-  categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
-  categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
-  categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
-};
+/**
+ * Legacy alias — the canonical factory lives in `../api` (FSD §9). Kept so
+ * call sites in this feature that import the name from here keep compiling;
+ * this is the SAME object identity, so cache keys cannot drift.
+ */
+export { PRODUCT_QUERY_KEYS };
 
 export function useProductSelectorQuery(search?: string, enabled = true) {
   return useQuery({
@@ -117,5 +117,21 @@ export function useProductMutations() {
     },
   });
 
-  return { toggleActivation, archive, submitForReview, review };
+  const create = useMutation({
+    mutationFn: (payload: CreateProductRequest) => createProduct(payload),
+    onSuccess: () => {
+      invalidateLists();
+    },
+  });
+
+  const update = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateProductRequest }) =>
+      updateProduct(id, payload),
+    onSuccess: (_response, variables) => {
+      invalidateLists();
+      queryClient.invalidateQueries({ queryKey: PRODUCT_QUERY_KEYS.detail(variables.id) });
+    },
+  });
+
+  return { toggleActivation, archive, submitForReview, review, create, update };
 }

@@ -1,13 +1,12 @@
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
 import { useCategories } from '../hooks/use-categories';
 import type { Category } from '../types';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
 import { useNavigationGuard } from '@/utils/navigation-guard';
 
@@ -60,12 +59,12 @@ export function CategoryCircles({ initialCategories }: { initialCategories?: Cat
             accessibilityLabel={`Shop ${cat.displayName || cat.name}`}
           >
             <View style={styles.circle}>
-              <Image
-                source={{ uri: resolveImageUrl(cat.imageUrl!) }}
-                style={styles.image}
+              <MobileApparelImage
+                src={cat.imageUrl}
+                preset="avatar"
+                containerStyle={styles.image}
                 contentFit="cover"
-                transition={100}
-                cachePolicy="memory-disk"
+                alt={cat.displayName || cat.name}
               />
             </View>
             <ThemedText style={styles.label} numberOfLines={2}>

@@ -86,6 +86,10 @@ export const authCache = {
   async invalidateSessions(sessionIds: string[]): Promise<void> {
     await safeDel(sessionIds.map((id) => `${SESSION_PREFIX}${id}`));
   },
+
+  async invalidateUser(userId: string): Promise<void> {
+    await safeDel([`${USER_PREFIX}${userId}`]);
+  },
 };
 
 /**

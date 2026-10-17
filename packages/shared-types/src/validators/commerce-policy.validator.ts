@@ -1,0 +1,195 @@
+import { z } from 'zod';
+
+/**
+ * Commerce policy — the business numbers that decide what a customer pays.
+ *
+ * These used to be hardcoded in five places across two apps, which is how the
+ * cart came to promise free delivery at one threshold while the server charged
+ * a delivery fee at a different one. They live in `PlatformSetting` instead, so
+ * changing one is an admin edit rather than a code change plus a mobile release.
+ *
+ * The server is the only authority: it reads this policy and computes the real
+ * total. Apps read the same policy to *display* an immediate figure, and the
+ * server's number replaces it.
+ */
+
+/** Keys under which the policy is stored. Namespaced so future commerce rules
+ *  (vouchers, zone delivery rates) can join them without a new mechanism. */
+export const COMMERCE_SETTING_KEYS = {
+  codMaxLimit: 'commerce.cod_max_limit',
+  flatShippingFee: 'commerce.flat_shipping_fee',
+} as const;
+
+/**
+ * Values used when a setting is absent. Each matches the number the server
+ * hardcoded before the policy existed, so introducing the policy changes no
+ * charge. A threshold of 0 would mean "always free", which is never intended,
+ * so `0` is rejected as invalid rather than honoured — that is the one case
+ * where the correct answer is genuinely "not a real value".
+ *
+ * The free-delivery threshold is deliberately absent. It is not a single number:
+ * it is higher outside the Kathmandu Valley, so it belongs to the delivery zone
+ * rather than to the platform-wide policy.
+ */
+export const COMMERCE_POLICY_DEFAULTS = {
+  codMaxLimit: 5000,
+  flatShippingFee: 150,
+} as const;
+
+export const commercePolicySchema = z.object({
+  /** Highest order total that may be paid cash on delivery. */
+  codMaxLimit: z.number().int().positive(),
+  /** Flat delivery fee charged below the zone's free-delivery threshold. */
+  flatShippingFee: z.number().int().nonnegative(),
+});
+
+export type CommercePolicy = z.infer<typeof commercePolicySchema>;
+
+/** One stored setting as the admin/public endpoints return it. */
+export const commercePolicySettingSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
+export type CommercePolicySetting = z.infer<typeof commercePolicySettingSchema>;
+
+export interface CommercePolicyParseResult {
+  policy: CommercePolicy;
+  /**
+   * Keys whose stored value was missing or unusable, so the caller can log or
+   * surface it. Never silently swallowed: a bad value must not quietly become a
+   * different charge.
+   */
+  invalidKeys: string[];
+}
+
+/**
+ * Reads a numeric policy value.
+ *
+ * Accepts the raw stored string or the already-parsed number the settings
+ * service produces for a `NUMBER` setting, so either payload shape works.
+ *
+ * Rejects an empty string, non-numeric text, and any value below `min` instead
+ * of coercing them. Note this deliberately does NOT use the common
+ * `parseInt(raw) || DEFAULT` shape: `parseInt('0')` is `0`, and `0 || DEFAULT`
+ * yields the default, so a deliberately-zeroed setting would silently read back
+ * as the default. That is the exact class of bug this parser replaces, and the
+ * flat delivery fee is the one value where `0` is a real answer.
+ *
+ * `min` is 0 only for the fee (free delivery) and 1 for the limits, where `0`
+ * would mean "no order is ever allowed" and is a misconfiguration rather than
+ * an intent.
+ */
+function readPolicyNumber(
+  raw: unknown,
+  key: string,
+  fallback: number,
+  min: number,
+  invalidKeys: string[],
+): number {
+  if (raw === undefined || raw === null) return fallback;
+
+  // Accepts the raw stored string, or the already-parsed number the settings
+  // service produces for a `NUMBER` setting, so either payload shape works.
+  // Anything else is reported rather than coerced: this is the boundary with an
+  // untyped settings payload, and a number that arrives as something unexpected
+  // must not become a charge.
+  //
+  // A blank string is rejected explicitly because `Number('')` is `0`, not NaN —
+  // an empty setting must not silently mean a zero fee.
+  let parsed = Number.NaN;
+  if (typeof raw === 'number') {
+    parsed = raw;
+  } else if (typeof raw === 'string' && raw.trim() !== '') {
+    parsed = Number(raw.trim());
+  }
+
+  if (!Number.isInteger(parsed) || parsed < min) {
+    invalidKeys.push(key);
+    return fallback;
+  }
+
+  return parsed;
+}
+
+/** `Array.isArray` does not narrow `readonly T[]` out of a union, so the
+ *  array branch needs an explicit guard. */
+function isSettingArray(value: unknown): value is readonly CommercePolicySetting[] {
+  return Array.isArray(value);
+}
+
+/**
+ * Builds a `CommercePolicy` from raw `key`/`value` settings.
+ *
+ * Accepts either shape the settings endpoints produce: an array of
+ * `{ key, value }` records, or a plain key/value map. Unknown keys are ignored,
+ * so the commerce policy can share the settings table with unrelated groups.
+ */
+export function parseCommercePolicy(
+  settings: readonly CommercePolicySetting[] | Readonly<Record<string, unknown>> | undefined | null,
+): CommercePolicyParseResult {
+  const values: Readonly<Record<string, unknown>> = isSettingArray(settings)
+    ? Object.fromEntries(
+        settings
+          .filter((setting): setting is CommercePolicySetting => Boolean(setting?.key))
+          .map((setting) => [setting.key, setting.value]),
+      )
+    : (settings ?? {});
+
+  const invalidKeys: string[] = [];
+
+  const policy: CommercePolicy = {
+    codMaxLimit: readPolicyNumber(
+      values[COMMERCE_SETTING_KEYS.codMaxLimit],
+      COMMERCE_SETTING_KEYS.codMaxLimit,
+      COMMERCE_POLICY_DEFAULTS.codMaxLimit,
+      1,
+      invalidKeys,
+    ),
+    flatShippingFee: readPolicyNumber(
+      values[COMMERCE_SETTING_KEYS.flatShippingFee],
+      COMMERCE_SETTING_KEYS.flatShippingFee,
+      COMMERCE_POLICY_DEFAULTS.flatShippingFee,
+      0,
+      invalidKeys,
+    ),
+  };
+
+  return { policy, invalidKeys };
+}
+
+/**
+ * The one delivery-fee rule, shared by the server that charges and the app that
+ * displays, so the two can never disagree on the boundary.
+ *
+ * `freeShippingThreshold` is passed in rather than read from the policy because
+ * it is per delivery zone: higher outside the Kathmandu Valley, where the
+ * courier's rate is. A single platform-wide number would either over-promise in
+ * the valley or overcharge everywhere else.
+ *
+ * `atOrAbove` matters: the app previously used `>=` and the server `>`, so a
+ * cart sitting exactly on the threshold was told delivery was free and then
+ * charged for it.
+ */
+const PAISA_PER_RUPEE = 100;
+
+/** Convert rupee amounts to whole integer paisas to avoid binary floating point drift. */
+const toPaisa = (value: number): number =>
+  Number.isFinite(value) ? Math.round(value * PAISA_PER_RUPEE) : 0;
+
+export function resolveShippingFee(
+  subtotal: number,
+  policy: Pick<CommercePolicy, 'flatShippingFee'>,
+  freeShippingThreshold: number,
+): number {
+  if (!Number.isFinite(subtotal) || toPaisa(subtotal) <= 0) return 0;
+  // Compared in paisa: `0.1 + 0.2 >= 0.3` is true in decimal and false in binary
+  // floating point, and that difference is a shopper charged delivery they had
+  // already earned free.
+  return toPaisa(subtotal) >= toPaisa(freeShippingThreshold) ? 0 : policy.flatShippingFee;
+}
+
+/** Cash on delivery is refused above the limit; the limit itself is allowed. */
+export function isCodAllowed(total: number, policy: CommercePolicy): boolean {
+  return toPaisa(total) <= toPaisa(policy.codMaxLimit);
+}

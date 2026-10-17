@@ -252,9 +252,17 @@ export async function seedProductsStaggJeans(): Promise<void> {
         },
         variants: {
           colorMeta: {
-            '#5a7d9a': { name: 'Vintage Blue', swatch: SW_A, images: [IMG_A, IMG_B] },
-            '#0f0f0f': { name: 'Midnight Black', swatch: SW_B, images: [IMG_B, IMG_C] },
-            '#a8b5c2': { name: 'Stone Wash', swatch: SW_C, images: [IMG_C, IMG_D] },
+            'Vintage Blue': { name: 'Vintage Blue', swatch: SW_A, images: [IMG_A, IMG_B] },
+            'Midnight Black': { name: 'Midnight Black', swatch: SW_B, images: [IMG_B, IMG_C] },
+            'Stone Wash': { name: 'Stone Wash', swatch: SW_C, images: [IMG_C, IMG_D] },
+          },
+        },
+        uploadedAssets: {
+          mainImages: [IMG_A, IMG_B, IMG_C],
+          colorMeta: {
+            'Vintage Blue': { swatch: SW_A, images: [IMG_A, IMG_B], hot: false },
+            'Midnight Black': { swatch: SW_B, images: [IMG_B, IMG_C], hot: false },
+            'Stone Wash': { swatch: SW_C, images: [IMG_C, IMG_D], hot: false },
           },
         },
       },
@@ -343,8 +351,15 @@ export async function seedProductsStaggJeans(): Promise<void> {
         },
         variants: {
           colorMeta: {
-            '#d6e2eb': { name: 'Light Wash', swatch: SW_B, images: [IMG_B, IMG_D] },
-            '#2c3e50': { name: 'Dark Indigo', swatch: SW_D, images: [IMG_D, IMG_E] },
+            'Light Wash': { name: 'Light Wash', swatch: SW_B, images: [IMG_B, IMG_D] },
+            'Dark Indigo': { name: 'Dark Indigo', swatch: SW_D, images: [IMG_D, IMG_E] },
+          },
+        },
+        uploadedAssets: {
+          mainImages: [IMG_B, IMG_D, IMG_E],
+          colorMeta: {
+            'Light Wash': { swatch: SW_B, images: [IMG_B, IMG_D], hot: false },
+            'Dark Indigo': { swatch: SW_D, images: [IMG_D, IMG_E], hot: false },
           },
         },
       },
@@ -433,8 +448,15 @@ export async function seedProductsStaggJeans(): Promise<void> {
         },
         variants: {
           colorMeta: {
-            '#8a9199': { name: 'Ash Grey', swatch: SW_D, images: [IMG_E, IMG_A] },
-            '#1a1a1a': { name: 'Washed Black', swatch: SW_B, images: [IMG_B, IMG_C] },
+            'Ash Grey': { name: 'Ash Grey', swatch: SW_D, images: [IMG_E, IMG_A] },
+            'Washed Black': { name: 'Washed Black', swatch: SW_B, images: [IMG_B, IMG_C] },
+          },
+        },
+        uploadedAssets: {
+          mainImages: [IMG_C, IMG_D, IMG_E],
+          colorMeta: {
+            'Ash Grey': { swatch: SW_D, images: [IMG_E, IMG_A], hot: false },
+            'Washed Black': { swatch: SW_B, images: [IMG_B, IMG_C], hot: false },
           },
         },
       },
@@ -466,11 +488,13 @@ export async function seedProductsStaggJeans(): Promise<void> {
       })),
     );
 
+    const celebsDenimBrand = await prisma.brand.findFirst({ where: { slug: 'celebs-denim' } });
+
     const baseData: Record<string, unknown> = {
       name: def.name,
       slug: def.slug,
       brand: def.brand,
-      brandId: null,
+      brandId: celebsDenimBrand?.id || null,
       description: def.description,
       price: def.price,
       discountedPrice: def.discountedPrice,

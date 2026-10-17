@@ -1,6 +1,15 @@
-import { CodStatus, DispatchMode, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
-import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  CodStatus,
+  DispatchMode,
+  LedgerDirection,
+  LedgerEntryType,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from '@prisma/client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { DeliveryCoverageRepository } from '../delivery-coverage.repository';
 import {
   LogisticsRepository,
   logisticsRepository,
@@ -17,6 +26,14 @@ type UpdatedDispatchedOrderPayload = Prisma.PromiseReturnType<
   LogisticsRepository['updateDispatchedOrder']
 >;
 
+const createMockItem = (vendorId: string, id = 'item-123') => ({
+  id,
+  vendorId,
+  quantity: 1,
+  unitPrice: new Prisma.Decimal('1000.00'),
+  unitWeightKg: new Prisma.Decimal('0.500'),
+});
+
 const createMockDispatchedOrder = (
   overrides: Partial<DispatchedOrderPayload> = {},
 ): DispatchedOrderPayload => ({
@@ -28,6 +45,14 @@ const createMockDispatchedOrder = (
   totalAmount: new Prisma.Decimal(1000),
   discountAmount: new Prisma.Decimal(0),
   shippingFee: new Prisma.Decimal(0),
+  codHandlingFee: new Prisma.Decimal(0),
+  amountToCollect: null,
+  courierFee: new Prisma.Decimal(0),
+  absorbedShippingCost: new Prisma.Decimal(0),
+  deliveryPricingSource: 'FALLBACK' as const,
+  matchedShippingRateId: null,
+  logisticsZoneId: null,
+  totalBillableWeightKg: null,
   status: OrderStatus.CONFIRMED,
   paymentMethod: PaymentMethod.COD,
   paymentStatus: PaymentStatus.PENDING,
@@ -44,7 +69,8 @@ const createMockDispatchedOrder = (
   estimatedDelivery: null,
   createdAt: new Date(),
   updatedAt: new Date(),
-  items: [{ vendorId: 'vendor-123' }],
+  items: [createMockItem('vendor-123')],
+  consignments: [],
   address: {
     id: 'addr-123',
     userId: 'user-123',
@@ -56,6 +82,8 @@ const createMockDispatchedOrder = (
     cityArea: 'Thamel',
     streetAddress: 'Chaksibari Marg',
     landmark: null,
+    logisticsZoneId: null,
+    deliveryZoneId: null,
     label: 'Home',
     isDefault: false,
     createdAt: new Date(),
@@ -158,6 +186,110 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       expect(updated.codSettledAt).not.toBeNull();
     });
 
+    // Cash arriving is the one event a settlement is reconciled against, so it has
+    // to be in the ledger. Keyed on the voucher, so the same deposit cannot be
+    // counted twice.
+    it('records the cash that arrived when an order is settled', async () => {
+      const order = await prisma.order.findUniqueOrThrow({ where: { id: testOrderId } });
+      await prisma.order.update({
+        where: { id: testOrderId },
+        data: { codAmount: 1200 },
+      });
+
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-1');
+
+      const entry = await prisma.ledgerEntry.findFirstOrThrow({
+        where: { sourceType: 'COD_SETTLEMENT', sourceId: 'STMT-CASH-1' },
+      });
+      expect(entry.type).toBe(LedgerEntryType.COD_RECEIVED);
+      expect(entry.direction).toBe(LedgerDirection.IN);
+      expect(entry.amount.toNumber()).toBe(1200);
+      expect(entry.orderId).toBe(testOrderId);
+      void order;
+    });
+
+    it('counts a settled deposit once however many times it is submitted', async () => {
+      await prisma.order.update({
+        where: { id: testOrderId },
+        data: { codAmount: 1200 },
+      });
+
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-2');
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-2');
+
+      expect(
+        await prisma.ledgerEntry.count({
+          where: { sourceType: 'COD_SETTLEMENT', sourceId: 'STMT-CASH-2' },
+        }),
+      ).toBe(1);
+    });
+
+    it('records nothing when the order had no cash to collect', async () => {
+      await logisticsRepository.markCodSettled(testOrderId, 'STMT-CASH-EMPTY');
+
+      expect(
+        await prisma.ledgerEntry.count({
+          where: { sourceType: 'COD_SETTLEMENT', sourceId: 'STMT-CASH-EMPTY' },
+        }),
+      ).toBe(0);
+    });
+
+    // An accountant reconciling a courier deposit can easily submit the same
+    // voucher twice, or discover they mistyped it and submit a second. The first
+    // case must be a harmless retry; the second must not erase the voucher that
+    // the money was actually matched against.
+    describe('settling a COD order that is already settled', () => {
+      const settlementEvents = () =>
+        prisma.orderTrackingEvent.count({
+          where: { orderId: testOrderId, title: 'COD Payment Settled' },
+        });
+      it('leaves the settlement untouched when the same voucher is submitted twice', async () => {
+        const first = await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+
+        const second = await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+
+        expect(second.codStatus).toBe('COD_SETTLED');
+        expect(second.codReference).toBe('STMT-REF-12345');
+        expect(second.codSettledAt?.getTime()).toBe(first.codSettledAt?.getTime());
+      });
+
+      it('records only one settlement when the same voucher is submitted twice', async () => {
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-REF-12345');
+
+        expect(await settlementEvents()).toBe(1);
+      });
+
+      it('refuses a different voucher and keeps the one the cash was matched against', async () => {
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-ORIGINAL');
+
+        await expect(
+          logisticsRepository.markCodSettled(testOrderId, 'STMT-CORRECTED'),
+        ).rejects.toThrow(/already settled/i);
+
+        const order = await prisma.order.findUniqueOrThrow({
+          where: { id: testOrderId },
+          select: { codReference: true },
+        });
+        expect(order.codReference).toBe('STMT-ORIGINAL');
+        expect(await settlementEvents()).toBe(1);
+      });
+
+      it('refuses a second settlement before writing any partial state', async () => {
+        await logisticsRepository.markCodSettled(testOrderId, 'STMT-ORIGINAL');
+        const settledAtBefore = (
+          await prisma.order.findUniqueOrThrow({ where: { id: testOrderId } })
+        ).codSettledAt;
+
+        await expect(
+          logisticsRepository.markCodSettled(testOrderId, 'STMT-CORRECTED'),
+        ).rejects.toThrow();
+
+        const after = await prisma.order.findUniqueOrThrow({ where: { id: testOrderId } });
+        expect(after.codSettledAt?.getTime()).toBe(settledAtBefore?.getTime());
+      });
+    });
+
     it('should add tracking event', async () => {
       const event = await logisticsRepository.addTrackingEvent(
         testOrderId,
@@ -180,7 +312,7 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
             id: testOrderId,
             totalAmount: new Prisma.Decimal(1000),
             paymentMethod: PaymentMethod.COD,
-            items: [{ vendorId: vendorStoreId }],
+            items: [createMockItem(vendorStoreId)],
             address: {
               id: 'addr-test',
               userId: 'user-test',
@@ -192,6 +324,8 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
               cityArea: 'Thamel',
               streetAddress: 'Chaksibari Marg',
               landmark: null,
+              logisticsZoneId: null,
+              deliveryZoneId: null,
               label: 'Home',
               isDefault: false,
               createdAt: new Date(),
@@ -222,12 +356,100 @@ describe('LogisticsRepository & LogisticsService Clean Architecture Suite', () =
       expect(result.trackingNumber).toBe('FE-998877');
     });
 
+    // The validator refuses a courier with no adapter, but the service must not
+    // depend on that alone: dispatch guards a caller that skipped validation
+    // and attempted to dispatch with an unadapted 3PL provider.
+    it('should refuse a courier that has no adapter instead of dispatching without a tracking number', async () => {
+      const updateDispatchedOrder = vi.fn();
+      const mockRepo: Partial<LogisticsRepository> = {
+        findOrderForDispatch: async () =>
+          createMockDispatchedOrder({ id: testOrderId, items: [createMockItem(vendorStoreId)] }),
+        updateDispatchedOrder: updateDispatchedOrder as never,
+      };
+      // Coverage is deliberately COVERED: the address is deliverable, so the only
+      // thing that can refuse this dispatch is the missing adapter.
+      const coveredRepo: Partial<DeliveryCoverageRepository> = {
+        coverageForAddress: async () => ({ status: 'COVERED', cityName: 'Kathmandu' }) as never,
+      };
+
+      const service = new LogisticsService({ logisticsRepo: mockRepo, coverageRepo: coveredRepo });
+
+      // Cast: exercises the service's own fail-closed guard against a caller that skipped validation.
+      await expect(
+        service.dispatchOrder({
+          orderId: testOrderId,
+          provider: 'UNKNOWN_COURIER' as never,
+        }),
+      ).rejects.toThrow(/UNKNOWN_COURIER/);
+
+      expect(updateDispatchedOrder).not.toHaveBeenCalled();
+    });
+
+    // A seller handing the parcel over does not make an undeliverable address
+    // deliverable. MANUAL used to skip the coverage gate entirely, so an order
+    // placed before the district picker existed could be declared handed over to
+    // a zone the courier had already retired.
+    it('should refuse a manual handover to an area the courier does not deliver to', async () => {
+      const updateDispatchedOrder = vi.fn();
+      const mockRepo: Partial<LogisticsRepository> = {
+        findOrderForDispatch: async () =>
+          createMockDispatchedOrder({ id: testOrderId, items: [createMockItem(vendorStoreId)] }),
+        updateDispatchedOrder: updateDispatchedOrder as never,
+      };
+      const uncoveredRepo: Partial<DeliveryCoverageRepository> = {
+        coverageForAddress: async () => ({ status: 'UNCOVERED', cityName: 'Ilam' }) as never,
+      };
+
+      const service = new LogisticsService({
+        logisticsRepo: mockRepo,
+        coverageRepo: uncoveredRepo,
+      });
+
+      await expect(
+        service.dispatchOrder({
+          orderId: testOrderId,
+          provider: 'MANUAL',
+          manualTrackingNumber: 'FE-998877',
+        }),
+      ).rejects.toThrow(/Ilam/);
+
+      expect(updateDispatchedOrder).not.toHaveBeenCalled();
+    });
+
+    // UNVERIFIED only means our own mirror is empty or stale, which must not
+    // strand a seller who is holding the parcel.
+    it('should allow a manual handover when coverage is merely unverified', async () => {
+      const mockRepo: Partial<LogisticsRepository> = {
+        findOrderForDispatch: async () =>
+          createMockDispatchedOrder({ id: testOrderId, items: [createMockItem(vendorStoreId)] }),
+        updateDispatchedOrder: async (data: UpdateDispatchedOrderData) =>
+          createMockUpdatedOrder(data, { id: data.orderId }),
+      };
+      const unverifiedRepo: Partial<DeliveryCoverageRepository> = {
+        coverageForAddress: async () => ({ status: 'UNVERIFIED' }) as never,
+      };
+
+      const service = new LogisticsService({
+        logisticsRepo: mockRepo,
+        coverageRepo: unverifiedRepo,
+      });
+
+      const result = await service.dispatchOrder({
+        orderId: testOrderId,
+        provider: 'MANUAL',
+        manualTrackingNumber: 'FE-998877',
+      });
+
+      expect(result.status).toBe(OrderStatus.HANDED_OVER);
+      expect(result.trackingNumber).toBe('FE-998877');
+    });
+
     it('should reject dispatch if seller does not own any item in order', async () => {
       const mockRepo: Partial<LogisticsRepository> = {
         findOrderForDispatch: async () =>
           createMockDispatchedOrder({
             id: testOrderId,
-            items: [{ vendorId: 'different-store-id' }],
+            items: [createMockItem('different-store-id')],
           }),
       };
 

@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { DeliveryPricingSource, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
@@ -12,6 +12,25 @@ export interface CheckoutItemDetail {
   unitPrice: Prisma.Decimal;
   subtotal: Prisma.Decimal;
   vendorId: string;
+  /**
+   * Billable weight of the line, snapshotted at purchase. A product's weight can
+   * change after the order is placed, and a courier quote has to stay
+   * reproducible for the shipment, so the weight that was paid for is the
+   * weight that ships.
+   */
+  unitWeightKg: Prisma.Decimal;
+  billableWeightKg: Prisma.Decimal;
+  /**
+   * Commission, resolved and frozen at checkout.
+   *
+   * `sellerNetAmount` is always `subtotal` minus `commissionAmount`; it is never
+   * recomputed from the rate. Keeping all three on the line means a seller's
+   * earnings can be re-derived from the order years later and land on exactly the
+   * same number.
+   */
+  commissionRatePercent: Prisma.Decimal;
+  commissionAmount: Prisma.Decimal;
+  sellerNetAmount: Prisma.Decimal;
 }
 
 export class InsufficientStockError extends Error {
@@ -54,7 +73,25 @@ export class CheckoutRepository {
   async findCheckoutProducts(productIds: string[]) {
     return prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, price: true, discountedPrice: true, name: true, vendorId: true },
+      // Weight and dimensions are selected because the delivery quote is
+      // derived from them, and the figure is snapshotted onto the order item so
+      // it survives a later change to the product.
+      select: {
+        id: true,
+        price: true,
+        discountedPrice: true,
+        name: true,
+        vendorId: true,
+        packageWeightKg: true,
+        packageLengthCm: true,
+        packageWidthCm: true,
+        packageHeightCm: true,
+        // Category and subcategory are selected because the commission rule is
+        // resolved from them - a category-scoped rate narrows the percentage, and
+        // a subcategory beats its parent. Snapshotted onto the order item.
+        categoryId: true,
+        subcategoryId: true,
+      },
     });
   }
 
@@ -72,6 +109,23 @@ export class CheckoutRepository {
     subtotal: Prisma.Decimal;
     shippingFee: Prisma.Decimal;
     totalAmount: Prisma.Decimal;
+    /** What the courier charges us, recorded apart from the customer's fee. */
+    courierFee: Prisma.Decimal;
+    /** Delivery given away to reach the free-delivery threshold. */
+    absorbedShippingCost: Prisma.Decimal;
+    deliveryPricingSource: DeliveryPricingSource;
+    /**
+     * The band that priced the delivery, when we priced it from a hand-entered
+     * band. Null for a courier quote: the courier answered, and there is no band on
+     * our side to point at. Kept so a disputed old charge can still be explained.
+     */
+    matchedShippingRateId: string | null;
+    /** The courier percentage charge for collecting cash. Zero unless COD. */
+    codHandlingFee: Prisma.Decimal;
+    /** What the courier is told to collect. Null on prepaid orders. */
+    amountToCollect: Prisma.Decimal | null;
+    logisticsZoneId: string | null;
+    totalBillableWeightKg: Prisma.Decimal;
     orderStatus: OrderStatus;
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod;
@@ -123,6 +177,14 @@ export class CheckoutRepository {
             shippingFee: data.shippingFee,
             discountAmount: new Prisma.Decimal(0),
             totalAmount: data.totalAmount,
+            courierFee: data.courierFee,
+            absorbedShippingCost: data.absorbedShippingCost,
+            deliveryPricingSource: data.deliveryPricingSource,
+            matchedShippingRateId: data.matchedShippingRateId,
+            codHandlingFee: data.codHandlingFee,
+            amountToCollect: data.amountToCollect,
+            logisticsZoneId: data.logisticsZoneId,
+            totalBillableWeightKg: data.totalBillableWeightKg,
             status: data.orderStatus,
             paymentMethod: data.paymentMethod,
             paymentStatus: data.paymentStatus,
@@ -136,6 +198,11 @@ export class CheckoutRepository {
                 unitPrice: det.unitPrice,
                 quantity: det.quantity,
                 subtotal: det.subtotal,
+                commissionRatePercent: det.commissionRatePercent,
+                commissionAmount: det.commissionAmount,
+                sellerNetAmount: det.sellerNetAmount,
+                unitWeightKg: det.unitWeightKg,
+                billableWeightKg: det.billableWeightKg,
                 itemStatus: 'PENDING',
               })),
             },
@@ -165,13 +232,26 @@ export class CheckoutRepository {
           where: { cartId: data.cartId },
         });
 
-        // 4. Create placeholder idempotency key inside the transaction to guard against concurrent replay
+        // 4. Record idempotency key inside the transaction with created order reference
         await tx.idempotencyKey.create({
           data: {
             key: data.idempotencyKey,
             userId: data.userId,
             statusCode: 201,
-            responseBody: JSON.stringify({ status: 'PROCESSING', retry_with_new_key: true }),
+            responseBody: JSON.stringify({
+              order: {
+                id: createdOrder.id,
+                orderNumber: createdOrder.orderNumber,
+                status: createdOrder.status,
+                totalAmount: createdOrder.totalAmount,
+                paymentMethod: createdOrder.paymentMethod,
+                paymentStatus: createdOrder.paymentStatus,
+              },
+              payment: {
+                paymentMethod: data.paymentMethod,
+                paymentStatus: data.paymentStatus,
+              },
+            }),
           },
         });
 
@@ -207,13 +287,14 @@ export class CheckoutRepository {
   }) {
     const sortedItems = [...data.items].sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
 
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const itemsToRelease = sortedItems.filter((item) => item.itemStatus !== 'CANCELLED');
-      if (itemsToRelease.length > 0) {
-        const values = itemsToRelease.map(
-          (item) => Prisma.sql`(${item.inventoryId}::text, ${item.quantity}::int)`,
-        );
-        await tx.$executeRaw`
+    return prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const itemsToRelease = sortedItems.filter((item) => item.itemStatus !== 'CANCELLED');
+        if (itemsToRelease.length > 0) {
+          const values = itemsToRelease.map(
+            (item) => Prisma.sql`(${item.inventoryId}::text, ${item.quantity}::int)`,
+          );
+          await tx.$executeRaw`
           WITH to_release(id, qty) AS (
             VALUES ${Prisma.join(values)}
           )
@@ -222,31 +303,34 @@ export class CheckoutRepository {
           FROM to_release r
           WHERE p.id = r.id;
         `;
-      }
+        }
 
-      await tx.orderItem.updateMany({
-        where: { orderId: data.id },
-        data: { itemStatus: 'CANCELLED' },
-      });
+        await tx.orderItem.updateMany({
+          where: { orderId: data.id },
+          data: { itemStatus: 'CANCELLED' },
+        });
 
-      await tx.orderTrackingEvent.create({
-        data: {
-          orderId: data.id,
-          status: 'CANCELLED',
-          title: 'Order Expired',
-          description: 'Payment was not completed within the time limit. The order was cancelled.',
-          source: 'SYSTEM',
-        },
-      });
+        await tx.orderTrackingEvent.create({
+          data: {
+            orderId: data.id,
+            status: 'CANCELLED',
+            title: 'Order Expired',
+            description:
+              'Payment was not completed within the time limit. The order was cancelled.',
+            source: 'SYSTEM',
+          },
+        });
 
-      return tx.order.update({
-        where: { id: data.id },
-        data: {
-          status: 'CANCELLED',
-          paymentStatus: 'FAILED',
-        },
-      });
-    });
+        return tx.order.update({
+          where: { id: data.id },
+          data: {
+            status: 'CANCELLED',
+            paymentStatus: 'FAILED',
+          },
+        });
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 }
 

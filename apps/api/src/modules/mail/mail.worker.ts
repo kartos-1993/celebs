@@ -2,7 +2,7 @@ import { Job, Worker } from 'bullmq';
 
 import { logger } from '@celebs/shared-utils';
 
-import { redisConnection } from '@/common/services/queue.service';
+import { redisConnection, WORKER_DRAIN_DELAY_SECONDS } from '@/common/services/queue.service';
 import type { MailParams } from '@/mailers/mailer';
 import { sendEmail } from '@/mailers/mailer';
 
@@ -45,5 +45,6 @@ export const mailWorker = new Worker(
   {
     connection: redisConnection,
     concurrency: 3,
+    drainDelay: WORKER_DRAIN_DELAY_SECONDS,
   },
 );

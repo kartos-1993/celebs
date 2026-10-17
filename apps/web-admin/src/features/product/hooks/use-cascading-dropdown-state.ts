@@ -19,7 +19,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 
 interface CascadingDropdownStateProps {
   selectedCategory?: DropdownCategory | null;
-  isDirty?: boolean;
+  isDirty?: boolean | (() => boolean);
   onSelect?: (category: DropdownCategory) => void;
 }
 
@@ -117,7 +117,9 @@ export function useCascadingDropdownState({
 
   const requestCategorySelection = useCallback(
     (category: DropdownCategory) => {
-      if (selectedCategory && selectedCategory.id !== category.id && isDirty) {
+      const hasDirtyData = typeof isDirty === 'function' ? isDirty() : Boolean(isDirty);
+      if (selectedCategory && selectedCategory.id !== category.id && hasDirtyData) {
+        setIsOpen(false);
         setPendingCategory(category);
         setIsConfirmModalOpen(true);
       } else {
@@ -195,17 +197,9 @@ export function useCascadingDropdownState({
         level: Math.max(0, segments.length - 1),
         path: recent.path,
       };
-      if (isOpen) {
-        applyPathSelection(item);
-      } else {
-        // Closed-popover chips commit immediately — only for ids the tree knows.
-        const known = item.id ? findCategoryById(item.id) : undefined;
-        if (known || isLoadingTree) {
-          requestCategorySelection(item);
-        }
-      }
+      requestCategorySelection(item);
     },
-    [isOpen, applyPathSelection, requestCategorySelection, findCategoryById, isLoadingTree],
+    [requestCategorySelection],
   );
 
   const handleConfirm = useCallback(() => {
@@ -227,7 +221,10 @@ export function useCascadingDropdownState({
   const handleConfirmModalCancel = useCallback(() => {
     setPendingCategory(null);
     setIsConfirmModalOpen(false);
-  }, []);
+    if (selectedCategory) {
+      applyPathSelection(selectedCategory);
+    }
+  }, [selectedCategory, applyPathSelection]);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {

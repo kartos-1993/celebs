@@ -13,6 +13,7 @@ import { CartService } from './cart.service';
 
 import { sendSuccess } from '@/common/utils/response.util';
 import { appConfig } from '@/config/app.config';
+import { UNRESOLVED_FREE_DELIVERY_THRESHOLD } from '@/modules/logistics/delivery-pricing.repository';
 
 interface AuthUser {
   id: string;
@@ -85,6 +86,11 @@ export class CartController {
           sessionId: null,
           items: [],
           subtotal: 0,
+          shippingFee: 0,
+          freeDeliveryThreshold: UNRESOLVED_FREE_DELIVERY_THRESHOLD,
+          // Nothing to deliver, so nothing is quoted against a destination.
+          deliveryIsEstimate: true,
+          total: 0,
           itemCount: 0,
           hasStockIssues: false,
           createdAt: new Date().toISOString(),

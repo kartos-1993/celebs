@@ -1,6 +1,11 @@
 import { SettingType } from '@prisma/client';
 
-import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
+import {
+  COMMERCE_POLICY_DEFAULTS,
+  type CommercePolicy,
+  parseCommercePolicy,
+} from '@celebs/shared-types';
+import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import {
   PlatformSettingsRepository,
@@ -13,6 +18,32 @@ export class PlatformSettingsService {
   constructor(
     private readonly repository: PlatformSettingsRepository = platformSettingsRepository,
   ) {}
+
+  /**
+   * The business numbers that decide what a customer pays: COD ceiling, delivery
+   * fee and the free-delivery threshold.
+   *
+   * Read through `getPublicSettings`, which is already L1 + L2 cached, so this
+   * costs no extra query on the checkout path. A stored value that cannot be
+   * used falls back to the shipped default, but is logged rather than swallowed
+   * — a bad setting must never quietly become a different charge without a
+   * trace.
+   */
+  async getCommercePolicy(): Promise<CommercePolicy> {
+    const settings = await this.repository.getPublicSettings();
+    const { policy, invalidKeys } = parseCommercePolicy(
+      settings.map((setting) => ({ key: setting.key, value: setting.value })),
+    );
+
+    if (invalidKeys.length > 0) {
+      logger.warn(
+        { invalidKeys, usedDefaults: COMMERCE_POLICY_DEFAULTS },
+        'Commerce policy settings unusable; falling back to defaults for those keys',
+      );
+    }
+
+    return policy;
+  }
 
   async getPublicSettings() {
     const settings = await this.repository.getPublicSettings();

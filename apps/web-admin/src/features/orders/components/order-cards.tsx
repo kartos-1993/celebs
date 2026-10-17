@@ -9,6 +9,7 @@ import type { Mode, OrderItemUI } from '../types';
 
 import { OrderStatusBadge } from './order-status-badge';
 
+import { CardListSkeleton } from '@/components/table-skeleton';
 import { cn } from '@/lib/utils';
 
 interface OrderCardsProps {
@@ -21,11 +22,7 @@ interface OrderCardsProps {
 
 export function OrderCards({ rows, isLoading, isFetching, mode, onUpdate }: OrderCardsProps) {
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center rounded-xl border bg-card text-sm text-muted-foreground md:hidden">
-        Loading orders…
-      </div>
-    );
+    return <CardListSkeleton rows={4} />;
   }
 
   if (rows.length === 0) {

@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PanelsTopLeft } from 'lucide-react';
 
-import PageLoader from '@/components/page-loader';
+import { PageSkeleton } from '@/components/page-skeleton';
 import { useAuthContext } from '@/context/auth-provider';
 
 /**
@@ -25,7 +25,7 @@ export const VendorPortalLayout = () => {
       {/* Main content area */}
       <main className="flex-1 flex items-start justify-center py-10 px-4">
         <div className="w-full max-w-4xl">
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageSkeleton />}>
             <Outlet />
           </Suspense>
         </div>

@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { Star } from 'lucide-react-native';
 
 import type { ToReviewItem } from '../types';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 import { formatDate } from '@/features/orders/utils/order-status';
@@ -27,11 +27,11 @@ export function ToReviewCard({ item, onPressReview }: ToReviewCardProps) {
       </View>
 
       <View style={styles.bodyRow}>
-        <Image
-          source={{ uri: item.productImage }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
+        <MobileApparelImage
+          src={item.productImage}
+          preset="thumbnail"
+          containerStyle={styles.image}
+          alt={item.productName}
         />
         <View style={styles.infoCol}>
           <ThemedText numberOfLines={2} style={styles.title}>

@@ -1,41 +1,17 @@
+import type { z } from 'zod';
+
 import type {
+  baseProductSchema,
   CreateProductType,
   ProductFilterType,
-  ProductType,
   UpdateProductType,
 } from '@celebs/shared-types';
 
 export type CreateProductRequest = CreateProductType;
 export type UpdateProductRequest = UpdateProductType;
 export type ProductFilterRequest = ProductFilterType;
-export type ProductRecord = Partial<ProductType> & {
-  id?: string;
-  slug?: string;
-  name?: string;
-  price?: number;
-  category?: {
-    id?: string;
-    name?: string;
-    slug?: string;
-    path?: string | string[];
-    level?: number;
-  };
-  subcategory?: {
-    id?: string;
-    name?: string;
-    slug?: string;
-    path?: string | string[];
-    level?: number;
-  };
-};
-
-export type ProductStatus =
-  | 'draft'
-  | 'pending_review'
-  | 'published'
-  | 'rejected'
-  | 'deactivated'
-  | 'archived';
+export type ProductFormValues = Partial<z.infer<typeof baseProductSchema>> &
+  Record<string, unknown>;
 
 export interface ReviewProductRequestPayload {
   action: 'approve' | 'reject';
@@ -88,12 +64,24 @@ export type PageSectionKey =
   | 'shipping'
   | 'terms';
 
+/**
+ * Section completeness is three-state, not yes/no:
+ *   'untouched'  nothing in the section has been answered yet
+ *   'incomplete' the seller started it and something is still missing
+ *   'complete'   nothing is missing
+ *
+ * A boolean cannot express this: an empty section collects zero errors (the
+ * server defaults the package weight), so "no errors" used to read as "done"
+ * and an empty form rendered as finished.
+ */
+export type SidebarSectionStatus = 'untouched' | 'incomplete' | 'complete';
+
 export interface ProductSidebarSection {
   anchorId: string;
   errors: string[];
   key: string;
   label: string;
-  status: boolean;
+  status: SidebarSectionStatus;
 }
 
 export interface ProductDraft {
@@ -102,8 +90,6 @@ export interface ProductDraft {
   storeId?: string;
   values?: Record<string, unknown>;
 }
-
-export type ProductListItem = ProductRecord;
 
 // ── Cascading category dropdown UI state ────────────────────────────────
 export interface DropdownColumn {
@@ -124,5 +110,3 @@ export interface PreviewFilters {
   category: string;
   stock: PreviewStockFilter;
 }
-
-export type { DropdownCategory, RecentCategory } from '@celebs/shared-types';

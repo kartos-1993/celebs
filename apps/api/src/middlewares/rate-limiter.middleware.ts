@@ -51,6 +51,16 @@ export const searchRateLimiter = rateLimit({
 export const uploadRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
+  keyGenerator: (req: Request) => {
+    if (req.user?.id) {
+      return `user:${req.user.id}`;
+    }
+    const authHeader = req.headers?.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return `token:${authHeader.slice(7, 39)}`;
+    }
+    return req.ip || 'anonymous';
+  },
   standardHeaders: true,
   legacyHeaders: false,
   skip: shouldSkipRateLimit,

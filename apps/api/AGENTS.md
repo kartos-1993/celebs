@@ -68,3 +68,23 @@
   - Status / Toggle: `PATCH /:id` (never `POST /:id/toggle-activation`).
   - Scoped Queries: `GET /orders?scope=mine` (never `GET /my-orders`).
 - Pre-Production YAGNI: In active development, do not maintain legacy backward-compatibility shims or redundant aliases. Build cleanly to the standard.
+
+## 11. Database & Prisma Tooling Protocols
+
+Whenever writing, modifying, or reviewing backend database code, repositories, or schema migrations:
+
+- **Mandatory Skills Activation**:
+  - Activate [`prisma-client-api`](file:///c:/celebs/celebs/.agents/skills/prisma-client-api/SKILL.md) for query patterns, targeted field projection (`select` over deep `include`), batching, and strict null guarantees.
+  - Activate [`prisma-cli`](file:///c:/celebs/celebs/.agents/skills/prisma-cli/SKILL.md) for schema validation, migration generation, and port 5432 DDL protocol.
+  - Activate [`api-transaction-safe`](file:///c:/celebs/celebs/.agents/skills/api-transaction-safe/SKILL.md) for interactive `$transaction` boundaries, port 6543 pool safety, and deadlock prevention.
+- **Active MCP Verification**:
+  - Leverage the `postgres` MCP (`explain_query`, `analyze_workload_indexes`, `execute_sql`) to verify query execution plans and index utilization.
+  - Leverage the `prisma` MCP (`search_prisma_documentation`, `introspect_database_schema`) to verify official API semantics and live database schema alignment.
+
+## 12. Code Readability & Anti-Patch Architecture
+
+- **Thin Controllers (<40 lines)**: Express controllers must only validate DTOs, call the domain service, and return canonical envelopes (`sendSuccess`, `sendCreated`, `sendPaginated`). Zero business logic, zero data formatting calculations, zero database access.
+- **Single Level of Abstraction in Services**: Service methods must orchestrate business domain workflows at a single level of abstraction. Complex mathematical formulas, slug generation, or string manipulation must be extracted into dedicated pure helper functions with isolated unit tests.
+- **Typed Domain Errors over Generic Try/Catch**: Throw explicit domain errors (`NotFoundError`, `BadRequestError`, `ConflictError`, `ForbiddenError`) instead of catching errors to return generic `{ error: string }` or masking errors with client-side fallbacks.
+- **Self-Documenting Conditionals**: Replace compound conditional expressions with well-named boolean constants (`const hasSufficientStock = ...`).
+- **Refactor-First on High-Complexity Services**: When modifying existing service methods with Cyclomatic Complexity > 8 or deeply nested `if/else` ladders, refactor with early guard returns before adding new business rules.

@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AlertCircle, Banknote, ChevronRight, CreditCard } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { BrandColor } from '@/constants/brand-colors';
 import { FontSize, FontWeight, Palette, Radius, Spacing } from '@/constants/theme';
 
 export type CheckoutPaymentMethod = 'COD' | 'ESEWA' | 'KHALTI';
@@ -22,11 +23,11 @@ const METHOD_DETAILS: Record<
   ESEWA: {
     name: 'eSewa Mobile Wallet',
     desc: 'Pay instantly with eSewa',
-    color: '#60bb46',
+    color: BrandColor.esewa,
     badge: 'e-',
   },
-  KHALTI: { name: 'Khalti by IME', desc: 'Mobile Wallet', color: '#5c2d91', badge: 'K' },
-  COD: { name: 'Cash on Delivery', desc: 'Pay upon delivery', color: '#0ea5e9', badge: 'COD' },
+  KHALTI: { name: 'Khalti by IME', desc: 'Mobile Wallet', color: BrandColor.khalti, badge: 'K' },
+  COD: { name: 'Cash on Delivery', desc: 'Pay upon delivery', color: BrandColor.cod, badge: 'COD' },
 };
 
 export function PaymentMethodSelector({

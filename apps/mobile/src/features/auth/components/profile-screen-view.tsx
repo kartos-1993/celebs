@@ -2,7 +2,15 @@ import React from 'react';
 import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Heart, LogOut, MapPin, ShieldCheck, ShoppingBag } from 'lucide-react-native';
+import {
+  Bell,
+  ChevronRight,
+  Heart,
+  LogOut,
+  MapPin,
+  ShieldCheck,
+  ShoppingBag,
+} from 'lucide-react-native';
 
 import { styles } from '../styles/profile.styles';
 
@@ -66,6 +74,20 @@ export function ProfileScreenView({ user, onLogout }: ProfileScreenViewProps) {
           <View style={styles.menuItemLeft}>
             <ShoppingBag size={19} color={Palette.gray900} strokeWidth={1.8} />
             <ThemedText style={styles.menuItemTitle}>My Orders</ThemedText>
+          </View>
+          <ChevronRight size={17} color={Palette.gray400} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.menuItem, styles.menuItemDivided]}
+          onPress={() => router.push('/notifications')}
+          activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+        >
+          <View style={styles.menuItemLeft}>
+            <Bell size={19} color={Palette.gray900} strokeWidth={1.8} />
+            <ThemedText style={styles.menuItemTitle}>Notifications</ThemedText>
           </View>
           <ChevronRight size={17} color={Palette.gray400} />
         </TouchableOpacity>

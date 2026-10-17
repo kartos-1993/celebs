@@ -4,19 +4,15 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  PixelRatio,
   ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { X } from 'lucide-react-native';
-
-import { getOptimizedImageUrl } from '@celebs/shared-utils';
 
 import { styles } from './product-gallery.styles';
 
-import { resolveImageUrl } from '@/constants/config';
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { Palette } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -55,8 +51,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
     [activeIndex],
   );
 
-  const dpr = Math.min(3, Math.max(1, Math.ceil(PixelRatio.get()))) as 1 | 2 | 3;
-  const galleryImages = images.length > 0 ? images : ['https://via.placeholder.com/600x800'];
+  // A product with no picture renders ONE neutral slide. It used to be filled
+  // with a third-party placeholder-image hotlink — a live request to someone
+  // else's host in a production app. There is no local placeholder asset in the
+  // repo, so the empty state is a neutral tile, never an invented remote URL.
+  const galleryImages = images.length > 0 ? images : [''];
 
   return (
     <View style={styles.container}>
@@ -70,10 +69,6 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
       >
         {galleryImages.map((img, idx) => {
           const inWindow = Math.abs(idx - activeIndex) <= GALLERY_WINDOW;
-          const resolvedUrl = inWindow ? resolveImageUrl(img) : '';
-          const heroUrl = inWindow
-            ? getOptimizedImageUrl(resolvedUrl, { preset: 'pdp-hero', dpr })
-            : '';
 
           return (
             <TouchableOpacity
@@ -87,25 +82,22 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
               accessibilityRole="button"
               accessibilityLabel={`View full screen image ${idx + 1} of ${galleryImages.length} for ${productName}`}
             >
-              {inWindow ? (
-                <Image
-                  source={{ uri: heroUrl || resolvedUrl }}
-                  style={styles.mainImage}
-                  contentFit="cover"
-                  transition={150}
-                  cachePolicy="memory-disk"
-                />
-              ) : (
-                <View style={[styles.mainImage, { backgroundColor: Palette.gray100 }]} />
-              )}
+              <MobileApparelImage
+                src={inWindow ? img : ''}
+                preset="pdp-hero"
+                containerStyle={styles.mainImage}
+                contentFit="cover"
+                alt={productName}
+                priority={idx === 0 ? 'high' : 'normal'}
+              />
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {galleryImages.length > 1 && (
+      {images.length > 1 && (
         <View style={styles.indicatorContainer}>
-          {galleryImages.map((_, idx) => (
+          {images.map((_, idx) => (
             <View
               key={idx}
               style={[styles.indicatorDot, activeIndex === idx && styles.indicatorDotActive]}
@@ -138,23 +130,16 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productN
           >
             {galleryImages.map((img, idx) => {
               const inZoomWindow = Math.abs(idx - zoomIndex) <= GALLERY_WINDOW;
-              const resolvedUrl = inZoomWindow ? resolveImageUrl(img) : '';
-              const zoomUrl = inZoomWindow
-                ? getOptimizedImageUrl(resolvedUrl, { preset: 'zoom' })
-                : '';
 
               return (
                 <View key={`zoom-${idx}`} style={styles.zoomSlide}>
-                  {inZoomWindow ? (
-                    <Image
-                      source={{ uri: zoomUrl || resolvedUrl }}
-                      style={styles.zoomImage}
-                      contentFit="contain"
-                      cachePolicy="memory-disk"
-                    />
-                  ) : (
-                    <View style={[styles.zoomImage, { backgroundColor: Palette.gray100 }]} />
-                  )}
+                  <MobileApparelImage
+                    src={inZoomWindow ? img : ''}
+                    preset="zoom"
+                    containerStyle={styles.zoomImage}
+                    contentFit="contain"
+                    alt={productName}
+                  />
                 </View>
               );
             })}

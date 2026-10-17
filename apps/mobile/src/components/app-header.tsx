@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Palette } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
+import { useUnreadCountQuery } from '@/features/notifications/hooks/use-notifications';
 
 interface AppHeaderProps {
   showSubHeader?: boolean;
@@ -33,6 +34,8 @@ export function AppHeader({
   const router = useRouter();
   const { itemCount } = useCart();
   const { openCartSheet } = useCartSheet();
+  const { data: unreadData } = useUnreadCountQuery();
+  const unreadCount = unreadData?.count ?? unreadData?.unreadCount ?? 0;
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
 
   const handleSubTabPress = (tab: string) => {
@@ -70,8 +73,26 @@ export function AppHeader({
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Menu size={22} color={textColor} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => router.push('/notifications')}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+          >
             <Mail size={22} color={textColor} strokeWidth={2} />
+            {unreadCount > 0 && (
+              <View style={styles.cartBadge}>
+                <ThemedText
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1}
+                  numberOfLines={1}
+                  style={styles.cartBadgeText}
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </ThemedText>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 

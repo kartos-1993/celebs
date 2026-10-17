@@ -1,11 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { ActivityIndicator, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, type WebViewNavigation } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
 import { X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { BrandColor } from '@/constants/brand-colors';
 import { FontSize, FontWeight, Palette, Spacing } from '@/constants/theme';
+
+/** 44pt-min touch target for the icon-only close button. */
+const HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 } as const;
 
 interface InAppPaymentSheetProps {
   visible: boolean;
@@ -15,10 +19,7 @@ interface InAppPaymentSheetProps {
   onSuccess: (status: string) => void;
 }
 
-const parseStatus = (url: string): string => {
-  const match = url.match(/[?&]status=([^&]+)/);
-  return match?.[1] ? decodeURIComponent(match[1]) : 'COMPLETED';
-};
+import { usePaymentInterceptor } from '../hooks/use-payment-interceptor';
 
 export function InAppPaymentSheet({
   visible,
@@ -28,37 +29,9 @@ export function InAppPaymentSheet({
   onSuccess,
 }: InAppPaymentSheetProps) {
   const insets = useSafeAreaInsets();
-  const hasHandledResult = useRef(false);
-
-  useEffect(() => {
-    if (visible) {
-      hasHandledResult.current = false;
-    }
-  }, [visible]);
+  const { handleNavChange, handleShouldStartLoad } = usePaymentInterceptor(visible, onSuccess);
 
   if (!visible || !paymentUrl) return null;
-
-  const interceptPaymentResult = (url: string): boolean => {
-    if (url.startsWith('celebs://') || url.includes('payment-result')) {
-      if (!hasHandledResult.current) {
-        hasHandledResult.current = true;
-        onSuccess(parseStatus(url));
-      }
-      return true;
-    }
-    return false;
-  };
-
-  const handleNavChange = (navState: WebViewNavigation) => {
-    interceptPaymentResult(navState.url);
-  };
-
-  const handleShouldStartLoad = (request: WebViewNavigation) => {
-    if (interceptPaymentResult(request.url)) {
-      return false;
-    }
-    return true;
-  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -69,7 +42,8 @@ export function InAppPaymentSheet({
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={onClose}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              hitSlop={HIT_SLOP}
+              accessibilityRole="button"
               accessibilityLabel="Close payment sheet"
             >
               <X size={20} color={Palette.gray900} />
@@ -100,7 +74,9 @@ export function InAppPaymentSheet({
               startInLoadingState
               renderLoading={() => (
                 <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="large" color="#f95738" />
+                  {/* #f95738 is the gateway brand colour; no Palette token
+                      carries that exact value, so it stays a literal. */}
+                  <ActivityIndicator size="large" color={BrandColor.pathao} />
                   <ThemedText style={styles.loadingText}>Loading payment gateway...</ThemedText>
                 </View>
               )}

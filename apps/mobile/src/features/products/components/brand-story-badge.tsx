@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { Modal, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { Award, CheckCircle2, ChevronRight, ShieldCheck, Sparkles, X } from 'lucide-react-native';
 
@@ -6,6 +6,9 @@ import { styles } from './brand-story-badge.styles';
 
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
+
+/** 44pt-min touch target for the icon-only close button. */
+const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
 
 interface BrandStoryBadgeProps {
   brandName?: string | null;
@@ -27,6 +30,9 @@ export const BrandStoryBadge = memo(function BrandStoryBadge({
 }: BrandStoryBadgeProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const openModal = useCallback(() => setIsModalOpen(true), []);
+  const closeModal = useCallback(() => setIsModalOpen(false), []);
+
   const name = brandRef?.name || brandName || 'Celebs Exclusive';
   const tier = brandRef?.tier || 'FIRST_PARTY';
   const is1P = tier === 'FIRST_PARTY';
@@ -36,8 +42,10 @@ export const BrandStoryBadge = memo(function BrandStoryBadge({
     <>
       <TouchableOpacity
         style={styles.container}
-        onPress={() => setIsModalOpen(true)}
+        onPress={openModal}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`${name} brand story`}
       >
         <View style={styles.badgeLeft}>
           {is1P ? (
@@ -67,13 +75,8 @@ export const BrandStoryBadge = memo(function BrandStoryBadge({
       </TouchableOpacity>
 
       {/* Brand Authenticity & Story Modal */}
-      <Modal
-        visible={isModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsModalOpen(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setIsModalOpen(false)}>
+      <Modal visible={isModalOpen} transparent animationType="fade" onRequestClose={closeModal}>
+        <TouchableWithoutFeedback onPress={closeModal}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
@@ -83,8 +86,11 @@ export const BrandStoryBadge = memo(function BrandStoryBadge({
                     <ThemedText style={styles.modalTitle}>{name}</ThemedText>
                   </View>
                   <TouchableOpacity
-                    onPress={() => setIsModalOpen(false)}
+                    onPress={closeModal}
                     style={styles.closeButton}
+                    hitSlop={HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close brand story"
                   >
                     <X size={18} color={Palette.gray500} />
                   </TouchableOpacity>

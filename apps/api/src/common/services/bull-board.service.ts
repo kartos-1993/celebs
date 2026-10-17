@@ -3,7 +3,13 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { Router } from 'express';
 
-import { assetQueue, mailQueue, orderMaintenanceQueue, sessionQueue } from './queue.service';
+import {
+  assetQueue,
+  mailQueue,
+  notificationQueue,
+  orderMaintenanceQueue,
+  sessionQueue,
+} from './queue.service';
 
 import { config } from '@/config/app.config';
 
@@ -23,6 +29,7 @@ export function getBullBoardRouter(): Router {
       new BullMQAdapter(sessionQueue),
       new BullMQAdapter(mailQueue),
       new BullMQAdapter(assetQueue),
+      new BullMQAdapter(notificationQueue),
     ],
     serverAdapter,
     options: {

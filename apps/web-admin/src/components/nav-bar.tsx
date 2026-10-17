@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useMatches } from 'react-router-dom';
-import { Bell } from 'lucide-react';
 
 import {
   Breadcrumb,
@@ -9,11 +8,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@celebs/shared-ui/components/breadcrumbs';
-import { Button } from '@celebs/shared-ui/components/button';
 
 import { SheetMenu } from './sheet-menu';
 
 import { useSidebarContext } from '@/context/sidebar-provider';
+import { NotificationPopover } from '@/features/notifications/components/notification-popover';
 import { cn } from '@/lib/utils';
 
 interface RouteHandle {
@@ -63,10 +62,7 @@ export function Navbar() {
 
         {/* Notification bell */}
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
-          </Button>
+          <NotificationPopover />
         </div>
       </div>
     </header>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { ShoppingBag, Sparkles, Tag, X } from 'lucide-react-native';
 
@@ -11,34 +11,41 @@ import { ComboBundleData } from './combo-bundle-showcase';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
+/** Per-item selection carried into add-to-cart: both axes, never just the size. */
+export type ComboSelectedVariants = Record<string, { size?: string; color?: string }>;
+
 interface ComboBundleModalProps {
   visible: boolean;
   combo: ComboBundleData | null;
   onClose: () => void;
-  onAddToCart?: (combo: ComboBundleData, selectedVariants: Record<string, string>) => void;
+  onAddToCart?: (combo: ComboBundleData, selectedVariants: ComboSelectedVariants) => void;
 }
 
 export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: ComboBundleModalProps) {
   const displayItems = useMemo(() => getComboDisplayItems(combo), [combo]);
+  const currentComboId = combo?.id ?? null;
 
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [selectedColors, setSelectedColors] = useState<Record<string, string>>({});
-  const [prevComboId, setPrevComboId] = useState<string | null>(null);
 
-  const currentComboId = combo?.id ?? null;
-  if (currentComboId !== prevComboId) {
-    setPrevComboId(currentComboId);
-    const initialSizes: Record<string, string> = {};
-    const initialColors: Record<string, string> = {};
-    displayItems.forEach((item) => {
-      initialSizes[item.id] = item.sizes[0] || 'M';
-      initialColors[item.id] = item.colors[0] || 'Default';
-    });
-    setSelectedSizes(initialSizes);
-    setSelectedColors(initialColors);
-  }
+  // Re-seed the draft from an effect, never from setState inside the render
+  // body, and only from values the product actually declares.
+  useEffect(() => {
+    if (!currentComboId) return;
+    const sizes: Record<string, string> = {};
+    const colors: Record<string, string> = {};
+    for (const item of displayItems) {
+      if (item.sizes[0]) sizes[item.id] = item.sizes[0];
+      if (item.colors[0]) colors[item.id] = item.colors[0];
+    }
+    setSelectedSizes(sizes);
+    setSelectedColors(colors);
+  }, [currentComboId, displayItems]);
 
-  const totalOriginalPrice = displayItems.reduce((sum, i) => sum + i.originalPrice, 0);
+  const totalOriginalPrice = useMemo(
+    () => displayItems.reduce((sum, i) => sum + i.originalPrice, 0),
+    [displayItems],
+  );
   const { finalPrice, savings } = calculateComboPricing(combo, totalOriginalPrice);
 
   const handleSelectSize = useCallback((itemId: string, size: string) => {
@@ -50,16 +57,24 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
   }, []);
 
   const handleAddToCart = useCallback(() => {
-    if (combo) {
-      onAddToCart?.(combo, selectedSizes);
+    if (!combo) return;
+    const selectedVariants: ComboSelectedVariants = {};
+    for (const item of displayItems) {
+      selectedVariants[item.id] = {
+        ...(selectedSizes[item.id] ? { size: selectedSizes[item.id] } : {}),
+        ...(selectedColors[item.id] ? { color: selectedColors[item.id] } : {}),
+      };
     }
+    onAddToCart?.(combo, selectedVariants);
     onClose();
-  }, [combo, onAddToCart, onClose, selectedSizes]);
+  }, [combo, displayItems, onAddToCart, onClose, selectedColors, selectedSizes]);
+
+  const handleClose = useCallback(() => onClose(), [onClose]);
 
   if (!combo) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.header}>
@@ -69,7 +84,12 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
                 {combo.title}
               </ThemedText>
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={handleClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close combo bundle"
+            >
               <X size={20} color={Palette.gray500} />
             </TouchableOpacity>
           </View>
@@ -111,6 +131,8 @@ export function ComboBundleModal({ visible, combo, onClose, onAddToCart }: Combo
               style={styles.addCartBtn}
               onPress={handleAddToCart}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${combo.title} to cart`}
             >
               <ShoppingBag size={16} color={Palette.white} />
               <ThemedText style={styles.addCartBtnText}>Add Combo to Cart</ThemedText>

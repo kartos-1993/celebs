@@ -70,7 +70,7 @@ async function seedApprovedStoreWithStaff() {
     });
     return {
       access: signJwtToken({ userId, sessionId: session.id }),
-      refresh: signJwtToken({ sessionId: session.id }, refreshTokenSignOptions),
+      refresh: signJwtToken({ sessionId: session.id, jti: session.id }, refreshTokenSignOptions),
     };
   };
 

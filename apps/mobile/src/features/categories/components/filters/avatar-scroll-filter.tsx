@@ -1,13 +1,12 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 
 import { QuickFilterItem } from '../../types';
 
 import { styles } from './avatar-scroll-filter.styles';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
 
 interface AvatarScrollFilterProps {
   items: QuickFilterItem[];
@@ -31,9 +30,6 @@ export const AvatarScrollFilter: React.FC<AvatarScrollFilterProps> = ({
       {items.map((item, idx) => {
         const itemKey = item.filterValue || item.slug || item.name;
         const isSelected = selectedItem === itemKey || (selectedItem === 'All' && idx === 0);
-        const imageUrl =
-          resolveImageUrl(item.image) ||
-          'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200&q=80';
 
         return (
           <TouchableOpacity
@@ -46,11 +42,14 @@ export const AvatarScrollFilter: React.FC<AvatarScrollFilterProps> = ({
             accessibilityLabel={`Filter by ${item.name}`}
           >
             <View style={[styles.avatarRing, isSelected && styles.avatarRingSelected]}>
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.avatarImage}
+              {/* No Unsplash stand-in: a filter with no artwork gets a neutral
+                  avatar tile, never a third-party photo hotlinked in production. */}
+              <MobileApparelImage
+                src={item.image}
+                preset="avatar"
+                containerStyle={styles.avatarImage}
                 contentFit="cover"
-                transition={200}
+                alt={item.name}
               />
             </View>
             <ThemedText

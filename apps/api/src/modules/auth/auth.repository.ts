@@ -83,8 +83,10 @@ export class AuthRepository {
         user: {
           include: {
             vendorProfile: {
-              include: {
-                warehouses: true,
+              select: {
+                id: true,
+                shopName: true,
+                status: true,
               },
             },
           },
@@ -101,6 +103,76 @@ export class AuthRepository {
         rotatedRefreshId,
       },
     });
+  }
+
+  public async slideSessionCas(
+    sessionId: string,
+    expectedJti: string,
+    newJti: string,
+    expiredAt: Date,
+  ): Promise<boolean> {
+    const result = await prisma.session.updateMany({
+      where: {
+        id: sessionId,
+        rotatedRefreshId: expectedJti,
+      },
+      data: {
+        expiredAt,
+        rotatedRefreshId: newJti,
+      },
+    });
+    return result.count > 0;
+  }
+
+  /**
+   * CAS rotation that stashes the superseded jti into a short grace window
+   * so one lost-response retry does not look like token theft. Resets the
+   * anomaly counter on every clean rotation.
+   */
+  public async rotateSessionCas(
+    sessionId: string,
+    expectedJti: string,
+    newJti: string,
+    expiredAt: Date,
+  ): Promise<boolean> {
+    const result = await prisma.session.updateMany({
+      where: {
+        id: sessionId,
+        rotatedRefreshId: expectedJti,
+      },
+      data: {
+        expiredAt,
+        previousRefreshId: expectedJti,
+        previousIssuedAt: new Date(),
+        rotatedRefreshId: newJti,
+        oldTokenUseCount: 0,
+      },
+    });
+    return result.count > 0;
+  }
+
+  /** Atomically consumes one grace use; returns the post-increment count. */
+  public async recordGraceUse(sessionId: string): Promise<number> {
+    const updated = await prisma.session.update({
+      where: { id: sessionId },
+      data: { oldTokenUseCount: { increment: 1 } },
+      select: { oldTokenUseCount: true },
+    });
+    return updated.oldTokenUseCount;
+  }
+
+  public async deleteAllUserSessions(userId: string): Promise<string[]> {
+    const sessions = await prisma.session.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const sessionIds = sessions.map((s) => s.id);
+    if (sessionIds.length > 0) {
+      await prisma.session.deleteMany({
+        where: { userId },
+      });
+    }
+    return sessionIds;
   }
 
   public async deleteSession(sessionId: string): Promise<void> {
@@ -159,6 +231,37 @@ export class AuthRepository {
   public async deleteVerificationCodeById(id: string): Promise<void> {
     await prisma.verificationCode.delete({
       where: { id },
+    });
+  }
+
+  public async createPasswordResetCode(userId: string): Promise<VerificationCode> {
+    return prisma.verificationCode.create({
+      data: {
+        userId,
+        type: VerificationEnum.PASSWORD_RESET,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    });
+  }
+
+  public async findValidPasswordResetCode(code: string): Promise<VerificationCode | null> {
+    return prisma.verificationCode.findFirst({
+      where: {
+        type: VerificationEnum.PASSWORD_RESET,
+        code,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+  }
+
+  public async deleteUserPasswordResetCodes(userId: string): Promise<void> {
+    await prisma.verificationCode.deleteMany({
+      where: {
+        userId,
+        type: VerificationEnum.PASSWORD_RESET,
+      },
     });
   }
 }

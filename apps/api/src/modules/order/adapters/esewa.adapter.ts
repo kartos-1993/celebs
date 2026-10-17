@@ -6,7 +6,11 @@ import {
   IPaymentGateway,
   PaymentIntentResult,
   PaymentVerificationResult,
+  RefundRequest,
+  RefundResult,
 } from './payment-gateway.interface';
+
+import { Prisma } from '@/config/db.prisma';
 
 export interface EsewaConfig {
   productCode: string;
@@ -18,18 +22,48 @@ export interface EsewaConfig {
 }
 
 export function resolveEsewaConfig(): EsewaConfig {
+  const productCode = process.env.ESEWA_PRODUCT_CODE || '';
+  const secretKey = process.env.ESEWA_SECRET_KEY || '';
+  const nodeEnv = process.env.NODE_ENV || 'development';
+
+  if ((nodeEnv === 'staging' || nodeEnv === 'production') && (!productCode || !secretKey)) {
+    throw new Error(
+      'ESEWA_PRODUCT_CODE and ESEWA_SECRET_KEY must be configured in staging/production — test defaults are not allowed',
+    );
+  }
+
+  const successUrl =
+    process.env.ESEWA_SUCCESS_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/success';
+  const failureUrl =
+    process.env.ESEWA_FAILURE_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/failure';
+
+  if (nodeEnv === 'staging' || nodeEnv === 'production') {
+    for (const [name, url] of [
+      ['ESEWA_SUCCESS_URL', successUrl],
+      ['ESEWA_FAILURE_URL', failureUrl],
+    ] as const) {
+      if (!url || /localhost|127\.0\.0\.1/.test(url)) {
+        throw new Error(
+          `${name} must be a real https URL in staging/production — a localhost callback strands customers after they have paid`,
+        );
+      }
+    }
+  }
+
   return {
-    productCode: process.env.ESEWA_PRODUCT_CODE || 'EPAYTEST',
-    secretKey: process.env.ESEWA_SECRET_KEY || '8gBm/:&EnhH.1/q',
+    productCode: productCode || 'EPAYTEST',
+    secretKey: secretKey || '8gBm/:&EnhH.1/q',
     baseUrl: process.env.ESEWA_BASE_URL || 'https://rc-epay.esewa.com.np',
-    successUrl:
-      process.env.ESEWA_SUCCESS_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/success',
-    failureUrl:
-      process.env.ESEWA_FAILURE_URL || 'http://localhost:3333/api/v1/orders/payments/esewa/failure',
+    successUrl,
+    failureUrl,
   };
 }
 
-const toNpr2 = (amount: number): string => amount.toFixed(2);
+/**
+ * Exact, not a float round: the value is signed into the request the gateway
+ * verifies, so a drifted amount produces a signature the gateway rejects.
+ */
+const toNpr2 = (amount: Prisma.Decimal): string => amount.toFixed(2);
 
 export function buildEsewaSignature(
   fields: { total_amount: string; transaction_uuid: string; product_code: string },
@@ -93,7 +127,7 @@ export class EsewaAdapter implements IPaymentGateway {
 
   async createPaymentIntent(
     orderId: string,
-    amount: number,
+    amount: Prisma.Decimal,
     _currency = 'NPR',
     metadata: Record<string, unknown> = {},
   ): Promise<PaymentIntentResult> {
@@ -159,14 +193,16 @@ export class EsewaAdapter implements IPaymentGateway {
     paymentId: string,
     payload: unknown = {},
   ): Promise<PaymentVerificationResult> {
-    const { totalAmount } = (payload as { totalAmount?: number }) || {};
+    // Arrives from the return URL, so it is really a string and converting it to a
+    // Decimal is exact rather than a float rounding.
+    const { totalAmount } = (payload as { totalAmount?: string | number }) || {};
     if (totalAmount === undefined) {
       throw new Error('Esewa verifyPayment requires payload.totalAmount (NPR)');
     }
 
     const params = new URLSearchParams({
       product_code: this.config.productCode,
-      total_amount: toNpr2(totalAmount),
+      total_amount: toNpr2(new Prisma.Decimal(totalAmount)),
       transaction_uuid: paymentId,
     });
     const url = `${this.config.baseUrl}/api/epay/transaction/status/?${params.toString()}`;
@@ -174,6 +210,9 @@ export class EsewaAdapter implements IPaymentGateway {
     let data: { status?: string; ref_id?: string | null };
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!response.ok) {
+        throw new Error(`eSewa status check returned HTTP ${response.status}`);
+      }
       data = (await response.json()) as { status?: string; ref_id?: string | null };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -209,5 +248,28 @@ export class EsewaAdapter implements IPaymentGateway {
       default:
         return { success: false, status: 'PENDING', rawResponse };
     }
+  }
+
+  /**
+   * eSewa publishes no refund endpoint - its API starts a payment and reads a
+   * status, and nothing more. A refund is issued by a person in the merchant
+   * dashboard, and the status API only reports FULL_REFUND afterwards.
+   *
+   * So this does not call eSewa at all and does not pretend to have refunded
+   * anything: it reports that the refund needs a person, which is the state the
+   * caller has to record and show. Reporting SUCCEEDED here would put "refunded"
+   * in front of a customer whose money has not moved.
+   */
+  async refund(_request: RefundRequest): Promise<RefundResult> {
+    logger.warn(
+      { gateway: 'ESEWA' },
+      'eSewa has no refund API; recorded for manual action in the eSewa merchant portal',
+    );
+
+    return {
+      status: 'REQUIRES_MANUAL_ACTION',
+      message:
+        'eSewa provides no refund API. Refund this payment manually in the eSewa merchant portal, then mark it settled.',
+    };
   }
 }

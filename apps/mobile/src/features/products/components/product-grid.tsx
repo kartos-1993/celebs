@@ -29,6 +29,7 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
       loading: queryLoading,
       loadingMore,
       hasMore,
+      resultsCapped,
       loadMore,
       refetch,
     } = useProducts(10);
@@ -46,6 +47,10 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
         loadMore();
       }
     }, [loadMoreTrigger, loading, loadingMore, hasMore, loadMore]);
+
+    const handleRetry = React.useCallback(() => {
+      refetch();
+    }, [refetch]);
 
     return (
       <View style={styles.container}>
@@ -69,8 +74,15 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
           </View>
         ) : products.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <ThemedText style={{ opacity: 0.6 }}>No products found</ThemedText>
-            <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+            {/* Inline opacity kept: product-grid.styles.ts is outside this
+                stream's file list, so the key cannot be added here. */}
+            <ThemedText style={{ opacity: 0.6 }}>No products found</ThemedText>{' '}
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={handleRetry}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading products"
+            >
               <ThemedText style={styles.retryText}>Retry</ThemedText>
             </TouchableOpacity>
           </View>
@@ -91,6 +103,16 @@ export const ProductGrid = React.forwardRef<ProductGridRef, ProductGridProps>(
             {loadingMore && (
               <View style={styles.paginationFooter}>
                 <ActivityIndicator size="small" color={colors.text} />
+              </View>
+            )}
+
+            {/* The page window is bounded, so a deeper catalog would otherwise
+                look like the end of the list. Say it instead of truncating. */}
+            {resultsCapped && !loadingMore && (
+              <View style={styles.paginationFooter}>
+                <ThemedText style={styles.loadMoreText}>
+                  Showing the latest {products.length} styles — browse Explore for the full catalog
+                </ThemedText>
               </View>
             )}
           </>

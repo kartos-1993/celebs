@@ -17,6 +17,12 @@ describe('Multi-Device Session Isolation & Selective Logout Suite', () => {
     }
   });
 
+  function cookieValue(res: request.Response, name: string): string {
+    const raw = res.headers['set-cookie'] as unknown as string[] | string | undefined;
+    const joined = Array.isArray(raw) ? raw.join(';') : (raw ?? '');
+    return joined.match(new RegExp(`${name}=([^;]+)`))?.[1] ?? '';
+  }
+
   it('should maintain independent sessions for multiple devices and selectively revoke only the logged-out device', async () => {
     const rawPassword = 'Password123!';
     const email = faker.internet.exampleEmail().toLowerCase();
@@ -34,18 +40,22 @@ describe('Multi-Device Session Isolation & Selective Logout Suite', () => {
     // Login 1: Desktop Web Browser
     const loginWebRes = await request(app)
       .post('/api/v1/auth/login')
+      .set('Origin', 'http://localhost:5173')
       .set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0')
       .send({ email, password: rawPassword });
     expect(loginWebRes.status).toBe(200);
-    const webAccessToken = loginWebRes.body.data.accessToken;
+    const webAccessToken = cookieValue(loginWebRes, 'accessToken');
+    expect(webAccessToken).not.toBe('');
 
     // Login 2: Mobile App
     const loginMobileRes = await request(app)
       .post('/api/v1/auth/login')
+      .set('Origin', 'http://localhost:5173')
       .set('User-Agent', 'CelebsMobile/1.0.0 (Android 14; Pixel 8)')
       .send({ email, password: rawPassword });
     expect(loginMobileRes.status).toBe(200);
-    const mobileAccessToken = loginMobileRes.body.data.accessToken;
+    const mobileAccessToken = cookieValue(loginMobileRes, 'accessToken');
+    expect(mobileAccessToken).not.toBe('');
 
     // Verify 2 distinct sessions exist in DB for this user
     const dbSessions = await prisma.session.findMany({

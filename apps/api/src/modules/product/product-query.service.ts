@@ -1,6 +1,14 @@
 import { Prisma } from '@prisma/client';
 
-import { ProductFilterType } from '@celebs/shared-types';
+import {
+  AdminProductDetail,
+  AdminProductListItem,
+  PaginatedProductResponse,
+  PRODUCT_STATUS,
+  ProductFilterType,
+  StorefrontCard,
+  StorefrontDetail,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
 import { CategoryRepository, categoryRepository } from '../category/category.repository';
@@ -9,8 +17,22 @@ import { ProductRepository, productRepository } from './repositories/product.rep
 import { PRODUCT_FEED_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { decodeProductCursor, encodeProductCursor } from './utils/product-cursor';
 import { calculateProductQCScore } from './utils/product-qc';
-import { formatProductResponse } from './product.presenter';
-import { PRODUCT_STATUS } from './product-status';
+import {
+  PRODUCT_DETAIL_TTL_SECONDS,
+  PRODUCT_LIST_TTL_SECONDS,
+  productDetailKey,
+  productListKey,
+  readCachedJson,
+  signListQuery,
+  writeCachedJson,
+} from './product-cache';
+import { formatProductResponse } from './product-format';
+import {
+  formatAdminDetail,
+  formatAdminProductListItem,
+  formatStorefrontCard,
+  formatStorefrontDetail,
+} from './product-response-shapes';
 
 import type { Actor } from '@/common/context/actor-context';
 import { isPlatformActor } from '@/common/context/actor-context';
@@ -35,14 +57,25 @@ export class ProductQueryService {
     return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, opts);
   }
 
-  async getProductById(id: string, isElevated = false) {
+  async getProductById(
+    id: string,
+    isElevated = false,
+  ): Promise<StorefrontDetail | AdminProductDetail | null> {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
+    const cacheKey = productDetailKey(id, isElevated);
+    const cached = await readCachedJson<StorefrontDetail | AdminProductDetail | null>(cacheKey);
+    if (cached) return cached;
+
     const product = await this.products.findDetailedById(id, isElevated);
 
     if (!product) return null;
-    return formatProductResponse(product, { isElevated });
+    const formatted = formatProductResponse(product, { isElevated });
+    if (!formatted) return null;
+    const shaped = isElevated ? formatAdminDetail(formatted) : formatStorefrontDetail(formatted);
+    await writeCachedJson(cacheKey, shaped, PRODUCT_DETAIL_TTL_SECONDS);
+    return shaped;
   }
 
   async getProductsByVendor(
@@ -59,12 +92,22 @@ export class ProductQueryService {
     page = 1,
     limit = 10,
     opts: QueryServiceOptions = {},
-  ): Promise<{
-    products: Array<Record<string, unknown> | null>;
-    total?: number;
-    nextCursor?: string;
-    hasMore?: boolean;
-  }> {
+  ): Promise<PaginatedProductResponse<StorefrontCard | AdminProductListItem>> {
+    // List cache covers the public storefront scope only: elevated and
+    // store-scoped reads vary per actor and must never share a key.
+    const isPublicScope =
+      !opts.isElevated && !opts.actor && !opts.storeId && !opts.isStoreManagement;
+    const cacheKey = isPublicScope
+      ? productListKey(signListQuery({ ...(filters as Record<string, unknown>), page, limit }))
+      : null;
+    if (cacheKey) {
+      const cached =
+        await readCachedJson<PaginatedProductResponse<StorefrontCard | AdminProductListItem>>(
+          cacheKey,
+        );
+      if (cached) return cached;
+    }
+
     const where: Prisma.ProductWhereInput = {};
     const andClauses: Prisma.ProductWhereInput[] = [];
 
@@ -143,12 +186,32 @@ export class ProductQueryService {
       });
     }
 
-    return {
-      products: products.map((p) => formatProductResponse(p, { isElevated: opts.isElevated })),
+    const isPlatform = isPlatformActor(opts.actor);
+    const elevatedRead = this.resolveElevatedRead(opts, isPlatform);
+    const result: PaginatedProductResponse<StorefrontCard | AdminProductListItem> = {
+      products: products
+        .map((p) => {
+          const formatted = formatProductResponse(p, { isElevated: opts.isElevated });
+          if (!formatted) return null;
+          return elevatedRead
+            ? formatAdminProductListItem(formatted)
+            : formatStorefrontCard(formatted);
+        })
+        .filter((p): p is StorefrontCard | AdminProductListItem => p !== null),
       ...(totalCount !== undefined ? { total: totalCount } : {}),
       nextCursor,
       hasMore,
     };
+    if (cacheKey) {
+      await writeCachedJson(cacheKey, result, PRODUCT_LIST_TTL_SECONDS);
+    }
+    return result;
+  }
+
+  private resolveElevatedRead(opts: QueryServiceOptions, isPlatform: boolean): boolean {
+    return (
+      opts.isElevated ?? (isPlatform || (Boolean(opts.actor) && Boolean(opts.isStoreManagement)))
+    );
   }
 
   private applyScalarFilters(
@@ -158,8 +221,7 @@ export class ProductQueryService {
     opts: QueryServiceOptions,
   ): void {
     const isPlatform = isPlatformActor(opts.actor);
-    const isElevated =
-      opts.isElevated ?? (isPlatform || (Boolean(opts.actor) && Boolean(opts.isStoreManagement)));
+    const isElevated = this.resolveElevatedRead(opts, isPlatform);
 
     if (!isPlatform && opts.storeId && opts.isStoreManagement) {
       where.vendorId = opts.storeId;

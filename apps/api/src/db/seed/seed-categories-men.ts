@@ -4,7 +4,7 @@ import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 import prisma from '../../config/db.prisma';
 
-interface SeedAttr {
+export interface SeedAttr {
   name: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
   values?: string[];
@@ -18,7 +18,7 @@ interface SeedAttr {
   isStorefrontFilter?: boolean;
 }
 
-interface SeedCategory {
+export interface SeedCategory {
   name: string;
   sizeChartColumns?: string[];
   bodyChartColumns?: string[];
@@ -170,10 +170,11 @@ const sizeAttr: SeedAttr = {
 };
 
 const numericSizeAttr: SeedAttr = {
+  // Demoted from variant axis: bottoms already carry Size, and the pricing
+  // matrix supports two variant groups (SHEIN convention). Waist numbers
+  // live per-size in measurements; this stays a plain product attribute.
   name: 'Waist Size',
   type: 'select',
-  isVariant: true,
-  variantType: 'size',
   useStandardOptions: true,
   optionSetName: 'Numeric Sizes (26-46)',
 };
@@ -272,7 +273,7 @@ const scenesAttr: SeedAttr = {
 // MEN CATEGORIES TREE CONFIGURATION
 // ==========================================
 
-const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
+export const ALL_MEN_CATEGORIES_TREE: SeedCategory = {
   name: 'Men',
   children: [
     // ----------------------------------------------------

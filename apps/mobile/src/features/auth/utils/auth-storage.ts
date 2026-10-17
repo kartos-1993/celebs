@@ -1,8 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 import type { UserProfile } from '../types';
 
 import { setAccessToken, setRefreshToken } from '@/api/client';
+import { unregisterPushTokenApi } from '@/features/notifications/api';
 
 export type StoredUserProfile = UserProfile;
 
@@ -47,6 +49,11 @@ export async function saveAuthSession(
 export async function clearAuthSession(): Promise<void> {
   setAccessToken(null);
   try {
+    const pushToken = await AsyncStorage.getItem('push_token_registered');
+    if (pushToken) {
+      await unregisterPushTokenApi(pushToken).catch(() => {});
+      await AsyncStorage.removeItem('push_token_registered');
+    }
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     await SecureStore.deleteItemAsync(REFRESH_KEY);
     await SecureStore.deleteItemAsync(USER_KEY);

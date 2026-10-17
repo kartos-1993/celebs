@@ -1,13 +1,9 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 import { Permission } from '@celebs/rbac';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const OrdersPage = lazy(() => import('./pages/orders-page'));
-const ReturnOrdersPage = lazy(() => import('./pages/return-orders-page'));
-const ReviewsPage = lazy(() => import('./pages/reviews-page'));
 
 export const orderRoutes: RouteObject = {
   path: 'orders',
@@ -15,30 +11,39 @@ export const orderRoutes: RouteObject = {
   children: [
     {
       path: '',
-      element: (
-        <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
-          <OrdersPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/orders-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
-      handle: { crumb: 'Orders' },
+      handle: { crumb: 'Orders', skeleton: 'table' },
     },
     {
       path: 'return',
-      element: (
-        <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
-          <ReturnOrdersPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/return-orders-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
-      handle: { crumb: 'Return Orders' },
+      handle: { crumb: 'Return Orders', skeleton: 'table' },
     },
     {
       path: 'reviews',
-      element: (
-        <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
-          <ReviewsPage />
-        </RoleGuard>
+      ...pageRoute(
+        () => import('./pages/reviews-page'),
+        (Page) => (
+          <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
+            <Page />
+          </RoleGuard>
+        ),
       ),
-      handle: { crumb: 'Reviews' },
+      handle: { crumb: 'Reviews', skeleton: 'table' },
     },
   ],
 };

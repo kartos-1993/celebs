@@ -1,9 +1,11 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import {
+  changePasswordType,
   loginType,
   registerType,
   resendVerificationType,
+  resetPasswordType,
   setupSuperadminType,
   vendorRegisterType,
   VerifyEmailResponse,
@@ -14,8 +16,8 @@ import {
   ForbiddenException,
   HttpException,
   HTTPSTATUS,
-  InternalServerException,
   logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@celebs/shared-utils';
 
@@ -31,12 +33,36 @@ import { authCache } from '@/common/cache/auth-cache';
 import { comparePassword, hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
 
+export interface RefreshResult {
+  user: Record<string, unknown>;
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AuthServiceDeps {
   authRepo?: AuthRepository;
   tokenService?: TokenService;
   verificationService?: VerificationService;
   googleAuthService?: GoogleAuthService;
   vendorService?: VendorService;
+}
+
+/** Previous-jti grace: a lost-response retry must not look like theft. */
+const GRACE_WINDOW_MS = 60 * 1000;
+const GRACE_MAX_USES = 3;
+
+/**
+ * Normalizes a User-Agent for device comparison: version numbers churn on
+ * every browser update, so they are stripped and only client/OS tokens
+ * are compared. Returns null when there is nothing stable to compare.
+ */
+export function normalizeFingerprint(userAgent?: string | null): string | null {
+  if (!userAgent) return null;
+  const stripped = userAgent
+    .replace(/\d+(\.\d+)*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped.length >= 8 ? stripped : null;
 }
 
 export class AuthService {
@@ -160,6 +186,13 @@ export class AuthService {
   public async verifyEmail(code: string): Promise<VerifyEmailResponse> {
     const updatedUser = await this.verificationService.verifyCode(code);
 
+    await storeLifecycle.assertSellerLoginAllowed(updatedUser);
+
+    // The identity layer caches `isEmailVerified`, and this flow issues a brand
+    // new token pair immediately. Without dropping the cached principal, the
+    // first request on that new token would still read `isEmailVerified: false`.
+    await authCache.invalidateUser(updatedUser.id);
+
     logger.info({ userId: updatedUser.id }, 'Creating session after email verification');
     const userAgent = 'Email Verification Auto-Login';
     const jti = randomUUID();
@@ -245,7 +278,47 @@ export class AuthService {
     };
   }
 
-  public async refreshToken(token: string) {
+  /** In-flight refreshes keyed by presented token: identical concurrent
+   *  requests (StrictMode, double-click, tab races) share one rotation
+   *  instead of tripping reuse detection on each other. */
+  private readonly inflightRefreshes = new Map<string, Promise<RefreshResult>>();
+
+  public async refreshToken(
+    token: string,
+    context?: { userAgent?: string },
+  ): Promise<RefreshResult> {
+    const inFlight = this.inflightRefreshes.get(token);
+    if (inFlight) return inFlight;
+
+    const pending = this.executeRefresh(token, context).finally(() => {
+      if (this.inflightRefreshes.get(token) === pending) {
+        this.inflightRefreshes.delete(token);
+      }
+    });
+    this.inflightRefreshes.set(token, pending);
+    return pending;
+  }
+
+  private async revokeSessionFamily(
+    session: { id: string; userId: string },
+    reason: string,
+  ): Promise<never> {
+    const revokedSessionIds = await this.authRepo.deleteAllUserSessions(session.userId);
+    await authCache.invalidateSessions(revokedSessionIds);
+    logger.error(
+      { sessionId: session.id, userId: session.userId, revokedCount: revokedSessionIds.length },
+      `${reason} — all user sessions terminated`,
+    );
+    throw new UnauthorizedException(
+      'Session revoked due to token reuse',
+      ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+    );
+  }
+
+  private async executeRefresh(
+    token: string,
+    context?: { userAgent?: string },
+  ): Promise<RefreshResult> {
     const payload = this.tokenService.verifyRefreshToken(token);
 
     const session = await this.authRepo.findSessionWithUser(payload.sessionId);
@@ -257,15 +330,55 @@ export class AuthService {
     }
 
     const presentedJti = payload.jti;
-    if (presentedJti && session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
+    if (session.rotatedRefreshId && presentedJti !== session.rotatedRefreshId) {
+      const expectedFingerprint = normalizeFingerprint(session.userAgent);
+      const presentedFingerprint = normalizeFingerprint(context?.userAgent);
+      const fingerprintMismatch =
+        expectedFingerprint !== null &&
+        presentedFingerprint !== null &&
+        expectedFingerprint !== presentedFingerprint;
+      if (fingerprintMismatch) {
+        return this.revokeSessionFamily(session, 'security.refresh_fingerprint_mismatch');
+      }
+
+      const withinWindow =
+        session.previousRefreshId === presentedJti &&
+        session.previousIssuedAt !== null &&
+        Date.now() - session.previousIssuedAt.getTime() <= GRACE_WINDOW_MS;
+      if (withinWindow && session.oldTokenUseCount < GRACE_MAX_USES) {
+        const useCount = await this.authRepo.recordGraceUse(session.id);
+        if (useCount > GRACE_MAX_USES) {
+          return this.revokeSessionFamily(session, 'security.refresh_grace_exhausted');
+        }
+        logger.warn(
+          { sessionId: session.id, userId: session.userId, useCount },
+          'security.refresh_grace_used — previous jti accepted without rotation',
+        );
+        const { accessToken, refreshToken } = this.tokenService.issueTokenPair(
+          session.user.id,
+          session.id,
+          session.rotatedRefreshId,
+        );
+        return {
+          user: this.tokenService.stripPassword(session.user),
+          accessToken,
+          refreshToken,
+        };
+      }
+
+      return this.revokeSessionFamily(session, 'security.refresh_reuse_detected');
+    }
+
+    const sessionLifetimeMs = Date.now() - session.createdAt.getTime();
+    if (sessionLifetimeMs > config.SESSION.EXPIRY_MS) {
       await this.authRepo.deleteSession(session.id);
       await authCache.invalidateSessions([session.id]);
-      logger.error(
+      logger.warn(
         { sessionId: session.id, userId: session.userId },
-        'security.refresh_reuse_detected — session terminated',
+        'Session lifetime expired — terminated',
       );
       throw new UnauthorizedException(
-        'Session revoked due to token reuse',
+        'Session lifetime expired',
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
@@ -274,19 +387,27 @@ export class AuthService {
     await storeLifecycle.assertSellerLoginAllowed(user);
 
     const newJti = randomUUID();
+    const newExpiredAt = new Date(Date.now() + config.SESSION.EXPIRY_MS);
 
-    try {
-      const newExpiredAt = new Date(Date.now() + config.SESSION.EXPIRY_MS);
-      await this.authRepo.slideSession(session.id, newExpiredAt, newJti);
-      await authCache.invalidateSessions([session.id]);
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      logger.error(
-        { error: errMsg, sessionId: session.id },
-        'Failed to slide session window in database',
+    const updated = await this.authRepo.rotateSessionCas(
+      session.id,
+      presentedJti,
+      newJti,
+      newExpiredAt,
+    );
+
+    if (!updated) {
+      logger.warn(
+        { sessionId: session.id, presentedJti },
+        'Concurrent refresh detected: CAS slide failed',
       );
-      throw new InternalServerException('Failed to extend session lifetime');
+      throw new UnauthorizedException(
+        'Session revoked or refreshed concurrently',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
     }
+
+    await authCache.invalidateSessions([session.id]);
 
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       this.tokenService.issueTokenPair(user.id, session.id, newJti);
@@ -327,6 +448,79 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  public async forgotPassword(email: string): Promise<void> {
+    const user = await this.authRepo.findUserByEmail(email.toLowerCase());
+    if (!user) {
+      logger.warn({ email }, 'Password reset requested for non-existent email — silently ignored');
+      return;
+    }
+
+    // Invalidate existing reset tokens for this user
+    await this.authRepo.deleteUserPasswordResetCodes(user.id);
+
+    // Create fresh single-use reset token (15-minute expiry)
+    const verification = await this.authRepo.createPasswordResetCode(user.id);
+    await this.verificationService.sendPasswordResetEmail(user, verification.code);
+
+    logger.info({ userId: user.id, email: user.email }, 'Password reset email dispatched');
+  }
+
+  public async resetPassword(data: resetPasswordType): Promise<void> {
+    const validCode = await this.authRepo.findValidPasswordResetCode(data.verificationCode);
+    if (!validCode) {
+      throw new BadRequestException(
+        'Invalid or expired password reset verification code',
+        ErrorCode.VERIFICATION_ERROR,
+      );
+    }
+
+    const hashedPassword = await hashValue(data.password);
+    await this.authRepo.updateUser(validCode.userId, { password: hashedPassword });
+
+    // Universal session revocation: invalidate all active sessions for this user across all devices
+    const revokedSessionIds = await this.authRepo.deleteAllUserSessions(validCode.userId);
+    await authCache.invalidateSessions(revokedSessionIds);
+
+    // Single-use code burn
+    await this.authRepo.deleteVerificationCodeById(validCode.id);
+
+    logger.info(
+      { userId: validCode.userId, revokedCount: revokedSessionIds.length },
+      'User password reset completed — all active sessions terminated',
+    );
+  }
+
+  public async changePassword(
+    userId: string,
+    currentSessionId: string,
+    data: changePasswordType,
+  ): Promise<void> {
+    const user = await this.authRepo.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await comparePassword(data.currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException(
+        'Current password is incorrect',
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
+    const hashedPassword = await hashValue(data.newPassword);
+    await this.authRepo.updateUser(user.id, { password: hashedPassword });
+
+    // Revoke all sessions across all devices to guarantee no stale credentials remain active
+    const revokedSessionIds = await this.authRepo.deleteAllUserSessions(user.id);
+    await authCache.invalidateSessions(revokedSessionIds);
+
+    logger.info(
+      { userId, currentSessionId, revokedCount: revokedSessionIds.length },
+      'User password changed — all active sessions terminated',
+    );
   }
 }
 

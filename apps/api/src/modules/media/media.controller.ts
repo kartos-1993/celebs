@@ -98,8 +98,8 @@ export class MediaController {
    */
   async createFolder(req: Request, res: Response): Promise<void> {
     const vendorId = resolveTargetStoreId(req, 'body');
-    const { name } = createMediaFolderSchema.parse(req.body);
-    const folder = await mediaRepository.createFolder(vendorId, name);
+    const { name, parentId } = createMediaFolderSchema.parse(req.body);
+    const folder = await mediaRepository.createFolder(vendorId, name, parentId);
     sendCreated(res, folder, 'Media folder created successfully');
   }
 
@@ -125,6 +125,16 @@ export class MediaController {
     const raw = Array.isArray(req.body) ? { files: req.body } : req.body;
     const { files } = batchPresignSchema.parse(raw);
     const vendorId = resolveTargetStoreId(req, 'body');
+
+    if (vendorId) {
+      const totalBatchBytes = files.reduce((sum, f) => sum + Number(f.size || 0), 0);
+      const quota = await mediaRepository.getQuota(vendorId);
+      if (quota.usedBytes + totalBatchBytes > quota.maxBytes) {
+        throw new BadRequestException(
+          `Storage quota exceeded. Used: ${(quota.usedBytes / 1024 / 1024).toFixed(1)}MB, Batch: ${(totalBatchBytes / 1024 / 1024).toFixed(1)}MB / ${(quota.maxBytes / 1024 / 1024 / 1024).toFixed(0)}GB. Please delete unused assets.`,
+        );
+      }
+    }
 
     const results = await Promise.all(
       files.map((file: PresignFileInput) =>

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   dispatch3PLOrder,
+  type Dispatch3PLParams,
   type Dispatch3PLResponse,
   settleCodOrder,
   updateOrderItemStatusApi,
@@ -37,7 +38,10 @@ export function useDispatch3PLMutation(callbacks?: {
   onError?: (err: Error) => void;
 }) {
   return useMutation({
-    mutationFn: (orderId: string) => dispatch3PLOrder({ orderId }),
+    mutationFn: (variables: string | Dispatch3PLParams) => {
+      const params = typeof variables === 'string' ? { orderId: variables } : variables;
+      return dispatch3PLOrder(params);
+    },
     onSuccess: (res) => callbacks?.onSuccess?.(res),
     onError: (err: Error) => callbacks?.onError?.(err),
   });

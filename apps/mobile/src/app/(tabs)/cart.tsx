@@ -13,7 +13,9 @@ import { CartItemsSection } from '@/features/cart/components/cart-items-section'
 import { CartPromoBanner } from '@/features/cart/components/cart-promo-banner';
 import { useCart } from '@/features/cart/context/cart-context';
 import { styles } from '@/features/cart/styles/cart.styles';
-import { FREE_SHIPPING_THRESHOLD } from '@/features/cart/utils/cart-selectors';
+
+/** Shown only before the server has quoted; never used to compute a charge. */
+const UNKNOWN_DELIVERY_THRESHOLD = 5000;
 
 // Mirrors TAB_BAR_CONTENT_HEIGHT in (tabs)/_layout.tsx
 const TAB_BAR_CONTENT_HEIGHT = 56;
@@ -152,7 +154,10 @@ export default function CartScreen() {
         <CartPromoBanner
           savings={selectedSavings}
           savingsPercent={selectedSavingsPercent}
-          freeShippingRemaining={Math.max(0, FREE_SHIPPING_THRESHOLD - selectedSubtotal)}
+          freeShippingRemaining={Math.max(
+            0,
+            (cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD) - selectedSubtotal,
+          )}
         />
         <CartCheckoutBar
           itemCount={selectedCount}

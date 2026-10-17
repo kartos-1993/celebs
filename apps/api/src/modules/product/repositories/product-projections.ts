@@ -16,6 +16,9 @@ export const PRODUCT_LIST_SELECT = {
   // Storefront cards derive color swatch dots from these two fields
   colorVariants: true,
   dynamicData: true,
+  sizes: true,
+  skus: true,
+  variantOptions: true,
   vendorId: true,
   vendorName: true,
   categoryId: true,
@@ -78,6 +81,9 @@ export const PRODUCT_FEED_SELECT = {
   mainImages: true,
   colorVariants: true,
   dynamicData: true,
+  sizes: true,
+  skus: true,
+  variantOptions: true,
   inventories: {
     select: {
       colorVariantName: true,
@@ -96,6 +102,7 @@ export const PRODUCT_FEED_SELECT = {
       id: true,
       name: true,
       slug: true,
+      imageUrl: true,
     },
   },
   subcategory: {
@@ -103,6 +110,7 @@ export const PRODUCT_FEED_SELECT = {
       id: true,
       name: true,
       slug: true,
+      imageUrl: true,
     },
   },
   brandRef: {
@@ -129,6 +137,17 @@ export const PRODUCT_PUBLIC_DETAIL_SELECT = {
   variantOptions: true,
   dynamicData: true,
   tags: true,
+  packageWeightKg: true,
+  packageLengthCm: true,
+  packageWidthCm: true,
+  packageHeightCm: true,
+  packagingType: true,
+  isFragile: true,
+  hasBatteryOrLiquid: true,
+  warrantyType: true,
+  warrantyPeriod: true,
+  warrantyPolicy: true,
+  isNonReturnable: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -151,8 +170,12 @@ export const PRODUCT_DETAIL_SELECT = {
 } as const;
 
 export const PRODUCT_DETAIL_INCLUDE = {
-  category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-  subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
+  category: {
+    select: { id: true, name: true, slug: true, path: true, level: true, imageUrl: true },
+  },
+  subcategory: {
+    select: { id: true, name: true, slug: true, path: true, level: true, imageUrl: true },
+  },
   brandRef: {
     select: {
       id: true,

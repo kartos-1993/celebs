@@ -1,12 +1,94 @@
 import { ProductInventory } from '@prisma/client';
 
-import { generateSku } from '@celebs/shared-utils';
+import {
+  AppError,
+  buildProductStyleRef,
+  buildVariantKey,
+  ErrorCode,
+  generateRetailSku,
+  HTTPSTATUS,
+  logger,
+  PRODUCT_CARRIER_VARIANT,
+} from '@celebs/shared-utils';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export interface DecrementResult {
   id: string;
   quantity: number;
+}
+
+interface SkuLike {
+  skuCode?: string;
+  selectedOptions?: Record<string, unknown>;
+  stock?: number;
+  isDefault?: boolean;
+}
+
+interface VariantLike {
+  name?: string;
+  stocks?: Array<{ size?: string; quantity?: number }>;
+}
+
+/**
+ * Size axis of a colourless SKU: its `Size` option, or the carrier name when the
+ * SKU carries no size at all. Kept lenient (`size`/`Size`/`SIZE`) because the
+ * option key is authored by the dynamic form.
+ */
+function carrierSizeOf(selectedOptions: Record<string, unknown> | undefined): string {
+  if (!selectedOptions || typeof selectedOptions !== 'object') return PRODUCT_CARRIER_VARIANT;
+  for (const [key, value] of Object.entries(selectedOptions)) {
+    if (!/size/i.test(key)) continue;
+    const size = value == null ? '' : String(value).trim();
+    if (size) return size;
+  }
+  return PRODUCT_CARRIER_VARIANT;
+}
+
+/**
+ * A product with NO colour axis still owns inventory: it needs one row per size,
+ * under the carrier name. `buildVariantKey` strips the carrier segment, so those
+ * rows bind to the size-only SKUs exactly like a colour row binds to a
+ * color+size SKU — and every downstream guard (duplicate-SKU, published
+ * removal lock, SKU immutability, orphan prune, sort order) then applies
+ * unchanged because the rows are built by the same loop.
+ */
+function carrierVariantFromSkus(skus?: SkuLike[]): VariantLike[] | undefined {
+  if (!Array.isArray(skus) || skus.length === 0) return undefined;
+  const stocks: Array<{ size: string; quantity: number }> = [];
+  for (const sku of skus) {
+    stocks.push({ size: carrierSizeOf(sku?.selectedOptions), quantity: Number(sku?.stock) || 0 });
+  }
+  return [{ name: PRODUCT_CARRIER_VARIANT, stocks }];
+}
+
+/** Canonical option values of a SKU, or none when it carries no options. */
+function optionValues(sku: SkuLike): string[] {
+  const options = sku.selectedOptions;
+  if (!options || typeof options !== 'object') return [];
+  return Object.values(options).map(String);
+}
+
+/** Canonical SKU lookup: every code, plus the fallback for a product with one SKU. */
+function buildSkuIndex(skus?: SkuLike[]): {
+  skuMap: Map<string, string>;
+  singleFallbackSku: string | undefined;
+} {
+  const skuMap = new Map<string, string>();
+  let singleFallbackSku: string | undefined;
+  if (!Array.isArray(skus)) return { skuMap, singleFallbackSku };
+
+  for (const s of skus) {
+    const code = s?.skuCode?.trim();
+    if (!code) continue;
+
+    if (!singleFallbackSku || s.isDefault) {
+      singleFallbackSku = code;
+    }
+
+    skuMap.set(buildVariantKey(optionValues(s)), code);
+  }
+  return { skuMap, singleFallbackSku };
 }
 
 export class InventoryRepository {
@@ -29,6 +111,28 @@ export class InventoryRepository {
     return prisma.productInventory.findMany({
       where: { productId },
       select: { quantity: true },
+    });
+  }
+
+  public async findInventoriesByProductId(
+    productId: string,
+    tx: Prisma.TransactionClient = prisma,
+  ): Promise<
+    Array<{
+      colorVariantName: string;
+      size: string;
+      quantity: number;
+      reservedQuantity: number;
+    }>
+  > {
+    return tx.productInventory.findMany({
+      where: { productId },
+      select: {
+        colorVariantName: true,
+        size: true,
+        quantity: true,
+        reservedQuantity: true,
+      },
     });
   }
 
@@ -70,6 +174,9 @@ export class InventoryRepository {
 
   /**
    * Reconciles inventory rows with the product's current variant/size combos.
+   *
+   * A colourless product (no colour axis) is NOT skipped: its SKUs become one
+   * carrier-named row per size, so it keeps stock, `inStock` and checkout.
    * Batched: the loop below is memory-only (dedupe + SKU resolution); all writes
    * execute as set-based statements (createMany + one UPDATE + prune), so a
    * 3-color x 5-size matrix holds the pooled connection for ~4 round-trips
@@ -79,35 +186,35 @@ export class InventoryRepository {
   public async syncProductInventory(
     tx: Prisma.TransactionClient,
     productId: string,
-    colorVariants?: Array<{
-      name?: string;
-      stocks?: Array<{ size?: string; quantity?: number }>;
-    }>,
-    skus?: Array<{ skuCode?: string; selectedOptions?: Record<string, unknown> }>,
+    colorVariants?: VariantLike[],
+    skus?: SkuLike[],
     departmentHint?: string,
+    options?: { isPublished?: boolean; styleSalt?: string },
   ): Promise<void> {
-    if (!colorVariants || !Array.isArray(colorVariants)) return;
+    if (!Array.isArray(colorVariants)) return;
+
+    // No colour axis → the carrier variant carries the size axis instead. A
+    // product with neither variants nor SKUs keeps the stored list (usually
+    // empty), which lands on the orphan-prune path exactly as before.
+    const effectiveVariants =
+      colorVariants.length > 0 ? colorVariants : (carrierVariantFromSkus(skus) ?? colorVariants);
 
     const seenVariantNames = new Map<string, number>();
 
-    const skuMap = new Map<string, string>();
-    if (Array.isArray(skus)) {
-      for (const s of skus) {
-        if (s?.skuCode && s?.selectedOptions) {
-          const optEntries = Object.entries(s.selectedOptions)
-            .map(([k, v]) => `${k.toLowerCase()}:${String(v).toLowerCase().trim()}`)
-            .sort()
-            .join('|');
-          skuMap.set(optEntries, s.skuCode.trim());
-        }
-      }
-    }
+    // Index skus dynamically by canonical sorted option values.
+    // KEY SCHEME A (pinned, ): buildVariantKey — trimmed, lowercased,
+    // sorted, Default-filtered, ':::'-joined. Used for skuMap + rowKey only;
+    // the published-removal / existingByKey / activeSet lookups below use a
+    // DIFFERENT raw `${lower}:::${lower}` template (Scheme B) that keeps
+    // 'default' segments and is order-sensitive.
+    // @todo-fix: unify on one canonical key builder.
+    const { skuMap, singleFallbackSku } = buildSkuIndex(skus);
 
     // Memory-only pass: dedupe combos + resolve SKUs, no I/O.
     const rows: Array<{ colorVariantName: string; size: string; sku: string; quantity: number }> =
       [];
-    for (const variant of colorVariants) {
-      const baseName = variant.name?.trim() || 'Default';
+    for (const variant of effectiveVariants) {
+      const baseName = variant.name?.trim() || PRODUCT_CARRIER_VARIANT;
       const count = seenVariantNames.get(baseName) || 0;
       seenVariantNames.set(baseName, count + 1);
       const colorVariantName = count > 0 ? `${baseName} (${count + 1})` : baseName;
@@ -117,23 +224,77 @@ export class InventoryRepository {
       const seenSizes = new Set<string>();
 
       for (const stockItem of variant.stocks) {
-        const size = stockItem.size?.trim() || 'Default';
-        const sizeKey = size.toLowerCase();
-        if (seenSizes.has(sizeKey)) continue;
-        seenSizes.add(sizeKey);
+        const size = stockItem.size?.trim() || PRODUCT_CARRIER_VARIANT;
+        const normSize = size.toLowerCase();
+        if (seenSizes.has(normSize)) continue;
+        seenSizes.add(normSize);
 
-        const matchKey1 = `color:${colorVariantName.toLowerCase()}|size:${sizeKey}`;
-        const matchKey2 = `color:${baseName.toLowerCase()}|size:${sizeKey}`;
+        const rowKey = buildVariantKey([baseName, size]);
+
         const sku =
-          skuMap.get(matchKey1) ||
-          skuMap.get(matchKey2) ||
-          generateSku({ brandPrefix: 'c', department: departmentHint });
+          skuMap.get(rowKey) ||
+          skuMap.get('') ||
+          singleFallbackSku ||
+          generateRetailSku({
+            brandToken: 'CLB',
+            // the fix: callers thread an explicit styleSalt so SKU-conflict
+            // retries mint a provably fresh salt instead of relying on the
+            // implicit Math.random re-roll inside buildProductStyleRef.
+            styleRef: buildProductStyleRef(departmentHint, options?.styleSalt),
+            options: [colorVariantName, size],
+          });
 
         rows.push({ colorVariantName, size, sku, quantity: stockItem.quantity ?? 0 });
       }
     }
 
-    if (rows.length === 0) return;
+    const seenSkus = new Set<string>();
+    for (const row of rows) {
+      if (seenSkus.has(row.sku)) {
+        const message = `Duplicate SKU "${row.sku}" found in product variants. Every variant must have a unique SKU code.`;
+        throw Object.assign(
+          new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.VALIDATION_ERROR),
+          { details: [{ field: 'skus', message }] },
+        );
+      }
+      seenSkus.add(row.sku);
+    }
+
+    const existingInventories = await tx.productInventory.findMany({
+      where: { productId },
+      select: { id: true, colorVariantName: true, size: true, sku: true },
+    });
+
+    // the fix (lock ordering): this published removal/SKU-lock validation runs
+    // AFTER the read but BEFORE any insert/update/delete, so violations never
+    // partially write. It is the ONLY removal guard — the duplicate check that
+    // used to sit after the writes was removed; both incoming keys and
+    // existing inventories are available here, so nothing executes pre-throw.
+    if (options?.isPublished && existingInventories.length > 0) {
+      const incomingKeySet = new Set(
+        rows.map((k) => `${k.colorVariantName.toLowerCase()}:::${k.size.toLowerCase()}`),
+      );
+      const removedKeys = existingInventories
+        .filter(
+          (inv) =>
+            !incomingKeySet.has(
+              `${inv.colorVariantName.toLowerCase()}:::${inv.size.toLowerCase()}`,
+            ),
+        )
+        .map((inv) => `${inv.colorVariantName}/${inv.size}`);
+      if (removedKeys.length > 0) {
+        const message =
+          'Cannot remove variants from an already published product. Set stock quantity to 0 instead.';
+        throw Object.assign(
+          new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST),
+          { details: removedKeys.map((key) => ({ field: key, message })) },
+        );
+      }
+    }
+
+    // the fix (empty-rows prune): no early return — when rows is empty every
+    // existing row is an orphan and falls into the prune path below (delete
+    // iff no order history, else zero-out).
 
     // Deterministic lock order eliminates 40P01 deadlocks under concurrent saves.
     rows.sort(
@@ -141,14 +302,10 @@ export class InventoryRepository {
         a.colorVariantName.localeCompare(b.colorVariantName) || a.size.localeCompare(b.size),
     );
 
-    const existingInventories = await tx.productInventory.findMany({
-      where: { productId },
-      select: { id: true, colorVariantName: true, size: true },
-    });
     const existingByKey = new Map(
       existingInventories.map((inv) => [
         `${inv.colorVariantName.toLowerCase()}:::${inv.size.toLowerCase()}`,
-        inv.id,
+        inv,
       ]),
     );
 
@@ -161,11 +318,25 @@ export class InventoryRepository {
     }> = [];
     const toUpdate: Array<{ id: string; sku: string; quantity: number }> = [];
     for (const row of rows) {
-      const id = existingByKey.get(
+      const existing = existingByKey.get(
         `${row.colorVariantName.toLowerCase()}:::${row.size.toLowerCase()}`,
       );
-      if (id) {
-        toUpdate.push({ id, sku: row.sku, quantity: row.quantity });
+      if (existing) {
+        if (
+          options?.isPublished &&
+          existing.sku &&
+          row.sku &&
+          existing.sku.trim() !== row.sku.trim()
+        ) {
+          const variantKey = `${row.colorVariantName}/${row.size}`;
+          const message = `Cannot modify SKU for published variant "${variantKey}". Existing SKU is "${existing.sku}", received "${row.sku}".`;
+          throw Object.assign(
+            new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST),
+            { details: [{ field: variantKey, message }] },
+          );
+        }
+        const resolvedSku = (options?.isPublished ? existing.sku : row.sku) || existing.sku;
+        toUpdate.push({ id: existing.id, sku: resolvedSku, quantity: row.quantity });
       } else {
         toCreate.push({ productId, ...row });
       }
@@ -205,19 +376,34 @@ export class InventoryRepository {
     }
 
     if (toDeleteIds.length > 0) {
-      await tx.productInventory
-        .deleteMany({
-          where: {
-            id: { in: toDeleteIds },
-            orderItems: { none: {} },
-          },
-        })
-        .catch(() => null);
-
-      await tx.productInventory.updateMany({
-        where: { id: { in: toDeleteIds } },
-        data: { quantity: 0 },
+      // the fix (orphan prune FK handling): the removal guard above already ran
+      // pre-write, so no second published check is needed here. Delete ONLY
+      // history-free rows (the orderItems filter is evaluated by the database
+      // before deleting — no blind catch); survivors keep their order history
+      // and are zeroed instead, with the reason logged.
+      await tx.productInventory.deleteMany({
+        where: {
+          id: { in: toDeleteIds },
+          orderItems: { none: {} },
+        },
       });
+
+      const survivors = await tx.productInventory.findMany({
+        where: { id: { in: toDeleteIds } },
+        select: { id: true },
+      });
+
+      if (survivors.length > 0) {
+        const survivorIds = survivors.map((s) => s.id);
+        logger.warn(
+          { productId, inventoryIds: survivorIds },
+          'Orphan inventory prune: rows have order history, zeroing quantity instead of delete',
+        );
+        await tx.productInventory.updateMany({
+          where: { id: { in: survivorIds } },
+          data: { quantity: 0 },
+        });
+      }
     }
   }
 }

@@ -78,3 +78,12 @@ export const setupSuperadminSchema = z.object({
 export const resendVerificationSchema = z.object({
   email: emailSchema,
 });
+
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: passwordSchema,
+});

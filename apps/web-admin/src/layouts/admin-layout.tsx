@@ -1,16 +1,26 @@
 import { Suspense, useEffect } from 'react';
-import { Outlet, useMatches, useNavigation } from 'react-router-dom';
+import { Outlet, useLocation, useMatches } from 'react-router-dom';
 
 import Main from '@/components/main';
 import { Navbar } from '@/components/nav-bar';
-import PageLoader from '@/components/page-loader';
+import { DashboardSkeleton, FormSkeleton, PageSkeleton } from '@/components/page-skeleton';
 import Sidebar from '@/components/sidebar';
+import { TableSkeleton } from '@/components/table-skeleton';
 import SidebarProvider from '@/context/sidebar-provider';
+import { skeletonForPath } from '@/routes/skeleton-for-path';
+
+/** Chunk-load fallback matching the destination silhouette (same owner). */
+function RouteSkeleton() {
+  const { pathname } = useLocation();
+  const kind = skeletonForPath(pathname);
+  if (kind === 'table') return <TableSkeleton rows={10} columns={6} />;
+  if (kind === 'dashboard') return <DashboardSkeleton />;
+  if (kind === 'form') return <FormSkeleton />;
+  return <PageSkeleton />;
+}
 
 export const AdminLayout = () => {
   const matches = useMatches();
-  const navigation = useNavigation();
-  const isNavigating = navigation.state === 'loading';
 
   useEffect(() => {
     const currentMatch = matches[matches.length - 1];
@@ -21,11 +31,6 @@ export const AdminLayout = () => {
 
   return (
     <div>
-      {isNavigating && (
-        <div className="fixed top-0 left-0 right-0 z-50 h-1 overflow-hidden bg-primary/20">
-          <div className="h-full bg-primary animate-pulse w-full origin-left transition-all duration-300" />
-        </div>
-      )}
       <SidebarProvider>
         <div>
           <Sidebar />
@@ -33,7 +38,7 @@ export const AdminLayout = () => {
         <div className="bg-muted/40 min-h-screen">
           <Navbar />
           <Main>
-            <Suspense fallback={<PageLoader />}>
+            <Suspense fallback={<RouteSkeleton />}>
               <Outlet />
             </Suspense>
           </Main>

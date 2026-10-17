@@ -103,9 +103,6 @@ export default function RootLayout() {
                         />
                         <Stack.Screen
                           name="order-detail"
-                          getId={({ params }) =>
-                            params?.orderId ? String(params.orderId) : undefined
-                          }
                           options={{ headerShown: false, animation: 'slide_from_right' }}
                         />
                         <Stack.Screen

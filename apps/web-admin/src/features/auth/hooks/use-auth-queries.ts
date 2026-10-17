@@ -6,6 +6,11 @@ export function useSetupStatus() {
   return useQuery({
     queryKey: AUTH_QUERY_KEYS.setupStatus(),
     queryFn: getSetupStatus,
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    meta: {
+      suppressErrorToast: true,
+    },
   });
 }

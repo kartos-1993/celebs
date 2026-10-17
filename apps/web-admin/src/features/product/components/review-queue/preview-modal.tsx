@@ -137,7 +137,7 @@ export function PreviewModal({
           <div className="p-4 border-b bg-muted/20 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold tracking-tight">{product.name}</h2>
+                <h2 className="text-lg font-semibold tracking-tight">{product.name}</h2>
                 <QualityBadge score={product.qualityScore} />
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
@@ -227,7 +227,7 @@ export function PreviewModal({
             {/* 2. Category specs */}
             {previewTab === 'specs' && (
               <div className="space-y-4">
-                <h4 className="font-semibold text-base flex items-center gap-2">
+                <h4 className="text-sm font-semibold leading-tight flex items-center gap-2">
                   <Tag className="w-4 h-4 text-primary" /> Vendor Specifications & Category
                   Attributes
                 </h4>
@@ -255,7 +255,7 @@ export function PreviewModal({
             {/* 3. Sizes */}
             {previewTab === 'sizes' && (
               <div className="space-y-4">
-                <h4 className="font-semibold text-base flex items-center gap-2">
+                <h4 className="text-sm font-semibold leading-tight flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-primary" /> Size Guide & Measurements Matrix
                 </h4>
                 {(product.sizes ?? []).length > 0 ? (
@@ -327,7 +327,7 @@ export function PreviewModal({
             {/* 4. Variants & stock */}
             {previewTab === 'variants' && (
               <div className="space-y-4">
-                <h4 className="font-semibold text-base flex items-center gap-2">
+                <h4 className="text-sm font-semibold leading-tight flex items-center gap-2">
                   <Layers className="w-4 h-4 text-primary" /> Variant Stock & Inventory Matrix
                 </h4>
                 {(product.colorVariants ?? []).length > 0 ? (
@@ -410,9 +410,9 @@ export function PreviewModal({
               <div className="space-y-4">
                 <div className="flex flex-col items-stretch gap-3 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h4 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                       <ShieldCheck className="w-5 h-5 text-success" /> Automated QC Quality Score
-                    </h4>
+                    </h2>
                     <p className="text-xs text-muted-foreground">
                       System audit computed from listing completeness & guideline metrics.
                     </p>
@@ -471,7 +471,7 @@ export function PreviewModal({
             {/* 6. Audit history */}
             {previewTab === 'history' && (
               <div className="space-y-4">
-                <h4 className="font-semibold text-base flex items-center gap-2">
+                <h4 className="text-sm font-semibold leading-tight flex items-center gap-2">
                   <History className="w-4 h-4 text-primary" /> Listing Audit & Review Log
                 </h4>
                 {(product.reviewHistory ?? []).length > 0 ? (

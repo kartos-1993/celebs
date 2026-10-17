@@ -1,86 +1,72 @@
+import { moneyMax, moneyPercentOf, moneySubtract } from '@celebs/shared-utils';
+
 import { RenderableBundleItem } from '../components/combo-bundle-item-card';
 import { ComboBundleData } from '../components/combo-bundle-showcase';
 
-export const FALLBACK_BUNDLE_ITEMS: RenderableBundleItem[] = [
-  {
-    id: 'item_thermal_top',
-    name: 'Heavy Fleece Thermal Top',
-    originalPrice: 2499,
-    image:
-      'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&auto=format&fit=crop',
-    sizes: ['M', 'L', 'XL'],
-    colors: ['Black', 'Grey'],
-  },
-  {
-    id: 'item_puffer_jacket',
-    name: 'Windproof Winter Puffer Coat',
-    originalPrice: 5999,
-    image: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=400&auto=format&fit=crop',
-    sizes: ['M', 'L', 'XL'],
-    colors: ['Black', 'Navy'],
-  },
-  {
-    id: 'item_thermal_bottom',
-    name: 'Insulated Base Layer Pant',
-    originalPrice: 1999,
-    image:
-      'https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&auto=format&fit=crop',
-    sizes: ['M', 'L', 'XL'],
-    colors: ['Black'],
-  },
-];
+import { firstRenderableImage } from '@/utils/image';
 
+/** Finite non-negative number, or undefined. Tolerates a NULL API price. */
+function finiteOrZero(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Projects the backend-declared bundle items onto renderable rows.
+ *
+ * Nothing is invented: no demo/Unsplash imagery, no default price, no default
+ * S/M/L/XL size list, no 'Default' color. A row the API did not hydrate is
+ * dropped, and the caller renders its empty state.
+ */
 export function getComboDisplayItems(combo: ComboBundleData | null): RenderableBundleItem[] {
-  if (combo?.itemDetails && combo.itemDetails.length > 0) {
-    return combo.itemDetails.map((item, idx) => {
-      const prod = item.product;
-      const mainImg =
-        prod?.mainImages && prod.mainImages.length > 0
-          ? prod.mainImages[0]
-          : prod?.colorVariants &&
-              prod.colorVariants.length > 0 &&
-              prod.colorVariants[0]?.images?.length
-            ? prod.colorVariants[0].images[0]
-            : FALLBACK_BUNDLE_ITEMS[idx % FALLBACK_BUNDLE_ITEMS.length].image;
+  const itemDetails = combo?.itemDetails ?? combo?.items ?? [];
+  if (itemDetails.length === 0) return [];
 
-      const sizes = prod?.colorVariants
-        ? Array.from(
-            new Set(
-              prod.colorVariants.flatMap(
-                (cv) => cv.stocks?.map((s) => s.size).filter(Boolean) || [],
-              ),
-            ),
-          )
-        : [];
+  return itemDetails.flatMap((item, idx) => {
+    const prod = item.product;
+    if (!prod?.id) return [];
 
-      const colors = prod?.colorVariants
-        ? prod.colorVariants.map((cv) => cv.name).filter(Boolean)
-        : [];
+    const colorImages = prod.colorVariants?.flatMap((cv) => cv.images ?? []) ?? [];
+    // The derived `cover` is the field the API sends; a colour gallery is the
+    // per-colour override that only some bundle rows carry.
+    const image = prod.cover?.trim() ?? firstRenderableImage(colorImages) ?? '';
+    const sizes = Array.from(
+      new Set(
+        (prod.colorVariants ?? []).flatMap(
+          (cv) => (cv.stocks ?? []).map((s) => s.size).filter(Boolean) as string[],
+        ),
+      ),
+    );
+    const colors = (prod.colorVariants ?? []).map((cv) => cv.name).filter(Boolean);
 
-      return {
+    return [
+      {
         id: item.id || `item_${idx}`,
-        name: prod?.name || `Product ${idx + 1}`,
-        originalPrice: prod?.price || 2499,
-        image: mainImg,
-        sizes: sizes.length > 0 ? sizes : ['S', 'M', 'L', 'XL'],
-        colors: colors.length > 0 ? colors : ['Default'],
-      };
-    });
-  }
-  return FALLBACK_BUNDLE_ITEMS;
+        name: prod.name ?? '',
+        originalPrice: finiteOrZero(prod.price),
+        image,
+        sizes,
+        colors,
+      },
+    ];
+  });
 }
 
 export function calculateComboPricing(combo: ComboBundleData | null, totalOriginal: number) {
-  let finalPrice = totalOriginal;
+  const original = Number.isFinite(totalOriginal) ? moneyMax(0, totalOriginal) : 0;
+  let finalPrice = original;
   let savings = 0;
 
   if (combo) {
+    // Exact: this is a percentage of a price the shopper is shown, and the
+    // difference between the float answer and the decimal one is a rupee on a
+    // large bundle.
     if (combo.discountType === 'PERCENTAGE') {
-      savings = Math.round((totalOriginal * combo.discountValue) / 100);
-      finalPrice = totalOriginal - savings;
+      savings = moneyPercentOf(original, finiteOrZero(combo.discountValue));
+      finalPrice = moneySubtract(original, savings);
     } else {
-      savings = Number(combo.discountValue);
-      finalPrice = Math.max(0, totalOriginal - savings);
+      savings = moneyMax(0, finiteOrZero(combo.discountValue));
+      finalPrice = moneyMax(0, moneySubtract(original, savings));
     }
   }
 

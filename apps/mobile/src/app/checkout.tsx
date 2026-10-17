@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { AlertTriangle } from 'lucide-react-native';
 
+import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { showToast } from '@/components/toast/toast';
+import { Palette } from '@/constants/theme';
 import { AddressFormSheet } from '@/features/addresses/components/address-form-sheet';
 import { useAddresses } from '@/features/addresses/hooks/use-addresses';
 import { useAuth } from '@/features/auth/context/auth-context';
@@ -22,16 +25,23 @@ import {
   type CheckoutPaymentMethod,
   SelectPaymentMethodModal,
 } from '@/features/checkout/components/select-payment-method-modal';
-import { COD_MAX_LIMIT, FREE_SHIPPING_THRESHOLD } from '@/features/checkout/constants';
 import { useCheckoutAddressForm } from '@/features/checkout/hooks/use-checkout-address-form';
 import { useCheckoutMutation } from '@/features/checkout/hooks/use-checkout-mutation';
 import { useCheckoutPricing } from '@/features/checkout/hooks/use-checkout-pricing';
+import { useCommercePolicy } from '@/features/checkout/hooks/use-commerce-policy';
 import { styles } from '@/features/checkout/styles/checkout.styles';
 
+/** Shown only before the server has quoted; never used to compute a charge. */
+const UNKNOWN_DELIVERY_THRESHOLD = 5000;
+
 export default function CheckoutScreen() {
+  // The server owns these numbers; the app reads them so it displays the same
+  // figures it will be charged, and falls back to the shipped defaults until the
+  // policy arrives.
+  const commercePolicy = useCommercePolicy();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { cart, subtotal, selectedItems, selectedSubtotal } = useCart();
+  const { cart, subtotal, selectedItems, selectedSubtotal, refreshCart } = useCart();
   const { isLoggedIn } = useAuth();
   const { signInWithGoogle, isAuthenticating } = useGoogleAuth();
   const { placeOrder, isPlacingOrder, activePayment, handlePaymentResult } = useCheckoutMutation();
@@ -53,6 +63,7 @@ export default function CheckoutScreen() {
     grandTotal,
     isCodDisabled,
     canPlaceOrder,
+    stockWarning,
     deliveryCaption,
   } = useCheckoutPricing({
     selectedItems,
@@ -61,7 +72,27 @@ export default function CheckoutScreen() {
     subtotal,
     isLoggedIn,
     effectiveAddressId: addrForm.effectiveSelectedId,
+    policy: commercePolicy,
+    freeShippingThreshold: cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD,
+    serverShippingFee: cart?.shippingFee,
+    serverDeliveryIsEstimate: cart?.deliveryIsEstimate,
+    serverTotal: cart?.total,
   });
+
+  // Preflight: revalidate cart truth on mount and every foreground so
+  // checkout never prices or places from a stale cart.
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshCart();
+    }
+  }, [isLoggedIn, refreshCart]);
+  useFocusEffect(
+    useCallback(() => {
+      if (isLoggedIn) {
+        refreshCart();
+      }
+    }, [isLoggedIn, refreshCart]),
+  );
 
   const handlePlaceOrder = () => {
     if (!addrForm.effectiveSelectedId) {
@@ -70,6 +101,10 @@ export default function CheckoutScreen() {
     }
     if (checkoutItems.length === 0) {
       showToast('Please select items in your cart before checking out');
+      return;
+    }
+    if (stockWarning) {
+      showToast(stockWarning);
       return;
     }
     placeOrder(addrForm.effectiveSelectedId, paymentMethod);
@@ -101,6 +136,25 @@ export default function CheckoutScreen() {
         }
       >
         <CheckoutItemsStrip items={checkoutItems} itemsCount={itemsCount} />
+        {stockWarning ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginHorizontal: 16,
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 12,
+              backgroundColor: Palette.dangerTint,
+            }}
+          >
+            <AlertTriangle size={18} color={Palette.danger} />
+            <ThemedText style={{ flex: 1, fontSize: 13, color: Palette.danger }}>
+              {stockWarning}
+            </ThemedText>
+          </View>
+        ) : null}
         <View style={styles.sectionBand} />
 
         <CheckoutAddressSection
@@ -116,7 +170,7 @@ export default function CheckoutScreen() {
           paymentMethod={paymentMethod}
           isCodDisabled={isCodDisabled}
           grandTotal={grandTotal}
-          codMaxLimit={COD_MAX_LIMIT}
+          codMaxLimit={commercePolicy.codMaxLimit}
           onOpenModal={() => setPaymentModalOpen(true)}
         />
         <View style={styles.sectionBand} />
@@ -125,7 +179,7 @@ export default function CheckoutScreen() {
           itemsSubtotal={itemsSubtotal}
           shippingFee={shippingFee}
           grandTotal={grandTotal}
-          freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
+          freeShippingThreshold={cart?.freeDeliveryThreshold ?? UNKNOWN_DELIVERY_THRESHOLD}
         />
       </ScrollView>
 
@@ -157,7 +211,7 @@ export default function CheckoutScreen() {
         subtotal={itemsSubtotal}
         grandTotal={grandTotal}
         isCodDisabled={isCodDisabled}
-        codMaxLimit={COD_MAX_LIMIT}
+        codMaxLimit={commercePolicy.codMaxLimit}
       />
 
       <InAppPaymentSheet

@@ -1,0 +1,43 @@
+import { memo } from 'react';
+
+import { useSubmissionState } from '../../hooks/use-submission-state';
+import type { FieldSpec, VariantMetaItem } from '../../types';
+import { SubmissionProgressChecklist } from '../submission-progress-checklist';
+
+import { CommissionCalculatorPanel } from '@/features/finance/commission/components/commission-calculator-panel';
+
+interface ProductSubmissionSidebarProps {
+  schemaFields: FieldSpec[];
+  schemaHasName: boolean;
+  variantMeta: Array<Pick<VariantMetaItem, 'key' | 'label'>>;
+  onSectionClick: (anchorId: string) => void;
+}
+
+export const ProductSubmissionSidebar = memo(function ProductSubmissionSidebar({
+  schemaFields,
+  schemaHasName,
+  variantMeta,
+  onSectionClick,
+}: ProductSubmissionSidebarProps) {
+  const { sections, completionPercentage, showErrors } = useSubmissionState({
+    schemaFields,
+    schemaHasName,
+    variantMeta,
+  });
+
+  return (
+    <aside className="sticky top-20 hidden space-y-4 self-start lg:block">
+      <SubmissionProgressChecklist
+        sections={sections}
+        completionPercentage={completionPercentage}
+        onSectionClick={onSectionClick}
+        showErrors={showErrors}
+      />
+
+      {/* What the seller keeps, beside the form where the price is typed. A seller
+          who works out their own cut from a percentage gets it subtly wrong, and a
+          figure they cannot reconcile is a figure they will not trust. */}
+      <CommissionCalculatorPanel />
+    </aside>
+  );
+});

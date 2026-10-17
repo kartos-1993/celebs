@@ -1,0 +1,30 @@
+version: '3.8'
+
+networks:
+  celebs-net:
+    external: true
+
+services:
+  # ─── CELEBS API (EXPRESS) ──────────────────────────────────────────────────
+  api:
+    image: celebs-app:latest
+    container_name: celebs-api
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    env_file:
+      - .env.production
+    ports:
+      - '3000:3000'
+    command: ['node', 'dist/main.js']
+
+  # ─── CELEBS BACKGROUND WORKER (BULLMQ) ─────────────────────────────────────
+  worker:
+    image: celebs-app:latest
+    container_name: celebs-worker
+    restart: unless-stopped
+    networks:
+      - celebs-net
+    env_file:
+      - .env.production
+    command: ['node', 'dist/worker-main.js']

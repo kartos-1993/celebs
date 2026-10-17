@@ -31,6 +31,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-Surface': 'mobile',
   },
 });
 
@@ -64,6 +65,31 @@ export const getAuthToken = getAccessToken;
 
 let refreshInFlight: Promise<string | null> | null = null;
 
+interface RefreshPayload {
+  accessToken: string;
+  refreshToken: string;
+}
+
+/**
+ * Explicit shape validation for the /auth/refresh envelope (mobile
+ * AGENTS.md §5/§7). Throws a descriptive error instead of `as`-casting
+ * `response.data?.data` and silently continuing with undefined tokens.
+ */
+function assertRefreshPayload(body: unknown): RefreshPayload {
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    typeof (body as { accessToken?: unknown }).accessToken === 'string' &&
+    typeof (body as { refreshToken?: unknown }).refreshToken === 'string'
+  ) {
+    return body as RefreshPayload;
+  }
+  throw new Error(
+    `Malformed /auth/refresh envelope: expected { accessToken, refreshToken } but received ` +
+      `${body === null ? 'null' : typeof body}. Fix the backend controller at the source.`,
+  );
+}
+
 async function performRefresh(): Promise<string | null> {
   const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
   if (!refreshToken) return null;
@@ -71,12 +97,16 @@ async function performRefresh(): Promise<string | null> {
   try {
     // Bare axios instance — deliberately bypasses this file's interceptors.
     const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, undefined, {
-      headers: { 'x-refresh-token': refreshToken },
+      headers: {
+        'x-refresh-token': refreshToken,
+        'X-Surface': 'mobile',
+      },
       timeout: API_CONFIG.timeout,
     });
 
-    const data = response.data?.data as { accessToken?: string; refreshToken?: string } | undefined;
-    if (!data?.accessToken || !data?.refreshToken) return null;
+    // Unwrap exactly one canonical envelope level, then validate — no
+    // `data?.data as {...}` shim. A malformed body throws and is caught below.
+    const data = assertRefreshPayload((response.data as { data?: unknown } | undefined)?.data);
 
     accessToken = data.accessToken;
     await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
@@ -148,6 +178,7 @@ const GUEST_CAPABLE_PREFIXES = [
   '/settings',
   '/storefront',
   '/quick-filters',
+  '/reviews',
 ];
 
 function isGuestCapable(url?: string): boolean {

@@ -1,19 +1,19 @@
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react-native';
 
 import { CartItemHydrated } from '@celebs/shared-types';
 
-import { getDiscountPercent, getUnitPrice } from '../utils/cart-selectors';
+import { useCartLineProduct } from '../hooks/use-cart-line-product';
+import { getDiscountPercent, getUnitPrice, resolveCartLineImage } from '../utils/cart-selectors';
 
 import { CartCheckbox } from './cart-checkbox';
 import { styles } from './cart-item-card.styles';
 import { CartPrice } from './cart-price';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
-import { resolveImageUrl } from '@/features/products/hooks/use-products';
 
 interface CartItemCardProps {
   item: CartItemHydrated;
@@ -36,6 +36,13 @@ export function CartItemCard({
   const discountPercent = getDiscountPercent(item);
   const variantLabel = [item.colorVariantName, item.size].filter(Boolean).join(' / ');
 
+  // The thumbnail is resolved from the CURRENT product, never from the frozen
+  // `item.image` snapshot (empty on the optimistic row, stale after a gallery
+  // swap). `displayImage` is `undefined` only when the product genuinely has no
+  // picture, which renders the neutral tile instead of a broken image.
+  const { data: product } = useCartLineProduct(item.productId);
+  const displayImage = resolveCartLineImage(item, product);
+
   return (
     <View style={[styles.row, isOutOfStock && styles.rowDisabled]}>
       <View style={styles.checkboxWrap}>
@@ -48,11 +55,12 @@ export function CartItemCard({
       </View>
 
       <View style={styles.thumbnailWrap}>
-        <Image
-          source={{ uri: resolveImageUrl(item.image || '') }}
-          style={[styles.thumbnail, isOutOfStock && styles.thumbnailOos]}
+        <MobileApparelImage
+          src={displayImage}
+          preset="thumbnail"
+          containerStyle={[styles.thumbnail, isOutOfStock && styles.thumbnailOos]}
           contentFit="cover"
-          transition={200}
+          alt={`${item.productName} thumbnail`}
         />
         {isOutOfStock && (
           <View style={styles.oosOverlay} pointerEvents="none">

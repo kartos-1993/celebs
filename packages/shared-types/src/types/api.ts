@@ -18,6 +18,23 @@ export interface IPaginatedResponse<T> {
   totalPages: number;
 }
 
+/**
+ * What sendPaginated actually puts on the wire.
+ *
+ * The canonical helper keeps the rows in `data` and the counts in `meta`, which is
+ * not the same shape as IPaginatedResponse above. Rather than let each client
+ * re-derive it - consumers were reaching for `as unknown as { meta?: ... }` to see
+ * the totals at all - the envelope is named here once.
+ */
+export interface IPaginatedApiResponse<T> extends IApiResponse<T[]> {
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // Interface for query parameters with pagination
 export interface IPaginationQuery {
   page?: number;

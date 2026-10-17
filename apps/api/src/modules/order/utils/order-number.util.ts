@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 /**
- * Enterprise Order Number Generator (SHEIN / Alibaba / Daraz standard):
+ * Enterprise Order Number Generator:
  * Format: CEL-YYMMDD-XXXXXX (e.g. CEL-260908-489214)
  * - YYMMDD: Chronological, human-readable date for customer support & warehouse operations
  * - XXXXXX: Cryptographic 6-digit random entropy to prevent volume enumeration and collision

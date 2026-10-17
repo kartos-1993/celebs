@@ -4,7 +4,7 @@ import { logger } from '@celebs/shared-utils';
 
 import { sessionService } from './session.service';
 
-import { redisConnection } from '@/common/services/queue.service';
+import { redisConnection, WORKER_DRAIN_DELAY_SECONDS } from '@/common/services/queue.service';
 
 export const sessionWorker = new Worker(
   'session-maintenance',
@@ -26,5 +26,6 @@ export const sessionWorker = new Worker(
   {
     connection: redisConnection,
     concurrency: 1,
+    drainDelay: WORKER_DRAIN_DELAY_SECONDS,
   },
 );

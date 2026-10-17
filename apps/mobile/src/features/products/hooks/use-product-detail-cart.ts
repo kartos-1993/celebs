@@ -7,13 +7,44 @@ import {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { clampColorIndex } from './use-product-variant-selection';
 
 import { showToast } from '@/components/toast/toast';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
+import { getProductById, PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import type { Product } from '@/features/products/hooks/use-products';
-import { resolveImageUrl } from '@/features/products/hooks/use-products';
-import { isSizeOutOfStockForVariant } from '@/features/products/utils/stock';
+import { planCartAdd } from '@/features/products/utils/stock';
+import { resolveImageUrl } from '@/utils/image';
+
+/** Revalidates the detail entry; a failed revalidation falls back to the cached copy. */
+async function fetchFreshProduct(
+  queryClient: ReturnType<typeof useQueryClient>,
+  product: Product,
+): Promise<Product> {
+  try {
+    return await queryClient.fetchQuery({
+      queryKey: PRODUCT_QUERY_KEYS.detail(product.id),
+      queryFn: () => getProductById(product.id),
+      staleTime: 0,
+    });
+  } catch {
+    // Revalidation failed (offline?): the server guard still rejects oversells.
+    return product;
+  }
+}
+
+function toastMessageForAddError(err: unknown): string {
+  const raw =
+    err instanceof Error && err.message ? err.message : 'Could not add to cart. Please try again.';
+  return /exceeds available stock|out of stock/i.test(raw) ? 'No stock available' : raw;
+}
+
+function triggerFly(variantImage: string | undefined, startFlyAnimation: (image: string) => void) {
+  if (variantImage) startFlyAnimation(variantImage);
+}
 
 interface UseProductDetailCartParams {
   product: Product | null;
@@ -37,6 +68,7 @@ export function useProductDetailCart({
   const { width: windowWidth } = useWindowDimensions();
   const { addToCart } = useCart();
   const { startFlyAnimation, setCartIconCoords, pulseTrigger } = useFlyToCart();
+  const queryClient = useQueryClient();
   const topCartBtnRef = useRef<View>(null);
   const topCartCoordsRef = useRef<{ x: number; y: number }>({
     x: windowWidth - 72,
@@ -126,39 +158,52 @@ export function useProductDetailCart({
   const handleAddToCart = useCallback(
     async (overrideSize?: string) => {
       if (!product) return;
-      const finalSize = overrideSize || selectedSize;
-      const currentVariant = product.colorVariants?.[selectedColorIndex];
-      const isFinalOos = finalSize ? isSizeOutOfStockForVariant(currentVariant, finalSize) : false;
-
-      if (isFullyOutOfStock || isFinalOos) {
-        showToast('No stock available', { type: 'error' });
-        return;
-      }
-      if (product.sizes && product.sizes.length > 0 && !finalSize) {
-        onOpenSizeModal();
-        return;
-      }
+      // A legacy 'Standard'/'Default' value is a nothing-selected state, never
+      // a real pick — filtered with the shared placeholder helper at submit time.
+      const requestedSize = overrideSize || selectedSize;
 
       setIsAdding(true);
       try {
-        await addToCart({
-          productId: product.id,
-          quantity: 1,
-          size: finalSize || 'Standard',
-          colorVariantName: product.colorVariants?.[selectedColorIndex]?.name || 'Standard',
+        // Truth check before celebration: revalidate the detail entry and judge
+        // stock on the fresh copy, not the possibly-stale render copy. Server
+        // CTE remains the final guard for the check-to-write race.
+        const freshProduct = await fetchFreshProduct(queryClient, product);
+        // The size modal and the stock verdict must target the FRESH variant
+        // list: a refetch that returned fewer variants would otherwise make the
+        // modal resolve against the wrong (or no) SKU.
+        const variantIndex = clampColorIndex(
+          selectedColorIndex,
+          freshProduct.colorVariants?.length ?? 0,
+        );
+        const plan = planCartAdd({
+          product: freshProduct,
+          variantIndex,
+          requestedSize,
+          isFullyOutOfStock,
         });
-        const flyImage =
-          product.colorVariants?.[selectedColorIndex]?.images?.[0] || product.mainImages?.[0] || '';
-        if (flyImage) {
-          triggerFlyAnimation(flyImage);
+
+        if (plan.kind === 'out-of-stock') {
+          showToast('No stock available', { type: 'error' });
+          return;
         }
+        if (plan.kind === 'pick-size') {
+          onOpenSizeModal();
+          return;
+        }
+        if (plan.kind === 'unresolved') {
+          showToast('Please select a size and color', { type: 'error' });
+          return;
+        }
+
+        await addToCart({
+          productId: freshProduct.id,
+          quantity: 1,
+          size: plan.size,
+          colorVariantName: plan.color,
+        });
+        triggerFly(freshProduct.colorVariants?.[variantIndex]?.images?.[0], triggerFlyAnimation);
       } catch (err: unknown) {
-        const raw =
-          err instanceof Error && err.message
-            ? err.message
-            : 'Could not add to cart. Please try again.';
-        const isOosError = /exceeds available stock|out of stock/i.test(raw);
-        showToast(isOosError ? 'No stock available' : raw, { type: 'error' });
+        showToast(toastMessageForAddError(err), { type: 'error' });
       } finally {
         setIsAdding(false);
       }
@@ -171,6 +216,7 @@ export function useProductDetailCart({
       onOpenSizeModal,
       addToCart,
       triggerFlyAnimation,
+      queryClient,
     ],
   );
 

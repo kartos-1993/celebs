@@ -4,7 +4,7 @@ import type { AttributeGroup as AllowedGroup } from '@celebs/shared-types';
 
 import prisma from '../../config/db.prisma';
 
-interface SeedAttr {
+export interface SeedAttr {
   name: string;
   label?: string;
   type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
@@ -15,7 +15,7 @@ interface SeedAttr {
   placeholder?: string;
 }
 
-interface SeedCategory {
+export interface SeedCategory {
   name: string;
   imageUrl?: string;
   attributes?: SeedAttr[];
@@ -36,7 +36,7 @@ function mkAttr(a: SeedAttr) {
   };
 }
 
-const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
+export const JEWELRY_ACCESSORIES_TREE: SeedCategory = {
   name: 'Jewelry & Accessories',
   imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
   children: [

@@ -1,8 +1,10 @@
 import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { useFormContext } from 'react-hook-form';
+import { Trash2 } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
-import { Input } from '@celebs/shared-ui/components/input';
+
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
 
 import { ColorMetaGalleryList } from './color-meta-gallery-list';
 import { ColorMetaSwatchTile } from './color-meta-swatch-tile';
@@ -24,8 +26,6 @@ export function ColorMetaItem({ color, namePrefix, accept, limits, onRemove }: C
     imagePreviews,
     isUploadingSwatch,
     isUploadingGallery,
-    isEditingColor,
-    setIsEditingColor,
     canAddMore,
     remainingSlots,
     maxImages,
@@ -35,13 +35,22 @@ export function ColorMetaItem({ color, namePrefix, accept, limits, onRemove }: C
     onReplaceImage,
     onRemoveImage,
     appendImages,
-    onUpdateColorName,
     onSetSwatchFromUrl,
   } = useColorMetaItem({ color, namePrefix, accept, limits });
 
   const acceptStr = Array.isArray(accept) ? accept.join(',') : undefined;
-  const swatchErr = getPathError(formErrors, `${namePrefix}.swatch`)?.message;
-  const imagesErr = getPathError(formErrors, `${namePrefix}.images`)?.message;
+  // Each message is gated on ITS OWN path: touching Red's gallery must not
+  // surface Red's swatch complaint, and Blue stays silent either way.
+  const { control } = useFormContext();
+  const { revealError } = useFieldErrorReveal(control);
+  const swatchPath = `${namePrefix}.swatch`;
+  const imagesPath = `${namePrefix}.images`;
+  const swatchErr = revealError(swatchPath)
+    ? getPathError(formErrors, swatchPath)?.message
+    : undefined;
+  const imagesErr = revealError(imagesPath)
+    ? getPathError(formErrors, imagesPath)?.message
+    : undefined;
   const rowError = imagesErr ?? swatchErr;
 
   return (
@@ -56,27 +65,12 @@ export function ColorMetaItem({ color, namePrefix, accept, limits, onRemove }: C
           onSelectLibrary={(urls) => onSetSwatchFromUrl(urls[0])}
         />
 
-        {isEditingColor ? (
-          <Input
-            type="text"
-            defaultValue={color}
-            autoFocus
-            className="h-8 w-32 text-xs"
-            onBlur={(e) => onUpdateColorName(e.target.value.trim())}
-          />
-        ) : (
-          <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-            {color}
-            <button
-              type="button"
-              title="Rename color"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => setIsEditingColor(true)}
-            >
-              <Pencil className="h-3 w-3" />
-            </button>
-          </span>
-        )}
+        {/* The colour NAME is the axis value, not an editable row field: the
+            payload reads it from the colour axis (`add-product-payload.ts`), so
+            a per-row rename wrote `<prefix>.name`, which nothing ever read —
+            the edit vanished and the photos stayed under the original key.
+            Rename the colour on the Color axis above instead. */}
+        <span className="text-sm font-medium text-foreground">{color}</span>
 
         <ColorMetaGalleryList
           color={color}
@@ -117,11 +111,11 @@ export function ColorMetaItem({ color, namePrefix, accept, limits, onRemove }: C
         </div>
       </div>
 
-      {rowError ? (
-        <div className="pt-1.5">
-          <FieldError message={rowError} />
-        </div>
-      ) : null}
+      {/* No `pt-*` wrapper: `FieldError` already carries its own `mt-1`, and the
+          old `pt-1.5` stacked 10px of gap under the swatch row. This is a
+          full-width stacked block, not a table cell, so the message stays in
+          flow where it can actually be read. */}
+      {rowError ? <FieldError message={rowError} /> : null}
     </div>
   );
 }

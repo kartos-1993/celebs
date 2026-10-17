@@ -1,119 +1,111 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { ChevronRight, Ruler, ScanLine } from 'lucide-react-native';
 
-import { ProductColorVariant, ProductSize } from '../hooks/use-products';
-import { isVariantOutOfStock } from '../utils/stock';
+import type { ProductColorVariant, ProductSize, ProductVariantOption } from '../types';
+import { isPlaceholderSelection, resolveProductSizes } from '../utils/stock';
 
+import { ColorSwatchItem } from './color-swatch-item';
 import { styles } from './product-variant-selector.styles';
+import { SizeBoxItem } from './size-box-item';
 
 import { ThemedText } from '@/components/themed-text';
-import { showToast } from '@/components/toast/toast';
-import { resolveImageUrl } from '@/constants/config';
+import { Palette } from '@/constants/theme';
 
-interface ProductVariantSelectorProps {
+const COLOR_PROMPT = 'Select a color';
+const SIZE_PROMPT = 'Select a size';
+const noop = () => {};
+
+export interface ProductVariantSelectorProps {
   colorVariants?: ProductColorVariant[];
   selectedColorIndex: number;
   onSelectColor: (index: number) => void;
   sizes?: ProductSize[];
+  variantOptions?: ProductVariantOption[];
   selectedSize: string;
   onSelectSize: (sizeName: string) => void;
 }
-
-interface ColorSwatchItemProps {
-  variant: ProductColorVariant;
-  isSelected: boolean;
-  onSelect: () => void;
-}
-
-const ColorSwatchItem: React.FC<ColorSwatchItemProps> = ({ variant, isSelected, onSelect }) => {
-  const [imageFailed, setImageFailed] = useState(false);
-  // Canonical dot source: explicit swatch first, then first gallery photo.
-  const rawImage =
-    (variant as { swatch?: string }).swatch ||
-    variant.images?.[0] ||
-    (variant as { image?: string }).image;
-  const imageUrl = rawImage ? resolveImageUrl(rawImage) : null;
-  const variantOos = isVariantOutOfStock(variant);
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.colorChip,
-        isSelected && styles.colorChipSelected,
-        variantOos && styles.colorChipDisabled,
-      ]}
-      onPress={onSelect}
-      activeOpacity={0.8}
-      accessible={true}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`Select color ${variant.name}${variantOos ? ' — out of stock' : ''}`}
-    >
-      {imageUrl && !imageFailed ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.colorThumbnail}
-          contentFit="cover"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <View style={[styles.colorDot, { backgroundColor: variant.colorCode || '#000000' }]} />
-      )}
-      {variantOos && (
-        <View style={styles.colorChipDisabledOverlay} pointerEvents="none">
-          <View style={styles.colorChipDisabledLine} />
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-};
 
 export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   colorVariants,
   selectedColorIndex,
   onSelectColor,
   sizes,
+  variantOptions,
   selectedSize,
   onSelectSize,
 }) => {
   const currentColorVariant = colorVariants?.[selectedColorIndex];
   const stocks = currentColorVariant?.stocks;
 
-  // Helper to get stock quantity for a size under the current color variant
-  const getStockQtyForSize = (sizeName: string): number | null => {
-    if (!stocks || stocks.length === 0) return null;
-    const item = stocks.find((st) => st.size.toLowerCase() === sizeName.toLowerCase());
-    return item ? item.quantity : null;
-  };
+  // Unify sizes across measurements, variantOptions, and inventory stocks
+  const effectiveSizes = useMemo(
+    () => resolveProductSizes({ sizes, colorVariants, variantOptions }, selectedColorIndex),
+    [sizes, colorVariants, variantOptions, selectedColorIndex],
+  );
 
-  const selectedSizeQty = selectedSize ? getStockQtyForSize(selectedSize) : null;
+  const getStockQtyForSize = useCallback(
+    (sizeName: string): number | null => {
+      if (!stocks || stocks.length === 0) return null;
+      const item = stocks.find((st) => st.size.toLowerCase() === sizeName.toLowerCase());
+      return item ? item.quantity : null;
+    },
+    [stocks],
+  );
 
-  const selectedSizeData = sizes?.find((s) => s.name.toLowerCase() === selectedSize.toLowerCase());
+  // Nothing selected is a prompt, never a sentinel label. A legacy
+  // 'Default'/'Standard' value counts as nothing selected too.
+  const hasSize = Boolean(selectedSize) && !isPlaceholderSelection(selectedSize);
+  const hasColor = !isPlaceholderSelection(currentColorVariant?.name);
+  const colorLabel = hasColor ? currentColorVariant?.name : COLOR_PROMPT;
+  const sizeLabel = hasSize ? selectedSize : SIZE_PROMPT;
+
+  const selectedSizeQty = hasSize ? getStockQtyForSize(selectedSize) : null;
+  const selectedSizeData = useMemo(
+    () => effectiveSizes.find((s) => s.name.toLowerCase() === selectedSize.toLowerCase()),
+    [effectiveSizes, selectedSize],
+  );
   const selectedMeasurements = selectedSizeData?.productMeasurements ?? [];
+
+  /**
+   * Stable per-size press handlers. `SizeBoxItem` takes a bare `onSelect`, so
+   * an inline arrow in the map would allocate a new gesture handler on every
+   * render (mobile AGENTS.md §2). Keyed by size name, so the identity only
+   * changes when the size list or the parent callback changes.
+   */
+  const sizeHandlers = useMemo(() => {
+    const handlers = new Map<string, () => void>();
+    for (const size of effectiveSizes) {
+      handlers.set(size.name, () => onSelectSize(size.name));
+    }
+    return handlers;
+  }, [effectiveSizes, onSelectSize]);
+
+  const hasRealColorVariants = Boolean(
+    colorVariants &&
+      colorVariants.length > 0 &&
+      !(colorVariants.length === 1 && colorVariants[0].name.toLowerCase() === 'default'),
+  );
 
   return (
     <View style={styles.container}>
       {/* Color Variants */}
-      {colorVariants && colorVariants.length > 0 && (
+      {hasRealColorVariants && (
         <View style={styles.section}>
           <View style={styles.labelRow}>
             <ThemedText style={styles.sectionLabel}>
-              Color:{' '}
-              <ThemedText style={styles.valueText}>
-                {currentColorVariant?.name || 'Standard'}
-              </ThemedText>
+              Color: <ThemedText style={styles.valueText}>{colorLabel}</ThemedText>
             </ThemedText>
-            <ChevronRight size={14} color="#9CA3AF" />
+            <ChevronRight size={14} color={Palette.gray400} />
           </View>
           <View style={styles.variantRow}>
-            {colorVariants.map((c, idx) => (
+            {colorVariants?.map((c, idx) => (
               <ColorSwatchItem
                 key={`${c.name}-${idx}`}
                 variant={c}
                 isSelected={selectedColorIndex === idx}
-                onSelect={() => onSelectColor(idx)}
+                variantIndex={idx}
+                onSelectColor={onSelectColor}
               />
             ))}
           </View>
@@ -121,74 +113,35 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
       )}
 
       {/* Size Variants */}
-      {sizes && sizes.length > 0 && (
+      {effectiveSizes.length > 0 && (
         <View style={styles.section}>
           <View style={styles.labelRow}>
             <ThemedText style={styles.sectionLabel}>
-              Size: <ThemedText style={styles.valueText}>{selectedSize || 'Default'}</ThemedText>
+              Size: <ThemedText style={styles.valueText}>{sizeLabel}</ThemedText>
             </ThemedText>
-            <ChevronRight size={14} color="#9CA3AF" />
+            <ChevronRight size={14} color={Palette.gray400} />
           </View>
 
           <View style={styles.variantRow}>
-            {sizes.map((s) => {
-              const isSelected = selectedSize === s.name;
-              const qty = getStockQtyForSize(s.name);
-              const isOutOfStock = qty !== null && qty <= 0;
-              const isLowStock = qty !== null && qty > 0 && qty <= 5;
-
-              return (
-                <TouchableOpacity
-                  key={s.name}
-                  style={[
-                    styles.sizeBox,
-                    isSelected && styles.sizeBoxSelected,
-                    isOutOfStock && styles.sizeBoxDisabled,
-                    isLowStock && !isSelected && styles.sizeBoxLowStock,
-                  ]}
-                  onPress={() => {
-                    if (isOutOfStock) {
-                      showToast('No stock available', { type: 'error' });
-                      return;
-                    }
-                    onSelectSize(s.name);
-                  }}
-                  activeOpacity={0.8}
-                  accessible={true}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected, disabled: isOutOfStock }}
-                  accessibilityLabel={`Select size ${s.name}${isOutOfStock ? ' — out of stock' : isLowStock ? ` — ${qty} left` : ''}`}
-                >
-                  <View style={styles.sizeBoxInner}>
-                    <ThemedText
-                      style={[
-                        styles.sizeText,
-                        isSelected && styles.sizeTextSelected,
-                        isOutOfStock && styles.sizeTextDisabled,
-                        isLowStock && !isSelected && styles.sizeTextLowStock,
-                      ]}
-                    >
-                      {s.name}
-                    </ThemedText>
-                    {isLowStock && (
-                      <ThemedText
-                        style={[
-                          styles.sizeLowStockTag,
-                          isSelected && styles.sizeLowStockTagSelected,
-                        ]}
-                      >
-                        {qty} left
-                      </ThemedText>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            {effectiveSizes.map((s) => (
+              <SizeBoxItem
+                key={s.name}
+                sizeName={s.name}
+                isSelected={selectedSize === s.name}
+                quantity={getStockQtyForSize(s.name)}
+                onSelect={sizeHandlers.get(s.name) ?? noop}
+              />
+            ))}
           </View>
 
           {/* Product Measurements — shown underneath once a size is selected */}
-          {selectedSize && selectedMeasurements.length > 0 && (
-            <TouchableOpacity style={styles.measurementBox} activeOpacity={0.9}>
+          {hasSize && selectedMeasurements.length > 0 && (
+            <TouchableOpacity
+              style={styles.measurementBox}
+              activeOpacity={0.9}
+              accessibilityRole="button"
+              accessibilityLabel={`Size measurements for size ${selectedSize}`}
+            >
               <View style={styles.measurementTextWrap}>
                 {selectedMeasurements.map((m) => (
                   <ThemedText key={m.name} style={styles.measurementText}>
@@ -197,26 +150,26 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                   </ThemedText>
                 ))}
               </View>
-              <ChevronRight size={14} color="#9CA3AF" />
+              <ChevronRight size={14} color={Palette.gray400} />
             </TouchableOpacity>
           )}
 
           {/* Size Guide Links */}
-          {selectedSize && (
+          {hasSize && (
             <View style={styles.sizeGuideRow}>
               <View style={styles.sizeGuideLink}>
-                <Ruler size={14} color="#18181B" />
+                <Ruler size={14} color={Palette.gray900} />
                 <ThemedText style={styles.sizeGuideText}>Size Guide</ThemedText>
               </View>
               <View style={styles.sizeGuideLink}>
-                <ScanLine size={14} color="#18181B" />
+                <ScanLine size={14} color={Palette.gray900} />
                 <ThemedText style={styles.sizeGuideText}>Check My Size</ThemedText>
               </View>
             </View>
           )}
 
-          {/* Stock status — Shein style: generic for OOS, no in-stock banner */}
-          {selectedSize && selectedSizeQty !== null && selectedSizeQty <= 0 && (
+          {/* Out of stock notice */}
+          {hasSize && selectedSizeQty !== null && selectedSizeQty <= 0 && (
             <View style={styles.stockNoticeBox}>
               <ThemedText style={styles.outOfStockText}>No stock available</ThemedText>
             </View>

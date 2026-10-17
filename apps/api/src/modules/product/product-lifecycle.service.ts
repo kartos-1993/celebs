@@ -1,23 +1,27 @@
 import { Prisma } from '@prisma/client';
 
+import { PRODUCT_STATUS, type ProductStatus, VENDOR_EDITABLE_STATUSES } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { InventoryRepository, inventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
+import { STOREFRONT_HOME_CACHE_KEY } from '../storefront/storefront.constants';
 import { VendorRepository, vendorRepository } from '../vendor/vendor.repository';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import {
   calculateProductQCScore,
   getColorImageBlockers,
+  NO_STOCK_BLOCKER,
+  type PublishFloorInput,
   sumVariantStock,
 } from './utils/product-qc';
-import { formatProductResponse } from './product.presenter';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
-import type { ProductStatusValue } from './product-status';
-import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
+import { isVisibilityFlip, purgeProduct, purgeProductLists } from './product-cache';
+import { formatProductResponse } from './product-format';
 
 import { enqueueMail } from '@/common/services/mail.queue';
+import { invalidateCacheKey } from '@/common/services/redis-cache.service';
 import { productRejectionEmailTemplate } from '@/mailers/templates/product-review.template';
 
 export class ProductLifecycleService {
@@ -53,7 +57,7 @@ export class ProductLifecycleService {
       );
     }
 
-    if (!VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)) {
+    if (!VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatus)) {
       throw new AppError(
         'Product is not in a submittable state',
         HTTPSTATUS.BAD_REQUEST,
@@ -61,9 +65,12 @@ export class ProductLifecycleService {
       );
     }
 
-    await this.assertPublishable(product.id, product.colorVariants);
+    await this.assertPublishable(product.id, product);
 
     const updated = await this.products.update(id, { status: PRODUCT_STATUS.PENDING_REVIEW });
+
+    // Pending review is invisible: detail truth moved, lists ride TTL.
+    purgeProduct(id);
 
     return formatProductResponse(updated);
   }
@@ -100,7 +107,7 @@ export class ProductLifecycleService {
 
     const args = this.parseReviewArgs(actionOrPayload, reviewerIdArg, noteArg);
     if (args.action === 'approve') {
-      await this.assertPublishable(product.id, product.colorVariants);
+      await this.assertPublishable(product.id, product);
     }
     const qcResult = calculateProductQCScore(formatProductResponse(product));
 
@@ -117,24 +124,30 @@ export class ProductLifecycleService {
       await this.sendRejectionEmail(id, product, updated, args);
     }
 
+    purgeProduct(id);
+    if (args.action === 'approve') {
+      purgeProductLists();
+    }
+
     return formatProductResponse(updated, { isElevated: true });
   }
 
   /**
-   * Strict publish floor: per-size 0 is fine, but all-zero stock or a color
-   * without photos stays out of review and out of the storefront. Live
-   * ProductInventory rows are authoritative when present, JSON otherwise.
+   * Strict publish floor: a colour axis needs a photo per colour, a colourless
+   * product needs a cover photo instead, and per-size 0 is fine but all-zero
+   * stock stays out of review and out of the storefront. Live ProductInventory
+   * rows are authoritative when present, JSON/SKU matrices otherwise.
    */
-  private async assertPublishable(productId: string, colorVariants: unknown): Promise<void> {
-    const blockers = [...getColorImageBlockers(colorVariants)];
+  private async assertPublishable(productId: string, product: PublishFloorInput): Promise<void> {
+    const blockers = [...getColorImageBlockers(product.colorVariants, product)];
 
     const liveRows = await this.inventoryRepository.findQuantitiesByProductId(productId);
     const total =
       liveRows.length > 0
         ? liveRows.reduce((sum, row) => sum + row.quantity, 0)
-        : sumVariantStock(colorVariants);
+        : sumVariantStock(product.colorVariants, product.skus);
     if (total <= 0) {
-      blockers.push('Add at least 1 unit in one size to publish.');
+      blockers.push(NO_STOCK_BLOCKER);
     }
 
     if (blockers.length > 0) {
@@ -273,6 +286,11 @@ export class ProductLifecycleService {
       updatedBy: userId,
     });
 
+    purgeProduct(id);
+    if (isVisibilityFlip(product.status, PRODUCT_STATUS.ARCHIVED)) {
+      purgeProductLists();
+    }
+
     if (product.status !== PRODUCT_STATUS.ARCHIVED) {
       await mediaRepository
         .adjustUsageByUrls(collectProductAssetUrls(updated), -1)
@@ -283,6 +301,10 @@ export class ProductLifecycleService {
           ),
         );
     }
+
+    await invalidateCacheKey(STOREFRONT_HOME_CACHE_KEY).catch((err) =>
+      logger.warn({ err }, 'Failed to invalidate storefront home cache after product archive'),
+    );
 
     return formatProductResponse(updated);
   }
@@ -318,6 +340,10 @@ export class ProductLifecycleService {
           ? PRODUCT_STATUS.DEACTIVATED
           : PRODUCT_STATUS.PUBLISHED,
     });
+
+    // Toggle always flips visibility by construction.
+    purgeProduct(id);
+    purgeProductLists();
 
     return formatProductResponse(updated);
   }

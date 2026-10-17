@@ -1,18 +1,15 @@
-import { lazy } from 'react';
 import { Navigate, RouteObject } from 'react-router-dom';
 
-const SignInPage = lazy(() => import('./pages/sign-in-page'));
-const SetupSuperadminPage = lazy(() => import('./pages/setup-superadmin-page'));
-const VendorRegisterPage = lazy(() => import('./pages/vendor-register-page'));
+import { pageRoute } from '@/routes/page-route';
 
 export const authRoutes: RouteObject[] = [
   {
     path: '/login',
-    element: <SignInPage />,
+    ...pageRoute(() => import('./pages/sign-in-page')),
   },
   {
     path: '/setup-superadmin',
-    element: <SetupSuperadminPage />,
+    ...pageRoute(() => import('./pages/setup-superadmin-page')),
   },
   {
     path: '/setup-admin',
@@ -20,6 +17,6 @@ export const authRoutes: RouteObject[] = [
   },
   {
     path: '/vendor/register',
-    element: <VendorRegisterPage />,
+    ...pageRoute(() => import('./pages/vendor-register-page')),
   },
 ];

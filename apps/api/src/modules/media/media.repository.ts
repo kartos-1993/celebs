@@ -349,7 +349,23 @@ export class MediaRepository {
     });
   }
 
+  async findFolderById(id: string, vendorId?: string | null) {
+    const where: Prisma.MediaFolderWhereInput = { id };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId ?? null;
+    }
+    return prisma.mediaFolder.findFirst({ where });
+  }
+
   async createFolder(vendorId: string | null, name: string, parentId?: string | null) {
+    if (parentId) {
+      const parent = await prisma.mediaFolder.findFirst({
+        where: { id: parentId, vendorId: vendorId ?? null },
+      });
+      if (!parent) {
+        throw new BadRequestException('Parent folder not found or does not belong to this store');
+      }
+    }
     return prisma.mediaFolder.create({
       data: {
         vendorId,
@@ -386,15 +402,35 @@ export class MediaRepository {
     targetFolderId: string | null;
   }) {
     const { assetIds, vendorId, targetFolderId } = params;
-    const where: Prisma.MediaAssetWhereInput = { id: { in: assetIds } };
-    if (vendorId !== undefined) where.vendorId = vendorId;
+    if (!assetIds.length) {
+      return { count: 0 };
+    }
+
     // Validate target folder belongs to vendor if provided
     if (targetFolderId) {
       const folder = await prisma.mediaFolder.findFirst({
         where: { id: targetFolderId, vendorId: vendorId ?? null },
       });
-      if (!folder) throw new Error('Target folder not found');
+      if (!folder) {
+        throw new BadRequestException('Target folder not found or does not belong to this store');
+      }
     }
+
+    // Validate all assetIds belong to vendor
+    const where: Prisma.MediaAssetWhereInput = { id: { in: assetIds } };
+    if (vendorId !== undefined) {
+      where.vendorId = vendorId ?? null;
+    }
+
+    const ownedAssets = await prisma.mediaAsset.findMany({
+      where,
+      select: { id: true },
+    });
+
+    if (ownedAssets.length !== assetIds.length) {
+      throw new BadRequestException('One or more assets not found or not owned by this store');
+    }
+
     return prisma.mediaAsset.updateMany({
       where,
       data: { folderId: targetFolderId },

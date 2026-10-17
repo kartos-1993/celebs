@@ -33,6 +33,7 @@ export interface VendorProfileData {
   vatDocumentUrl?: string;
   businessRegDocumentUrl?: string;
   ownerPhotoUrl?: string;
+  storeCode?: string;
   warehouses?: WarehouseData[];
 }
 

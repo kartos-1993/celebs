@@ -3,7 +3,7 @@ import { PlatformSetting, SettingType } from '@prisma/client';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import prisma from '@/config/db.prisma';
-import { upstashRedis } from '@/config/upstash.redis';
+import { cacheRedis } from '@/config/upstash.redis';
 
 interface L1CacheEntry {
   data: PlatformSetting | PlatformSetting[] | null;
@@ -30,7 +30,7 @@ export class PlatformSettingsRepository {
 
     // 2. Check L2 Redis Cache
     try {
-      const l2Data = await upstashRedis.get<PlatformSetting>(this.getL2Key(key));
+      const l2Data = await cacheRedis.get<PlatformSetting>(this.getL2Key(key));
       if (l2Data) {
         const parsed = typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data;
         this.l1Cache.set(key, { data: parsed, expiresAt: now + this.L1_TTL_MS });
@@ -49,7 +49,7 @@ export class PlatformSettingsRepository {
     this.l1Cache.set(key, { data: setting, expiresAt: now + this.L1_TTL_MS });
     if (setting) {
       try {
-        await upstashRedis.set(this.getL2Key(key), JSON.stringify(setting), {
+        await cacheRedis.set(this.getL2Key(key), JSON.stringify(setting), {
           ex: this.L2_TTL_SEC,
         });
       } catch (err) {
@@ -68,7 +68,7 @@ export class PlatformSettingsRepository {
     }
 
     try {
-      const l2Data = await upstashRedis.get<PlatformSetting[]>(this.L2_PUBLIC_KEY);
+      const l2Data = await cacheRedis.get<PlatformSetting[]>(this.L2_PUBLIC_KEY);
       if (l2Data) {
         const parsed = (
           typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data
@@ -89,7 +89,7 @@ export class PlatformSettingsRepository {
 
     this.l1Cache.set(this.L2_PUBLIC_KEY, { data: settings, expiresAt: now + this.L1_TTL_MS });
     try {
-      await upstashRedis.set(this.L2_PUBLIC_KEY, JSON.stringify(settings), { ex: this.L2_TTL_SEC });
+      await cacheRedis.set(this.L2_PUBLIC_KEY, JSON.stringify(settings), { ex: this.L2_TTL_SEC });
     } catch (err) {
       logger.warn({ err }, 'Failed to write public settings to L2 Redis cache');
     }
@@ -148,7 +148,7 @@ export class PlatformSettingsRepository {
     await this.invalidateCache(key);
     this.l1Cache.set(key, { data: updated, expiresAt: Date.now() + this.L1_TTL_MS });
     try {
-      await upstashRedis.set(this.getL2Key(key), JSON.stringify(updated), { ex: this.L2_TTL_SEC });
+      await cacheRedis.set(this.getL2Key(key), JSON.stringify(updated), { ex: this.L2_TTL_SEC });
     } catch (err) {
       logger.warn({ err, key }, 'Failed to write-through platform setting to L2 Redis');
     }
@@ -212,7 +212,7 @@ export class PlatformSettingsRepository {
     await this.invalidateCache(key);
     this.l1Cache.set(key, { data: setting, expiresAt: Date.now() + this.L1_TTL_MS });
     try {
-      await upstashRedis.set(this.getL2Key(key), JSON.stringify(setting), { ex: this.L2_TTL_SEC });
+      await cacheRedis.set(this.getL2Key(key), JSON.stringify(setting), { ex: this.L2_TTL_SEC });
     } catch (err) {
       logger.warn({ err, key }, 'Failed to write-through platform setting to L2 Redis');
     }
@@ -242,8 +242,8 @@ export class PlatformSettingsRepository {
       this.l1Cache.delete(this.L2_PUBLIC_KEY);
       try {
         await Promise.allSettled([
-          upstashRedis.del(this.getL2Key(key)),
-          upstashRedis.del(this.L2_PUBLIC_KEY),
+          cacheRedis.del(this.getL2Key(key)),
+          cacheRedis.del(this.L2_PUBLIC_KEY),
         ]);
       } catch (err) {
         logger.warn({ err, key }, 'Failed to delete platform setting from L2 Redis cache');
@@ -251,7 +251,7 @@ export class PlatformSettingsRepository {
     } else {
       this.l1Cache.clear();
       try {
-        await upstashRedis.del(this.L2_PUBLIC_KEY);
+        await cacheRedis.del(this.L2_PUBLIC_KEY);
       } catch (err) {
         logger.warn({ err }, 'Failed to clear public settings from L2 Redis cache');
       }

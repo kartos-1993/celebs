@@ -32,14 +32,15 @@ export class GoogleAuthService {
       );
     }
 
+    if (config.GOOGLE.ALLOWED_CLIENT_IDS.length === 0) {
+      throw new InternalServerException('Google OAuth client IDs are not configured on server');
+    }
+
     let payload;
     try {
       const ticket = await googleClient.verifyIdToken({
         idToken,
-        audience:
-          config.GOOGLE.ALLOWED_CLIENT_IDS.length > 0
-            ? config.GOOGLE.ALLOWED_CLIENT_IDS
-            : undefined,
+        audience: config.GOOGLE.ALLOWED_CLIENT_IDS,
       });
       payload = ticket.getPayload();
     } catch (err: unknown) {

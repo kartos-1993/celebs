@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { PATHS } from './paths';
+import { skeletonForPath } from './skeleton-for-path';
 
 import { FullscreenLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
@@ -15,7 +16,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const location = useLocation();
 
   if (isLoading) {
-    return <FullscreenLoader />;
+    // Same silhouette BootFallback showed pre-router: one answer per path.
+    return <FullscreenLoader variant={skeletonForPath(location.pathname)} />;
   }
 
   if (!user) {

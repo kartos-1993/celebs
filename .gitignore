@@ -7,9 +7,10 @@ node_modules
 .turbo/
 tmp/
 
-# Ignore environment files
+# Ignore environment files (including .env.test: test-only values live in
+# .env.test.example; copy it locally, never commit real credentials)
 .env.*
-!.env.test
+!.env.*.example
 
 # Ignore build output folders
 dist/
@@ -72,3 +73,15 @@ report.json
 # Expo cache
 .expo/
 
+# Mobile credentials
+google-services.json
+GoogleService-Info.plist
+!google-services.json.example
+!GoogleService-Info.plist.example
+
+# Scratch files
+scratch/
+
+
+# Local MCP server config (machine paths + credentials)
+.agents/mcp_config.json

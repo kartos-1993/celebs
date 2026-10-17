@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
 import {
   Dialog,
@@ -12,10 +13,11 @@ import {
 } from '@celebs/shared-ui/components/dialog';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import type { ProductListItem } from '../../types';
+import { BarcodePrintModal } from '../barcode/barcode-print-modal';
+import { useBarcodeItems } from '../barcode/use-barcode-items';
 
 interface ManageProductDialogsProps {
-  archiveTarget: ProductListItem | null;
+  archiveTarget: AdminProductListItem | null;
   onCloseArchiveTarget: () => void;
   onConfirmArchiveTarget: () => void;
   isArchivePending: boolean;
@@ -24,6 +26,8 @@ interface ManageProductDialogsProps {
   onConfirmBatchArchive: () => void;
   selectedCount: number;
   isBatchProcessing: boolean;
+  barcodeTarget?: AdminProductListItem | null;
+  onCloseBarcodeTarget?: () => void;
 }
 
 export const ManageProductDialogs: React.FC<ManageProductDialogsProps> = ({
@@ -36,7 +40,10 @@ export const ManageProductDialogs: React.FC<ManageProductDialogsProps> = ({
   onConfirmBatchArchive,
   selectedCount,
   isBatchProcessing,
+  barcodeTarget,
+  onCloseBarcodeTarget,
 }) => {
+  const { items: barcodeItems } = useBarcodeItems(barcodeTarget);
   return (
     <>
       <Dialog
@@ -97,6 +104,14 @@ export const ManageProductDialogs: React.FC<ManageProductDialogsProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {barcodeTarget && onCloseBarcodeTarget && (
+        <BarcodePrintModal
+          isOpen={Boolean(barcodeTarget)}
+          onClose={onCloseBarcodeTarget}
+          items={barcodeItems}
+        />
+      )}
     </>
   );
 };

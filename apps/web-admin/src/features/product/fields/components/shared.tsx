@@ -1,9 +1,10 @@
-/* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import { AlertCircle, ImagePlus, Trash2, Upload } from 'lucide-react';
 
 import { Label } from '@celebs/shared-ui/components/label';
 export {
+  type ErrorLike,
+  getPathError,
   type ImageValue,
   imageValueKey,
   rulesFrom,
@@ -29,6 +30,7 @@ export function LabelWithRequired({
   );
 }
 
+/** Stacked-field error. Stays in normal flow so the message is readable. */
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
@@ -39,29 +41,24 @@ export function FieldError({ message }: { message?: string }) {
   );
 }
 
-interface ErrorLike {
-  message?: string;
-  type?: string;
-}
-
 /**
- * React Hook Form stores errors as a NESTED tree (`errors.a.b.c.message`),
- * while fields registered under dynamic paths (e.g. `variants.colorMeta.Red.images`)
- * only know their dotted path. Resolve the path segment by segment.
+ * Grid-cell error. Takes ZERO layout space: inside a `TableCell` a taller cell
+ * re-centres every sibling control in the row, so one failing cell used to jump
+ * the whole matrix. A blanket `min-h` is not the fix either — it would park
+ * ~20px of dead space under every cell forever. The text is kept out of flow
+ * (still in the DOM, still announced) and the control carries `title` for
+ * sighted hover, the same compact idiom as the locked-SKU glyph.
  */
-export function getPathError(errors: unknown, path: string): ErrorLike | undefined {
-  if (!errors || typeof errors !== 'object') return undefined;
-  const resolved = path.split('.').reduce<unknown>((acc, key) => {
-    if (acc === null || acc === undefined || typeof acc !== 'object') return undefined;
-    return (acc as Record<string, unknown>)[key];
-  }, errors);
-  if (resolved && typeof resolved === 'object' && 'message' in (resolved as ErrorLike)) {
-    return resolved as ErrorLike;
-  }
-  return undefined;
+export function FieldErrorCompact({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <span role="alert" className="sr-only">
+      {message}
+    </span>
+  );
 }
 
-// ── Compact image tiles shared by color variant rows ────────────────────────
+// ── Compact image tiles shared by color variant rows ─────────────────────────
 
 const TILE = 'h-12 w-12';
 

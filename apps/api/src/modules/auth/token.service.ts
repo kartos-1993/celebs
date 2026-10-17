@@ -15,7 +15,7 @@ export interface TokenPair {
 }
 
 export class TokenService {
-  public issueTokenPair(userId: string, sessionId: string, jti?: string): TokenPair {
+  public issueTokenPair(userId: string, sessionId: string, jti: string): TokenPair {
     const accessTokenPayload: AccessTPayload = {
       userId,
       sessionId,
@@ -44,7 +44,7 @@ export class TokenService {
       secret: config.JWT.REFRESH_SECRET,
     });
 
-    if (error || !payload?.sessionId) {
+    if (error || !payload?.sessionId || !payload?.jti) {
       throw new UnauthorizedException(
         'Invalid or expired refresh token',
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,

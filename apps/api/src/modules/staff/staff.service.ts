@@ -10,6 +10,7 @@ import {
 
 import { type StaffRepository, staffRepository } from './staff.repository';
 
+import { authCache } from '@/common/cache/auth-cache';
 import { VerificationEnum } from '@/common/enums/verification-code.enum';
 import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
@@ -287,6 +288,10 @@ export class StaffService {
       ...(Array.isArray(data.permissions) ? { permissions: data.permissions } : {}),
       ...(data.name ? { name: data.name } : {}),
     });
+
+    // The identity layer serves `permissions` from a 30s cache, so revoked
+    // staff permissions would otherwise keep working until the TTL expired.
+    await authCache.invalidateUser(staffId);
 
     return updated;
   }

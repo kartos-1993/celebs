@@ -1,26 +1,20 @@
 import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 
-import type { ProductListItem } from '../../types';
-
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { ManageProductCard } from './manage-product-card';
 
-interface ManageProductCardsProps {
-  products: ProductListItem[];
+import { CardListSkeleton } from '@/components/table-skeleton';
+
+export interface ManageProductCardsProps extends ManageProductActionHandlers {
+  products: AdminProductListItem[];
   isLoading: boolean;
   isFetching: boolean;
   selectedProducts: string[];
   onSelectProduct: (id: string, checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
   searchQuery: string;
 }
 
@@ -42,11 +36,7 @@ export const ManageProductCards: React.FC<ManageProductCardsProps> = ({
   searchQuery,
 }) => {
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center text-sm text-muted-foreground md:hidden">
-        Loading products...
-      </div>
-    );
+    return <CardListSkeleton rows={4} />;
   }
 
   if (products.length === 0) {

@@ -32,7 +32,11 @@ export interface HydratedProduct {
   id?: string;
   name?: string;
   price?: number;
-  mainImages?: string[];
+  /**
+   * Derived primary photo. This is what the API sends to storefront clients;
+   * `mainImages` is deliberately absent from the payload.
+   */
+  cover?: string;
   colorVariants?: {
     name: string;
     colorCode?: string;

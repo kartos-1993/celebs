@@ -7,6 +7,7 @@ import { storeLifecycle } from '../store/store-lifecycle.service';
 
 import { type AdminRepository, adminRepository } from './admin.repository';
 
+import { authCache } from '@/common/cache/auth-cache';
 import { enqueueMail } from '@/common/services/mail.queue';
 import { hashValue } from '@/common/utils/bcrypt';
 import {} from '@/mailers/mailer';
@@ -126,10 +127,16 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
-    return this.adminRepo.updateUserRoleAndPermissions(id, {
+    const updated = await this.adminRepo.updateUserRoleAndPermissions(id, {
       role: data.role !== undefined ? data.role : user.role,
       permissions: data.permissions !== undefined ? data.permissions : (user.permissions ?? []),
     });
+
+    // The identity layer serves `role`/`permissions` from a 30s cache, so a
+    // promotion would otherwise keep the old authority until the TTL expired.
+    await authCache.invalidateUser(id);
+
+    return updated;
   }
 }
 

@@ -106,4 +106,48 @@ describe('VendorRepository Integration Tests', () => {
     expect(warehouse.id).toBeDefined();
     expect(warehouse.label).toBe('Main Warehouse');
   });
+
+  it('does not create a second warehouse when the vendor saves again', async () => {
+    const email = faker.internet.exampleEmail().toLowerCase();
+    const { user, vendorProfileId } = await vendorRepository.createVendorWithProfile(
+      {
+        name: 'Warehouse Repeater',
+        email,
+        password: await hashValue('Password123!'),
+        role: 'VENDOR',
+      },
+      {
+        phoneNumber: `98${faker.string.numeric(8)}`,
+        shopName: `Repeater Shop ${Date.now()}`,
+        panNumber: faker.string.numeric(9),
+        citizenshipNumber: `17-${faker.string.numeric(6)}`,
+        status: 'PENDING',
+      },
+    );
+    createdUserId = user.id;
+
+    const base = {
+      label: 'Main Warehouse',
+      contactName: 'Warehouse Manager',
+      contactPhone: '9800000000',
+      addressLine1: 'Kathmandu 1',
+      city: 'Kathmandu',
+      district: 'Kathmandu',
+      province: 'Bagmati',
+      isBusinessAddress: true,
+    };
+
+    const first = await vendorRepository.upsertWarehouse(vendorProfileId, base);
+    const second = await vendorRepository.upsertWarehouse(vendorProfileId, {
+      ...base,
+      addressLine1: 'Kathmandu 2',
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(
+      await prisma.warehouse.count({
+        where: { vendorProfileId, isBusinessAddress: true },
+      }),
+    ).toBe(1);
+  });
 });

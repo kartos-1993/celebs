@@ -49,6 +49,7 @@ export async function fetchProductReviewsApi(
   const payload = await handleApiResponse(
     apiClient.get<IApiResponse<ReviewItem[]>>(`/reviews/products/${productId}`, {
       params: { page, limit, rating, hasImages },
+      skipAuth: true,
     }),
   );
   return Array.isArray(payload) ? payload : [];
@@ -58,7 +59,9 @@ export async function fetchProductReviewSummaryApi(
   productId: string,
 ): Promise<ProductReviewSummary | null> {
   const data = await handleApiResponse(
-    apiClient.get<IApiResponse<ProductReviewSummary>>(`/reviews/products/${productId}/summary`),
+    apiClient.get<IApiResponse<ProductReviewSummary>>(`/reviews/products/${productId}/summary`, {
+      skipAuth: true,
+    }),
   );
   if (!data) return null;
   return {
@@ -78,6 +81,7 @@ export async function fetchProductReviewGalleryApi(
   const payload = await handleApiResponse(
     apiClient.get<IApiResponse<ReviewGalleryItem[]>>(`/reviews/products/${productId}/gallery`, {
       params: { page, limit },
+      skipAuth: true,
     }),
   );
   return Array.isArray(payload) ? payload : [];

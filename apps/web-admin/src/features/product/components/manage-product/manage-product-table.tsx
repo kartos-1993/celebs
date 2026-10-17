@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import { EmptyState } from '@celebs/shared-ui/components/empty-state';
 import {
@@ -11,26 +12,19 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
-import type { ProductListItem } from '../../types';
-
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { ManageProductCards } from './manage-product-cards';
 import { ManageProductTableRow } from './manage-product-table-row';
 
-interface ManageProductTableProps {
-  products: ProductListItem[];
+import { TableSkeleton } from '@/components/table-skeleton';
+
+export interface ManageProductTableProps extends ManageProductActionHandlers {
+  products: AdminProductListItem[];
   isLoading: boolean;
   isFetching: boolean;
   selectedProducts: string[];
   onSelectAll: () => void;
   onSelectProduct: (id: string, checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
   searchQuery: string;
 }
 
@@ -49,14 +43,11 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   onToggleActivation,
   isTogglePending,
   onSetArchiveTarget,
+  onPrintBarcodes,
   searchQuery,
 }) => {
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-        Loading products...
-      </div>
-    );
+    return <TableSkeleton rows={10} columns={7} />;
   }
 
   if (products.length === 0) {
@@ -74,12 +65,15 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
   }
 
   return (
-    <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+    <div
+      aria-busy={isFetching}
+      className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+    >
       <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-10">
                 <Checkbox
                   checked={selectedProducts.length === products.length && products.length > 0}
                   onCheckedChange={onSelectAll}
@@ -109,6 +103,7 @@ export const ManageProductTable: React.FC<ManageProductTableProps> = ({
                 onToggleActivation={onToggleActivation}
                 isTogglePending={isTogglePending}
                 onSetArchiveTarget={onSetArchiveTarget}
+                onPrintBarcodes={onPrintBarcodes}
               />
             ))}
           </TableBody>

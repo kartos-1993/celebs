@@ -95,7 +95,7 @@ export type SettleCodResponse = IApiResponse<unknown>;
 
 export async function dispatch3PLOrder({
   orderId,
-  provider = 'NEPAL_CAN_MOVE',
+  provider = 'PATHAO',
 }: Dispatch3PLParams): Promise<Dispatch3PLResponse> {
   const response = await axiosClient.post<Dispatch3PLResponse>(`/logistics/dispatch/${orderId}`, {
     provider,

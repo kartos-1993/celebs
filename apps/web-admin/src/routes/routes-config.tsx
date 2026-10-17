@@ -1,14 +1,17 @@
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 
 import AuthGuard from './auth-guard';
+import { DashboardIndex } from './dashboard-index';
 import GuestGuard from './guest-guard';
+import { pageRoute } from './page-route';
 import { PATHS } from './paths';
 
 import { accountRoutes } from '@/features/account/routes';
 // Feature Routes
 import { authRoutes } from '@/features/auth/routes';
 import { categoryRoutes } from '@/features/category/routes';
+import { commissionRoutes } from '@/features/finance/commission/routes';
+import { earningsRoutes } from '@/features/finance/earnings/routes';
 import { financeRoutes } from '@/features/finance/routes';
 import { marketingRoutes } from '@/features/marketing/routes';
 import { optionSetRoutes } from '@/features/option-sets/routes';
@@ -24,15 +27,11 @@ import AdminLayout from '@/layouts/admin-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import VendorPortalLayout from '@/layouts/vendor-portal-layout';
 
-const NotFoundError = lazy(() => import('@/features/errors/not-found-error'));
-const ForbiddenError = lazy(() => import('@/features/errors/forbidden-error'));
-const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'));
-
 export const routesConfig: RouteObject[] = [
   // ── Standalone Public Routes (No AuthGuard / GuestGuard) ─────────────────
   {
     path: '/verify-email',
-    element: <VerifyEmailPage />,
+    ...pageRoute(() => import('@/features/auth/pages/verify-email-page')),
   },
   // ── Full Admin App (approved vendors + admins only) ───────────────────────
   {
@@ -44,6 +43,9 @@ export const routesConfig: RouteObject[] = [
     ),
     handle: { crumb: 'Home' },
     children: [
+      // Not a page: instantly forwards to the role's landing route.
+      // hideFromNav keeps the resolver (and the sidebar) from electing it.
+      { index: true, element: <DashboardIndex />, handle: { hideFromNav: true } },
       productRoutes,
       reviewRoutes,
       categoryRoutes,
@@ -54,11 +56,13 @@ export const routesConfig: RouteObject[] = [
       orderRoutes,
       accountRoutes,
       financeRoutes,
+      commissionRoutes,
+      earningsRoutes,
       ...platformSettingsRoutes,
       marketingRoutes,
       {
         path: '403',
-        element: <ForbiddenError />,
+        ...pageRoute(() => import('@/features/errors/forbidden-error')),
         handle: { crumb: 'Access Denied' },
       },
     ],
@@ -85,10 +89,10 @@ export const routesConfig: RouteObject[] = [
   // ── Standalone Error Routes ───────────────────────────────────────────────
   {
     path: PATHS.ERRORS.FORBIDDEN,
-    element: <ForbiddenError />,
+    ...pageRoute(() => import('@/features/errors/forbidden-error')),
   },
   {
     path: '*',
-    element: <NotFoundError />,
+    ...pageRoute(() => import('@/features/errors/not-found-error')),
   },
 ];

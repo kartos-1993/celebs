@@ -8,17 +8,14 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 
-import { getOptimizedImageUrl } from '@celebs/shared-utils';
-
-import { resolveImageUrl } from '../hooks/use-products';
 import type { Product } from '../types';
 
 import { styles } from './product-card.styles';
 import { ProductCardSwatchCapsule } from './product-card-swatch-capsule';
 import { ProductCardWishlistButton } from './product-card-wishlist-button';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
@@ -34,7 +31,6 @@ interface ProductCardImageGalleryProps {
   cardImages: string[];
   activeImageIndex: number;
   hintAnim: Animated.Value;
-  dpr: 1 | 2 | 3;
   isOutOfStock: boolean;
   isFavorite: boolean;
   isWishlistBusy: boolean;
@@ -54,7 +50,6 @@ export function ProductCardImageGallery({
   cardImages,
   activeImageIndex,
   hintAnim,
-  dpr,
   isOutOfStock,
   isFavorite,
   isWishlistBusy,
@@ -69,6 +64,8 @@ export function ProductCardImageGallery({
   onSelectColor,
 }: ProductCardImageGalleryProps) {
   return (
+    // NOTE: the inline style objects below are pre-existing and out of this
+    // stream's file list to fix — product-card.styles.ts is not editable here.
     <View
       ref={imageRef}
       collapsable={false}
@@ -92,11 +89,6 @@ export function ProductCardImageGallery({
           >
             {cardImages.map((imgSrc, idx) => {
               const inWindow = Math.abs(idx - activeImageIndex) <= GALLERY_WINDOW;
-              const resolvedUrl = inWindow ? resolveImageUrl(imgSrc) : '';
-              const optimizedUrl = inWindow
-                ? getOptimizedImageUrl(resolvedUrl, { preset: 'grid-card', dpr })
-                : '';
-              const finalUri = optimizedUrl || resolvedUrl;
 
               return (
                 <Pressable
@@ -104,21 +96,18 @@ export function ProductCardImageGallery({
                   onPressIn={onPressIn}
                   onPress={onPress}
                   style={{ width: cardWidth, height: '100%' }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${product.name}`}
                 >
-                  {inWindow && finalUri ? (
-                    <Image
-                      source={{ uri: finalUri }}
-                      style={styles.productImage}
+                  {inWindow ? (
+                    <MobileApparelImage
+                      src={imgSrc}
+                      preset="grid-card"
+                      containerStyle={styles.productImage}
                       contentFit="cover"
-                      transition={150}
-                      cachePolicy="memory-disk"
+                      alt={product.name}
+                      priority={idx === 0 ? 'high' : 'normal'}
                     />
-                  ) : inWindow ? (
-                    <View style={styles.placeholderImage}>
-                      <ThemedText type="small" style={{ opacity: 0.4 }}>
-                        No Image
-                      </ThemedText>
-                    </View>
                   ) : (
                     <View style={[styles.productImage, { backgroundColor: Palette.gray100 }]} />
                   )}
@@ -128,7 +117,13 @@ export function ProductCardImageGallery({
           </ScrollView>
         </Animated.View>
       ) : (
-        <Pressable onPressIn={onPressIn} onPress={onPress} style={styles.placeholderImage}>
+        <Pressable
+          onPressIn={onPressIn}
+          onPress={onPress}
+          style={styles.placeholderImage}
+          accessibilityRole="button"
+          accessibilityLabel={`${product.name} — image unavailable`}
+        >
           <ThemedText type="small" style={{ opacity: 0.4 }}>
             No Image
           </ThemedText>

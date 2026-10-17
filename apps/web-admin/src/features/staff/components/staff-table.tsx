@@ -56,23 +56,23 @@ export function StaffTable({
             </TableRow>
           ) : (
             staff.map((member) => (
-              <TableRow key={member.id} className="hover:bg-muted/30">
-                <TableCell className="text-sm font-semibold text-foreground">
+              <TableRow key={member.id}>
+                <TableCell className="max-w-44 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
                   {member.name}
                 </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
+                <TableCell className="max-w-56 truncate font-mono text-xs text-muted-foreground">
                   {member.email}
                 </TableCell>
                 {isAdminOrSuperAdmin && (
-                  <TableCell className="text-sm font-medium text-foreground">
+                  <TableCell className="max-w-44 truncate text-sm font-medium text-foreground">
                     {member.vendorProfile?.shopName || 'Vendor Shop'}
                   </TableCell>
                 )}
                 <TableCell>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex max-w-64 flex-wrap gap-1">
                     {Array.isArray(member.permissions) && member.permissions.length > 0 ? (
                       member.permissions.slice(0, 4).map((perm: string) => (
-                        <Badge key={perm} variant="outline" className="px-1.5 py-0 font-mono">
+                        <Badge key={perm} variant="outline">
                           {perm}
                         </Badge>
                       ))
@@ -80,9 +80,7 @@ export function StaffTable({
                       <Badge variant="secondary">Staff Sub-User</Badge>
                     )}
                     {Array.isArray(member.permissions) && member.permissions.length > 4 && (
-                      <Badge variant="secondary" className="px-1 py-0 font-mono">
-                        +{member.permissions.length - 4} more
-                      </Badge>
+                      <Badge variant="secondary">+{member.permissions.length - 4} more</Badge>
                     )}
                   </div>
                 </TableCell>

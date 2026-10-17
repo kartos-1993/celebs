@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
 
+import { setMediaDevOrigin } from '@/utils/image';
+
 export const STAGING_API_URL =
   process.env.EXPO_PUBLIC_STAGING_API_URL || 'https://celebs-api-staging.onrender.com/api/v1';
 export const STAGING_HOST =
@@ -37,29 +39,12 @@ export function getDevBaseUrl(): string {
   return STAGING_API_URL;
 }
 
-export const R2_PUBLIC_MEDIA_URL =
-  process.env.EXPO_PUBLIC_MEDIA_URL ||
-  process.env.EXPO_PUBLIC_R2_MEDIA_URL ||
-  'https://media.celebs.com.np';
-
-export function resolveImageUrl(url?: string | null): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('/')) {
-    const baseUrl = getDevBaseUrl().replace('/api/v1', '');
-    return `${baseUrl}${trimmed}`;
-  }
-  // Rewrite legacy local MinIO loopback URLs to Cloudflare R2 public base
-  if (trimmed.includes('127.0.0.1:9000') || trimmed.includes('localhost:9000')) {
-    const key = trimmed.replace(/^https?:\/\/[^/]+\/(celebs\/)?/, '');
-    return `${R2_PUBLIC_MEDIA_URL}/${key}`;
-  }
-  // Handle raw object keys stored in DB (e.g. celebs/products/... or products/...)
-  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-    return `${R2_PUBLIC_MEDIA_URL}/${trimmed.replace(/^\/+/, '')}`;
-  }
-  return trimmed;
-}
+/**
+ * Image resolution lives in `@/utils/image` — ONE canonical order for every
+ * render site. This module only contributes the part that needs native Expo
+ * APIs: the origin that root-relative media paths (`/uploads/x.jpg`) hang off.
+ */
+setMediaDevOrigin(getDevBaseUrl());
 
 export const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 

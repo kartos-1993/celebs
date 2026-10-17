@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
+
 import { archiveProduct, submitProductForReview, toggleProductActivation } from '../api';
-import type { ProductListItem } from '../types';
 
 import { PRODUCT_QUERY_KEYS } from './use-product-queries';
 
@@ -20,7 +21,10 @@ export function useProductBatchMutations() {
     ]);
   };
 
-  const handleBatchSubmit = async (selectedItems: ProductListItem[], onSuccess: () => void) => {
+  const handleBatchSubmit = async (
+    selectedItems: AdminProductListItem[],
+    onSuccess: () => void,
+  ) => {
     const targets = selectedItems.filter(
       (p) => Boolean(p.id) && (p.status === 'draft' || p.status === 'rejected'),
     );
@@ -51,7 +55,7 @@ export function useProductBatchMutations() {
 
   const handleBatchToggleStatus = async (
     type: 'activate' | 'deactivate',
-    selectedItems: ProductListItem[],
+    selectedItems: AdminProductListItem[],
     onSuccess: () => void,
   ) => {
     const targetStatus = type === 'activate' ? 'deactivated' : 'published';

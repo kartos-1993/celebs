@@ -3,6 +3,7 @@ import { useController, useFormContext } from 'react-hook-form';
 
 import { Multiselect } from '@celebs/shared-ui/components/multiselect';
 
+import { useFieldErrorReveal } from '../../hooks/use-submission-state';
 import type { UiProps } from '../ui-registry';
 
 import { useOptions } from './dropdown-input-field';
@@ -17,8 +18,15 @@ export function VariantListInputField({ field, control }: UiProps) {
   });
   const opts = useOptions(field);
   const selected = Array.isArray(f.value) ? f.value : [];
+  // Gated on THIS field's path, never on the form: a sibling being worked on
+  // is not consent to render this variant list's error.
+  const { revealError } = useFieldErrorReveal(control);
+  const visibleError = revealError(field.name) ? fieldState.error : undefined;
   return (
-    <div className="space-y-1">
+    // Multiselect takes a fixed prop set (no name/rest spread), so the field is
+    // addressed for `focusFirstError` via `data-field-name`; `tabIndex={-1}`
+    // makes this wrapper programmatically focusable without a tab stop.
+    <div className="space-y-1" data-field-name={field.name} tabIndex={-1}>
       <LabelWithRequired required={field.required}>{field.label}</LabelWithRequired>
       <Multiselect
         options={opts}
@@ -31,7 +39,7 @@ export function VariantListInputField({ field, control }: UiProps) {
         }}
         placeholder={`Select ${field.label}`}
       />
-      <FieldError message={fieldState.error?.message} />
+      <FieldError message={visibleError?.message} />
     </div>
   );
 }

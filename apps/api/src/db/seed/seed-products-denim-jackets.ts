@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import prisma from '../../config/db.prisma';
+import { purgeProducts } from '../../modules/product/product-cache';
 
 export async function seedProductsDenimJackets(): Promise<void> {
   console.log('\n🧥 Seeding Denim Jackets Products via PostgreSQL Prisma...');
@@ -60,12 +61,14 @@ export async function seedProductsDenimJackets(): Promise<void> {
           { name: 'Shoulder', value: String(sc.shoulder || 45), unit: 'cm' },
           { name: 'Chest', value: String(sc.chest || 100), unit: 'cm' },
         ],
+        bodyMeasurements: [],
       }),
     );
 
     const colorVariants = (item.variants || []).map((v: Record<string, unknown>) => ({
       name: v.color || 'Default',
       colorCode: v.color === 'Black' ? '#000000' : v.color === 'Blue' ? '#0000FF' : '#888888',
+      swatch: Array.isArray(v.images) && v.images.length > 0 ? v.images[0] : '',
       images: v.images || [],
       stocks: (item.measurements?.sizeChart || []).map((sc: Record<string, unknown>) => ({
         size: sc.size,
@@ -115,6 +118,14 @@ export async function seedProductsDenimJackets(): Promise<void> {
 
     count++;
   }
+
+  // Seeds bypass service-layer guarantees by design: refresh cached truth
+  // once at the end so reseeds never leave ghost grid/detail entries.
+  const seeded = await prisma.product.findMany({
+    where: { categoryId },
+    select: { id: true },
+  });
+  purgeProducts(seeded.map((p) => p.id));
 
   console.log(`✅ Seeded Denim Jackets in Postgres: ${count} processed.`);
 }

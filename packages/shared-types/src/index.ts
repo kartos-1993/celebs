@@ -1,6 +1,8 @@
 import { z } from 'zod';
 export { z };
 import {
+  changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendVerificationSchema,
@@ -38,13 +40,16 @@ export * from './validators/campaign.validator';
 export * from './validators/cart.validator';
 export * from './validators/category.validator';
 export * from './validators/combo.validator';
+export * from './validators/commerce-policy.validator';
 export * from './validators/common.validator';
 export * from './validators/layout.validator';
 export * from './validators/logistics.validator';
 export * from './validators/media.validator';
 export * from './validators/mfa.validator';
+export * from './validators/notification.validator';
 export * from './validators/option-set.validator';
 export * from './validators/order.validator';
+export * from './validators/parcel-weight.validator';
 export * from './validators/platform-settings.validator';
 export * from './validators/product.validator';
 export * from './validators/user.validator';
@@ -56,6 +61,8 @@ export type registerType = z.infer<typeof registerSchema>;
 export type vendorRegisterType = z.infer<typeof vendorRegisterSchema>;
 export type verifyEmailType = z.infer<typeof verificationEmailSchema>;
 export type resetPasswordType = z.infer<typeof resetPasswordSchema>;
+export type forgotPasswordType = z.infer<typeof forgotPasswordSchema>;
+export type changePasswordType = z.infer<typeof changePasswordSchema>;
 export type verifyMFAType = z.infer<typeof verifyMfaSchema>;
 export type mfaLoginType = z.infer<typeof verifyMfaForLoginSchema>;
 export type setupSuperadminType = z.infer<typeof setupSuperadminSchema>;
@@ -82,8 +89,11 @@ export * from './types/api';
 export * from './types/brand';
 export * from './types/cart';
 export * from './types/category';
+export * from './types/delivery-location';
 export * from './types/layout';
 export * from './types/marketing';
 export * from './types/media';
+export * from './types/notification';
 export * from './types/platform-settings';
+export * from './types/product';
 export * from './types/user';

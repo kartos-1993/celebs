@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 
 import { Button } from '@celebs/shared-ui/components/button';
 
@@ -24,6 +24,8 @@ export function SkuTableInputField({ field }: UiProps) {
     scopeOptions,
     applyToAll,
     handleAutoGenerateSkus,
+    skuButtonState,
+    isSkuLocked,
   } = useSkuTable(ds);
 
   return (
@@ -42,15 +44,21 @@ export function SkuTableInputField({ field }: UiProps) {
           variant="outline"
           size="sm"
           data-testid="sku-auto-generate-btn"
+          disabled={skuButtonState.isDisabled}
           className="gap-1.5 text-xs h-8"
+          title={skuButtonState.tooltip}
           onClick={handleAutoGenerateSkus}
         >
-          <Sparkles className="h-3.5 w-3.5 text-warning" />
-          Auto-Generate SKUs
+          {skuButtonState.icon === 'check' ? (
+            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5 text-warning" />
+          )}
+          {skuButtonState.label}
         </Button>
       </div>
 
-      {variants.length === 0 && <SkuDefaultTable />}
+      {variants.length === 0 && <SkuDefaultTable isSkuLocked={isSkuLocked} />}
 
       {variants.length > 0 && (
         <SkuBatchEditBar
@@ -63,13 +71,16 @@ export function SkuTableInputField({ field }: UiProps) {
         />
       )}
 
-      {variants.length === 1 && <SkuSingleAxisTable variant={variants[0]} labelOf={labelOf} />}
+      {variants.length === 1 && (
+        <SkuSingleAxisTable variant={variants[0]} labelOf={labelOf} isSkuLocked={isSkuLocked} />
+      )}
 
       {variants.length >= 2 && (
         <SkuMatrixTable
           primaryVariant={variants[0]}
           secondaryVariant={variants[1]}
           labelOf={labelOf}
+          isSkuLocked={isSkuLocked}
         />
       )}
     </div>

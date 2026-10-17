@@ -7,9 +7,10 @@ import { useActiveCampaign } from '../hooks/use-home-queries';
 import type { CampaignData, HydratedProduct } from '../types';
 import { dealTag, tilePhoto, tilePrice } from '../utils/super-deals.utils';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
-import { resolveImageUrl } from '@/constants/config';
 import { Palette } from '@/constants/theme';
+import { resolveImageUrl } from '@/utils/image';
 import { useNavigationGuard } from '@/utils/navigation-guard';
 
 type CampaignWithProducts = CampaignData & {
@@ -43,6 +44,12 @@ export function SuperDealsRail() {
     [navigateSafely, router],
   );
 
+  // Prefetch the CLEAN master: the derivative is derived from it by the same
+  // pipeline at render time, so warming the master warms the tile.
+  const handlePrefetch = React.useCallback((src?: string) => {
+    if (src) Image.prefetch(resolveImageUrl(src));
+  }, []);
+
   // Cold-start contract: sparse rails hide instead of rendering hollow shelves.
   if (products.length < MIN_DEAL_TILES) return null;
 
@@ -57,31 +64,27 @@ export function SuperDealsRail() {
         contentContainerStyle={styles.rail}
       >
         {products.map((product) => {
-          const uri = tilePhoto(product);
+          const src = tilePhoto(product);
           const tag = dealTag(product);
           return (
             <TouchableOpacity
               key={product.id}
               style={styles.tile}
               activeOpacity={0.8}
-              onPressIn={() => {
-                if (uri) Image.prefetch(resolveImageUrl(uri));
-              }}
+              onPressIn={() => handlePrefetch(src)}
               onPress={() => handleTilePress(product.id)}
               accessible={true}
               accessibilityRole="button"
               accessibilityLabel={`Shop deal ${product.name ?? ''}`}
             >
               <View style={styles.photo}>
-                {uri ? (
-                  <Image
-                    source={{ uri: resolveImageUrl(uri) }}
-                    style={styles.image}
-                    contentFit="cover"
-                    transition={100}
-                    cachePolicy="memory-disk"
-                  />
-                ) : null}
+                <MobileApparelImage
+                  src={src}
+                  preset="grid-card"
+                  containerStyle={styles.image}
+                  contentFit="cover"
+                  alt={product.name}
+                />
               </View>
               <ThemedText style={styles.price}>{tilePrice(product)}</ThemedText>
               {tag ? (
@@ -132,6 +135,7 @@ const styles = StyleSheet.create({
   },
   tag: {
     alignSelf: 'flex-start',
+    // UNMAPPED: no Palette token is this exact colour; substituting one would repaint the tag.
     backgroundColor: '#F93A00',
     borderRadius: 4,
     paddingHorizontal: 6,
@@ -140,6 +144,6 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Palette.white,
   },
 });

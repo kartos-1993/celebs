@@ -1,7 +1,10 @@
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { authedMutation } from '../../../../tests/support/csrf-origin';
+
 import app from '@/app';
+import { config } from '@/config/app.config';
 import prisma from '@/config/db.prisma';
 
 // Mock the mailer to avoid making external HTTP calls
@@ -14,7 +17,7 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
     name: 'Super Admin',
     email: 'superadmin.test@example.com',
     password: 'Password123!',
-    setupSecret: 'celebs-superadmin-secret-2026',
+    setupSecret: config.SETUP_SECRET,
   };
 
   const adminPayload = {
@@ -112,19 +115,20 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
     });
 
     it('should allow ADMIN to approve vendor profile', async () => {
-      const res = await request(app)
-        .patch(`/api/v1/admin/vendors/${vendorId}/approve`)
-        .set('Cookie', adminCookie);
+      const res = await authedMutation(
+        request(app).patch(`/api/v1/admin/vendors/${vendorId}/approve`),
+        adminCookie,
+      );
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('APPROVED');
     });
 
     it('should allow ADMIN to reject vendor profile with a reason', async () => {
-      const res = await request(app)
-        .patch(`/api/v1/admin/vendors/${vendorId}/reject`)
-        .set('Cookie', adminCookie)
-        .send({ reason: 'Documents are blurred' });
+      const res = await authedMutation(
+        request(app).patch(`/api/v1/admin/vendors/${vendorId}/reject`),
+        adminCookie,
+      ).send({ reason: 'Documents are blurred' });
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('REJECTED');
@@ -133,7 +137,7 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
 
   describe('User Management (SUPERADMIN only)', () => {
     it('should deny ADMIN access to create users', async () => {
-      const res = await request(app).post('/api/v1/admin/users').set('Cookie', adminCookie).send({
+      const res = await authedMutation(request(app).post('/api/v1/admin/users'), adminCookie).send({
         name: 'Staff user',
         email: 'staff.created@example.com',
         password: 'Password123!',
@@ -151,15 +155,15 @@ describe('Admin/SuperAdmin API Integration Tests', () => {
     });
 
     it('should allow SUPERADMIN to create a new user account', async () => {
-      const res = await request(app)
-        .post('/api/v1/admin/users')
-        .set('Cookie', superadminCookie)
-        .send({
-          name: 'New Moderator',
-          email: 'mod@celebs.com',
-          password: 'Password123!',
-          role: 'ADMIN',
-        });
+      const res = await authedMutation(
+        request(app).post('/api/v1/admin/users'),
+        superadminCookie,
+      ).send({
+        name: 'New Moderator',
+        email: 'mod@celebs.com',
+        password: 'Password123!',
+        role: 'ADMIN',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.data.role).toBe('ADMIN');

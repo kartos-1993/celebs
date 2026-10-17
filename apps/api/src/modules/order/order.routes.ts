@@ -102,7 +102,11 @@ orderRoutes.patch(
 // --- PUBLIC WALLET CALLBACKS ---
 orderRoutes.get('/payments/esewa/success', asyncHandler(paymentController.esewaSuccess));
 orderRoutes.get('/payments/esewa/failure', asyncHandler(paymentController.esewaFailure));
-orderRoutes.get('/payments/esewa/form/:orderId', asyncHandler(paymentController.esewaForm));
+orderRoutes.get(
+  '/payments/esewa/form/:orderId',
+  authenticateJWT,
+  asyncHandler(paymentController.esewaForm),
+);
 orderRoutes.get('/payments/khalti/return', asyncHandler(paymentController.khaltiReturn));
 
 export default orderRoutes;

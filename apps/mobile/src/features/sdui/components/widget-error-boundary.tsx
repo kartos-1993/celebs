@@ -1,6 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Palette } from '@/constants/theme';
+
 interface Props {
   children: ReactNode;
   widgetId?: string;
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Palette.dangerTint,
     borderWidth: 1,
     borderColor: '#FCA5A5',
   },

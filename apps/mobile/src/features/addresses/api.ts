@@ -1,4 +1,4 @@
-import type { IApiResponse } from '@celebs/shared-types';
+import type { DeliveryLocationsResponse, IApiResponse } from '@celebs/shared-types';
 
 import type { AddressDraft, SavedAddress } from './types';
 
@@ -11,7 +11,16 @@ export const ADDRESS_QUERY_KEYS = {
   list: () => [...ADDRESS_QUERY_KEYS.lists()] as const,
   details: () => [...ADDRESS_QUERY_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...ADDRESS_QUERY_KEYS.details(), id] as const,
+  deliveryLocations: () => ['delivery-locations'] as const,
 };
+
+export async function getDeliveryLocations(): Promise<DeliveryLocationsResponse> {
+  return handleApiResponse<DeliveryLocationsResponse>(
+    apiClient.get<IApiResponse<DeliveryLocationsResponse>>('/logistics/delivery-locations', {
+      skipAuth: true,
+    }),
+  );
+}
 
 export async function getAddresses(): Promise<SavedAddress[]> {
   const data = await handleApiResponse(

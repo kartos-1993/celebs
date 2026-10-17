@@ -1,7 +1,11 @@
 import { OrderStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
-import { canTransition, validateTransition } from '@/modules/order/order.state-machine';
+import {
+  canTransition,
+  isForwardOrderMove,
+  validateTransition,
+} from '@/modules/order/order.state-machine';
 
 describe('OrderStateMachine Unit Tests', () => {
   it('should allow valid transitions', () => {
@@ -29,5 +33,15 @@ describe('OrderStateMachine Unit Tests', () => {
     expect(() => validateTransition(OrderStatus.DELIVERED, OrderStatus.CANCELLED)).toThrow(
       "Invalid order status transition from 'DELIVERED' to 'CANCELLED'.",
     );
+  });
+
+  it('should let webhook moves skip forward but never regress', () => {
+    // A missed intermediate must not stall a real delivery.
+    expect(isForwardOrderMove(OrderStatus.CONFIRMED, OrderStatus.DELIVERED)).toBe(true);
+    expect(isForwardOrderMove(OrderStatus.DELIVERED, OrderStatus.RETURNED)).toBe(true);
+    // A stale or forged event must never move an order backwards or revive it.
+    expect(isForwardOrderMove(OrderStatus.DELIVERED, OrderStatus.OUT_FOR_DELIVERY)).toBe(false);
+    expect(isForwardOrderMove(OrderStatus.DELIVERED, OrderStatus.DELIVERED)).toBe(false);
+    expect(isForwardOrderMove(OrderStatus.CANCELLED, OrderStatus.CONFIRMED)).toBe(false);
   });
 });

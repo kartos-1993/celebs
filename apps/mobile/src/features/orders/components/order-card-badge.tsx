@@ -5,7 +5,7 @@ import type { OrderStatus } from '../utils/order-status';
 import { getOrderStatusMeta } from '../utils/order-status';
 
 import { ThemedText } from '@/components/themed-text';
-import { FontWeight, Radius } from '@/constants/theme';
+import { FontWeight, Palette, Radius } from '@/constants/theme';
 
 interface OrderCardBadgeProps {
   status: OrderStatus;
@@ -22,7 +22,7 @@ const TONE_THEMES: Record<string, BadgeTheme> = {
   warning: { bg: '#FFF7ED', text: '#C2410C' },
   active: { bg: '#EFF6FF', text: '#1D4ED8' },
   success: { bg: '#F0FDF4', text: '#15803D' },
-  danger: { bg: '#FEF2F2', text: '#B91C1C' },
+  danger: { bg: Palette.dangerTint, text: '#B91C1C' },
   neutral: { bg: '#F8FAFC', text: '#64748B' },
 };
 

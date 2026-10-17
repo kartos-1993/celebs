@@ -110,6 +110,10 @@ function transformItem(item: SeedItem) {
     dynamicData: {
       values: item.dynamicData?.values ?? {},
       variants: { colorMeta },
+      uploadedAssets: {
+        mainImages: item.mainImages ?? [],
+        colorMeta,
+      },
     },
     tags: item.tags ?? [],
     featured: false,

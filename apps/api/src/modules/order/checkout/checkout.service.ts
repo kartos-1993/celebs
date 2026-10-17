@@ -1,8 +1,23 @@
-import { PaymentMethod } from '@prisma/client';
+import { DeliveryPricingSource, PaymentMethod } from '@prisma/client';
 
-import { CheckoutInput, COD_MAX_LIMIT } from '@celebs/shared-types';
+import {
+  CheckoutInput,
+  isCodAllowed,
+  MIN_PARCEL_WEIGHT_KG,
+  WEIGHT_DECIMALS,
+} from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import { resolvePathaoStoreId } from '../../logistics/adapters/pathao-token.provider';
+import {
+  CourierDestinationRepository,
+  courierDestinationRepository,
+} from '../../logistics/courier-destination.repository';
+import { resolveDeliveryPricing } from '../../logistics/delivery-pricing';
+import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repository';
+import { DeliveryQuoteService, deliveryQuoteService } from '../../logistics/delivery-quote.service';
+import { sumBillableWeightKg } from '../../logistics/parcel-weight';
+import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
@@ -11,6 +26,7 @@ import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 import { generateOrderNumber } from '../utils/order-number.util';
 
 import {
+  CheckoutItemDetail,
   CheckoutRepository,
   checkoutRepository,
   InsufficientStockError,
@@ -20,6 +36,20 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
+import { commissionService } from '@/modules/finance/commission/commission.service';
+import {
+  postOrderCommissionEntries,
+  postOrderPlacementEntries,
+} from '@/modules/finance/ledger/ledger-posting.service';
+import {
+  NotificationService,
+  notificationService as defaultNotificationService,
+} from '@/modules/notification/notification.service';
+import {
+  PlatformSettingsService,
+  platformSettingsService as defaultPlatformSettingsService,
+} from '@/modules/platform-settings/platform-settings.service';
+import { purgeProductDetail, purgeProductHome } from '@/modules/product/product-cache';
 
 export class CheckoutService {
   constructor(
@@ -28,7 +58,21 @@ export class CheckoutService {
     private paymentRepo: PaymentRepository = paymentRepository,
     private paymentSvc: PaymentService = paymentService,
     private coreOrderRepo: CoreOrderRepository = coreOrderRepository,
+    private notificationService: NotificationService = defaultNotificationService,
+    private platformSettingsService: PlatformSettingsService = defaultPlatformSettingsService,
+    private deliveryQuoteSvc: DeliveryQuoteService = deliveryQuoteService,
+    private courierDestinationRepo: CourierDestinationRepository = courierDestinationRepository,
+    private pathaoStoreIdOverride?: number,
   ) {}
+
+  /**
+   * The courier pickup store. Resolved per use, not at construction: the module
+   * singleton is built at import time, and importing a module must not throw
+   * for a missing variable.
+   */
+  private pathaoStoreId(): number {
+    return this.pathaoStoreIdOverride ?? resolvePathaoStoreId();
+  }
 
   async checkout(userId: string, input: CheckoutInput, requestHost?: string) {
     const { paymentMethod, idempotencyKey } = input;
@@ -89,17 +133,9 @@ export class CheckoutService {
 
     // Resolve Product Info and Calculate Totals
     let subtotalDecimal = new Prisma.Decimal(0);
-    const itemDetails: Array<{
-      inventoryId: string;
-      productId: string;
-      productName: string;
-      colorVariantName: string;
-      size: string;
-      quantity: number;
-      unitPrice: Prisma.Decimal;
-      subtotal: Prisma.Decimal;
-      vendorId: string;
-    }> = [];
+    // Typed from the repository's own interface rather than restated here, so a
+    // new snapshot field cannot be added to one and forgotten on the other.
+    const itemDetails: CheckoutItemDetail[] = [];
 
     // Batch product lookup — single query
     const cartProductIds = Array.from(new Set(cart.items.map((item) => item.inventory.productId)));
@@ -127,15 +163,58 @@ export class CheckoutService {
         );
       }
 
-      const rawPrice =
-        product.discountedPrice && Number(product.discountedPrice) > 0
-          ? Number(product.discountedPrice)
-          : Number(product.price);
-      const unitPriceDecimal = new Prisma.Decimal(rawPrice);
+      // Decimal from the column to the line total, with no JS number in the
+      // middle. Converting the price to a number first would put a binary float
+      // into the one calculation a seller is later paid from; the round trip
+      // usually survives for 2dp values today, which is exactly why it is worth
+      // removing.
+      //
+      // Null-safe on undefined as well as null, because a discount is optional
+      // and its absence has to read as "no discount" rather than throw. The
+      // Decimal constructor also accepts a value that is already a Decimal, so
+      // the wrap is a no-op on the real Prisma path.
+      const selectedPrice =
+        product.discountedPrice !== null &&
+        product.discountedPrice !== undefined &&
+        product.discountedPrice.gt(0)
+          ? product.discountedPrice
+          : product.price;
+
+      const unitPriceDecimal = new Prisma.Decimal(selectedPrice);
       const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
       subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);
 
       const vendorId = product.vendorId || PLATFORM_VENDOR_ID;
+
+      // Billable weight for this line, snapshotted so the shipment stays
+      // reproducible if the product's weight is edited later.
+      //
+      // Computed with Decimal rather than the shared float helper: a courier
+      // charge is reconciled against this stored figure, and float arithmetic
+      // drifts (0.7 * 3 is 2.0999999999999996, and `toFixed` rounds 1.005 down
+      // to 1.00). The shared helper produces the same value for display, but
+      // this is the one that has to be exact.
+      const lineBillableWeightKg = computeBillableLineWeightKg({
+        weightKg: product.packageWeightKg,
+        quantity: item.quantity,
+        lengthCm: product.packageLengthCm,
+        widthCm: product.packageWidthCm,
+        heightCm: product.packageHeightCm,
+      });
+
+      // Commission is resolved and frozen onto this line before it is written.
+      //
+      // The seller listed the price the customer sees; the platform's cut is
+      // deducted from it. Both the rate and the resulting amounts are snapshotted
+      // so a later rate change cannot retroactively alter what this seller earned
+      // on a sale they already made.
+      const commission = await commissionService.applyToLine({
+        lineId: inv.id,
+        subtotal: lineSubtotalDecimal,
+        categoryId: product.categoryId,
+        subcategoryId: product.subcategoryId,
+        vendorId,
+      });
 
       itemDetails.push({
         inventoryId: inv.id,
@@ -147,24 +226,57 @@ export class CheckoutService {
         unitPrice: unitPriceDecimal,
         subtotal: lineSubtotalDecimal,
         vendorId,
+        commissionRatePercent: commission.ratePercent,
+        commissionAmount: commission.commissionAmount,
+        sellerNetAmount: commission.sellerNetAmount,
+        unitWeightKg: new Prisma.Decimal(
+          product.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
+        ).toDecimalPlaces(WEIGHT_DECIMALS, Prisma.Decimal.ROUND_HALF_UP),
+        billableWeightKg: lineBillableWeightKg,
       });
     }
 
-    // Enforce COD Maximum Limit with Decimal Precision
-    const shippingFeeDecimal = subtotalDecimal.gt(3000)
-      ? new Prisma.Decimal(0)
-      : new Prisma.Decimal(150);
-    const totalAmountDecimal = subtotalDecimal.add(shippingFeeDecimal);
+    // Delivery pricing: calculated deterministically from the Platform Rate Card and
+    // Commerce Policy (isValley ? valleyFee : outerFee, plus free delivery threshold waiver).
+    // Checkout is 100% offline-resilient, never blocked by third-party 3PL courier downtime.
+    const policy = await this.platformSettingsService.getCommercePolicy();
+    const destination = await deliveryPricingRepository.thresholdForAddress({
+      logisticsZoneId: address.logisticsZoneId,
+    });
+    const activeRates = await deliveryPricingRepository.activeRates(destination.cityId);
 
-    if (paymentMethod === 'COD' && totalAmountDecimal.gt(COD_MAX_LIMIT)) {
+    const totalBillableWeight = sumBillableWeightKg(
+      itemDetails.map((item) => item.billableWeightKg),
+    );
+
+    const isCod = paymentMethod === 'COD';
+
+    const delivery = resolveDeliveryPricing({
+      subtotal: subtotalDecimal,
+      weightKg: totalBillableWeight,
+      isCod,
+      freeDeliveryThreshold: destination.freeDeliveryThreshold,
+      flatShippingFee: new Prisma.Decimal(policy.flatShippingFee),
+      rates: activeRates,
+      cityId: destination.cityId,
+    });
+
+    const shippingFeeDecimal = delivery.shippingFee;
+    const totalAmountDecimal = subtotalDecimal.plus(shippingFeeDecimal);
+    const deliveryPricingSource =
+      delivery.source === 'RATE_CARD'
+        ? DeliveryPricingSource.RATE_CARD
+        : DeliveryPricingSource.FALLBACK;
+
+    if (paymentMethod === 'COD' && !isCodAllowed(totalAmountDecimal.toNumber(), policy)) {
       throw new AppError(
-        `Cash on Delivery (COD) is limited to maximum NPR ${COD_MAX_LIMIT}. Please pay the total of NPR ${totalAmountDecimal.toFixed(2)} with eSewa or Khalti.`,
+        `Cash on Delivery (COD) is limited to maximum NPR ${policy.codMaxLimit}. Please pay the total of NPR ${totalAmountDecimal.toFixed(2)} with eSewa or Khalti.`,
         HTTPSTATUS.BAD_REQUEST,
         ErrorCode.INVALID_REQUEST,
       );
     }
 
-    // Enterprise SHEIN/Daraz order numbering: CEL-YYMMDD-XXXXXX
+    // Enterprise order numbering: CEL-YYMMDD-XXXXXX
     const orderNumber = generateOrderNumber();
     const isCOD = paymentMethod === 'COD';
     const orderStatus = isCOD ? 'CONFIRMED' : 'PENDING_PAYMENT';
@@ -180,6 +292,14 @@ export class CheckoutService {
         subtotal: subtotalDecimal,
         shippingFee: shippingFeeDecimal,
         totalAmount: totalAmountDecimal,
+        courierFee: delivery.courierFee,
+        absorbedShippingCost: delivery.absorbedCost,
+        deliveryPricingSource,
+        matchedShippingRateId: delivery.matchedRateId,
+        codHandlingFee: new Prisma.Decimal(0),
+        amountToCollect: isCOD ? totalAmountDecimal : null,
+        logisticsZoneId: destination.zoneId,
+        totalBillableWeightKg: totalBillableWeight,
         orderStatus,
         paymentStatus,
         paymentMethod,
@@ -192,6 +312,16 @@ export class CheckoutService {
         throw new AppError(err.message, HTTPSTATUS.CONFLICT, ErrorCode.INVALID_REQUEST);
       }
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const recheck = await this.checkoutRepo.findIdempotencyKey(idempotencyKey, userId);
+          if (recheck) {
+            const parsed = JSON.parse(recheck.responseBody);
+            if (parsed.order?.id) {
+              return parsed;
+            }
+          }
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
         const recheck = await this.checkoutRepo.findIdempotencyKey(idempotencyKey, userId);
         if (recheck) {
           return JSON.parse(recheck.responseBody);
@@ -204,6 +334,36 @@ export class CheckoutService {
       }
       throw err;
     }
+
+    // Stock just moved: refresh cached PDP truth for the ordered products.
+    // Home rails follow on the same beat: one DEL, ~1:100 write:read.
+    for (const productId of new Set(itemDetails.map((item) => item.productId))) {
+      purgeProductDetail(productId);
+    }
+    purgeProductHome();
+
+    // Record what the sale was worth. Runs after the reservation committed, and is
+    // keyed on the order so a retried checkout records it once. Best effort: a
+    // ledger failure must not fail an order the customer has already placed, and
+    // the entry is derived from the order row rather than from live pricing, so it
+    // can be posted again later from the same numbers.
+    await postOrderPlacementEntries({ orderId: order.id }).catch((error: unknown) => {
+      logger.error(
+        { orderId: order.id, error: (error as Error).message },
+        'Could not record the order in the ledger; it must be posted manually',
+      );
+    });
+
+    // Commission, one entry per seller, from the rate frozen on each line. Separate
+    // from the placement entries above because it is attributed per line rather
+    // than per order: a basket can hold several sellers' goods, and revenue is
+    // posted once for the whole subtotal.
+    await postOrderCommissionEntries({ orderId: order.id }).catch((error: unknown) => {
+      logger.error(
+        { orderId: order.id, error: (error as Error).message },
+        'Could not record commission in the ledger; it must be posted manually',
+      );
+    });
 
     // Create online payment intent when not COD
     let paymentResult = null;
@@ -221,16 +381,11 @@ export class CheckoutService {
               returnUrl: `${callbackBase}${apiBase}/orders/payments/khalti/return`,
             }
           : {};
-        paymentResult = await adapter.createPaymentIntent(
-          order.id,
-          totalAmountDecimal.toNumber(),
-          'NPR',
-          {
-            orderNumber: order.orderNumber,
-            userId,
-            ...walletMeta,
-          },
-        );
+        paymentResult = await adapter.createPaymentIntent(order.id, totalAmountDecimal, 'NPR', {
+          orderNumber: order.orderNumber,
+          userId,
+          ...walletMeta,
+        });
 
         await this.paymentRepo.createPayment({
           orderId: order.id,
@@ -257,6 +412,11 @@ export class CheckoutService {
               quantity: item.quantity,
             })),
           });
+          // Released stock moved truth again for the same products.
+          for (const productId of new Set(itemDetails.map((item) => item.productId))) {
+            purgeProductDetail(productId);
+          }
+          purgeProductHome();
         } catch (cancelErr) {
           logger.error(
             { orderId: order.id, cancelErr },
@@ -287,6 +447,37 @@ export class CheckoutService {
     if (order.paymentMethod === 'COD') {
       await enqueueOrderConfirmationEmail(order, 'checkout-cod');
     }
+
+    // Dispatch in-app and push notification for customer
+    this.notificationService
+      .notifyOrderStatus({
+        userId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.paymentMethod === 'COD' ? 'CONFIRMED' : 'PENDING',
+        totalAmount: totalAmountDecimal.toNumber(),
+      })
+      .catch((notifErr) => {
+        logger.warn({ orderId: order.id, err: notifErr }, 'Failed to dispatch order notification');
+      });
+
+    // Dispatch in-app notification for platform admins and vendors
+    const vendorIds = Array.from(
+      new Set(order.items.map((i) => i.vendorId).filter((v): v is string => Boolean(v))),
+    );
+    this.notificationService
+      .notifyNewOrderForAdminsAndVendors({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        totalAmount: totalAmountDecimal.toNumber(),
+        vendorIds,
+      })
+      .catch((err) => {
+        logger.warn(
+          { orderId: order.id, err },
+          'Failed to dispatch admin/vendor order notification',
+        );
+      });
 
     return responseBody;
   }

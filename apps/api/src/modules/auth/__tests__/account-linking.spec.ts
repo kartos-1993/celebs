@@ -127,7 +127,10 @@ describe('Account Linking & OAuth Provider Conflict Suite', () => {
       .send({ idToken: 'valid-token' });
 
     expect(googleRes.status).toBe(200);
-    const accessToken = googleRes.body.data.accessToken;
+    const rawCookies = googleRes.headers['set-cookie'];
+    const joinedCookies = Array.isArray(rawCookies) ? rawCookies.join(';') : (rawCookies ?? '');
+    const accessToken = joinedCookies.match(/accessToken=([^;]+)/)?.[1] ?? '';
+    expect(accessToken).not.toBe('');
 
     const dbUser = await prisma.user.findUnique({ where: { email } });
     createdUserId = dbUser!.id;

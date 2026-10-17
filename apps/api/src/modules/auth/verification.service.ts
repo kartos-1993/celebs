@@ -13,7 +13,7 @@ import { AuthRepository, authRepository } from './auth.repository';
 
 import { enqueueMail } from '@/common/services/mail.queue';
 import { buildWebUrl } from '@/common/utils/url';
-import { verifyEmailTemplate } from '@/mailers/templates/template';
+import { passwordResetTemplate, verifyEmailTemplate } from '@/mailers/templates/template';
 
 export class VerificationService {
   constructor(private authRepo: AuthRepository = authRepository) {}
@@ -136,6 +136,34 @@ export class VerificationService {
     }
 
     return { message: 'Verification link sent successfully' };
+  }
+
+  public async sendPasswordResetEmail(
+    user: { id: string; email: string },
+    code: string,
+  ): Promise<void> {
+    const resetUrl = buildWebUrl('/reset-password', { code });
+    logger.info({ email: user.email, resetUrl }, 'Attempting to send password reset email');
+
+    try {
+      await enqueueMail({
+        to: user.email,
+        subject: 'Reset your celebs.com.np account password',
+        text: `Please reset your password by clicking the following link (expires in 15 minutes): ${resetUrl}`,
+        html: passwordResetTemplate(resetUrl).html,
+      });
+      logger.info({ email: user.email }, 'Password reset email enqueued successfully');
+    } catch (err) {
+      logger.error({ err, email: user.email }, 'Failed to enqueue password reset email');
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        logger.warn(
+          { resetUrl, email: user.email },
+          '[DEV/TEST FALLBACK] Password reset email failed to send. Click link in logs to reset manually.',
+        );
+      } else {
+        throw new InternalServerException('Failed to send password reset email');
+      }
+    }
   }
 }
 

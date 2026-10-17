@@ -4,7 +4,6 @@ import cors from 'cors';
 import { randomUUID } from 'crypto';
 import express from 'express';
 import { json } from 'express';
-import session from 'express-session';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
@@ -17,7 +16,7 @@ import { generateOpenAPIDocument } from './common/openapi/openapi.config';
 import { getBullBoardRouter } from './common/services/bull-board.service';
 import { authenticateJWT } from './common/strategies/jwt.strategy';
 import { config } from './config/app.config';
-import { UpstashRedisStore } from './config/session-store';
+import { csrfOriginGuard } from './middlewares/csrf-origin-guard.middleware';
 import { errorHandler } from './middlewares/error-handler';
 import passport from './middlewares/passport';
 import { globalRateLimiter } from './middlewares/rate-limiter.middleware';
@@ -31,6 +30,10 @@ import cartRoutes from './modules/cart/cart.routes';
 import categoryRoutes from './modules/category/category.routes';
 import comboRoutes from './modules/combo/combo.routes';
 import devLogsRouter from './modules/dev/dev-logs.routes';
+import commissionRoutes from './modules/finance/commission/commission.routes';
+import earningsRoutes from './modules/finance/earnings/earnings.routes';
+import financeRoutes from './modules/finance/finance.routes';
+import sellerStatementRoutes from './modules/finance/ledger/seller-statement.routes';
 import logisticsRoutes from './modules/logistics/logistics.routes';
 import mediaRoutes from './modules/media/media.routes';
 import notificationRoutes from './modules/notification/notification.routes';
@@ -94,26 +97,23 @@ app.use(
       'Content-Type',
       'Authorization',
       'x-session-id',
-      'X-Session-Id',
       'x-requested-with',
-      'X-Requested-With',
       'x-surface',
-      'X-Surface',
       'x-request-id',
-      'X-Request-Id',
       'x-refresh-token',
-      'X-Refresh-Token',
       'idempotency-key',
-      'Idempotency-Key',
       'x-test-rate-limit',
       'Accept',
       'Origin',
     ],
-    exposedHeaders: ['x-session-id', 'X-Session-Id', 'x-request-id', 'X-Request-Id'],
+    // Header names are case-insensitive (RFC 9110 §5.5) — single lowercase
+    // entries cover all casings; no Title-Case duplicates.
+    exposedHeaders: ['x-session-id', 'x-request-id'],
   }),
 );
 
 app.use(cookieParser());
+app.use(csrfOriginGuard);
 app.use(passport.initialize());
 app.use(
   pinoHttp({
@@ -183,37 +183,12 @@ app.use(
 );
 app.use(globalRateLimiter);
 
-// Session management setup
+// Fail fast rather than signing with an undefined secret. The identity layer
+// is stateless JWT (`jwt.strategy.ts` verifies, `utils/jwt.ts` signs), so this
+// guards token issuance - not a server-side session store.
 if (!config.JWT.SECRET) {
-  throw new Error('JWT_SECRET environment variable is required for session management');
+  throw new Error('JWT_SECRET environment variable is required to issue and verify tokens');
 }
-
-let sessionStore;
-
-// Any reachable Redis host qualifies (local Memurai/Docker runs passwordless)
-if (config.REDIS.HOST) {
-  sessionStore = new UpstashRedisStore('celebs_sess:', 86400);
-} else {
-  logger.warn(
-    'No Redis configuration found. Using in-memory session store (not recommended for production/staging)',
-  );
-}
-
-app.use(
-  session({
-    store: sessionStore,
-    secret: config.JWT.SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: config.COOKIE.SECURE,
-      httpOnly: config.COOKIE.HTTPONLY,
-      sameSite: config.COOKIE.SAME_SITE,
-      domain: config.COOKIE.DOMAIN || undefined,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
-  }),
-);
 
 app.use(`${config.BASE_PATH}/auth`, authRoutes);
 app.use(`${config.BASE_PATH}/session`, sessionRoutes);
@@ -251,6 +226,10 @@ app.use(`${config.BASE_PATH}/notifications`, notificationRoutes);
 app.use(`${config.BASE_PATH}/campaigns`, campaignRoutes);
 app.use(`${config.BASE_PATH}/combos`, comboRoutes);
 app.use(`${config.BASE_PATH}/logistics`, logisticsRoutes);
+app.use(`${config.BASE_PATH}/finance/earnings`, earningsRoutes);
+app.use(`${config.BASE_PATH}/finance`, financeRoutes);
+app.use(`${config.BASE_PATH}/finance/commissions`, commissionRoutes);
+app.use(`${config.BASE_PATH}/finance/statements`, sellerStatementRoutes);
 app.use(`${config.BASE_PATH}/wishlist`, wishlistRoutes);
 app.use(`${config.BASE_PATH}/settings`, platformSettingsRoutes);
 app.use(`${config.BASE_PATH}/storefront`, storefrontRoutes);
@@ -262,7 +241,17 @@ if (config.NODE_ENV !== 'production') {
     res.send(generateOpenAPIDocument());
   });
   app.use(`${config.BASE_PATH}/docs`, swaggerUi.serve, swaggerUi.setup(generateOpenAPIDocument()));
-  app.use(`${config.BASE_PATH}/dev/logs`, devLogsRouter);
+  if (config.NODE_ENV === 'development') {
+    app.use(`${config.BASE_PATH}/dev/logs`, devLogsRouter);
+  } else {
+    app.use(
+      `${config.BASE_PATH}/dev/logs`,
+      authenticateJWT,
+      asyncHandler(actorContext),
+      requirePlatformActor,
+      devLogsRouter,
+    );
+  }
 }
 
 import healthRoutes from './modules/health/health.routes';

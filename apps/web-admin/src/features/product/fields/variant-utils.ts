@@ -44,6 +44,18 @@ export function detectVariantKind(f: FieldSpec): VariantKind | null {
   return 'other';
 }
 
+/**
+ * Single color-axis resolver shared by validators, fields, and payload.
+ * Mirrors detectVariantKind's color rule exactly so all three agree.
+ */
+export function resolveColorAxisKey(
+  axes: Array<{ key: string; label: string }>,
+): string | undefined {
+  return axes.find(
+    (axis) => axis.key.toLowerCase() === 'color' || axis.label.toLowerCase().includes('color'),
+  )?.key;
+}
+
 export function extractVariantsMeta(fields: FieldSpec[]): {
   variants: VariantMetaItem[];
   colorFieldName?: string;

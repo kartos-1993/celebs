@@ -1,4 +1,8 @@
+import { discountPercentFrom } from '@celebs/shared-utils';
+
 import type { HydratedProduct } from '../types';
+
+import { firstRenderableImage, hasRenderableImage } from '@/utils/image';
 
 /**
  * Calculates human-readable discount percentage tag (e.g. "25% OFF").
@@ -9,19 +13,21 @@ export function dealTag(product: HydratedProduct): string | null {
   const sale = product as HydratedProduct & { discountedPrice?: number | null };
   const discounted = sale.discountedPrice != null ? Number(sale.discountedPrice) : NaN;
   if (Number.isFinite(discounted) && discounted > 0 && discounted < price && price > 0) {
-    return `${Math.round((1 - discounted / price) * 100)}% OFF`;
+    return `${discountPercentFrom(price, discounted)}% OFF`;
   }
   return null;
 }
 
 /**
- * Resolves the primary photo URI for a deal tile, preferring first variant image.
+ * Resolves the primary photo source for a deal tile: a colour gallery's first
+ * photo when the product has one, otherwise the derived `cover`. Returns
+ * `undefined` (never `''`) so the caller can render a neutral tile.
  */
-export function tilePhoto(product: HydratedProduct): string {
-  const firstVariantPhoto = product.colorVariants?.find(
-    (v) => Array.isArray(v.images) && v.images.length > 0,
-  )?.images?.[0];
-  return firstVariantPhoto ?? product.mainImages?.[0] ?? '';
+export function tilePhoto(product: HydratedProduct): string | undefined {
+  const withPhotos = product.colorVariants?.find((variant) =>
+    hasRenderableImage(firstRenderableImage(variant.images)),
+  );
+  return firstRenderableImage(withPhotos?.images) ?? product.cover?.trim() ?? undefined;
 }
 
 /**

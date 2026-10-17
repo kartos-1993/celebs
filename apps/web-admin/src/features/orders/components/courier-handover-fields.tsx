@@ -51,7 +51,7 @@ export function CourierHandoverFields({
             id="tracking-number"
             value={trackingNo}
             onChange={(e) => onTrackingChange(e.target.value)}
-            placeholder="e.g. NCM-98214-NP"
+            placeholder="e.g. PTH-12345-NP"
             className="flex-1 font-mono"
           />
           <Button
@@ -70,7 +70,7 @@ export function CourierHandoverFields({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Dispatch hands the parcel to Nepal Can Move via 3PL and records the handover.
+          Dispatch hands the parcel to Pathao via 3PL and records the handover.
         </p>
       </div>
     </>

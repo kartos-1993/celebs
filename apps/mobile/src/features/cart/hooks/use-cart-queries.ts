@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
@@ -6,6 +7,7 @@ import type {
   CartResponse,
   SyncCartInput,
 } from '@celebs/shared-types';
+import { moneyMultiply, moneySum } from '@celebs/shared-utils';
 
 import {
   addToCartApi,
@@ -16,16 +18,69 @@ import {
   syncCartApi,
   updateCartItemApi,
 } from '../api';
+import { getUnitPrice } from '../utils/cart-selectors';
 
+/**
+ * Local fallback only. The server is the source of truth for the subtotal, so
+ * every optimistic write prefers the server figure it already has and only
+ * recomputes when the cached response carries none (see applyCartPatch).
+ */
 function recalculateCartTotals(items: CartItemHydrated[]) {
-  let subtotal = 0;
+  // Exact, so this fallback cannot show a total the server would contradict.
   let itemCount = 0;
-  for (const item of items) {
-    const price = item.discountedPrice ?? item.price;
-    subtotal += price * item.quantity;
-    itemCount += item.quantity;
-  }
-  return { subtotal, itemCount };
+  for (const item of items) itemCount += item.quantity;
+
+  return {
+    subtotal: moneySum(items.map((item) => moneyMultiply(getUnitPrice(item), item.quantity))),
+    itemCount,
+  };
+}
+
+/** Applies a patched item list, keeping the server subtotal when it has one. */
+function applyCartPatch(
+  cart: CartResponse,
+  items: CartItemHydrated[],
+  overrides: Partial<Pick<CartResponse, 'subtotal' | 'itemCount' | 'hasStockIssues'>>,
+): CartResponse {
+  return { ...cart, ...overrides, items };
+}
+
+const OPTIMISTIC_ITEM_PREFIX = 'optimistic-';
+
+/**
+ * `CartItemHydrated.image` is a REQUIRED field of the shared cart contract, but
+ * it is a frozen denormalised snapshot that the cart deliberately never reads:
+ * the row thumbnail is resolved live from the product (see
+ * `resolveCartLineImage`). The optimistic row therefore has no honest image to
+ * put here, and the value is a named constant rather than a bare `image: ''` so
+ * the "nothing to show yet" is obvious at the call site.
+ */
+const NO_LINE_IMAGE = '';
+
+/**
+ * Placeholder row for the optimistic add. The cart schema needs a full item
+ * shape, but the only facts known before the server replies are the ones the
+ * caller submitted — everything else stays empty rather than invented.
+ */
+function buildOptimisticItem(input: AddToCartInput): CartItemHydrated {
+  return {
+    id: `${OPTIMISTIC_ITEM_PREFIX}${input.productId}`,
+    cartId: '',
+    inventoryId: '',
+    productId: input.productId,
+    productName: '',
+    productSlug: '',
+    price: 0,
+    colorVariantName: input.colorVariantName,
+    colorCode: '',
+    image: NO_LINE_IMAGE,
+    size: input.size,
+    quantity: input.quantity,
+    availableStock: 0,
+    isAvailable: true,
+    createdAt: '',
+    updatedAt: '',
+  };
 }
 
 export function useCartQuery(sessionId: string | null, options?: { enabled?: boolean }) {
@@ -39,14 +94,30 @@ export function useCartQuery(sessionId: string | null, options?: { enabled?: boo
 
 export function useAddToCartMutation(sessionId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = CART_QUERY_KEYS.detail(sessionId);
+  const queryKey = useMemo(() => CART_QUERY_KEYS.detail(sessionId), [sessionId]);
 
   return useMutation({
     mutationFn: (input: AddToCartInput) => addToCartApi(input, sessionId),
-    onMutate: async () => {
+    onMutate: async (input: AddToCartInput) => {
       await queryClient.cancelQueries({ queryKey });
       const previousCart = queryClient.getQueryData<CartResponse>(queryKey);
+      if (previousCart) {
+        // Same optimistic shape as update/remove/clear: a placeholder row
+        // carrying only what the caller submitted, plus recalculated totals.
+        const optimisticItems = [...previousCart.items, buildOptimisticItem(input)];
+        queryClient.setQueryData<CartResponse>(
+          queryKey,
+          applyCartPatch(previousCart, optimisticItems, {
+            ...recalculateCartTotals(optimisticItems),
+          }),
+        );
+      }
       return { previousCart };
+    },
+    onSuccess: (serverCart) => {
+      // The server response carries the authoritative subtotal/itemCount, so it
+      // replaces the optimistic recompute wholesale.
+      queryClient.setQueryData<CartResponse>(queryKey, serverCart);
     },
     onError: (_err, _vars, context) => {
       if (context?.previousCart) {
@@ -61,7 +132,7 @@ export function useAddToCartMutation(sessionId: string | null) {
 
 export function useUpdateCartQuantityMutation(sessionId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = CART_QUERY_KEYS.detail(sessionId);
+  const queryKey = useMemo(() => CART_QUERY_KEYS.detail(sessionId), [sessionId]);
 
   return useMutation({
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
@@ -73,15 +144,17 @@ export function useUpdateCartQuantityMutation(sessionId: string | null) {
         const updatedItems = previousCart.items.map((item) =>
           item.id === itemId ? { ...item, quantity } : item,
         );
-        const { subtotal, itemCount } = recalculateCartTotals(updatedItems);
-        queryClient.setQueryData<CartResponse>(queryKey, {
-          ...previousCart,
-          items: updatedItems,
-          subtotal,
-          itemCount,
-        });
+        queryClient.setQueryData<CartResponse>(
+          queryKey,
+          applyCartPatch(previousCart, updatedItems, recalculateCartTotals(updatedItems)),
+        );
       }
       return { previousCart };
+    },
+    onSuccess: (serverCart) => {
+      // The server response carries the authoritative subtotal/itemCount, so it
+      // replaces the optimistic recompute wholesale.
+      queryClient.setQueryData<CartResponse>(queryKey, serverCart);
     },
     onError: (_err, _vars, context) => {
       if (context?.previousCart) {
@@ -96,7 +169,7 @@ export function useUpdateCartQuantityMutation(sessionId: string | null) {
 
 export function useRemoveCartItemMutation(sessionId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = CART_QUERY_KEYS.detail(sessionId);
+  const queryKey = useMemo(() => CART_QUERY_KEYS.detail(sessionId), [sessionId]);
 
   return useMutation({
     mutationFn: (itemId: string) => removeCartItemApi(itemId, sessionId),
@@ -105,15 +178,17 @@ export function useRemoveCartItemMutation(sessionId: string | null) {
       const previousCart = queryClient.getQueryData<CartResponse>(queryKey);
       if (previousCart) {
         const updatedItems = previousCart.items.filter((item) => item.id !== itemId);
-        const { subtotal, itemCount } = recalculateCartTotals(updatedItems);
-        queryClient.setQueryData<CartResponse>(queryKey, {
-          ...previousCart,
-          items: updatedItems,
-          subtotal,
-          itemCount,
-        });
+        queryClient.setQueryData<CartResponse>(
+          queryKey,
+          applyCartPatch(previousCart, updatedItems, recalculateCartTotals(updatedItems)),
+        );
       }
       return { previousCart };
+    },
+    onSuccess: (serverCart) => {
+      // The server response carries the authoritative subtotal/itemCount, so it
+      // replaces the optimistic recompute wholesale.
+      queryClient.setQueryData<CartResponse>(queryKey, serverCart);
     },
     onError: (_err, _vars, context) => {
       if (context?.previousCart) {
@@ -128,7 +203,7 @@ export function useRemoveCartItemMutation(sessionId: string | null) {
 
 export function useClearCartMutation(sessionId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = CART_QUERY_KEYS.detail(sessionId);
+  const queryKey = useMemo(() => CART_QUERY_KEYS.detail(sessionId), [sessionId]);
 
   return useMutation({
     mutationFn: () => clearCartApi(sessionId),
@@ -136,14 +211,17 @@ export function useClearCartMutation(sessionId: string | null) {
       await queryClient.cancelQueries({ queryKey });
       const previousCart = queryClient.getQueryData<CartResponse>(queryKey);
       if (previousCart) {
-        queryClient.setQueryData<CartResponse>(queryKey, {
-          ...previousCart,
-          items: [],
-          subtotal: 0,
-          itemCount: 0,
-        });
+        queryClient.setQueryData<CartResponse>(
+          queryKey,
+          applyCartPatch(previousCart, [], { subtotal: 0, itemCount: 0 }),
+        );
       }
       return { previousCart };
+    },
+    onSuccess: (serverCart) => {
+      // The server response carries the authoritative subtotal/itemCount, so it
+      // replaces the optimistic recompute wholesale.
+      queryClient.setQueryData<CartResponse>(queryKey, serverCart);
     },
     onError: (_err, _vars, context) => {
       if (context?.previousCart) {

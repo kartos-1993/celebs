@@ -73,6 +73,13 @@ export class UserRepository {
     return prisma.user.findUnique({ where: { id } });
   }
 
+  public async findUserWithPreferences(id: string) {
+    return prisma.user.findUnique({
+      where: { id },
+      include: { userPreferences: true },
+    });
+  }
+
   public async deleteUser(id: string) {
     return prisma.user.delete({ where: { id } });
   }

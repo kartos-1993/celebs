@@ -147,6 +147,23 @@ export const setupInterceptors = (client: AxiosInstance) => {
         !originalRequest._retry &&
         !originalRequest.skipAuthRefresh
       ) {
+        // The session check itself must not trigger a refresh when the user
+        // is sitting on a public page: there is nothing to silently restore
+        // (they are about to type credentials), and the doomed refresh POST
+        // just burns the auth rate-limit budget. Protected pages keep the
+        // silent-refresh flow untouched.
+        const isSessionCheck = originalRequest.url?.includes('/session');
+        const isPublicRoute =
+          typeof window !== 'undefined' &&
+          PUBLIC_NO_REDIRECT_PREFIXES.some((prefix) => window.location.pathname.startsWith(prefix));
+        if (isSessionCheck && isPublicRoute) {
+          return Promise.reject({
+            status,
+            message: typeof errorData?.message === 'string' ? errorData.message : error.message,
+            ...(typeof errorData === 'object' ? errorData : {}),
+          } as ApiErrorResponse);
+        }
+
         const isBypassUrl = AUTH_BYPASS_URLS.some((url) => originalRequest.url?.includes(url));
 
         if (isBypassUrl) {

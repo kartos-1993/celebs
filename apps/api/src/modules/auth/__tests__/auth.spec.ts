@@ -103,11 +103,9 @@ describe('Authentication API Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty('accessToken');
-      expect(res.body.data).toHaveProperty('refreshToken');
       expect(res.body.data.user.email).toBe(testUser.email.toLowerCase());
 
-      // Check cookies
+      // Tokens ship via httpOnly cookies on web surface, not the body
       const cookies = res.headers['set-cookie'];
       expect(cookies).toBeDefined();
       const cookiesArray = Array.isArray(cookies)
@@ -116,6 +114,7 @@ describe('Authentication API Integration Tests', () => {
           ? [cookies]
           : [];
       expect(cookiesArray.some((c: string) => c.includes('accessToken'))).toBe(true);
+      expect(cookiesArray.some((c: string) => c.includes('refreshToken'))).toBe(true);
     });
 
     it('should reject login with incorrect credentials', async () => {
@@ -196,7 +195,10 @@ describe('Authentication API Integration Tests', () => {
     });
 
     it('should logout successfully with authenticated session', async () => {
-      const res = await request(app).post('/api/v1/auth/logout').set('Cookie', authCookie);
+      const res = await request(app)
+        .post('/api/v1/auth/logout')
+        .set('Origin', 'http://localhost:5173')
+        .set('Cookie', authCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

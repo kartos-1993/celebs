@@ -1,6 +1,6 @@
 import { logger } from '@celebs/shared-utils';
 
-import { upstashRedis } from '@/config/upstash.redis';
+import { cacheRedis } from '@/config/upstash.redis';
 
 interface L1Entry {
   data: unknown;
@@ -37,7 +37,7 @@ export class TtlCache<T> {
     }
 
     try {
-      const raw = await upstashRedis.get<string>(`${this.namespace}:${key}`);
+      const raw = await cacheRedis.get<string>(`${this.namespace}:${key}`);
       if (raw) {
         const parsed = typeof raw === 'string' ? (JSON.parse(raw) as T) : (raw as T);
         this.l1.set(key, { data: parsed, expiresAt: now + L1_TTL_MS });
@@ -54,7 +54,7 @@ export class TtlCache<T> {
     this.l1.set(key, { data: value, expiresAt: Date.now() + L1_TTL_MS });
     this.issuedKeys.add(key);
     try {
-      await upstashRedis.set(`${this.namespace}:${key}`, JSON.stringify(value), {
+      await cacheRedis.set(`${this.namespace}:${key}`, JSON.stringify(value), {
         ex: this.l2TtlSec,
       });
     } catch (err) {
@@ -73,7 +73,7 @@ export class TtlCache<T> {
     }
 
     await Promise.allSettled(
-      targets.map((target) => upstashRedis.del(`${this.namespace}:${target}`)),
+      targets.map((target) => cacheRedis.del(`${this.namespace}:${target}`)),
     );
   }
 }

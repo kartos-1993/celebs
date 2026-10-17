@@ -4,6 +4,8 @@ import { AlertCircle } from 'lucide-react-native';
 
 import { toastStyles } from './toast.styles';
 
+import { Palette } from '@/constants/theme';
+
 export type ToastType = 'error' | 'success' | 'info';
 
 interface ToastPayload {
@@ -93,7 +95,7 @@ export function ToastHost() {
         accessibilityLiveRegion="polite"
         accessibilityLabel={toast.message}
       >
-        {toast.type === 'error' ? <AlertCircle size={16} color="#FFFFFF" /> : null}
+        {toast.type === 'error' ? <AlertCircle size={16} color={Palette.white} /> : null}
         <Text style={toastStyles.message}>{toast.message}</Text>
       </Animated.View>
     </View>

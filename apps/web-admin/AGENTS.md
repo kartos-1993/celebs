@@ -85,3 +85,10 @@
 
 - In active development, reject backward-compatibility translation layers, multi-version adapters, and legacy response shims.
 - Always fix contracts at the source: update the Express controller to return the canonical `IApiResponse<T>`, update the client API method to expect it, and delete any legacy fallback cascading code.
+
+## 11. Code Readability & Anti-Patch Standards
+
+- **Declarative, Scannable JSX**: JSX must strictly reflect UI layout without nested conditional soup. Nested ternaries in JSX (`cond ? <A /> : cond2 ? <B /> : <C />`) are FORBIDDEN. Use early returns, guard clauses, or dedicated sub-render components.
+- **Tailwind Token Discipline (Zero Magic Numbers)**: Arbitrary pixel classes (`w-[347px]`, `p-[13px]`, `leading-[19px]`, `text-[11px]`) are prohibited. All styling must map to standard tokens from the typography scale (Section 7) and spacing scale (`space-y-4`, `p-4`, `gap-2`).
+- **Refactor-First on Bloated Files**: When opening an existing component that violates the 150-line budget or Cyclomatic Complexity > 8, you MUST NOT append patch code. Decompose the component into FSD sub-components and pure helpers first, then implement the change.
+- **Self-Documenting Conditionals**: Extract complex multi-variable booleans into descriptively named `const` flags above the JSX return block.

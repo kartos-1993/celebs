@@ -34,4 +34,6 @@ export interface OrderNotificationParams {
   orderNumber: string;
   status: string;
   trackingNumber?: string;
+  totalAmount?: number | string;
+  gateway?: string;
 }

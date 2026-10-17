@@ -43,8 +43,11 @@ describe('Google Sign-In Cryptographic Verification & Auth Suite', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.user.email).toBe(email);
-    expect(res.body.data.accessToken).toBeDefined();
-    expect(res.body.data.refreshToken).toBeDefined();
+    // Tokens ship via httpOnly cookies on web surface, not the body
+    const rawCookies = res.headers['set-cookie'];
+    const joinedCookies = Array.isArray(rawCookies) ? rawCookies.join(';') : (rawCookies ?? '');
+    expect(joinedCookies).toContain('accessToken=');
+    expect(joinedCookies).toContain('refreshToken=');
 
     // Verify user is in DB and marked as email verified
     const dbUser = await prisma.user.findUnique({ where: { email } });

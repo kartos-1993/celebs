@@ -26,8 +26,51 @@ export enum Permission {
   ORDER_MANAGE = 'order:manage',
 
   // ── Finance ───────────────────────────
+  // A shop's own money. A vendor sees their own earnings, not the platform's.
   FINANCE_VIEW = 'finance:view',
   FINANCE_MANAGE = 'finance:manage',
+
+  // The platform's own money: the courier ledger, what delivery costs across all
+  // vendors, and settlements agreed with a courier.
+  //
+  // Deliberately separate from the pair above. Reusing FINANCE_VIEW here would
+  // hand every seller a read on every other seller's delivery costs, because the
+  // two are about different money: one is a shop's earnings, the other is the
+  // whole marketplace's dealings with a courier.
+  FINANCE_PLATFORM_VIEW = 'finance:platform:view',
+  FINANCE_PLATFORM_MANAGE = 'finance:platform:manage',
+
+  // The platform's commission rate.
+  //
+  // SUPERADMIN only, and deliberately not granted to ADMIN. Everyone below
+  // SUPERADMIN can already read platform finance and manage settlement batches;
+  // this one changes what sellers are paid, so it is not part of that tier. An
+  // ADMIN able to set the rate could set it to zero, which is the one edit that
+  // cannot be walked back once a seller has listed against it.
+  COMMISSION_MANAGE = 'commission:manage',
+
+  // Read-only counterpart to COMMISSION_MANAGE.
+  //
+  // Separated deliberately: an ADMIN needs to see what rate a seller pays to
+  // support them and to explain a payout, but granting them COMMISSION_MANAGE
+  // to get that would hand them the ability to set it. Reading a rate and
+  // changing a rate are not the same permission, and only the second is revenue.
+  COMMISSION_VIEW = 'commission:view',
+
+  // ── Seller statements ──────────────────────────────────────
+  //
+  // Four permissions for one workflow, because the steps are not
+  // interchangeable: read a statement, freeze the figures, authorise the
+  // payout, record that the money moved.
+  //
+  // Separated so a deployment can hand them to different people. Whoever freezes
+  // a statement may not also approve it - that inequality is enforced in the
+  // service, and these permissions are what let an operator be given only part
+  // of the flow.
+  SELLER_STATEMENT_VIEW = 'seller-statement:view',
+  SELLER_STATEMENT_PREPARE = 'seller-statement:prepare',
+  SELLER_STATEMENT_APPROVE = 'seller-statement:approve',
+  SELLER_STATEMENT_PAY = 'seller-statement:pay',
 
   // ── Vendors ───────────────────────────
   VENDOR_VIEW = 'vendor:view',

@@ -22,7 +22,6 @@ export type AuthContextType = {
   isStaff: boolean;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const defaultAuthContext: AuthContextType = {
   user: undefined,
   error: null,
@@ -37,7 +36,6 @@ export const defaultAuthContext: AuthContextType = {
   isStaff: false,
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -108,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   return context ?? defaultAuthContext;

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createDeliverableZone } from '../../../../tests/support/delivery-zone';
 import { checkoutService } from '../checkout/checkout.service';
 
 import { hashValue } from '@/common/utils/bcrypt';
@@ -48,8 +49,12 @@ describe('Checkout Compensating Transaction (Saga Pattern)', () => {
     });
     vendorProfileId = vendorProfile.id;
 
+    // Checkout and dispatch refuse an address with no delivery zone, so a
+    // fixture address has to carry a real one.
+    const { zoneId: addressZone } = await createDeliverableZone();
     const address = await prisma.address.create({
       data: {
+        logisticsZoneId: addressZone,
         userId,
         fullName: 'Saga Customer',
         phone: '9841111111',

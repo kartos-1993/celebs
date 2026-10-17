@@ -1,5 +1,165 @@
+import { afterAll, beforeEach, vi } from 'vitest';
+
 import prisma from '@/config/db.prisma';
-import { afterAll, beforeEach } from 'vitest';
+
+/**
+ * Tests must not open broker connections.
+ *
+ * Every queue and worker is constructed at module scope - importing
+ * `queue.service` opens five, and importing a worker opens one that starts
+ * consuming jobs - so a spec that imports a module to reach a function beside it
+ * leaves a live connection behind. The run then finishes its assertions and hangs
+ * instead of exiting, which turned a 27 minute suite into a 10 hour one.
+ *
+ * Closing them afterwards is worse than useless: BullMQ's ioredis still has
+ * commands in flight when the connection goes, so each close raises EPIPE as an
+ * unhandled rejection and the suite exits non-zero with every test green. That is
+ * the same failure shape as the bug it was meant to fix.
+ *
+ * So the connection is never made in the first place. Real behaviour is exercised
+ * by passing a stub through the module's own injection point, which is what the
+ * notification and refund specs do.
+ */
+vi.mock('bullmq', async () => {
+  const actual = await vi.importActual<typeof import('bullmq')>('bullmq');
+
+  class InertQueue {
+    add = vi.fn(async () => ({ id: 'stub-job' }));
+    getJob = vi.fn(async () => null);
+    getJobCounts = vi.fn(async () => ({
+      active: 0,
+      completed: 0,
+      delayed: 0,
+      failed: 0,
+      paused: 0,
+      waiting: 0,
+    }));
+    remove = vi.fn(async () => 1);
+    close = vi.fn(async () => undefined);
+    drain = vi.fn(async () => undefined);
+    obliterate = vi.fn(async () => undefined);
+  }
+
+  class InertWorker {
+    on = vi.fn(() => this);
+    once = vi.fn(() => this);
+    off = vi.fn(() => this);
+    run = vi.fn(async () => this);
+    pause = vi.fn(async () => undefined);
+    resume = vi.fn(async () => undefined);
+    close = vi.fn(async () => undefined);
+    waitUntilReady = vi.fn(async () => undefined);
+  }
+
+  return { ...actual, Queue: InertQueue, Worker: InertWorker };
+});
+
+/**
+ * The queue dashboard mounts a BullMQ adapter over each queue at startup, and that
+ * adapter rejects anything that is not a real BullMQ queue. With the queues
+ * inert above, mounting it would throw while the app module is still loading and
+ * take down every spec that imports the app. There is nothing to see in a test
+ * run, so the router is stubbed to an empty one.
+ */
+vi.mock('@/common/services/bull-board.service', async () => {
+  const { Router } = await vi.importActual<typeof import('express')>('express');
+  return { getBullBoardRouter: () => Router() };
+});
+
+/**
+ * The courier is a network boundary, so it is stubbed for the whole suite.
+ *
+ * Checkout now prices delivery by asking the courier, which means an unmocked
+ * suite would attempt a live HTTP call on every order - slow, flaky, and dependent
+ * on a third party's uptime to say something about our code.
+ *
+ * Stubbed at the client's public method rather than by injecting a fake service
+ * into every spec, so the real quoting service, its cache, the free-delivery
+ * policy and checkout itself all still run. What is replaced is exactly the thing
+ * we do not own: the number the courier answers with.
+ */
+vi.mock('@/modules/logistics/adapters/pathao-price.client', async () => {
+  const { Prisma } =
+    await vi.importActual<typeof import('@/config/db.prisma')>('@/config/db.prisma');
+  // Prisma is re-exported as a namespace, so the Decimal class hangs off it.
+  const Decimal = Prisma.Decimal;
+  type DecimalValue = InstanceType<typeof Decimal>;
+  // Spread the real module so its constants - the measured weight limits checkout
+  // validates against - keep their real values. Only the network call is replaced.
+  const actual = await vi.importActual<
+    typeof import('@/modules/logistics/adapters/pathao-price.client')
+  >('@/modules/logistics/adapters/pathao-price.client');
+
+  return {
+    ...actual,
+    PathaoPriceClient: class {},
+    pathaoPriceClient: {
+      quote: vi.fn(async (input: { itemWeightKg: DecimalValue }) => ({
+        // A flat 150 for anything light, doubling past 1 kg, so tests can tell a
+        // light parcel from a heavy one and see the weight actually reach us.
+        finalPrice: new Decimal(
+          new Decimal(input.itemWeightKg.toString()).greaterThan(1) ? '300' : '150',
+        ),
+        codPercentage: new Decimal('0.01'),
+        planId: 1,
+        codEnabled: true,
+        // The courier's own response, kept for disputing a charge later.
+        raw: {},
+      })),
+    },
+  };
+});
+
+/**
+ * Tokens are cached and refreshed against the courier's auth endpoint. Nothing in
+ * the suite should reach for one, so the provider hands back a fixed string.
+ */
+vi.mock('@/modules/logistics/adapters/pathao-token.provider', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/modules/logistics/adapters/pathao-token.provider')
+  >('@/modules/logistics/adapters/pathao-token.provider');
+
+  return {
+    ...actual,
+    pathaoTokenProvider: { ...actual.pathaoTokenProvider, getToken: async () => 'test-token' },
+    PathaoTokenProvider: class {
+      getToken = async () => 'test-token';
+    },
+  };
+});
+
+/**
+ * Pathao order creation books real courier consignments.
+ * The network client is stubbed for test runs to prevent network egress and
+ * ensure deterministic consignment IDs.
+ */
+vi.mock('@/modules/logistics/adapters/pathao-order.client', async () => {
+  const { Prisma } =
+    await vi.importActual<typeof import('@/config/db.prisma')>('@/config/db.prisma');
+  const actual = await vi.importActual<
+    typeof import('@/modules/logistics/adapters/pathao-order.client')
+  >('@/modules/logistics/adapters/pathao-order.client');
+
+  return {
+    ...actual,
+    PathaoOrderClient: class {},
+    pathaoOrderClient: {
+      createOrder: vi.fn(async (input: { merchantOrderId: string }) => ({
+        consignmentId: `PT-${Math.floor(100000 + Math.random() * 900000)}`,
+        merchantOrderId: input.merchantOrderId,
+        deliveryFee: new Prisma.Decimal('140.00'),
+        trackingUrl: 'https://pathao.com/track/?consignment_id=PT-123456',
+        orderStatus: 'Pending',
+        raw: {},
+      })),
+    },
+  };
+});
+
+// TRUNCATE ... CASCADE across every public table contends for the single local test database and
+// can exceed vitest's default 10s hookTimeout under parallel load, failing suites for reasons that
+// have nothing to do with the code under test. Raise the timeout for this hook only.
+const TRUNCATE_HOOK_TIMEOUT_MS = 120_000;
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -18,4 +178,4 @@ beforeEach(async () => {
   } catch {
     // Fallback if test DB connection is not available in isolated unit runs
   }
-});
+}, TRUNCATE_HOOK_TIMEOUT_MS);

@@ -1,13 +1,7 @@
-import { lazy } from 'react';
 import { Navigate, Outlet, RouteObject } from 'react-router-dom';
 
+import { pageRoute } from '@/routes/page-route';
 import { RoleGuard } from '@/routes/role-guard';
-
-const CampaignListPage = lazy(() => import('./pages/campaign-list-page'));
-const CampaignFormPage = lazy(() => import('./pages/campaign-form-page'));
-const ComboListPage = lazy(() => import('./pages/combo-list-page'));
-const ComboFormPage = lazy(() => import('./pages/combo-form-page'));
-const SDUIPagePreview = lazy(() => import('./pages/sdui-preview-page'));
 
 export const marketingRoutes: RouteObject = {
   path: 'marketing',
@@ -21,26 +15,26 @@ export const marketingRoutes: RouteObject = {
     { index: true, element: <Navigate to="campaigns" replace /> },
     {
       path: 'preview',
-      element: <SDUIPagePreview />,
-      handle: { title: 'SDUI Storefront Preview', crumb: 'SDUI Preview' },
+      ...pageRoute(() => import('./pages/sdui-preview-page')),
+      handle: { title: 'SDUI Storefront Preview', crumb: 'SDUI Preview', skeleton: 'page' },
     },
     {
       path: 'campaigns',
       children: [
         {
           path: '',
-          element: <CampaignListPage />,
-          handle: { title: 'Festival Campaigns', crumb: 'Campaigns' },
+          ...pageRoute(() => import('./pages/campaign-list-page')),
+          handle: { title: 'Festival Campaigns', crumb: 'Campaigns', skeleton: 'table' },
         },
         {
           path: 'new',
-          element: <CampaignFormPage />,
-          handle: { title: 'Create Campaign', crumb: 'New Campaign' },
+          ...pageRoute(() => import('./pages/campaign-form-page')),
+          handle: { title: 'Create Campaign', crumb: 'New Campaign', skeleton: 'form' },
         },
         {
           path: ':id',
-          element: <CampaignFormPage />,
-          handle: { title: 'Edit Campaign', crumb: 'Edit Campaign' },
+          ...pageRoute(() => import('./pages/campaign-form-page')),
+          handle: { title: 'Edit Campaign', crumb: 'Edit Campaign', skeleton: 'form' },
         },
       ],
     },
@@ -49,18 +43,18 @@ export const marketingRoutes: RouteObject = {
       children: [
         {
           path: '',
-          element: <ComboListPage />,
-          handle: { title: 'Generic Combo Bundles', crumb: 'Combos' },
+          ...pageRoute(() => import('./pages/combo-list-page')),
+          handle: { title: 'Generic Combo Bundles', crumb: 'Combos', skeleton: 'table' },
         },
         {
           path: 'new',
-          element: <ComboFormPage />,
-          handle: { title: 'Create Combo Bundle', crumb: 'New Combo' },
+          ...pageRoute(() => import('./pages/combo-form-page')),
+          handle: { title: 'Create Combo Bundle', crumb: 'New Combo', skeleton: 'form' },
         },
         {
           path: ':id',
-          element: <ComboFormPage />,
-          handle: { title: 'Edit Combo Bundle', crumb: 'Edit Combo' },
+          ...pageRoute(() => import('./pages/combo-form-page')),
+          handle: { title: 'Edit Combo Bundle', crumb: 'Edit Combo', skeleton: 'form' },
         },
       ],
     },

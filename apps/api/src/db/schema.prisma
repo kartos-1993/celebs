@@ -7,13 +7,16 @@ generator client {
 }
 
 model Session {
-  id               String   @id @default(uuid())
-  userId           String   @map("userId")
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userAgent        String?
-  rotatedRefreshId String?  @map("rotated_refresh_id")
-  createdAt        DateTime @default(now())
-  expiredAt        DateTime @default(dbgenerated("NOW() + interval '30 days'"))
+  id                String    @id @default(uuid())
+  userId            String    @map("userId")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent         String?
+  rotatedRefreshId  String?   @map("rotated_refresh_id")
+  previousRefreshId String?   @map("previous_refresh_id")
+  previousIssuedAt  DateTime? @map("previous_issued_at")
+  oldTokenUseCount  Int       @default(0) @map("old_token_use_count")
+  createdAt         DateTime  @default(now())
+  expiredAt         DateTime  @default(dbgenerated("NOW() + interval '30 days'"))
 
   @@index([userId])
   @@index([expiredAt])
@@ -49,6 +52,8 @@ model User {
   orders        Order[]
   reviews       Review[]
   wishlistItems WishlistItem[]
+  pushTokens    PushToken[]
+  notifications Notification[]
 
   @@index([vendorId])
 }
@@ -83,17 +88,23 @@ model VendorProfile {
   holidayMode            Boolean @default(false)
   onboardingStep         Int     @default(1)
   rejectionReason        String?
+  storeCode              String? @unique @map("store_code")
   recentCategories       Json?   @default("[]")
 
   // Relations
   warehouses          Warehouse[]
   staff               User[]                     @relation("VendorStaff")
   orderItems          OrderItem[]
+  commissionRules     CommissionRule[] @relation("VendorCommissionRules")
+  ledgerEntries       LedgerEntry[]
+  sellerStatements    SellerStatement[]
   products            Product[]
   ownedBrands         Brand[]                    @relation("OwnedBrands")
   brandAuthorizations VendorBrandAuthorization[]
   mediaFolders        MediaFolder[]
   mediaAssets         MediaAsset[]
+  notifications       Notification[]
+  consignments        Consignment[]
 
   @@index([status])
 }
@@ -106,14 +117,15 @@ model IdempotencyKey {
   responseBody String
   createdAt    DateTime @default(now())
   expiresAt    DateTime @default(dbgenerated("NOW() + interval '24 hours'"))
-
-  @@index([key])
 }
 
 model UserPreference {
   id                String  @id @default(uuid())
   enable2FA         Boolean @default(false)
   emailNotification Boolean @default(true)
+  pushOrderUpdates  Boolean @default(true)
+  pushPromotions    Boolean @default(true)
+  pushPriceDrops    Boolean @default(true)
   twoFactorSecret   String?
   recentCategories  Json?   @default("[]")
   userId            String  @unique
@@ -133,15 +145,17 @@ model VerificationCode {
 }
 
 model WishlistItem {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  priceAtWishlist Decimal? @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
 
   @@unique([userId, productId])
   @@index([userId, createdAt])
+  @@index([productId])
 }
 
 model Warehouse {
@@ -187,8 +201,8 @@ model ProductInventory {
   orderItems OrderItem[]
 
   @@unique([productId, colorVariantName, size])
-  @@index([productId])
   @@index([productId, quantity])
+  @@index([warehouseId])
 }
 
 model Cart {
@@ -202,8 +216,6 @@ model Cart {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([sessionId])
   @@index([updatedAt])
 }
 
@@ -226,6 +238,7 @@ model CartItem {
 
   @@unique([cartId, inventoryId])
   @@index([inventoryId])
+  @@index([comboBundleId])
 }
 
 enum OrderStatus {
@@ -253,6 +266,17 @@ enum PaymentMethod {
   ESEWA
 }
 
+// Which rule priced the delivery. FALLBACK means no rate band matched the parcel,
+// so the platform flat fee was used - worth reporting, because a rate card with
+// gaps silently overcharges and looks like a pricing decision.
+enum DeliveryPricingSource {
+  RATE_CARD
+  FALLBACK
+  // The courier's own price, for one parcel per seller. The bands above are our
+  // guess at what a courier charges; this is the courier saying it.
+  COURIER_QUOTE
+}
+
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -275,11 +299,118 @@ model Address {
   landmark      String?
   isDefault     Boolean @default(false) @map("is_default")
 
+  // The courier's own zone, captured when the address is created. The courier
+  // city is derivable from the zone, so it is not duplicated here. The text
+  // columns above stay as the display snapshot so a historical order still
+  // renders the address as the customer typed it, even after the courier
+  // renames or retires a zone.
+  logisticsZoneId String?        @map("logistics_zone_id")
+  logisticsZone   LogisticsZone? @relation(fields: [logisticsZoneId], references: [id], onDelete: SetNull)
+  // Resolved coverage at the time of order, so a later coverage change does not
+  // rewrite the history of what we promised.
+  deliveryZoneId  String?        @map("delivery_zone_id")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
 
   @@index([userId])
+  @@index([logisticsZoneId])
+}
+
+// ── Courier coverage (mirrored from the courier's own location lists) ───────
+//
+// Pathao publishes city / zone / area lists. Mirroring them locally means the
+// address form can offer only deliverable districts, which removes the need to
+// match free text against a courier taxonomy after the fact.
+
+model LogisticsCity {
+  id                    String          @id @default(uuid())
+  externalId            Int?            @unique
+  name                  String
+  province              String
+  // Kathmandu Valley drives the free-delivery threshold, so it is a property we
+  // hold rather than infer. Seeded by name, then correctable by an admin.
+  isValley              Boolean         @default(false) @map("is_valley")
+  // Order subtotal at or above which delivery is free to this city. Higher
+  // outside the valley, where the courier's rate is. Belongs to the city rather
+  // than to a platform-wide policy because it is not one number.
+  //
+  // Decimal, not Int: it is compared against an order subtotal, which is money to
+  // the paisa. As an integer column it could not express a threshold like
+  // 2499.50, and a threshold rounded to whole rupees silently moves the boundary
+  // a customer is judged against.
+  freeDeliveryThreshold Decimal         @default(5000) @map("free_delivery_threshold") @db.Decimal(12, 2)
+  // BOOTSTRAP rows come from our own reference data and have no courier id yet;
+  // a courier sync supersedes them. Recording the origin keeps a later sync from
+  // being mistaken for ground truth we already had.
+  source                LogisticsSource @default(BOOTSTRAP)
+  isActive              Boolean         @default(true) @map("is_active")
+  syncedAt              DateTime        @default(now()) @map("synced_at")
+
+  zones LogisticsZone[]
+  rates ShippingRate[]
+
+  @@index([isActive, isValley])
+  @@index([province])
+}
+
+model LogisticsZone {
+  id         String        @id @default(uuid())
+  cityId     String        @map("city_id")
+  city       LogisticsCity @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  externalId Int           @unique
+  name       String
+  isActive   Boolean       @default(true) @map("is_active")
+  syncedAt   DateTime      @default(now()) @map("synced_at")
+
+  areas     LogisticsArea[]
+  addresses Address[]
+
+  @@index([cityId, isActive])
+}
+
+model LogisticsArea {
+  id         String        @id @default(uuid())
+  zoneId     String        @map("zone_id")
+  zone       LogisticsZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  externalId Int           @unique
+  name       String
+  isActive   Boolean       @default(true) @map("is_active")
+  syncedAt   DateTime      @default(now()) @map("synced_at")
+
+  // No direct address relation: a quote needs city + zone only, and the address
+  // stores the zone. Areas are mirrored so the courier's full hierarchy is on
+  // record for when quoting or routing needs finer granularity.
+  @@index([zoneId, isActive])
+}
+
+// ── Delivery pricing ────────────────────────────────────────────────────────
+//
+// Our rate card, authoritative when a courier quote is unavailable. It exists
+// because checkout must never depend on a third party being up, and because
+// Pathao's charges are published and revised on their schedule rather than ours.
+
+model ShippingRate {
+  id          String         @id @default(uuid())
+  // Null means every active city. A specific row overrides it.
+  cityId      String?        @map("city_id")
+  city        LogisticsCity? @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  // Half-open band [minWeightKg, maxWeightKg). The lowest band starts at 0 and
+  // the highest ends at the courier maximum, so a parcel always matches exactly
+  // one band rather than falling through a gap.
+  minWeightKg Decimal        @map("min_weight_kg") @db.Decimal(8, 3)
+  maxWeightKg Decimal        @map("max_weight_kg") @db.Decimal(8, 3)
+  fee         Decimal        @db.Decimal(12, 2)
+  // Charged by the courier on collection, so it is a cost we absorb rather than
+  // a fee the customer sees.
+  codFee      Decimal        @default(0) @map("cod_fee") @db.Decimal(12, 2)
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt
+
+  @@index([cityId, isActive, minWeightKg])
+  @@index([isActive, minWeightKg])
 }
 
 model Order {
@@ -295,6 +426,35 @@ model Order {
   discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(12, 2)
   totalAmount    Decimal @map("total_amount") @db.Decimal(12, 2)
 
+  // What the courier charges us for this parcel, kept apart from what the
+  // customer paid. They differ whenever a free-delivery threshold was applied,
+  // and the difference is the running cost of those thresholds.
+  courierFee            Decimal               @default(0) @map("courier_fee") @db.Decimal(12, 2)
+  // Delivery given away to reach the threshold. Zero when the customer paid.
+  absorbedShippingCost  Decimal               @default(0) @map("absorbed_shipping_cost") @db.Decimal(12, 2)
+  // Which rule priced the delivery, so a disputed charge can be explained and a
+  // missing rate band is visible in reporting rather than silent.
+  deliveryPricingSource DeliveryPricingSource @default(FALLBACK) @map("delivery_pricing_source")
+  matchedShippingRateId String?               @map("matched_shipping_rate_id")
+  // The zone priced and shipped to. A snapshot rather than a relation: the order
+  // must keep the answer it was given even if the zone is later deactivated or
+  // removed from the mirror.
+  logisticsZoneId       String?               @map("logistics_zone_id")
+  // Total billable weight of the parcel, snapshotted for the same reason the
+  // per-line weights are: a courier is billed on the weight we quoted.
+  totalBillableWeightKg Decimal?              @map("total_billable_weight_kg") @db.Decimal(8, 3)
+  // The courier's percentage charge for collecting cash, passed through to the
+  // customer at cost rather than marked up. Zero unless the order is COD.
+  //
+  // Held as money rather than recomputed from a rate later, because it is a
+  // percentage of the amount collected: once a free-delivery threshold waived the
+  // delivery charge, the fee is a percentage of the goods alone, and there is no
+  // way to tell from a single rate column which of the two an old order was.
+  codHandlingFee        Decimal               @default(0) @map("cod_handling_fee") @db.Decimal(12, 2)
+  // What the courier collects on a COD order: goods plus delivery plus handling.
+  // The courier reconciles against this, so it must be the figure we gave them.
+  amountToCollect       Decimal?              @map("amount_to_collect") @db.Decimal(12, 2)
+
   status        OrderStatus   @default(PENDING_PAYMENT)
   paymentMethod PaymentMethod @map("payment_method")
   paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
@@ -302,8 +462,11 @@ model Order {
 
   items          OrderItem[]
   payments       Payment[]
+  refunds        Refund[]
+  ledgerEntries  LedgerEntry[]
   trackingEvents OrderTrackingEvent[]
   reviews        Review[]
+  consignments   Consignment[]
 
   courierProvider   String?
   courierName       String?
@@ -319,9 +482,7 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([orderNumber])
-  @@index([status])
+  @@index([addressId])
   @@index([userId, status])
   @@index([status, createdAt])
 }
@@ -338,6 +499,14 @@ enum CodStatus {
   COD_SETTLED
 }
 
+enum LogisticsSource {
+  // Our own reference data. Lets the address form offer real districts before a
+  // courier location list has ever been synced.
+  BOOTSTRAP
+  // Mirrored from a courier's published location list.
+  COURIER
+}
+
 model OrderTrackingEvent {
   id          String      @id @default(uuid())
   orderId     String
@@ -350,6 +519,47 @@ model OrderTrackingEvent {
   timestamp   DateTime    @default(now())
 
   @@index([orderId])
+}
+
+/// Status of an individual seller parcel consignment.
+enum ConsignmentStatus {
+  CREATED
+  HANDED_OVER
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+/// A seller's parcel within an order, booked as an individual shipment with the courier.
+///
+/// In multi-seller baskets, checkout quotes and bills each seller's delivery separately
+/// while Pathao requires one order booking per seller parcel from our central pickup
+/// point. Each consignment tracks its own courier fee, waybill tracking number,
+/// collectible COD amount, and lifecycle state.
+model Consignment {
+  id              String            @id @default(uuid())
+  orderId         String            @map("order_id")
+  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vendorId        String            @map("vendor_id")
+  vendor          VendorProfile     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  courierProvider String            @default("PATHAO") @map("courier_provider")
+  courierName     String            @default("Pathao") @map("courier_name")
+  trackingNumber  String            @map("tracking_number")
+  trackingUrl     String?           @map("tracking_url")
+  courierFee      Decimal           @map("courier_fee") @db.Decimal(12, 2)
+  amountToCollect Decimal           @default(0) @map("amount_to_collect") @db.Decimal(12, 2)
+  codAmount       Decimal?          @map("cod_amount") @db.Decimal(12, 2)
+  status          ConsignmentStatus @default(CREATED)
+  lineIds         String[]          @default([]) @map("line_ids")
+  dispatchedAt    DateTime?         @map("dispatched_at")
+  deliveredAt     DateTime?         @map("delivered_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([vendorId])
+  @@index([trackingNumber])
+  @@index([status])
 }
 
 model ComboBundle {
@@ -408,15 +618,15 @@ model Campaign {
 }
 
 model CampaignProduct {
-  id         String   @id @default(uuid())
-  campaignId String
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  productId  String
+  id            String            @id @default(uuid())
+  campaignId    String
+  campaign      Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  productId     String
   // Optional campaign-level override; null means the product's own
   // discountedPrice rules (never invent a discount).
-  discountType ComboDiscountType @default(PERCENTAGE)
-  discountValue Decimal? @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
+  discountType  ComboDiscountType @default(PERCENTAGE)
+  discountValue Decimal?          @db.Decimal(10, 2)
+  createdAt     DateTime          @default(now())
 
   @@unique([campaignId, productId])
   @@index([productId])
@@ -448,6 +658,29 @@ model OrderItem {
   quantity         Int
   subtotal         Decimal @db.Decimal(12, 2)
 
+  // Commission, frozen at purchase and never recomputed.
+  //
+  // The seller lists the final price the customer sees; commission is deducted
+  // from it and the seller is paid the net. Snapshotting matters because a
+  // superadmin changing the rate must not retroactively alter what a seller
+  // already sold - the same reasoning as the weight snapshot below.
+  //
+  // sellerNetAmount is ALWAYS subtotal minus commissionAmount, never
+  // subtotal * (1 - rate). Those disagree by a paisa on many prices because the
+  // multiply rounds a third time, and a ledger that drifts away from payouts by a
+  // paisa at a time is unreadable. Derived by subtraction so the two cannot.
+  commissionRatePercent Decimal @default(0) @map("commission_rate_percent") @db.Decimal(5, 2)
+  commissionAmount      Decimal @default(0) @map("commission_amount") @db.Decimal(12, 2)
+  sellerNetAmount       Decimal @default(0) @map("seller_net_amount") @db.Decimal(12, 2)
+
+  // Per-unit weight snapshotted at purchase. A product's weight can change after
+  // an order is placed, and a courier quote has to stay reproducible for the
+  // shipment, so the figure that was paid for is the figure that ships.
+  unitWeightKg     Decimal @default(0.5) @map("unit_weight_kg") @db.Decimal(8, 3)
+  // Billable weight of this line: the greater of mass and volume, and the sum
+  // across lines is what the courier charges for.
+  billableWeightKg Decimal @default(0.5) @map("billable_weight_kg") @db.Decimal(8, 3)
+
   itemStatus     OrderItemStatus @default(PENDING) @map("item_status")
   trackingNumber String?         @map("tracking_number")
   courierPartner String?         @map("courier_partner")
@@ -460,7 +693,68 @@ model OrderItem {
   @@index([vendorId])
   @@index([inventoryId])
   @@index([vendorId, itemStatus])
-  @@index([vendorId, createdAt])
+  // A seller's earnings page: their lines, newest first, with the commission
+  // already deducted on each. Same column pair as the itemStatus index above, so
+  // it needs an explicit name to stay unique.
+  @@index([vendorId, createdAt], map: "OrderItem_vendor_id_createdAt_earnings_idx")
+}
+
+/// How a commission rule is targeted. Narrower scope wins.
+enum CommissionScope {
+  /// One rate for the whole marketplace. What ships first.
+  GLOBAL
+  /// A rate for a category tree, for categories whose margins or return rates
+  /// genuinely differ - electronics against apparel, say.
+  CATEGORY
+  /// A rate agreed with one seller.
+  VENDOR
+}
+
+/// The platform's cut, as a percentage of the seller's listed price.
+///
+/// A rate is a percentage to two decimals: 7.50 means seven and a half percent.
+///
+/// Effective dating rather than an in-place edit. A superadmin changing the rate
+/// must never alter what a seller already sold, so changing the rate closes the
+/// current rule with an `effectiveTo` and opens a new one. Orders keep the rate
+/// frozen on their line regardless.
+model CommissionRule {
+  id String @id @default(uuid())
+
+  scope CommissionScope @default(GLOBAL)
+
+  // Nullable because their meaning depends on scope: a category id for CATEGORY,
+  // a vendor id for VENDOR, and null for GLOBAL - the marketplace-wide default.
+  categoryId String? @map("category_id")
+  category   Category? @relation("CategoryCommissionRules", fields: [categoryId], references: [id], onDelete: Cascade)
+
+  vendorId String? @map("vendor_id")
+  vendor   VendorProfile? @relation("VendorCommissionRules", fields: [vendorId], references: [id], onDelete: Cascade)
+
+  /// Percentage, to two decimals. Zero for a rule that charges nothing.
+  ratePercent Decimal @default(0) @map("rate_percent") @db.Decimal(5, 2)
+
+  /// When this rate starts applying. Null until the rule is published, so a
+  /// draft cannot change anybody's price.
+  effectiveFrom DateTime? @map("effective_from")
+  /// When a later rule replaced it. Null while this is the current rate.
+  effectiveTo   DateTime? @map("effective_to")
+
+  /// A draft is not consulted at all.
+  isActive Boolean @default(true) @map("is_active")
+
+  label       String?
+  description String?
+
+  createdBy String?   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([scope, effectiveFrom])
+  @@index([categoryId, isActive])
+  @@index([vendorId, isActive])
+  // Which rules are currently live. Partial, because closed rules are history.
+  @@index([isActive, effectiveTo])
 }
 
 model Payment {
@@ -479,8 +773,321 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  refunds Refund[]
+
   @@index([orderId])
   @@index([userId])
+}
+
+enum RefundStatus {
+  /// We asked the gateway and it has not answered yet.
+  PENDING
+  /// The gateway confirmed the money is on its way back.
+  SUCCEEDED
+  /// The gateway has no refund API, so a person has to finish this by hand.
+  REQUIRES_MANUAL_ACTION
+  /// The gateway refused, or the request never reached it.
+  FAILED
+  /// Abandoned before it was ever attempted.
+  CANCELLED
+}
+
+// Returning money to a customer, recorded as its own fact.
+//
+// PaymentStatus.REFUNDED is not enough on its own: it is a single label written
+// by three different paths, one of which merely observed a gateway that had
+// already refunded. It carries no amount, no gateway reference and no initiator,
+// so it cannot answer "how much did we give back, to whom, and who approved it".
+// This records that, per refund attempt, including the ones a human has to finish
+// because the wallet provides no refund API.
+model Refund {
+  id        String  @id @default(uuid())
+  orderId   String  @map("order_id")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // The payment being returned. On Khalti this is the pidx, not the transaction id.
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  amount  Decimal       @db.Decimal(12, 2)
+  gateway PaymentMethod
+  status  RefundStatus  @default(PENDING)
+
+  // The reference the gateway gave us, when it gave us one.
+  providerRefundId String? @map("provider_refund_id")
+  reason           String?
+  // Why it needs a person, or why it failed. Kept so nobody has to guess from a
+  // status code months later.
+  message          String?
+
+  initiatedBy String    @map("initiated_by")
+  // Set when a human finished a manual refund, so the gap between asking and
+  // doing is visible rather than infinite.
+  settledAt   DateTime? @map("settled_at")
+  settledBy   String?   @map("settled_by")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([paymentId])
+  // The finance queue: everything still owed a person, oldest first.
+  @@index([status, createdAt])
+}
+
+// ── Courier settlement ledger ───────────────────────────────────────────────
+//
+// Every movement of money, in one append-only place, so the answer to "how much
+// did we take, how much did delivery cost us, per courier" is a sum rather than a
+// reconstruction from six columns.
+//
+// Two decisions are deliberate and both exist to stop silent corruption:
+//
+// Append-only. Nothing is updated or deleted. A mistake is corrected by posting a
+// reversing entry, which leaves both the mistake and the correction on record. A
+// mutable ledger cannot answer "what did this look like last month".
+//
+// Amounts are positive and paired with a direction, rather than being signed.
+// A -80 in an amount column is ambiguous between money leaving and a typo, and
+// that ambiguity is the kind of thing that survives an audit.
+
+enum LedgerDirection {
+  /// Money arriving at the platform: goods sold, cash collected, cash remitted.
+  IN
+  /// Money leaving the platform: what a courier charged, what we refunded.
+  OUT
+}
+
+enum LedgerEntryType {
+  // Taken from the customer
+  ORDER_REVENUE
+  DELIVERY_CHARGED
+  FREE_DELIVERY_ABSORBED
+  // Cash the courier collects on our behalf.
+  //
+  // Not posted yet: a parcel handed over does not make the cash ours, and posting
+  // it as money in would count the same rupees twice once the courier remits.
+  // Reserved for a future posting that records the receivable without treating it
+  // as revenue - a reconciliation compares a courier's statement against what was
+  // owed to us, not against what we sold.
+  COD_EXPECTED
+  // Cash the courier remits to us
+  COD_RECEIVED
+  // What couriers charge us
+  COURIER_DELIVERY_FEE
+  COURIER_COD_FEE
+  COURIER_RETURN_FEE
+  /// Settling a balance we owe a courier
+  COURIER_PAYMENT
+  /// Money returned to a customer
+  REFUND
+  /// The platform's cut of a sale, taken from the seller's listed price.
+  ///
+  /// Its own type rather than a deduction folded into ORDER_REVENUE, because a
+  /// seller reading their ledger needs to see what was taken as a separate line.
+  /// Folding it in would leave them with a net they cannot account for, which is
+  /// the distrust this is trying to avoid.
+  COMMISSION
+}
+
+model LedgerEntry {
+  id String @id @default(uuid())
+
+  type      LedgerEntryType
+  direction LedgerDirection
+  amount    Decimal         @db.Decimal(12, 2)
+  currency  String          @default("NPR")
+
+  // Which courier this concerns, when it concerns one. Null for entries that are
+  // not a courier's - goods sold, money refunded - so a courier's cost can be
+  // totalled without the retail side contaminating the number.
+  courier String?
+
+  // The thing whose lifecycle produced this entry.
+  //
+  // This is the idempotency key: one entry of a type per source, enforced by the
+  // unique index below rather than by a check that a racing request might skip.
+  // Couriers redeliver webhooks, and a double-posted delivery fee quietly eats
+  // the margin on every affected order.
+  sourceType String @map("source_type")
+  sourceId   String @map("source_id")
+
+  // Denormalised for the questions people actually ask. Not part of the key:
+  // one order legitimately produces many entries, and more than one refund.
+  orderId String? @map("order_id")
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  // The seller this entry is attributed to, when it belongs to one.
+  //
+  // `Order` has no vendor: an order is a basket and can hold items from several
+  // sellers. So an order-scoped entry cannot say whose money it is, and a
+  // seller's ledger derived by joining through their order items would show them
+  // another seller's revenue. Recorded per entry instead.
+  //
+  // Null on platform-level entries - courier settlement, a refund that spans
+  // sellers - because those are not anybody's revenue.
+  vendorId String?        @map("vendor_id")
+  vendor   VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  settlementBatchId String?          @map("settlement_batch_id")
+  settlementBatch   SettlementBatch? @relation(fields: [settlementBatchId], references: [id], onDelete: SetNull)
+
+  // Human-readable explanation, so a line in a report can be understood without
+  // joining back to the row that caused it.
+  memo String?
+
+  occurredAt DateTime @default(now()) @map("occurred_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([sourceType, sourceId, type])
+  @@index([occurredAt])
+  @@index([courier, occurredAt])
+  @@index([type, occurredAt])
+  // Per-courier money over a period, which is what a settlement is reconciled against.
+  @@index([courier, type, occurredAt])
+  @@index([orderId])
+  // A seller's ledger, newest first. The most-hit query in the seller dashboard,
+  // and without this it degrades to a sequential scan.
+  @@index([vendorId, occurredAt])
+  // Per-entry-type totals for one seller, over a period.
+  @@index([vendorId, type, occurredAt])
+}
+
+enum SettlementBatchStatus {
+  /// Money is still moving; nothing to reconcile yet.
+  OPEN
+  /// The courier's statement has been compared against our expectation.
+  RECONCILED
+  /// We have paid what the statement said.
+  PAID
+}
+
+// A courier statement for a period, compared against what we expected.
+//
+// The variance is the entire point. Both numbers are kept - ours and theirs -
+// rather than only a difference, because a difference with no explanation cannot
+// be argued about, and disagreements with a courier are otherwise unresolvable.
+model SettlementBatch {
+  id      String @id @default(uuid())
+  courier String
+
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+
+  status SettlementBatchStatus @default(OPEN) @map("status")
+
+  // What we worked out should have happened.
+  expectedCollected Decimal @default(0) @map("expected_collected") @db.Decimal(12, 2)
+  expectedFees      Decimal @default(0) @map("expected_fees") @db.Decimal(12, 2)
+  // What the courier's statement says happened.
+  declaredCollected Decimal @default(0) @map("declared_collected") @db.Decimal(12, 2)
+  declaredFees      Decimal @default(0) @map("declared_fees") @db.Decimal(12, 2)
+  // (declared - fees) - (expected - fees); zero means the courier agrees with us.
+  variance          Decimal @default(0) @db.Decimal(12, 2)
+
+  // The courier's own statement reference, so a dispute has something to point at.
+  reference String?
+  notes     String?
+
+  // When their statement arrived. Not a money figure, because both declared
+  // columns default to zero: a courier that genuinely collected nothing has to
+  // look different from a courier we have not heard from yet.
+  declaredAt DateTime? @map("declared_at")
+
+  reconciledAt DateTime? @map("reconciled_at")
+  reconciledBy String?   @map("reconciled_by")
+  paidAt       DateTime? @map("paid_at")
+  paidBy       String?   @map("paid_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt
+
+  entries LedgerEntry[]
+
+  // One statement per courier per period. Without this, opening a batch twice
+  // produces two competing expectations for the same money and the variance
+  // becomes a comparison of a statement with itself.
+  @@unique([courier, periodStart])
+  @@index([status, periodStart])
+}
+
+// ── Seller statements ────────────────────────────────────────────────────────
+//
+// Courier settlement answers "did the courier pay what they owed". This answers
+// the other question marketplaces are actually judged on: "what did we owe this
+// seller, and can they prove it".
+//
+// The ledger is the source of truth for every figure, but it is NOT the answer a
+// seller should be shown for a closed period. The ledger keeps moving: a refund
+// posted in March against a February order changes February's arithmetic, so a
+// seller who checks February next week sees a different number than they saw last
+// week. That is not a rounding quibble - it is a seller being told two
+// different truths about money already earned.
+//
+// So a closed period is snapshotted once, into the row below, and never edited
+// again. Corrections are not edits: they land in a LATER statement, because that
+// is what a ledger is for. A statement is an assertion about history, not a view
+// of the present.
+//
+// `lockedBy` and `approvedBy` are separate because one person must not both
+// declare what a seller earned and authorise the payout. That is the whole of
+// separation of duties: not a policy, an enforced inequality.
+enum SellerStatementStatus {
+  /// Computed from the ledger, not yet issued. Figures may still move.
+  DRAFT
+  /// Issued to the seller. Every figure below is now history.
+  LOCKED
+  /// Approved for payment by someone other than who locked it.
+  APPROVED
+  /// The money has gone out.
+  PAID
+  /// Withdrawn before payment. The period is settled by a later statement.
+  VOID
+}
+
+model SellerStatement {
+  id       String        @id @default(uuid())
+  vendorId String        @map("vendor_id")
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+
+  status SellerStatementStatus @default(DRAFT) @map("status")
+
+  // Frozen at lock time. Deliberately duplicated from the ledger rather than
+  // queried through it: that duplication IS the feature.
+  grossSales    Decimal @default(0) @map("gross_sales") @db.Decimal(12, 2)
+  commission    Decimal @default(0) @map("commission") @db.Decimal(12, 2)
+  refunds       Decimal @default(0) @map("refunds") @db.Decimal(12, 2)
+  deliveryCosts Decimal @default(0) @map("delivery_costs") @db.Decimal(12, 2)
+  // Derived by subtraction, never by multiplying by a rate: gross * (1 - r)
+  // rounds independently of the commission shown above and lands a paisa away
+  // from it, which is the difference between a figure a seller can check and
+  // one they cannot.
+  netPayable Decimal @default(0) @map("net_payable") @db.Decimal(12, 2)
+
+  lockedBy   String?   @map("locked_by")
+  lockedAt   DateTime? @map("locked_at")
+  approvedBy String?   @map("approved_by")
+  approvedAt DateTime? @map("approved_at")
+
+  payoutReference String?    @map("payout_reference")
+  paidAt          DateTime?  @map("paid_at")
+  paidBy          String?    @map("paid_by")
+  voidedAt        DateTime?  @map("voided_at")
+  voidedBy        String?    @map("voided_by")
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt
+
+  // One statement per seller per period. Two statements for the same period would
+  // each look authoritative and a seller could be shown either.
+  @@unique([vendorId, periodStart])
+  @@index([status, periodStart])
+  // A seller's own history, newest first: the seller dashboard's main read.
+  @@index([vendorId, periodEnd])
 }
 
 enum OutboxStatus {
@@ -634,6 +1241,7 @@ model MediaFolder {
 
   @@unique([vendorId, parentId, name])
   @@index([vendorId])
+  @@index([parentId])
 }
 
 model MediaAsset {
@@ -672,6 +1280,7 @@ model MediaAsset {
   @@index([vendorId, hashSha256])
   @@index([vendorId, createdAt])
   @@index([productId])
+  @@index([folderId])
 }
 
 // ==========================================
@@ -699,6 +1308,27 @@ model Product {
   skus           Json? // Array of ISkuItem
   variantOptions Json? // Array of IVariantOption
   dynamicData    Json? // Category dynamic attribute values
+
+  // Shipping & Logistics Physical Specifications
+  //
+  // Decimal, not Float. This weight selects the courier's price band, so it sits
+  // on the money path: a value stored as a double can land either side of a band
+  // edge that the same figure, stored exactly, would not. 0.3 and 0.1 + 0.2 are
+  // not the same number to a binary float, and we hand this to a courier and
+  // reconcile against their statement.
+  packageWeightKg    Decimal? @default(0.300) @map("package_weight_kg") @db.Decimal(8, 3)
+  packageLengthCm    Decimal? @map("package_length_cm") @db.Decimal(8, 3)
+  packageWidthCm     Decimal? @map("package_width_cm") @db.Decimal(8, 3)
+  packageHeightCm    Decimal? @map("package_height_cm") @db.Decimal(8, 3)
+  packagingType      String? @default("FLYER_SMALL") @map("packaging_type")
+  isFragile          Boolean @default(false) @map("is_fragile")
+  hasBatteryOrLiquid Boolean @default(false) @map("has_battery_or_liquid")
+
+  // Warranty & Returns Guard
+  warrantyType    String  @default("NO_WARRANTY") @map("warranty_type")
+  warrantyPeriod  String? @map("warranty_period")
+  warrantyPolicy  String? @map("warranty_policy")
+  isNonReturnable Boolean @default(false) @map("is_non_returnable")
 
   // Moderation & QC
   qualityScore            Float?
@@ -730,11 +1360,9 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([categoryId])
   @@index([subcategoryId])
   @@index([vendorId])
   @@index([brandId])
-  @@index([status])
   @@index([categoryId, status])
   @@index([status, createdAt])
 }
@@ -759,9 +1387,10 @@ model Category {
   updatedAt DateTime @updatedAt
 
   products    Product[] @relation("CategoryProducts")
+
+  commissionRules CommissionRule[] @relation("CategoryCommissionRules")
   subProducts Product[] @relation("SubcategoryProducts")
 
-  @@index([slug])
   @@index([parentCategory])
 }
 
@@ -778,38 +1407,36 @@ enum ReviewStatus {
 }
 
 model Review {
-  id                 String          @id @default(uuid())
-  productId          String          @map("product_id")
-  product            Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId             String          @map("user_id")
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderId            String?         @map("order_id")
-  order              Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  orderItemId        String?         @unique @map("order_item_id")
-  orderItem          OrderItem?      @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
-  inventoryId        String?         @map("inventory_id")
+  id          String     @id @default(uuid())
+  productId   String     @map("product_id")
+  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId      String     @map("user_id")
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId     String?    @map("order_id")
+  order       Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderItemId String?    @unique @map("order_item_id")
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  inventoryId String?    @map("inventory_id")
 
-  userName           String          @map("user_name")
-  userAvatar         String?         @map("user_avatar")
-  rating             Int
-  fitRating          ReviewFitRating @default(TRUE_TO_SIZE) @map("fit_rating")
-  comment            String          @db.Text
-  images             String[]        @default([])
-  colorVariantName   String?         @map("color_variant_name")
-  size               String?
-  variantSnapshot    Json?           @map("variant_snapshot")
+  userName         String          @map("user_name")
+  userAvatar       String?         @map("user_avatar")
+  rating           Int
+  fitRating        ReviewFitRating @default(TRUE_TO_SIZE) @map("fit_rating")
+  comment          String          @db.Text
+  images           String[]        @default([])
+  colorVariantName String?         @map("color_variant_name")
+  size             String?
+  variantSnapshot  Json?           @map("variant_snapshot")
 
-  helpfulCount       Int             @default(0) @map("helpful_count")
-  status             ReviewStatus    @default(APPROVED)
-  isVerifiedPurchase Boolean         @default(true) @map("is_verified_purchase")
+  helpfulCount       Int          @default(0) @map("helpful_count")
+  status             ReviewStatus @default(APPROVED)
+  isVerifiedPurchase Boolean      @default(true) @map("is_verified_purchase")
 
-  likes              ReviewLike[]
+  likes ReviewLike[]
 
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([productId])
-  @@index([productId, status])
   @@index([productId, status, rating])
   @@index([productId, status, createdAt])
   @@index([userId])
@@ -830,7 +1457,7 @@ model ReviewLike {
 model ProductReviewSummary {
   productId          String   @id @map("product_id")
   product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  averageRating      Decimal  @default(0.0) @db.Decimal(3, 2) @map("average_rating")
+  averageRating      Decimal  @default(0.0) @map("average_rating") @db.Decimal(3, 2)
   totalReviews       Int      @default(0) @map("total_reviews")
   ratingsCount       Int      @default(0) @map("ratings_count")
   withImagesCount    Int      @default(0) @map("with_images_count")
@@ -920,4 +1547,39 @@ model PlatformSettingAudit {
   createdAt DateTime @default(now())
 
   @@index([settingKey, createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  platform  String   @default("android") // android | ios | web
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
+  @@index([token])
+}
+
+model Notification {
+  id         String         @id @default(uuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorId   String?
+  vendor     VendorProfile? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  type       String // ORDER_STATUS | PAYMENT | BROADCAST | SYSTEM | VENDOR_ORDER | REVIEW | PRICE_DROP | CART_ABANDONED
+  severity   String         @default("INFO") // INFO | WARNING | CRITICAL
+  title      String
+  body       String
+  data       Json? // Pointer-only: { url, orderId, productId } (Strictly < 4KB)
+  read       Boolean        @default(false)
+  pushStatus String         @default("PENDING") // PENDING | SENT | FAILED | SKIPPED
+  channel    String         @default("PUSH") // PUSH | EMAIL | INBOX_ONLY
+  createdAt  DateTime       @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, read])
+  @@index([vendorId, createdAt(sort: Desc)])
+  @@index([pushStatus])
 }

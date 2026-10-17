@@ -1,33 +1,29 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import type { AdminProductListItem } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
 import { Button } from '@celebs/shared-ui/components/button';
 import { Card } from '@celebs/shared-ui/components/card';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 
-import type { ProductListItem } from '../../types';
 import {
   formatShortDate,
+  getCategoryImage,
   getCategoryName,
+  getProductCover,
+  getProductPrice,
   getProductStock,
   getVendorDisplay,
 } from '../../utils/product-table-helpers';
 
+import type { ManageProductActionHandlers } from './manage-product-action-types';
 import { statusBadgeVariant, statusLabels } from './product-status';
 
-interface ManageProductCardProps {
-  product: ProductListItem;
+export interface ManageProductCardProps extends ManageProductActionHandlers {
+  product: AdminProductListItem;
   isSelected: boolean;
   onSelectProduct: (id: string, checked: boolean) => void;
-  isSellerOrStaff: boolean;
-  canCreate: boolean;
-  canEdit: boolean;
-  onSubmit: (id: string) => void;
-  isSubmitPending: boolean;
-  onToggleActivation: (id: string) => void;
-  isTogglePending: boolean;
-  onSetArchiveTarget: (product: ProductListItem) => void;
 }
 
 export const ManageProductCard: React.FC<ManageProductCardProps> = ({
@@ -45,9 +41,13 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
 }) => {
   if (!product.id) return null;
   const productId = product.id;
-  const price = Number(product.price ?? 0);
+  // A missing price/stock is a gap in the record, not a zero the seller set:
+  // `Number(product.price ?? 0)` published "Rs. 0" for a product that simply has
+  // no price yet. Same contract as `ManageProductTableRow` and `avgStock`.
+  const price = getProductPrice(product);
   const status = product.status ?? 'draft';
   const stock = getProductStock(product);
+  const coverImage = getProductCover(product);
   const updated = formatShortDate(
     (product as { updatedAt?: unknown }).updatedAt ??
       (product as { createdAt?: unknown }).createdAt,
@@ -63,7 +63,7 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
           className="mt-1 shrink-0"
         />
         <img
-          src={product.mainImages?.[0] || '/placeholder.svg'}
+          src={coverImage}
           alt={product.name ?? 'Product'}
           className="h-14 w-14 shrink-0 rounded-lg border bg-muted object-cover"
           onError={(e) => {
@@ -76,16 +76,24 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
           <div className="truncate text-sm font-medium leading-tight">
             {product.name ?? 'Untitled'}
           </div>
-          {product.brand && (
-            <div className="truncate text-xs text-muted-foreground">{product.brand}</div>
-          )}
           <div className="mt-1 flex flex-wrap items-center gap-1">
+            {getCategoryImage(product) ? (
+              <img
+                src={getCategoryImage(product)}
+                alt=""
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 rounded border bg-muted object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : null}
             <Badge variant="secondary">{getCategoryName(product)}</Badge>
             <Badge variant={statusBadgeVariant(status)}>{statusLabels[status] ?? status}</Badge>
           </div>
         </div>
         <div className="shrink-0 text-right font-mono text-sm tabular-nums">
-          Rs. {price.toLocaleString()}
+          {price === null ? '—' : `Rs. ${price.toLocaleString()}`}
         </div>
       </div>
 
@@ -93,7 +101,9 @@ export const ManageProductCard: React.FC<ManageProductCardProps> = ({
         <span className="min-w-0 truncate">
           {getVendorDisplay(product)} · Updated {updated}
         </span>
-        <span className="shrink-0 font-mono tabular-nums">Stock {stock}</span>
+        <span className="shrink-0 font-mono tabular-nums">
+          {stock === null ? '—' : `Stock ${stock}`}
+        </span>
       </div>
 
       <div className="flex flex-wrap gap-2">

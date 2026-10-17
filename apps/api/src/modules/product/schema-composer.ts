@@ -181,8 +181,15 @@ export async function composeSchema(params: {
   // System fields (images only; product name is handled in Basic Info section on the web app)
   // Cover is optional when per-color galleries exist — the payload auto-derives
   // the cover from the first color gallery, enforced by the dynamic cover rule.
+  //
+  // NAME = THE WRITE CONTRACT'S NAME. This field spec's `name` IS the key the
+  // dynamic form registers and POSTS, and the product write contract
+  // (`createProductSchema` / `updateProductSchema` in @celebs/shared-types)
+  // accepts only `mainImages`. Zod runs in default `strip` mode, so a `mainImage`
+  // key was silently dropped on the way in — the field spec advertised a
+  // singular gallery the write contract could not accept. One name, end to end.
   fields.push({
-    name: 'mainImage',
+    name: 'mainImages',
     uiType: 'MainImage',
     label: 'Cover Images',
     group: 'base',

@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { authedMutation } from '../../../../tests/support/csrf-origin';
+
 import app from '@/app';
 import { hashValue } from '@/common/utils/bcrypt';
 import { config } from '@/config/app.config';
@@ -101,10 +103,9 @@ describe('Category RBAC & Tree Operations', () => {
       ],
     };
 
-    const res = await request(app)
-      .post('/api/v1/category')
-      .set('Cookie', [superadminToken])
-      .send(payload);
+    const res = await authedMutation(request(app).post('/api/v1/category'), [superadminToken]).send(
+      payload,
+    );
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -128,10 +129,9 @@ describe('Category RBAC & Tree Operations', () => {
       attributes: [],
     };
 
-    const res = await request(app)
-      .post('/api/v1/category')
-      .set('Cookie', [adminToken])
-      .send(payload);
+    const res = await authedMutation(request(app).post('/api/v1/category'), [adminToken]).send(
+      payload,
+    );
 
     expect(res.status).toBe(403);
   });
@@ -143,10 +143,9 @@ describe('Category RBAC & Tree Operations', () => {
       attributes: [],
     };
 
-    const res = await request(app)
-      .post('/api/v1/category')
-      .set('Cookie', [vendorToken])
-      .send(payload);
+    const res = await authedMutation(request(app).post('/api/v1/category'), [vendorToken]).send(
+      payload,
+    );
 
     expect(res.status).toBe(403);
   });
@@ -187,10 +186,9 @@ describe('Category RBAC & Tree Operations', () => {
       ],
     };
 
-    const res = await request(app)
-      .put(`/api/v1/category/${createdCat.id}`)
-      .set('Cookie', [superadminToken])
-      .send(updatePayload);
+    const res = await authedMutation(request(app).put(`/api/v1/category/${createdCat.id}`), [
+      superadminToken,
+    ]).send(updatePayload);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -233,9 +231,9 @@ describe('Category RBAC & Tree Operations', () => {
     });
 
     it('should block deletion of parent category if it has subcategories', async () => {
-      const res = await request(app)
-        .delete(`/api/v1/category/${parentCatId}`)
-        .set('Cookie', [superadminToken]);
+      const res = await authedMutation(request(app).delete(`/api/v1/category/${parentCatId}`), [
+        superadminToken,
+      ]);
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -262,9 +260,9 @@ describe('Category RBAC & Tree Operations', () => {
       });
 
       // Try to delete the child category (which has 1 product assigned)
-      const res = await request(app)
-        .delete(`/api/v1/category/${childCatId}`)
-        .set('Cookie', [superadminToken]);
+      const res = await authedMutation(request(app).delete(`/api/v1/category/${childCatId}`), [
+        superadminToken,
+      ]);
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -273,9 +271,9 @@ describe('Category RBAC & Tree Operations', () => {
 
     it('should successfully delete category if it has no children and no products', async () => {
       // Delete the child category first (no subcategories, no products assigned)
-      const res = await request(app)
-        .delete(`/api/v1/category/${childCatId}`)
-        .set('Cookie', [superadminToken]);
+      const res = await authedMutation(request(app).delete(`/api/v1/category/${childCatId}`), [
+        superadminToken,
+      ]);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -310,12 +308,11 @@ describe('Category RBAC & Tree Operations', () => {
         },
       });
 
-      const res = await request(app)
-        .put(`/api/v1/category/${cat.id}`)
-        .set('Cookie', [superadminToken])
-        .send({
-          attributes: [{ invalidKey: 123 }],
-        });
+      const res = await authedMutation(request(app).put(`/api/v1/category/${cat.id}`), [
+        superadminToken,
+      ]).send({
+        attributes: [{ invalidKey: 123 }],
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);

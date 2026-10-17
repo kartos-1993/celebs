@@ -1,6 +1,7 @@
 import { logger } from '@celebs/shared-utils';
 
 import { enqueueMail } from '@/common/services/mail.queue';
+import type { RefundOutcome } from '@/mailers/templates';
 import { orderConfirmationTemplate } from '@/mailers/templates';
 
 export interface OrderEmailItem {
@@ -269,6 +270,7 @@ export async function enqueueOrderCancelledEmail(
   order: OrderEmailPayload,
   reason?: string,
   logContext: string = 'order-cancelled',
+  refund?: { status: string } | null,
 ): Promise<void> {
   const recipientEmail = order.user?.email;
   if (!recipientEmail || !order.items || order.items.length === 0) {
@@ -289,6 +291,7 @@ export async function enqueueOrderCancelledEmail(
         quantity: i.quantity,
       })),
       reason,
+      refundOutcome: (refund?.status as RefundOutcome | undefined) ?? 'NOT_ATTEMPTED',
     });
 
     await enqueueMail({

@@ -24,13 +24,17 @@ export class SessionRepository {
             updatedAt: true,
             vendorId: true,
             vendorProfile: {
-              include: {
-                warehouses: true,
+              select: {
+                id: true,
+                shopName: true,
+                status: true,
               },
             },
             vendor: {
-              include: {
-                warehouses: true,
+              select: {
+                id: true,
+                shopName: true,
+                status: true,
               },
             },
           },

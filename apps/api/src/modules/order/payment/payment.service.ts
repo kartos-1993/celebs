@@ -9,12 +9,22 @@ import {
 } from '../adapters/esewa.adapter';
 import { KhaltiAdapter, toPaisa } from '../adapters/khalti.adapter';
 import { IPaymentGateway } from '../adapters/payment-gateway.interface';
+import { validatePaymentTransition } from '../order.state-machine';
 import { enqueueOrderConfirmationEmail } from '../utils/order-email.util';
 
 import { PaymentRepository, paymentRepository } from './payment.repository';
 
+import { Prisma } from '@/config/db.prisma';
+import {
+  NotificationService,
+  notificationService as defaultNotificationService,
+} from '@/modules/notification/notification.service';
+
 export class PaymentService {
-  constructor(private repo: PaymentRepository = paymentRepository) {}
+  constructor(
+    private repo: PaymentRepository = paymentRepository,
+    private notificationService: NotificationService = defaultNotificationService,
+  ) {}
 
   getPaymentGateway(method: 'KHALTI' | 'ESEWA'): IPaymentGateway {
     switch (method) {
@@ -43,19 +53,7 @@ export class PaymentService {
       return order;
     }
 
-    const allowedFrom: Record<string, string[]> = {
-      COMPLETED: ['PENDING', 'FAILED'],
-      FAILED: ['PENDING'],
-      REFUNDED: ['COMPLETED'],
-    };
-
-    if (!allowedFrom[next]?.includes(current)) {
-      throw new AppError(
-        `Invalid payment status transition from '${current}' to '${next}'.`,
-        HTTPSTATUS.BAD_REQUEST,
-        ErrorCode.INVALID_REQUEST,
-      );
-    }
+    validatePaymentTransition(current, next);
 
     const updated = await this.repo.applyPaymentStatusUpdate({
       orderId: order.id,
@@ -69,14 +67,41 @@ export class PaymentService {
       latestPayment: order.payments[0] ?? null,
     });
 
+    if (order.status === 'CANCELLED' && next === 'COMPLETED') {
+      logger.warn(
+        {
+          orderId,
+          amount: String(order.totalAmount),
+          reference: input.reference,
+          by: actorLabel,
+        },
+        'LATE_PAYMENT_ON_CANCELLED_ORDER: Customer paid after order cancellation; held for review/refund',
+      );
+    }
+
     logger.info(
       { orderId, from: current, to: next, reference: input.reference, by: actorLabel },
       'Updated order payment status',
     );
 
-    // Enqueue payment confirmation receipt when payment completes
-    if (next === 'COMPLETED' && updated) {
+    // Enqueue payment confirmation receipt when payment completes for non-cancelled orders
+    if (next === 'COMPLETED' && updated && order.status !== 'CANCELLED') {
       await enqueueOrderConfirmationEmail(updated, 'payment-completed');
+      this.notificationService
+        .notifyOrderStatus({
+          userId: updated.userId,
+          orderId: updated.id,
+          orderNumber: updated.orderNumber,
+          status: 'PAID',
+          totalAmount: Number(updated.totalAmount),
+          gateway: updated.paymentMethod,
+        })
+        .catch((notifErr) => {
+          logger.warn(
+            { orderId: updated.id, err: notifErr },
+            'Failed to dispatch payment notification',
+          );
+        });
     }
 
     return updated;
@@ -108,7 +133,24 @@ export class PaymentService {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
-    if (Math.abs(Number(payload.total_amount) - Number(order.totalAmount)) > 0.005) {
+    if (order.paymentStatus === 'COMPLETED') {
+      return {
+        order,
+        verification: {
+          success: true,
+          status: 'COMPLETED',
+          transactionId: order.payments[0]?.transactionId || payload.transaction_uuid,
+        },
+      };
+    }
+
+    // Compared as Decimal, not as JS numbers. The tolerance is unchanged - a
+    // gateway is allowed to send floating noise - but the subtraction happens in
+    // decimal so a large order total is not judged by a value that has already
+    // lost precision.
+    const paidAmount = new Prisma.Decimal(payload.total_amount);
+
+    if (!paidAmount.minus(order.totalAmount).abs().lte('0.005')) {
       logger.error(
         { orderId: order.id, expected: String(order.totalAmount), got: payload.total_amount },
         'eSewa amount mismatch — held for review, order NOT fulfilled',
@@ -146,8 +188,8 @@ export class PaymentService {
     return { order, verification };
   }
 
-  async getEsewaFormFields(orderId: string) {
-    const order = await this.repo.findOrderWithPayments(orderId);
+  async getEsewaFormFields(orderId: string, userId: string) {
+    const order = await this.repo.findOrderWithPayments(orderId, userId);
 
     if (!order || order.paymentMethod !== 'ESEWA') {
       throw new AppError(
@@ -222,11 +264,22 @@ export class PaymentService {
       throw new AppError('Order not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
     }
 
+    if (order.paymentStatus === 'COMPLETED') {
+      return {
+        order,
+        verification: {
+          success: true,
+          status: 'COMPLETED',
+          transactionId: payment.transactionId || pidx,
+        },
+      };
+    }
+
     const adapter = this.getPaymentGateway('KHALTI');
     const verification = await adapter.verifyPayment(pidx);
 
     if (verification.success) {
-      const expectedPaisa = toPaisa(Number(order.totalAmount));
+      const expectedPaisa = toPaisa(order.totalAmount);
       const gotPaisa = Number(
         (verification.rawResponse as Record<string, unknown> | undefined)?.total_amount,
       );

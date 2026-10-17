@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { ChevronRight, ShoppingBag, ThumbsUp } from 'lucide-react-native';
 
 import { useToggleReviewLikeMutation } from '../hooks/use-reviews';
@@ -9,6 +8,7 @@ import type { ReviewItem } from '../types';
 
 import { StarRating } from './star-rating';
 
+import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 import { formatDate } from '@/features/orders/utils/order-status';
@@ -74,7 +74,12 @@ export const ProductReviewItem = React.memo(function ProductReviewItem({
         <View style={styles.imagesRow}>
           {item.images.map((img, idx) => (
             <TouchableOpacity key={idx} onPress={() => onOpenPhoto(item, idx)} activeOpacity={0.8}>
-              <Image source={{ uri: img }} style={styles.thumbnail} contentFit="cover" />
+              <MobileApparelImage
+                src={img}
+                preset="thumbnail"
+                containerStyle={styles.thumbnail}
+                alt={`Review photo ${idx + 1}`}
+              />
             </TouchableOpacity>
           ))}
         </View>

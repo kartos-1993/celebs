@@ -1,14 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import type {
-  PreviewFilters,
-  PreviewStockFilter,
-  ProductListItem,
-  ProductSortKey,
-  ProductStatus,
-} from '../types';
+import type { AdminProductListItem, ProductStatus } from '@celebs/shared-types';
+
+import type { PreviewFilters, PreviewStockFilter, ProductSortKey } from '../types';
 import { applyPreviewFilters, sortKeyToParams } from '../utils/product-table-helpers';
 
+import { useListQueryState } from '@/common/hooks/use-list-query-state';
 import { useDebounce } from '@/hooks/use-debounce';
 
 export const PRODUCT_STATUS_TABS: Array<{ id: ProductStatus | 'all'; label: string }> = [
@@ -20,20 +17,47 @@ export const PRODUCT_STATUS_TABS: Array<{ id: ProductStatus | 'all'; label: stri
   { id: 'deactivated', label: 'Deactivated' },
 ];
 
+const PRODUCT_TABS = [
+  'all',
+  'draft',
+  'pending_review',
+  'published',
+  'rejected',
+  'deactivated',
+] as const;
+const PRODUCT_SORTS = ['newest', 'price-asc', 'price-desc', 'name-asc'] as const;
+const PREVIEW_KEYS = ['vendor', 'category', 'stock'] as const;
+
 export function useManageProductState() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSizeState] = useState(10);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [searchInput, setSearchInput] = useState('');
+  const listQuery = useListQueryState({
+    defaultTab: 'all' as ProductStatus | 'all',
+    allowedTabs: PRODUCT_TABS,
+    defaultSort: 'newest' as ProductSortKey,
+    allowedSorts: PRODUCT_SORTS,
+    extraKeys: PREVIEW_KEYS,
+  });
+  const page = listQuery.page;
+  const setPage = listQuery.setPage;
+  const pageSize = listQuery.limit;
+  const filterStatus = listQuery.tab;
+  const sortKey = listQuery.sort;
+  const [searchInput, setSearchInput] = useState(listQuery.q);
   const debouncedSearch = useDebounce(searchInput, 350);
-  const [sortKey, setSortKeyState] = useState<ProductSortKey>('newest');
-  const [previewVendor, setPreviewVendor] = useState('all');
-  const [previewCategory, setPreviewCategory] = useState('all');
-  const [previewStock, setPreviewStock] = useState<PreviewStockFilter>('all');
+  const previewVendor = listQuery.extras.vendor ?? 'all';
+  const previewCategory = listQuery.extras.category ?? 'all';
+  const previewStock = (listQuery.extras.stock ?? 'all') as PreviewStockFilter;
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [archiveTarget, setArchiveTarget] = useState<ProductListItem | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<AdminProductListItem | null>(null);
   const [isBatchArchiveOpen, setIsBatchArchiveOpen] = useState(false);
+
+  useEffect(() => {
+    if (debouncedSearch.trim() !== listQuery.q) listQuery.setQ(debouncedSearch);
+  }, [debouncedSearch, listQuery]);
+
+  useEffect(() => {
+    if (listQuery.q !== searchInput) setSearchInput(listQuery.q);
+  }, [listQuery.q, searchInput]);
 
   const filterParams = useMemo(
     () => ({
@@ -51,10 +75,10 @@ export function useManageProductState() {
     [previewVendor, previewCategory, previewStock],
   );
 
-  const applyPreview = (products: ProductListItem[]) =>
+  const applyPreview = (products: AdminProductListItem[]) =>
     applyPreviewFilters(products, previewFilters);
 
-  const getSelectionCounts = (products: ProductListItem[]) => {
+  const getSelectionCounts = (products: AdminProductListItem[]) => {
     const selectedItems = products.filter((p) => p.id && selectedProducts.includes(p.id));
     return {
       selectedItems,
@@ -65,7 +89,7 @@ export function useManageProductState() {
     };
   };
 
-  const handleSelectAll = (products: ProductListItem[]) => {
+  const handleSelectAll = (products: AdminProductListItem[]) => {
     const validIds = products.map((p) => p.id).filter((id): id is string => Boolean(id));
     setSelectedProducts(
       selectedProducts.length === validIds.length && validIds.length > 0 ? [] : validIds,
@@ -76,20 +100,18 @@ export function useManageProductState() {
     setSelectedProducts((prev) => (checked ? [...prev, id] : prev.filter((item) => item !== id)));
   };
 
-  const setSortKey = (key: ProductSortKey) => {
-    setSortKeyState(key);
-    setPage(1);
-  };
+  const setFilterStatus = (value: string) => listQuery.setTab(value as ProductStatus | 'all');
 
-  const setPageSize = (size: number) => {
-    setPageSizeState(size);
-    setPage(1);
-  };
+  const setSortKey = (key: ProductSortKey) => listQuery.setSort(key);
+
+  const setPageSize = (size: number) => listQuery.setLimit(size);
+
+  const setPreviewVendor = (value: string) => listQuery.setExtra('vendor', value);
+  const setPreviewCategory = (value: string) => listQuery.setExtra('category', value);
+  const setPreviewStock = (value: PreviewStockFilter) => listQuery.setExtra('stock', value);
 
   const resetPreviewFilters = () => {
-    setPreviewVendor('all');
-    setPreviewCategory('all');
-    setPreviewStock('all');
+    listQuery.setExtras({ vendor: 'all', category: 'all', stock: 'all' });
   };
 
   const previewActive =

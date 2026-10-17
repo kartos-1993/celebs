@@ -10,6 +10,7 @@ import {
   ProductSizeType,
   ProductStockType,
 } from '@celebs/shared-types';
+import { PRODUCT_STATUS } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
 import { brandRepository } from '../brand/brand.repository';
@@ -19,16 +20,31 @@ import { InventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
-import { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT } from './repositories/product-projections';
 import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
-import { getColorImageBlockers, sumVariantStock } from './utils/product-qc';
-import { formatProductResponse } from './product.presenter';
+import {
+  COVER_PHOTO_BLOCKER,
+  getColorImageBlockers,
+  NO_STOCK_BLOCKER,
+  type PublishFloorInput,
+  sumVariantStock,
+} from './utils/product-qc';
 import { collectProductAssetUrls, toJsonInput } from './product-assets';
+import {
+  isVisibilityFlip,
+  purgeProduct,
+  purgeProductHome,
+  purgeProductLists,
+} from './product-cache';
+import { formatProductResponse } from './product-format';
 import { ProductLifecycleService } from './product-lifecycle.service';
 import { buildProductCreateData, buildProductUpdateData } from './product-payloads';
 import { ProductQueryService, type QueryServiceOptions } from './product-query.service';
-import type { ProductStatusValue } from './product-status';
-import { PRODUCT_STATUS, VENDOR_EDITABLE_STATUSES } from './product-status';
+
+import {
+  is1PVendor,
+  PLATFORM_VENDOR_ID,
+  PLATFORM_VENDOR_NAME,
+} from '@/common/constants/platform-vendor';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -36,7 +52,21 @@ export type ProductSizeInput = ProductSizeType;
 export type ProductStockInput = ProductStockType;
 export type ProductColorVariantInput = ProductColorVariantType;
 
-export { PRODUCT_DETAIL_SELECT, PRODUCT_LIST_SELECT };
+type ErrorDetails = Array<{ field?: string; message: string }>;
+
+/** Attaches additive structured details without mutating the AppError contract. */
+function withDetails(error: AppError, details: ErrorDetails): AppError {
+  return Object.assign(error, { details });
+}
+
+function freshStyleSalt(): string {
+  return Math.random().toString(36).substring(2, 6).toUpperCase().padEnd(4, 'X');
+}
+
+function p2002TargetText(err: Prisma.PrismaClientKnownRequestError): string {
+  const target = (err.meta as { target?: unknown } | undefined)?.target;
+  return Array.isArray(target) ? target.join(' ') : String(target ?? '');
+}
 
 export class ProductService {
   private readonly inventoryRepository = new InventoryRepository();
@@ -117,17 +147,43 @@ export class ProductService {
     vendorId?: string | null,
     vendorName?: string,
     userRole?: string,
+    userPermissions?: string[],
   ): Promise<Record<string, unknown> | null> {
+    // the fix (entry-point parity): the non-publisher downgrade lives here now,
+    // but it must only apply to a caller that ACTUALLY supplied a role. Before
+    // the move this check lived in the controller, so a role-less service caller
+    // (seed scripts, internal tooling) always published as asked; defaulting a
+    // missing role to the zero-permission STAFF role silently downgraded those.
+    // The HTTP boundary always passes actor.role, so an untrusted request can
+    // never reach the role-less path.
+    const hasExplicitRole = typeof userRole === 'string' && userRole.length > 0;
+    const isPublisher =
+      !hasExplicitRole || can(userRole as Role, Permission.PRODUCT_PUBLISH, userPermissions);
+    const effectiveInput =
+      !isPublisher && input.status === PRODUCT_STATUS.PUBLISHED
+        ? { ...input, status: PRODUCT_STATUS.PENDING_REVIEW }
+        : input;
+
+    // the fix (controller thinning): platform fallback lived in the controller —
+    // sellers are scoped by the caller, platform actors default to 1P here.
+    const resolvedVendorId = vendorId || PLATFORM_VENDOR_ID;
+    const resolvedVendorName =
+      vendorName || (is1PVendor(resolvedVendorId) ? PLATFORM_VENDOR_NAME : undefined);
+
     const { categoryId, subcategoryId, departmentHint } = await this.resolveCategoryIds(
       input.categoryId,
       input.subcategoryId,
     );
+    // the fix (department hint): fall back to the product name so generated
+    // SKUs still mint a meaningful styleRef prefix when no category path
+    // resolved (e.g. the NODE_ENV=test short-circuit returns ids only).
+    const effectiveHint = departmentHint ?? input.name;
 
     // Resolve Brand and apply brand protection & authorization guards
     const { resolvedBrandId, resolvedBrandName } = await this.resolveBrandForCreate(input);
 
     await this.assertBrandGuards({
-      vendorId,
+      vendorId: resolvedVendorId,
       brandId: resolvedBrandId,
       userRole,
       title: input.name,
@@ -136,21 +192,16 @@ export class ProductService {
 
     // Direct publish (publish-capable actors) must clear the same floor as
     // submit/review — otherwise zero-stock products bypass the strict rule.
-    if (input.status === PRODUCT_STATUS.PUBLISHED) {
-      const blockers = [
-        ...getColorImageBlockers(input.colorVariants),
-        ...(sumVariantStock(input.colorVariants) > 0
-          ? []
-          : ['Add at least 1 unit in one size to publish.']),
-      ];
-      if (blockers.length > 0) {
-        throw new AppError(blockers.join(' '), HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-      }
+    if (effectiveInput.status === PRODUCT_STATUS.PUBLISHED) {
+      this.assertPublishFloor(effectiveInput);
     }
 
     const maxAttempts = 3;
     let createdProduct: Product | null = null;
     let lastError: unknown = null;
+    // the fix (slug retry): an explicit salt is threaded into generated SKUs so
+    // an SKU-conflict retry mints provably fresh styleRefs.
+    let styleSalt: string | undefined;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -160,15 +211,15 @@ export class ProductService {
         createdProduct = await this.products.transaction(
           async (tx) => {
             const product = await this.products.create(
-              buildProductCreateData(input, {
+              buildProductCreateData(effectiveInput, {
                 slug,
                 categoryId,
                 subcategoryId,
                 brandId: resolvedBrandId,
                 brandName: resolvedBrandName,
                 userId,
-                vendorId,
-                vendorName,
+                vendorId: resolvedVendorId,
+                vendorName: resolvedVendorName,
               }),
               tx,
             );
@@ -176,20 +227,16 @@ export class ProductService {
             await this.inventoryRepository.syncProductInventory(
               tx,
               product.id,
-              input.colorVariants,
-              input.skus,
-              departmentHint,
+              effectiveInput.colorVariants,
+              effectiveInput.skus,
+              effectiveHint,
+              { styleSalt },
             );
 
-            const inventories = await tx.productInventory.findMany({
-              where: { productId: product.id },
-              select: {
-                colorVariantName: true,
-                size: true,
-                quantity: true,
-                reservedQuantity: true,
-              },
-            });
+            const inventories = await this.inventoryRepository.findInventoriesByProductId(
+              product.id,
+              tx,
+            );
 
             return { ...product, inventories };
           },
@@ -199,12 +246,27 @@ export class ProductService {
         break;
       } catch (err: unknown) {
         lastError = err;
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === 'P2002' &&
-          attempt < maxAttempts
-        ) {
-          continue;
+        // the fix (slug retry): only slug-target P2002s retry with a fresh
+        // slug. SKU-target P2002s regenerate the styleRef salt (bounded) so
+        // retries never replay identical generated SKUs; anything else (or an
+        // exhausted budget) surfaces instead of burning attempts.
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          const targetText = p2002TargetText(err);
+          const isSlugConflict = /slug/i.test(targetText);
+          const isSkuConflict = /sku/i.test(targetText);
+          if (attempt < maxAttempts && (isSlugConflict || isSkuConflict)) {
+            if (isSkuConflict && !isSlugConflict) {
+              styleSalt = freshStyleSalt();
+            }
+            continue;
+          }
+          if (isSkuConflict && !isSlugConflict) {
+            const message = 'A record with this sku already exists. Please use a unique value.';
+            throw withDetails(
+              new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.VALIDATION_ERROR),
+              [{ field: 'skus', message }],
+            );
+          }
         }
         throw err;
       }
@@ -215,6 +277,13 @@ export class ProductService {
     }
 
     await this.linkMediaUsageOnCreate(createdProduct);
+
+    // New arrival on rails; detail key cannot exist yet. Lists only need
+    // a sweep when the product is born visible.
+    purgeProductHome();
+    if (effectiveInput.status === PRODUCT_STATUS.PUBLISHED) {
+      purgeProductLists();
+    }
 
     return formatProductResponse(createdProduct);
   }
@@ -234,14 +303,36 @@ export class ProductService {
 
     await this.assertUpdateAuthorization(product, updateData, role, vendorId, userPermissions);
 
+    // the fix (discount safety): the Zod refine only sees the incoming payload,
+    // so it cannot catch a price lowered under the STORED discount (or a
+    // discount raised above the STORED price). Compare merged stored+incoming
+    // values here, in the service, where the row is in hand.
+    this.assertDiscountSafety(product, updateData);
+
+    // the fix (publish floor on update): a draft/pending product can otherwise
+    // be flipped straight to PUBLISHED with zero stock and no variant photos.
+    // Runs after assertUpdateAuthorization so it sees the post-downgrade status.
+    if (this.transitionsToPublished(product, updateData)) {
+      this.assertPublishFloor({
+        colorVariants: updateData.colorVariants ?? product.colorVariants,
+        dynamicData: updateData.dynamicData ?? product.dynamicData,
+        mainImages: updateData.mainImages ?? product.mainImages,
+        skus: updateData.skus ?? product.skus,
+      });
+    }
+
     // Audit trail
     const auditChanges = buildProductAuditDiff(product, updateData);
     const crossStoreEdit = isCrossStoreProductEdit(role, product.vendorId);
 
-    const { resolvedCategoryId, resolvedSubcategoryId } = await this.resolveUpdateCategoryIds(
-      product,
-      updateData,
-    );
+    const { resolvedCategoryId, resolvedSubcategoryId, departmentHint } =
+      await this.resolveUpdateCategoryIds(product, updateData);
+
+    // the fix (department hint): mirror the create path exactly — a real
+    // department name/path when the category resolved, else the product name —
+    // so update and create mint the same SKU styleRef prefix. Uses the INCOMING
+    // name so a rename re-derives the prefix the same way create does.
+    const effectiveHint = departmentHint ?? updateData.name ?? product.name;
 
     let slug = product.slug;
     if (updateData.name && updateData.name.trim() !== product.name) {
@@ -256,8 +347,8 @@ export class ProductService {
     if (updateData.brandId || updateData.brand || updateData.name || updateData.description) {
       await this.assertBrandGuards({
         vendorId: product.vendorId || vendorId,
-        brandId: resolvedBrandId,
         userRole: role,
+        brandId: resolvedBrandId,
         title: updateData.name || product.name,
         description: updateData.description ?? product.description ?? '',
       });
@@ -265,6 +356,7 @@ export class ProductService {
 
     const updated = await this.applyUpdateTransaction(id, product, updateData, {
       slug,
+      departmentHint: effectiveHint,
       resolvedCategoryId,
       resolvedSubcategoryId,
       resolvedBrandId,
@@ -276,6 +368,11 @@ export class ProductService {
     });
 
     await this.reconcileMediaUsageDiff(product, updateData, id);
+
+    purgeProduct(id);
+    if (isVisibilityFlip(product.status, updated.status)) {
+      purgeProductLists();
+    }
 
     return formatProductResponse(updated);
   }
@@ -304,18 +401,51 @@ export class ProductService {
           ErrorCode.FORBIDDEN_RESOURCE,
         );
       }
-      if (
-        !isPublisher &&
-        !VENDOR_EDITABLE_STATUSES.includes(product.status as ProductStatusValue)
-      ) {
+      if (product.status === PRODUCT_STATUS.ARCHIVED) {
         throw new AppError(
-          'Cannot update product unless it is draft or rejected',
+          'Cannot update archived product',
           HTTPSTATUS.BAD_REQUEST,
           ErrorCode.INVALID_REQUEST,
         );
       }
-      if (!isPublisher && updateData.status === PRODUCT_STATUS.PUBLISHED) {
-        updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
+      if (!isPublisher) {
+        // Non-publisher vendors editing an active published product may update pricing and inventory freely.
+        // Any modification to editorial content (title, description, images, variants) routes to moderation.
+        if (product.status === PRODUCT_STATUS.PUBLISHED) {
+          const hasEditorialChange = Boolean(
+            (updateData.name && updateData.name !== product.name) ||
+              (updateData.description !== undefined &&
+                updateData.description !== product.description) ||
+              updateData.mainImages ||
+              updateData.colorVariants,
+          );
+          if (hasEditorialChange) {
+            updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
+          }
+        } else if (updateData.status === PRODUCT_STATUS.PUBLISHED) {
+          updateData.status = PRODUCT_STATUS.PENDING_REVIEW;
+        }
+      }
+    }
+
+    if (product.status === PRODUCT_STATUS.PUBLISHED) {
+      if (updateData.categoryId && updateData.categoryId !== product.categoryId) {
+        throw new AppError(
+          'Category cannot be changed once a product is published',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+      if (
+        updateData.subcategoryId &&
+        product.subcategoryId &&
+        updateData.subcategoryId !== product.subcategoryId
+      ) {
+        throw new AppError(
+          'Category cannot be changed once a product is published',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
       }
     }
   }
@@ -326,6 +456,7 @@ export class ProductService {
     updateData: Partial<CreateProductInput>,
     opts: {
       slug: string;
+      departmentHint: string;
       resolvedCategoryId: string;
       resolvedSubcategoryId: string | null;
       resolvedBrandId: string | null;
@@ -338,13 +469,34 @@ export class ProductService {
   ) {
     return this.products.transaction(
       async (tx) => {
-        if (updateData.colorVariants) {
+        const effectiveColorVariants =
+          updateData.colorVariants ??
+          (Array.isArray(product.colorVariants)
+            ? (product.colorVariants as Array<{
+                name?: string;
+                stocks?: Array<{ size?: string; quantity?: number }>;
+              }>)
+            : undefined);
+
+        if (effectiveColorVariants) {
+          // the fix (department hint): a real department NAME/path (or the
+          // product name) is threaded in, not opts.resolvedCategoryId — a
+          // category ROW ID. buildProductStyleRef slices its first 4
+          // characters, so an id produced category-id-shaped styleRefs
+          // ("CLB-A1B2…") that never matched the create path.
           await this.inventoryRepository.syncProductInventory(
             tx,
             id,
-            updateData.colorVariants,
-            updateData.skus,
-            opts.resolvedCategoryId,
+            effectiveColorVariants,
+            updateData.skus ??
+              (Array.isArray(product.skus)
+                ? (product.skus as Array<{
+                    skuCode?: string;
+                    selectedOptions?: Record<string, unknown>;
+                  }>)
+                : undefined),
+            opts.departmentHint,
+            { isPublished: product.status === PRODUCT_STATUS.PUBLISHED },
           );
         }
 
@@ -385,19 +537,82 @@ export class ProductService {
     product: Product,
     updateData: Partial<CreateProductInput>,
   ) {
-    let resolvedCategoryId = product.categoryId;
-    let resolvedSubcategoryId = product.subcategoryId;
+    const requestedCategoryId = updateData.categoryId || product.categoryId;
+    const requestedSubcategoryId = updateData.subcategoryId || product.subcategoryId || undefined;
 
-    if (updateData.categoryId || updateData.subcategoryId) {
-      const resolved = await this.resolveCategoryIds(
-        updateData.categoryId || product.categoryId,
-        updateData.subcategoryId || product.subcategoryId || undefined,
-      );
-      resolvedCategoryId = resolved.categoryId;
-      resolvedSubcategoryId = resolved.subcategoryId;
+    // Always run the shared resolver: it is the single source of the department
+    // NAME/path, which the inventory layer needs to mint SKU styleRefs. The
+    // category-id resolution result is only CONSUMED when the request actually
+    // changes the taxonomy, preserving the previous no-extra-lookup behaviour.
+    const resolved = await this.resolveCategoryIds(requestedCategoryId, requestedSubcategoryId);
+    const isTaxonomyChange = Boolean(updateData.categoryId || updateData.subcategoryId);
+
+    return {
+      resolvedCategoryId: isTaxonomyChange ? resolved.categoryId : product.categoryId,
+      resolvedSubcategoryId: isTaxonomyChange ? resolved.subcategoryId : product.subcategoryId,
+      departmentHint: resolved.departmentHint,
+    };
+  }
+
+  /**
+   * Merged stored+incoming discount safety. `updateProductSchema.refine` only
+   * fires when BOTH price and discountedPrice are in the same payload, so the
+   * stored row is the missing half of the comparison. A no-op update (neither
+   * field present) is never rejected on pre-existing data.
+   */
+  private assertDiscountSafety(product: Product, updateData: Partial<CreateProductInput>): void {
+    const incomingPrice = updateData.price;
+    const incomingDiscountedPrice = updateData.discountedPrice;
+    // A no-op update is never rejected on pre-existing (legacy) bad data.
+    if (incomingPrice === undefined && incomingDiscountedPrice === undefined) return;
+
+    const nextPrice = incomingPrice ?? product.price;
+    const nextDiscountedPrice =
+      incomingDiscountedPrice === undefined ? product.discountedPrice : incomingDiscountedPrice;
+
+    if (nextDiscountedPrice === null || nextDiscountedPrice === undefined) return;
+
+    if (nextDiscountedPrice >= nextPrice) {
+      const message = 'Discounted price must be less than the regular price';
+      throw withDetails(new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.VALIDATION_ERROR), [
+        { field: 'discountedPrice', message },
+      ]);
+    }
+  }
+
+  /** True only when this write moves a non-published product INTO published. */
+  private transitionsToPublished(
+    product: Product,
+    updateData: Partial<CreateProductInput>,
+  ): boolean {
+    if (updateData.status !== PRODUCT_STATUS.PUBLISHED) return false;
+    return product.status !== PRODUCT_STATUS.PUBLISHED;
+  }
+
+  /**
+   * Hard publish floor, shared by create and the draft→published update
+   * transition: a product with a colour axis needs a gallery photo per real
+   * colour, a product WITHOUT one needs a cover photo instead, and somewhere
+   * must hold a positive quantity — read from the variant matrix or, for a
+   * colourless product, from its SKUs.
+   */
+  private assertPublishFloor(input: PublishFloorInput): void {
+    const blockers = [...getColorImageBlockers(input.colorVariants, input)];
+    const hasStock = sumVariantStock(input.colorVariants, input.skus) > 0;
+    if (!hasStock) {
+      blockers.push(NO_STOCK_BLOCKER);
     }
 
-    return { resolvedCategoryId, resolvedSubcategoryId };
+    if (blockers.length > 0) {
+      const message = blockers.join(' ');
+      throw withDetails(
+        new AppError(message, HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST),
+        blockers.map((blocker) => ({
+          field: blocker === COVER_PHOTO_BLOCKER ? 'mainImages' : 'colorVariants',
+          message: blocker,
+        })),
+      );
+    }
   }
 
   private async resolveBrandForCreate(input: CreateProductInput) {

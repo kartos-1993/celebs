@@ -1,32 +1,43 @@
 import type { FieldErrors } from 'react-hook-form';
 
+import { flattenFormErrors as flattenFormErrorsCore } from './add-product-validation';
+
 export interface FlatFormError {
   path: string;
   message: string;
 }
 
+// One core, two public names. The flatten itself (including nested children)
+// lives in add-product-validation.ts; this signature is kept for its existing
+// importers so no error is silently dropped and no second implementation drifts.
 export const flattenFormErrors = (
-  errors: FieldErrors<Record<string, unknown>>,
+  errors: FieldErrors<Record<string, unknown>> | undefined,
   parentPath = '',
-): FlatFormError[] => {
-  const result: FlatFormError[] = [];
+): FlatFormError[] => flattenFormErrorsCore(errors, parentPath);
 
-  for (const [key, value] of Object.entries(errors)) {
-    const currentPath = parentPath ? `${parentPath}.${key}` : key;
-    if (!value) continue;
-
-    if (typeof value === 'object') {
-      if ('message' in value && typeof value.message === 'string' && value.message.trim() !== '') {
-        result.push({ path: currentPath, message: value.message });
-      } else {
-        result.push(
-          ...flattenFormErrors(value as FieldErrors<Record<string, unknown>>, currentPath),
-        );
-      }
-    }
-  }
-
-  return result;
+// Exact label map for paths whose last segment is an internal field name.
+// Anything unlisted falls back to a humanized last segment.
+const FIELD_LABELS: Record<string, string> = {
+  name: 'Product Name',
+  brand: 'Brand',
+  description: 'Description',
+  categoryId: 'Category',
+  subcategoryId: 'Subcategory',
+  // The form carries the plural gallery field; the singular alias still appears
+  // in server-shaped errors.
+  mainImage: 'Product Images',
+  mainImages: 'Product Images',
+  price: 'Regular Price',
+  discountedPrice: 'Special Price',
+  packageWeightKg: 'Package Weight (kg)',
+  packageLengthCm: 'Parcel Length (cm)',
+  packageWidthCm: 'Parcel Width (cm)',
+  packageHeightCm: 'Parcel Height (cm)',
+  warrantyType: 'Warranty Type',
+  warrantyPeriod: 'Warranty Duration',
+  isFragile: 'Fragile Handling',
+  hasBatteryOrLiquid: 'Battery or Liquid',
+  isNonReturnable: 'Non-Returnable',
 };
 
 export const formatFieldLabel = (path: string): string => {
@@ -39,18 +50,19 @@ export const formatFieldLabel = (path: string): string => {
     }
     return 'Size Chart';
   }
-  if (path.startsWith('sku.')) {
+  if (
+    path.startsWith('sku.') ||
+    path.startsWith('sku.default') ||
+    path.startsWith('sku.variants')
+  ) {
     return 'Price & Stock (SKU)';
   }
   if (path.startsWith('variants.colorMeta') || path.startsWith('colorMeta')) {
     return 'Color Images & Swatches';
   }
-  if (path === 'name') return 'Product Name';
-  if (path === 'brand') return 'Brand';
-  if (path === 'categoryId' || path === 'subcategoryId') return 'Category';
-  if (path === 'mainImage') return 'Product Images';
-  if (path === 'price') return 'Regular Price';
-  if (path === 'discountedPrice') return 'Special Price';
+
+  const exact = FIELD_LABELS[path];
+  if (exact) return exact;
 
   const parts = path.split('.');
   const lastPart = parts[parts.length - 1] || path;
@@ -71,7 +83,8 @@ let errorFlashTimer: ReturnType<typeof setTimeout> | undefined;
  * Locates the DOM element for an error path. Tries exact name/id/data
  * attributes first, then falls back to `data-error-path` anchors —
  * including segment-prefix matches so nested paths like
- * `variants.colorMeta.Red.images` land on their color row.
+ * `variants.colorMeta.Red.images` land on their color row and
+ * `sizes.0.bodyMeasurements.0.value` lands on the `sizes` container.
  */
 const locateErrorElement = (path: string): HTMLElement | null => {
   const selectors = [
@@ -91,17 +104,26 @@ const locateErrorElement = (path: string): HTMLElement | null => {
   }
 
   // data-error-path: exact match, then nearest ancestor-ish prefix
-  const anchored = document.querySelectorAll<HTMLElement>('[data-error-path]');
+  const anchored = Array.from(document.querySelectorAll<HTMLElement>('[data-error-path]'));
   if (anchored.length > 0) {
-    for (const node of Array.from(anchored)) {
+    for (const node of anchored) {
       if (node.dataset.errorPath === path) return node;
     }
     const segments = path.split('.');
     while (segments.length > 1) {
       segments.pop();
       const prefix = segments.join('.');
-      for (const node of Array.from(anchored)) {
+      for (const node of anchored) {
         if (node.dataset.errorPath?.startsWith(`${prefix}.`)) return node;
+      }
+      // A node whose anchor IS the prefix is the container this error lives
+      // under (`sizes.0.bodyMeasurements.0.value` → the `sizes` table). The
+      // strictly-longer check above can never see it, so a nested path under a
+      // container used to resolve to nothing and fall back to the section
+      // anchor. Checked only after the longer match for the same prefix, so
+      // every case that already resolved resolves to the same element.
+      for (const node of anchored) {
+        if (node.dataset.errorPath === prefix) return node;
       }
     }
   }
