@@ -43,10 +43,18 @@ const startServer = async () => {
     await prisma.$connect();
     logger.info('Postgres Database Connected successfully');
 
-    // Ensure canonical 1P platform vendor is provisioned
-    await ensurePlatformVendor(prisma).catch((err: unknown) => {
+    // Ensure canonical 1P platform vendor is provisioned. A null result means
+    // there is no superadmin yet to own it (fresh database): the requirement is
+    // real but deferred, so surface it at boot instead of staying silent.
+    const platformVendor = await ensurePlatformVendor(prisma).catch((err: unknown) => {
       logger.error({ err }, 'Failed to ensure 1P platform vendor on boot');
+      return null;
     });
+    if (!platformVendor) {
+      logger.warn(
+        '1P platform vendor is not provisioned yet (no superadmin found). Complete the initial superadmin setup before creating platform products.',
+      );
+    }
 
     // Connect and verify Redis and S3 connections
     await verifyRedisConnection();

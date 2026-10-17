@@ -163,26 +163,11 @@ export async function seedBrands(): Promise<void> {
     console.log(`  ✓ Brand: ${brand.name} [Tier: ${brand.tier}, Gated: ${brand.isGated}]`);
   }
 
-  // Link existing products to Celebs Denim / Celebs Official where appropriate
-  const celebsDenim = await prisma.brand.findUnique({ where: { slug: 'celebs-denim' } });
-  if (celebsDenim) {
-    const updated = await prisma.product.updateMany({
-      where: {
-        OR: [
-          { name: { contains: 'Denim', mode: 'insensitive' } },
-          { name: { contains: 'Jeans', mode: 'insensitive' } },
-        ],
-        brandId: null,
-      },
-      data: {
-        brandId: celebsDenim.id,
-        brand: celebsDenim.name,
-      },
-    });
-    if (updated.count > 0) {
-      console.log(`  🔗 Linked ${updated.count} existing Denim products to '${celebsDenim.name}'`);
-    }
-  }
+  // Catalog seeds attach brandId at creation time through ProductService. The
+  // old retro-link `updateMany` (name contains Denim/Jeans, brandId null) was
+  // nondeterministic across re-runs: run 1 left products unlinked, run 2
+  // linked them to Celebs Denim while the raw seed kept rewriting the brand
+  // string to the dataset value — brandId and brand could disagree forever.
 
   console.log('✅ Brand Registry Seed Complete.\n');
 }

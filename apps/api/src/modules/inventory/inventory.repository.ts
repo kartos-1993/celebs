@@ -159,7 +159,14 @@ export class InventoryRepository {
     });
   }
 
-  public async createInventory(data: {
+  /**
+   * Conflict-safe variant insert for the cart's lazy inventory fallback.
+   * Concurrent requests can materialize the same variant/size at once, and a
+   * bare create() then loses to the composite unique key with P2002.
+   * ON CONFLICT DO NOTHING + read-back returns the row either way, so callers
+   * never see a conflict error for a combination that now exists.
+   */
+  public async createInventoryIfAbsent(data: {
     productId: string;
     colorVariantName: string;
     size: string;
@@ -167,8 +174,19 @@ export class InventoryRepository {
     quantity: number;
     reservedQuantity: number;
   }): Promise<ProductInventory> {
-    return prisma.productInventory.create({
-      data,
+    await prisma.productInventory.createMany({
+      data: [data],
+      skipDuplicates: true,
+    });
+
+    return prisma.productInventory.findUniqueOrThrow({
+      where: {
+        productId_colorVariantName_size: {
+          productId: data.productId,
+          colorVariantName: data.colorVariantName,
+          size: data.size,
+        },
+      },
     });
   }
 

@@ -18,6 +18,7 @@ import { brandService } from '../brand/brand.service';
 import { categoryRepository } from '../category/category.repository';
 import { InventoryRepository } from '../inventory/inventory.repository';
 import { mediaRepository } from '../media/media.repository';
+import { vendorRepository } from '../vendor/vendor.repository';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
 import { buildProductAuditDiff, isCrossStoreProductEdit } from './utils/product-audit';
@@ -169,6 +170,21 @@ export class ProductService {
     const resolvedVendorId = vendorId || PLATFORM_VENDOR_ID;
     const resolvedVendorName =
       vendorName || (is1PVendor(resolvedVendorId) ? PLATFORM_VENDOR_NAME : undefined);
+
+    // the fix (platform bootstrap): defaulting a vendor-less create to the 1P
+    // store is only valid once that store exists. Without this guard the insert
+    // surfaces as a foreign-key P2003 after the transaction starts; fail with a
+    // typed, actionable error instead.
+    if (is1PVendor(resolvedVendorId)) {
+      const platformStore = await vendorRepository.findById(PLATFORM_VENDOR_ID);
+      if (!platformStore) {
+        throw new AppError(
+          'The 1P platform store is not provisioned yet. Complete the initial superadmin setup before creating platform products.',
+          HTTPSTATUS.SERVICE_UNAVAILABLE,
+          ErrorCode.PLATFORM_VENDOR_NOT_PROVISIONED,
+        );
+      }
+    }
 
     const { categoryId, subcategoryId, departmentHint } = await this.resolveCategoryIds(
       input.categoryId,

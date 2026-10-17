@@ -18,6 +18,7 @@ import { deliveryPricingRepository } from '../../logistics/delivery-pricing.repo
 import { DeliveryQuoteService, deliveryQuoteService } from '../../logistics/delivery-quote.service';
 import { sumBillableWeightKg } from '../../logistics/parcel-weight';
 import { computeBillableLineWeightKg } from '../../logistics/parcel-weight';
+import { vendorRepository } from '../../vendor/vendor.repository';
 import { AddressRepository, addressRepository } from '../address/address.repository';
 import { CoreOrderRepository, coreOrderRepository } from '../core/order.repository';
 import { PaymentRepository, paymentRepository } from '../payment/payment.repository';
@@ -141,6 +142,25 @@ export class CheckoutService {
     const cartProductIds = Array.from(new Set(cart.items.map((item) => item.inventory.productId)));
     const cartProducts = await this.checkoutRepo.findCheckoutProducts(cartProductIds);
     const productsById = new Map(cartProducts.map((p) => [p.id, p]));
+
+    // Legacy vendor-less rows fall back to the 1P store below. Verify it once,
+    // up front: `OrderItem.vendorId` is a NOT NULL + RESTRICT FK, so a missing
+    // store would otherwise surface as a P2003 after the order write instead of
+    // a typed domain error the customer can be shown.
+    const hasVendorlessLine = cart.items.some((item) => {
+      const product = productsById.get(item.inventory.productId);
+      return Boolean(product && !product.vendorId);
+    });
+    if (hasVendorlessLine) {
+      const platformStore = await vendorRepository.findById(PLATFORM_VENDOR_ID);
+      if (!platformStore) {
+        throw new AppError(
+          'This order contains a product without a seller, and the 1P platform store is not provisioned yet. Complete the initial superadmin setup and retry.',
+          HTTPSTATUS.SERVICE_UNAVAILABLE,
+          ErrorCode.PLATFORM_VENDOR_NOT_PROVISIONED,
+        );
+      }
+    }
 
     for (const item of cart.items) {
       const inv = item.inventory;
