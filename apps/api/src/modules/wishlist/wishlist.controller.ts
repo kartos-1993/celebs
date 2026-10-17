@@ -5,7 +5,7 @@ import { asyncHandler, ErrorCode, logger, UnauthorizedException } from '@celebs/
 
 import { WishlistService } from './wishlist.service';
 
-import { sendCreated, sendSuccess } from '@/common/utils/response.util';
+import { sendCreated, sendPrivateUncached, sendSuccess } from '@/common/utils/response.util';
 
 interface AuthUser {
   id: string;
@@ -29,7 +29,7 @@ export class WishlistController {
   static getWishlist = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = WishlistController.getUserId(req);
     const entries = await WishlistService.getWishlist(userId);
-    sendSuccess(res, entries, 'Wishlist retrieved successfully');
+    sendPrivateUncached(res, entries, 'Wishlist retrieved successfully');
   });
 
   static addToWishlist = asyncHandler(async (req: Request, res: Response): Promise<void> => {

@@ -34,7 +34,7 @@ export const appConfig = () => {
         | 'strict'
         | 'lax'
         | 'none',
-      DOMAIN: validatedEnv.COOKIE_DOMAIN || (isProduction ? 'yourdomain.com' : ''),
+      DOMAIN: validatedEnv.COOKIE_DOMAIN || '',
     },
     SETUP_SECRET: validatedEnv.SETUP_SECRET,
 

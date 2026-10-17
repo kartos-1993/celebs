@@ -12,7 +12,6 @@ import { uploadRateLimiter } from '@/middlewares/rate-limiter.middleware';
 import { requireAnyPermission, requirePermissions } from '@/middlewares/rbac.middleware';
 
 const router = Router();
-router.use(uploadRateLimiter);
 
 // identity → context → lifecycle → permission
 // Media uploads must be available BEFORE approval: vendors upload KYC
@@ -22,6 +21,7 @@ router.use(uploadRateLimiter);
 router.use(authenticateJWT);
 router.use(asyncHandler(actorContext));
 router.use(requireStoreState(['PENDING', 'UNDER_REVIEW', 'REJECTED', 'APPROVED']));
+router.use(uploadRateLimiter);
 
 /**
  * GET /api/v1/media/assets

@@ -11,7 +11,7 @@ import { asyncHandler, logger, UnauthorizedException } from '@celebs/shared-util
 
 import { CartService } from './cart.service';
 
-import { sendSuccess } from '@/common/utils/response.util';
+import { sendPrivateUncached, sendSuccess } from '@/common/utils/response.util';
 import { appConfig } from '@/config/app.config';
 import { UNRESOLVED_FREE_DELIVERY_THRESHOLD } from '@/modules/logistics/delivery-pricing.repository';
 
@@ -78,7 +78,7 @@ export class CartController {
 
     // Prevent crawler DB bloat: return ephemeral empty cart without writing to PostgreSQL
     if (!userId && !sessionId) {
-      sendSuccess(
+      sendPrivateUncached(
         res,
         {
           id: '',
@@ -104,7 +104,7 @@ export class CartController {
     logger.info({ userId, sessionId }, '[CartController.getCart] Fetching cart');
     const cart = await CartService.getCart(userId, sessionId);
 
-    sendSuccess(res, cart, 'Cart retrieved successfully');
+    sendPrivateUncached(res, cart, 'Cart retrieved successfully');
   });
 
   static addToCart = asyncHandler(async (req: Request, res: Response): Promise<void> => {

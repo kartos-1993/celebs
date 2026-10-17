@@ -16,7 +16,7 @@ const defaults: CookieOptions = {
   httpOnly: config.COOKIE.HTTPONLY,
   secure: config.COOKIE.SECURE,
   sameSite: config.COOKIE.SAME_SITE,
-  domain: config.COOKIE.DOMAIN,
+  domain: config.COOKIE.DOMAIN || undefined,
   partitioned: config.COOKIE.SAME_SITE === 'none',
 };
 

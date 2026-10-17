@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 
+import { Permission } from '@celebs/rbac';
 import {
   batchPresignSchema,
   confirmUploadSchema,
@@ -215,9 +216,46 @@ export class MediaController {
       throw new BadRequestException('key or url query parameter is required');
     }
 
+    const isKycPath =
+      targetKey.includes('/kyc/') ||
+      targetKey.startsWith('kyc/') ||
+      targetKey.includes('celebs/kyc');
+
+    const asset = await mediaRepository.findAssetByKey(targetKey);
+
+    if (isKycPath && !asset) {
+      throw new NotFoundException('Asset not found');
+    }
+
+    const isSensitive = Boolean(asset?.isPrivate || asset?.scope === 'KYC' || isKycPath);
+
+    if (isSensitive) {
+      const actor = req.actor;
+      const store = req.store;
+
+      const isPlatform =
+        actor?.role === 'SUPERADMIN' ||
+        actor?.role === 'ADMIN' ||
+        actor?.permissions?.includes(Permission.VENDOR_MANAGE) ||
+        actor?.permissions?.includes(Permission.STAFF_KYC_VERIFY);
+
+      const isOwner =
+        actor?.role === 'VENDOR' &&
+        Boolean(store?.isOwner) &&
+        Boolean(store?.id && asset && store.id === asset.vendorId);
+
+      if (!isPlatform && !isOwner) {
+        throw new NotFoundException('Asset not found');
+      }
+
+      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+
     const { stream, contentType, contentLength } = await getS3ObjectStream(targetKey);
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
     if (contentLength) {
       res.setHeader('Content-Length', contentLength);
     }
