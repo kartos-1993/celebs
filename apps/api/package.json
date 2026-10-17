@@ -39,6 +39,7 @@
     "seed:categories-men": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-categories-men.ts",
     "seed:categories-jewelry": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-categories-jewelry.ts",
     "seed:products": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-products.ts",
+    "seed:shortcuts": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-storefront-shortcuts.ts",
     "merge:seed-batch": "node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/merge-seed-batch.ts",
     "//_QUALITY": "=== Code Quality & Testing ===",
     "test": "dotenv -e .env.test -- prisma db push --schema=src/db/schema.prisma --accept-data-loss --config=../../prisma.config.ts && dotenv -e .env.test -- vitest run",
