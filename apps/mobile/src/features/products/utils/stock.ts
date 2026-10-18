@@ -105,6 +105,18 @@ export function isVariantOutOfStock(variant: ProductColorVariant | undefined): b
   return variant.stocks.every((s) => (s.quantity ?? 0) <= 0);
 }
 
+/**
+ * List-card variant check: card payloads intentionally ship no per-variant
+ * inventory rows (`stocks` is only resolved for the detail payload). A variant
+ * without an inventory array cannot be judged here — report false so callers
+ * defer to the product-level `inStock` signal. A tracked variant (array
+ * present, possibly empty) is judged fail-closed as usual.
+ */
+export function isTrackedVariantOutOfStock(variant: ProductColorVariant | undefined): boolean {
+  if (!variant || !Array.isArray(variant.stocks)) return false;
+  return isVariantOutOfStock(variant);
+}
+
 export function isProductFullyOutOfStock(product: Product | null | undefined): boolean {
   if (!product) return false;
   const prodRec = product as Product & Record<string, unknown>;
@@ -122,14 +134,18 @@ export function isProductFullyOutOfStock(product: Product | null | undefined): b
   }
 
   const variants = product.colorVariants;
-  if (!Array.isArray(variants) || variants.length === 0) {
-    // If the product defines no color variants, check if inStock is explicitly true or positive total stock exists
-    if (prodRec.inStock === true) return false;
-    if (typeof totalStock === 'number' && totalStock > 0) return false;
-    return true;
+  // Tracked variant rows are authoritative whenever the payload carries them
+  // (detail surface): every tracked variant must then be depleted.
+  if (Array.isArray(variants) && variants.some((variant) => Array.isArray(variant.stocks))) {
+    return variants.every(isVariantOutOfStock);
   }
 
-  return variants.every(isVariantOutOfStock);
+  // No per-variant inventory to judge (no color axis, or the list/card
+  // projection that omits `stocks`): the card-level availability signal
+  // governs — and without one, fail closed.
+  if (prodRec.inStock === true) return false;
+  if (typeof totalStock === 'number' && totalStock > 0) return false;
+  return true;
 }
 
 export function getStockQtyForVariantSize(

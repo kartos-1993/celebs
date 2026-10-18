@@ -6,6 +6,7 @@ import {
   isProductFullyOutOfStock,
   isSelectedCombinationOutOfStock,
   isSizeOutOfStockForVariant,
+  isTrackedVariantOutOfStock,
   isVariantOutOfStock,
   resolveProductSizes,
   sizeForColorSwitch,
@@ -232,5 +233,63 @@ describe('isSelectedCombinationOutOfStock vs cart OOS-check skip', () => {
       ? isSizeOutOfStockForVariant(depleted, finalSize)
       : isVariantOutOfStock(depleted);
     expect(isFreshOos).toBe(true);
+  });
+});
+
+describe('list-card projection — stocks omitted but card-level availability known', () => {
+  it('trusts inStock: true when variants ship no inventory rows (list projection)', () => {
+    const card = {
+      id: 'card-1',
+      inStock: true,
+      colorVariants: [{ name: 'Black', images: ['https://cdn.example.com/black.jpg'] }],
+    } as unknown as Product;
+
+    expect(isProductFullyOutOfStock(card)).toBe(false);
+  });
+
+  it('still fails closed when a stocks-less card has no availability signal', () => {
+    const card = {
+      id: 'card-2',
+      colorVariants: [{ name: 'Black' }],
+    } as unknown as Product;
+
+    expect(isProductFullyOutOfStock(card)).toBe(true);
+  });
+
+  it('keeps tracked-but-empty variants OOS even when inStock claims otherwise', () => {
+    const trackedEmpty = {
+      id: 'card-3',
+      inStock: true,
+      colorVariants: [
+        { name: 'Black', stocks: [] },
+        { name: 'White', stocks: [{ size: 'M', quantity: 0 }] },
+      ],
+    } as unknown as Product;
+
+    expect(isProductFullyOutOfStock(trackedEmpty)).toBe(true);
+  });
+
+  it('defers to variant rows whenever any variant tracks inventory', () => {
+    const mixed = {
+      id: 'card-4',
+      inStock: true,
+      colorVariants: [{ name: 'Black' }, { name: 'White', stocks: [{ size: 'M', quantity: 2 }] }],
+    } as unknown as Product;
+
+    // Tracked rows are authoritative: an untracked variant is fail-closed but
+    // the tracked, sellable one keeps the product buyable.
+    expect(isProductFullyOutOfStock(mixed)).toBe(false);
+  });
+
+  it('isTrackedVariantOutOfStock only judges variants that ship inventory rows', () => {
+    expect(isTrackedVariantOutOfStock(undefined)).toBe(false);
+    expect(isTrackedVariantOutOfStock({ name: 'Black' } as never)).toBe(false);
+    expect(isTrackedVariantOutOfStock({ name: 'Black', stocks: [] } as never)).toBe(true);
+    expect(
+      isTrackedVariantOutOfStock({ name: 'Black', stocks: [{ size: 'M', quantity: 0 }] } as never),
+    ).toBe(true);
+    expect(
+      isTrackedVariantOutOfStock({ name: 'Black', stocks: [{ size: 'M', quantity: 1 }] } as never),
+    ).toBe(false);
   });
 });

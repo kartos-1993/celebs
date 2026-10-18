@@ -16,7 +16,7 @@ import { validDiscount } from '@celebs/shared-utils';
 
 import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
 import { resolveMinPrice } from '../utils/pricing';
-import { isProductFullyOutOfStock, isVariantOutOfStock } from '../utils/stock';
+import { isProductFullyOutOfStock, isTrackedVariantOutOfStock } from '../utils/stock';
 
 import { Product } from './use-products';
 
@@ -181,10 +181,10 @@ export function useProductCard({
   const storeName = product.brand || 'BODI';
 
   const currentVariant = product.colorVariants?.[selectedColorIndex];
-  // Same fail-closed rule as the PDP: an untracked variant is unknown stock,
-  // never "in stock".
-  const isSelectedVariantOutOfStock =
-    Boolean(currentVariant) && isVariantOutOfStock(currentVariant);
+  // Card payloads ship no per-variant inventory rows, so only a tracked
+  // variant can be judged here — an untracked one defers to the product-level
+  // result below (same fail-closed rule as the PDP once inventory is present).
+  const isSelectedVariantOutOfStock = isTrackedVariantOutOfStock(currentVariant);
 
   const isOutOfStock = isProductFullyOutOfStock(product) || isSelectedVariantOutOfStock;
 

@@ -72,3 +72,10 @@ Failure modes preserved: tracked-empty/depleted variants stay OOS
 
 List cards with `inStock: true` and stocks-omitted variants render buyable;
 genuinely depleted products still render OUT OF STOCK on both card and PDP.
+
+## Execution Log (2026-10-18)
+
+- RED first: `stock-availability.spec.ts` gained a list-card describe block; the first case (`inStock: true` + stocks-omitted variant → NOT fully OOS) failed against the old helper (`expected true to be false`), all fail-closed guards already passed.
+- Fix shipped: `isTrackedVariantOutOfStock` added to `stock.ts`; `isProductFullyOutOfStock` now applies the variant-level judgment only when at least one variant ships an inventory array, otherwise defers to `inStock === true` / positive `totalStock` and fails closed without a signal; `use-product-card.ts` uses the tracked-only helper for the selected variant (import swapped, no other usages in the hook).
+- GREEN: stock-availability + simple-product-stock + stock-sizes 35/35; products + wishlist feature suites 109/109; FULL mobile suite 23 files / 235 tests passed; `tsc --noEmit` 0 errors.
+- Preserved invariants verified by existing specs: `stocks: []` / depleted tracked variants stay OUT OF STOCK; no-signal payloads stay OUT OF STOCK; PDP paths (detail ships inventory rows) unchanged.
