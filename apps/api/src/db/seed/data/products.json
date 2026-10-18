@@ -13,16 +13,16 @@
     "stockPerSize": 25,
     "attributes": {
       "Closure Type": "Single Breasted",
-      "Details": ["Pocket", "Button", "Flap Pocket", "Fleece Lined"],
-      "Pattern Type": "Plain",
-      "Style": "Streetwear",
+      "Details": ["Pocket", "Button Front", "Flap Pockets", "Fleece Lined"],
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Streetwear"],
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
       "Material": "Denim",
       "Composition": "100% Cotton, Lining: 100% Polyester",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Fleece Lined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -95,16 +95,16 @@
     "stockPerSize": 25,
     "attributes": {
       "Closure Type": "Single Breasted",
-      "Details": ["Distressed", "Button", "Pocket", "Raw Hem"],
-      "Pattern Type": "Washed",
-      "Style": "Vintage",
+      "Details": ["Ripped / Distressed", "Button Front", "Pocket", "Raw Hem"],
+      "Pattern Type": "Vintage Washed",
+      "Style": ["Vintage"],
       "Fit Type": "Oversized",
       "Fabric Elasticity": "Non-Stretch",
       "Material": "Denim",
       "Composition": "100% Cotton",
       "Care Instructions": "Hand wash recommended",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -161,16 +161,16 @@
     "stockPerSize": 25,
     "attributes": {
       "Closure Type": "Button Front",
-      "Details": ["Ripped", "Embroidery", "Pocket"],
-      "Pattern Type": "Graphic",
-      "Style": "Streetwear",
+      "Details": ["Ripped / Distressed", "Embroidery", "Pocket"],
+      "Pattern Type": "Graphic Print",
+      "Style": ["Streetwear"],
       "Fit Type": "Loose",
       "Fabric Elasticity": "Non-Stretch",
       "Material": "Denim",
       "Composition": "85% Cotton, 15% Polyester",
       "Care Instructions": "Machine wash",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -220,20 +220,20 @@
     "stockPerSize": 30,
     "attributes": {
       "Closure Type": "Zipper Fly",
-      "Details": ["Pocket", "Zipper", "Ripped"],
-      "Pattern Type": "Graphic, Retro",
-      "Style": "Avant-Garde - Street Casual",
-      "Ideal For": "conventional",
+      "Details": ["Pocket", "Zipper", "Ripped / Distressed"],
+      "Pattern Type": "Graphic Print",
+      "Style": ["Avant-Garde - Street Casual"],
+      "Ideal For": ["conventional"],
       "Color": "Multicolor",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
-      "Fit Type": "Loose",
+      "Fit Type": "Baggy / Loose",
       "Fabric Elasticity": "Non-Stretch",
       "Material": "Denim",
       "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
       "Care Instructions": "Hand wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -372,14 +372,14 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Avant-Garde - Street Casual, Casual - Amekaji",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
-      "Festivals": "Halloween",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Avant-Garde - Street Casual", "Casual - Amekaji"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
+      "Festivals": ["Halloween"],
       "Color": "Navy Blue",
       "Type": "Straight Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -387,7 +387,7 @@
       "Composition": "66% Cotton, 18% Polyester, 16% Viscose",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -527,14 +527,14 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Casual - Amekaji",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
-      "Festivals": "Halloween",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Casual - Amekaji"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
+      "Festivals": ["Halloween"],
       "Color": "Light Wash",
       "Type": "Wide Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -542,7 +542,7 @@
       "Composition": "68% Cotton, 18% Viscose, 14% Polyester",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -748,12 +748,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Ballgame",
-      "Festivals": "Christmas",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Ballgame"],
+      "Festivals": ["Christmas"],
       "Color": "Black",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -761,7 +761,7 @@
       "Composition": "85% Cotton, 15% Polyester",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -861,18 +861,18 @@
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
       "Body / Lining": "Lined",
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
       "Color": "Multicolor",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Fit Type": "Skinny",
       "Fabric Elasticity": "Slight Stretch",
       "Length": "Long",
       "Care Instructions": "Machine wash, do not dry clean",
       "Material": "Denim",
       "Composition": "64.5% Cotton,33.5% Polyester,2% Elastane",
-      "Sheer": false,
+      "Sheer": "No",
       "Lining": "100% Polyester"
     },
     "sizeChart": [
@@ -940,20 +940,20 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Pocket"],
-      "Pattern Type": "Geometric, Retro",
-      "Style": "Casual - Amekaji",
-      "Ideal For": "conventional",
-      "Scenes": "School, Daily, Street",
+      "Pattern Type": "Geometric",
+      "Style": ["Casual - Amekaji"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["School", "Daily", "Street"],
       "Color": "Dark Wash",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
-      "Fit Type": "Loose",
+      "Fit Type": "Baggy / Loose",
       "Fabric Elasticity": "Non-Stretch",
       "Material": "Denim",
       "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -1021,20 +1021,20 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
       "Color": "Red Violet",
       "Type": "Wide Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
-      "Fit Type": "Loose",
+      "Fit Type": "Baggy / Loose",
       "Fabric Elasticity": "Non-Stretch",
       "Material": "Denim",
       "Composition": "78% Cotton, 14% Polyester, 7% Viscose, 1% Lyocell",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -1301,14 +1301,14 @@
     "stockPerSize": 30,
     "attributes": {
       "Closure Type": "Zipper Fly",
-      "Details": ["Drawstring", "Pocket", "Chain"],
+      "Details": ["Drawstring", "Pocket", "Chain / D-Ring Detail"],
       "Pattern Type": "Colorblock",
-      "Style": "Avant-Garde - Street Casual",
-      "Ideal For": "conventional",
-      "Festivals": "Halloween",
+      "Style": ["Avant-Garde - Street Casual"],
+      "Ideal For": ["conventional"],
+      "Festivals": ["Halloween"],
       "Color": "Multicolor",
       "Type": "Wide Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -1316,7 +1316,7 @@
       "Composition": "100% Cotton",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -1400,12 +1400,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Festivals": "Halloween",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Festivals": ["Halloween"],
       "Color": "Black",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Skinny",
       "Fabric Elasticity": "Medium Stretch",
@@ -1413,7 +1413,7 @@
       "Composition": "63% Cotton, 25% Polyester, 10% Viscose, 2% Elastane",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -1487,12 +1487,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Drawstring", "Pocket"],
-      "Style": "Avant-Garde - Street Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Street",
+      "Style": ["Avant-Garde - Street Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Street"],
       "Color": "Redwood",
       "Type": "Skinny",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Slight Stretch",
@@ -1500,7 +1500,7 @@
       "Composition": "70% Cotton, 24% Polyester, 4% Viscose, 2% Elastane",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -1635,12 +1635,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Sports & Outdoor - Urban Utility, Casual - Amekaji",
-      "Ideal For": "conventional",
-      "Scenes": "Daily, Outdoor, Business Commuting",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Sports & Outdoor - Urban Utility", "Casual - Amekaji"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily", "Outdoor", "Business Commuting"],
       "Color": "Blue",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Slight Stretch",
@@ -1648,7 +1648,7 @@
       "Composition": "65% Cotton, 33.7% Polyester, 1.3% Elastane",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -1709,11 +1709,11 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Avant-Garde - Hip-Hop Streetwear",
-      "Ideal For": "conventional",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Avant-Garde - Hip-Hop Streetwear"],
+      "Ideal For": ["conventional"],
       "Color": "Grey",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -1721,7 +1721,7 @@
       "Composition": "67% Cotton, 22% Polyester, 11% Viscose",
       "Care Instructions": "Hand wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -1922,12 +1922,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
       "Color": "Blue",
       "Type": "Skinny",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Skinny",
       "Fabric Elasticity": "High Stretch",
@@ -1935,7 +1935,7 @@
       "Composition": "57% Cotton, 34% Polyester, 7% Viscose, 2% Elastane",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -2032,18 +2032,18 @@
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
       "Body / Lining": "Lined",
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Business Commuting",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Business Commuting"],
       "Color": "Multicolor",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Slight Stretch",
       "Length": "Long",
       "Care Instructions": "Machine wash, do not dry clean",
       "Material": "Denim",
       "Composition": "64.5% Cotton,33.5% Polyester,2% Elastane",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -2110,11 +2110,11 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Avant-Garde - Street Casual",
-      "Ideal For": "conventional",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Avant-Garde - Street Casual"],
+      "Ideal For": ["conventional"],
       "Color": "Multicolor",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "High Stretch",
@@ -2122,7 +2122,7 @@
       "Composition": "65% Cotton, 28% Polyester, 5% Viscose, 2% Elastane",
       "Care Instructions": "Machine wash or professional dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -2237,13 +2237,13 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Avant-Garde - Street Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Avant-Garde - Street Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
       "Color": "Light Wash",
       "Type": "Wide Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -2251,7 +2251,7 @@
       "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -2337,12 +2337,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
       "Color": "Coffee Brown",
       "Type": "Wide Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -2350,7 +2350,7 @@
       "Composition": "87% Cotton, 7% Polyester, 6% Viscose",
       "Care Instructions": "Hand wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false,
+      "Sheer": "No",
       "Number Of Pieces": "1 Piece Set"
     },
     "sizeChart": [
@@ -2500,12 +2500,12 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
       "Color": "Blue",
       "Type": "Straight Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -2513,7 +2513,7 @@
       "Composition": "68% Cotton, 18% Viscose, 14% Polyester",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -2672,13 +2672,13 @@
     "attributes": {
       "Closure Type": "Zipper Fly",
       "Details": ["Button", "Pocket", "Zipper"],
-      "Pattern Type": "Plain",
-      "Style": "Casual - Modern Casual",
-      "Ideal For": "conventional",
-      "Scenes": "Daily",
+      "Pattern Type": "Plain / Solid",
+      "Style": ["Casual - Modern Casual"],
+      "Ideal For": ["conventional"],
+      "Scenes": ["Daily"],
       "Color": "Light Wash",
       "Type": "Wide Leg",
-      "Waist Line": "Natural(Mid Waist)",
+      "Waist Line": "Natural (Mid Waist)",
       "Length": "Long",
       "Fit Type": "Regular Fit",
       "Fabric Elasticity": "Non-Stretch",
@@ -2686,7 +2686,7 @@
       "Composition": "73% Cotton, 18% Polyester, 9% Viscose",
       "Care Instructions": "Machine wash, do not dry clean",
       "Body / Lining": "Unlined",
-      "Sheer": false
+      "Sheer": "No"
     },
     "sizeChart": [
       {
@@ -2865,14 +2865,14 @@
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
-      "Care Instructions": "Hand wash,do not dry clean",
+      "Care Instructions": "Hand wash, do not dry clean",
       "Color": "Burgundy",
       "Composition": "100% Polyester",
       "Details": ["Pocket", "Zipper", "Button Front"],
       "Fabric Elasticity": "Non-Stretch",
       "Fit Type": "Regular Fit",
       "Material": "Woven Fabric",
-      "Style": "Casual - Minimalist Style"
+      "Style": ["Casual - Minimalist Style"]
     },
     "sizeChart": [
       {
@@ -3031,7 +3031,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Loose",
       "Material": "Woven Fabric",
-      "Style": "Streetwear"
+      "Style": ["Streetwear"]
     },
     "sizeChart": [
       {
@@ -3108,7 +3108,7 @@
       "Composition": "95% Polyester, 5% Elastane",
       "Fit Type": "Regular Fit",
       "Material": "Suedette",
-      "Style": "Western Style"
+      "Style": ["Western Style"]
     },
     "sizeChart": [
       {
@@ -3194,18 +3194,18 @@
       "Fabric Elasticity": "Non-Stretch",
       "Fit Type": "Regular Fit",
       "Hem Shaped": "Regular",
-      "Ideal For": "Unisex",
+      "Ideal For": ["Unisex"],
       "Length": "Regular",
       "Lining": "100% Polyester",
       "Material": "Woven Fabric",
       "Neckline": "Hooded",
       "Number Of Pieces": "1 Piece Set",
-      "Pattern Type": "Letter",
-      "Placket": "Zipper",
+      "Pattern Type": "Letter / Slogan Print",
+      "Closure Type": "Full Zipper",
       "Sheer": "No",
       "Sleeve Length": "Long Sleeve",
       "Sleeve Type": "Raglan Sleeve",
-      "Style": "Sports & Outdoor - Mountain/Outdoor",
+      "Style": ["Sports & Outdoor - Mountain/Outdoor"],
       "Type": "Windbreaker"
     },
     "sizeChart": [
@@ -3306,7 +3306,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Loose",
       "Material": "Polyurethane(PU)",
-      "Style": "Casual"
+      "Style": ["Casual"]
     },
     "sizeChart": [
       {
@@ -3374,7 +3374,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Regular Fit",
       "Material": "Woven Fabric",
-      "Style": "Casual"
+      "Style": ["Casual"]
     },
     "sizeChart": [
       {
@@ -3492,7 +3492,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Regular Fit",
       "Material": "Woven Fabric",
-      "Style": "Casual"
+      "Style": ["Casual"]
     },
     "sizeChart": [
       {
@@ -3587,7 +3587,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Loose",
       "Material": "Corduroy",
-      "Style": "Casual"
+      "Style": ["Casual"]
     },
     "sizeChart": [
       {
@@ -3682,7 +3682,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Loose",
       "Material": "Woven Fabric",
-      "Style": "Casual"
+      "Style": ["Casual"]
     },
     "sizeChart": [
       {
@@ -3736,7 +3736,7 @@
       "Composition": "100% Polyester",
       "Fit Type": "Regular Fit",
       "Material": "Knitted Fabric",
-      "Style": "Western Style"
+      "Style": ["Western Style"]
     },
     "sizeChart": [
       {
@@ -3875,20 +3875,20 @@
       "Composition": "100% Polyester",
       "Details": ["Rib-Knit"],
       "Fabric Elasticity": "Slight Stretch",
-      "Festivals": "Christmas, Halloween",
+      "Festivals": ["Christmas", "Halloween"],
       "Fit Type": "Regular Fit",
       "Hem Shaped": "Regular",
-      "Ideal For": "conventional",
+      "Ideal For": ["conventional"],
       "Length": "Regular",
-      "Material": "Fabric",
+      "Material": "Knitted Fabric",
       "Neckline": "Round Neck",
       "Number Of Pieces": "1 Piece Set",
-      "Pattern Type": "Geometric, Letter",
-      "Scenes": "Daily",
+      "Pattern Type": "Letter / Slogan Print",
+      "Scenes": ["Daily"],
       "Sheer": "No",
       "Sleeve Length": "Long Sleeve",
       "Sleeve Type": "Regular Sleeve",
-      "Style": "Casual - Modern Casual",
+      "Style": ["Casual - Modern Casual"],
       "Temperature": "Spring/Fall (18-25/63-77)"
     },
     "sizeChart": [
@@ -4145,7 +4145,7 @@
     "skuPrefix": "BRO-HOO",
     "stockPerSize": 20,
     "attributes": {
-      "Body": "Unlined",
+      "Body / Lining": "Unlined",
       "Care Instructions": "Machine wash or professional dry clean",
       "Color": "Black",
       "Composition": "100% Polyester",
@@ -4153,16 +4153,16 @@
       "Fabric Elasticity": "Slight Stretch",
       "Fit Type": "Regular Fit",
       "Hem Shaped": "Regular",
-      "Ideal For": "Unisex, conventional",
+      "Ideal For": ["Unisex", "conventional"],
       "Length": "Regular",
       "Lined For Added Warmth": "Yes",
       "Material": "Polyester",
       "Neckline": "Stand Collar",
-      "Scenes": "Daily",
+      "Scenes": ["Daily"],
       "Sheer": "No",
       "Sleeve Length": "Long Sleeve",
       "Sleeve Type": "Regular Sleeve",
-      "Style": "Casual - Basic",
+      "Style": ["Casual - Basic"],
       "Temperature": "Winter (<10/50)"
     },
     "sizeChart": [

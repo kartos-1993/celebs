@@ -23,6 +23,7 @@ Branch: `fix/auth-ux-and-shortcut-rename` (from `fix/seed-service-parity` @ `aec
 - [§9] Execution log (bottom of this doc)
 - [§10] Batch import: reusable `merge-seed-batch` converter (scraper batch → dataset, `--update` refresh) + 2 new Brothers Collection products, windbreaker entry enriched; importer gains optional `mainImages`/`packaging`/`warranty` and drops the 8-image cover truncation
 - [§11] StorefrontShortcut seeding: persist the runtime "Subcategories" shortcut for every active parent category (replaces the no-op seed)
+- [§12] Men apparel seed standardization: attribute vocabulary aligned to leaf schemas + SHEIN spec-table key fixes in the merge converter, guarded by a dataset-coverage spec
 
 ## Notes
 
@@ -43,3 +44,5 @@ Branch: `fix/auth-ux-and-shortcut-rename` (from `fix/seed-service-parity` @ `aec
 - 2026-10-17 — Vendor e2e checklist re-run: `vendor-onboarding.spec.ts` 9/9 — full onboarding walk + submit-blocked-unverified, resubmit-blocked-unverified, verified-resubmit-allowed all green.
 - 2026-10-17 — Pushed `fix/seed-service-parity` (base, so the stacked PR has a remote base) and `fix/auth-ux-and-shortcut-rename`; opened stacked PR #5 → `fix/seed-service-parity` (10 commits): https://github.com/kartos-1993/celebs/pull/5. The `feat/phase-1…5` branches beneath the base remain unpushed.
 - 2026-10-17 — Full stack pushed and PR'd: `feat/headers-cache-security-hardening` + phases 1–5 pushed; stacked PRs opened bottom-up — #6 catch-up → `staging`, #7 phase-1, #8 phase-2, #9 phase-3, #10 phase-4, #11 phase-5, #12 `fix/seed-service-parity` → phase-5, with PR #5 (auth-ux) completing the top. Merge bottom-up, retargeting each next PR to `staging` after the one below merges. https://github.com/kartos-1993/celebs/pulls
+- 2026-10-18 — §12 men apparel standardization: the 36-item `data/products.json` men block now speaks each leaf category's own vocabulary (`Body`→`Body / Lining`, `Collar`→`Neckline`, `Season(s)`→`Temperature`, care/spec value lists aligned to the option sets) and `seed-categories-men.ts` / `seed-option-sets.ts` gained the matching schema + values (Apparel Temperature option set, wash-tone and care colors). `merge-seed-batch.ts` maps SHEIN spec-table label variants onto those keys so future scraper batches land schema-valid; merge-batch spec extended (7 tests). New `seed-product-attribute-coverage.spec.ts` guardrail (3 tests): every men item attaches to a leaf category, every attribute key exists on that leaf's schema, every value option belongs to its option set — the dataset can no longer silently drift. DB reseeded and re-verified against live rows.
+- 2026-10-18 — §12 verification: spot-check specs 10/10 (`seed-product-attribute-coverage` 3/3, `merge-seed-batch` 7/7).

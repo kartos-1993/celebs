@@ -120,6 +120,26 @@ describe('toCanonicalItem', () => {
     });
   });
 
+  it('normalizes renamed SHEIN spec-table labels onto the men-apparel vocabulary', () => {
+    const cases: Array<[string, string, string]> = [
+      ['Body', 'Unlined', 'Body / Lining'],
+      ['Collar', 'Hooded', 'Neckline'],
+      ['Collar / Neckline', 'Lapel / Notched Collar', 'Neckline'],
+      ['Neckline / Collar', 'Hooded', 'Neckline'],
+      ['Season', 'Winter (<10/50)', 'Temperature'],
+      ['Seasons', 'All-Season', 'Temperature'],
+    ];
+
+    for (const [label, value, canonical] of cases) {
+      const item = toCanonicalItem({
+        ...BATCH_ITEM,
+        dynamicData: { values: { [label]: value } },
+      });
+
+      expect(item.attributes).toEqual({ [canonical]: value });
+    }
+  });
+
   it('maps the legacy FLYER_LARGE packaging type to BOX_STANDARD', () => {
     const item = toCanonicalItem({ ...BATCH_ITEM, packagingType: 'FLYER_LARGE' });
 

@@ -29,6 +29,7 @@ export const DEFAULT_OPTION_SETS = [
       'Tan',
       'Khaki',
       'Mocha',
+      'Mocha Brown',
       'Coffee',
       'Chocolate',
       'Chocolate Brown',
@@ -184,6 +185,11 @@ export const DEFAULT_OPTION_SETS = [
       'Transparent',
       'Rainbow',
       'Iridescent',
+      // Denim washes & earthy reds (SHEIN scraped product colors)
+      'Light Wash',
+      'Dark Wash',
+      'Red Violet',
+      'Redwood',
     ],
   },
   {
@@ -231,6 +237,12 @@ export const DEFAULT_OPTION_SETS = [
       'Professional dry clean only',
       'Do not bleach / Line dry',
       'Hand wash cold, line dry in shade',
+      // SHEIN spec-table care phrases (scraped product data)
+      'Hand wash, do not dry clean',
+      'Machine wash, do not dry clean',
+      'Machine wash',
+      'Hand wash recommended',
+      'Hand wash or professional dry clean',
     ],
   },
   {
@@ -270,14 +282,23 @@ export const DEFAULT_OPTION_SETS = [
     ],
   },
   {
-    name: 'Apparel Seasons',
+    name: 'Apparel Temperature',
     type: 'general' as const,
-    values: ['All-Season', 'Spring / Summer', 'Fall / Winter', 'Summer', 'Winter'],
+    values: ['Winter (<10/50)', 'Spring/Fall (18-25/63-77)', 'Summer (>25/77)', 'All-Season'],
   },
 ];
 
 export async function seedOptionSets(): Promise<void> {
   console.log('\n🎨 Seeding Option Sets into PostgreSQL...');
+
+  // 'Apparel Seasons' was renamed to 'Apparel Temperature' (SHEIN spec vocabulary).
+  // Remove the legacy row so it stops surfacing in the admin option-set picker.
+  const removed = await prisma.optionSet.deleteMany({ where: { name: 'Apparel Seasons' } });
+  if (removed.count > 0) {
+    console.log(
+      '  └─ Removed legacy option set: "Apparel Seasons" (renamed to "Apparel Temperature")',
+    );
+  }
 
   for (const set of DEFAULT_OPTION_SETS) {
     await prisma.optionSet.upsert({

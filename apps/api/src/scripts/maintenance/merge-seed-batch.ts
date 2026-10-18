@@ -94,6 +94,13 @@ const SKU_PREFIXES_BY_CATEGORY: Record<string, string> = {
 const ATTRIBUTE_KEY_FIXES: Record<string, string> = {
   'Ideal for': 'Ideal For',
   'Number of Pieces': 'Number Of Pieces',
+  // Men-apparel schema key renames (SHEIN spec-table label variants):
+  Body: 'Body / Lining',
+  Collar: 'Neckline',
+  'Collar / Neckline': 'Neckline',
+  'Neckline / Collar': 'Neckline',
+  Season: 'Temperature',
+  Seasons: 'Temperature',
 };
 const PACKAGING_TYPE_FIXES: Record<string, string> = {
   FLYER_LARGE: 'BOX_STANDARD',
