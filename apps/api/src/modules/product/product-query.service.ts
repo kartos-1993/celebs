@@ -11,6 +11,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
+import { CampaignRepository, campaignRepository } from '../campaign/campaign.repository';
 import { CategoryRepository, categoryRepository } from '../category/category.repository';
 
 import { ProductRepository, productRepository } from './repositories/product.repository';
@@ -48,10 +49,16 @@ export interface QueryServiceOptions {
 export class ProductQueryService {
   private readonly products: ProductRepository;
   private readonly categories: CategoryRepository;
+  private readonly campaigns: CampaignRepository;
 
-  constructor(products?: ProductRepository, categories?: CategoryRepository) {
+  constructor(
+    products?: ProductRepository,
+    categories?: CategoryRepository,
+    campaigns?: CampaignRepository,
+  ) {
     this.products = products ?? productRepository;
     this.categories = categories ?? categoryRepository;
+    this.campaigns = campaigns ?? campaignRepository;
   }
 
   async getProducts(filters: ProductFilterType, opts: QueryServiceOptions = {}) {
@@ -114,6 +121,7 @@ export class ProductQueryService {
 
     this.applyScalarFilters(filters, where, andClauses, opts);
     await this.applyCategoryFilters(filters, andClauses);
+    await this.applyCampaignFilter(filters, andClauses);
 
     if (andClauses.length > 0) {
       where.AND = andClauses;
@@ -165,9 +173,13 @@ export class ProductQueryService {
       findOptions.skip = (page - 1) * limit;
     }
 
+    // Anonymous storefront reads paginate on cursors and never display a
+    // total (mobile ignores it); counting them is a redundant scan. Elevated
+    // and actor-scoped surfaces keep the total.
+    const shouldCount = !isCursorMode && !isPublicScope;
     const [rawProducts, totalCount] = await Promise.all([
       this.products.findManyList(findOptions),
-      isCursorMode ? Promise.resolve(undefined) : this.products.count(where),
+      shouldCount ? this.products.count(where) : Promise.resolve(undefined),
     ]);
 
     const hasMore = rawProducts.length > limit;
@@ -260,7 +272,6 @@ export class ProductQueryService {
         OR: [
           { name: { contains: filters.search, mode: 'insensitive' } },
           { brand: { contains: filters.search, mode: 'insensitive' } },
-          { tags: { has: filters.search } },
         ],
       });
     }
@@ -283,10 +294,6 @@ export class ProductQueryService {
 
     if (filters.subcategoryId) {
       where.subcategoryId = filters.subcategoryId;
-    }
-
-    if (filters.tag) {
-      where.tags = { has: filters.tag };
     }
   }
 
@@ -329,6 +336,41 @@ export class ProductQueryService {
         });
       }
     }
+
+    // Storefront chips send a subcategory slug; resolve its whole subtree and
+    // AND it with the browse-root clause above (chip inside its own branch).
+    if (filters.subcategory) {
+      const subcategoryDoc = await this.categories.findFilterMatch(filters.subcategory.trim());
+
+      if (subcategoryDoc) {
+        const descendantIds = await this.categories.findDescendantIds(
+          subcategoryDoc.id,
+          subcategoryDoc.slug,
+        );
+        const allMatchingSubcategoryIds = [subcategoryDoc.id, ...descendantIds];
+
+        andClauses.push({
+          OR: [
+            { categoryId: { in: allMatchingSubcategoryIds } },
+            { subcategoryId: { in: allMatchingSubcategoryIds } },
+          ],
+        });
+      }
+    }
+  }
+
+  private async applyCampaignFilter(
+    filters: ProductFilterType,
+    andClauses: Prisma.ProductWhereInput[],
+  ): Promise<void> {
+    if (!filters.campaign) return;
+
+    const campaign = await this.campaigns.findBySlug(filters.campaign.trim());
+    const enrolledProductIds = campaign?.products.map((entry) => entry.productId) ?? [];
+
+    // Unknown campaign slug → empty id set: a stale campaign link must never
+    // silently degrade into an unfiltered storefront list.
+    andClauses.push({ id: { in: enrolledProductIds } });
   }
 
   async getProductReviewQueue(

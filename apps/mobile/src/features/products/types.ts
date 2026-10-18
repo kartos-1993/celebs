@@ -103,12 +103,13 @@ export interface Product {
 export interface ProductFilterParams {
   limit?: number;
   category?: string;
+  subcategory?: string;
+  campaign?: string;
   cursor?: string | null;
   status?: string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  tag?: string;
   brandId?: string;
   sortBy?: 'createdAt' | 'price' | 'name';
   sortOrder?: 'asc' | 'desc';

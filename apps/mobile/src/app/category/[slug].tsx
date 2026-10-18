@@ -53,7 +53,7 @@ export default function CategoryProductsScreen() {
           key={shortcut.id || idx}
           config={shortcut}
           selectedItem={filters.selectedStorefrontShortcutValue}
-          onSelectItem={filters.handleSelectStorefrontShortcutItem}
+          onSelectItem={(item) => filters.handleSelectStorefrontShortcutItem(item, shortcut.type)}
         />
       ))}
 

@@ -97,7 +97,7 @@ export const updateCategoryAttributesSchema = z.object({
 export const storefrontShortcutTypeSchema = z.enum([
   'subcategory',
   'attribute',
-  'tag',
+  'campaign',
   'collection',
 ]);
 export const storefrontShortcutDisplayAsSchema = z.enum([

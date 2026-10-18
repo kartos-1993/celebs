@@ -87,4 +87,16 @@ describe('Product Cursor-Based Pagination & Storefront API (PostgreSQL)', () => 
     expect(page2.hasMore).toBe(false);
     expect(page2.nextCursor).toBeUndefined();
   });
+
+  it('omits total on anonymous storefront reads and keeps it for elevated scopes', async () => {
+    const anonymous = await productService.getProducts({ category: mockCategory.slug, limit: 5 });
+    expect(anonymous.total).toBeUndefined();
+
+    const elevated = await productService.getProducts(
+      { category: mockCategory.slug, limit: 5 },
+      { isElevated: true },
+    );
+    expect(typeof elevated.total).toBe('number');
+    expect(elevated.total).toBeGreaterThanOrEqual(15);
+  });
 });

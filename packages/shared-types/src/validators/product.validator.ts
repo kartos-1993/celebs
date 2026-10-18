@@ -231,9 +231,12 @@ export const productFilterSchema = z.object({
   categoryId: idSchema.optional(),
   subcategoryId: idSchema.optional(),
   category: z.string().optional(),
+  /** Storefront chip subcategory slug — resolved across its whole subtree. */
+  subcategory: z.string().optional(),
+  /** Campaign slug — restricts to products enrolled in that campaign. */
+  campaign: z.string().optional(),
   brandId: idSchema.optional(),
   brand: z.string().optional(),
-  tag: z.string().optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   status: z

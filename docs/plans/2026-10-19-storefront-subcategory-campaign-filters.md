@@ -80,3 +80,13 @@ storefront client consumes.
 - Chip tap sends `subcategory`; button result count > 0.
 - `GET /products?campaign=<slug>` → only enrolled ids.
 - Page-1 public list: no count; cursor pages unchanged; elevated responses keep `total`.
+
+## Execution Log (2026-10-19)
+
+- RED first: 6 failing API cases (subcategory/campaign stripped → unfiltered lists, `tag` not stripped, anonymous `total` present) and 4 failing mobile cases (`shortcutFilterParams is not a function`).
+- Shipped: schema swap in shared-types (`tag` out; `subcategory` + `campaign` in), shortcut enum swap (`tag` → `campaign`), subcategory subtree clause in `applyCategoryFilters`, campaign id-set filter in new `applyCampaignFilter` (via `CampaignRepository.findBySlug`), search drops the `tags.has` branch, count skip (`shouldCount = !isCursorMode && !isPublicScope`).
+- Mobile: typed chip selection — screen passes `shortcut.type`, hook stores `{ type, value }`, one pure mapper `shortcutFilterParams`; renderer and filter components untouched. Web-admin shortcut dropdown swaps the `tag` option for `campaign`.
+- GREEN: new API spec 5/5; pagination 4/4; pruning 2/2; broad batch (product + storefront + storefront-shortcut + category) 31 files / 229 tests; mobile full suite 24 files / 239 tests; shared-types 9 files / 95 tests; web-admin 818/819 (1 long-running render spec flaked under full-suite concurrency; passes 5/5 in isolation and is unrelated to this diff).
+- Typechecks: api app 0 errors; api spec tsc 37 (at baseline); mobile 0; web-admin 0 (`tsc -b --noEmit`). `packages/shared-types` dist rebuilt so built-package consumers (mobile, web-admin) see the new schema/enum.
+- Adaptations: `product-inventory-pruning.spec.ts` dropped two stale public `.total` asserts (anonymous reads no longer count); `product-pagination.spec.ts` gained the anonymous-vs-elevated total contract test.
+- Deviation: none from the plan. `getProducts` cache keys already include all filters, so `subcategory`/`campaign` reads cache per signature as before.

@@ -48,7 +48,7 @@ export const StorefrontHeroConfig: React.FC<StorefrontHeroConfigProps> = ({
             <SelectContent>
               <SelectItem value="subcategory">Child Subcategories</SelectItem>
               <SelectItem value="attribute">Product Attribute (Color, Fit, etc.)</SelectItem>
-              <SelectItem value="tag">Marketing Tags (Dashain, Japan Pack)</SelectItem>
+              <SelectItem value="campaign">Active Campaign (Dashain, Tihar, ...)</SelectItem>
               <SelectItem value="collection">Curated Collection</SelectItem>
             </SelectContent>
           </Select>

@@ -171,7 +171,6 @@ describe('Product Inventory Pruning & Deep Hierarchy Search', () => {
       category: mockCategory.slug,
       status: 'published',
     });
-    expect(resultsBySlug.total).toBeGreaterThanOrEqual(1);
     expect(resultsBySlug.products.some((p) => String(p?.name).includes('Maxi Evening Dress'))).toBe(
       true,
     );
@@ -181,7 +180,6 @@ describe('Product Inventory Pruning & Deep Hierarchy Search', () => {
       categoryId: mockCategory.id,
       status: 'published',
     });
-    expect(resultsById.total).toBeGreaterThanOrEqual(1);
     expect(resultsById.products.some((p) => String(p?.name).includes('Maxi Evening Dress'))).toBe(
       true,
     );
