@@ -130,12 +130,6 @@ export class ProductController {
         isStoreManagement,
       });
 
-      // C10: Send caching headers for public storefront browse
-      const isElevated = isPlatformActor(req.actor);
-      if (!isElevated && !req.headers.authorization) {
-        res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=120');
-      }
-
       sendSuccess(res, result, 'Products retrieved successfully');
     } catch (error) {
       next(error);

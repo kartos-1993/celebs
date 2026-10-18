@@ -2,8 +2,9 @@ import { Category, VendorProfile } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CreateProductType } from '@celebs/shared-types';
-import { AppError } from '@celebs/shared-utils';
+import { AppError, ErrorCode } from '@celebs/shared-utils';
 
+import type { Actor } from '@/common/context/actor-context';
 import prisma from '@/config/db.prisma';
 import { ProductService } from '@/modules/product/product.service';
 
@@ -181,5 +182,97 @@ describe('Product Tenant Isolation & Cross-Vendor Boundaries (PostgreSQL)', () =
 
     const vendorBList = await productService.getProductsByVendor(vendorB.id);
     expect(vendorBList.products.some((p) => p?.id === productAId)).toBe(false);
+  });
+
+  describe('List query vendor scoping — single effective vendor resolution', () => {
+    const sellerActor = (userId: string): Actor => ({
+      userId,
+      sessionId: 'spec-session',
+      email: `${userId}@example.com`,
+      role: 'VENDOR',
+      permissions: [],
+      isEmailVerified: true,
+    });
+
+    const platformActor: Actor = {
+      userId: 'platform-spec-user',
+      sessionId: 'spec-session',
+      email: 'platform@example.com',
+      role: 'SUPERADMIN',
+      permissions: [],
+      isEmailVerified: true,
+    };
+
+    async function createVendorBProduct(uid: string): Promise<string> {
+      const payload: CreateProductType = {
+        name: `Vendor B Product ${uid}`,
+        brand: 'Brand B',
+        description: 'Product owned by Vendor B',
+        price: 2000,
+        discountedPrice: 1800,
+        categoryId: testCategory.id,
+        subcategoryId: testCategory.id,
+        mainImages: ['https://example.com/b-item.jpg'],
+        colorVariants: [
+          {
+            name: 'Black',
+            colorCode: '#000000',
+            images: ['https://example.com/b-black.jpg'],
+            stocks: [{ size: 'L', quantity: 5 }],
+          },
+        ],
+        status: 'draft',
+      };
+      const created = await productService.createProduct(
+        payload,
+        userBId,
+        vendorB.id,
+        vendorB.shopName,
+      );
+      return String(created?.id);
+    }
+
+    it('pins seller management list queries to the caller store and ignores client vendorId', async () => {
+      const productBId = await createVendorBProduct('pin');
+
+      const result = await productService.getProducts(
+        { vendorId: vendorB.id, limit: 100 },
+        { actor: sellerActor(userAId), storeId: vendorA.id, isStoreManagement: true },
+      );
+
+      const ids = result.products.map((p) => p?.id);
+      expect(ids).toContain(productAId);
+      expect(ids).not.toContain(productBId);
+    });
+
+    it('allows platform actors to scope list queries by any vendorId', async () => {
+      const productBId = await createVendorBProduct('platform');
+
+      const result = await productService.getProducts(
+        { vendorId: vendorB.id, limit: 100 },
+        { actor: platformActor, isStoreManagement: true },
+      );
+
+      const ids = result.products.map((p) => p?.id);
+      expect(ids).toContain(productBId);
+      expect(ids).not.toContain(productAId);
+    });
+
+    it('honors vendorId for anonymous storefront browse but never exposes unpublished products', async () => {
+      await prisma.product.update({ where: { id: productAId }, data: { status: 'published' } });
+      const productBId = await createVendorBProduct('guest');
+
+      const result = await productService.getProducts({ vendorId: vendorA.id, limit: 100 });
+
+      const ids = result.products.map((p) => p?.id);
+      expect(ids).toContain(productAId);
+      expect(ids).not.toContain(productBId);
+    });
+
+    it('rejects management-scoped list queries from actors without a store context', async () => {
+      await expect(
+        productService.getProducts({}, { actor: sellerActor(userAId), isStoreManagement: true }),
+      ).rejects.toMatchObject({ errorCode: ErrorCode.SELLER_CONTEXT_REQUIRED });
+    });
   });
 });

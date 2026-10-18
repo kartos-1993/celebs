@@ -17,7 +17,13 @@ import {
 
 const SELLER_CONTEXT_MESSAGE = 'This operation requires a seller store context.';
 
-function noStoreError(role: string): ForbiddenException | UnauthorizedException {
+/**
+ * Canonical "no store context" error for a given actor role. Shared by the
+ * declarative guards and the product query service so both layers stay on the
+ * same error contract (staff orphans → ACCOUNT_ORPHANED, sellers/customers →
+ * SELLER_CONTEXT_REQUIRED).
+ */
+export function noStoreError(role: string): ForbiddenException | UnauthorizedException {
   // Staff accounts whose parent store was deleted (FK set to NULL) are orphaned.
   if (role === 'STAFF') {
     return new ForbiddenException(

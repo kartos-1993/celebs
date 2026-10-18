@@ -36,6 +36,7 @@ import {
 
 import type { Actor } from '@/common/context/actor-context';
 import { isPlatformActor } from '@/common/context/actor-context';
+import { noStoreError } from '@/common/guards/store.guards';
 
 export interface QueryServiceOptions {
   actor?: Actor | null;
@@ -223,9 +224,20 @@ export class ProductQueryService {
     const isPlatform = isPlatformActor(opts.actor);
     const isElevated = this.resolveElevatedRead(opts, isPlatform);
 
-    if (!isPlatform && opts.storeId && opts.isStoreManagement) {
+    if (isPlatform) {
+      // Platform actors may scope any vendor's catalogue.
+      if (filters.vendorId) {
+        where.vendorId = filters.vendorId;
+      }
+    } else if (opts.actor && opts.isStoreManagement) {
+      // Seller management surfaces are ALWAYS pinned to the caller's own
+      // store: a client-supplied vendorId must never widen the tenant scope.
+      if (!opts.storeId) {
+        throw noStoreError(opts.actor.role);
+      }
       where.vendorId = opts.storeId;
     } else if (filters.vendorId) {
+      // Anonymous / non-management browse may filter a public vendor page.
       where.vendorId = filters.vendorId;
     }
 
@@ -257,10 +269,6 @@ export class ProductQueryService {
       where.brandId = filters.brandId;
     } else if (filters.brand) {
       where.brand = { contains: filters.brand, mode: 'insensitive' };
-    }
-
-    if (filters.vendorId) {
-      where.vendorId = filters.vendorId;
     }
 
     if (typeof filters.featured === 'boolean') {

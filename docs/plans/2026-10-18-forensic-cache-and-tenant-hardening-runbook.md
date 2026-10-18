@@ -241,3 +241,30 @@ grep -rn "publicCache(\|privateNoStore(" apps/api/src --include="*.ts" | grep -v
 - Execute this plan BEFORE `2026-10-18-storefront-campaign-combo-agent-execution-runbook.md` Phase 4 (both touch `ProductQueryService`; this plan's Phase 1/2 precede its Step 4.2 to avoid merge conflicts).
 - This plan REPLACES the shortcut-cache step scope in its Phase 4.6 with the invalidation-inclusive version (Phase 3.2 here).
 - The companion runbook's forensic sections remain valid; nothing in it conflicts.
+
+## Execution Log — Phase A (2026-10-18, branch `fix/tenant-scope-and-cache-auth-hardening`)
+
+**Phase 1 (F1 + F3) — done.**
+
+- `product-query.service.ts` `applyScalarFilters` now has a single effective vendor resolution: platform actors scope `filters.vendorId`; non-platform actors with `isStoreManagement` are ALWAYS pinned to `opts.storeId` (missing store → `noStoreError(actor.role)` → `SELLER_CONTEXT_REQUIRED` for sellers/customers, `ACCOUNT_ORPHANED` for orphaned staff); anonymous/non-management browse keeps the public `filters.vendorId` filter. The unconditional override (old lines 262–264) is deleted, so management mode is a surface hint only — it can no longer widen tenant scope either way.
+- `store.guards.ts` `noStoreError` is exported so the service and the declarative guards share one error contract.
+- TDD evidence: service-level specs went RED pre-fix (pin test returned only vendor B's row; store-less management resolved instead of rejecting) and GREEN after.
+- Regression specs: 4 service-level cases in `product-tenant-isolation.spec.ts` + 3 HTTP-level cases in `tests/security/product-cross-tenant-http.spec.ts` (seller + `?manage=true&vendorId=<other>` over the live app → own-store rows only; manage without store → 403 `SELLER_CONTEXT_REQUIRED`; anonymous stays public).
+
+**Phase 2 (F2 + F4) — done.**
+
+- `publicCache` is now the single source of truth: credentialed requests (resolved actor/user, `Authorization` header, `accessToken`/`refreshToken` cookies) emit `Cache-Control: private, no-store, no-cache, must-revalidate` + `Pragma: no-cache`; anonymous requests emit the configured public policy and `Vary: Accept-Encoding, Authorization, X-Surface`.
+- The controller override (old `product.controller.ts` lines 133–137) is deleted: it stripped `s-maxage` for anonymous reads and left `public, s-maxage` on authenticated reads. Anonymous list reads now correctly serve the route policy (`public, max-age=30, s-maxage=60, stale-while-revalidate=120`), verified at HTTP level.
+- `sendPublicCachedWithETag` + `PublicCacheETagOptions` + `conditional-get-revalidation.spec.ts` deleted (zero production call sites; the middleware is the one cache-header mechanism).
+- DEVIATION — `etag` CORS `exposedHeaders` entry KEPT: the F4 premise "nothing emits ETags" is factually wrong. `product-render.routes.ts` emits a real `ETag` and answers `If-None-Match` with 304; removing the exposure would strip browser readability of that live contract, and `cors-configuration.spec.ts` pins the exposure.
+- DEVIATION — `Vary: Authorization, X-Surface` (not `Cookie`): the anonymous storefront carries a guest `sessionId` cart cookie, so `Vary: Cookie` would fragment the edge cache per visitor and silently kill `s-maxage` for cart users. The only cookie-authenticated client (web-admin) sends `X-Surface: admin` on every request, so elevated traffic is separated; credentialed responses are no-store anyway and can never populate a shared cache.
+
+**Verification**
+
+- Targeted: cache-policy + tenant-isolation 19/19; new HTTP boundary spec 3/3.
+- Full product module + rbac + product-lifecycle: 26 files / 200 tests green.
+- Broader batch (product, storefront, security cache, cors, health): 100/101. The single failure is a PRE-EXISTING stale expectation in `tests/security/access-matrix.spec.ts` (it calls legacy `POST /products/:id/archive` while the canonical route is `DELETE /:id` per §10 conventions) — no route files were touched in this diff.
+- Typecheck: app 30 errors (baseline), spec 37 (≤ baseline 38), none in touched files.
+- Appendix B checklist recorded: remaining `req.query.vendorId` consumers (finance, fulfillment) use their own scope helpers (`resolveTargetStoreId`, `earnings-scope`, `vendorScope`) — deferred to the Phase 3 audit pass.
+
+**Deferred (not in Phase A):** Phase 3 (auth-cache invalidation audit, shortcut cache), Phase 4 (client interplay verification), Phase 5/6 (hygiene + e2e acceptance gate).
