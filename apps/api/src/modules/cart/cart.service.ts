@@ -16,7 +16,6 @@ import { resolveCover } from '../product/utils/product-image.util';
 import { cartRepository } from './cart.repository';
 import { resolveCartLineUnitPrice, resolveComboLineUnitDiscounts } from './cart-line-price';
 
-import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
 import { cacheRedis } from '@/config/upstash.redis';
 import { resolveDeliveryPricing } from '@/modules/logistics/delivery-pricing';
@@ -24,7 +23,6 @@ import {
   deliveryPricingRepository,
   UNRESOLVED_FREE_DELIVERY_THRESHOLD,
 } from '@/modules/logistics/delivery-pricing.repository';
-import type { QuoteSellerParcelInput } from '@/modules/logistics/delivery-quote.service';
 import {
   computeBillableLineWeightKg,
   sumBillableWeightKg,
@@ -103,9 +101,6 @@ export class CartService {
     let billableWeightKg = new Prisma.Decimal(0);
     let itemCount = 0;
     let hasStockIssues = false;
-    // Grouped by seller as the items are walked, so the cart can be quoted the same
-    // way checkout will quote it: one parcel per seller.
-    const previewParcels: QuoteSellerParcelInput[] = [];
 
     const hydratedItems: CartItemHydrated[] = cartWithItems.items.map((item) => {
       const product = item.inventory.product;
@@ -160,29 +155,10 @@ export class CartService {
         // Billable weight for the line, accumulated here rather than read back off
         // the hydrated items: these are product dimensions, and publishing them
         // on the cart response would leak a pricing input into the API surface.
-        // Declared weight, not the volumetric maximum: the courier prices what the
-        // seller states and has no volumetric input of its own.
-        const declaredLineWeightKg = new Prisma.Decimal(
-          product?.packageWeightKg ?? MIN_PARCEL_WEIGHT_KG,
-        ).mul(item.quantity);
-        const sellerId = product?.vendorId ?? PLATFORM_VENDOR_ID;
-        const existingParcel = previewParcels.find((p) => p.vendorId === sellerId);
-
-        if (existingParcel) {
-          existingParcel.declaredWeightKg =
-            existingParcel.declaredWeightKg.plus(declaredLineWeightKg);
-          existingParcel.goodsAmount = existingParcel.goodsAmount.add(
-            unitPriceDecimal.mul(item.quantity),
-          );
-        } else {
-          previewParcels.push({
-            vendorId: sellerId,
-            declaredWeightKg: declaredLineWeightKg,
-            goodsAmount: unitPriceDecimal.mul(item.quantity),
-            lineIds: [item.id],
-          });
-        }
-
+        //
+        // Mass versus volume at the courier's divisor, exactly as checkout
+        // computes it - this is the weight delivery is priced from, so a
+        // light-but-bulky parcel lands in the same band on both surfaces.
         billableWeightKg = sumBillableWeightKg([
           billableWeightKg,
           computeBillableLineWeightKg({
@@ -247,11 +223,10 @@ export class CartService {
     // shown here is the figure billed.
     const destination = await this.resolveDefaultDestination(userId);
     const activeRates = await deliveryPricingRepository.activeRates(destination?.cityId ?? null);
-    const totalWeightKg = sumBillableWeightKg(previewParcels.map((p) => p.declaredWeightKg));
 
     const preview = resolveDeliveryPricing({
       subtotal: subtotalDecimal,
-      weightKg: totalWeightKg,
+      weightKg: billableWeightKg,
       isCod: false,
       freeDeliveryThreshold: new Prisma.Decimal(
         destination?.freeDeliveryThreshold ?? UNRESOLVED_FREE_DELIVERY_THRESHOLD,

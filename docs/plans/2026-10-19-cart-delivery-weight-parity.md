@@ -65,3 +65,28 @@ quantity`, gram-rounded, clamped `[0.5, 10]` kg; `sumBillableWeightKg` sums and
 - Vestigial parcel machinery removed; `tsc` 0; cart/combo suites green.
 - The pre-existing `cart-zone-pricing.spec.ts` courier pair stays untouched
   (separate stale-spec concern, documented in the C2 log).
+
+## Execution log (2026-10-19)
+
+### RED first
+
+- New `cart-delivery-weight-parity.spec.ts`: the dims-heavy case failed first —
+  `expected 100 to be 260` (declared-weight pricing matched the `[0,1)` band). The
+  declared-dominant guard case passed from the start (characterization).
+
+### Fix
+
+- `getCart` feeds `resolveDeliveryPricing` the line-accumulated `billableWeightKg`
+  — the same `computeBillableLineWeightKg` call shape checkout uses — and the
+  vestigial parcel machinery is gone (`previewParcels`, `goodsAmount`,
+  `QuoteSellerParcelInput` import, `PLATFORM_VENDOR_ID` usage).
+
+### GREEN
+
+- `cart-delivery-weight-parity.spec.ts` 2/2.
+- Cart + combo modules: 9 files / 56 tests → 54 passed. The only 2 failures are
+  the pre-existing `cart-zone-pricing.spec.ts` courier pair
+  (`expected 150 to be 300`) — unchanged by this branch, untouched by design.
+- `apps/api` app `tsc` 0; spec `tsc` 37 (baseline set, none in touched files).
+- No other surface changed: response shape, `resolveDeliveryPricing`, bands,
+  thresholds, checkout all untouched; mobile and web-admin read no weight data.
